@@ -111,7 +111,25 @@ export function TopBar({ title, subtitle, isMobile = false, onMenuToggle }: TopB
         </Link>
       )}
 
-      {isMobile ? (
+      {isMobile && !authed ? (
+        <Link
+          href="/login"
+          style={{
+            background: "#1D1D1F",
+            color: "white",
+            textDecoration: "none",
+            padding: "8px 14px",
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          Entrar
+        </Link>
+      ) : isMobile ? (
         <Link
           href="/create"
           style={{
