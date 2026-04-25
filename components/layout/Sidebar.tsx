@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { CURRENT_USER } from "@/lib/data";
 
@@ -15,7 +15,13 @@ const NAV = [
   { href: "/notifications", label: "Notificações", icon: Bell, badge: 3 },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobile?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const authed = status === "authenticated" && session?.user?.handle;
@@ -26,6 +32,89 @@ export function Sidebar() {
   const displayName = authed ? (session.user.name ?? "Usuário") : CURRENT_USER.name;
   const displayStreak = authed ? (session.user.streak ?? 0) : CURRENT_USER.streak;
   const avatarUser = authed ? { name: session!.user.name ?? "Usuário", avatar: "#FA243C" } : CURRENT_USER;
+
+  const handleNavClick = () => {
+    if (isMobile && onClose) onClose();
+  };
+
+  if (isMobile) {
+    return (
+      <>
+        {/* Overlay */}
+        {isOpen && (
+          <div
+            onClick={onClose}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.4)",
+              zIndex: 190,
+            }}
+          />
+        )}
+
+        {/* Drawer */}
+        <aside
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: 280,
+            height: "100vh",
+            background: "#F5F5F7",
+            borderRight: "1px solid rgba(0,0,0,0.06)",
+            padding: "22px 14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            overflowY: "auto",
+            zIndex: 200,
+            transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+            transition: "transform 260ms cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div style={{ padding: "4px 10px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: "linear-gradient(135deg, #FA243C, #FF5858)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                  <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
+                </svg>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>Charts</span>
+            </div>
+            <button
+              onClick={onClose}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "#86868B" }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <SidebarContent
+            pathname={pathname}
+            profilePath={profilePath}
+            profileActive={profileActive}
+            displayName={displayName}
+            displayStreak={displayStreak}
+            avatarUser={avatarUser}
+            authed={!!authed}
+            session={session}
+            onNavClick={handleNavClick}
+          />
+        </aside>
+      </>
+    );
+  }
 
   return (
     <aside
@@ -63,12 +152,51 @@ export function Sidebar() {
         <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>Charts</span>
       </div>
 
+      <SidebarContent
+        pathname={pathname}
+        profilePath={profilePath}
+        profileActive={profileActive}
+        displayName={displayName}
+        displayStreak={displayStreak}
+        avatarUser={avatarUser}
+        authed={!!authed}
+        session={session}
+        onNavClick={() => {}}
+      />
+    </aside>
+  );
+}
+
+function SidebarContent({
+  pathname,
+  profilePath,
+  profileActive,
+  displayName,
+  displayStreak,
+  avatarUser,
+  authed,
+  session,
+  onNavClick,
+}: {
+  pathname: string;
+  profilePath: string;
+  profileActive: boolean;
+  displayName: string;
+  displayStreak: number;
+  avatarUser: { name: string; avatar: string };
+  authed: boolean;
+  session: ReturnType<typeof useSession>["data"];
+  onNavClick: () => void;
+}) {
+  return (
+    <>
       {NAV.map(({ href, label, icon: Icon, badge }) => {
         const active = pathname === href;
         return (
           <Link
             key={href}
             href={href}
+            onClick={onNavClick}
             style={{
               display: "flex",
               alignItems: "center",
@@ -114,6 +242,7 @@ export function Sidebar() {
 
       <Link
         href="/create"
+        onClick={onNavClick}
         style={{
           display: "flex",
           alignItems: "center",
@@ -133,6 +262,7 @@ export function Sidebar() {
 
       <Link
         href={profilePath}
+        onClick={onNavClick}
         style={{
           display: "flex",
           alignItems: "center",
@@ -244,6 +374,7 @@ export function Sidebar() {
           </div>
           <Link
             href="/login"
+            onClick={onNavClick}
             style={{
               textAlign: "center",
               padding: "10px 12px",
@@ -259,6 +390,6 @@ export function Sidebar() {
           </Link>
         </div>
       )}
-    </aside>
+    </>
   );
 }

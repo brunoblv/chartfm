@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Flame } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
+import { HomeGrid } from "@/components/layout/HomeGrid";
 import { ChartCard } from "@/components/chart/ChartCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
@@ -9,32 +10,34 @@ import { TIMELINE, GLOBAL_CHART, USERS_DATA, ARTISTS, CURRENT_USER, COVER_PALETT
 import { buildWeekLabelFromDate } from "@/lib/chart-week";
 
 export default function HomePage() {
+  const feed = (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <YourWeekCard />
+      <FriendsRow />
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 2px 0 2px" }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>Timeline</div>
+        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
+        <button style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#FA243C", cursor: "pointer" }}>Filtrar</button>
+      </div>
+
+      {TIMELINE.slice(1).map((t) => (
+        <ChartCard key={t.user.id} user={t.user} chart={t.chart} postedAgo={t.postedAgo} />
+      ))}
+    </div>
+  );
+
+  const sidebar = (
+    <>
+      <GlobalTeaser />
+      <SuggestedUsers />
+      <TrendingArtists />
+    </>
+  );
+
   return (
     <Shell title="Início" subtitle="As paradas de quem você segue">
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 320px", gap: 36, alignItems: "flex-start" }}>
-        {/* Feed principal */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <YourWeekCard />
-          <FriendsRow />
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 2px 0 2px" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>Timeline</div>
-            <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
-            <button style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#FA243C", cursor: "pointer" }}>Filtrar</button>
-          </div>
-
-          {TIMELINE.slice(1).map((t) => (
-            <ChartCard key={t.user.id} user={t.user} chart={t.chart} postedAgo={t.postedAgo} />
-          ))}
-        </div>
-
-        {/* Sidebar direita */}
-        <aside style={{ position: "sticky", top: 100, display: "flex", flexDirection: "column", gap: 20 }}>
-          <GlobalTeaser />
-          <SuggestedUsers />
-          <TrendingArtists />
-        </aside>
-      </div>
+      <HomeGrid feed={feed} sidebar={sidebar} />
     </Shell>
   );
 }
@@ -46,41 +49,43 @@ function YourWeekCard() {
     <div style={{
       background: "linear-gradient(135deg, #FA243C 0%, #FF5858 100%)",
       borderRadius: 18,
-      padding: 24,
+      padding: 20,
       color: "white",
       display: "flex",
-      alignItems: "center",
-      gap: 20,
+      flexDirection: "column",
+      gap: 16,
       boxShadow: "0 4px 16px rgba(250,36,60,0.25)",
     }}>
-      <div style={{
-        width: 64, height: 64, borderRadius: 16,
-        background: "rgba(255,255,255,0.15)",
-        display: "grid", placeItems: "center",
-        backdropFilter: "blur(10px)",
-        flexShrink: 0,
-      }}>
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
-          <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
-        </svg>
-      </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
-          Sua parada · {weekNow}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: 14,
+          background: "rgba(255,255,255,0.15)",
+          display: "grid", placeItems: "center",
+          backdropFilter: "blur(10px)",
+          flexShrink: 0,
+        }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
+          </svg>
         </div>
-        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginTop: 2 }}>
-          Quais foram suas músicas dessa semana?
-        </div>
-        <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
-          {daysLeft} dias restantes para publicar · Mantenha seu streak de {CURRENT_USER.streak} semanas
-          <Flame size={13} fill="white" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
+            Sua parada · {weekNow}
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.025em", marginTop: 2, lineHeight: 1.3 }}>
+            Quais foram suas músicas dessa semana?
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+            {daysLeft} dias restantes · streak de {CURRENT_USER.streak} semanas
+            <Flame size={12} fill="white" />
+          </div>
         </div>
       </div>
       <Link href="/create" style={{
         background: "white", color: "#FA243C", textDecoration: "none",
         padding: "12px 22px", borderRadius: 100, fontSize: 14, fontWeight: 700,
         letterSpacing: "-0.01em", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-        whiteSpace: "nowrap", flexShrink: 0,
+        textAlign: "center", display: "block",
       }}>
         Criar parada
       </Link>

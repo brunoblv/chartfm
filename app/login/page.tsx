@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { signIn, getProviders } from "next-auth/react";
 import { COVER_PALETTES, USERS_DATA } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 function GoogleLogo({ size = 16 }: { size?: number }) {
   return (
@@ -29,6 +30,7 @@ function ChartifyIcon({ size = 20, color = "white" }: { size?: number; color?: s
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     getProviders().then((p) => setGoogleReady(Boolean(p?.google)));
@@ -42,9 +44,10 @@ export default function LoginPage() {
   const covers = Array.from({ length: 24 }, (_, i) => COVER_PALETTES[i % COVER_PALETTES.length]);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", display: "grid", gridTemplateColumns: "1.1fr 1fr", background: "#FBFBFD", fontFamily: "inherit", overflow: "hidden" }}>
+    <div style={{ width: "100vw", minHeight: "100vh", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1fr", background: "#FBFBFD", fontFamily: "inherit", overflow: isMobile ? "auto" : "hidden", maxHeight: isMobile ? "none" : "100vh" }}>
 
       {/* ── Left: visual panel ── */}
+      {!isMobile && (
       <div style={{ position: "relative", overflow: "hidden", background: "#0F0F12", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "48px 56px", color: "white" }}>
 
         {/* Cover wall */}
@@ -92,9 +95,10 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Right: form ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "40px 24px" : 48 }}>
         <div style={{ width: "100%", maxWidth: 380 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
             Bem-vindo

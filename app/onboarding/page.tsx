@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const ALL_GENRES = [
   "Pop", "Indie", "Rock", "R&B", "Hip Hop",
@@ -56,6 +57,7 @@ function StepDone() {
 export default function OnboardingPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [selected, setSelected] = useState<string[]>(["Pop", "Indie", "Rock", "R&B", "Hip Hop"]);
   const [saving, setSaving] = useState(false);
 
@@ -84,10 +86,10 @@ export default function OnboardingPage() {
   const initial = firstName[0]?.toUpperCase() ?? "U";
 
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#FBFBFD", display: "flex", flexDirection: "column", fontFamily: "inherit", overflow: "auto" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: "#FBFBFD", display: "flex", flexDirection: "column", fontFamily: "inherit", overflow: "auto" }}>
 
       {/* Top bar with progress */}
-      <div style={{ padding: "24px 48px", display: "flex", alignItems: "center", gap: 18, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
+      <div style={{ padding: isMobile ? "16px 20px" : "24px 48px", display: "flex", alignItems: "center", gap: 18, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FA243C", display: "grid", placeItems: "center" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" stroke="white" strokeWidth="2.4" fill="none" strokeLinecap="round">
@@ -121,14 +123,14 @@ export default function OnboardingPage() {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, padding: "56px 80px", alignItems: "center" }}>
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 32 : 48, padding: isMobile ? "32px 20px 48px 20px" : "56px 80px", alignItems: isMobile ? "start" : "center" }}>
 
         {/* Left: copy + Google account card */}
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
             Quase lá
           </div>
-          <h1 style={{ fontSize: 46, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05 }}>
+          <h1 style={{ fontSize: isMobile ? 32 : 46, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05 }}>
             Conectado como<br />{firstName}.
           </h1>
           <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
