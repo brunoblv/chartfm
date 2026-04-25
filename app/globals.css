@@ -1,0 +1,144 @@
+:root {
+  --accent: #FA243C;
+  --accent-hover: #FF5858;
+  --accent-tint: rgba(250, 36, 60, 0.08);
+  --bg: #FBFBFD;
+  --sidebar-bg: #F5F5F7;
+  --surface: #FFFFFF;
+  --text: #1D1D1F;
+  --text-muted: #86868B;
+  --text-subtle: #6B6B70;
+  --divider: rgba(0, 0, 0, 0.06);
+  --divider-soft: rgba(0, 0, 0, 0.04);
+  --up-bg: #E8F8EE;
+  --up-fg: #1B873F;
+  --down-bg: #FDECEC;
+  --down-fg: #C5291C;
+  --same-bg: #F2F2F7;
+  --same-fg: #6B6B70;
+  --new-bg: #000000;
+  --new-fg: #FFFFFF;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Inter", system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+/* Tabular numbers for positions and stats */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Overline style */
+.overline {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Card base */
+.card {
+  background: var(--surface);
+  border-radius: 18px;
+  border: 1px solid var(--divider);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Movement badges */
+.badge-new {
+  background: #000;
+  color: #fff;
+}
+.badge-up {
+  background: var(--up-bg);
+  color: var(--up-fg);
+}
+.badge-down {
+  background: var(--down-bg);
+  color: var(--down-fg);
+}
+.badge-same {
+  background: var(--same-bg);
+  color: var(--same-fg);
+}
+
+/* Button base */
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Pill button */
+.btn-pill {
+  border-radius: 100px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: none;
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(250, 36, 60, 0.25);
+}
+
+.btn-dark {
+  background: #1D1D1F;
+  color: white;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}

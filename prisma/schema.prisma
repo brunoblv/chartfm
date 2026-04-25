@@ -1,0 +1,337 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                   String            @id @default(cuid())
+  handle               String            @unique
+  name                 String
+  email                String?           @unique
+  image                String?
+  googleId             String?           @unique
+  avatarColor          String            @default("#FA243C")
+  bio                  String?
+  followers            Int               @default(0)
+  following            Int               @default(0)
+  streak               Int               @default(0)
+  verified             Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  paradaNome           String?
+  genres               String[]          @default([])
+  charts               Chart[]
+  likes                ChartLike[]
+  reposts              ChartRepost[]
+  comments             Comment[]
+  communityMemberships CommunityMember[]
+  actorNotifs          Notification[]    @relation("NotificationActor")
+  notifications        Notification[]    @relation("NotificationRecipient")
+  posts                Post[]
+  postLikes            PostLike[]
+  postReplies          PostReply[]
+  ownedCommunities     Community[]        @relation("CommunityOwner")
+  followerLinks        UserFollow[]       @relation("UserFollows")
+  followingLinks       UserFollow[]       @relation("UserFollowing")
+}
+
+model Artist {
+  id         Int        @id @default(autoincrement())
+  spotifyId  String     @unique @map("spotify_id")
+  name       String
+  imageUrl   String?    @map("image_url")
+  spotifyUrl String?    @map("spotify_url")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  albums     Album[]
+  songs      Song[]     @relation("PrimarySongArtist")
+  feats      SongFeat[]
+
+  @@index([spotifyId], map: "idx_artists_spotify_id")
+  @@map("artists")
+}
+
+enum AlbumType {
+  SINGLE
+  EP
+  ALBUM
+  COMPILATION
+
+  @@map("album_type")
+}
+
+model Album {
+  id              Int         @id @default(autoincrement())
+  spotifyId       String      @unique @map("spotify_id")
+  title           String
+  artistSpotifyId String      @map("artist_spotify_id")
+  albumType       AlbumType?  @map("album_type")
+  releaseDate     DateTime?   @map("release_date") @db.Date
+  coverUrl        String?     @map("cover_url")
+  spotifyUrl      String?     @map("spotify_url")
+  totalTracks     Int?        @map("total_tracks")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  artist          Artist      @relation(fields: [artistSpotifyId], references: [spotifyId])
+  songs           Song[]      @relation("AlbumSongs")
+  chartEntries    ChartEntry[] @relation("ChartEntryAlbumSpotify")
+
+  @@index([spotifyId], map: "idx_albums_spotify_id")
+  @@index([artistSpotifyId], map: "idx_albums_artist_spotify_id")
+  @@map("albums")
+}
+
+model Song {
+  id      String       @id @default(cuid())
+  title   String
+  artist  String
+  album   String?
+  entries ChartEntry[]
+  spotifyId       String?      @unique @map("spotify_id")
+  artistSpotifyId String?      @map("artist_spotify_id")
+  albumSpotifyId  String?      @map("album_spotify_id")
+  durationMs      Int?         @map("duration_ms")
+  previewUrl      String?      @map("preview_url")
+  spotifyUrl      String?      @map("spotify_url")
+  trackNumber     Int?         @map("track_number")
+  artistRef       Artist?      @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
+  albumRef        Album?       @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])
+  feats           SongFeat[]
+  chartEntriesBySpotify ChartEntry[] @relation("ChartEntrySongSpotify")
+
+  @@unique([title, artist])
+  @@index([spotifyId], map: "idx_songs_spotify_id")
+  @@index([artistSpotifyId], map: "idx_songs_artist_spotify_id")
+  @@index([albumSpotifyId], map: "idx_songs_album_spotify_id")
+}
+
+model SongFeat {
+  id              Int      @id @default(autoincrement())
+  songSpotifyId   String   @map("song_spotify_id")
+  artistSpotifyId String   @map("artist_spotify_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  song            Song     @relation(fields: [songSpotifyId], references: [spotifyId], onDelete: Cascade)
+  artist          Artist   @relation(fields: [artistSpotifyId], references: [spotifyId])
+
+  @@unique([songSpotifyId, artistSpotifyId])
+  @@index([songSpotifyId], map: "idx_song_feats_song_spotify_id")
+  @@index([artistSpotifyId], map: "idx_song_feats_artist_spotify_id")
+  @@map("song_feats")
+}
+
+enum ChartType {
+  SONGS
+  ALBUMS
+  MIXED
+}
+
+model Chart {
+  id            String        @id @default(cuid())
+  userId        String
+  weekIndex     Int
+  weekLabel     String
+  dateRange     String
+  publishedAt   DateTime      @default(now())
+  likes         Int           @default(0)
+  comments      Int           @default(0)
+  reposts       Int           @default(0)
+  user          User          @relation(fields: [userId], references: [id])
+  entries       ChartEntry[]
+  chartLikes    ChartLike[]
+  chartReposts  ChartRepost[]
+  chartComments Comment[]
+  slug          String?       @unique
+  title         String?
+  description   String?
+  chartType     ChartType     @default(SONGS) @map("chart_type")
+  weekStartDate DateTime?     @map("week_start_date") @db.Date
+  isPublished   Boolean       @default(true) @map("is_published")
+  maxItems      Int           @default(100) @map("max_items")
+  communityId   String?       @map("community_id")
+  community     Community?    @relation(fields: [communityId], references: [id])
+
+  @@unique([userId, weekIndex])
+  @@index([userId, weekStartDate], map: "idx_charts_user_week")
+  @@index([communityId], map: "charts_communityId_fkey")
+  @@index([slug], map: "idx_charts_slug")
+}
+
+model ChartEntry {
+  id            String @id @default(cuid())
+  chartId       String
+  songId        String
+  position      Int
+  points        Int    @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+  songSpotifyId String?  @map("song_spotify_id")
+  albumSpotifyId String? @map("album_spotify_id")
+  status        String @default("new")
+  delta         Int?
+  prevPos       Int?
+  peak          Int
+  weeks         Int    @default(1)
+  coverPaletteA String @default("#FF6B6B")
+  coverPaletteB String @default("#FFE66D")
+  coverSeed     Int    @default(0)
+  chart         Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  song          Song   @relation(fields: [songId], references: [id])
+  songBySpotify Song?  @relation("ChartEntrySongSpotify", fields: [songSpotifyId], references: [spotifyId])
+  albumBySpotify Album? @relation("ChartEntryAlbumSpotify", fields: [albumSpotifyId], references: [spotifyId])
+
+  @@unique([chartId, position])
+  @@index([chartId, position], map: "idx_chart_entries_chart_position")
+  @@index([songSpotifyId], map: "idx_chart_entries_song_spotify_id")
+  @@index([albumSpotifyId], map: "idx_chart_entries_album_spotify_id")
+}
+
+model ChartLike {
+  id        String   @id @default(cuid())
+  userId    String
+  chartId   String
+  createdAt DateTime @default(now())
+  chart     Chart    @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, chartId])
+}
+
+model ChartRepost {
+  id        String   @id @default(cuid())
+  userId    String
+  chartId   String
+  createdAt DateTime @default(now())
+  chart     Chart    @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, chartId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  chartId   String
+  userId    String
+  text      String
+  likes     Int      @default(0)
+  reactions String   @default("[]")
+  createdAt DateTime @default(now())
+  chart     Chart    @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Community {
+  id               String            @id @default(cuid())
+  slug             String            @unique
+  name             String
+  tagline          String
+  icon             String            @default("🎵")
+  coverA           String            @default("#FA243C")
+  coverB           String            @default("#FF5858")
+  members          Int               @default(0)
+  posts            Int               @default(0)
+  founded          String
+  privacy          String            @default("public")
+  rules            String?
+  createdAt        DateTime          @default(now())
+  communityMembers CommunityMember[]
+  communityPosts   Post[]
+  maxSongs         Int               @default(50)
+  isPublic         Boolean           @default(true)
+  ownerId          String?
+  owner            User?             @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  charts           Chart[]
+
+  @@index([ownerId], map: "communities_ownerId_fkey")
+}
+
+model CommunityMember {
+  id          String    @id @default(cuid())
+  userId      String
+  communityId String
+  role        String    @default("member")
+  joinedAt    DateTime  @default(now())
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, communityId])
+}
+
+model Post {
+  id            String      @id @default(cuid())
+  communityId   String
+  userId        String
+  kind          String      @default("text")
+  text          String
+  imageUrl      String?
+  imagePaletteA String?
+  imagePaletteB String?
+  imageText     String?
+  imageCaption  String?
+  youtubeId     String?
+  ytTitle       String?
+  ytChannel     String?
+  ytThumbA      String?
+  ytThumbB      String?
+  likes         Int         @default(0)
+  replies       Int         @default(0)
+  shares        Int         @default(0)
+  createdAt     DateTime    @default(now())
+  community     Community   @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id])
+  postLikes     PostLike[]
+  postReplies   PostReply[]
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, postId])
+}
+
+model PostReply {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  text      String
+  likes     Int      @default(0)
+  replyToId String?
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  recipientId String
+  actorId     String?
+  type        String
+  text        String
+  targetUrl   String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  actor       User?    @relation("NotificationActor", fields: [actorId], references: [id])
+  recipient   User     @relation("NotificationRecipient", fields: [recipientId], references: [id])
+}
+
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  follower    User     @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId], map: "idx_user_follows_follower_id")
+  @@index([followingId], map: "idx_user_follows_following_id")
+  @@map("user_follows")
+}

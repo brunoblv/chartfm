@@ -1,0 +1,320 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import { prisma } from "@/lib/prisma";
+import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
+import { getSpotifyTrackMetadataById } from "@/lib/spotify-server";
+
+export const runtime = "nodejs";
+
+function isoWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function isoWeeksInYear(year: number): number {
+  // Semana ISO da data 28/12 sempre cai na última semana ISO do ano.
+  return isoWeek(new Date(Date.UTC(year, 11, 28)));
+}
+
+function prevWeekIndex(index: number): number {
+  const year = Math.floor(index / 100);
+  const week = index % 100;
+  if (week > 1) return year * 100 + (week - 1);
+  const prevYear = year - 1;
+  return prevYear * 100 + isoWeeksInYear(prevYear);
+}
+
+function computeCurrentStreak(weekIndexes: number[]): number {
+  if (weekIndexes.length === 0) return 0;
+  const sortedUnique = [...new Set(weekIndexes)].sort((a, b) => b - a);
+  let streak = 1;
+  let cursor = sortedUnique[0];
+  for (let i = 1; i < sortedUnique.length; i++) {
+    const expected = prevWeekIndex(cursor);
+    if (sortedUnique[i] !== expected) break;
+    streak += 1;
+    cursor = sortedUnique[i];
+  }
+  return streak;
+}
+
+function weekSunday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? 0 : 7 - day));
+  return d;
+}
+
+const PALETTES: [string, string][] = [
+  ["#FF6B6B", "#FFE66D"],
+  ["#4ECDC4", "#556270"],
+  ["#C7F464", "#4ECDC4"],
+  ["#FF8C94", "#FFAAA5"],
+  ["#A8E6CF", "#3D5A80"],
+  ["#E07856", "#F2D8A7"],
+  ["#2E294E", "#EA698B"],
+  ["#1B2021", "#FFD166"],
+  ["#EF476F", "#06D6A0"],
+  ["#073B4C", "#FFD166"],
+  ["#8338EC", "#FB5607"],
+];
+
+function paletteFor(artist: string, title: string) {
+  const key = artist + title;
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
+  return { palette: PALETTES[Math.abs(hash) % PALETTES.length], seed: Math.abs(hash) };
+}
+
+type EntryInput = {
+  title: string;
+  artist: string;
+  album?: string | null;
+  imageUrl?: string | null;
+  spotifyId?: string | null;
+};
+
+function parseWeekDate(input: unknown): Date | null {
+  if (typeof input !== "string") return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
+  const [y, m, d] = input.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function isoWeekYear(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  return d.getUTCFullYear();
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const entries: EntryInput[] = body.entries ?? [];
+
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return NextResponse.json({ error: "Adicione ao menos uma música" }, { status: 400 });
+  }
+
+  const MAX_ENTRIES = 1000;
+  if (entries.length > MAX_ENTRIES) {
+    return NextResponse.json(
+      { error: `Limite de ${MAX_ENTRIES} músicas por parada. Reduza a lista e tente de novo.` },
+      { status: 400 }
+    );
+  }
+
+  const userId = session.user.id;
+  const today = new Date();
+  const selectedDate = parseWeekDate(body.weekDate) ?? today;
+  if (selectedDate.getTime() > today.getTime()) {
+    return NextResponse.json({ error: "Não é possível publicar parada em semana futura" }, { status: 400 });
+  }
+  const isoYear = isoWeekYear(selectedDate);
+  const week = isoWeek(selectedDate);
+  // Codifica ano+semana no campo existente para permitir histórico multi-ano.
+  const weekIndex = isoYear * 100 + week;
+  const sunday = weekSunday(selectedDate);
+  const weekLabel = buildWeekLabelFromDate(selectedDate);
+  const dateRange = buildDateRangeFromDate(selectedDate);
+
+  const existing = await prisma.chart.findUnique({ where: { userId_weekIndex: { userId, weekIndex } } });
+  if (existing) {
+    return NextResponse.json(
+      { error: "Você já publicou uma parada esta semana" },
+      { status: 409 }
+    );
+  }
+
+  // Upsert songs/artists/albums sequentially to avoid race on unique constraints
+  const songs: { id: string; spotifyId: string | null; albumSpotifyId: string | null }[] = [];
+  for (const e of entries) {
+    const spotifyId = e.spotifyId?.trim() || null;
+    if (!spotifyId) {
+      const song = await prisma.song.upsert({
+        where: { title_artist: { title: e.title, artist: e.artist } },
+        update: e.album ? { album: e.album } : {},
+        create: { title: e.title, artist: e.artist, album: e.album ?? null },
+      });
+      songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
+      continue;
+    }
+
+    const metadata = await getSpotifyTrackMetadataById(spotifyId);
+    const artistDisplay = metadata?.artistDisplay || e.artist;
+    const primaryArtist = metadata?.primaryArtist;
+    const albumSpotifyId = metadata?.album.spotifyId ?? null;
+
+    if (primaryArtist) {
+      await prisma.artist.upsert({
+        where: { spotifyId: primaryArtist.spotifyId },
+        update: {
+          name: primaryArtist.name,
+          spotifyUrl: primaryArtist.spotifyUrl ?? undefined,
+        },
+        create: {
+          spotifyId: primaryArtist.spotifyId,
+          name: primaryArtist.name,
+          spotifyUrl: primaryArtist.spotifyUrl ?? null,
+        },
+      });
+    }
+
+    if (primaryArtist && albumSpotifyId) {
+      await prisma.album.upsert({
+        where: { spotifyId: albumSpotifyId },
+        update: {
+          title: metadata?.album.title ?? e.album ?? "Álbum",
+          artistSpotifyId: primaryArtist.spotifyId,
+          albumType: metadata?.album.albumType ?? undefined,
+          releaseDate: metadata?.album.releaseDate ?? undefined,
+          coverUrl: metadata?.album.coverUrl ?? undefined,
+          spotifyUrl: metadata?.album.spotifyUrl ?? undefined,
+          totalTracks: metadata?.album.totalTracks ?? undefined,
+        },
+        create: {
+          spotifyId: albumSpotifyId,
+          title: metadata?.album.title ?? e.album ?? "Álbum",
+          artistSpotifyId: primaryArtist.spotifyId,
+          albumType: metadata?.album.albumType ?? undefined,
+          releaseDate: metadata?.album.releaseDate ?? undefined,
+          coverUrl: metadata?.album.coverUrl ?? null,
+          spotifyUrl: metadata?.album.spotifyUrl ?? null,
+          totalTracks: metadata?.album.totalTracks ?? null,
+        },
+      });
+    }
+
+    const song = await prisma.song.upsert({
+      where: { spotifyId },
+      update: {
+        title: metadata?.title ?? e.title,
+        artist: artistDisplay,
+        album: metadata?.album.title ?? e.album ?? null,
+        artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
+        albumSpotifyId: albumSpotifyId ?? undefined,
+        durationMs: metadata?.durationMs ?? undefined,
+        previewUrl: metadata?.previewUrl ?? undefined,
+        spotifyUrl: metadata?.spotifyUrl ?? undefined,
+        trackNumber: metadata?.trackNumber ?? undefined,
+      },
+      create: {
+        title: metadata?.title ?? e.title,
+        artist: artistDisplay,
+        album: metadata?.album.title ?? e.album ?? null,
+        spotifyId,
+        artistSpotifyId: primaryArtist?.spotifyId ?? null,
+        albumSpotifyId,
+        durationMs: metadata?.durationMs ?? null,
+        previewUrl: metadata?.previewUrl ?? null,
+        spotifyUrl: metadata?.spotifyUrl ?? null,
+        trackNumber: metadata?.trackNumber ?? null,
+      },
+    });
+
+    // Artistas secundários (feats) no relacionamento song_feats
+    if (metadata?.featuredArtists?.length && song.spotifyId) {
+      for (const feat of metadata.featuredArtists) {
+        await prisma.artist.upsert({
+          where: { spotifyId: feat.spotifyId },
+          update: { name: feat.name, spotifyUrl: feat.spotifyUrl ?? undefined },
+          create: { spotifyId: feat.spotifyId, name: feat.name, spotifyUrl: feat.spotifyUrl ?? null },
+        });
+        await prisma.songFeat.upsert({
+          where: {
+            songSpotifyId_artistSpotifyId: {
+              songSpotifyId: song.spotifyId,
+              artistSpotifyId: feat.spotifyId,
+            },
+          },
+          update: {},
+          create: {
+            songSpotifyId: song.spotifyId,
+            artistSpotifyId: feat.spotifyId,
+          },
+        });
+      }
+    }
+
+    songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
+  }
+
+  // Previous chart for delta calculations
+  const previousChart = await prisma.chart.findFirst({
+    where: { userId, weekIndex: { lt: weekIndex } },
+    include: { entries: true },
+    orderBy: { weekIndex: "desc" },
+  });
+
+  const entryData = entries.map((e, i) => {
+    const song = songs[i];
+    const pos = i + 1;
+    const prev = previousChart?.entries.find((pe) => pe.songId === song.id);
+    const { palette, seed } = paletteFor(e.artist, e.title);
+
+    if (!prev) {
+      return {
+        songId: song.id,
+        songSpotifyId: song.spotifyId,
+        albumSpotifyId: song.albumSpotifyId,
+        points: 0,
+        position: pos,
+        status: "new",
+        delta: null,
+        prevPos: null,
+        peak: pos,
+        weeks: 1,
+        coverPaletteA: palette[0],
+        coverPaletteB: palette[1],
+        coverSeed: seed,
+      };
+    }
+
+    const delta = prev.position - pos;
+    return {
+      songId: song.id,
+      songSpotifyId: song.spotifyId,
+      albumSpotifyId: song.albumSpotifyId,
+      points: 0,
+      position: pos,
+      status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
+      delta,
+      prevPos: prev.position,
+      peak: Math.min(pos, prev.peak),
+      weeks: prev.weeks + 1,
+      coverPaletteA: palette[0],
+      coverPaletteB: palette[1],
+      coverSeed: seed,
+    };
+  });
+
+  const chart = await prisma.chart.create({
+    data: {
+      userId,
+      weekIndex,
+      weekLabel,
+      dateRange,
+      publishedAt: sunday,
+      entries: { create: entryData },
+    },
+  });
+
+  const allWeeks = await prisma.chart.findMany({
+    where: { userId },
+    select: { weekIndex: true },
+    orderBy: { weekIndex: "desc" },
+  });
+  const streak = computeCurrentStreak(allWeeks.map((w) => w.weekIndex));
+  await prisma.user.update({ where: { id: userId }, data: { streak } });
+
+  return NextResponse.json({ id: chart.id }, { status: 201 });
+}

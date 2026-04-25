@@ -1,0 +1,59 @@
+interface MovementBadgeProps {
+  status: "new" | "up" | "down" | "same";
+  delta?: number | null;
+  compact?: boolean;
+}
+
+export function MovementBadge({ status, delta, compact = false }: MovementBadgeProps) {
+  const base: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 3,
+    fontSize: compact ? 11 : 12,
+    fontWeight: 600,
+    letterSpacing: "-0.01em",
+    padding: compact ? "2px 6px" : "3px 8px",
+    borderRadius: 6,
+    fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  };
+
+  const sz = compact ? 9 : 10;
+
+  if (status === "new") {
+    return (
+      <span style={{ ...base, background: "#000", color: "#fff" }} aria-label="nova entrada">
+        NOVA
+      </span>
+    );
+  }
+  if (status === "same") {
+    return (
+      <span style={{ ...base, background: "#F2F2F7", color: "#6B6B70" }} aria-label="estável">
+        ―
+      </span>
+    );
+  }
+  if (status === "up") {
+    return (
+      <span style={{ ...base, background: "#E8F8EE", color: "#1B873F" }} aria-label={`subiu ${delta} posições`}>
+        <svg width={sz} height={sz} viewBox="0 0 10 10">
+          <path d="M5 1 L9 8 L1 8 Z" fill="currentColor" />
+        </svg>
+        {delta}
+      </span>
+    );
+  }
+  if (status === "down") {
+    return (
+      <span style={{ ...base, background: "#FDECEC", color: "#C5291C" }} aria-label={`caiu ${Math.abs(delta ?? 0)} posições`}>
+        <svg width={sz} height={sz} viewBox="0 0 10 10">
+          <path d="M5 9 L1 2 L9 2 Z" fill="currentColor" />
+        </svg>
+        {Math.abs(delta ?? 0)}
+      </span>
+    );
+  }
+  return null;
+}
