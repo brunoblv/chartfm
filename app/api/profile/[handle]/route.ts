@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { buildPublicProfilePayload } from "@/lib/map-db-profile";
+import { searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 
@@ -44,5 +45,46 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     isFollowing = Boolean(follow);
   }
 
-  return NextResponse.json(buildPublicProfilePayload(dbUser, isFollowing));
+  const artistNames = [...new Set(dbUser.charts.flatMap((c) => c.entries.map((e) => e.song.artist)))];
+  const artistRows = artistNames.length
+    ? await prisma.artist.findMany({
+        where: { name: { in: artistNames } },
+        select: { name: true, imageUrl: true },
+      })
+    : [];
+  const artistImages: Record<string, string | null> = Object.fromEntries(artistRows.map((a) => [a.name, a.imageUrl]));
+
+  if (spotifyConfigured()) {
+    const missing = artistNames.filter((n) => !artistImages[n]);
+    const CHUNK = 8;
+    for (let i = 0; i < missing.length; i += CHUNK) {
+      await Promise.all(
+        missing.slice(i, i + CHUNK).map(async (name) => {
+          const result = await searchSpotifyArtist(name);
+          artistImages[name] = result?.imageUrl ?? null;
+          if (result) {
+            await prisma.artist.upsert({
+              where: { spotifyId: result.spotifyId },
+              create: {
+                spotifyId: result.spotifyId,
+                name: result.name,
+                imageUrl: result.imageUrl,
+                spotifyUrl: result.spotifyUrl,
+              },
+              update: {
+                name: result.name,
+                spotifyUrl: result.spotifyUrl ?? undefined,
+                ...(result.imageUrl ? { imageUrl: result.imageUrl } : {}),
+              },
+            });
+          }
+        })
+      );
+    }
+  }
+
+  return NextResponse.json({
+    ...buildPublicProfilePayload(dbUser, isFollowing),
+    artistImages,
+  });
 }

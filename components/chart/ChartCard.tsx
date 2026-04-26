@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Heart, MessageCircle, Repeat2, Share, MoreHorizontal, BadgeCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
-import { MovementBadge } from "@/components/ui/MovementBadge";
+
 import { PositionNumber } from "@/components/ui/PositionNumber";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { formatChartPeriod } from "@/lib/chart-week";
@@ -23,7 +23,6 @@ interface ChartCardProps {
 export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true }: ChartCardProps) {
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
-  const newCount = chart.entries.filter((e) => e.status === "new").length;
 
   return (
     <article style={{
@@ -69,14 +68,6 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
         </div>
         <div style={{ padding: "4px 24px 16px 24px", fontSize: 13, color: "#86868B", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span>{formatChartPeriod(chart)}</span>
-          {newCount > 0 && (
-            <>
-              <span style={{ opacity: 0.4 }}>·</span>
-              <span style={{ background: "#1D1D1F", color: "white", fontSize: 10, padding: "2px 7px", borderRadius: 10, fontWeight: 600, letterSpacing: "0.02em" }}>
-                {newCount} NOVAS
-              </span>
-            </>
-          )}
         </div>
       </Link>
 
@@ -107,7 +98,7 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
                 {entry.song.artist}
               </div>
             </div>
-            <MovementBadge status={entry.status} delta={entry.delta} compact />
+
           </Link>
         ))}
         {remaining > 0 && (
@@ -115,7 +106,7 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
             href={`/chart/${chart.id}`}
             style={{ padding: "10px 4px 2px 4px", fontSize: 13, color: "#FA243C", fontWeight: 600, letterSpacing: "-0.01em", textDecoration: "none" }}
           >
-            Ver todas as {chart.entries.length} · {remaining} mais
+            Ver completa
           </Link>
         )}
       </div>

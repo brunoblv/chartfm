@@ -22,6 +22,7 @@ type ApiProfile = {
   paradaNome: string | null;
   genres: string[];
   isFollowing: boolean;
+  artistImages?: Record<string, string | null>;
 };
 
 function countDistinctNumberOnes(charts: Chart[]) {
@@ -75,6 +76,12 @@ type SongTableRow = {
 
 function pointsForPosition(position: number) {
   return 101 - position;
+}
+
+function colorForArtist(name: string): [string, string] {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  return COVER_PALETTES[Math.abs(hash) % COVER_PALETTES.length];
 }
 
 function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTableRow[] {
@@ -230,6 +237,7 @@ export default function ProfilePage() {
   const imageUrl = payload?.imageUrl ?? null;
   const paradaNome = payload?.paradaNome ?? null;
   const genres = payload?.genres ?? [];
+  const artistImages = payload?.artistImages ?? {};
   const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
 
@@ -563,7 +571,7 @@ export default function ProfilePage() {
                 </select>
               </div>
             )}
-            <ArtistStatsTable rows={tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows} />
+            <ArtistStatsTable rows={tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows} artistImages={artistImages} />
           </>
         )}
         {(tab === "songs_overall" || tab === "songs_year") && hasCharts && (
@@ -585,27 +593,43 @@ export default function ProfilePage() {
   );
 }
 
-function ArtistStatsTable({ rows }: { rows: ArtistTableRow[] }) {
+function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; artistImages: Record<string, string | null> }) {
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "60px 100px minmax(0,1fr) 90px 80px 80px 70px 110px 100px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-        {["Pos", "Mudança", "Artista", "Sem. ant.", "Sem.", "Pico", "Músicas", "Pontos", "Cresc."].map((h, i) => (
+      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        {["Pos", "", "Artista", "Sem.", "Pico", "Músicas", "Pontos"].map((h, i) => (
           <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
       {rows.map((r) => (
-        <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 100px minmax(0,1fr) 90px 80px 80px 70px 110px 100px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+        <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
           <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-          <div style={{ padding: "0 8px" }}><MovementBadge status={r.status} delta={r.delta} /></div>
+          <div style={{ padding: "4px 8px" }}>
+            {artistImages[r.name] ? (
+              <img
+                src={artistImages[r.name] as string}
+                alt={r.name}
+                width={44}
+                height={44}
+                style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${colorForArtist(r.name)[0]}, ${colorForArtist(r.name)[1]})`,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                }}
+              />
+            )}
+          </div>
           <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
-          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.prevPos ?? "—"}</div>
           <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
           <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
           <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: r.growthPct !== null && r.growthPct >= 0 ? "#16A34A" : "#DC2626", fontVariantNumeric: "tabular-nums" }}>
-            {r.growthPct === null ? "—" : `${r.growthPct >= 0 ? "+" : ""}${r.growthPct.toFixed(1)}%`}
-          </div>
         </div>
       ))}
     </div>
@@ -615,27 +639,22 @@ function ArtistStatsTable({ rows }: { rows: ArtistTableRow[] }) {
 function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "60px 64px 100px minmax(0,1fr) 90px 80px 70px 110px 100px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-        {["Pos", "", "Mudança", "Música", "Sem. ant.", "Sem.", "Pico", "Pontos", "Cresc."].map((h, i) => (
+      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        {["Pos", "", "Música", "Sem.", "Pico", "Pontos"].map((h, i) => (
           <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
       {rows.map((r) => (
-        <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px 100px minmax(0,1fr) 90px 80px 70px 110px 100px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+        <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
           <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
           <div style={{ padding: "4px 8px" }}><Cover cover={r.cover} song={{ title: r.title, artist: r.artist }} size={48} rounded={8} /></div>
-          <div style={{ padding: "0 8px" }}><MovementBadge status={r.status} delta={r.delta} /></div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</div>
             <div style={{ fontSize: 12, color: "#86868B" }}>{r.artist}</div>
           </div>
-          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.prevPos ?? "—"}</div>
           <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
           <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: r.growthPct !== null && r.growthPct >= 0 ? "#16A34A" : "#DC2626", fontVariantNumeric: "tabular-nums" }}>
-            {r.growthPct === null ? "—" : `${r.growthPct >= 0 ? "+" : ""}${r.growthPct.toFixed(1)}%`}
-          </div>
         </div>
       ))}
     </div>
