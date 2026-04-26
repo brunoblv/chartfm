@@ -65,11 +65,13 @@ async function resolveArtistImages(artists: ArtistImageKey[]): Promise<Map<strin
             create: {
               spotifyId: result.spotifyId,
               name: result.name,
+              genres: result.genres ?? [],
               imageUrl: result.imageUrl,
               spotifyUrl: result.spotifyUrl,
             },
             update: {
               name: result.name,
+              genres: result.genres ?? [],
               spotifyUrl: result.spotifyUrl ?? undefined,
               ...(result.imageUrl ? { imageUrl: result.imageUrl } : {}),
             },

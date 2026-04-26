@@ -24,7 +24,8 @@ export interface Song {
   /** Artistas secundários (feats), sem incluir o principal. */
   featArtists?: string[];
   album: string;
-  spotifyId?: string;
+  spotifyId?: string | null;
+  artistSpotifyId?: string | null;
   /** Capa oficial (Spotify); o componente Cover também pode resolver via API se ausente */
   imageUrl?: string | null;
 }

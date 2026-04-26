@@ -13,6 +13,7 @@ import { FollowButton } from "@/components/ui/FollowButton";
 import { PositionNumber } from "@/components/ui/PositionNumber";
 import { COVER_PALETTES } from "@/lib/data";
 import { buildWeekIndexFromDate, buildWeekLabelFromDate, getRankingWeekReference } from "@/lib/chart-week";
+import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
@@ -128,7 +129,7 @@ async function getTimelineFeed(
           coverPaletteA: true,
           coverPaletteB: true,
           coverSeed: true,
-          song: { select: { title: true, artist: true, album: true, spotifyId: true } },
+          song: { select: { title: true, artist: true, album: true, spotifyId: true, artistSpotifyId: true } },
         },
       },
     },
@@ -178,7 +179,8 @@ async function getTimelineFeed(
           title: e.song.title,
           artist: e.song.artist,
           album: e.song.album ?? "",
-          spotifyId: e.song.spotifyId ?? undefined,
+          spotifyId: e.song.spotifyId ?? null,
+          artistSpotifyId: e.song.artistSpotifyId ?? null,
         },
       })),
     },
@@ -332,7 +334,7 @@ function YourWeekCard({
           ) : (
             <>
               {daysLeft === 0 ? "Último dia" : `${daysLeft} dia${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}`}
-              {streak > 0 && <> · streak de {streak} semana{streak !== 1 ? "s" : ""} <Flame size={12} fill="white" /></>}
+              {streak > 0 && <> · sequência ativa <Flame size={12} fill="white" /></>}
             </>
           )}
         </div>
@@ -354,8 +356,6 @@ function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: "18px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Publicaram esta semana</div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 12, color: "#86868B" }}>{publishers.length} pessoa{publishers.length !== 1 ? "s" : ""}</div>
       </div>
       <div style={{ display: "flex", gap: 18, overflowX: "auto", paddingBottom: 4 }}>
         {publishers.map((p) => (
@@ -386,19 +386,6 @@ function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
                     size={50}
                   />
                 </div>
-              </div>
-              {/* Entry count badge */}
-              <div style={{
-                position: "absolute", bottom: -1, right: -3,
-                background: "#FA243C", color: "white",
-                fontSize: 9, fontWeight: 700,
-                minWidth: 18, height: 16,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                borderRadius: 8, border: "2px solid white",
-                paddingInline: 3,
-                lineHeight: 1,
-              }}>
-                {p.entryCount}
               </div>
             </div>
             <div style={{
@@ -440,10 +427,9 @@ function GlobalTeaser({
               <PositionNumber n={e.position} size={14} />
               <Cover cover={e.cover} song={e.song} size={36} rounded={6} />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-                <div style={{ fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.artist}</div>
+                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{e.points}pts</div>
             </div>
           ))}
         </div>
@@ -476,7 +462,7 @@ function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
             <div style={{ minWidth: 0, flex: 1 }}>
               <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</div>
-                <div style={{ fontSize: 11, color: "#86868B" }}>@{u.handle} · {u.followers.toLocaleString("pt-BR")} seguidores</div>
+                <div style={{ fontSize: 11, color: "#86868B" }}>@{u.handle}</div>
                 {u.commonGenres > 0 && (
                   <div style={{ fontSize: 10, color: "#FA243C", fontWeight: 600, marginTop: 2 }}>
                     {u.commonGenres} gênero{u.commonGenres > 1 ? "s" : ""} em comum
@@ -612,7 +598,7 @@ function TrendingArtists({
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {artists.map((a, i) => (
-          <Link key={a.name} href={`/artist/${encodeURIComponent(a.name)}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
+          <Link key={a.name} href={buildArtistPath(a.name)} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#000000", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
             <div style={{
               width: 40, height: 40, borderRadius: "50%",
@@ -622,7 +608,6 @@ function TrendingArtists({
             }} />
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
-              <div style={{ fontSize: 11, color: "#86868B" }}>{a.totalPoints}pts esta semana</div>
             </div>
           </Link>
         ))}

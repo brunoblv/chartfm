@@ -44,6 +44,7 @@ model Artist {
   id         Int        @id @default(autoincrement())
   spotifyId  String     @unique @map("spotify_id")
   name       String
+  genres     String[]   @default([])
   imageUrl   String?    @map("image_url")
   spotifyUrl String?    @map("spotify_url")
   createdAt  DateTime   @default(now()) @map("created_at")

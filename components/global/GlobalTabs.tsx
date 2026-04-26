@@ -5,12 +5,13 @@ import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { COVER_PALETTES } from "@/lib/data";
 import { formatSongArtist } from "@/lib/song-artist";
+import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import type { Cover as CoverData } from "@/lib/types";
 import Link from "next/link";
 
 type SongEntry = {
   position: number;
-  song: { title: string; artist: string };
+  song: { title: string; artist: string; spotifyId?: string | null; artistSpotifyId?: string | null };
   cover: CoverData;
   status: "new" | "up" | "down" | "same";
   delta?: number | null;
@@ -24,6 +25,7 @@ type SongEntry = {
 type ArtistEntry = {
   position: number;
   name: string;
+  spotifyId?: string | null;
   totalPoints: number;
   chartCount: number;
   status: "new" | "up" | "down" | "same";
@@ -219,8 +221,10 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
             <MovementBadge status={e.status} delta={e.delta} />
           </div>
           <div style={{ padding: "0 12px", minWidth: 0 }}>
-            <div style={{ fontSize: titleSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{e.song.title}</div>
-              <div style={{ fontSize: artistSize, color: "#86868B" }}>{formatSongArtist(e.song)}</div>
+            <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: titleSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "inherit", textDecoration: "none" }}>
+              {e.song.title}
+            </Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: artistSize, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
           </div>
           <div style={{ fontSize: valueSize, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.prevPos ?? "—"}
@@ -276,7 +280,7 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
         return (
           <Link
             key={a.name}
-            href={`/artist/${encodeURIComponent(a.name)}`}
+            href={buildArtistPath(a.name, a.spotifyId)}
             style={{
               display: "grid",
               gridTemplateColumns: gridTemplateColumnsWithGrowth,

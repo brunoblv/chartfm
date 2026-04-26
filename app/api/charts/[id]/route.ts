@@ -322,3 +322,31 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+  const chartId = typeof id === "string" ? id.trim() : "";
+  if (!chartId) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
+
+  const chart = await prisma.chart.findUnique({
+    where: { id: chartId },
+    select: { id: true, userId: true },
+  });
+  if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (chart.userId !== session.user.id) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  await prisma.chart.delete({
+    where: { id: chartId },
+  });
+
+  return NextResponse.json({ ok: true });
+}

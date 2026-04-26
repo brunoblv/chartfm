@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronLeft, Flame, Trophy, BadgeCheck } from "lucide-react";
+import { ChevronLeft, Flame, Trophy, BadgeCheck, Trash2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartCard } from "@/components/chart/ChartCard";
@@ -223,6 +223,7 @@ export default function ProfilePage() {
   const [chartPage, setChartPage] = useState(1);
   const [loadingChartPage, setLoadingChartPage] = useState(false);
   const [statsPage, setStatsPage] = useState(1);
+  const [deletingChartId, setDeletingChartId] = useState<string | null>(null);
   const CHARTS_PER_PAGE = 6;
   const STATS_PER_PAGE = 100;
 
@@ -378,6 +379,51 @@ export default function ProfilePage() {
   const totalCharts = payload?.totalCharts ?? user.charts.length;
   const totalRankedSlots = statsUser ? statsUser.charts.reduce((acc, c) => acc + c.entries.length, 0) : 0;
 
+  async function handleDeleteChart(chartId: string) {
+    if (deletingChartId) return;
+    const confirmed = window.confirm("Tem certeza que deseja excluir esta parada? Essa ação não pode ser desfeita.");
+    if (!confirmed) return;
+
+    setDeletingChartId(chartId);
+    try {
+      const res = await fetch(`/api/charts/${chartId}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("Não foi possível excluir a parada agora.");
+        return;
+      }
+
+      setPayload((prev) => {
+        if (!prev) return prev;
+        const nextCharts = prev.user.charts.filter((c) => c.id !== chartId);
+        const nextTotalCharts = Math.max((prev.totalCharts ?? prev.user.charts.length) - 1, 0);
+        return {
+          ...prev,
+          user: { ...prev.user, charts: nextCharts },
+          totalCharts: nextTotalCharts,
+        };
+      });
+      setFullPayload((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          user: { ...prev.user, charts: prev.user.charts.filter((c) => c.id !== chartId) },
+        };
+      });
+
+      const remainingInPage = (payload?.user.charts ?? []).filter((c) => c.id !== chartId).length;
+      const currentPage = payload?.page ?? chartPage;
+      if (remainingInPage === 0 && currentPage > 1) {
+        setChartPage(currentPage - 1);
+      } else {
+        setChartPage(currentPage);
+      }
+    } catch {
+      alert("Erro de conexão ao excluir a parada.");
+    } finally {
+      setDeletingChartId(null);
+    }
+  }
+
   return (
     <Shell title="" noPadding>
       <div
@@ -409,7 +455,7 @@ export default function ProfilePage() {
             <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Perfil</div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <h1 style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}>{user.name}</h1>
-              {(user.verified || user.followers > 2000) && <BadgeCheck size={28} color="#0A84FF" fill="#0A84FF" />}
+              {user.verified && <BadgeCheck size={28} color="#0A84FF" fill="#0A84FF" />}
             </div>
             <div style={{ fontSize: 15, color: "#86868B", marginBottom: 10 }}>@{user.handle}</div>
             {paradaNome && source === "db" && (
@@ -441,18 +487,7 @@ export default function ProfilePage() {
                 Ainda sem bio. As informações vêm da sua conta Google; em breve poderá editar aqui.
               </p>
             ) : null}
-            <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "#86868B", flexWrap: "wrap" }}>
-              <span>
-                <strong style={{ fontWeight: 700, color: "#1D1D1F" }}>{user.followers.toLocaleString("pt-BR")}</strong> seguidores
-              </span>
-              <span>
-                <strong style={{ fontWeight: 700, color: "#1D1D1F" }}>{user.following.toLocaleString("pt-BR")}</strong> seguindo
-              </span>
-              <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#FA243C", fontWeight: 600 }}>
-                <Flame size={15} fill="#FA243C" />
-                <strong>{user.streak}</strong> streak
-              </span>
-            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "#86868B", flexWrap: "wrap" }} />
           </div>
 
           <div style={{ display: "flex", gap: 8, paddingBottom: 8, flexWrap: "wrap" }}>
@@ -637,12 +672,40 @@ export default function ProfilePage() {
                   )}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
                     {pageCharts.map((chart, i) => (
-                      <ChartCard
-                        key={chart.id}
-                        user={user}
-                        chart={chart}
-                        showFollowActions={!isOwn}
-                      />
+                      <div key={chart.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <ChartCard
+                          user={user}
+                          chart={chart}
+                          showFollowActions={!isOwn}
+                          showUserHeader={false}
+                        />
+                        {isOwn && source === "db" ? (
+                          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteChart(chart.id)}
+                              disabled={deletingChartId === chart.id}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                border: "1px solid rgba(250,36,60,0.25)",
+                                background: "rgba(250,36,60,0.08)",
+                                color: "#FA243C",
+                                borderRadius: 999,
+                                padding: "8px 12px",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                cursor: deletingChartId === chart.id ? "not-allowed" : "pointer",
+                                opacity: deletingChartId === chart.id ? 0.6 : 1,
+                              }}
+                            >
+                              <Trash2 size={14} />
+                              {deletingChartId === chart.id ? "Excluindo..." : "Excluir parada"}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                   <PaginationBar page={currentChartPage} totalPages={totalPages} onChange={setChartPage} loading={loadingChartPage} />

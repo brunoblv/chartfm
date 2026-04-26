@@ -165,12 +165,14 @@ export async function POST(req: NextRequest) {
           where: { spotifyId: resolvedArtist.spotifyId },
           update: {
             name: resolvedArtist.name,
+            genres: resolvedArtist.genres ?? [],
             spotifyUrl: resolvedArtist.spotifyUrl ?? undefined,
             ...(resolvedArtist.imageUrl ? { imageUrl: resolvedArtist.imageUrl } : {}),
           },
           create: {
             spotifyId: resolvedArtist.spotifyId,
             name: resolvedArtist.name,
+            genres: resolvedArtist.genres ?? [],
             spotifyUrl: resolvedArtist.spotifyUrl ?? null,
             imageUrl: resolvedArtist.imageUrl ?? null,
           },
@@ -214,12 +216,14 @@ export async function POST(req: NextRequest) {
         where: { spotifyId: primaryArtist.spotifyId },
         update: {
           name: profile?.name ?? primaryArtist.name,
+          genres: profile?.genres ?? [],
           spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? undefined,
           ...(profile?.imageUrl ? { imageUrl: profile.imageUrl } : {}),
         },
         create: {
           spotifyId: primaryArtist.spotifyId,
           name: profile?.name ?? primaryArtist.name,
+          genres: profile?.genres ?? [],
           spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? null,
           imageUrl: profile?.imageUrl ?? null,
         },
@@ -289,12 +293,14 @@ export async function POST(req: NextRequest) {
           where: { spotifyId: feat.spotifyId },
           update: {
             name: featProfile?.name ?? feat.name,
+            genres: featProfile?.genres ?? [],
             spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? undefined,
             ...(featProfile?.imageUrl ? { imageUrl: featProfile.imageUrl } : {}),
           },
           create: {
             spotifyId: feat.spotifyId,
             name: featProfile?.name ?? feat.name,
+            genres: featProfile?.genres ?? [],
             spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? null,
             imageUrl: featProfile?.imageUrl ?? null,
           },

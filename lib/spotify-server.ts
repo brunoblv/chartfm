@@ -207,6 +207,7 @@ export async function getSpotifyTrackMetadataById(trackId: string): Promise<Spot
 type SpotifyArtistApi = {
   id: string;
   name: string;
+  genres?: string[];
   images: SpotifyImage[];
   external_urls?: { spotify?: string };
 };
@@ -214,6 +215,7 @@ type SpotifyArtistApi = {
 export type SpotifyArtistProfile = {
   spotifyId: string;
   name: string;
+  genres: string[];
   imageUrl: string | null;
   spotifyUrl: string | null;
 };
@@ -222,6 +224,7 @@ function mapArtistApiToProfile(artist: SpotifyArtistApi): SpotifyArtistProfile {
   return {
     spotifyId: artist.id,
     name: artist.name,
+    genres: artist.genres ?? [],
     imageUrl: pickAlbumImageUrl(artist.images),
     spotifyUrl: artist.external_urls?.spotify ?? null,
   };

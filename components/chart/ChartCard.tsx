@@ -10,6 +10,7 @@ import { PositionNumber } from "@/components/ui/PositionNumber";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
+import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import type { UserWithCharts, Chart } from "@/lib/types";
 
 interface ChartCardProps {
@@ -19,9 +20,18 @@ interface ChartCardProps {
   highlightTop?: number;
   isFollowing?: boolean;
   showFollowActions?: boolean;
+  showUserHeader?: boolean;
 }
 
-export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true }: ChartCardProps) {
+export function ChartCard({
+  user,
+  chart,
+  postedAgo,
+  highlightTop = 5,
+  isFollowing,
+  showFollowActions = true,
+  showUserHeader = true,
+}: ChartCardProps) {
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
   const formattedPeriod = formatChartPeriod(chart);
@@ -59,28 +69,29 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
       overflow: "hidden",
       transition: "box-shadow 150ms",
     }}>
-      {/* Header */}
-      <header style={{ padding: "20px 24px 16px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-        <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
-          <Avatar user={user} imageUrl={user.imageUrl} size={44} />
-        </Link>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.015em", display: "flex", alignItems: "center", gap: 4 }}>
-            <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none", color: "#1D1D1F" }}>
-              {user.name}
-            </Link>
-            {(user.verified || user.followers > 2000) && (
-              <BadgeCheck size={16} color="#0A84FF" fill="#0A84FF" />
-            )}
+      {showUserHeader && (
+        <header style={{ padding: "20px 24px 16px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+          <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
+            <Avatar user={user} imageUrl={user.imageUrl} size={44} />
+          </Link>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.015em", display: "flex", alignItems: "center", gap: 4 }}>
+              <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none", color: "#1D1D1F" }}>
+                {user.name}
+              </Link>
+              {user.verified && (
+                <BadgeCheck size={16} color="#0A84FF" fill="#0A84FF" />
+              )}
+            </div>
+            <div style={{ fontSize: 13, color: "#86868B" }}>
+              @{user.handle}{postedAgo ? ` · ${postedAgo}` : ""}
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: "#86868B" }}>
-            @{user.handle}{postedAgo ? ` · ${postedAgo}` : ""}
-          </div>
-        </div>
-        {showFollowActions && (
-          <FollowButton targetId={user.id} initialFollowing={isFollowing} />
-        )}
-      </header>
+          {showFollowActions && (
+            <FollowButton targetId={user.id} initialFollowing={isFollowing} />
+          )}
+        </header>
+      )}
 
       {/* Chart title */}
       <Link href={`/chart/${chart.id}`} style={{ textDecoration: "none", color: "inherit" }}>
@@ -112,12 +123,12 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
             <PositionNumber n={entry.position} size={18} />
             <Cover cover={entry.cover} song={entry.song} size={44} rounded={8} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <Link href={buildSongPath(entry.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "inherit", textDecoration: "none" }}>
                 {entry.song.title}
-              </div>
-              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              </Link>
+              <Link href={buildArtistPath(entry.song.artist, entry.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
                 {formatSongArtist(entry.song)}
-              </div>
+              </Link>
             </div>
           </Link>
         ))}
@@ -158,12 +169,11 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
           }}
         >
           <Heart size={18} fill={liked ? "currentColor" : "none"} />
-          <span>{likeCount}</span>
         </button>
         {[
-          { icon: <MessageCircle size={18} />, count: chart.comments },
-          { icon: <Repeat2 size={18} />, count: chart.reposts },
-        ].map(({ icon, count }, i) => (
+          { icon: <MessageCircle size={18} /> },
+          { icon: <Repeat2 size={18} /> },
+        ].map(({ icon }, i) => (
           <button key={i} style={{
             display: "flex",
             alignItems: "center",
@@ -177,7 +187,6 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
             fontWeight: 500,
           }}>
             {icon}
-            <span>{count}</span>
           </button>
         ))}
         <div style={{ flex: 1 }} />

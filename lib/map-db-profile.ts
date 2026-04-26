@@ -35,6 +35,8 @@ type PrismaProfileUser = {
         title: string;
         artist: string;
         album: string | null;
+        spotifyId?: string | null;
+        artistSpotifyId?: string | null;
         artistRef?: { name: string } | null;
         feats?: Array<{ artist: { name: string } }>;
       };
@@ -69,6 +71,8 @@ type PrismaChartRow = {
       title: string;
       artist: string;
       album: string | null;
+      spotifyId?: string | null;
+      artistSpotifyId?: string | null;
       artistRef?: { name: string } | null;
       feats?: Array<{ artist: { name: string } }>;
     };
@@ -91,6 +95,8 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
         artist: e.song.artistRef?.name?.trim() || e.song.artist,
         featArtists: (e.song.feats ?? []).map((f) => f.artist.name),
         album: e.song.album ?? "",
+        spotifyId: e.song.spotifyId ?? null,
+        artistSpotifyId: e.song.artistSpotifyId ?? null,
       },
       cover: {
         palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],

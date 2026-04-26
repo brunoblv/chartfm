@@ -265,7 +265,8 @@ export function aggregateGlobalSongs(
       title: s.title,
       artist: s.artist,
       album: s.album ?? "",
-      spotifyId: s.spotifyId ?? undefined,
+      spotifyId: s.spotifyId ?? null,
+      artistSpotifyId: s.artistSpotifyId ?? null,
     };
     return {
       position,

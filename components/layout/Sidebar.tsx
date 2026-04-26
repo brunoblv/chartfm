@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
 const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
@@ -233,27 +233,7 @@ function SidebarContent({
               )}
             </div>
             <span>{label}</span>
-            {showUnreadBadge && (
-              <span
-                style={{
-                  marginLeft: "auto",
-                  minWidth: 18,
-                  height: 18,
-                  borderRadius: 999,
-                  padding: "0 6px",
-                  background: "#FA243C",
-                  color: "white",
-                  fontSize: 11,
-                  fontWeight: 700,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                }}
-              >
-                {unreadNotifications > 99 ? "99+" : unreadNotifications}
-              </span>
-            )}
+            {showUnreadBadge && <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "#FA243C" }} />}
           </Link>
         );
       })}
@@ -317,10 +297,28 @@ function SidebarContent({
               </div>
               <div style={{ fontSize: 12, color: "#86868B", display: "flex", alignItems: "center", gap: 3 }}>
                 <Flame size={12} color="#FA243C" fill="#FA243C" />
-                <span style={{ color: "#FA243C", fontWeight: 600 }}>{displayStreak}</span>
-                <span>semanas</span>
+                <span style={{ color: "#FA243C", fontWeight: 600 }}>ativo</span>
               </div>
             </div>
+            <Link
+              href="/settings"
+              onClick={onNavClick}
+              title="Editar dados"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+                color: "#6B6B70",
+                background: "rgba(0,0,0,0.04)",
+                flexShrink: 0,
+              }}
+            >
+              <Settings size={15} />
+            </Link>
           </div>
           <button
             type="button"

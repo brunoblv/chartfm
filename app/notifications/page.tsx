@@ -44,10 +44,8 @@ export default async function NotificationsPage() {
       : null,
   }));
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   return (
-    <Shell title="Notificações" subtitle={unreadCount > 0 ? `${unreadCount} não lidas` : undefined}>
+    <Shell title="Notificações">
       <div style={{ maxWidth: 680 }}>
         <NotificationsClient initial={notifications} />
       </div>

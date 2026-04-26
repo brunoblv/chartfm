@@ -7,10 +7,6 @@ import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { getRankingWeekReference } from "@/lib/chart-week";
 
-function weeklyScore(likes: number, comments: number, reposts: number): number {
-  return likes * 1 + comments * 2 + reposts * 3;
-}
-
 export default async function CuratorsRankingPage() {
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const rankingWeek = getRankingWeekReference(nowBRT);
@@ -49,12 +45,7 @@ export default async function CuratorsRankingPage() {
 
   const followingIds = new Set(followRows.map((r) => r.followingId));
   const rankedRows = rows
-    .map((row) => ({
-      ...row,
-      score: weeklyScore(row.likes, row.comments, row.reposts),
-    }))
     .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
       if (b.likes !== a.likes) return b.likes - a.likes;
       if (b.comments !== a.comments) return b.comments - a.comments;
       return b.reposts - a.reposts;
@@ -62,7 +53,7 @@ export default async function CuratorsRankingPage() {
     .slice(0, 20);
 
   return (
-    <Shell title="Top 20 curadores" subtitle={`Ranking por pontuação semanal · ${rankingWeek.weekLabel}`}>
+    <Shell title="Top 20 curadores" subtitle={`Ranking semanal · ${rankingWeek.weekLabel}`}>
       <div style={{ maxWidth: 860 }}>
         <div style={{ marginBottom: 14 }}>
           <Link href="/discover" style={{ color: "#86868B", textDecoration: "none", fontSize: 13 }}>
@@ -93,9 +84,6 @@ export default async function CuratorsRankingPage() {
                       {row.user.name}
                     </Link>
                     <span style={{ fontSize: 12, color: "#86868B" }}>@{row.user.handle}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: "#6B6B70", marginTop: 2 }}>
-                    🏆 {row.score} pts · 👍 {row.likes} · 💬 {row.comments} · 🔁 {row.reposts}
                   </div>
                 </div>
               </div>

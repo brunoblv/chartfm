@@ -4,10 +4,9 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
-import { MovementBadge } from "@/components/ui/MovementBadge";
 import { FollowButton } from "@/components/ui/FollowButton";
-import { ARTISTS, COVER_PALETTES } from "@/lib/data";
-import { getRankingWeekReference } from "@/lib/chart-week";
+import { HotTabs } from "./HotTabs";
+import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
 
 function weeklyScore(likes: number, comments: number, reposts: number): number {
   return likes * 1 + comments * 2 + reposts * 3;
@@ -25,16 +24,40 @@ const GENRES = [
 ];
 
 export default async function DiscoverPage() {
-  const trendingArtists = ARTISTS.slice(0, 10);
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const rankingWeek = getRankingWeekReference(nowBRT);
+  const prevWeekDate = new Date(getPreviousClosedWeekDate(nowBRT).getTime() - 7 * 24 * 60 * 60 * 1000);
+  const prevWeekIndex = buildWeekIndexFromDate(prevWeekDate);
 
-  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, trendingArtists);
+  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex);
 }
 
-async function loadPageData(weekIndex: number, weekLabel: string, trendingArtists: typeof ARTISTS) {
+type ArtistWeekRow = {
+  name: string;
+  spotifyId?: string | null;
+  listeners: number;
+  users: number;
+  status: "new" | "up" | "down" | "same";
+  delta: number | null;
+};
+
+type SongWeekRow = {
+  title: string;
+  artist: string;
+  spotifyId?: string | null;
+  artistSpotifyId?: string | null;
+  users: number;
+  status: "new" | "up" | "down" | "same";
+  delta: number | null;
+};
+
+function normalizeArtistName(raw: string): string {
+  return raw.trim().replace(/\s+/g, " ");
+}
+
+async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex: number) {
   const session = await getServerSession(authOptions);
-  const [curatorCharts, followRows] = await Promise.all([
+  const [curatorCharts, followRows, weeklyEntries, previousEntries] = await Promise.all([
     prisma.chart.findMany({
       where: { weekIndex, isPublished: true },
       orderBy: [{ publishedAt: "asc" }],
@@ -63,6 +86,42 @@ async function loadPageData(weekIndex: number, weekLabel: string, trendingArtist
           select: { followingId: true },
         })
       : Promise.resolve([] as Array<{ followingId: string }>),
+    prisma.chartEntry.findMany({
+      where: { chart: { weekIndex, isPublished: true } },
+      select: {
+        chartId: true,
+        chart: {
+          select: { userId: true },
+        },
+        song: {
+          select: {
+            title: true,
+            artist: true,
+            spotifyId: true,
+            artistSpotifyId: true,
+            artistRef: { select: { name: true, spotifyId: true } },
+          },
+        },
+      },
+    }),
+    prisma.chartEntry.findMany({
+      where: { chart: { weekIndex: prevWeekIndex, isPublished: true } },
+      select: {
+        chartId: true,
+        chart: {
+          select: { userId: true },
+        },
+        song: {
+          select: {
+            title: true,
+            artist: true,
+            spotifyId: true,
+            artistSpotifyId: true,
+            artistRef: { select: { name: true, spotifyId: true } },
+          },
+        },
+      },
+    }),
   ]);
 
   const followingIds = new Set(followRows.map((r) => r.followingId));
@@ -79,6 +138,85 @@ async function loadPageData(weekIndex: number, weekLabel: string, trendingArtist
     })
     .slice(0, 5);
 
+  const aggregateArtists = (rows: typeof weeklyEntries) => {
+    const map = new Map<string, { points: number; chartIds: Set<string>; userIds: Set<string>; spotifyId: string | null }>();
+    for (const row of rows) {
+      const name = normalizeArtistName(row.song.artistRef?.name || row.song.artist);
+      const sid = row.song.artistRef?.spotifyId ?? row.song.artistSpotifyId ?? null;
+      const cur = map.get(name) ?? { points: 0, chartIds: new Set<string>(), userIds: new Set<string>(), spotifyId: null };
+      cur.points += 1;
+      cur.chartIds.add(row.chartId);
+      cur.userIds.add(row.chart.userId);
+      if (sid) cur.spotifyId = cur.spotifyId ?? sid;
+      map.set(name, cur);
+    }
+    return map;
+  };
+
+  const aggregateSongsByUsers = (rows: typeof weeklyEntries) => {
+    const map = new Map<string, { title: string; artist: string; spotifyId: string | null; artistSpotifyId: string | null; users: Set<string> }>();
+    for (const row of rows) {
+      const title = row.song.title.trim();
+      const artist = normalizeArtistName(row.song.artistRef?.name || row.song.artist);
+      const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
+      const cur = map.get(key) ?? { title, artist, spotifyId: row.song.spotifyId ?? null, artistSpotifyId: row.song.artistRef?.spotifyId ?? row.song.artistSpotifyId ?? null, users: new Set<string>() };
+      cur.users.add(row.chart.userId);
+      map.set(key, cur);
+    }
+    return map;
+  };
+
+  const currentMap = aggregateArtists(weeklyEntries);
+  const previousMap = aggregateArtists(previousEntries);
+
+  const currentSorted = [...currentMap.entries()]
+    .map(([name, stats]) => ({
+      name,
+      spotifyId: stats.spotifyId,
+      listeners: stats.chartIds.size,
+      users: stats.userIds.size,
+      totalPoints: stats.points,
+    }))
+    .sort((a, b) => b.totalPoints - a.totalPoints || b.listeners - a.listeners || a.users - b.users || a.name.localeCompare(b.name, "pt-BR"))
+    .slice(0, 10);
+
+  const prevPosByName = new Map(
+    [...previousMap.entries()]
+      .map(([name, stats]) => ({ name, points: stats.points, listeners: stats.chartIds.size, users: stats.userIds.size }))
+      .sort((a, b) => b.points - a.points || b.listeners - a.listeners || b.users - a.users || a.name.localeCompare(b.name, "pt-BR"))
+      .map((row, idx) => [row.name, idx + 1]),
+  );
+
+  const trendingArtists: ArtistWeekRow[] = currentSorted.map((row, idx) => {
+    const position = idx + 1;
+    const prevPos = prevPosByName.get(row.name) ?? null;
+    const delta = prevPos === null ? null : prevPos - position;
+    const status: ArtistWeekRow["status"] =
+      prevPos === null ? "new" : delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
+    return { name: row.name, spotifyId: row.spotifyId, listeners: row.listeners, users: row.users, status, delta };
+  });
+
+  const currentSongsMap = aggregateSongsByUsers(weeklyEntries);
+  const previousSongsMap = aggregateSongsByUsers(previousEntries);
+  const currentSongsSorted = [...currentSongsMap.entries()]
+    .map(([key, v]) => ({ key, title: v.title, artist: v.artist, spotifyId: v.spotifyId, artistSpotifyId: v.artistSpotifyId, users: v.users.size }))
+    .sort((a, b) => b.users - a.users || a.title.localeCompare(b.title, "pt-BR"))
+    .slice(0, 10);
+  const prevSongsPosByKey = new Map(
+    [...previousSongsMap.entries()]
+      .map(([key, v]) => ({ key, users: v.users.size, title: v.title }))
+      .sort((a, b) => b.users - a.users || a.title.localeCompare(b.title, "pt-BR"))
+      .map((row, idx) => [row.key, idx + 1]),
+  );
+  const trendingSongs: SongWeekRow[] = currentSongsSorted.map((row, idx) => {
+    const position = idx + 1;
+    const prevPos = prevSongsPosByKey.get(row.key) ?? null;
+    const delta = prevPos === null ? null : prevPos - position;
+    const status: SongWeekRow["status"] =
+      prevPos === null ? "new" : delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
+    return { title: row.title, artist: row.artist, spotifyId: row.spotifyId, artistSpotifyId: row.artistSpotifyId, users: row.users, status, delta };
+  });
+
   return (
     <Shell title="Descobrir" subtitle="Explore músicas, artistas e curadores">
       {/* Curadores em destaque */}
@@ -89,7 +227,7 @@ async function loadPageData(weekIndex: number, weekLabel: string, trendingArtist
             Ver top 20 →
           </Link>
         </div>
-        <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>Pontuação semanal ({weekLabel}): likes x1, comentários x2, republicações x3</div>
+        <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>Curadoria semanal em destaque ({weekLabel})</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
           {rankedCurators.map((row) => (
             <div key={row.user.id} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
@@ -101,7 +239,7 @@ async function loadPageData(weekIndex: number, weekLabel: string, trendingArtist
                   padding: "2px 6px", borderRadius: 8, border: "2px solid white",
                   display: "flex", alignItems: "center", gap: 2,
                 }}>
-                  🏆 {row.score}
+                  Destaque
                 </div>
               </div>
               <div style={{ textAlign: "center" }}>
@@ -149,45 +287,10 @@ async function loadPageData(weekIndex: number, weekLabel: string, trendingArtist
         </div>
       </section>
 
-      {/* Artistas em alta */}
-      <section>
-        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 20 }}>Artistas em alta</h2>
-        <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-          {/* Header */}
-          <div style={{ display: "grid", gridTemplateColumns: "40px 60px 1fr 120px 120px 100px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-            {["#", "", "Artista", "Ouvintes", "Pontos", "Tendência"].map((h, i) => (
-              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "4px 8px" }}>{h}</div>
-            ))}
-          </div>
-          {trendingArtists.map((a, i) => (
-            <Link key={a.name} href={`/artist/${encodeURIComponent(a.name)}`} style={{ textDecoration: "none", color: "inherit" }}>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "40px 60px 1fr 120px 120px 100px",
-                alignItems: "center",
-                padding: "8px 20px",
-                borderBottom: "1px solid rgba(0,0,0,0.04)",
-              }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#000000", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{i + 1}</div>
-                <div style={{ padding: "4px 8px" }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: "50%",
-                    background: `linear-gradient(135deg, ${COVER_PALETTES[i % COVER_PALETTES.length][0]}, ${COVER_PALETTES[i % COVER_PALETTES.length][1]})`,
-                  }} />
-                </div>
-                <div style={{ padding: "0 8px" }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div>
-                </div>
-                <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{a.listeners}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{a.totalPoints}</div>
-                <div style={{ padding: "0 8px" }}>
-                  <MovementBadge status={i % 3 === 0 ? "up" : i % 3 === 1 ? "down" : "same"} delta={i % 3 === 0 ? i + 1 : -(i + 1)} />
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>
+        Ranking semanal atualizado na consolidação de segunda, 01:00 (BRT).
+      </div>
+      <HotTabs artists={trendingArtists} songs={trendingSongs} />
     </Shell>
   );
 }

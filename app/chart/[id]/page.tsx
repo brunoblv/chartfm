@@ -14,6 +14,7 @@ import { MovementBadge } from "@/components/ui/MovementBadge";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
+import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, TimelineItem, User } from "@/lib/types";
@@ -298,15 +299,6 @@ export default function ChartDetailPage() {
               </div>
             )}
 
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13, color: "#86868B" }}>
-              <Heart size={14} />
-              <span>{likeCount}</span>
-              <MessageCircle size={14} style={{ marginLeft: 8 }} />
-              <span>{commentCount}</span>
-              <Repeat2 size={14} style={{ marginLeft: 8 }} />
-              <span>{repostCount}</span>
-            </div>
-
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <button style={{
                 display: "flex", alignItems: "center", gap: 8,
@@ -373,7 +365,7 @@ export default function ChartDetailPage() {
       <div style={{ padding: "0 40px 80px 40px" }}>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 24 }}>
-        {([["chart", "Parada"], ["comments", `Comentários (${commentCount})`], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
+        {([["chart", "Parada"], ["comments", "Comentários"], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -455,8 +447,8 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
             </div>
             <div style={{ padding: "0 8px" }}><MovementBadge status={e.status} delta={e.delta} /></div>
             <div style={{ minWidth: 0, padding: "0 12px" }}>
-              <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{formatSongArtist(e.song)}</div>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
               <div style={{ fontSize: 11, color: "#86868B" }}>{e.song.album}</div>
             </div>
             <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
@@ -496,8 +488,8 @@ function GridVariant({ entries }: { entries: ChartEntry[] }) {
             </div>
           </div>
           <div style={{ padding: "10px 12px" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-            <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{formatSongArtist(e.song)}</div>
+            <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
             <div style={{ fontSize: 11, color: "#86868B", marginTop: 4 }}>Pico #{e.peak} · {e.weeks} sem.</div>
           </div>
         </div>
@@ -533,8 +525,8 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
               </div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>{e.song.title}</div>
-              <div style={{ fontSize: 12, color: "#86868B" }}>{formatSongArtist(e.song)}</div>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160, textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
             </div>
           </div>
         ))}
@@ -652,7 +644,6 @@ function CommentsTab({
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <button style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "#86868B", fontSize: 13, cursor: "pointer" }}>
                   <Heart size={14} />
-                  {c.likes}
                 </button>
                 <button style={{ background: "none", border: "none", color: "#86868B", fontSize: 13, cursor: "pointer" }}>Responder</button>
                 {c.reactions.length > 0 && (
@@ -724,17 +715,10 @@ function OverlapTab({ chartId, isDbChart }: { chartId: string; isDbChart: boolea
                 <Link href={`/profile/${row.user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "#1D1D1F", textDecoration: "none" }}>
                   {row.user.name}
                 </Link>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#FA243C" }}>{row.overlapPercent}%</span>
-              </div>
-              <div style={{ fontSize: 12, color: "#86868B", marginBottom: 7 }}>
-                {row.commonSongs} de {row.totalSongs} músicas em comum nesta semana
-              </div>
-              <div style={{ height: 6, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                <div style={{ width: `${row.overlapPercent}%`, height: "100%", background: "linear-gradient(90deg, #FA243C, #FF5858)", borderRadius: 3 }} />
               </div>
             </div>
             <Link href={`/chart/${row.chartId}`} style={{ background: "#1D1D1F", color: "white", border: "none", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
-              Comparar
+              Visualizar
             </Link>
           </div>
         );
