@@ -1,9 +1,17 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { FollowButton } from "@/components/ui/FollowButton";
-import { USERS_DATA, ARTISTS, COVER_PALETTES } from "@/lib/data";
+import { ARTISTS, COVER_PALETTES } from "@/lib/data";
+import { getRankingWeekReference } from "@/lib/chart-week";
+
+function weeklyScore(likes: number, comments: number, reposts: number): number {
+  return likes * 1 + comments * 2 + reposts * 3;
+}
 
 const GENRES = [
   { name: "Pop", color: ["#FA243C", "#FF5858"], letter: "P" },
@@ -16,35 +24,95 @@ const GENRES = [
   { name: "K-Pop", color: ["#FB5607", "#FFBE0B"], letter: "K" },
 ];
 
-export default function DiscoverPage() {
-  const curators = USERS_DATA.slice(0, 4);
+export default async function DiscoverPage() {
   const trendingArtists = ARTISTS.slice(0, 10);
+  const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const rankingWeek = getRankingWeekReference(nowBRT);
+
+  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, trendingArtists);
+}
+
+async function loadPageData(weekIndex: number, weekLabel: string, trendingArtists: typeof ARTISTS) {
+  const session = await getServerSession(authOptions);
+  const [curatorCharts, followRows] = await Promise.all([
+    prisma.chart.findMany({
+      where: { weekIndex, isPublished: true },
+      orderBy: [{ publishedAt: "asc" }],
+      take: 5,
+      select: {
+        id: true,
+        likes: true,
+        comments: true,
+        reposts: true,
+        user: {
+          select: {
+            id: true,
+            handle: true,
+            name: true,
+            bio: true,
+            image: true,
+            avatarColor: true,
+            streak: true,
+          },
+        },
+      },
+    }),
+    session?.user?.id
+      ? prisma.userFollow.findMany({
+          where: { followerId: session.user.id },
+          select: { followingId: true },
+        })
+      : Promise.resolve([] as Array<{ followingId: string }>),
+  ]);
+
+  const followingIds = new Set(followRows.map((r) => r.followingId));
+  const rankedCurators = curatorCharts
+    .map((row) => ({
+      ...row,
+      score: weeklyScore(row.likes, row.comments, row.reposts),
+    }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.likes !== a.likes) return b.likes - a.likes;
+      if (b.comments !== a.comments) return b.comments - a.comments;
+      return b.reposts - a.reposts;
+    })
+    .slice(0, 5);
 
   return (
     <Shell title="Descobrir" subtitle="Explore músicas, artistas e curadores">
       {/* Curadores em destaque */}
       <section style={{ marginBottom: 48 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 20 }}>Curadores em destaque</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {curators.map((u) => (
-            <div key={u.id} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>Curadores em destaque</h2>
+          <Link href="/discover/curators" style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+            Ver top 20 →
+          </Link>
+        </div>
+        <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>Pontuação semanal ({weekLabel}): likes x1, comentários x2, republicações x3</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
+          {rankedCurators.map((row) => (
+            <div key={row.user.id} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
               <div style={{ position: "relative" }}>
-                <Avatar user={u} size={72} />
+                <Avatar user={{ name: row.user.name, avatar: row.user.avatarColor }} imageUrl={row.user.image} size={72} />
                 <div style={{
                   position: "absolute", bottom: -4, right: -4,
                   background: "#FA243C", color: "white", fontSize: 11, fontWeight: 700,
                   padding: "2px 6px", borderRadius: 8, border: "2px solid white",
                   display: "flex", alignItems: "center", gap: 2,
                 }}>
-                  🔥 {u.streak}
+                  🏆 {row.score}
                 </div>
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{u.name}</div>
-                <div style={{ fontSize: 13, color: "#86868B" }}>@{u.handle}</div>
-                <div style={{ fontSize: 13, color: "#6B6B70", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{u.bio}</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{row.user.name}</div>
+                <div style={{ fontSize: 13, color: "#86868B" }}>@{row.user.handle}</div>
+                <div style={{ fontSize: 13, color: "#6B6B70", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.user.bio ?? "Curador em destaque da semana."}</div>
+                <Link href={`/chart/${row.id}`} style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
+                  Ver parada
+                </Link>
               </div>
-              <FollowButton targetId={u.id} variant="dark" size="sm" />
+              <FollowButton targetId={row.user.id} initialFollowing={followingIds.has(row.user.id)} variant="dark" size="sm" />
             </div>
           ))}
         </div>
