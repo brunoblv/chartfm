@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Heart, MessageCircle, Repeat2, Share, BadgeCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
@@ -7,6 +8,7 @@ import { Cover } from "@/components/ui/Cover";
 
 import { PositionNumber } from "@/components/ui/PositionNumber";
 import { FollowButton } from "@/components/ui/FollowButton";
+import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import type { UserWithCharts, Chart } from "@/lib/types";
 
@@ -19,22 +21,34 @@ interface ChartCardProps {
   showFollowActions?: boolean;
 }
 
-function formatCardPeriod(weekLabel: string, dateRange: string): string {
-  const weekMatch = weekLabel.match(/Semana\s+(\d+)/i);
-  const yearMatch = weekLabel.match(/(\d{4})/);
-  const week = weekMatch?.[1] ?? "";
-  const year = yearMatch?.[1] ?? "";
-  const range = dateRange.trim();
-  if (week && year && range) return `Semana ${week}, ${range}, ${year}`;
-  if (week && range) return `Semana ${week}, ${range}`;
-  if (range) return range;
-  return weekLabel;
-}
-
 export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true }: ChartCardProps) {
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
-  const formattedPeriod = formatCardPeriod(chart.weekLabel, chart.dateRange);
+  const formattedPeriod = formatChartPeriod(chart);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(chart.likes);
+  const [liking, setLiking] = useState(false);
+
+  async function toggleLike() {
+    if (!chart.id || liking) return;
+    const prevLiked = liked;
+    const prevCount = likeCount;
+    setLiking(true);
+    setLiked(!prevLiked);
+    setLikeCount((c) => c + (prevLiked ? -1 : 1));
+    try {
+      const res = await fetch(`/api/charts/${chart.id}/like`, { method: "POST" });
+      if (!res.ok) throw new Error("like_failed");
+      const data = (await res.json()) as { liked?: boolean; likes?: number };
+      if (typeof data.liked === "boolean") setLiked(data.liked);
+      if (typeof data.likes === "number") setLikeCount(data.likes);
+    } catch {
+      setLiked(prevLiked);
+      setLikeCount(prevCount);
+    } finally {
+      setLiking(false);
+    }
+  }
 
   return (
     <article style={{
@@ -125,8 +139,28 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
         padding: "8px 14px 14px 14px",
         borderTop: "1px solid rgba(0,0,0,0.05)",
       }}>
+        <button
+          onClick={toggleLike}
+          disabled={liking}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 12px",
+            borderRadius: 8,
+            background: "transparent",
+            border: "none",
+            color: liked ? "#C5291C" : "#6B6B70",
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: liking ? "default" : "pointer",
+            opacity: liking ? 0.7 : 1,
+          }}
+        >
+          <Heart size={18} fill={liked ? "currentColor" : "none"} />
+          <span>{likeCount}</span>
+        </button>
         {[
-          { icon: <Heart size={18} />, count: chart.likes },
           { icon: <MessageCircle size={18} />, count: chart.comments },
           { icon: <Repeat2 size={18} />, count: chart.reposts },
         ].map(({ icon, count }, i) => (

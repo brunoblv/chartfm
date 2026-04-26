@@ -26,11 +26,11 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ id: s
   });
 
   if (existing) {
-    await prisma.$transaction([
+    const [, updated] = await prisma.$transaction([
       prisma.chartLike.delete({ where: { userId_chartId: { userId: session.user.id, chartId } } }),
-      prisma.chart.update({ where: { id: chartId }, data: { likes: { decrement: 1 } } }),
+      prisma.chart.update({ where: { id: chartId }, data: { likes: { decrement: 1 } }, select: { likes: true } }),
     ]);
-    return NextResponse.json({ liked: false });
+    return NextResponse.json({ liked: false, likes: updated.likes });
   }
 
   const [, updated] = await prisma.$transaction([
