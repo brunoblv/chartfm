@@ -10,7 +10,7 @@ import { ChartCard } from "@/components/chart/ChartCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { PositionNumber } from "@/components/ui/PositionNumber";
-import { TIMELINE, USERS_DATA, COVER_PALETTES } from "@/lib/data";
+import { TIMELINE, COVER_PALETTES } from "@/lib/data";
 import { buildWeekIndexFromDate, buildWeekLabelFromDate, getRankingWeekReference } from "@/lib/chart-week";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
@@ -25,10 +25,12 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions);
 
   if (!session) return <LandingPage />;
+  if (!session.user?.id) return <LandingPage />;
 
   let userStreak = 0;
   let userParadaNome: string | null = null;
   let thisWeekChartId: string | null = null;
+  let userGenres: string[] = [];
 
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const currentWeekIdx = buildWeekIndexFromDate(nowBRT);
@@ -50,13 +52,15 @@ export default async function HomePage() {
 
     userStreak = user?.streak ?? 0;
     userParadaNome = user?.paradaNome ?? null;
+    userGenres = user?.genres ?? [];
     thisWeekChartId = thisWeekChart?.id ?? null;
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs] = await Promise.all([
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers] = await Promise.all([
     Promise.resolve(daysUntilSundayBRT()),
     getTrendingArtists(rankingWeek.weekIndex),
     getGlobalTopSongs(rankingWeek.weekIndex, 3),
+    getSuggestedUsers(session.user.id, userGenres, 3),
   ]);
 
   const feed = (
@@ -79,7 +83,7 @@ export default async function HomePage() {
   const sidebar = (
     <>
       <GlobalTeaser topSongs={globalTopSongs} weekLabel={rankingWeek.weekLabel} />
-      <SuggestedUsers />
+      <SuggestedUsers users={suggestedUsers} />
       <TrendingArtists artists={trendingArtists} />
     </>
   );
@@ -227,8 +231,17 @@ function GlobalTeaser({
   );
 }
 
-function SuggestedUsers() {
-  const suggested = USERS_DATA.slice(2, 5);
+type SuggestedUserRow = {
+  id: string;
+  handle: string;
+  name: string;
+  followers: number;
+  avatarColor: string;
+  commonGenres: number;
+};
+
+function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
+  const suggested = users;
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
       <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 14 }}>Quem seguir</div>
@@ -236,12 +249,17 @@ function SuggestedUsers() {
         {suggested.map((u) => (
           <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Link href={`/profile/${u.handle}`}>
-              <Avatar user={u} size={40} />
+              <Avatar user={{ name: u.name, avatar: u.avatarColor }} size={40} />
             </Link>
             <div style={{ minWidth: 0, flex: 1 }}>
               <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</div>
                 <div style={{ fontSize: 11, color: "#86868B" }}>@{u.handle} · {u.followers.toLocaleString("pt-BR")} seguidores</div>
+                {u.commonGenres > 0 && (
+                  <div style={{ fontSize: 10, color: "#FA243C", fontWeight: 600, marginTop: 2 }}>
+                    {u.commonGenres} gênero{u.commonGenres > 1 ? "s" : ""} em comum
+                  </div>
+                )}
               </Link>
             </div>
             <button style={{
@@ -255,6 +273,52 @@ function SuggestedUsers() {
       </div>
     </div>
   );
+}
+
+async function getSuggestedUsers(userId: string, genres: string[], limit = 3): Promise<SuggestedUserRow[]> {
+  const where = genres.length
+    ? { id: { not: userId }, genres: { hasSome: genres } }
+    : { id: { not: userId } };
+  const candidates = await prisma.user.findMany({
+    where,
+    select: { id: true, handle: true, name: true, followers: true, avatarColor: true, genres: true },
+    orderBy: { followers: "desc" },
+    take: 20,
+  });
+  const ranked = candidates
+    .map((u) => ({
+      id: u.id,
+      handle: u.handle,
+      name: u.name,
+      followers: u.followers,
+      avatarColor: u.avatarColor,
+      commonGenres: genres.length ? u.genres.filter((g) => genres.includes(g)).length : 0,
+    }))
+    .sort((a, b) => {
+      if (b.commonGenres !== a.commonGenres) return b.commonGenres - a.commonGenres;
+      return b.followers - a.followers;
+    })
+    .slice(0, limit);
+
+  if (ranked.length >= limit || genres.length === 0) return ranked;
+
+  const fallback = await prisma.user.findMany({
+    where: { id: { notIn: [userId, ...ranked.map((r) => r.id)] } },
+    select: { id: true, handle: true, name: true, followers: true, avatarColor: true, genres: true },
+    orderBy: { followers: "desc" },
+    take: limit - ranked.length,
+  });
+  return [
+    ...ranked,
+    ...fallback.map((u) => ({
+      id: u.id,
+      handle: u.handle,
+      name: u.name,
+      followers: u.followers,
+      avatarColor: u.avatarColor,
+      commonGenres: genres.length ? u.genres.filter((g) => genres.includes(g)).length : 0,
+    })),
+  ];
 }
 
 async function getTrendingArtists(weekIdx: number, limit = 4) {
