@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { ChevronLeft, ImagePlus, X } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 
@@ -15,16 +17,21 @@ const PALETTES: [string, string][] = [
   ["#06D6A0", "#073B4C"],
 ];
 
-const LOGO_MAX_BYTES = 5 * 1024 * 1024;
+const LOGO_MAX_BYTES = 1 * 1024 * 1024;
 
 export default function CreateCommunityPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [icon, setIcon] = useState("🎵");
   const [palette, setPalette] = useState<[string, string]>(PALETTES[0]);
   const [privacy, setPrivacy] = useState<"public" | "private">("public");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,6 +42,7 @@ export default function CreateCommunityPage() {
 
   function clearLogo() {
     setLogoError(null);
+    setLogoFile(null);
     setLogoPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
@@ -51,13 +59,84 @@ export default function CreateCommunityPage() {
       return;
     }
     if (file.size > LOGO_MAX_BYTES) {
-      setLogoError("A imagem deve ter no máximo 5 MB.");
+      setLogoError("A imagem deve ter no máximo 1 MB.");
       return;
     }
+    setLogoFile(file);
     setLogoPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return URL.createObjectURL(file);
     });
+  }
+
+  async function readLogoDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onerror = () => reject(new Error("read_failed"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handlePublish() {
+    setSubmitError(null);
+    if (status === "loading") return;
+    if (!session?.user?.id) {
+      router.push(`/login?callbackUrl=${encodeURIComponent("/community/create")}`);
+      return;
+    }
+    const n = name.trim();
+    const t = tagline.trim();
+    if (n.length < 2) {
+      setSubmitError("Informe um nome com pelo menos 2 caracteres.");
+      return;
+    }
+    if (t.length < 3) {
+      setSubmitError("Informe uma descrição curta com pelo menos 3 caracteres.");
+      return;
+    }
+
+    let logoUrl: string | null = null;
+    if (logoFile) {
+      try {
+        logoUrl = await readLogoDataUrl(logoFile);
+      } catch {
+        setSubmitError("Não foi possível ler a imagem do logo.");
+        return;
+      }
+      if (logoUrl.length > 1_400_000) {
+        setSubmitError("Logo muito grande. Tente uma imagem menor (até 1 MB).");
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/communities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: n,
+          tagline: t,
+          icon,
+          coverA: palette[0],
+          coverB: palette[1],
+          privacy,
+          logoUrl,
+        }),
+      });
+      const data = (await res.json()) as { slug?: string; error?: string };
+      if (!res.ok) {
+        setSubmitError(data.error ?? "Não foi possível publicar.");
+        return;
+      }
+      if (data.slug) router.push(`/community/${encodeURIComponent(data.slug)}`);
+      else setSubmitError("Resposta inválida do servidor.");
+    } catch {
+      setSubmitError("Erro de rede. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -257,8 +336,14 @@ export default function CreateCommunityPage() {
               </div>
             </div>
 
+            {submitError && (
+              <div style={{ fontSize: 13, color: "#DC2626", marginTop: 4 }}>{submitError}</div>
+            )}
+
             <button
               type="button"
+              onClick={() => void handlePublish()}
+              disabled={submitting || status === "loading"}
               style={{
                 width: "100%",
                 marginTop: 8,
@@ -270,10 +355,11 @@ export default function CreateCommunityPage() {
                 fontSize: 15,
                 fontWeight: 700,
                 boxShadow: "0 2px 8px rgba(250,36,60,0.25)",
-                cursor: "pointer",
+                cursor: submitting || status === "loading" ? "wait" : "pointer",
+                opacity: submitting || status === "loading" ? 0.75 : 1,
               }}
             >
-              Publicar comunidade
+              {submitting ? "Publicando…" : "Publicar comunidade"}
             </button>
           </div>
 

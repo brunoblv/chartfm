@@ -106,31 +106,63 @@ export function ChartCard({
       {/* Preview rows */}
       <div style={{ padding: "0 24px 16px 24px", display: "flex", flexDirection: "column", gap: 2 }}>
         {preview.map((entry) => (
-          <Link
+          <div
             key={entry.position}
-            href={`/chart/${chart.id}`}
             style={{
               display: "grid",
-              gridTemplateColumns: "28px 44px 1fr auto",
+              gridTemplateColumns: "28px 44px 1fr",
               alignItems: "center",
               gap: 12,
               padding: "8px 4px",
               borderRadius: 8,
-              textDecoration: "none",
               color: "inherit",
             }}
           >
-            <PositionNumber n={entry.position} size={18} />
-            <Cover cover={entry.cover} song={entry.song} size={44} rounded={8} />
+            <Link
+              href={`/chart/${chart.id}`}
+              prefetch={false}
+              style={{ textDecoration: "none", color: "inherit", display: "flex", justifyContent: "flex-end" }}
+            >
+              <PositionNumber n={entry.position} size={18} />
+            </Link>
+            <Link href={`/chart/${chart.id}`} prefetch={false} style={{ textDecoration: "none", color: "inherit", lineHeight: 0 }}>
+              <Cover cover={entry.cover} song={entry.song} size={44} rounded={8} />
+            </Link>
             <div style={{ minWidth: 0 }}>
-              <Link href={buildSongPath(entry.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "inherit", textDecoration: "none" }}>
+              <Link
+                href={buildSongPath(entry.song)}
+                prefetch={false}
+                style={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  color: "inherit",
+                  textDecoration: "none",
+                }}
+              >
                 {entry.song.title}
               </Link>
-              <Link href={buildArtistPath(entry.song.artist, entry.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+              <Link
+                href={buildArtistPath(entry.song.artist, entry.song.artistSpotifyId)}
+                prefetch={false}
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  color: "#86868B",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                }}
+              >
                 {formatSongArtist(entry.song)}
               </Link>
             </div>
-          </Link>
+          </div>
         ))}
         {remaining > 0 && (
           <Link

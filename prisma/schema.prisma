@@ -230,6 +230,7 @@ model Community {
   name             String
   tagline          String
   icon             String            @default("🎵")
+  logoUrl          String?
   coverA           String            @default("#FA243C")
   coverB           String            @default("#FF5858")
   members          Int               @default(0)
