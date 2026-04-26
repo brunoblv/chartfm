@@ -3,7 +3,8 @@ import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { getSpotifyArtistById, searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
-import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import { computeGlobalSnapshotData, getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import Link from "next/link";
 
 type ArtistImageKey = { name: string; spotifyId: string | null };
 
@@ -80,16 +81,61 @@ async function resolveArtistImages(artists: ArtistImageKey[]): Promise<Map<strin
   return imageMap;
 }
 
-export default async function GlobalPage() {
+type GlobalPageProps = {
+  searchParams?: Promise<{ week?: string }> | { week?: string };
+};
+
+export default async function GlobalPage({ searchParams }: GlobalPageProps) {
+  const params = searchParams
+    ? ("then" in searchParams ? await searchParams : searchParams)
+    : {};
+  const requestedWeek = Number(params.week ?? "");
   const rankingWeek = getRankingWeekReference(new Date());
-  const weekNow = rankingWeek.weekLabel;
-  const weekRangeNow = rankingWeek.dateRange;
-  const snapshot = await getOrCreateRankingWeekSnapshot(new Date());
+  const availableWeeks = await prisma.chart.findMany({
+    where: { weekIndex: { lte: rankingWeek.weekIndex } },
+    select: { weekIndex: true, weekLabel: true, dateRange: true },
+    distinct: ["weekIndex"],
+    orderBy: { weekIndex: "desc" },
+  });
+  const availableWeekIndexes = availableWeeks.map((w) => w.weekIndex);
+  const weekIndex =
+    Number.isFinite(requestedWeek) && availableWeekIndexes.includes(requestedWeek)
+      ? requestedWeek
+      : availableWeekIndexes[0] ?? rankingWeek.weekIndex;
+  const currentMeta = availableWeeks.find((w) => w.weekIndex === weekIndex);
+
+  const snapshotRow = await prisma.globalSnapshot.findUnique({ where: { weekIndex } });
+  const snapshot = snapshotRow
+    ? {
+        weekIndex,
+        weekLabel: snapshotRow.weekLabel,
+        dateRange: snapshotRow.dateRange,
+        payload: {
+          weeklySongs: snapshotRow.weeklySongs as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"],
+          weeklyArtists: snapshotRow.weeklyArtists as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklyArtists"],
+          overallSongs: snapshotRow.overallSongs as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallSongs"],
+          overallArtists: snapshotRow.overallArtists as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallArtists"],
+        },
+      }
+    : {
+        weekIndex,
+        weekLabel: currentMeta?.weekLabel ?? rankingWeek.weekLabel,
+        dateRange: currentMeta?.dateRange ?? rankingWeek.dateRange,
+        payload: await computeGlobalSnapshotData(weekIndex),
+      };
+  const weekNow = snapshot.weekLabel;
+  const weekRangeNow = snapshot.dateRange;
   const globalSongs = snapshot.payload.weeklySongs;
   const overallSongs = snapshot.payload.overallSongs;
   const topArtists = snapshot.payload.weeklyArtists;
   const topArtistsOverall = snapshot.payload.overallArtists;
-  const uniqueParadas = await prisma.chart.count({ where: { weekIndex: rankingWeek.weekIndex } });
+  const uniqueParadas = await prisma.chart.count({ where: { weekIndex } });
+  const currentIndexInList = availableWeekIndexes.indexOf(weekIndex);
+  const newerWeek = currentIndexInList > 0 ? availableWeekIndexes[currentIndexInList - 1] : null;
+  const olderWeek =
+    currentIndexInList >= 0 && currentIndexInList < availableWeekIndexes.length - 1
+      ? availableWeekIndexes[currentIndexInList + 1]
+      : null;
   const imageMap = await resolveArtistImages(
     [...topArtists, ...topArtistsOverall].map((a) => ({ name: a.name, spotifyId: a.spotifyId }))
   );
@@ -135,6 +181,48 @@ export default async function GlobalPage() {
             <span>{globalSongs.length} músicas</span>
             <span>·</span>
             <span>{weekRangeNow}</span>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+            {olderWeek ? (
+              <Link
+                href={`/global?week=${olderWeek}`}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  color: "white",
+                  padding: "8px 14px",
+                  borderRadius: 10,
+                  textDecoration: "none",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                ← Semana anterior
+              </Link>
+            ) : (
+              <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+                ← Semana anterior
+              </span>
+            )}
+            {newerWeek ? (
+              <Link
+                href={`/global?week=${newerWeek}`}
+                style={{
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  color: "white",
+                  padding: "8px 14px",
+                  borderRadius: 10,
+                  textDecoration: "none",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                Próxima semana →
+              </Link>
+            ) : (
+              <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+                Próxima semana →
+              </span>
+            )}
           </div>
         </div>
       </div>

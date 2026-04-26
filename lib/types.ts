@@ -21,6 +21,8 @@ export interface User {
 export interface Song {
   title: string;
   artist: string;
+  /** Artistas secundários (feats), sem incluir o principal. */
+  featArtists?: string[];
   album: string;
   spotifyId?: string;
   /** Capa oficial (Spotify); o componente Cover também pode resolver via API se ausente */

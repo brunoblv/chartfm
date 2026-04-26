@@ -30,7 +30,22 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       },
       entries: {
         orderBy: { position: "asc" },
-        include: { song: true },
+        include: {
+          song: {
+            include: {
+              artistRef: {
+                select: { name: true },
+              },
+              feats: {
+                include: {
+                  artist: {
+                    select: { name: true },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
   });
@@ -53,6 +68,18 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     prisma.chartEntry.findMany({
       where: { position: 1, songId: { in: currentSongIds } },
       select: { songId: true },
+    }),
+  ]);
+  const [previousChart, nextChart] = await Promise.all([
+    prisma.chart.findFirst({
+      where: { userId: row.userId, weekIndex: { lt: row.weekIndex } },
+      orderBy: { weekIndex: "desc" },
+      select: { id: true, weekLabel: true },
+    }),
+    prisma.chart.findFirst({
+      where: { userId: row.userId, weekIndex: { gt: row.weekIndex } },
+      orderBy: { weekIndex: "asc" },
+      select: { id: true, weekLabel: true },
     }),
   ]);
 
@@ -105,6 +132,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
   return NextResponse.json({
     ...mapPrismaChartDetail({ ...row, entries: entriesWithComputedStats }),
+    previousChart,
+    nextChart,
     personalNumberOnes,
     globalNumberOnes,
   });

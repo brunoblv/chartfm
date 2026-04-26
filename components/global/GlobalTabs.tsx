@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { COVER_PALETTES } from "@/lib/data";
+import { formatSongArtist } from "@/lib/song-artist";
 import type { Cover as CoverData } from "@/lib/types";
 import Link from "next/link";
 
@@ -219,7 +220,7 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
           </div>
           <div style={{ padding: "0 12px", minWidth: 0 }}>
             <div style={{ fontSize: titleSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{e.song.title}</div>
-            <div style={{ fontSize: artistSize, color: "#86868B" }}>{e.song.artist}</div>
+              <div style={{ fontSize: artistSize, color: "#86868B" }}>{formatSongArtist(e.song)}</div>
           </div>
           <div style={{ fontSize: valueSize, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.prevPos ?? "—"}

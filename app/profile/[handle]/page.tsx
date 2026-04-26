@@ -45,9 +45,14 @@ function buildTopArtists(user: UserWithCharts) {
   if (!latest) return [];
   const artistMap = new Map<string, { name: string; points: number; color: [string, string] }>();
   latest.entries.forEach((e, i) => {
-    const a = e.song.artist;
-    if (!artistMap.has(a)) artistMap.set(a, { name: a, points: 0, color: COVER_PALETTES[i % COVER_PALETTES.length] });
-    artistMap.get(a)!.points += 101 - e.position;
+    const artists = [e.song.artist, ...(e.song.featArtists ?? [])]
+      .map((a) => a.trim())
+      .filter(Boolean);
+    const unique = [...new Set(artists)];
+    unique.forEach((a) => {
+      if (!artistMap.has(a)) artistMap.set(a, { name: a, points: 0, color: COVER_PALETTES[i % COVER_PALETTES.length] });
+      artistMap.get(a)!.points += 101 - e.position;
+    });
   });
   return [...artistMap.values()].sort((a, b) => b.points - a.points).slice(0, 12);
 }
@@ -93,18 +98,31 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTable
   const map = new Map<string, { points: number; songs: Set<string>; weeks: Set<number>; peak: number }>();
   charts.forEach((c) => {
     c.entries.forEach((e) => {
-      const key = e.song.artist;
-      const cur = map.get(key) ?? { points: 0, songs: new Set<string>(), weeks: new Set<number>(), peak: e.position };
-      cur.points += pointsForPosition(e.position);
-      cur.songs.add(e.song.title);
-      cur.weeks.add(c.week);
-      cur.peak = Math.min(cur.peak, e.position);
-      map.set(key, cur);
+      const artists = [e.song.artist, ...(e.song.featArtists ?? [])]
+        .map((a) => a.trim())
+        .filter(Boolean);
+      const unique = [...new Set(artists)];
+      unique.forEach((key) => {
+        const cur = map.get(key) ?? { points: 0, songs: new Set<string>(), weeks: new Set<number>(), peak: e.position };
+        cur.points += pointsForPosition(e.position);
+        cur.songs.add(e.song.title);
+        cur.weeks.add(c.week);
+        cur.peak = Math.min(cur.peak, e.position);
+        map.set(key, cur);
+      });
     });
   });
   const prevMap = new Map<string, number>();
   previousCharts.forEach((c) =>
-    c.entries.forEach((e) => prevMap.set(e.song.artist, (prevMap.get(e.song.artist) ?? 0) + pointsForPosition(e.position)))
+    c.entries.forEach((e) => {
+      const artists = [e.song.artist, ...(e.song.featArtists ?? [])]
+        .map((a) => a.trim())
+        .filter(Boolean);
+      const unique = [...new Set(artists)];
+      unique.forEach((artist) => {
+        prevMap.set(artist, (prevMap.get(artist) ?? 0) + pointsForPosition(e.position));
+      });
+    })
   );
   const sorted = [...map.entries()].sort((a, b) => b[1].points - a[1].points);
   const prevRank = [...prevMap.entries()].sort((a, b) => b[1] - a[1]).reduce((acc, [k], i) => acc.set(k, i + 1), new Map<string, number>());
@@ -203,6 +221,7 @@ export default function ProfilePage() {
   const [mockUser, setMockUser] = useState<UserWithCharts | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [chartPage, setChartPage] = useState(1);
+  const [loadingChartPage, setLoadingChartPage] = useState(false);
   const [statsPage, setStatsPage] = useState(1);
   const CHARTS_PER_PAGE = 6;
   const STATS_PER_PAGE = 100;
@@ -214,6 +233,7 @@ export default function ProfilePage() {
     }
     let cancelled = false;
     setPhase("loading");
+    setChartPage(1);
     (async () => {
       try {
         const res = await fetch(`/api/profile/${encodeURIComponent(handle)}?mode=summary&page=1&perPage=${CHARTS_PER_PAGE}`);
@@ -246,8 +266,10 @@ export default function ProfilePage() {
   }, [handle, CHARTS_PER_PAGE]);
 
   useEffect(() => {
-    if (!handle || source !== "db" || chartPage === 1) return;
+    if (!handle || source !== "db") return;
+    if (payload?.page === chartPage) return;
     let cancelled = false;
+    setLoadingChartPage(true);
     (async () => {
       try {
         const res = await fetch(
@@ -259,12 +281,14 @@ export default function ProfilePage() {
         setPayload(data);
       } catch {
         // mantém a página atual em caso de erro de rede
+      } finally {
+        if (!cancelled) setLoadingChartPage(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [chartPage, handle, source, CHARTS_PER_PAGE]);
+  }, [chartPage, handle, source, CHARTS_PER_PAGE, payload?.page]);
 
   useEffect(() => {
     if (!handle || source !== "db") return;
@@ -604,9 +628,13 @@ export default function ProfilePage() {
             ) : (() => {
               const totalPages = Math.ceil(totalCharts / CHARTS_PER_PAGE);
               const pageCharts = user.charts;
-              const globalOffset = (chartPage - 1) * CHARTS_PER_PAGE;
+              const currentChartPage = payload?.page ?? chartPage;
+              const globalOffset = (currentChartPage - 1) * CHARTS_PER_PAGE;
               return (
                 <>
+                  {loadingChartPage && (
+                    <div style={{ marginBottom: 12, color: "#86868B", fontSize: 13 }}>Carregando página {chartPage}…</div>
+                  )}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
                     {pageCharts.map((chart, i) => (
                       <ChartCard
@@ -617,47 +645,7 @@ export default function ProfilePage() {
                       />
                     ))}
                   </div>
-                  {totalPages > 1 && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 28 }}>
-                      <button
-                        type="button"
-                        disabled={chartPage === 1}
-                        onClick={() => setChartPage((p) => Math.max(1, p - 1))}
-                        style={{
-                          padding: "8px 18px",
-                          borderRadius: 100,
-                          border: "1px solid rgba(0,0,0,0.12)",
-                          background: "white",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: chartPage === 1 ? "not-allowed" : "pointer",
-                          opacity: chartPage === 1 ? 0.4 : 1,
-                        }}
-                      >
-                        ← Anterior
-                      </button>
-                      <span style={{ fontSize: 13, color: "#86868B", padding: "0 8px" }}>
-                        {chartPage} / {totalPages}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={chartPage === totalPages}
-                        onClick={() => setChartPage((p) => Math.min(totalPages, p + 1))}
-                        style={{
-                          padding: "8px 18px",
-                          borderRadius: 100,
-                          border: "1px solid rgba(0,0,0,0.12)",
-                          background: "white",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: chartPage === totalPages ? "not-allowed" : "pointer",
-                          opacity: chartPage === totalPages ? 0.4 : 1,
-                        }}
-                      >
-                        Próxima →
-                      </button>
-                    </div>
-                  )}
+                  <PaginationBar page={currentChartPage} totalPages={totalPages} onChange={setChartPage} loading={loadingChartPage} />
                 </>
               );
             })()}
@@ -708,24 +696,102 @@ export default function ProfilePage() {
 function StatsPagination({ page, total, perPage, onChange }: { page: number; total: number; perPage: number; onChange: (p: number) => void }) {
   const totalPages = Math.ceil(total / perPage);
   if (totalPages <= 1) return null;
+  return <PaginationBar page={page} totalPages={totalPages} onChange={onChange} />;
+}
+
+function buildPageItems(currentPage: number, totalPages: number): Array<number | "..."> {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, "...", totalPages];
+  }
+  if (currentPage >= totalPages - 3) {
+    return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+  return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+}
+
+function PaginationBar({
+  page,
+  totalPages,
+  onChange,
+  loading = false,
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (p: number) => void;
+  loading?: boolean;
+}) {
+  if (totalPages <= 1) return null;
+  const items = buildPageItems(page, totalPages);
+  const buttonStyle = {
+    padding: "8px 14px",
+    borderRadius: 10,
+    border: "1px solid rgba(0,0,0,0.12)",
+    background: "white",
+    fontSize: 13,
+    fontWeight: 600,
+  } as const;
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 20 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 20, flexWrap: "wrap" }}>
       <button
         type="button"
-        disabled={page === 1}
-        onClick={() => onChange(page - 1)}
-        style={{ padding: "8px 18px", borderRadius: 100, border: "1px solid rgba(0,0,0,0.12)", background: "white", fontSize: 13, fontWeight: 600, cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1 }}
+        disabled={page === 1 || loading}
+        onClick={() => onChange(1)}
+        style={{ ...buttonStyle, cursor: page === 1 || loading ? "not-allowed" : "pointer", opacity: page === 1 || loading ? 0.4 : 1 }}
       >
-        ← Anterior
+        « Primeiro
       </button>
+      <button
+        type="button"
+        disabled={page === 1 || loading}
+        onClick={() => onChange(page - 1)}
+        style={{ ...buttonStyle, cursor: page === 1 || loading ? "not-allowed" : "pointer", opacity: page === 1 || loading ? 0.4 : 1 }}
+      >
+        ←
+      </button>
+      {items.map((item, idx) =>
+        item === "..." ? (
+          <span key={`ellipsis-${idx}`} style={{ fontSize: 13, color: "#86868B", padding: "0 2px" }}>
+            ...
+          </span>
+        ) : (
+          <button
+            key={item}
+            type="button"
+            disabled={loading}
+            onClick={() => onChange(item)}
+            style={{
+              ...buttonStyle,
+              minWidth: 36,
+              padding: "8px 10px",
+              borderColor: item === page ? "#FA243C" : "rgba(0,0,0,0.12)",
+              color: item === page ? "#FA243C" : "#1D1D1F",
+              background: item === page ? "rgba(250,36,60,0.06)" : "white",
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            {item}
+          </button>
+        )
+      )}
       <span style={{ fontSize: 13, color: "#86868B", padding: "0 8px" }}>{page} / {totalPages}</span>
       <button
         type="button"
-        disabled={page === totalPages}
+        disabled={page === totalPages || loading}
         onClick={() => onChange(page + 1)}
-        style={{ padding: "8px 18px", borderRadius: 100, border: "1px solid rgba(0,0,0,0.12)", background: "white", fontSize: 13, fontWeight: 600, cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.4 : 1 }}
+        style={{ ...buttonStyle, cursor: page === totalPages || loading ? "not-allowed" : "pointer", opacity: page === totalPages || loading ? 0.4 : 1 }}
       >
-        Próxima →
+        →
+      </button>
+      <button
+        type="button"
+        disabled={page === totalPages || loading}
+        onClick={() => onChange(totalPages)}
+        style={{ ...buttonStyle, cursor: page === totalPages || loading ? "not-allowed" : "pointer", opacity: page === totalPages || loading ? 0.4 : 1 }}
+      >
+        Última »
       </button>
     </div>
   );

@@ -12,6 +12,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { formatChartPeriod } from "@/lib/chart-week";
+import { formatSongArtist } from "@/lib/song-artist";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { TIMELINE, SAMPLE_COMMENTS, USERS_DATA } from "@/lib/data";
 import type { ChartEntry, TimelineItem, User } from "@/lib/types";
@@ -127,11 +128,6 @@ export default function ChartDetailPage() {
     );
   }
 
-  const newCount = chart.entries.filter((e) => e.status === "new").length;
-  const upCount = chart.entries.filter((e) => e.status === "up").length;
-  const downCount = chart.entries.filter((e) => e.status === "down").length;
-  const sameCount = chart.entries.filter((e) => e.status === "same").length;
-
   return (
     <Shell title="" noPadding>
       {/* Hero */}
@@ -168,6 +164,42 @@ export default function ChartDetailPage() {
               </Link>
               <span style={{ fontSize: 13, color: "#86868B" }}>@{user.handle}</span>
             </div>
+            {(dbPayload?.previousChart || dbPayload?.nextChart) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+                {dbPayload?.previousChart ? (
+                  <Link
+                    href={`/chart/${dbPayload.previousChart.id}`}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#1D1D1F",
+                      textDecoration: "none",
+                      border: "1px solid rgba(0,0,0,0.12)",
+                      borderRadius: 10,
+                      padding: "7px 12px",
+                    }}
+                  >
+                    ← Parada anterior
+                  </Link>
+                ) : null}
+                {dbPayload?.nextChart ? (
+                  <Link
+                    href={`/chart/${dbPayload.nextChart.id}`}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#1D1D1F",
+                      textDecoration: "none",
+                      border: "1px solid rgba(0,0,0,0.12)",
+                      borderRadius: 10,
+                      padding: "7px 12px",
+                    }}
+                  >
+                    Próxima parada →
+                  </Link>
+                ) : null}
+              </div>
+            )}
 
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13, color: "#86868B" }}>
               <Heart size={14} />
@@ -230,22 +262,6 @@ export default function ChartDetailPage() {
       </div>
 
       <div style={{ padding: "0 40px 80px 40px" }}>
-      {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1, background: "rgba(0,0,0,0.06)", borderRadius: 14, overflow: "hidden", margin: "28px 0" }}>
-        {[
-          { label: "Novas entradas", value: newCount, color: "#1D1D1F" },
-          { label: "Subiram", value: upCount, color: "#1B873F" },
-          { label: "Caíram", value: downCount, color: "#C5291C" },
-          { label: "Estabilizadas", value: sameCount, color: "#86868B" },
-          { label: "Overlap global", value: "12%", color: "#FA243C" },
-        ].map(({ label, value, color }) => (
-          <div key={label} style={{ background: "white", padding: "16px 20px" }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 6 }}>{label}</div>
-            <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.03em", color, fontVariantNumeric: "tabular-nums" }}>{value}</div>
-          </div>
-        ))}
-      </div>
-
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 24 }}>
         {([["chart", "Parada"], ["comments", `Comentários (${chart.comments})`], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
@@ -326,7 +342,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
             <div style={{ padding: "0 8px" }}><MovementBadge status={e.status} delta={e.delta} /></div>
             <div style={{ minWidth: 0, padding: "0 12px" }}>
               <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.artist}</div>
+              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{formatSongArtist(e.song)}</div>
               <div style={{ fontSize: 11, color: "#86868B" }}>{e.song.album}</div>
             </div>
             <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
@@ -367,7 +383,7 @@ function GridVariant({ entries }: { entries: ChartEntry[] }) {
           </div>
           <div style={{ padding: "10px 12px" }}>
             <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-            <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.artist}</div>
+            <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{formatSongArtist(e.song)}</div>
             <div style={{ fontSize: 11, color: "#86868B", marginTop: 4 }}>Pico #{e.peak} · {e.weeks} sem.</div>
           </div>
         </div>
@@ -404,7 +420,7 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>{e.song.title}</div>
-              <div style={{ fontSize: 12, color: "#86868B" }}>{e.song.artist}</div>
+              <div style={{ fontSize: 12, color: "#86868B" }}>{formatSongArtist(e.song)}</div>
             </div>
           </div>
         ))}

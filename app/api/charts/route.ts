@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
-import { getSpotifyArtistById, getSpotifyTrackMetadataById } from "@/lib/spotify-server";
+import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 
@@ -138,6 +138,7 @@ export async function POST(req: NextRequest) {
   // Upsert songs/artists/albums sequentially to avoid race on unique constraints
   const songs: { id: string; spotifyId: string | null; albumSpotifyId: string | null }[] = [];
   const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
+  const spotifyArtistNameCache = new Map<string, Awaited<ReturnType<typeof searchSpotifyArtist>>>();
 
   async function spotifyArtistProfile(spotifyId: string) {
     if (spotifyArtistCache.has(spotifyId)) return spotifyArtistCache.get(spotifyId)!;
@@ -146,22 +147,65 @@ export async function POST(req: NextRequest) {
     return p;
   }
 
+  async function spotifyArtistByName(name: string) {
+    const key = name.trim().toLowerCase();
+    if (spotifyArtistNameCache.has(key)) return spotifyArtistNameCache.get(key)!;
+    const result = await searchSpotifyArtist(name);
+    spotifyArtistNameCache.set(key, result);
+    return result;
+  }
+
   for (const e of entries) {
     const spotifyId = e.spotifyId?.trim() || null;
     if (!spotifyId) {
-      const song = await prisma.song.upsert({
-        where: { title_artist: { title: e.title, artist: e.artist } },
-        update: e.album ? { album: e.album } : {},
-        create: { title: e.title, artist: e.artist, album: e.album ?? null },
+      const resolvedArtist = await spotifyArtistByName(e.artist);
+      if (resolvedArtist) {
+        await prisma.artist.upsert({
+          where: { spotifyId: resolvedArtist.spotifyId },
+          update: {
+            name: resolvedArtist.name,
+            spotifyUrl: resolvedArtist.spotifyUrl ?? undefined,
+            ...(resolvedArtist.imageUrl ? { imageUrl: resolvedArtist.imageUrl } : {}),
+          },
+          create: {
+            spotifyId: resolvedArtist.spotifyId,
+            name: resolvedArtist.name,
+            spotifyUrl: resolvedArtist.spotifyUrl ?? null,
+            imageUrl: resolvedArtist.imageUrl ?? null,
+          },
+        });
+      }
+      const canonicalArtist = resolvedArtist?.name ?? e.artist;
+      const existingSong = await prisma.song.findFirst({
+        where: {
+          title: e.title,
+          artist: { in: [...new Set([e.artist, canonicalArtist])] },
+        },
       });
+      const song = existingSong
+        ? await prisma.song.update({
+            where: { id: existingSong.id },
+            data: {
+              ...(e.album ? { album: e.album } : {}),
+              ...(resolvedArtist?.spotifyId ? { artistSpotifyId: resolvedArtist.spotifyId } : {}),
+            },
+          })
+        : await prisma.song.create({
+            data: {
+              title: e.title,
+              artist: canonicalArtist,
+              album: e.album ?? null,
+              artistSpotifyId: resolvedArtist?.spotifyId ?? null,
+            },
+          });
       songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
       continue;
     }
 
     const metadata = await getSpotifyTrackMetadataById(spotifyId);
-    const artistDisplay = metadata?.artistDisplay || e.artist;
     const primaryArtist = metadata?.primaryArtist;
     const albumSpotifyId = metadata?.album.spotifyId ?? null;
+    const mainArtistName = primaryArtist?.name?.trim() || metadata?.artists?.[0]?.name?.trim() || e.artist;
 
     if (primaryArtist) {
       const profile = await spotifyArtistProfile(primaryArtist.spotifyId);
@@ -210,7 +254,7 @@ export async function POST(req: NextRequest) {
       where: { spotifyId },
       update: {
         title: metadata?.title ?? e.title,
-        artist: artistDisplay,
+        artist: mainArtistName,
         album: metadata?.album.title ?? e.album ?? null,
         artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
         albumSpotifyId: albumSpotifyId ?? undefined,
@@ -221,7 +265,7 @@ export async function POST(req: NextRequest) {
       },
       create: {
         title: metadata?.title ?? e.title,
-        artist: artistDisplay,
+        artist: mainArtistName,
         album: metadata?.album.title ?? e.album ?? null,
         spotifyId,
         artistSpotifyId: primaryArtist?.spotifyId ?? null,
@@ -234,8 +278,11 @@ export async function POST(req: NextRequest) {
     });
 
     // Artistas secundários (feats) no relacionamento song_feats
-    if (metadata?.featuredArtists?.length && song.spotifyId) {
-      for (const feat of metadata.featuredArtists) {
+    if (song.spotifyId) {
+      const featured = metadata?.featuredArtists ?? [];
+      const featIds = new Set<string>();
+      for (const feat of featured) {
+        featIds.add(feat.spotifyId);
         const featProfile = await spotifyArtistProfile(feat.spotifyId);
         await prisma.artist.upsert({
           where: { spotifyId: feat.spotifyId },
@@ -265,6 +312,12 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+      await prisma.songFeat.deleteMany({
+        where: {
+          songSpotifyId: song.spotifyId,
+          ...(featIds.size ? { artistSpotifyId: { notIn: [...featIds] } } : {}),
+        },
+      });
     }
 
     songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });

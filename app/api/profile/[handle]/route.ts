@@ -75,6 +75,16 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
                 title: true,
                 artist: true,
                 album: true,
+                artistRef: {
+                  select: { name: true },
+                },
+                feats: {
+                  select: {
+                    artist: {
+                      select: { name: true },
+                    },
+                  },
+                },
               },
             },
           },

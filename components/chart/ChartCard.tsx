@@ -7,6 +7,7 @@ import { Cover } from "@/components/ui/Cover";
 
 import { PositionNumber } from "@/components/ui/PositionNumber";
 import { FollowButton } from "@/components/ui/FollowButton";
+import { formatSongArtist } from "@/lib/song-artist";
 import type { UserWithCharts, Chart } from "@/lib/types";
 
 interface ChartCardProps {
@@ -101,7 +102,7 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
                 {entry.song.title}
               </div>
               <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {entry.song.artist}
+                {formatSongArtist(entry.song)}
               </div>
             </div>
           </Link>

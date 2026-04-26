@@ -15,6 +15,7 @@ export type WeeklyChartEntryRow = {
     spotifyId: string | null;
     artistSpotifyId: string | null;
     artistRef: { spotifyId: string; name: string } | null;
+    feats?: Array<{ artist: { spotifyId: string; name: string } }>;
   };
 };
 
@@ -38,6 +39,27 @@ export function artistDisplayName(song: WeeklyChartEntryRow["song"]): string {
   const ref = song.artistRef?.name?.trim();
   if (ref) return ref;
   return song.artist.trim().replace(/\s+/g, " ");
+}
+
+type ArtistContributor = { key: string; name: string; spotifyId: string | null };
+
+function artistContributors(song: WeeklyChartEntryRow["song"]): ArtistContributor[] {
+  const out: ArtistContributor[] = [];
+  const seen = new Set<string>();
+  const push = (nameRaw: string, sidRaw: string | null | undefined) => {
+    const name = nameRaw.trim().replace(/\s+/g, " ");
+    if (!name) return;
+    const sid = sidRaw?.trim() || null;
+    const key = sid ? `artist_spotify:${sid}` : `artist_name:${name.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ key, name, spotifyId: sid });
+  };
+  push(artistDisplayName(song), song.artistRef?.spotifyId ?? song.artistSpotifyId ?? null);
+  for (const feat of song.feats ?? []) {
+    push(feat.artist.name, feat.artist.spotifyId);
+  }
+  return out;
 }
 
 function songAggregationKey(song: WeeklyChartEntryRow["song"]): string {
@@ -79,20 +101,19 @@ export function aggregateTopArtists(
   >();
   for (const e of entries) {
     const pts = pointsForWeeklyEntry(e);
-    const key = artistAggregationKey(e.song);
-    const label = artistDisplayName(e.song);
-    const sid = e.song.artistRef?.spotifyId ?? e.song.artistSpotifyId ?? null;
-    const cur = byKey.get(key) ?? {
-      points: 0,
-      charts: new Set<string>(),
-      displayName: label,
-      spotifyId: null as string | null,
-    };
-    cur.points += pts;
-    cur.charts.add(e.chartId);
-    if (e.song.artistRef?.name?.trim()) cur.displayName = e.song.artistRef.name.trim();
-    if (sid) cur.spotifyId = cur.spotifyId ?? sid;
-    byKey.set(key, cur);
+    for (const contributor of artistContributors(e.song)) {
+      const cur = byKey.get(contributor.key) ?? {
+        points: 0,
+        charts: new Set<string>(),
+        displayName: contributor.name,
+        spotifyId: null as string | null,
+      };
+      cur.points += pts;
+      cur.charts.add(e.chartId);
+      cur.displayName = contributor.name;
+      if (contributor.spotifyId) cur.spotifyId = cur.spotifyId ?? contributor.spotifyId;
+      byKey.set(contributor.key, cur);
+    }
   }
 
   // Merge name-based buckets into matching Spotify-based buckets so that the
@@ -120,8 +141,12 @@ export function aggregateTopArtists(
   const comparisonByArtist = new Map<string, number>();
   if (options?.comparisonEntries?.length) {
     for (const e of options.comparisonEntries) {
-      const key = artistAggregationKey(e.song);
-      comparisonByArtist.set(key, (comparisonByArtist.get(key) ?? 0) + pointsForWeeklyEntry(e));
+      for (const contributor of artistContributors(e.song)) {
+        comparisonByArtist.set(
+          contributor.key,
+          (comparisonByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e)
+        );
+      }
     }
   }
 
@@ -129,8 +154,12 @@ export function aggregateTopArtists(
   if (options?.previousWeekEntries?.length) {
     const prevByArtist = new Map<string, number>();
     for (const e of options.previousWeekEntries) {
-      const key = artistAggregationKey(e.song);
-      prevByArtist.set(key, (prevByArtist.get(key) ?? 0) + pointsForWeeklyEntry(e));
+      for (const contributor of artistContributors(e.song)) {
+        prevByArtist.set(
+          contributor.key,
+          (prevByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e)
+        );
+      }
     }
     [...prevByArtist.entries()]
       .sort((a, b) => b[1] - a[1])

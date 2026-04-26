@@ -41,6 +41,7 @@ async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntr
           spotifyId: true,
           artistSpotifyId: true,
           artistRef: { select: { spotifyId: true, name: true } },
+          feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
         },
       },
     },
@@ -86,6 +87,7 @@ async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<strin
           artist: true,
           artistSpotifyId: true,
           artistRef: { select: { spotifyId: true } },
+          feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
         },
       },
     },
@@ -93,14 +95,28 @@ async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<strin
 
   const weekArtistPoints = new Map<string, Map<number, number>>();
   for (const r of rows) {
-    const sid = r.song.artistRef?.spotifyId ?? r.song.artistSpotifyId;
-    const key = sid
-      ? `artist_spotify:${sid}`
-      : `artist_name:${r.song.artist.trim().replace(/\s+/g, " ").toLowerCase()}`;
-    const weekMap = weekArtistPoints.get(key) ?? new Map<number, number>();
+    const contributors = [
+      {
+        sid: r.song.artistRef?.spotifyId ?? r.song.artistSpotifyId ?? null,
+        name: r.song.artist,
+      },
+      ...(r.song.feats ?? []).map((f) => ({
+        sid: f.artist.spotifyId,
+        name: f.artist.name,
+      })),
+    ];
+    const seen = new Set<string>();
     const pts = r.points > 0 ? r.points : 101 - r.position;
-    weekMap.set(r.chart.weekIndex, (weekMap.get(r.chart.weekIndex) ?? 0) + pts);
-    weekArtistPoints.set(key, weekMap);
+    for (const contributor of contributors) {
+      const key = contributor.sid
+        ? `artist_spotify:${contributor.sid}`
+        : `artist_name:${contributor.name.trim().replace(/\s+/g, " ").toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const weekMap = weekArtistPoints.get(key) ?? new Map<number, number>();
+      weekMap.set(r.chart.weekIndex, (weekMap.get(r.chart.weekIndex) ?? 0) + pts);
+      weekArtistPoints.set(key, weekMap);
+    }
   }
 
   const stats = new Map<string, { peak: number; weeks: number }>();
@@ -155,6 +171,7 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
             spotifyId: true,
             artistSpotifyId: true,
             artistRef: { select: { spotifyId: true, name: true } },
+            feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
           },
         },
       },
@@ -176,6 +193,7 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
             spotifyId: true,
             artistSpotifyId: true,
             artistRef: { select: { spotifyId: true, name: true } },
+            feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
           },
         },
       },

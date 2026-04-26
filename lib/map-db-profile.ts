@@ -31,7 +31,13 @@ type PrismaProfileUser = {
       coverPaletteA: string;
       coverPaletteB: string;
       coverSeed: number;
-      song: { title: string; artist: string; album: string | null };
+      song: {
+        title: string;
+        artist: string;
+        album: string | null;
+        artistRef?: { name: string } | null;
+        feats?: Array<{ artist: { name: string } }>;
+      };
     }>;
   }>;
 };
@@ -59,7 +65,13 @@ type PrismaChartRow = {
     coverPaletteA: string;
     coverPaletteB: string;
     coverSeed: number;
-    song: { title: string; artist: string; album: string | null };
+    song: {
+      title: string;
+      artist: string;
+      album: string | null;
+      artistRef?: { name: string } | null;
+      feats?: Array<{ artist: { name: string } }>;
+    };
   }>;
 };
 
@@ -76,7 +88,8 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
       position: e.position,
       song: {
         title: e.song.title,
-        artist: e.song.artist,
+        artist: e.song.artistRef?.name?.trim() || e.song.artist,
+        featArtists: (e.song.feats ?? []).map((f) => f.artist.name),
         album: e.song.album ?? "",
       },
       cover: {
@@ -147,6 +160,8 @@ export type ChartDetailPayload = {
   user: User;
   chart: Chart;
   imageUrl: string | null;
+  previousChart?: { id: string; weekLabel: string } | null;
+  nextChart?: { id: string; weekLabel: string } | null;
   personalNumberOnes?: Record<string, number>;
   globalNumberOnes?: Record<string, number>;
 };
