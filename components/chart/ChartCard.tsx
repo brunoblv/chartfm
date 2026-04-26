@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { PositionNumber } from "@/components/ui/PositionNumber";
+import { FollowButton } from "@/components/ui/FollowButton";
 import { formatChartPeriod } from "@/lib/chart-week";
 import type { UserWithCharts, Chart } from "@/lib/types";
 
@@ -14,11 +15,12 @@ interface ChartCardProps {
   chart: Chart;
   postedAgo?: string;
   highlightTop?: number;
+  isFollowing?: boolean;
   /** Quando false, oculta seguir / menu (ex.: próprio perfil) */
   showFollowActions?: boolean;
 }
 
-export function ChartCard({ user, chart, postedAgo, highlightTop = 5, showFollowActions = true }: ChartCardProps) {
+export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true }: ChartCardProps) {
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
   const newCount = chart.entries.filter((e) => e.status === "new").length;
@@ -35,7 +37,7 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, showFollow
       {/* Header */}
       <header style={{ padding: "20px 24px 16px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
-          <Avatar user={user} size={44} />
+          <Avatar user={user} imageUrl={user.imageUrl} size={44} />
         </Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.015em", display: "flex", alignItems: "center", gap: 4 }}>
@@ -52,18 +54,7 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, showFollow
         </div>
         {showFollowActions && (
           <>
-            <button style={{
-              background: "none",
-              border: "1px solid rgba(0,0,0,0.1)",
-              padding: "6px 14px",
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
-              color: "#1D1D1F",
-            }}>
-              Seguir
-            </button>
+            <FollowButton targetId={user.id} initialFollowing={isFollowing} />
             <button style={{ background: "none", border: "none", color: "#86868B", padding: 6 }}>
               <MoreHorizontal size={20} />
             </button>

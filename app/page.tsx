@@ -9,16 +9,182 @@ import { HomeGrid } from "@/components/layout/HomeGrid";
 import { ChartCard } from "@/components/chart/ChartCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
+import { FollowButton } from "@/components/ui/FollowButton";
 import { PositionNumber } from "@/components/ui/PositionNumber";
-import { TIMELINE, COVER_PALETTES } from "@/lib/data";
+import { COVER_PALETTES } from "@/lib/data";
 import { buildWeekIndexFromDate, buildWeekLabelFromDate, getRankingWeekReference } from "@/lib/chart-week";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
+import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import type { UserWithCharts } from "@/lib/types";
 
 function daysUntilSundayBRT(): number {
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const day = nowBRT.getUTCDay();
   return day === 0 ? 0 : 7 - day;
+}
+
+function formatRelativeTime(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffMins < 1) return "agora";
+  if (diffMins < 60) return `há ${diffMins}min`;
+  if (diffHours < 24) return `há ${diffHours}h`;
+  if (diffDays === 1) return "há 1d";
+  return `há ${diffDays}d`;
+}
+
+type PublisherRow = {
+  userId: string;
+  chartId: string;
+  handle: string;
+  name: string;
+  avatarColor: string;
+  image: string | null;
+  entryCount: number;
+};
+
+async function getPublishedThisWeek(
+  userId: string,
+  weekIdx: number,
+  followingIds: Set<string>,
+): Promise<PublisherRow[]> {
+  const charts = await prisma.chart.findMany({
+    where: { userId: { not: userId }, weekIndex: weekIdx, isPublished: true },
+    orderBy: { publishedAt: "desc" },
+    take: 14,
+    select: {
+      id: true,
+      user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+      _count: { select: { entries: true } },
+    },
+  });
+
+  return charts
+    .sort((a, b) => {
+      const aF = followingIds.has(a.user.id) ? 1 : 0;
+      const bF = followingIds.has(b.user.id) ? 1 : 0;
+      return bF - aF;
+    })
+    .map((c) => ({
+      userId: c.user.id,
+      chartId: c.id,
+      handle: c.user.handle,
+      name: c.user.name,
+      avatarColor: c.user.avatarColor,
+      image: c.user.image,
+      entryCount: c._count.entries,
+    }));
+}
+
+async function getTimelineFeed(
+  userId: string,
+  weekIdx: number,
+  followingIds: Set<string>,
+) {
+  const rows = await prisma.chart.findMany({
+    where: {
+      userId: { not: userId },
+      weekIndex: { gte: weekIdx - 2 },
+      isPublished: true,
+    },
+    orderBy: { publishedAt: "desc" },
+    take: 30,
+    select: {
+      id: true,
+      weekLabel: true,
+      dateRange: true,
+      weekIndex: true,
+      publishedAt: true,
+      likes: true,
+      comments: true,
+      reposts: true,
+      user: {
+        select: {
+          id: true,
+          handle: true,
+          name: true,
+          avatarColor: true,
+          image: true,
+          followers: true,
+          verified: true,
+          streak: true,
+          bio: true,
+          following: true,
+        },
+      },
+      entries: {
+        orderBy: { position: "asc" },
+        take: 20,
+        select: {
+          position: true,
+          status: true,
+          delta: true,
+          prevPos: true,
+          peak: true,
+          weeks: true,
+          coverPaletteA: true,
+          coverPaletteB: true,
+          coverSeed: true,
+          song: { select: { title: true, artist: true, album: true, spotifyId: true } },
+        },
+      },
+    },
+  });
+
+  rows.sort((a, b) => {
+    const aF = followingIds.has(a.user.id) ? 1 : 0;
+    const bF = followingIds.has(b.user.id) ? 1 : 0;
+    if (aF !== bF) return bF - aF;
+    return b.publishedAt.getTime() - a.publishedAt.getTime();
+  });
+
+  return rows.slice(0, 15).map((c) => ({
+    user: {
+      id: c.user.id,
+      handle: c.user.handle,
+      name: c.user.name,
+      avatar: c.user.avatarColor,
+      imageUrl: c.user.image,
+      bio: c.user.bio ?? "",
+      followers: c.user.followers,
+      following: c.user.following,
+      streak: c.user.streak,
+      verified: c.user.verified,
+      charts: [],
+    } as UserWithCharts,
+    chart: {
+      id: c.id,
+      week: c.weekIndex,
+      weekLabel: c.weekLabel,
+      dateRange: c.dateRange,
+      likes: c.likes,
+      comments: c.comments,
+      reposts: c.reposts,
+      entries: c.entries.map((e) => ({
+        position: e.position,
+        status: e.status as "new" | "up" | "down" | "same",
+        delta: e.delta,
+        prevPos: e.prevPos,
+        peak: e.peak,
+        weeks: e.weeks,
+        cover: {
+          palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
+          seed: e.coverSeed,
+        },
+        song: {
+          title: e.song.title,
+          artist: e.song.artist,
+          album: e.song.album ?? "",
+          spotifyId: e.song.spotifyId ?? undefined,
+        },
+      })),
+    },
+    postedAgo: formatRelativeTime(c.publishedAt),
+    isFollowing: followingIds.has(c.user.id),
+  }));
 }
 
 export default async function HomePage() {
@@ -31,13 +197,14 @@ export default async function HomePage() {
   let userParadaNome: string | null = null;
   let thisWeekChartId: string | null = null;
   let userGenres: string[] = [];
+  let followingIds = new Set<string>();
 
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const currentWeekIdx = buildWeekIndexFromDate(nowBRT);
   const rankingWeek = getRankingWeekReference(nowBRT);
 
   if (session?.user?.id) {
-    const [user, thisWeekChart] = await Promise.all([
+    const [user, thisWeekChart, followRows] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
         select: { streak: true, paradaNome: true, genres: true },
@@ -45,6 +212,10 @@ export default async function HomePage() {
       prisma.chart.findUnique({
         where: { userId_weekIndex: { userId: session.user.id, weekIndex: currentWeekIdx } },
         select: { id: true },
+      }),
+      prisma.userFollow.findMany({
+        where: { followerId: session.user.id },
+        select: { followingId: true },
       }),
     ]);
 
@@ -54,19 +225,24 @@ export default async function HomePage() {
     userParadaNome = user?.paradaNome ?? null;
     userGenres = user?.genres ?? [];
     thisWeekChartId = thisWeekChart?.id ?? null;
+    followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers] = await Promise.all([
-    Promise.resolve(daysUntilSundayBRT()),
-    getTrendingArtists(rankingWeek.weekIndex),
-    getGlobalTopSongs(rankingWeek.weekIndex, 3),
-    getSuggestedUsers(session.user.id, userGenres, 3),
-  ]);
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeed, publishedToday] =
+    await Promise.all([
+      Promise.resolve(daysUntilSundayBRT()),
+      getTrendingArtists(rankingWeek.weekIndex),
+      getGlobalTopSongs(rankingWeek.weekIndex, 3),
+      getSuggestedUsers(session.user.id, userGenres, 3),
+      getTimelineFeed(session.user.id, currentWeekIdx, followingIds),
+      getPublishedThisWeek(session.user.id, currentWeekIdx, followingIds),
+    ]);
 
   const feed = (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <YourWeekCard streak={userStreak} daysLeft={daysLeft} paradaNome={userParadaNome} thisWeekChartId={thisWeekChartId} />
-      <FriendsRow />
+
+      {publishedToday.length > 0 && <FriendsRow publishers={publishedToday} />}
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 2px 0 2px" }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>Timeline</div>
@@ -74,16 +250,27 @@ export default async function HomePage() {
         <button style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#FA243C", cursor: "pointer" }}>Filtrar</button>
       </div>
 
-      {TIMELINE.slice(1).map((t) => (
-        <ChartCard key={t.user.id} user={t.user} chart={t.chart} postedAgo={t.postedAgo} />
-      ))}
+      {timelineFeed.length > 0 ? (
+        timelineFeed.map((t) => (
+          <ChartCard key={t.chart.id} user={t.user} chart={t.chart} postedAgo={t.postedAgo} isFollowing={t.isFollowing} />
+        ))
+      ) : (
+        <div style={{
+          background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)",
+          padding: "48px 24px", textAlign: "center",
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
+          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Nenhuma parada por aqui ainda</div>
+          <div style={{ fontSize: 13, color: "#86868B" }}>Siga mais pessoas para ver as paradas delas aqui</div>
+        </div>
+      )}
     </div>
   );
 
   const sidebar = (
     <>
       <GlobalTeaser topSongs={globalTopSongs} weekLabel={rankingWeek.weekLabel} />
-      <SuggestedUsers users={suggestedUsers} />
+      <SuggestedUsers users={suggestedUsers.map((u) => ({ ...u, isFollowing: followingIds.has(u.id) }))} />
       <TrendingArtists artists={trendingArtists} />
     </>
   );
@@ -162,29 +349,64 @@ function YourWeekCard({
   );
 }
 
-function FriendsRow() {
+function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: "18px 20px" }}>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Publicaram hoje</div>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Publicaram esta semana</div>
         <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 12, color: "#86868B" }}>{TIMELINE.slice(0, 5).length} pessoas</div>
+        <div style={{ fontSize: 12, color: "#86868B" }}>{publishers.length} pessoa{publishers.length !== 1 ? "s" : ""}</div>
       </div>
-      <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 4 }}>
-        {TIMELINE.slice(0, 7).map((t) => (
-          <Link key={t.user.id} href={`/profile/${t.user.handle}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", color: "inherit", flexShrink: 0 }}>
+      <div style={{ display: "flex", gap: 18, overflowX: "auto", paddingBottom: 4 }}>
+        {publishers.map((p) => (
+          <Link
+            key={p.userId}
+            href={`/profile/${p.handle}`}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, textDecoration: "none", color: "inherit", flexShrink: 0 }}
+          >
             <div style={{ position: "relative" }}>
-              <Avatar user={t.user} size={56} ring />
+              {/* Story-style gradient ring */}
               <div style={{
-                position: "absolute", bottom: -2, right: -2,
-                background: "#FA243C", color: "white", fontSize: 10, fontWeight: 700,
-                padding: "2px 6px", borderRadius: 8, border: "2px solid white",
+                width: 64, height: 64, borderRadius: "50%",
+                background: "linear-gradient(135deg, #FA243C 0%, #FF8C42 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 2.5,
+                boxSizing: "border-box",
               }}>
-                {t.chart.entries.length}
+                <div style={{
+                  width: "100%", height: "100%", borderRadius: "50%",
+                  background: "white",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: 2,
+                  boxSizing: "border-box",
+                }}>
+                  <Avatar
+                    user={{ name: p.name, avatar: p.avatarColor }}
+                    imageUrl={p.image}
+                    size={50}
+                  />
+                </div>
+              </div>
+              {/* Entry count badge */}
+              <div style={{
+                position: "absolute", bottom: -1, right: -3,
+                background: "#FA243C", color: "white",
+                fontSize: 9, fontWeight: 700,
+                minWidth: 18, height: 16,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: 8, border: "2px solid white",
+                paddingInline: 3,
+                lineHeight: 1,
+              }}>
+                {p.entryCount}
               </div>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 500, maxWidth: 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {t.user.name.split(" ")[0]}
+            <div style={{
+              fontSize: 11, fontWeight: 500,
+              maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis",
+              whiteSpace: "nowrap", textAlign: "center",
+            }}>
+              {p.name.split(" ")[0]}
             </div>
           </Link>
         ))}
@@ -238,15 +460,15 @@ type SuggestedUserRow = {
   followers: number;
   avatarColor: string;
   commonGenres: number;
+  isFollowing?: boolean;
 };
 
 function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
-  const suggested = users;
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
       <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 14 }}>Quem seguir</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {suggested.map((u) => (
+        {users.map((u) => (
           <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Link href={`/profile/${u.handle}`}>
               <Avatar user={{ name: u.name, avatar: u.avatarColor }} size={40} />
@@ -262,12 +484,7 @@ function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
                 )}
               </Link>
             </div>
-            <button style={{
-              background: "#1D1D1F", color: "white", border: "none",
-              padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-            }}>
-              Seguir
-            </button>
+            <FollowButton targetId={u.id} initialFollowing={u.isFollowing} variant="dark" />
           </div>
         ))}
       </div>
@@ -348,6 +565,12 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
 }
 
 async function getGlobalTopSongs(weekIdx: number, limit = 3) {
+  const snapshot = await prisma.globalSnapshot.findUnique({ where: { weekIndex: weekIdx } });
+  if (snapshot) {
+    const weeklySongs =
+      snapshot.weeklySongs as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"];
+    return weeklySongs.slice(0, limit);
+  }
   const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
     where: { chart: { weekIndex: weekIdx } },
     select: {

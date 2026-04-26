@@ -10,6 +10,7 @@ export interface User {
   handle: string;
   name: string;
   avatar: string;
+  imageUrl?: string | null;
   bio: string;
   followers: number;
   following: number;

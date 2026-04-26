@@ -335,3 +335,20 @@ model UserFollow {
   @@index([followingId], map: "idx_user_follows_following_id")
   @@map("user_follows")
 }
+
+model GlobalSnapshot {
+  id             String   @id @default(cuid())
+  weekIndex      Int      @unique @map("week_index")
+  weekLabel      String   @map("week_label")
+  dateRange      String   @map("date_range")
+  weeklySongs    Json     @map("weekly_songs")
+  weeklyArtists  Json     @map("weekly_artists")
+  overallSongs   Json     @map("overall_songs")
+  overallArtists Json     @map("overall_artists")
+  frozenAt       DateTime @default(now()) @map("frozen_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([weekIndex], map: "idx_global_snapshots_week_index")
+  @@map("global_snapshots")
+}

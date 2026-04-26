@@ -8,16 +8,20 @@ import { ChevronLeft, Flame, Trophy, BadgeCheck } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartCard } from "@/components/chart/ChartCard";
+import { FollowButton } from "@/components/ui/FollowButton";
+import { MovementBadge } from "@/components/ui/MovementBadge";
+import { Cover } from "@/components/ui/Cover";
 import { USERS_DATA, COVER_PALETTES } from "@/lib/data";
 import type { Chart, UserWithCharts } from "@/lib/types";
 
-type Tab = "charts" | "artists" | "evolution";
+type Tab = "charts" | "artists_overall" | "artists_year" | "songs_overall" | "songs_year";
 
 type ApiProfile = {
   user: UserWithCharts;
   imageUrl: string | null;
   paradaNome: string | null;
   genres: string[];
+  isFollowing: boolean;
 };
 
 function countDistinctNumberOnes(charts: Chart[]) {
@@ -40,6 +44,123 @@ function buildTopArtists(user: UserWithCharts) {
     artistMap.get(a)!.points += 101 - e.position;
   });
   return [...artistMap.values()].sort((a, b) => b.points - a.points).slice(0, 12);
+}
+
+type ArtistTableRow = {
+  position: number;
+  name: string;
+  songCount: number;
+  totalPoints: number;
+  weeks: number;
+  peak: number;
+  prevPos: number | null;
+  delta: number | null;
+  status: "new" | "up" | "down" | "same";
+  growthPct: number | null;
+};
+
+type SongTableRow = {
+  position: number;
+  title: string;
+  artist: string;
+  totalPoints: number;
+  weeks: number;
+  peak: number;
+  prevPos: number | null;
+  delta: number | null;
+  status: "new" | "up" | "down" | "same";
+  growthPct: number | null;
+  cover: Chart["entries"][number]["cover"];
+};
+
+function pointsForPosition(position: number) {
+  return 101 - position;
+}
+
+function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTableRow[] {
+  const map = new Map<string, { points: number; songs: Set<string>; weeks: Set<number>; peak: number }>();
+  charts.forEach((c) => {
+    c.entries.forEach((e) => {
+      const key = e.song.artist;
+      const cur = map.get(key) ?? { points: 0, songs: new Set<string>(), weeks: new Set<number>(), peak: e.position };
+      cur.points += pointsForPosition(e.position);
+      cur.songs.add(e.song.title);
+      cur.weeks.add(c.week);
+      cur.peak = Math.min(cur.peak, e.position);
+      map.set(key, cur);
+    });
+  });
+  const prevMap = new Map<string, number>();
+  previousCharts.forEach((c) =>
+    c.entries.forEach((e) => prevMap.set(e.song.artist, (prevMap.get(e.song.artist) ?? 0) + pointsForPosition(e.position)))
+  );
+  const sorted = [...map.entries()].sort((a, b) => b[1].points - a[1].points);
+  const prevRank = [...prevMap.entries()].sort((a, b) => b[1] - a[1]).reduce((acc, [k], i) => acc.set(k, i + 1), new Map<string, number>());
+  return sorted.map(([name, v], i) => {
+    const position = i + 1;
+    const prevPos = prevRank.get(name) ?? null;
+    const delta = prevPos === null ? null : prevPos - position;
+    const status: ArtistTableRow["status"] = prevPos === null ? "new" : delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
+    const prevPoints = prevMap.get(name) ?? 0;
+    const growthPct = prevPoints > 0 ? ((v.points - prevPoints) / prevPoints) * 100 : null;
+    return {
+      position,
+      name,
+      songCount: v.songs.size,
+      totalPoints: v.points,
+      weeks: v.weeks.size,
+      peak: v.peak,
+      prevPos,
+      delta,
+      status,
+      growthPct,
+    };
+  });
+}
+
+function aggregateSongs(charts: Chart[], previousCharts: Chart[]): SongTableRow[] {
+  const map = new Map<string, { title: string; artist: string; points: number; weeks: Set<number>; peak: number; cover: Chart["entries"][number]["cover"] }>();
+  charts.forEach((c) => {
+    c.entries.forEach((e) => {
+      const key = `${e.song.title}\0${e.song.artist}`;
+      const cur = map.get(key) ?? { title: e.song.title, artist: e.song.artist, points: 0, weeks: new Set<number>(), peak: e.position, cover: e.cover };
+      cur.points += pointsForPosition(e.position);
+      cur.weeks.add(c.week);
+      cur.peak = Math.min(cur.peak, e.position);
+      if (e.position < cur.peak) cur.cover = e.cover;
+      map.set(key, cur);
+    });
+  });
+  const prevMap = new Map<string, number>();
+  previousCharts.forEach((c) =>
+    c.entries.forEach((e) => {
+      const key = `${e.song.title}\0${e.song.artist}`;
+      prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForPosition(e.position));
+    })
+  );
+  const sorted = [...map.entries()].sort((a, b) => b[1].points - a[1].points);
+  const prevRank = [...prevMap.entries()].sort((a, b) => b[1] - a[1]).reduce((acc, [k], i) => acc.set(k, i + 1), new Map<string, number>());
+  return sorted.map(([key, v], i) => {
+    const position = i + 1;
+    const prevPos = prevRank.get(key) ?? null;
+    const delta = prevPos === null ? null : prevPos - position;
+    const status: SongTableRow["status"] = prevPos === null ? "new" : delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
+    const prevPoints = prevMap.get(key) ?? 0;
+    const growthPct = prevPoints > 0 ? ((v.points - prevPoints) / prevPoints) * 100 : null;
+    return {
+      position,
+      title: v.title,
+      artist: v.artist,
+      totalPoints: v.points,
+      weeks: v.weeks.size,
+      peak: v.peak,
+      prevPos,
+      delta,
+      status,
+      growthPct,
+      cover: v.cover,
+    };
+  });
 }
 
 function buildAchievements(user: UserWithCharts, numberOnes: number) {
@@ -66,6 +187,7 @@ export default function ProfilePage() {
   const [source, setSource] = useState<"db" | "mock" | null>(null);
   const [payload, setPayload] = useState<ApiProfile | null>(null);
   const [mockUser, setMockUser] = useState<UserWithCharts | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   useEffect(() => {
     if (!handle) {
@@ -108,11 +230,40 @@ export default function ProfilePage() {
   const imageUrl = payload?.imageUrl ?? null;
   const paradaNome = payload?.paradaNome ?? null;
   const genres = payload?.genres ?? [];
+  const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
 
   const topArtists = useMemo(() => (user ? buildTopArtists(user) : []), [user]);
   const numberOnes = useMemo(() => (user ? countDistinctNumberOnes(user.charts) : 0), [user]);
   const achievements = useMemo(() => (user ? buildAchievements(user, numberOnes) : []), [user, numberOnes]);
+  const years = useMemo(() => user ? [...new Set(user.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a) : [], [user]);
+  const activeYear = selectedYear ?? years[0] ?? null;
+  const chartsSortedAsc = useMemo(() => user ? [...user.charts].sort((a, b) => a.week - b.week) : [], [user]);
+  const latestWeek = chartsSortedAsc[chartsSortedAsc.length - 1]?.week ?? null;
+  const overallArtistsRows = useMemo(() => {
+    if (!latestWeek) return [];
+    const previous = chartsSortedAsc.filter((c) => c.week < latestWeek);
+    return aggregateArtists(chartsSortedAsc, previous);
+  }, [chartsSortedAsc, latestWeek]);
+  const overallSongsRows = useMemo(() => {
+    if (!latestWeek) return [];
+    const previous = chartsSortedAsc.filter((c) => c.week < latestWeek);
+    return aggregateSongs(chartsSortedAsc, previous);
+  }, [chartsSortedAsc, latestWeek]);
+  const yearlyArtistsRows = useMemo(() => {
+    if (!activeYear) return [];
+    const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
+    const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
+    const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
+    return aggregateArtists(yearCharts, previous);
+  }, [chartsSortedAsc, activeYear]);
+  const yearlySongsRows = useMemo(() => {
+    if (!activeYear) return [];
+    const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
+    const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
+    const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
+    return aggregateSongs(yearCharts, previous);
+  }, [chartsSortedAsc, activeYear]);
 
   if (phase === "loading") {
     return (
@@ -256,22 +407,12 @@ export default function ProfilePage() {
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  style={{
-                    background: "#FA243C",
-                    color: "white",
-                    border: "none",
-                    padding: "11px 26px",
-                    borderRadius: 100,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    boxShadow: "0 2px 8px rgba(250,36,60,0.25)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Seguir
-                </button>
+                <FollowButton
+                  targetId={user.id}
+                  initialFollowing={isFollowing}
+                  variant="primary"
+                  size="md"
+                />
                 <button
                   type="button"
                   style={{
@@ -354,8 +495,10 @@ export default function ProfilePage() {
           {(
             [
               ["charts", "Paradas"],
-              ["artists", "Artistas favoritos"],
-              ["evolution", "Evolução"],
+              ["artists_overall", "Artistas overall"],
+              ["artists_year", "Artistas anual"],
+              ["songs_overall", "Músicas overall"],
+              ["songs_year", "Músicas anual"],
             ] as [Tab, string][]
           ).map(([t, label]) => (
             <button
@@ -365,7 +508,7 @@ export default function ProfilePage() {
               onClick={() => setTab(t)}
               style={{
                 padding: "12px 4px",
-                marginRight: 24,
+                marginRight: 18,
                 background: "none",
                 border: "none",
                 fontSize: 14,
@@ -409,35 +552,93 @@ export default function ProfilePage() {
           </>
         )}
 
-        {tab === "artists" && hasCharts && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
-            {topArtists.map((a) => (
-              <Link
-                key={a.name}
-                href={`/artist/${encodeURIComponent(a.name)}`}
-                style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}
-              >
-                <div
-                  style={{
-                    width: 100,
-                    height: 100,
-                    borderRadius: "50%",
-                    background: `linear-gradient(135deg, ${a.color[0]}, ${a.color[1]})`,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                  }}
-                />
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{a.name}</div>
-                  <div style={{ fontSize: 12, color: "#86868B" }}>{a.points} pts</div>
-                </div>
-              </Link>
-            ))}
-          </div>
+        {(tab === "artists_overall" || tab === "artists_year") && hasCharts && (
+          <>
+            {tab === "artists_year" && years.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <select value={activeYear ?? ""} onChange={(e) => setSelectedYear(Number(e.target.value))} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <ArtistStatsTable rows={tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows} />
+          </>
         )}
-
-        {tab === "evolution" && hasCharts && <EvolutionChart user={user} />}
+        {(tab === "songs_overall" || tab === "songs_year") && hasCharts && (
+          <>
+            {tab === "songs_year" && years.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <select value={activeYear ?? ""} onChange={(e) => setSelectedYear(Number(e.target.value))} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <SongStatsTable rows={tab === "songs_overall" ? overallSongsRows : yearlySongsRows} />
+          </>
+        )}
       </div>
     </Shell>
+  );
+}
+
+function ArtistStatsTable({ rows }: { rows: ArtistTableRow[] }) {
+  return (
+    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "60px 100px minmax(0,1fr) 90px 80px 80px 70px 110px 100px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        {["Pos", "Mudança", "Artista", "Sem. ant.", "Sem.", "Pico", "Músicas", "Pontos", "Cresc."].map((h, i) => (
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
+        ))}
+      </div>
+      {rows.map((r) => (
+        <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 100px minmax(0,1fr) 90px 80px 80px 70px 110px 100px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+          <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+          <div style={{ padding: "0 8px" }}><MovementBadge status={r.status} delta={r.delta} /></div>
+          <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
+          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.prevPos ?? "—"}</div>
+          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
+          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
+          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: r.growthPct !== null && r.growthPct >= 0 ? "#16A34A" : "#DC2626", fontVariantNumeric: "tabular-nums" }}>
+            {r.growthPct === null ? "—" : `${r.growthPct >= 0 ? "+" : ""}${r.growthPct.toFixed(1)}%`}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
+  return (
+    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "60px 64px 100px minmax(0,1fr) 90px 80px 70px 110px 100px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        {["Pos", "", "Mudança", "Música", "Sem. ant.", "Sem.", "Pico", "Pontos", "Cresc."].map((h, i) => (
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
+        ))}
+      </div>
+      {rows.map((r) => (
+        <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px 100px minmax(0,1fr) 90px 80px 70px 110px 100px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+          <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+          <div style={{ padding: "4px 8px" }}><Cover cover={r.cover} song={{ title: r.title, artist: r.artist }} size={48} rounded={8} /></div>
+          <div style={{ padding: "0 8px" }}><MovementBadge status={r.status} delta={r.delta} /></div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</div>
+            <div style={{ fontSize: 12, color: "#86868B" }}>{r.artist}</div>
+          </div>
+          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.prevPos ?? "—"}</div>
+          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
+          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: r.growthPct !== null && r.growthPct >= 0 ? "#16A34A" : "#DC2626", fontVariantNumeric: "tabular-nums" }}>
+            {r.growthPct === null ? "—" : `${r.growthPct >= 0 ? "+" : ""}${r.growthPct.toFixed(1)}%`}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

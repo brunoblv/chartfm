@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 
 export const runtime = "nodejs";
 
@@ -25,11 +26,13 @@ export async function GET(req: NextRequest) {
       AND c."weekIndex" = ${rankingWeek.weekIndex}
       AND ce."points" IS DISTINCT FROM (101 - ce."position")
   `;
+  const snapshot = await getOrCreateRankingWeekSnapshot(new Date());
 
   return NextResponse.json({
     ok: true,
     weekIndex: rankingWeek.weekIndex,
     weekLabel: rankingWeek.weekLabel,
     updatedRows,
+    snapshotCreated: snapshot.created,
   });
 }

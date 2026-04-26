@@ -114,14 +114,19 @@ export type PublicProfilePayload = {
   imageUrl: string | null;
   paradaNome: string | null;
   genres: string[];
+  isFollowing: boolean;
 };
 
-export function buildPublicProfilePayload(db: PrismaProfileUser): PublicProfilePayload {
+export function buildPublicProfilePayload(
+  db: PrismaProfileUser,
+  isFollowing = false,
+): PublicProfilePayload {
   return {
     user: mapPrismaUserToUserWithCharts(db),
     imageUrl: db.image,
     paradaNome: db.paradaNome,
     genres: db.genres ?? [],
+    isFollowing,
   };
 }
 

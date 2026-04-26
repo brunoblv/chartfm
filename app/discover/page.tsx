@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { MovementBadge } from "@/components/ui/MovementBadge";
+import { FollowButton } from "@/components/ui/FollowButton";
 import { USERS_DATA, ARTISTS, COVER_PALETTES } from "@/lib/data";
 
 const GENRES = [
@@ -43,12 +44,7 @@ export default function DiscoverPage() {
                 <div style={{ fontSize: 13, color: "#86868B" }}>@{u.handle}</div>
                 <div style={{ fontSize: 13, color: "#6B6B70", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{u.bio}</div>
               </div>
-              <button style={{
-                width: "100%", background: "#1D1D1F", color: "white", border: "none",
-                padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 600,
-              }}>
-                Seguir
-              </button>
+              <FollowButton targetId={u.id} variant="dark" size="sm" />
             </div>
           ))}
         </div>
