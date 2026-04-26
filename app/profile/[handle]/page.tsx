@@ -914,7 +914,7 @@ function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
       {rows.map((r) => (
         <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
           <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-          <div style={{ padding: "4px 8px" }}><Cover cover={r.cover} song={{ title: r.title, artist: r.artist }} size={48} rounded={8} /></div>
+          <div style={{ padding: "4px 8px" }}><Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={48} rounded={8} /></div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</div>
             <div style={{ fontSize: 12, color: "#86868B" }}>{r.artist}</div>

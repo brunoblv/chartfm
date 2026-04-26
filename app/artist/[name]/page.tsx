@@ -326,7 +326,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
               }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#000000", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{i + 1}</div>
                 <div style={{ padding: "6px 6px" }}>
-                  <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName }} size={44} rounded={8} />
+                  <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album }} size={44} rounded={8} />
                 </div>
                 <div style={{ padding: "0 12px", minWidth: 0 }}>
                   <Link href={buildSongPath({ title: s.title, artist: canonicalName })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{s.title}</Link>

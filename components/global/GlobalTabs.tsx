@@ -11,7 +11,7 @@ import Link from "next/link";
 
 type SongEntry = {
   position: number;
-  song: { title: string; artist: string; spotifyId?: string | null; artistSpotifyId?: string | null };
+  song: { title: string; artist: string; album?: string | null; spotifyId?: string | null; artistSpotifyId?: string | null };
   cover: CoverData;
   status: "new" | "up" | "down" | "same";
   delta?: number | null;
@@ -215,7 +215,7 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
             {e.position}
           </div>
           <div style={{ padding: "6px 8px" }}>
-            <Cover cover={e.cover} song={e.song} size={coverSize} rounded={isLarge ? 14 : 10} />
+            <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={coverSize} rounded={isLarge ? 14 : 10} />
           </div>
           <div style={{ padding: "0 8px" }}>
             <MovementBadge status={e.status} delta={e.delta} />
