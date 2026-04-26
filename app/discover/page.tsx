@@ -6,6 +6,7 @@ import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { HotTabs } from "./HotTabs";
+import { buildSongPath } from "@/lib/music-routes";
 import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
 
 function weeklyScore(likes: number, comments: number, reposts: number): number {
@@ -13,23 +14,48 @@ function weeklyScore(likes: number, comments: number, reposts: number): number {
 }
 
 const GENRES = [
-  { name: "Pop", color: ["#FA243C", "#FF5858"], letter: "P" },
-  { name: "Hip-Hop/Rap", color: ["#1D1D1F", "#4A4A4F"], letter: "H" },
-  { name: "Sertanejo", color: ["#E36414", "#FFD166"], letter: "S" },
-  { name: "R&B/Soul", color: ["#6A0572", "#AB83A1"], letter: "R" },
-  { name: "Indie/Alt", color: ["#06D6A0", "#073B4C"], letter: "I" },
-  { name: "Funk", color: ["#EF476F", "#FFD166"], letter: "F" },
-  { name: "Eletrônica", color: ["#8338EC", "#3A86FF"], letter: "E" },
-  { name: "K-Pop", color: ["#FB5607", "#FFBE0B"], letter: "K" },
+  { slug: "pop", name: "Pop", color: ["#FA243C", "#FF5858"], letter: "P", tags: ["pop"] },
+  { slug: "hip-hop-rap", name: "Hip-Hop/Rap", color: ["#1D1D1F", "#4A4A4F"], letter: "H", tags: ["hip hop", "rap", "trap"] },
+  { slug: "sertanejo", name: "Sertanejo", color: ["#E36414", "#FFD166"], letter: "S", tags: ["sertanejo"] },
+  { slug: "rnb-soul", name: "R&B/Soul", color: ["#6A0572", "#AB83A1"], letter: "R", tags: ["r&b", "soul", "neo soul"] },
+  { slug: "indie-alt", name: "Indie/Alt", color: ["#06D6A0", "#073B4C"], letter: "I", tags: ["indie", "alternative", "alt"] },
+  { slug: "funk", name: "Funk", color: ["#EF476F", "#FFD166"], letter: "F", tags: ["funk"] },
+  { slug: "eletronica", name: "Eletrônica", color: ["#8338EC", "#3A86FF"], letter: "E", tags: ["electronic", "dance", "house", "techno", "edm", "eletronica", "eletronic"] },
+  { slug: "k-pop", name: "K-Pop", color: ["#FB5607", "#FFBE0B"], letter: "K", tags: ["k-pop", "kpop"] },
 ];
 
-export default async function DiscoverPage() {
+function pointsForPosition(position: number) {
+  return 101 - position;
+}
+
+function normalizeGenreTag(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function artistMatchesGenre(artistGenres: string[], genreTags: string[]) {
+  if (!artistGenres.length || !genreTags.length) return false;
+  const normalizedArtistGenres = artistGenres.map((g) => normalizeGenreTag(g));
+  return normalizedArtistGenres.some((artistGenre) => genreTags.some((tag) => artistGenre.includes(normalizeGenreTag(tag))));
+}
+
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ genre?: string }>;
+}) {
+  const resolvedSearchParams = (await searchParams) ?? {};
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const rankingWeek = getRankingWeekReference(nowBRT);
   const prevWeekDate = new Date(getPreviousClosedWeekDate(nowBRT).getTime() - 7 * 24 * 60 * 60 * 1000);
   const prevWeekIndex = buildWeekIndexFromDate(prevWeekDate);
+  const selectedGenre = GENRES.find((g) => g.slug === resolvedSearchParams.genre) ?? null;
 
-  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex);
+  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex, selectedGenre);
 }
 
 type ArtistWeekRow = {
@@ -55,7 +81,12 @@ function normalizeArtistName(raw: string): string {
   return raw.trim().replace(/\s+/g, " ");
 }
 
-async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex: number) {
+async function loadPageData(
+  weekIndex: number,
+  weekLabel: string,
+  prevWeekIndex: number,
+  selectedGenre: (typeof GENRES)[number] | null,
+) {
   const session = await getServerSession(authOptions);
   const [curatorCharts, followRows, weeklyEntries, previousEntries] = await Promise.all([
     prisma.chart.findMany({
@@ -89,6 +120,7 @@ async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex:
     prisma.chartEntry.findMany({
       where: { chart: { weekIndex, isPublished: true } },
       select: {
+        position: true,
         chartId: true,
         chart: {
           select: { userId: true },
@@ -99,7 +131,7 @@ async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex:
             artist: true,
             spotifyId: true,
             artistSpotifyId: true,
-            artistRef: { select: { name: true, spotifyId: true } },
+            artistRef: { select: { name: true, spotifyId: true, genres: true } },
           },
         },
       },
@@ -117,7 +149,7 @@ async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex:
             artist: true,
             spotifyId: true,
             artistSpotifyId: true,
-            artistRef: { select: { name: true, spotifyId: true } },
+            artistRef: { select: { name: true, spotifyId: true, genres: true } },
           },
         },
       },
@@ -217,6 +249,53 @@ async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex:
     return { title: row.title, artist: row.artist, spotifyId: row.spotifyId, artistSpotifyId: row.artistSpotifyId, users: row.users, status, delta };
   });
 
+  const topGenreSongs = selectedGenre
+    ? [...weeklyEntries].reduce<
+        Array<{
+          title: string;
+          artist: string;
+          spotifyId: string | null;
+          points: number;
+          users: Set<string>;
+        }>
+      >((_, __) => [], [])
+    : [];
+
+  if (selectedGenre) {
+    const bySong = new Map<
+      string,
+      {
+        title: string;
+        artist: string;
+        spotifyId: string | null;
+        points: number;
+        users: Set<string>;
+      }
+    >();
+    for (const row of weeklyEntries) {
+      const artistGenres = row.song.artistRef?.genres ?? [];
+      if (!artistMatchesGenre(artistGenres, selectedGenre.tags)) continue;
+      const title = row.song.title.trim();
+      const artist = normalizeArtistName(row.song.artistRef?.name || row.song.artist);
+      const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
+      const current = bySong.get(key) ?? {
+        title,
+        artist,
+        spotifyId: row.song.spotifyId ?? null,
+        points: 0,
+        users: new Set<string>(),
+      };
+      current.points += pointsForPosition(row.position);
+      current.users.add(row.chart.userId);
+      bySong.set(key, current);
+    }
+    topGenreSongs.push(
+      ...[...bySong.values()]
+        .sort((a, b) => b.points - a.points || b.users.size - a.users.size || a.title.localeCompare(b.title, "pt-BR"))
+        .slice(0, 10),
+    );
+  }
+
   return (
     <Shell title="Descobrir" subtitle="Explore músicas, artistas e curadores">
       {/* Curadores em destaque */}
@@ -261,8 +340,9 @@ async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex:
         <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 20 }}>Explorar por gênero</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {GENRES.map((g) => (
-            <div
+            <Link
               key={g.name}
+              href={selectedGenre?.slug === g.slug ? "/discover" : `/discover?genre=${encodeURIComponent(g.slug)}`}
               style={{
                 height: 120,
                 borderRadius: 16,
@@ -272,6 +352,9 @@ async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex:
                 position: "relative",
                 overflow: "hidden",
                 cursor: "pointer",
+                textDecoration: "none",
+                border: selectedGenre?.slug === g.slug ? "2px solid #1D1D1F" : "2px solid transparent",
+                boxShadow: selectedGenre?.slug === g.slug ? "0 0 0 3px rgba(29,29,31,0.12)" : "none",
               }}
             >
               <div style={{ fontSize: 16, fontWeight: 700, position: "relative", zIndex: 1 }}>{g.name}</div>
@@ -282,9 +365,52 @@ async function loadPageData(weekIndex: number, weekLabel: string, prevWeekIndex:
               }}>
                 {g.letter}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
+        {selectedGenre && (
+          <div style={{ marginTop: 22, background: "white", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
+                Top 10 músicas de {selectedGenre.name} ({weekLabel})
+              </h3>
+              <Link href="/discover" style={{ fontSize: 12, color: "#86868B", textDecoration: "none", fontWeight: 600 }}>
+                Limpar filtro
+              </Link>
+            </div>
+            {topGenreSongs.length === 0 ? (
+              <div style={{ fontSize: 13, color: "#86868B" }}>
+                Ainda não há músicas com artistas desse gênero nas paradas da semana.
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 8 }}>
+                {topGenreSongs.map((song, idx) => (
+                  <Link
+                    key={`${song.title}-${song.artist}-${idx}`}
+                    href={buildSongPath({ title: song.title, artist: song.artist, spotifyId: song.spotifyId })}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "32px 1fr auto",
+                      alignItems: "center",
+                      gap: 10,
+                      background: "#F8F8FA",
+                      borderRadius: 12,
+                      padding: "10px 12px",
+                      textDecoration: "none",
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#86868B" }}>#{idx + 1}</div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1D1D1F" }}>{song.title}</div>
+                      <div style={{ fontSize: 12, color: "#86868B" }}>{song.artist}</div>
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#FA243C" }}>{song.points} pts</div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>
