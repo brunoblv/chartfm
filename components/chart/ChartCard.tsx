@@ -7,7 +7,6 @@ import { Cover } from "@/components/ui/Cover";
 
 import { PositionNumber } from "@/components/ui/PositionNumber";
 import { FollowButton } from "@/components/ui/FollowButton";
-import { formatChartPeriod } from "@/lib/chart-week";
 import type { UserWithCharts, Chart } from "@/lib/types";
 
 interface ChartCardProps {
@@ -17,13 +16,24 @@ interface ChartCardProps {
   highlightTop?: number;
   isFollowing?: boolean;
   showFollowActions?: boolean;
-  personalNumberOnes?: Record<string, number>;
-  globalNumberOnes?: Record<string, number>;
 }
 
-export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true, personalNumberOnes, globalNumberOnes }: ChartCardProps) {
+function formatCardPeriod(weekLabel: string, dateRange: string): string {
+  const weekMatch = weekLabel.match(/Semana\s+(\d+)/i);
+  const yearMatch = weekLabel.match(/(\d{4})/);
+  const week = weekMatch?.[1] ?? "";
+  const year = yearMatch?.[1] ?? "";
+  const range = dateRange.trim();
+  if (week && year && range) return `Semana ${week}, ${range}, ${year}`;
+  if (week && range) return `Semana ${week}, ${range}`;
+  if (range) return range;
+  return weekLabel;
+}
+
+export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true }: ChartCardProps) {
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
+  const formattedPeriod = formatCardPeriod(chart.weekLabel, chart.dateRange);
 
   return (
     <article style={{
@@ -63,7 +73,7 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
           Top {chart.entries.length}
         </div>
         <div style={{ padding: "4px 24px 16px 24px", fontSize: 13, color: "#86868B", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span>{formatChartPeriod(chart)}</span>
+          <span>{formattedPeriod}</span>
         </div>
       </Link>
 
@@ -94,26 +104,6 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
                 {entry.song.artist}
               </div>
             </div>
-            {(personalNumberOnes || globalNumberOnes) && (() => {
-              const key = `${entry.song.title}\0${entry.song.artist}`;
-              const personal = personalNumberOnes?.[key] ?? 0;
-              const global = globalNumberOnes?.[key] ?? 0;
-              if (personal === 0 && global === 0) return null;
-              return (
-                <div style={{ textAlign: "right", lineHeight: 1.4, flexShrink: 0 }}>
-                  {personal > 0 && (
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#FFD700" }}>
-                      {personal}× pessoal
-                    </div>
-                  )}
-                  {global > 0 && (
-                    <div style={{ fontSize: 11, color: "#86868B" }}>
-                      {global}× global
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
           </Link>
         ))}
         {remaining > 0 && (

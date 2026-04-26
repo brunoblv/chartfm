@@ -3,43 +3,91 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { buildPublicProfilePayload } from "@/lib/map-db-profile";
-import { searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 
 export async function GET(_req: NextRequest, context: { params: Promise<{ handle: string }> }) {
+  const url = new URL(_req.url);
   const { handle: raw } = await context.params;
   const handle = decodeURIComponent(raw ?? "").trim();
   if (!handle) {
     return NextResponse.json({ error: "invalid_handle" }, { status: 400 });
   }
+  const mode = url.searchParams.get("mode") === "full" ? "full" : "summary";
+  const pageRaw = Number(url.searchParams.get("page") ?? "1");
+  const perPageRaw = Number(url.searchParams.get("perPage") ?? "6");
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
+  const perPage = Number.isFinite(perPageRaw) && perPageRaw > 0 ? Math.min(50, Math.floor(perPageRaw)) : 6;
 
-  const [session, dbUser] = await Promise.all([
+  const [session, dbUserBase] = await Promise.all([
     getServerSession(authOptions),
     prisma.user.findUnique({
       where: { handle },
-      include: {
-        charts: {
-          orderBy: { weekIndex: "desc" },
-          include: {
-            entries: {
-              orderBy: { position: "asc" },
-              include: { song: true },
+      select: {
+        id: true,
+        handle: true,
+        name: true,
+        avatarColor: true,
+        bio: true,
+        followers: true,
+        following: true,
+        streak: true,
+        verified: true,
+        image: true,
+        paradaNome: true,
+        genres: true,
+      },
+    }),
+  ]);
+
+  if (!dbUserBase) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  const [totalCharts, charts] = await Promise.all([
+    prisma.chart.count({ where: { userId: dbUserBase.id } }),
+    prisma.chart.findMany({
+      where: { userId: dbUserBase.id },
+      orderBy: { weekIndex: "desc" },
+      ...(mode === "summary" ? { skip: (page - 1) * perPage, take: perPage } : {}),
+      select: {
+        id: true,
+        weekIndex: true,
+        weekLabel: true,
+        dateRange: true,
+        likes: true,
+        comments: true,
+        reposts: true,
+        entries: {
+          orderBy: { position: "asc" },
+          select: {
+            songId: true,
+            position: true,
+            status: true,
+            delta: true,
+            prevPos: true,
+            peak: true,
+            weeks: true,
+            coverPaletteA: true,
+            coverPaletteB: true,
+            coverSeed: true,
+            song: {
+              select: {
+                title: true,
+                artist: true,
+                album: true,
+              },
             },
           },
         },
       },
     }),
   ]);
-
-  if (!dbUser) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
-  }
+  const dbUser = { ...dbUserBase, charts };
 
   let isFollowing = false;
-  if (session?.user?.id && session.user.id !== dbUser.id) {
+  if (session?.user?.id && session.user.id !== dbUserBase.id) {
     const follow = await prisma.userFollow.findUnique({
-      where: { followerId_followingId: { followerId: session.user.id, followingId: dbUser.id } },
+      where: { followerId_followingId: { followerId: session.user.id, followingId: dbUserBase.id } },
       select: { id: true },
     });
     isFollowing = Boolean(follow);
@@ -54,61 +102,36 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     : [];
   const artistImages: Record<string, string | null> = Object.fromEntries(artistRows.map((a) => [a.name, a.imageUrl]));
 
-  if (spotifyConfigured()) {
-    const missing = artistNames.filter((n) => !artistImages[n]);
-    const CHUNK = 8;
-    for (let i = 0; i < missing.length; i += CHUNK) {
-      await Promise.all(
-        missing.slice(i, i + CHUNK).map(async (name) => {
-          const result = await searchSpotifyArtist(name);
-          artistImages[name] = result?.imageUrl ?? null;
-          if (result) {
-            await prisma.artist.upsert({
-              where: { spotifyId: result.spotifyId },
-              create: {
-                spotifyId: result.spotifyId,
-                name: result.name,
-                imageUrl: result.imageUrl,
-                spotifyUrl: result.spotifyUrl,
-              },
-              update: {
-                name: result.name,
-                spotifyUrl: result.spotifyUrl ?? undefined,
-                ...(result.imageUrl ? { imageUrl: result.imageUrl } : {}),
-              },
-            });
-          }
-        })
-      );
+  const songIds = [...new Set(dbUser.charts.flatMap((c) => c.entries.map((e) => e.songId)))];
+  const songKeyById = new Map<string, string>();
+  for (const chart of dbUser.charts) {
+    for (const entry of chart.entries) {
+      songKeyById.set(entry.songId, `${entry.song.title}\0${entry.song.artist}`);
     }
   }
 
-  const songTitlesAndArtists = [
-    ...new Set(dbUser.charts.flatMap((c) => c.entries.map((e) => `${e.song.title}\0${e.song.artist}`))),
-  ];
-
   let globalNumberOnes: Record<string, number> = {};
-  if (songTitlesAndArtists.length > 0) {
+  if (songIds.length > 0) {
     const ones = await prisma.chartEntry.findMany({
       where: {
         position: 1,
-        song: {
-          OR: songTitlesAndArtists.map((key) => {
-            const sep = key.indexOf("\0");
-            return { title: key.slice(0, sep), artist: key.slice(sep + 1) };
-          }),
-        },
+        songId: { in: songIds },
       },
-      select: { song: { select: { title: true, artist: true } } },
+      select: { songId: true },
     });
     for (const entry of ones) {
-      const key = `${entry.song.title}\0${entry.song.artist}`;
+      const key = songKeyById.get(entry.songId);
+      if (!key) continue;
       globalNumberOnes[key] = (globalNumberOnes[key] ?? 0) + 1;
     }
   }
 
   return NextResponse.json({
     ...buildPublicProfilePayload(dbUser, isFollowing),
+    mode,
+    page,
+    perPage,
+    totalCharts,
     artistImages,
     globalNumberOnes,
   });

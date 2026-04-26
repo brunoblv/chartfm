@@ -22,6 +22,10 @@ type ApiProfile = {
   paradaNome: string | null;
   genres: string[];
   isFollowing: boolean;
+  mode?: "summary" | "full";
+  page?: number;
+  perPage?: number;
+  totalCharts?: number;
   artistImages?: Record<string, string | null>;
   globalNumberOnes?: Record<string, number>;
 };
@@ -194,6 +198,8 @@ export default function ProfilePage() {
   const [phase, setPhase] = useState<"loading" | "ready" | "missing">("loading");
   const [source, setSource] = useState<"db" | "mock" | null>(null);
   const [payload, setPayload] = useState<ApiProfile | null>(null);
+  const [fullPayload, setFullPayload] = useState<ApiProfile | null>(null);
+  const [loadingFullStats, setLoadingFullStats] = useState(false);
   const [mockUser, setMockUser] = useState<UserWithCharts | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [chartPage, setChartPage] = useState(1);
@@ -210,11 +216,12 @@ export default function ProfilePage() {
     setPhase("loading");
     (async () => {
       try {
-        const res = await fetch(`/api/profile/${encodeURIComponent(handle)}`);
+        const res = await fetch(`/api/profile/${encodeURIComponent(handle)}?mode=summary&page=1&perPage=${CHARTS_PER_PAGE}`);
         if (cancelled) return;
         if (res.ok) {
           const data = (await res.json()) as ApiProfile;
           setPayload(data);
+          setFullPayload(null);
           setMockUser(null);
           setSource("db");
           setPhase("ready");
@@ -236,36 +243,66 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [handle]);
+  }, [handle, CHARTS_PER_PAGE]);
+
+  useEffect(() => {
+    if (!handle || source !== "db" || chartPage === 1) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/profile/${encodeURIComponent(handle)}?mode=summary&page=${chartPage}&perPage=${CHARTS_PER_PAGE}`
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as ApiProfile;
+        if (cancelled) return;
+        setPayload(data);
+      } catch {
+        // mantém a página atual em caso de erro de rede
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [chartPage, handle, source, CHARTS_PER_PAGE]);
+
+  useEffect(() => {
+    if (!handle || source !== "db") return;
+    if (tab === "charts") return;
+    if (fullPayload) return;
+    let cancelled = false;
+    setLoadingFullStats(true);
+    (async () => {
+      try {
+        const res = await fetch(`/api/profile/${encodeURIComponent(handle)}?mode=full`);
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as ApiProfile;
+        if (cancelled) return;
+        setFullPayload(data);
+      } finally {
+        if (!cancelled) setLoadingFullStats(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, handle, source, fullPayload]);
 
   const user = payload?.user ?? mockUser;
+  const statsUser = source === "db" ? (fullPayload?.user ?? null) : user;
   const imageUrl = payload?.imageUrl ?? null;
   const paradaNome = payload?.paradaNome ?? null;
   const genres = payload?.genres ?? [];
-  const artistImages = payload?.artistImages ?? {};
-  const globalNumberOnes = payload?.globalNumberOnes ?? {};
+  const artistImages = (fullPayload?.artistImages ?? payload?.artistImages) ?? {};
   const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
 
-  const topArtists = useMemo(() => (user ? buildTopArtists(user) : []), [user]);
-  const personalNumberOnes = useMemo(() => {
-    const map: Record<string, number> = {};
-    if (!user) return map;
-    for (const c of user.charts) {
-      for (const e of c.entries) {
-        if (e.position === 1) {
-          const key = `${e.song.title}\0${e.song.artist}`;
-          map[key] = (map[key] ?? 0) + 1;
-        }
-      }
-    }
-    return map;
-  }, [user]);
-  const numberOnes = useMemo(() => (user ? countDistinctNumberOnes(user.charts) : 0), [user]);
-  const achievements = useMemo(() => (user ? buildAchievements(user, numberOnes) : []), [user, numberOnes]);
-  const years = useMemo(() => user ? [...new Set(user.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a) : [], [user]);
+  const topArtists = useMemo(() => (statsUser ? buildTopArtists(statsUser) : []), [statsUser]);
+  const numberOnes = useMemo(() => (statsUser ? countDistinctNumberOnes(statsUser.charts) : 0), [statsUser]);
+  const achievements = useMemo(() => (statsUser ? buildAchievements(statsUser, numberOnes) : []), [statsUser, numberOnes]);
+  const years = useMemo(() => statsUser ? [...new Set(statsUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a) : [], [statsUser]);
   const activeYear = selectedYear ?? years[0] ?? null;
-  const chartsSortedAsc = useMemo(() => user ? [...user.charts].sort((a, b) => a.week - b.week) : [], [user]);
+  const chartsSortedAsc = useMemo(() => statsUser ? [...statsUser.charts].sort((a, b) => a.week - b.week) : [], [statsUser]);
   const latestWeek = chartsSortedAsc[chartsSortedAsc.length - 1]?.week ?? null;
   const overallArtistsRows = useMemo(() => {
     if (!latestWeek) return [];
@@ -313,8 +350,9 @@ export default function ProfilePage() {
     );
   }
 
-  const hasCharts = user.charts.length > 0;
-  const totalRankedSlots = user.charts.reduce((acc, c) => acc + c.entries.length, 0);
+  const hasCharts = (payload?.totalCharts ?? user.charts.length) > 0;
+  const totalCharts = payload?.totalCharts ?? user.charts.length;
+  const totalRankedSlots = statsUser ? statsUser.charts.reduce((acc, c) => acc + c.entries.length, 0) : 0;
 
   return (
     <Shell title="" noPadding>
@@ -473,8 +511,8 @@ export default function ProfilePage() {
             marginBottom: 28,
           }}
         >
-          {[
-            { label: "Paradas publicadas", value: user.charts.length, icon: null },
+            {[
+            { label: "Paradas publicadas", value: totalCharts, icon: null },
             { label: "#1 pessoais", value: numberOnes, icon: <Trophy size={16} color="#FFD700" fill="#FFD700" /> },
             { label: "Músicas rankeadas", value: totalRankedSlots, icon: null },
             { label: "Artistas (última parada)", value: topArtists.length, icon: null },
@@ -564,8 +602,8 @@ export default function ProfilePage() {
                 ) : null}
               </div>
             ) : (() => {
-              const totalPages = Math.ceil(user.charts.length / CHARTS_PER_PAGE);
-              const pageCharts = user.charts.slice((chartPage - 1) * CHARTS_PER_PAGE, chartPage * CHARTS_PER_PAGE);
+              const totalPages = Math.ceil(totalCharts / CHARTS_PER_PAGE);
+              const pageCharts = user.charts;
               const globalOffset = (chartPage - 1) * CHARTS_PER_PAGE;
               return (
                 <>
@@ -575,10 +613,7 @@ export default function ProfilePage() {
                         key={chart.id}
                         user={user}
                         chart={chart}
-                        postedAgo={globalOffset + i === 0 ? "Mais recente" : chart.weekLabel}
                         showFollowActions={!isOwn}
-                        personalNumberOnes={personalNumberOnes}
-                        globalNumberOnes={globalNumberOnes}
                       />
                     ))}
                   </div>
@@ -587,7 +622,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         disabled={chartPage === 1}
-                        onClick={() => setChartPage((p) => p - 1)}
+                        onClick={() => setChartPage((p) => Math.max(1, p - 1))}
                         style={{
                           padding: "8px 18px",
                           borderRadius: 100,
@@ -607,7 +642,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         disabled={chartPage === totalPages}
-                        onClick={() => setChartPage((p) => p + 1)}
+                        onClick={() => setChartPage((p) => Math.min(totalPages, p + 1))}
                         style={{
                           padding: "8px 18px",
                           borderRadius: 100,
@@ -631,6 +666,9 @@ export default function ProfilePage() {
 
         {(tab === "artists_overall" || tab === "artists_year") && hasCharts && (
           <>
+            {source === "db" && !fullPayload && loadingFullStats && (
+              <div style={{ marginBottom: 14, color: "#86868B", fontSize: 14 }}>Carregando estatísticas completas…</div>
+            )}
             {tab === "artists_year" && years.length > 0 && (
               <div style={{ marginBottom: 14 }}>
                 <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
@@ -646,6 +684,9 @@ export default function ProfilePage() {
         )}
         {(tab === "songs_overall" || tab === "songs_year") && hasCharts && (
           <>
+            {source === "db" && !fullPayload && loadingFullStats && (
+              <div style={{ marginBottom: 14, color: "#86868B", fontSize: 14 }}>Carregando estatísticas completas…</div>
+            )}
             {tab === "songs_year" && years.length > 0 && (
               <div style={{ marginBottom: 14 }}>
                 <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
