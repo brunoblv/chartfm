@@ -83,8 +83,33 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     }
   }
 
+  const songTitlesAndArtists = [
+    ...new Set(dbUser.charts.flatMap((c) => c.entries.map((e) => `${e.song.title}\0${e.song.artist}`))),
+  ];
+
+  let globalNumberOnes: Record<string, number> = {};
+  if (songTitlesAndArtists.length > 0) {
+    const ones = await prisma.chartEntry.findMany({
+      where: {
+        position: 1,
+        song: {
+          OR: songTitlesAndArtists.map((key) => {
+            const sep = key.indexOf("\0");
+            return { title: key.slice(0, sep), artist: key.slice(sep + 1) };
+          }),
+        },
+      },
+      select: { song: { select: { title: true, artist: true } } },
+    });
+    for (const entry of ones) {
+      const key = `${entry.song.title}\0${entry.song.artist}`;
+      globalNumberOnes[key] = (globalNumberOnes[key] ?? 0) + 1;
+    }
+  }
+
   return NextResponse.json({
     ...buildPublicProfilePayload(dbUser, isFollowing),
     artistImages,
+    globalNumberOnes,
   });
 }

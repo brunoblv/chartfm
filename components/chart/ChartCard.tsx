@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MessageCircle, Repeat2, Share, MoreHorizontal, BadgeCheck } from "lucide-react";
+import { Heart, MessageCircle, Repeat2, Share, BadgeCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 
@@ -16,11 +16,12 @@ interface ChartCardProps {
   postedAgo?: string;
   highlightTop?: number;
   isFollowing?: boolean;
-  /** Quando false, oculta seguir / menu (ex.: próprio perfil) */
   showFollowActions?: boolean;
+  personalNumberOnes?: Record<string, number>;
+  globalNumberOnes?: Record<string, number>;
 }
 
-export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true }: ChartCardProps) {
+export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowing, showFollowActions = true, personalNumberOnes, globalNumberOnes }: ChartCardProps) {
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
 
@@ -52,12 +53,7 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
           </div>
         </div>
         {showFollowActions && (
-          <>
-            <FollowButton targetId={user.id} initialFollowing={isFollowing} />
-            <button style={{ background: "none", border: "none", color: "#86868B", padding: 6 }}>
-              <MoreHorizontal size={20} />
-            </button>
-          </>
+          <FollowButton targetId={user.id} initialFollowing={isFollowing} />
         )}
       </header>
 
@@ -98,7 +94,26 @@ export function ChartCard({ user, chart, postedAgo, highlightTop = 5, isFollowin
                 {entry.song.artist}
               </div>
             </div>
-
+            {(personalNumberOnes || globalNumberOnes) && (() => {
+              const key = `${entry.song.title}\0${entry.song.artist}`;
+              const personal = personalNumberOnes?.[key] ?? 0;
+              const global = globalNumberOnes?.[key] ?? 0;
+              if (personal === 0 && global === 0) return null;
+              return (
+                <div style={{ textAlign: "right", lineHeight: 1.4, flexShrink: 0 }}>
+                  {personal > 0 && (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#FFD700" }}>
+                      {personal}× pessoal
+                    </div>
+                  )}
+                  {global > 0 && (
+                    <div style={{ fontSize: 11, color: "#86868B" }}>
+                      {global}× global
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </Link>
         ))}
         {remaining > 0 && (

@@ -23,6 +23,7 @@ type ApiProfile = {
   genres: string[];
   isFollowing: boolean;
   artistImages?: Record<string, string | null>;
+  globalNumberOnes?: Record<string, number>;
 };
 
 function countDistinctNumberOnes(charts: Chart[]) {
@@ -196,7 +197,9 @@ export default function ProfilePage() {
   const [mockUser, setMockUser] = useState<UserWithCharts | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [chartPage, setChartPage] = useState(1);
+  const [statsPage, setStatsPage] = useState(1);
   const CHARTS_PER_PAGE = 6;
+  const STATS_PER_PAGE = 100;
 
   useEffect(() => {
     if (!handle) {
@@ -240,10 +243,24 @@ export default function ProfilePage() {
   const paradaNome = payload?.paradaNome ?? null;
   const genres = payload?.genres ?? [];
   const artistImages = payload?.artistImages ?? {};
+  const globalNumberOnes = payload?.globalNumberOnes ?? {};
   const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
 
   const topArtists = useMemo(() => (user ? buildTopArtists(user) : []), [user]);
+  const personalNumberOnes = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!user) return map;
+    for (const c of user.charts) {
+      for (const e of c.entries) {
+        if (e.position === 1) {
+          const key = `${e.song.title}\0${e.song.artist}`;
+          map[key] = (map[key] ?? 0) + 1;
+        }
+      }
+    }
+    return map;
+  }, [user]);
   const numberOnes = useMemo(() => (user ? countDistinctNumberOnes(user.charts) : 0), [user]);
   const achievements = useMemo(() => (user ? buildAchievements(user, numberOnes) : []), [user, numberOnes]);
   const years = useMemo(() => user ? [...new Set(user.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a) : [], [user]);
@@ -515,7 +532,7 @@ export default function ProfilePage() {
               key={t}
               type="button"
               disabled={!hasCharts && t !== "charts"}
-              onClick={() => { setTab(t); setChartPage(1); }}
+              onClick={() => { setTab(t); setChartPage(1); setStatsPage(1); }}
               style={{
                 padding: "12px 4px",
                 marginRight: 18,
@@ -560,6 +577,8 @@ export default function ProfilePage() {
                         chart={chart}
                         postedAgo={globalOffset + i === 0 ? "Mais recente" : chart.weekLabel}
                         showFollowActions={!isOwn}
+                        personalNumberOnes={personalNumberOnes}
+                        globalNumberOnes={globalNumberOnes}
                       />
                     ))}
                   </div>
@@ -614,32 +633,60 @@ export default function ProfilePage() {
           <>
             {tab === "artists_year" && years.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <select value={activeYear ?? ""} onChange={(e) => setSelectedYear(Number(e.target.value))} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
+                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
                   {years.map((y) => (
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
               </div>
             )}
-            <ArtistStatsTable rows={tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows} artistImages={artistImages} />
+            <ArtistStatsTable rows={(tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} artistImages={artistImages} />
+            <StatsPagination page={statsPage} total={(tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows).length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
         {(tab === "songs_overall" || tab === "songs_year") && hasCharts && (
           <>
             {tab === "songs_year" && years.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <select value={activeYear ?? ""} onChange={(e) => setSelectedYear(Number(e.target.value))} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
+                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
                   {years.map((y) => (
                     <option key={y} value={y}>{y}</option>
                   ))}
                 </select>
               </div>
             )}
-            <SongStatsTable rows={tab === "songs_overall" ? overallSongsRows : yearlySongsRows} />
+            <SongStatsTable rows={(tab === "songs_overall" ? overallSongsRows : yearlySongsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} />
+            <StatsPagination page={statsPage} total={(tab === "songs_overall" ? overallSongsRows : yearlySongsRows).length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
       </div>
     </Shell>
+  );
+}
+
+function StatsPagination({ page, total, perPage, onChange }: { page: number; total: number; perPage: number; onChange: (p: number) => void }) {
+  const totalPages = Math.ceil(total / perPage);
+  if (totalPages <= 1) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 20 }}>
+      <button
+        type="button"
+        disabled={page === 1}
+        onClick={() => onChange(page - 1)}
+        style={{ padding: "8px 18px", borderRadius: 100, border: "1px solid rgba(0,0,0,0.12)", background: "white", fontSize: 13, fontWeight: 600, cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1 }}
+      >
+        ← Anterior
+      </button>
+      <span style={{ fontSize: 13, color: "#86868B", padding: "0 8px" }}>{page} / {totalPages}</span>
+      <button
+        type="button"
+        disabled={page === totalPages}
+        onClick={() => onChange(page + 1)}
+        style={{ padding: "8px 18px", borderRadius: 100, border: "1px solid rgba(0,0,0,0.12)", background: "white", fontSize: 13, fontWeight: 600, cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.4 : 1 }}
+      >
+        Próxima →
+      </button>
+    </div>
   );
 }
 

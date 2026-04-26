@@ -147,6 +147,8 @@ export type ChartDetailPayload = {
   user: User;
   chart: Chart;
   imageUrl: string | null;
+  personalNumberOnes?: Record<string, number>;
+  globalNumberOnes?: Record<string, number>;
 };
 
 /** Uma parada com autor (para página de detalhe). */

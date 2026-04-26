@@ -5,13 +5,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  ChevronLeft, Heart, Repeat2, Share, Play, Star, MessageCircle, MoreHorizontal,
+  ChevronLeft, Heart, Repeat2, Share, Play, Star, MessageCircle,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
-import { PositionNumber } from "@/components/ui/PositionNumber";
 import { formatChartPeriod } from "@/lib/chart-week";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { TIMELINE, SAMPLE_COMMENTS, USERS_DATA } from "@/lib/data";
@@ -73,6 +72,8 @@ export default function ChartDetailPage() {
   const user = dbPayload?.user ?? mockItem?.user;
   const chart = dbPayload?.chart ?? mockItem?.chart;
   const ownerImageUrl = dbPayload?.imageUrl ?? null;
+  const personalNumberOnes = dbPayload?.personalNumberOnes ?? {};
+  const globalNumberOnes = dbPayload?.globalNumberOnes ?? {};
 
   useEffect(() => {
     if (!user?.handle) return;
@@ -271,7 +272,7 @@ export default function ChartDetailPage() {
       {/* Tab content */}
       {tab === "chart" && (
         <>
-          {variant === "list" && <ClassicList entries={chart.entries} />}
+          {variant === "list" && <ClassicList entries={chart.entries} personalNumberOnes={personalNumberOnes} globalNumberOnes={globalNumberOnes} />}
           {variant === "grid" && <GridVariant entries={chart.entries} />}
           {variant === "podium" && <PodiumVariant entries={chart.entries} />}
         </>
@@ -285,59 +286,67 @@ export default function ChartDetailPage() {
   );
 }
 
-function ClassicList({ entries }: { entries: ChartEntry[] }) {
+function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entries: ChartEntry[]; personalNumberOnes?: Record<string, number>; globalNumberOnes?: Record<string, number> }) {
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      {/* Header */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 80px 60px 40px",
+        gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 80px 60px 90px",
         gap: 0,
         padding: "0 20px",
         background: "rgba(0,0,0,0.02)",
         borderBottom: "1px solid rgba(0,0,0,0.06)",
       }}>
-        {["Pos", "", "Mudança", "Música", "Semana ant.", "Sem.", "Pico", ""].map((h, i) => (
+        {["Pos", "", "Mudança", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B" }}>{h}</div>
         ))}
       </div>
-      {entries.map((e) => (
-        <div
-          key={e.position}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 80px 60px 40px",
-            alignItems: "center",
-            padding: "8px 20px",
-            borderBottom: "1px solid rgba(0,0,0,0.04)",
-            gap: 0,
-          }}
-        >
-          <div style={{ fontSize: e.position <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12 }}>
-            {e.position}
+      {entries.map((e) => {
+        const key = `${e.song.title}\0${e.song.artist}`;
+        const personal = personalNumberOnes?.[key] ?? 0;
+        const global = globalNumberOnes?.[key] ?? 0;
+        return (
+          <div
+            key={e.position}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 80px 60px 90px",
+              alignItems: "center",
+              padding: "8px 20px",
+              borderBottom: "1px solid rgba(0,0,0,0.04)",
+              gap: 0,
+            }}
+          >
+            <div style={{ fontSize: e.position <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12 }}>
+              {e.position}
+            </div>
+            <div style={{ padding: "4px 8px 4px 0" }}>
+              <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
+            </div>
+            <div style={{ padding: "0 8px" }}><MovementBadge status={e.status} delta={e.delta} /></div>
+            <div style={{ minWidth: 0, padding: "0 12px" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
+              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.artist}</div>
+              <div style={{ fontSize: 11, color: "#86868B" }}>{e.song.album}</div>
+            </div>
+            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+              {e.prevPos ?? "—"}
+            </div>
+            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{e.weeks}</div>
+            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3 }}>
+              {e.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
+              {e.peak}
+            </div>
+            <div style={{ padding: "0 8px" }}>
+              {personal > 0 ? (
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#000000", fontVariantNumeric: "tabular-nums" }}>{personal}x</div>
+              ) : (
+                <div style={{ fontSize: 13, color: "rgba(0,0,0,0.2)" }}>—</div>
+              )}
+            </div>
           </div>
-          <div style={{ padding: "4px 8px 4px 0" }}>
-            <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
-          </div>
-          <div style={{ padding: "0 8px" }}><MovementBadge status={e.status} delta={e.delta} /></div>
-          <div style={{ minWidth: 0, padding: "0 12px" }}>
-            <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-            <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.artist}</div>
-            <div style={{ fontSize: 11, color: "#86868B" }}>{e.song.album}</div>
-          </div>
-          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-            {e.prevPos ?? "—"}
-          </div>
-          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{e.weeks}</div>
-          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3 }}>
-            {e.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
-            {e.peak}
-          </div>
-          <button style={{ background: "none", border: "none", color: "#86868B", cursor: "pointer" }}>
-            <MoreHorizontal size={16} />
-          </button>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -378,7 +387,7 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
   return (
     <>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 16, padding: "40px 0 60px 0" }}>
-        {podiumOrder.map((e, i) => (
+        {podiumOrder.map((e) => (
           <div key={e.position} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
             <div style={{ position: "relative" }}>
               <Cover cover={e.cover} song={e.song} size={160} rounded={16} style={{ boxShadow: "0 12px 30px rgba(0,0,0,0.18)" }} />

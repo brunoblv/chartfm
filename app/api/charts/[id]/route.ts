@@ -40,20 +40,35 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   }
 
   const currentSongIds = [...new Set(row.entries.map((e) => e.songId))];
-  const history = await prisma.chartEntry.findMany({
-    where: {
-      songId: { in: currentSongIds },
-      chart: {
-        userId: row.userId,
-        weekIndex: { lte: row.weekIndex },
+  const songIdToKey = new Map(row.entries.map((e) => [e.songId, `${e.song.title}\0${e.song.artist}`]));
+
+  const [history, globalOnes] = await Promise.all([
+    prisma.chartEntry.findMany({
+      where: {
+        songId: { in: currentSongIds },
+        chart: { userId: row.userId, weekIndex: { lte: row.weekIndex } },
       },
-    },
-    select: {
-      songId: true,
-      position: true,
-      chart: { select: { weekIndex: true } },
-    },
-  });
+      select: { songId: true, position: true, chart: { select: { weekIndex: true } } },
+    }),
+    prisma.chartEntry.findMany({
+      where: { position: 1, songId: { in: currentSongIds } },
+      select: { songId: true },
+    }),
+  ]);
+
+  const personalNumberOnes: Record<string, number> = {};
+  for (const h of history) {
+    if (h.position === 1) {
+      const key = songIdToKey.get(h.songId);
+      if (key) personalNumberOnes[key] = (personalNumberOnes[key] ?? 0) + 1;
+    }
+  }
+
+  const globalNumberOnes: Record<string, number> = {};
+  for (const g of globalOnes) {
+    const key = songIdToKey.get(g.songId);
+    if (key) globalNumberOnes[key] = (globalNumberOnes[key] ?? 0) + 1;
+  }
 
   const bySong = new Map<string, { weekIndex: number; position: number }[]>();
   for (const h of history) {
@@ -88,10 +103,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     };
   });
 
-  return NextResponse.json(
-    mapPrismaChartDetail({
-      ...row,
-      entries: entriesWithComputedStats,
-    })
-  );
+  return NextResponse.json({
+    ...mapPrismaChartDetail({ ...row, entries: entriesWithComputedStats }),
+    personalNumberOnes,
+    globalNumberOnes,
+  });
 }
