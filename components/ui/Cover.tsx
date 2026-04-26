@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Cover as CoverType, Song } from "@/lib/types";
 
-type SongRef = Pick<Song, "title" | "artist" | "imageUrl">;
+type SongRef = Pick<Song, "title" | "artist" | "imageUrl" | "album" | "spotifyId">;
 
 interface CoverProps {
   cover: CoverType;
