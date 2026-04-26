@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
@@ -24,6 +25,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const authed = status === "authenticated" && !!session?.user?.handle;
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const profileHandle = authed ? session!.user.handle! : null;
   const profilePath = profileHandle ? `/profile/${profileHandle}` : "/login";
   const profileActive =
@@ -39,6 +41,30 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
   const handleNavClick = () => {
     if (isMobile && onClose) onClose();
   };
+
+  useEffect(() => {
+    if (!authed) {
+      setUnreadNotifications(0);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/notifications", { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const rows = (await res.json()) as Array<{ read: boolean }>;
+        if (!cancelled) {
+          setUnreadNotifications(rows.filter((r) => !r.read).length);
+        }
+      } catch {
+        if (!cancelled) setUnreadNotifications(0);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authed, pathname]);
 
   if (isMobile) {
     return (
@@ -85,6 +111,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
             pathname={pathname}
             profilePath={profilePath}
             profileActive={profileActive}
+            unreadNotifications={unreadNotifications}
             displayName={displayName}
             displayStreak={displayStreak}
             avatarUser={avatarUser}
@@ -126,6 +153,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
         pathname={pathname}
         profilePath={profilePath}
         profileActive={profileActive}
+        unreadNotifications={unreadNotifications}
         displayName={displayName}
         displayStreak={displayStreak}
         avatarUser={avatarUser}
@@ -141,6 +169,7 @@ function SidebarContent({
   pathname,
   profilePath,
   profileActive,
+  unreadNotifications,
   displayName,
   displayStreak,
   avatarUser,
@@ -151,6 +180,7 @@ function SidebarContent({
   pathname: string;
   profilePath: string;
   profileActive: boolean;
+  unreadNotifications: number;
   displayName: string;
   displayStreak: number;
   avatarUser: { name: string; avatar: string };
@@ -163,6 +193,8 @@ function SidebarContent({
       {NAV.map(({ href, label, icon: Icon, requiresAuth }) => {
         const active = pathname === href;
         const locked = requiresAuth && !authed;
+        const isNotifications = href === "/notifications";
+        const showUnreadBadge = isNotifications && authed && unreadNotifications > 0;
         return (
           <Link
             key={href}
@@ -183,8 +215,45 @@ function SidebarContent({
               transition: "background 120ms",
             }}
           >
-            <Icon size={20} />
-            {label}
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <Icon size={20} />
+              {showUnreadBadge && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -6,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "#FA243C",
+                    boxShadow: "0 0 0 2px #F5F5F7",
+                  }}
+                />
+              )}
+            </div>
+            <span>{label}</span>
+            {showUnreadBadge && (
+              <span
+                style={{
+                  marginLeft: "auto",
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 999,
+                  padding: "0 6px",
+                  background: "#FA243C",
+                  color: "white",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1,
+                }}
+              >
+                {unreadNotifications > 99 ? "99+" : unreadNotifications}
+              </span>
+            )}
           </Link>
         );
       })}

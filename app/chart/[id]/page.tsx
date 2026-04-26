@@ -15,7 +15,7 @@ import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
-import { TIMELINE, USERS_DATA } from "@/lib/data";
+import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, TimelineItem, User } from "@/lib/types";
 
 type Variant = "list" | "grid" | "podium";
@@ -34,6 +34,21 @@ export type CommentRow = {
   likes: number;
   reactions: string[];
   createdAt: string;
+  user: {
+    id: string;
+    handle: string;
+    name: string;
+    avatarColor: string;
+    image: string | null;
+  };
+};
+
+type OverlapRow = {
+  userId: string;
+  chartId: string;
+  overlapPercent: number;
+  commonSongs: number;
+  totalSongs: number;
   user: {
     id: string;
     handle: string;
@@ -375,7 +390,7 @@ export default function ChartDetailPage() {
           onCommentAdded={() => setCommentCount((c) => c + 1)}
         />
       )}
-      {tab === "overlap" && <OverlapTab />}
+      {tab === "overlap" && <OverlapTab chartId={chart.id} isDbChart={isDbChart} />}
       </div>
     </Shell>
   );
@@ -635,26 +650,71 @@ function CommentsTab({
   );
 }
 
-function OverlapTab() {
+function OverlapTab({ chartId, isDbChart }: { chartId: string; isDbChart: boolean }) {
+  const [rows, setRows] = useState<OverlapRow[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isDbChart) return;
+    setLoading(true);
+    fetch(`/api/charts/${chartId}/overlap`)
+      .then((r) => r.json())
+      .then((data: OverlapRow[]) => {
+        setRows(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [chartId, isDbChart]);
+
+  if (!isDbChart) {
+    return (
+      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24, color: "#86868B", fontSize: 14 }}>
+        Recurso disponível apenas para paradas salvas no banco.
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24, color: "#86868B", fontSize: 14 }}>
+        Calculando afinidade da semana...
+      </div>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24, color: "#86868B", fontSize: 14 }}>
+        Nenhuma afinidade encontrada nesta semana.
+      </div>
+    );
+  }
+
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      {USERS_DATA.slice(1, 6).map((u, i) => {
-        const overlap = [78, 65, 54, 42, 30][i];
+      {rows.map((row, i) => {
         return (
-          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
-            <Avatar user={u} size={40} />
+          <div key={row.userId} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderBottom: i < rows.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none" }}>
+            <Link href={`/profile/${row.user.handle}`} style={{ textDecoration: "none" }}>
+              <Avatar user={{ name: row.user.name, avatar: row.user.avatarColor }} imageUrl={row.user.image} size={40} />
+            </Link>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{u.name}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#FA243C" }}>{overlap}%</span>
+                <Link href={`/profile/${row.user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "#1D1D1F", textDecoration: "none" }}>
+                  {row.user.name}
+                </Link>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#FA243C" }}>{row.overlapPercent}%</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#86868B", marginBottom: 7 }}>
+                {row.commonSongs} de {row.totalSongs} músicas em comum nesta semana
               </div>
               <div style={{ height: 6, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                <div style={{ width: `${overlap}%`, height: "100%", background: "linear-gradient(90deg, #FA243C, #FF5858)", borderRadius: 3 }} />
+                <div style={{ width: `${row.overlapPercent}%`, height: "100%", background: "linear-gradient(90deg, #FA243C, #FF5858)", borderRadius: 3 }} />
               </div>
             </div>
-            <button style={{ background: "#1D1D1F", color: "white", border: "none", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+            <Link href={`/chart/${row.chartId}`} style={{ background: "#1D1D1F", color: "white", border: "none", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
               Comparar
-            </button>
+            </Link>
           </div>
         );
       })}

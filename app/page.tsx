@@ -328,7 +328,7 @@ function YourWeekCard({
         </div>
         <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
           {hasSubmitted ? (
-            "Veja sua parada publicada abaixo"
+            "Clique para ver sua parada"
           ) : (
             <>
               {daysLeft === 0 ? "Último dia" : `${daysLeft} dia${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}`}
