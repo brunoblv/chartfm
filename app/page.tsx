@@ -192,8 +192,12 @@ async function getTimelineFeed(
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) return <LandingPage />;
-  if (!session.user?.id) return <LandingPage />;
+  if (!session || !session.user?.id) {
+    const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    const rankingWeek = getRankingWeekReference(nowBRT);
+    const globalChart = await getGlobalTopSongs(rankingWeek.weekIndex, 8);
+    return <LandingPage globalChart={globalChart} />;
+  }
 
   let userStreak = 0;
   let userParadaNome: string | null = null;
@@ -278,7 +282,7 @@ export default async function HomePage() {
   );
 
   return (
-    <Shell title="Início" subtitle="As paradas de quem você segue">
+    <Shell title="Início" subtitle="As paradas de quem você segue, atualizadas em tempo real">
       <HomeGrid feed={feed} sidebar={sidebar} />
     </Shell>
   );
@@ -354,43 +358,38 @@ function YourWeekCard({
 function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: "18px 20px" }}>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Publicaram esta semana</div>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Publicaram hoje</div>
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 12, color: "#86868B" }}>{publishers.length} pessoas</div>
       </div>
-      <div style={{ display: "flex", gap: 18, overflowX: "auto", paddingBottom: 4 }}>
+      <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 4 }}>
         {publishers.map((p) => (
           <Link
             key={p.userId}
             href={`/profile/${p.handle}`}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, textDecoration: "none", color: "inherit", flexShrink: 0 }}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", color: "inherit", flexShrink: 0 }}
           >
             <div style={{ position: "relative" }}>
-              {/* Story-style gradient ring */}
+              <Avatar
+                user={{ name: p.name, avatar: p.avatarColor }}
+                imageUrl={p.image}
+                size={56}
+                ring
+              />
               <div style={{
-                width: 64, height: 64, borderRadius: "50%",
-                background: "linear-gradient(135deg, #FA243C 0%, #FF8C42 100%)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                padding: 2.5,
-                boxSizing: "border-box",
+                position: "absolute", bottom: -2, right: -2,
+                background: "#FA243C", color: "white",
+                fontSize: 10, fontWeight: 700,
+                padding: "2px 6px", borderRadius: 8,
+                border: "2px solid white",
               }}>
-                <div style={{
-                  width: "100%", height: "100%", borderRadius: "50%",
-                  background: "white",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  padding: 2,
-                  boxSizing: "border-box",
-                }}>
-                  <Avatar
-                    user={{ name: p.name, avatar: p.avatarColor }}
-                    imageUrl={p.image}
-                    size={50}
-                  />
-                </div>
+                {p.entryCount}
               </div>
             </div>
             <div style={{
               fontSize: 11, fontWeight: 500,
-              maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis",
+              maxWidth: 70, overflow: "hidden", textOverflow: "ellipsis",
               whiteSpace: "nowrap", textAlign: "center",
             }}>
               {p.name.split(" ")[0]}
@@ -462,12 +461,7 @@ function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
             <div style={{ minWidth: 0, flex: 1 }}>
               <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</div>
-                <div style={{ fontSize: 11, color: "#86868B" }}>@{u.handle}</div>
-                {u.commonGenres > 0 && (
-                  <div style={{ fontSize: 10, color: "#FA243C", fontWeight: 600, marginTop: 2 }}>
-                    {u.commonGenres} gênero{u.commonGenres > 1 ? "s" : ""} em comum
-                  </div>
-                )}
+                <div style={{ fontSize: 11, color: "#86868B" }}>@{u.handle} · {u.followers.toLocaleString("pt-BR")} seguidores</div>
               </Link>
             </div>
             <FollowButton targetId={u.id} initialFollowing={u.isFollowing} variant="dark" />
@@ -524,7 +518,7 @@ async function getSuggestedUsers(userId: string, genres: string[], limit = 3): P
   ];
 }
 
-async function getTrendingArtists(weekIdx: number, limit = 3) {
+async function getTrendingArtists(weekIdx: number, limit = 4) {
   const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
     where: { chart: { weekIndex: weekIdx } },
     select: {
@@ -547,7 +541,7 @@ async function getTrendingArtists(weekIdx: number, limit = 3) {
     },
   });
 
-  return aggregateTopArtists(entries, limit).map(({ name, totalPoints }) => ({ name, totalPoints }));
+  return aggregateTopArtists(entries, limit).map(({ name, totalPoints, chartCount }) => ({ name, totalPoints, chartCount }));
 }
 
 async function getGlobalTopSongs(weekIdx: number, limit = 3) {
@@ -585,7 +579,7 @@ function TrendingArtists({
   artists,
   weekLabel,
 }: {
-  artists: { name: string; totalPoints: number }[];
+  artists: { name: string; totalPoints: number; chartCount: number }[];
   weekLabel: string;
 }) {
   if (artists.length === 0) return null;
@@ -599,7 +593,7 @@ function TrendingArtists({
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {artists.map((a, i) => (
           <Link key={a.name} href={buildArtistPath(a.name)} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#000000", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#86868B", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
             <div style={{
               width: 40, height: 40, borderRadius: "50%",
               background: `linear-gradient(135deg, ${COVER_PALETTES[i * 3][0]}, ${COVER_PALETTES[i * 3][1]})`,
@@ -608,6 +602,7 @@ function TrendingArtists({
             }} />
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
+              <div style={{ fontSize: 11, color: "#86868B" }}>{a.chartCount} paradas · {a.totalPoints}pts</div>
             </div>
           </Link>
         ))}

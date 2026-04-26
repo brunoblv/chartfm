@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { GLOBAL_CHART, USERS_DATA, COVER_PALETTES, COMMUNITIES } from "@/lib/data";
+import { USERS_DATA, COVER_PALETTES, COMMUNITIES } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import type { GlobalChartEntry } from "@/lib/types";
 
 function ChartifyIcon({ size = 18, color = "white" }: { size?: number; color?: string }) {
   return (
@@ -47,7 +48,7 @@ function CheckIcon() {
   );
 }
 
-export function LandingPage() {
+export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }) {
   const isMobile = useIsMobile();
   const [signingIn, setSigningIn] = useState(false);
 
@@ -57,7 +58,7 @@ export function LandingPage() {
   };
 
   const covers = Array.from({ length: 25 }, (_, i) => COVER_PALETTES[i % COVER_PALETTES.length]);
-  const top8 = GLOBAL_CHART.slice(0, 8);
+  const top8 = globalChart.slice(0, 8);
   const previewUser = USERS_DATA[2];
 
   const heroEntries = [
@@ -109,7 +110,7 @@ export function LandingPage() {
               opacity: signingIn ? 0.6 : 1,
             }}
           >
-            {signingIn ? "Entrando…" : "Começar grátis"}
+            {signingIn ? "Entrando…" : "Cadastrar"}
           </button>
         </div>
       </nav>

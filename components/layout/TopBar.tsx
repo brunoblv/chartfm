@@ -5,13 +5,11 @@ import { useSession } from "next-auth/react";
 import { Search, Menu, Plus } from "lucide-react";
 
 interface TopBarProps {
-  title: string;
-  subtitle?: string;
   isMobile?: boolean;
   onMenuToggle?: () => void;
 }
 
-export function TopBar({ title, subtitle, isMobile = false, onMenuToggle }: TopBarProps) {
+export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
   const { status } = useSession();
   const authed = status === "authenticated";
 
@@ -48,24 +46,6 @@ export function TopBar({ title, subtitle, isMobile = false, onMenuToggle }: TopB
         </button>
       )}
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: isMobile ? 16 : 18,
-            fontWeight: 700,
-            letterSpacing: "-0.02em",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {title}
-        </div>
-        {subtitle && !isMobile && (
-          <div style={{ fontSize: 13, color: "#86868B", marginTop: 1 }}>{subtitle}</div>
-        )}
-      </div>
-
       {!isMobile && (
         <div style={{
           display: "flex",
@@ -74,12 +54,13 @@ export function TopBar({ title, subtitle, isMobile = false, onMenuToggle }: TopB
           background: "rgba(120,120,128,0.1)",
           borderRadius: 8,
           padding: "8px 12px",
-          width: 220,
+          flex: 1,
+          maxWidth: 420,
         }}>
           <Search size={14} color="#86868B" />
           <input
             type="text"
-            placeholder="Buscar..."
+            placeholder="Buscar músicas, artistas, usuários"
             style={{
               border: "none",
               background: "transparent",
@@ -91,6 +72,8 @@ export function TopBar({ title, subtitle, isMobile = false, onMenuToggle }: TopB
           />
         </div>
       )}
+
+      <div style={{ flex: 1 }} />
 
       {!authed && !isMobile && (
         <Link
