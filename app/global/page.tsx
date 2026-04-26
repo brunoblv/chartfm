@@ -111,10 +111,10 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
         weekLabel: snapshotRow.weekLabel,
         dateRange: snapshotRow.dateRange,
         payload: {
-          weeklySongs: snapshotRow.weeklySongs as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"],
-          weeklyArtists: snapshotRow.weeklyArtists as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklyArtists"],
-          overallSongs: snapshotRow.overallSongs as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallSongs"],
-          overallArtists: snapshotRow.overallArtists as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallArtists"],
+          weeklySongs: snapshotRow.weeklySongs as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"],
+          weeklyArtists: snapshotRow.weeklyArtists as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklyArtists"],
+          overallSongs: snapshotRow.overallSongs as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallSongs"],
+          overallArtists: snapshotRow.overallArtists as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallArtists"],
         },
       }
     : {
