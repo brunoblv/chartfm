@@ -158,6 +158,7 @@ export default function ChartDetailPage() {
 
   const composeImageUrl = session?.user?.image ?? null;
   const tituloDetalheParada = `${ownerParadaNome ?? "Parada"} · Top ${chart?.entries.length ?? 0}`;
+  const isOwner = !!session?.user?.id && session.user.id === user?.id;
 
   async function toggleLike() {
     if (!id || !isDbChart) return;
@@ -274,6 +275,26 @@ export default function ChartDetailPage() {
                     Próxima parada →
                   </Link>
                 ) : null}
+              </div>
+            )}
+            {isOwner && (
+              <div style={{ marginBottom: 14 }}>
+                <Link
+                  href={`/chart/${chart.id}/edit`}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#1D1D1F",
+                    textDecoration: "none",
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    borderRadius: 10,
+                    padding: "7px 12px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  Editar parada
+                </Link>
               </div>
             )}
 
