@@ -1,13 +1,287 @@
+import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
-import { Cover } from "@/components/ui/Cover";
-import { MovementBadge } from "@/components/ui/MovementBadge";
-import { GLOBAL_CHART, USERS_DATA } from "@/lib/data";
-import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
+import { buildWeekIndexFromDate, getPreviousClosedWeekDate, getRankingWeekReference } from "@/lib/chart-week";
+import { GlobalTabs } from "@/components/global/GlobalTabs";
+import { getSpotifyArtistById, searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
+import {
+  aggregateGlobalSongs,
+  aggregateTopArtists,
+  type WeeklyChartEntryRow,
+} from "@/lib/weekly-chart-aggregate";
 
-export default function GlobalPage() {
-  const now = new Date();
-  const weekNow = buildWeekLabelFromDate(now);
-  const weekRangeNow = buildDateRangeFromDate(now);
+async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntryRow[]> {
+  return prisma.chartEntry.findMany({
+    where: { chart: { weekIndex: weekIdx } },
+    select: {
+      position: true,
+      points: true,
+      chartId: true,
+      coverPaletteA: true,
+      coverPaletteB: true,
+      coverSeed: true,
+      song: {
+        select: {
+          title: true,
+          artist: true,
+          album: true,
+          spotifyId: true,
+          artistSpotifyId: true,
+          artistRef: { select: { spotifyId: true, name: true } },
+        },
+      },
+    },
+  });
+}
+
+async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
+  const rows = await prisma.chartEntry.findMany({
+    where: { chart: { weekIndex: { lte: upToWeekIdx } } },
+    select: {
+      position: true,
+      chart: { select: { weekIndex: true } },
+      song: { select: { spotifyId: true, title: true, artist: true } },
+    },
+  });
+
+  const map = new Map<string, { peak: number; weeks: Set<number> }>();
+  for (const r of rows) {
+    const key = r.song.spotifyId
+      ? `song_spotify:${r.song.spotifyId}`
+      : `song_local:${r.song.title.trim().replace(/\s+/g, " ").toLowerCase()}|${r.song.artist
+          .trim()
+          .replace(/\s+/g, " ")
+          .toLowerCase()}`;
+    const cur = map.get(key) ?? { peak: r.position, weeks: new Set<number>() };
+    cur.peak = Math.min(cur.peak, r.position);
+    cur.weeks.add(r.chart.weekIndex);
+    map.set(key, cur);
+  }
+
+  return new Map(
+    [...map.entries()].map(([k, v]) => [k, { peak: v.peak, weeks: v.weeks.size }])
+  );
+}
+
+async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
+  const rows = await prisma.chartEntry.findMany({
+    where: { chart: { weekIndex: { lte: upToWeekIdx } } },
+    select: {
+      position: true,
+      points: true,
+      chart: { select: { weekIndex: true } },
+      song: {
+        select: {
+          artist: true,
+          artistSpotifyId: true,
+          artistRef: { select: { spotifyId: true } },
+        },
+      },
+    },
+  });
+
+  const weekArtistPoints = new Map<string, Map<number, number>>();
+  for (const r of rows) {
+    const sid = r.song.artistRef?.spotifyId ?? r.song.artistSpotifyId;
+    const key = sid
+      ? `artist_spotify:${sid}`
+      : `artist_name:${r.song.artist.trim().replace(/\s+/g, " ").toLowerCase()}`;
+    const weekMap = weekArtistPoints.get(key) ?? new Map<number, number>();
+    const pts = r.points > 0 ? r.points : 101 - r.position;
+    weekMap.set(r.chart.weekIndex, (weekMap.get(r.chart.weekIndex) ?? 0) + pts);
+    weekArtistPoints.set(key, weekMap);
+  }
+
+  const stats = new Map<string, { peak: number; weeks: number }>();
+  const weeklyRanks = new Map<number, { key: string; pts: number }[]>();
+  for (const [artistKey, wkMap] of weekArtistPoints) {
+    for (const [wk, pts] of wkMap) {
+      const arr = weeklyRanks.get(wk) ?? [];
+      arr.push({ key: artistKey, pts });
+      weeklyRanks.set(wk, arr);
+    }
+  }
+  for (const [wk, arr] of weeklyRanks) {
+    const sorted = arr.sort((a, b) => b.pts - a.pts);
+    for (let i = 0; i < sorted.length; i++) {
+      const a = sorted[i];
+      const cur = stats.get(a.key) ?? { peak: i + 1, weeks: 0 };
+      cur.peak = Math.min(cur.peak, i + 1);
+      cur.weeks += 1;
+      stats.set(a.key, cur);
+    }
+  }
+
+  return stats;
+}
+
+type ArtistImageKey = { name: string; spotifyId: string | null };
+
+function isMissingImageUrl(url: string | null | undefined): boolean {
+  return url === undefined || url === null || url === "";
+}
+
+async function resolveArtistImages(artists: ArtistImageKey[]): Promise<Map<string, string | null>> {
+  const imageMap = new Map<string, string | null>();
+
+  const spotifyIds = [...new Set(artists.map((a) => a.spotifyId).filter((x): x is string => Boolean(x)))];
+  if (spotifyIds.length) {
+    const byId = await prisma.artist.findMany({
+      where: { spotifyId: { in: spotifyIds } },
+      select: { spotifyId: true, imageUrl: true },
+    });
+    const idToUrl = new Map(byId.map((r) => [r.spotifyId, r.imageUrl]));
+    for (const a of artists) {
+      if (!a.spotifyId) continue;
+      const u = idToUrl.get(a.spotifyId);
+      if (!isMissingImageUrl(u ?? undefined)) imageMap.set(a.name, u!);
+    }
+  }
+
+  const names = [...new Set(artists.map((a) => a.name))];
+  const byName = names.length
+    ? await prisma.artist.findMany({
+        where: { name: { in: names } },
+        select: { name: true, imageUrl: true },
+      })
+    : [];
+  const nameToUrl = new Map(byName.map((r) => [r.name, r.imageUrl]));
+
+  for (const a of artists) {
+    if (!isMissingImageUrl(imageMap.get(a.name))) continue;
+    const fromName = nameToUrl.get(a.name);
+    if (!isMissingImageUrl(fromName ?? undefined)) imageMap.set(a.name, fromName!);
+  }
+
+  for (const a of artists) {
+    if (!imageMap.has(a.name)) imageMap.set(a.name, null);
+  }
+
+  if (!spotifyConfigured()) return imageMap;
+
+  const missing = artists.filter((a) => isMissingImageUrl(imageMap.get(a.name)));
+  const CHUNK = 10;
+  for (let i = 0; i < missing.length; i += CHUNK) {
+    await Promise.all(
+      missing.slice(i, i + CHUNK).map(async (a) => {
+        const fromId = a.spotifyId ? await getSpotifyArtistById(a.spotifyId) : null;
+        const result = fromId ?? (await searchSpotifyArtist(a.name));
+        const url = result?.imageUrl ?? null;
+        imageMap.set(a.name, url);
+        if (result) {
+          await prisma.artist.upsert({
+            where: { spotifyId: result.spotifyId },
+            create: {
+              spotifyId: result.spotifyId,
+              name: result.name,
+              imageUrl: result.imageUrl,
+              spotifyUrl: result.spotifyUrl,
+            },
+            update: {
+              name: result.name,
+              spotifyUrl: result.spotifyUrl ?? undefined,
+              ...(result.imageUrl ? { imageUrl: result.imageUrl } : {}),
+            },
+          });
+        }
+      })
+    );
+  }
+  return imageMap;
+}
+
+export default async function GlobalPage() {
+  const rankingWeek = getRankingWeekReference(new Date());
+  const weekNow = rankingWeek.weekLabel;
+  const weekRangeNow = rankingWeek.dateRange;
+  const weekIdx = rankingWeek.weekIndex;
+
+  const prevWeekIdx = buildWeekIndexFromDate(
+    new Date(getPreviousClosedWeekDate(new Date()).getTime() - 7 * 24 * 60 * 60 * 1000)
+  );
+
+  const [weeklyEntries, prevWeekEntries, historicalSongStats, historicalArtistStats] = await Promise.all([
+    loadWeeklyGlobalEntries(weekIdx),
+    loadWeeklyGlobalEntries(prevWeekIdx),
+    loadHistoricalSongStats(weekIdx),
+    loadHistoricalArtistStats(weekIdx),
+  ]);
+  const [overallEntries, prevOverallEntries] = await Promise.all([
+    prisma.chartEntry.findMany({
+      where: { chart: { weekIndex: { lte: weekIdx } } },
+      select: {
+        position: true,
+        points: true,
+        chartId: true,
+        coverPaletteA: true,
+        coverPaletteB: true,
+        coverSeed: true,
+        song: {
+          select: {
+            title: true,
+            artist: true,
+            album: true,
+            spotifyId: true,
+            artistSpotifyId: true,
+            artistRef: { select: { spotifyId: true, name: true } },
+          },
+        },
+      },
+    }),
+    prisma.chartEntry.findMany({
+      where: { chart: { weekIndex: { lte: prevWeekIdx } } },
+      select: {
+        position: true,
+        points: true,
+        chartId: true,
+        coverPaletteA: true,
+        coverPaletteB: true,
+        coverSeed: true,
+        song: {
+          select: {
+            title: true,
+            artist: true,
+            album: true,
+            spotifyId: true,
+            artistSpotifyId: true,
+            artistRef: { select: { spotifyId: true, name: true } },
+          },
+        },
+      },
+    }),
+  ]);
+  const uniqueParadas = new Set(weeklyEntries.map((e) => e.chartId)).size;
+  const globalSongs = aggregateGlobalSongs(weeklyEntries, 100, {
+    previousWeekEntries: prevWeekEntries,
+    historicalStatsBySongKey: historicalSongStats,
+    comparisonEntries: prevWeekEntries,
+  });
+  const overallSongs = aggregateGlobalSongs(overallEntries, 100, {
+    previousWeekEntries: prevOverallEntries,
+    historicalStatsBySongKey: historicalSongStats,
+    comparisonEntries: prevOverallEntries,
+  });
+  const topArtists = aggregateTopArtists(weeklyEntries, 100, {
+    previousWeekEntries: prevWeekEntries,
+    historicalStatsByArtistKey: historicalArtistStats,
+    comparisonEntries: prevWeekEntries,
+  });
+  const topArtistsOverall = aggregateTopArtists(overallEntries, 100, {
+    previousWeekEntries: prevOverallEntries,
+    historicalStatsByArtistKey: historicalArtistStats,
+    comparisonEntries: prevOverallEntries,
+  });
+  const imageMap = await resolveArtistImages(
+    [...topArtists, ...topArtistsOverall].map((a) => ({ name: a.name, spotifyId: a.spotifyId }))
+  );
+  const topArtistsWithImages = topArtists.map((a) => ({
+    ...a,
+    imageUrl: imageMap.get(a.name) ?? null,
+  }));
+  const topArtistsOverallWithImages = topArtistsOverall.map((a) => ({
+    ...a,
+    imageUrl: imageMap.get(a.name) ?? null,
+  }));
+
   return (
     <Shell title="Parada Global" subtitle="A parada agregada de toda a plataforma">
       {/* Hero */}
@@ -36,62 +310,21 @@ export default function GlobalPage() {
             Cada música ganha <strong>101 − posição</strong> pontos por parada em que aparece. A soma decide o ranking semanal global.
           </p>
           <div style={{ display: "flex", gap: 20, fontSize: 14, opacity: 0.7 }}>
-            <span>{USERS_DATA.length} paradas consideradas</span>
+            <span>{uniqueParadas} paradas consideradas</span>
             <span>·</span>
-            <span>{GLOBAL_CHART.length} músicas</span>
+            <span>{globalSongs.length} músicas</span>
             <span>·</span>
             <span>{weekRangeNow}</span>
           </div>
         </div>
       </div>
 
-      {/* Chart table */}
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "60px 64px 1fr 100px 100px 100px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-          {["Pos", "", "Música", "Mudança", "Pontos", "Eleitores"].map((h, i) => (
-            <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
-          ))}
-        </div>
-        {GLOBAL_CHART.map((e) => (
-          <div
-            key={e.position}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "60px 64px 1fr 100px 100px 100px",
-              alignItems: "center",
-              padding: "8px 20px",
-              borderBottom: "1px solid rgba(0,0,0,0.04)",
-            }}
-          >
-            <div style={{
-              fontSize: e.position <= 3 ? 28 : 18,
-              fontWeight: 700,
-              color: "#000000",
-              fontVariantNumeric: "tabular-nums",
-              textAlign: "right", paddingRight: 12,
-              letterSpacing: "-0.04em",
-            }}>
-              {e.position}
-            </div>
-            <div style={{ padding: "6px 8px" }}>
-              <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
-            </div>
-            <div style={{ padding: "0 12px", minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-              <div style={{ fontSize: 12, color: "#86868B" }}>{e.song.artist}</div>
-            </div>
-            <div style={{ padding: "0 8px" }}>
-              <MovementBadge status={e.status} delta={e.delta} />
-            </div>
-            <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "#FA243C", padding: "0 8px" }}>
-              {e.points}
-            </div>
-            <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-              {e.voters} {e.voters === 1 ? "eleitor" : "eleitores"}
-            </div>
-          </div>
-        ))}
-      </div>
+      <GlobalTabs
+        weeklySongs={globalSongs}
+        weeklyArtists={topArtistsWithImages}
+        overallSongs={overallSongs}
+        overallArtists={topArtistsOverallWithImages}
+      />
     </Shell>
   );
 }

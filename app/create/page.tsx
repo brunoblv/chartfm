@@ -449,7 +449,7 @@ export default function CreatePage() {
         })}
         {entries.length === 0 && (
           <div style={{ padding: "40px 24px", textAlign: "center", color: "#86868B", fontSize: 14 }}>
-            {isMobile ? "Busque músicas abaixo e adicione à parada" : "Adicione músicas da busca ao lado →"}
+            {isMobile ? "Use a busca de músicas re adicione à parada" : "Adicione músicas da busca ao lado →"}
           </div>
         )}
       </div>

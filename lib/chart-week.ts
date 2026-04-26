@@ -37,6 +37,29 @@ export function buildDateRangeFromDate(date: Date): string {
   return `de ${formatPtDayMonth(start)} a ${formatPtDayMonth(end)}`;
 }
 
+export function buildWeekIndexFromDate(date: Date): number {
+  return isoWeekYear(date) * 100 + isoWeek(date);
+}
+
+/**
+ * Rankings semanais (global/trending) sempre exibem a semana encerrada.
+ * Ex.: na terça da semana 18, mostramos resultados da semana 17.
+ */
+export function getPreviousClosedWeekDate(now: Date = new Date()): Date {
+  const d = new Date(now);
+  d.setDate(d.getDate() - 7);
+  return d;
+}
+
+export function getRankingWeekReference(now: Date = new Date()) {
+  const ref = getPreviousClosedWeekDate(now);
+  return {
+    weekIndex: buildWeekIndexFromDate(ref),
+    weekLabel: buildWeekLabelFromDate(ref),
+    dateRange: buildDateRangeFromDate(ref),
+  };
+}
+
 function normalizeWeekLabel(weekLabel: string): string {
   // Ex.: "Semana 17" -> "Semana 17 - 2026"
   if (/^Semana\s+\d+$/i.test(weekLabel.trim())) {

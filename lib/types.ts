@@ -66,6 +66,8 @@ export interface GlobalChartEntry {
   voters: number;
   status: "new" | "up" | "down" | "same";
   delta: number | null;
+  prevPos?: number | null;
+  growthPct?: number | null;
   peak: number;
   weeks: number;
 }

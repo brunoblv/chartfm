@@ -204,6 +204,76 @@ export async function getSpotifyTrackMetadataById(trackId: string): Promise<Spot
   };
 }
 
+type SpotifyArtistApi = {
+  id: string;
+  name: string;
+  images: SpotifyImage[];
+  external_urls?: { spotify?: string };
+};
+
+export type SpotifyArtistProfile = {
+  spotifyId: string;
+  name: string;
+  imageUrl: string | null;
+  spotifyUrl: string | null;
+};
+
+function mapArtistApiToProfile(artist: SpotifyArtistApi): SpotifyArtistProfile {
+  return {
+    spotifyId: artist.id,
+    name: artist.name,
+    imageUrl: pickAlbumImageUrl(artist.images),
+    spotifyUrl: artist.external_urls?.spotify ?? null,
+  };
+}
+
+/** Perfil oficial do artista (GET /artists/{id}), incluindo fotos. */
+export async function getSpotifyArtistById(spotifyId: string): Promise<SpotifyArtistProfile | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
+  const id = spotifyId.trim();
+  if (!id) return null;
+
+  const res = await fetch(`${API_BASE}/artists/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+
+  const artist = (await res.json()) as SpotifyArtistApi;
+  if (!artist?.id) return null;
+  return mapArtistApiToProfile(artist);
+}
+
+type SpotifyArtistSearchJson = {
+  artists?: { items: SpotifyArtistApi[] };
+};
+
+export async function searchSpotifyArtist(
+  name: string
+): Promise<SpotifyArtistProfile | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
+
+  const url = new URL(`${API_BASE}/search`);
+  url.searchParams.set("q", name.trim());
+  url.searchParams.set("type", "artist");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("market", "BR");
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+
+  const json = (await res.json()) as SpotifyArtistSearchJson;
+  const artist = json.artists?.items?.[0];
+  if (!artist) return null;
+
+  return mapArtistApiToProfile(artist);
+}
+
 export async function resolveCoverImageUrl(artist: string, title: string): Promise<string | null> {
   const key = trimKey(artist, title);
   if (coverCache.has(key)) return coverCache.get(key)!;

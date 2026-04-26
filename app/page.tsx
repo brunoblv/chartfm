@@ -1,18 +1,67 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Flame } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { HomeGrid } from "@/components/layout/HomeGrid";
 import { ChartCard } from "@/components/chart/ChartCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { PositionNumber } from "@/components/ui/PositionNumber";
-import { TIMELINE, GLOBAL_CHART, USERS_DATA, ARTISTS, CURRENT_USER, COVER_PALETTES } from "@/lib/data";
-import { buildWeekLabelFromDate } from "@/lib/chart-week";
+import { TIMELINE, USERS_DATA, COVER_PALETTES } from "@/lib/data";
+import { buildWeekIndexFromDate, buildWeekLabelFromDate, getRankingWeekReference } from "@/lib/chart-week";
+import { LandingPage } from "@/components/landing/LandingPage";
+import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 
-export default function HomePage() {
+function daysUntilSundayBRT(): number {
+  const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const day = nowBRT.getUTCDay();
+  return day === 0 ? 0 : 7 - day;
+}
+
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) return <LandingPage />;
+
+  let userStreak = 0;
+  let userParadaNome: string | null = null;
+  let thisWeekChartId: string | null = null;
+
+  const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const currentWeekIdx = buildWeekIndexFromDate(nowBRT);
+  const rankingWeek = getRankingWeekReference(nowBRT);
+
+  if (session?.user?.id) {
+    const [user, thisWeekChart] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { streak: true, paradaNome: true, genres: true },
+      }),
+      prisma.chart.findUnique({
+        where: { userId_weekIndex: { userId: session.user.id, weekIndex: currentWeekIdx } },
+        select: { id: true },
+      }),
+    ]);
+
+    if (user && !user.genres?.length) redirect("/onboarding");
+
+    userStreak = user?.streak ?? 0;
+    userParadaNome = user?.paradaNome ?? null;
+    thisWeekChartId = thisWeekChart?.id ?? null;
+  }
+
+  const [daysLeft, trendingArtists, globalTopSongs] = await Promise.all([
+    Promise.resolve(daysUntilSundayBRT()),
+    getTrendingArtists(rankingWeek.weekIndex),
+    getGlobalTopSongs(rankingWeek.weekIndex, 3),
+  ]);
+
   const feed = (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <YourWeekCard />
+      <YourWeekCard streak={userStreak} daysLeft={daysLeft} paradaNome={userParadaNome} thisWeekChartId={thisWeekChartId} />
       <FriendsRow />
 
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 2px 0 2px" }}>
@@ -29,9 +78,9 @@ export default function HomePage() {
 
   const sidebar = (
     <>
-      <GlobalTeaser />
+      <GlobalTeaser topSongs={globalTopSongs} weekLabel={rankingWeek.weekLabel} />
       <SuggestedUsers />
-      <TrendingArtists />
+      <TrendingArtists artists={trendingArtists} />
     </>
   );
 
@@ -42,52 +91,68 @@ export default function HomePage() {
   );
 }
 
-function YourWeekCard() {
-  const daysLeft = 3;
+function YourWeekCard({
+  streak,
+  daysLeft,
+  paradaNome,
+  thisWeekChartId,
+}: {
+  streak: number;
+  daysLeft: number;
+  paradaNome: string | null;
+  thisWeekChartId: string | null;
+}) {
   const weekNow = buildWeekLabelFromDate(new Date());
+  const hasSubmitted = thisWeekChartId !== null;
+  const label = paradaNome ? paradaNome.toUpperCase() : "SUA PARADA";
   return (
     <div style={{
       background: "linear-gradient(135deg, #FA243C 0%, #FF5858 100%)",
       borderRadius: 18,
-      padding: 20,
+      padding: 24,
       color: "white",
       display: "flex",
-      flexDirection: "column",
-      gap: 16,
+      alignItems: "center",
+      gap: 20,
       boxShadow: "0 4px 16px rgba(250,36,60,0.25)",
+      flexWrap: "wrap",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: 14,
-          background: "rgba(255,255,255,0.15)",
-          display: "grid", placeItems: "center",
-          backdropFilter: "blur(10px)",
-          flexShrink: 0,
-        }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
-            <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
-          </svg>
+      <div style={{
+        width: 64, height: 64, borderRadius: 16,
+        background: "rgba(255,255,255,0.15)",
+        display: "grid", placeItems: "center",
+        backdropFilter: "blur(10px)",
+        flexShrink: 0,
+      }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
+        </svg>
+      </div>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
+          {label} · {weekNow}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
-            Sua parada · {weekNow}
-          </div>
-          <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.025em", marginTop: 2, lineHeight: 1.3 }}>
-            Quais foram suas músicas dessa semana?
-          </div>
-          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-            {daysLeft} dias restantes · streak de {CURRENT_USER.streak} semanas
-            <Flame size={12} fill="white" />
-          </div>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginTop: 2, lineHeight: 1.2 }}>
+          {hasSubmitted ? "Você já publicou esta semana!" : "Quais foram suas músicas dessa semana?"}
+        </div>
+        <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+          {hasSubmitted ? (
+            "Veja sua parada publicada abaixo"
+          ) : (
+            <>
+              {daysLeft === 0 ? "Último dia" : `${daysLeft} dia${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}`}
+              {streak > 0 && <> · streak de {streak} semana{streak !== 1 ? "s" : ""} <Flame size={12} fill="white" /></>}
+            </>
+          )}
         </div>
       </div>
-      <Link href="/create" style={{
+      <Link href={hasSubmitted ? `/chart/${thisWeekChartId}` : "/create"} style={{
         background: "white", color: "#FA243C", textDecoration: "none",
         padding: "12px 22px", borderRadius: 100, fontSize: 14, fontWeight: 700,
         letterSpacing: "-0.01em", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-        textAlign: "center", display: "block",
+        whiteSpace: "nowrap", flexShrink: 0,
       }}>
-        Criar parada
+        {hasSubmitted ? "Ver minha parada" : "Criar parada"}
       </Link>
     </div>
   );
@@ -124,9 +189,14 @@ function FriendsRow() {
   );
 }
 
-function GlobalTeaser() {
-  const top3 = GLOBAL_CHART.slice(0, 3);
-  const weekNow = buildWeekLabelFromDate(new Date());
+function GlobalTeaser({
+  topSongs,
+  weekLabel,
+}: {
+  topSongs: Awaited<ReturnType<typeof getGlobalTopSongs>>;
+  weekLabel: string;
+}) {
+  const top3 = topSongs.slice(0, 3);
   return (
     <Link href="/global" style={{ textDecoration: "none", color: "inherit" }}>
       <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
@@ -136,7 +206,7 @@ function GlobalTeaser() {
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Parada Global</div>
           <div style={{ flex: 1 }} />
-          <div style={{ fontSize: 11, color: "#86868B" }}>{weekNow}</div>
+          <div style={{ fontSize: 11, color: "#86868B" }}>{weekLabel}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {top3.map((e) => (
@@ -187,13 +257,64 @@ function SuggestedUsers() {
   );
 }
 
-function TrendingArtists() {
-  const top = ARTISTS.slice(0, 4);
+async function getTrendingArtists(weekIdx: number, limit = 4) {
+  const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
+    where: { chart: { weekIndex: weekIdx } },
+    select: {
+      position: true,
+      points: true,
+      chartId: true,
+      coverPaletteA: true,
+      coverPaletteB: true,
+      coverSeed: true,
+      song: {
+        select: {
+          title: true,
+          artist: true,
+          album: true,
+          spotifyId: true,
+          artistSpotifyId: true,
+          artistRef: { select: { spotifyId: true, name: true } },
+        },
+      },
+    },
+  });
+
+  return aggregateTopArtists(entries, limit).map(({ name, totalPoints }) => ({ name, totalPoints }));
+}
+
+async function getGlobalTopSongs(weekIdx: number, limit = 3) {
+  const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
+    where: { chart: { weekIndex: weekIdx } },
+    select: {
+      position: true,
+      points: true,
+      chartId: true,
+      coverPaletteA: true,
+      coverPaletteB: true,
+      coverSeed: true,
+      song: {
+        select: {
+          title: true,
+          artist: true,
+          album: true,
+          spotifyId: true,
+          artistSpotifyId: true,
+          artistRef: { select: { spotifyId: true, name: true } },
+        },
+      },
+    },
+  });
+  return aggregateGlobalSongs(entries, limit);
+}
+
+function TrendingArtists({ artists }: { artists: { name: string; totalPoints: number }[] }) {
+  if (artists.length === 0) return null;
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
       <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 14 }}>Artistas em alta</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {top.map((a, i) => (
+        {artists.map((a, i) => (
           <Link key={a.name} href={`/artist/${encodeURIComponent(a.name)}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#000000", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
             <div style={{
@@ -204,7 +325,7 @@ function TrendingArtists() {
             }} />
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
-              <div style={{ fontSize: 11, color: "#86868B" }}>{a.listeners} ouvintes · {a.totalPoints}pts</div>
+              <div style={{ fontSize: 11, color: "#86868B" }}>{a.totalPoints}pts esta semana</div>
             </div>
           </Link>
         ))}

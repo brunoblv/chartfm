@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
-import { getSpotifyTrackMetadataById } from "@/lib/spotify-server";
+import { getSpotifyArtistById, getSpotifyTrackMetadataById } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 
@@ -137,6 +137,15 @@ export async function POST(req: NextRequest) {
 
   // Upsert songs/artists/albums sequentially to avoid race on unique constraints
   const songs: { id: string; spotifyId: string | null; albumSpotifyId: string | null }[] = [];
+  const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
+
+  async function spotifyArtistProfile(spotifyId: string) {
+    if (spotifyArtistCache.has(spotifyId)) return spotifyArtistCache.get(spotifyId)!;
+    const p = await getSpotifyArtistById(spotifyId);
+    spotifyArtistCache.set(spotifyId, p);
+    return p;
+  }
+
   for (const e of entries) {
     const spotifyId = e.spotifyId?.trim() || null;
     if (!spotifyId) {
@@ -155,16 +164,19 @@ export async function POST(req: NextRequest) {
     const albumSpotifyId = metadata?.album.spotifyId ?? null;
 
     if (primaryArtist) {
+      const profile = await spotifyArtistProfile(primaryArtist.spotifyId);
       await prisma.artist.upsert({
         where: { spotifyId: primaryArtist.spotifyId },
         update: {
-          name: primaryArtist.name,
-          spotifyUrl: primaryArtist.spotifyUrl ?? undefined,
+          name: profile?.name ?? primaryArtist.name,
+          spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? undefined,
+          ...(profile?.imageUrl ? { imageUrl: profile.imageUrl } : {}),
         },
         create: {
           spotifyId: primaryArtist.spotifyId,
-          name: primaryArtist.name,
-          spotifyUrl: primaryArtist.spotifyUrl ?? null,
+          name: profile?.name ?? primaryArtist.name,
+          spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? null,
+          imageUrl: profile?.imageUrl ?? null,
         },
       });
     }
@@ -224,10 +236,20 @@ export async function POST(req: NextRequest) {
     // Artistas secundários (feats) no relacionamento song_feats
     if (metadata?.featuredArtists?.length && song.spotifyId) {
       for (const feat of metadata.featuredArtists) {
+        const featProfile = await spotifyArtistProfile(feat.spotifyId);
         await prisma.artist.upsert({
           where: { spotifyId: feat.spotifyId },
-          update: { name: feat.name, spotifyUrl: feat.spotifyUrl ?? undefined },
-          create: { spotifyId: feat.spotifyId, name: feat.name, spotifyUrl: feat.spotifyUrl ?? null },
+          update: {
+            name: featProfile?.name ?? feat.name,
+            spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? undefined,
+            ...(featProfile?.imageUrl ? { imageUrl: featProfile.imageUrl } : {}),
+          },
+          create: {
+            spotifyId: feat.spotifyId,
+            name: featProfile?.name ?? feat.name,
+            spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? null,
+            imageUrl: featProfile?.imageUrl ?? null,
+          },
         });
         await prisma.songFeat.upsert({
           where: {
@@ -258,6 +280,7 @@ export async function POST(req: NextRequest) {
   const entryData = entries.map((e, i) => {
     const song = songs[i];
     const pos = i + 1;
+    const points = 101 - pos;
     const prev = previousChart?.entries.find((pe) => pe.songId === song.id);
     const { palette, seed } = paletteFor(e.artist, e.title);
 
@@ -266,7 +289,7 @@ export async function POST(req: NextRequest) {
         songId: song.id,
         songSpotifyId: song.spotifyId,
         albumSpotifyId: song.albumSpotifyId,
-        points: 0,
+        points,
         position: pos,
         status: "new",
         delta: null,
@@ -284,7 +307,7 @@ export async function POST(req: NextRequest) {
       songId: song.id,
       songSpotifyId: song.spotifyId,
       albumSpotifyId: song.albumSpotifyId,
-      points: 0,
+      points,
       position: pos,
       status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
       delta,

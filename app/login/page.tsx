@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   const handleGoogle = () => {
     setLoading(true);
-    signIn("google", { callbackUrl: "/onboarding" }).catch(() => setLoading(false));
+    signIn("google", { callbackUrl: "/" }).catch(() => setLoading(false));
   };
 
   const covers = Array.from({ length: 24 }, (_, i) => COVER_PALETTES[i % COVER_PALETTES.length]);
