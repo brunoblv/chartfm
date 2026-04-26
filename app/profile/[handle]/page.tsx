@@ -195,6 +195,8 @@ export default function ProfilePage() {
   const [payload, setPayload] = useState<ApiProfile | null>(null);
   const [mockUser, setMockUser] = useState<UserWithCharts | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [chartPage, setChartPage] = useState(1);
+  const CHARTS_PER_PAGE = 6;
 
   useEffect(() => {
     if (!handle) {
@@ -513,7 +515,7 @@ export default function ProfilePage() {
               key={t}
               type="button"
               disabled={!hasCharts && t !== "charts"}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setChartPage(1); }}
               style={{
                 padding: "12px 4px",
                 marginRight: 18,
@@ -544,19 +546,67 @@ export default function ProfilePage() {
                   </Link>
                 ) : null}
               </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-                {user.charts.map((chart, i) => (
-                  <ChartCard
-                    key={chart.id}
-                    user={user}
-                    chart={chart}
-                    postedAgo={i === 0 ? "Mais recente" : chart.weekLabel}
-                    showFollowActions={!isOwn}
-                  />
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              const totalPages = Math.ceil(user.charts.length / CHARTS_PER_PAGE);
+              const pageCharts = user.charts.slice((chartPage - 1) * CHARTS_PER_PAGE, chartPage * CHARTS_PER_PAGE);
+              const globalOffset = (chartPage - 1) * CHARTS_PER_PAGE;
+              return (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+                    {pageCharts.map((chart, i) => (
+                      <ChartCard
+                        key={chart.id}
+                        user={user}
+                        chart={chart}
+                        postedAgo={globalOffset + i === 0 ? "Mais recente" : chart.weekLabel}
+                        showFollowActions={!isOwn}
+                      />
+                    ))}
+                  </div>
+                  {totalPages > 1 && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 28 }}>
+                      <button
+                        type="button"
+                        disabled={chartPage === 1}
+                        onClick={() => setChartPage((p) => p - 1)}
+                        style={{
+                          padding: "8px 18px",
+                          borderRadius: 100,
+                          border: "1px solid rgba(0,0,0,0.12)",
+                          background: "white",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: chartPage === 1 ? "not-allowed" : "pointer",
+                          opacity: chartPage === 1 ? 0.4 : 1,
+                        }}
+                      >
+                        ← Anterior
+                      </button>
+                      <span style={{ fontSize: 13, color: "#86868B", padding: "0 8px" }}>
+                        {chartPage} / {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={chartPage === totalPages}
+                        onClick={() => setChartPage((p) => p + 1)}
+                        style={{
+                          padding: "8px 18px",
+                          borderRadius: 100,
+                          border: "1px solid rgba(0,0,0,0.12)",
+                          background: "white",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: chartPage === totalPages ? "not-allowed" : "pointer",
+                          opacity: chartPage === totalPages ? 0.4 : 1,
+                        }}
+                      >
+                        Próxima →
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
 

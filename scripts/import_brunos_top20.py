@@ -2,6 +2,7 @@ import openpyxl
 import psycopg2
 import uuid
 from datetime import datetime, date, timedelta
+from psycopg2.extras import execute_values
 
 XLSX = r"C:\Users\blvbr\Documents\Brunos Top 20.xlsx"
 DB_URL = "postgresql://postgres.jvbnrzgrivxavdlzoxbq:Twwz7zCbsaHjjOdj@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
@@ -97,124 +98,112 @@ def main():
     created_songs = 0
     processed_weeks = 0
     examples = []
-    song_cache = {}
 
     try:
         with conn.cursor() as cur:
+            cur.execute("SET statement_timeout = 0")
             cur.execute('SELECT id FROM "User" WHERE handle = %s', (USER_HANDLE,))
             row = cur.fetchone()
             if not row:
                 raise RuntimeError(f"Usuário {USER_HANDLE} não encontrado")
             user_id = row[0]
 
+            all_weeks = []
             for sheet_name in SHEETS:
                 ws = wb[sheet_name]
-                weeks = parse_sheet_week(ws)
-                for wk in weeks:
+                for wk in parse_sheet_week(ws):
                     processed_weeks += 1
                     ref_date = wk["date"]
                     iso_year, iso_week = iso_week_parts(ref_date)
-                    week_index = iso_year * 100 + iso_week
-
-                    cur.execute('SELECT id FROM "Chart" WHERE "userId" = %s AND "weekIndex" = %s', (user_id, week_index))
-                    if cur.fetchone():
-                        skipped_existing += 1
-                        continue
-
-                    end = week_sunday(ref_date)
-                    start = end - timedelta(days=6)
-                    week_label = f"Semana {iso_week} - {iso_year}"
-                    date_range = f"de {format_pt_day_month(start)} a {format_pt_day_month(end)}"
-
-                    cur.execute(
-                        'INSERT INTO "Chart" (id, "userId", "weekIndex", "weekLabel", "dateRange", "publishedAt", likes, comments, reposts, chart_type, is_published, max_items) '
-                        "VALUES (%s, %s, %s, %s, %s, %s, 0, 0, 0, %s, %s, %s) RETURNING id",
-                        (uuid.uuid4().hex, user_id, week_index, week_label, date_range, end, "SONGS", True, 100),
+                    all_weeks.append(
+                        {
+                            "sheet": sheet_name,
+                            "date": ref_date,
+                            "week_index": iso_year * 100 + iso_week,
+                            "week_label": f"Semana {iso_week} - {iso_year}",
+                            "entries": wk["entries"],
+                        }
                     )
-                    chart_id = cur.fetchone()[0]
 
-                    for e in wk["entries"]:
-                        song_key = (e["title"], e["artist"])
-                        if song_key in song_cache:
-                            song_id, song_spotify_id, album_spotify_id = song_cache[song_key]
-                        else:
-                            cur.execute(
-                                'INSERT INTO "Song" (id, title, artist, album) VALUES (%s, %s, %s, %s) '
-                                "ON CONFLICT (title, artist) DO NOTHING RETURNING id",
-                                (uuid.uuid4().hex, e["title"], e["artist"], None),
-                            )
-                            song_row = cur.fetchone()
-                            if song_row:
-                                song_id = song_row[0]
-                                created_songs += 1
-                            else:
-                                cur.execute(
-                                    'SELECT id, "spotify_id", "album_spotify_id" FROM "Song" WHERE title = %s AND artist = %s',
-                                    (e["title"], e["artist"]),
-                                )
-                                s = cur.fetchone()
-                                song_id, song_spotify_id, album_spotify_id = s[0], s[1], s[2]
-                                song_cache[song_key] = (song_id, song_spotify_id, album_spotify_id)
-                                # Já carregado para o insert abaixo.
-                                points = 101 - e["position"]
-                                (pal_a, pal_b), seed = palette_for(e["artist"], e["title"])
-                                cur.execute(
-                                    'INSERT INTO "ChartEntry" (id, "chartId", "songId", position, points, status, delta, "prevPos", peak, weeks, '
-                                    '"coverPaletteA", "coverPaletteB", "coverSeed", "song_spotify_id", "album_spotify_id") '
-                                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                                    (
-                                        uuid.uuid4().hex,
-                                        chart_id,
-                                        song_id,
-                                        e["position"],
-                                        points,
-                                        "new",
-                                        None,
-                                        None,
-                                        e["position"],
-                                        1,
-                                        pal_a,
-                                        pal_b,
-                                        seed,
-                                        song_spotify_id,
-                                        album_spotify_id,
-                                    ),
-                                )
-                                continue
+            cur.execute('SELECT "weekIndex" FROM "Chart" WHERE "userId" = %s', (user_id,))
+            existing_indexes = {r[0] for r in cur.fetchall()}
+            weeks_to_create = []
+            for wk in all_weeks:
+                if wk["week_index"] in existing_indexes:
+                    skipped_existing += 1
+                else:
+                    weeks_to_create.append(wk)
 
-                            cur.execute('SELECT "spotify_id", "album_spotify_id" FROM "Song" WHERE id = %s', (song_id,))
-                            song_spotify_id, album_spotify_id = cur.fetchone()
-                            song_cache[song_key] = (song_id, song_spotify_id, album_spotify_id)
+            # Carrega todas as músicas já existentes uma vez.
+            cur.execute('SELECT id, title, artist, "spotify_id", "album_spotify_id" FROM "Song"')
+            song_map = {(r[1], r[2]): (r[0], r[3], r[4]) for r in cur.fetchall()}
 
-                        points = 101 - e["position"]
-                        (pal_a, pal_b), seed = palette_for(e["artist"], e["title"])
+            # Descobre músicas novas para inserir em lote.
+            new_song_keys = set()
+            for wk in weeks_to_create:
+                for e in wk["entries"]:
+                    key = (e["title"], e["artist"])
+                    if key not in song_map:
+                        new_song_keys.add(key)
 
-                        cur.execute(
-                            'INSERT INTO "ChartEntry" (id, "chartId", "songId", position, points, status, delta, "prevPos", peak, weeks, '
-                            '"coverPaletteA", "coverPaletteB", "coverSeed", "song_spotify_id", "album_spotify_id") '
-                            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                            (
-                                uuid.uuid4().hex,
-                                chart_id,
-                                song_id,
-                                e["position"],
-                                points,
-                                "new",
-                                None,
-                                None,
-                                e["position"],
-                                1,
-                                pal_a,
-                                pal_b,
-                                seed,
-                                song_spotify_id,
-                                album_spotify_id,
-                            ),
+            if new_song_keys:
+                rows = [(uuid.uuid4().hex, title, artist, None) for (title, artist) in new_song_keys]
+                execute_values(
+                    cur,
+                    'INSERT INTO "Song" (id, title, artist, album) VALUES %s ON CONFLICT (title, artist) DO NOTHING',
+                    rows,
+                    page_size=200,
+                )
+                created_songs = len(rows)
+                cur.execute('SELECT id, title, artist, "spotify_id", "album_spotify_id" FROM "Song"')
+                song_map = {(r[1], r[2]): (r[0], r[3], r[4]) for r in cur.fetchall()}
+
+            for wk in weeks_to_create:
+                end = week_sunday(wk["date"])
+                start = end - timedelta(days=6)
+                date_range = f"de {format_pt_day_month(start)} a {format_pt_day_month(end)}"
+                chart_id = uuid.uuid4().hex
+                cur.execute(
+                    'INSERT INTO "Chart" (id, "userId", "weekIndex", "weekLabel", "dateRange", "publishedAt", likes, comments, reposts, chart_type, is_published, max_items) '
+                    "VALUES (%s, %s, %s, %s, %s, %s, 0, 0, 0, %s, %s, %s)",
+                    (chart_id, user_id, wk["week_index"], wk["week_label"], date_range, end, "SONGS", True, 100),
+                )
+
+                entry_rows = []
+                for e in wk["entries"]:
+                    song_id, song_spotify_id, album_spotify_id = song_map[(e["title"], e["artist"])]
+                    points = 101 - e["position"]
+                    (pal_a, pal_b), seed = palette_for(e["artist"], e["title"])
+                    entry_rows.append(
+                        (
+                            uuid.uuid4().hex,
+                            chart_id,
+                            song_id,
+                            e["position"],
+                            points,
+                            "new",
+                            None,
+                            None,
+                            e["position"],
+                            1,
+                            pal_a,
+                            pal_b,
+                            seed,
+                            song_spotify_id,
+                            album_spotify_id,
                         )
+                    )
 
-                    created_charts += 1
-                    if len(examples) < 10:
-                        examples.append((chart_id, sheet_name, ref_date.isoformat(), week_label, len(wk["entries"])))
+                execute_values(
+                    cur,
+                    'INSERT INTO "ChartEntry" (id, "chartId", "songId", position, points, status, delta, "prevPos", peak, weeks, "coverPaletteA", "coverPaletteB", "coverSeed", "song_spotify_id", "album_spotify_id") VALUES %s',
+                    entry_rows,
+                    page_size=200,
+                )
+
+                created_charts += 1
+                if len(examples) < 10:
+                    examples.append((chart_id, wk["sheet"], wk["date"].isoformat(), wk["week_label"], len(wk["entries"])))
 
         conn.commit()
         print("IMPORT_OK")
