@@ -13,14 +13,35 @@ import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
+import { timeAgo } from "@/lib/time-ago";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
-import { TIMELINE, SAMPLE_COMMENTS, USERS_DATA } from "@/lib/data";
+import { TIMELINE, USERS_DATA } from "@/lib/data";
 import type { ChartEntry, TimelineItem, User } from "@/lib/types";
 
 type Variant = "list" | "grid" | "podium";
 type Tab = "chart" | "comments" | "overlap";
 
 type ParadaNomeResponse = { paradaNome?: string | null };
+
+type ChartDetailExtended = ChartDetailPayload & {
+  liked?: boolean;
+  reposted?: boolean;
+};
+
+export type CommentRow = {
+  id: string;
+  text: string;
+  likes: number;
+  reactions: string[];
+  createdAt: string;
+  user: {
+    id: string;
+    handle: string;
+    name: string;
+    avatarColor: string;
+    image: string | null;
+  };
+};
 
 export default function ChartDetailPage() {
   const params = useParams();
@@ -29,13 +50,18 @@ export default function ChartDetailPage() {
 
   const { data: session } = useSession();
   const [phase, setPhase] = useState<"loading" | "ready" | "missing">("loading");
-  const [dbPayload, setDbPayload] = useState<ChartDetailPayload | null>(null);
+  const [dbPayload, setDbPayload] = useState<ChartDetailExtended | null>(null);
   const [mockItem, setMockItem] = useState<TimelineItem | null>(null);
   const [ownerParadaNome, setOwnerParadaNome] = useState<string | null>(null);
 
   const [variant, setVariant] = useState<Variant>("list");
   const [tab, setTab] = useState<Tab>("chart");
+
   const [liked, setLiked] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [repostCount, setRepostCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     if (!id) {
@@ -51,8 +77,13 @@ export default function ChartDetailPage() {
         const res = await fetch(`/api/charts/${encodeURIComponent(id)}`);
         if (cancelled) return;
         if (res.ok) {
-          const data = (await res.json()) as ChartDetailPayload;
+          const data = (await res.json()) as ChartDetailExtended;
           setDbPayload(data);
+          setLiked(data.liked ?? false);
+          setReposted(data.reposted ?? false);
+          setLikeCount(data.chart.likes);
+          setRepostCount(data.chart.reposts);
+          setCommentCount(data.chart.comments);
           setMockItem(null);
           setPhase("ready");
           return;
@@ -60,6 +91,11 @@ export default function ChartDetailPage() {
         const item = TIMELINE.find((t) => t.chart.id === id) ?? null;
         setDbPayload(null);
         setMockItem(item);
+        if (item) {
+          setLikeCount(item.chart.likes);
+          setRepostCount(item.chart.reposts);
+          setCommentCount(item.chart.comments);
+        }
         setPhase(item ? "ready" : "missing");
       } catch {
         if (!cancelled) setPhase("missing");
@@ -75,6 +111,7 @@ export default function ChartDetailPage() {
   const ownerImageUrl = dbPayload?.imageUrl ?? null;
   const personalNumberOnes = dbPayload?.personalNumberOnes ?? {};
   const globalNumberOnes = dbPayload?.globalNumberOnes ?? {};
+  const isDbChart = !!dbPayload;
 
   useEffect(() => {
     if (!user?.handle) return;
@@ -106,6 +143,30 @@ export default function ChartDetailPage() {
 
   const composeImageUrl = session?.user?.image ?? null;
   const tituloDetalheParada = `${ownerParadaNome ?? "Parada"} · Top ${chart?.entries.length ?? 0}`;
+
+  async function toggleLike() {
+    if (!id || !isDbChart) return;
+    const prev = liked;
+    setLiked(!prev);
+    setLikeCount((c) => c + (prev ? -1 : 1));
+    const res = await fetch(`/api/charts/${id}/like`, { method: "POST" });
+    if (!res.ok) {
+      setLiked(prev);
+      setLikeCount((c) => c + (prev ? 1 : -1));
+    }
+  }
+
+  async function toggleRepost() {
+    if (!id || !isDbChart) return;
+    const prev = reposted;
+    setReposted(!prev);
+    setRepostCount((c) => c + (prev ? -1 : 1));
+    const res = await fetch(`/api/charts/${id}/repost`, { method: "POST" });
+    if (!res.ok) {
+      setReposted(prev);
+      setRepostCount((c) => c + (prev ? 1 : -1));
+    }
+  }
 
   if (phase === "loading") {
     return (
@@ -203,9 +264,11 @@ export default function ChartDetailPage() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13, color: "#86868B" }}>
               <Heart size={14} />
-              <span>{chart.likes + (liked ? 1 : 0)}</span>
+              <span>{likeCount}</span>
               <MessageCircle size={14} style={{ marginLeft: 8 }} />
-              <span>{chart.comments}</span>
+              <span>{commentCount}</span>
+              <Repeat2 size={14} style={{ marginLeft: 8 }} />
+              <span>{repostCount}</span>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -219,20 +282,30 @@ export default function ChartDetailPage() {
                 Ouvir no Spotify
               </button>
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={toggleLike}
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
                   background: liked ? "#FDECEC" : "rgba(0,0,0,0.05)",
                   color: liked ? "#C5291C" : "#6B6B70",
                   border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600,
+                  cursor: isDbChart ? "pointer" : "default",
                 }}
               >
                 <Heart size={16} fill={liked ? "currentColor" : "none"} />
                 {liked ? "Curtido" : "Curtir"}
               </button>
-              <button style={{ background: "rgba(0,0,0,0.05)", border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600, color: "#6B6B70", display: "flex", gap: 6, alignItems: "center" }}>
+              <button
+                onClick={toggleRepost}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: reposted ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.05)",
+                  color: reposted ? "#1D1D1F" : "#6B6B70",
+                  border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600,
+                  cursor: isDbChart ? "pointer" : "default",
+                }}
+              >
                 <Repeat2 size={16} />
-                Repostar
+                {reposted ? "Repostado" : "Repostar"}
               </button>
               <button style={{ background: "rgba(0,0,0,0.05)", border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600, color: "#6B6B70", display: "flex", gap: 6, alignItems: "center" }}>
                 <Share size={16} />
@@ -264,7 +337,7 @@ export default function ChartDetailPage() {
       <div style={{ padding: "0 40px 80px 40px" }}>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 24 }}>
-        {([["chart", "Parada"], ["comments", `Comentários (${chart.comments})`], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
+        {([["chart", "Parada"], ["comments", `Comentários (${commentCount})`], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -294,7 +367,13 @@ export default function ChartDetailPage() {
         </>
       )}
       {tab === "comments" && (
-        <CommentsTab chartId={chart.id} composeUser={composeUser} composeImageUrl={composeImageUrl} />
+        <CommentsTab
+          chartId={chart.id}
+          isDbChart={isDbChart}
+          composeUser={composeUser}
+          composeImageUrl={composeImageUrl}
+          onCommentAdded={() => setCommentCount((c) => c + 1)}
+        />
       )}
       {tab === "overlap" && <OverlapTab />}
       </div>
@@ -320,7 +399,6 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
       {entries.map((e) => {
         const key = `${e.song.title}\0${e.song.artist}`;
         const personal = personalNumberOnes?.[key] ?? 0;
-        const global = globalNumberOnes?.[key] ?? 0;
         return (
           <div
             key={e.position}
@@ -432,18 +510,52 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
 
 function CommentsTab({
   chartId,
+  isDbChart,
   composeUser,
   composeImageUrl,
+  onCommentAdded,
 }: {
   chartId: string;
+  isDbChart: boolean;
   composeUser: Pick<User, "name" | "avatar">;
   composeImageUrl?: string | null;
+  onCommentAdded: () => void;
 }) {
   const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [comments, setComments] = useState<CommentRow[]>([]);
+  const [loading, setLoading] = useState(false);
   const reactions = ["🔥", "💯", "❤️", "🥲", "😅", "👀"];
 
+  useEffect(() => {
+    if (!isDbChart) return;
+    setLoading(true);
+    fetch(`/api/charts/${chartId}/comment`)
+      .then((r) => r.json())
+      .then((data: CommentRow[]) => { setComments(data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [chartId, isDbChart]);
+
+  async function submitComment() {
+    const text = comment.trim();
+    if (!text || submitting) return;
+    setSubmitting(true);
+    const res = await fetch(`/api/charts/${chartId}/comment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    setSubmitting(false);
+    if (res.ok) {
+      const newComment = (await res.json()) as CommentRow;
+      setComments((prev) => [newComment, ...prev]);
+      setComment("");
+      onCommentAdded();
+    }
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }} data-chart-id={chartId}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Compose */}
       <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
@@ -452,6 +564,7 @@ function CommentsTab({
             <input
               value={comment}
               onChange={(e) => setComment(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
               placeholder="Escreva um comentário..."
               style={{
                 width: "100%", border: "none", outline: "none", fontSize: 14,
@@ -461,14 +574,20 @@ function CommentsTab({
             />
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
               {reactions.map((r) => (
-                <button key={r} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 2 }}>{r}</button>
+                <button key={r} onClick={() => setComment((c) => c + r)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 2 }}>{r}</button>
               ))}
-              <button style={{
-                marginLeft: "auto",
-                background: "#FA243C", color: "white", border: "none",
-                padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 700,
-                boxShadow: "0 2px 8px rgba(250,36,60,0.25)",
-              }}>
+              <button
+                onClick={submitComment}
+                disabled={!comment.trim() || submitting}
+                style={{
+                  marginLeft: "auto",
+                  background: "#FA243C", color: "white", border: "none",
+                  padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 700,
+                  boxShadow: "0 2px 8px rgba(250,36,60,0.25)",
+                  opacity: !comment.trim() || submitting ? 0.5 : 1,
+                  cursor: !comment.trim() || submitting ? "default" : "pointer",
+                }}
+              >
                 Comentar
               </button>
             </div>
@@ -477,15 +596,21 @@ function CommentsTab({
       </div>
 
       {/* Comments list */}
-      {SAMPLE_COMMENTS.map((c, i) => (
-        <div key={i} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+      {loading && (
+        <div style={{ color: "#86868B", fontSize: 14, padding: "12px 0" }}>Carregando comentários…</div>
+      )}
+      {!loading && comments.length === 0 && (
+        <div style={{ color: "#86868B", fontSize: 14, padding: "12px 0" }}>Nenhum comentário ainda. Seja o primeiro!</div>
+      )}
+      {comments.map((c) => (
+        <div key={c.id} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
           <div style={{ display: "flex", gap: 12 }}>
-            <Avatar user={c.user} size={36} />
+            <Avatar user={{ name: c.user.name, avatar: c.user.avatarColor }} imageUrl={c.user.image} size={36} />
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{c.user.name}</span>
+                <Link href={`/profile/${c.user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "#1D1D1F", textDecoration: "none" }}>{c.user.name}</Link>
                 <span style={{ fontSize: 12, color: "#86868B" }}>@{c.user.handle}</span>
-                <span style={{ fontSize: 12, color: "#86868B", marginLeft: "auto" }}>{c.time}</span>
+                <span style={{ fontSize: 12, color: "#86868B", marginLeft: "auto" }}>{timeAgo(c.createdAt)}</span>
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.5, color: "#1D1D1F", marginBottom: 10 }}>{c.text}</p>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -496,10 +621,8 @@ function CommentsTab({
                 <button style={{ background: "none", border: "none", color: "#86868B", fontSize: 13, cursor: "pointer" }}>Responder</button>
                 {c.reactions.length > 0 && (
                   <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
-                    {c.reactions.map((r) => (
-                      <span key={r} style={{
-                        background: "rgba(0,0,0,0.04)", borderRadius: 12, padding: "2px 8px", fontSize: 12,
-                      }}>{r}</span>
+                    {c.reactions.map((r, i) => (
+                      <span key={i} style={{ background: "rgba(0,0,0,0.04)", borderRadius: 12, padding: "2px 8px", fontSize: 12 }}>{r}</span>
                     ))}
                   </div>
                 )}

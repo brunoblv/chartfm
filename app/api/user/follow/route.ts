@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 
@@ -42,5 +43,13 @@ export async function POST(req: NextRequest) {
     prisma.user.update({ where: { id: targetId }, data: { followers: { increment: 1 } } }),
     prisma.user.update({ where: { id: session.user.id }, data: { following: { increment: 1 } } }),
   ]);
+
+  await createNotification({
+    recipientId: targetId,
+    actorId: session.user.id,
+    type: "follow",
+    text: "começou a seguir você",
+  });
+
   return NextResponse.json({ following: true });
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
 import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
 
@@ -391,6 +392,18 @@ export async function POST(req: NextRequest) {
   });
   const streak = computeCurrentStreak(allWeeks.map((w) => w.weekIndex));
   await prisma.user.update({ where: { id: userId }, data: { streak } });
+
+  const MILESTONE_STREAKS = new Set([4, 8, 12, 16, 20, 26, 30, 36, 42, 52, 78, 104]);
+  if (MILESTONE_STREAKS.has(streak)) {
+    const milestoneText = `🎉 Streak de ${streak} semanas! Você publicou paradas por ${streak} semanas seguidas.`;
+    const existing = await prisma.notification.findFirst({
+      where: { recipientId: userId, type: "milestone", text: milestoneText },
+      select: { id: true },
+    });
+    if (!existing) {
+      await createNotification({ recipientId: userId, type: "milestone", text: milestoneText });
+    }
+  }
 
   return NextResponse.json({ id: chart.id }, { status: 201 });
 }

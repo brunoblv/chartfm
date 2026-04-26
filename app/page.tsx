@@ -271,7 +271,7 @@ export default async function HomePage() {
     <>
       <GlobalTeaser topSongs={globalTopSongs} weekLabel={rankingWeek.weekLabel} />
       <SuggestedUsers users={suggestedUsers.map((u) => ({ ...u, isFollowing: followingIds.has(u.id) }))} />
-      <TrendingArtists artists={trendingArtists} />
+      <TrendingArtists artists={trendingArtists} weekLabel={rankingWeek.weekLabel} />
     </>
   );
 
@@ -538,7 +538,7 @@ async function getSuggestedUsers(userId: string, genres: string[], limit = 3): P
   ];
 }
 
-async function getTrendingArtists(weekIdx: number, limit = 4) {
+async function getTrendingArtists(weekIdx: number, limit = 3) {
   const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
     where: { chart: { weekIndex: weekIdx } },
     select: {
@@ -595,11 +595,21 @@ async function getGlobalTopSongs(weekIdx: number, limit = 3) {
   return aggregateGlobalSongs(entries, limit);
 }
 
-function TrendingArtists({ artists }: { artists: { name: string; totalPoints: number }[] }) {
+function TrendingArtists({
+  artists,
+  weekLabel,
+}: {
+  artists: { name: string; totalPoints: number }[];
+  weekLabel: string;
+}) {
   if (artists.length === 0) return null;
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 14 }}>Artistas em alta</div>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Artistas em alta</div>
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 11, color: "#86868B" }}>{weekLabel}</div>
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {artists.map((a, i) => (
           <Link key={a.name} href={`/artist/${encodeURIComponent(a.name)}`} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
@@ -617,6 +627,9 @@ function TrendingArtists({ artists }: { artists: { name: string; totalPoints: nu
           </Link>
         ))}
       </div>
+      <Link href="/global" style={{ display: "inline-block", marginTop: 14, fontSize: 12, color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+        Ver parada completa →
+      </Link>
     </div>
   );
 }

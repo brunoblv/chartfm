@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 
 export const runtime = "nodejs";
 
 export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
   const { id } = await context.params;
   const chartId = typeof id === "string" ? id.trim() : "";
   if (!chartId) {
@@ -130,11 +133,30 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     };
   });
 
+  let liked = false;
+  let reposted = false;
+  if (session?.user?.id) {
+    const [like, repost] = await Promise.all([
+      prisma.chartLike.findUnique({
+        where: { userId_chartId: { userId: session.user.id, chartId: row.id } },
+        select: { id: true },
+      }),
+      prisma.chartRepost.findUnique({
+        where: { userId_chartId: { userId: session.user.id, chartId: row.id } },
+        select: { id: true },
+      }),
+    ]);
+    liked = !!like;
+    reposted = !!repost;
+  }
+
   return NextResponse.json({
     ...mapPrismaChartDetail({ ...row, entries: entriesWithComputedStats }),
     previousChart,
     nextChart,
     personalNumberOnes,
     globalNumberOnes,
+    liked,
+    reposted,
   });
 }
