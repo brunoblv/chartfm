@@ -6,7 +6,6 @@ import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { HotTabs } from "./HotTabs";
-import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
 
 function weeklyScore(likes: number, comments: number, reposts: number): number {
@@ -24,46 +23,12 @@ const GENRES = [
   { slug: "k-pop", name: "K-Pop", color: ["#FB5607", "#FFBE0B"], letter: "K", tags: ["k-pop", "kpop"] },
 ];
 
-function pointsForPosition(position: number) {
-  return 101 - position;
-}
-
-function normalizeGenreTag(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function artistMatchesGenre(artistGenres: string[], genreTags: string[]) {
-  if (!artistGenres.length || !genreTags.length) return false;
-  const normalizedArtistGenres = artistGenres.map((g) => normalizeGenreTag(g));
-  const normalizedTags = genreTags.map((tag) => normalizeGenreTag(tag));
-  return normalizedArtistGenres.some((artistGenre) => normalizedTags.some((tag) => artistGenre.includes(tag)));
-}
-
-function textMatchesGenre(value: string, genreTags: string[]) {
-  if (!value.trim() || !genreTags.length) return false;
-  const normalizedValue = normalizeGenreTag(value);
-  const normalizedTags = genreTags.map((tag) => normalizeGenreTag(tag));
-  return normalizedTags.some((tag) => normalizedValue.includes(tag));
-}
-
-export default async function DiscoverPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ genre?: string }>;
-}) {
-  const resolvedSearchParams = (await searchParams) ?? {};
+export default async function DiscoverPage() {
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const rankingWeek = getRankingWeekReference(nowBRT);
   const prevWeekDate = new Date(getPreviousClosedWeekDate(nowBRT).getTime() - 7 * 24 * 60 * 60 * 1000);
   const prevWeekIndex = buildWeekIndexFromDate(prevWeekDate);
-  const selectedGenre = GENRES.find((g) => g.slug === resolvedSearchParams.genre) ?? null;
-
-  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex, selectedGenre);
+  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex);
 }
 
 type ArtistWeekRow = {
@@ -93,7 +58,6 @@ async function loadPageData(
   weekIndex: number,
   weekLabel: string,
   prevWeekIndex: number,
-  selectedGenre: (typeof GENRES)[number] | null,
 ) {
   const session = await getServerSession(authOptions);
   const [curatorCharts, followRows, weeklyEntries, previousEntries] = await Promise.all([
@@ -147,6 +111,7 @@ async function loadPageData(
     prisma.chartEntry.findMany({
       where: { chart: { weekIndex: prevWeekIndex, isPublished: true } },
       select: {
+        position: true,
         chartId: true,
         chart: {
           select: { userId: true },
@@ -257,97 +222,6 @@ async function loadPageData(
     return { title: row.title, artist: row.artist, spotifyId: row.spotifyId, artistSpotifyId: row.artistSpotifyId, users: row.users, status, delta };
   });
 
-  const topGenreSongs = selectedGenre
-    ? [...weeklyEntries].reduce<
-        Array<{
-          title: string;
-          artist: string;
-          spotifyId: string | null;
-          points: number;
-          users: Set<string>;
-        }>
-      >((_, __) => [], [])
-    : [];
-  const topGenreArtists = selectedGenre
-    ? [...weeklyEntries].reduce<
-        Array<{
-          name: string;
-          spotifyId: string | null;
-          points: number;
-          listeners: Set<string>;
-          users: Set<string>;
-        }>
-      >((_, __) => [], [])
-    : [];
-
-  if (selectedGenre) {
-    const genreMatchedEntries = weeklyEntries.filter((row) => {
-      const artistGenres = row.song.artistRef?.genres ?? [];
-      if (artistMatchesGenre(artistGenres, selectedGenre.tags)) return true;
-      const artistName = normalizeArtistName(row.song.artistRef?.name || row.song.artist);
-      return textMatchesGenre(artistName, selectedGenre.tags);
-    });
-
-    const bySong = new Map<
-      string,
-      {
-        title: string;
-        artist: string;
-        spotifyId: string | null;
-        points: number;
-        users: Set<string>;
-      }
-    >();
-    const byArtist = new Map<
-      string,
-      {
-        name: string;
-        spotifyId: string | null;
-        points: number;
-        listeners: Set<string>;
-        users: Set<string>;
-      }
-    >();
-
-    for (const row of genreMatchedEntries) {
-      const title = row.song.title.trim();
-      const artist = normalizeArtistName(row.song.artistRef?.name || row.song.artist);
-      const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
-      const current = bySong.get(key) ?? {
-        title,
-        artist,
-        spotifyId: row.song.spotifyId ?? null,
-        points: 0,
-        users: new Set<string>(),
-      };
-      current.points += pointsForPosition(row.position);
-      current.users.add(row.chart.userId);
-      bySong.set(key, current);
-
-      const artistCurrent = byArtist.get(artist) ?? {
-        name: artist,
-        spotifyId: row.song.artistRef?.spotifyId ?? row.song.artistSpotifyId ?? null,
-        points: 0,
-        listeners: new Set<string>(),
-        users: new Set<string>(),
-      };
-      artistCurrent.points += pointsForPosition(row.position);
-      artistCurrent.listeners.add(row.chartId);
-      artistCurrent.users.add(row.chart.userId);
-      byArtist.set(artist, artistCurrent);
-    }
-    topGenreSongs.push(
-      ...[...bySong.values()]
-        .sort((a, b) => b.points - a.points || b.users.size - a.users.size || a.title.localeCompare(b.title, "pt-BR"))
-        .slice(0, 10),
-    );
-    topGenreArtists.push(
-      ...[...byArtist.values()]
-        .sort((a, b) => b.points - a.points || b.listeners.size - a.listeners.size || a.name.localeCompare(b.name, "pt-BR"))
-        .slice(0, 10),
-    );
-  }
-
   return (
     <Shell title="Descobrir" subtitle="Explore músicas, artistas e curadores">
       {/* Curadores em destaque */}
@@ -394,7 +268,7 @@ async function loadPageData(
           {GENRES.map((g) => (
             <Link
               key={g.name}
-              href={selectedGenre?.slug === g.slug ? "/discover" : `/discover?genre=${encodeURIComponent(g.slug)}`}
+              href={`/discover/genre/${encodeURIComponent(g.slug)}`}
               style={{
                 height: 120,
                 borderRadius: 16,
@@ -405,8 +279,8 @@ async function loadPageData(
                 overflow: "hidden",
                 cursor: "pointer",
                 textDecoration: "none",
-                border: selectedGenre?.slug === g.slug ? "2px solid #1D1D1F" : "2px solid transparent",
-                boxShadow: selectedGenre?.slug === g.slug ? "0 0 0 3px rgba(29,29,31,0.12)" : "none",
+                border: "2px solid transparent",
+                boxShadow: "none",
               }}
             >
               <div style={{ fontSize: 16, fontWeight: 700, position: "relative", zIndex: 1 }}>{g.name}</div>
@@ -420,75 +294,6 @@ async function loadPageData(
             </Link>
           ))}
         </div>
-        {selectedGenre && (
-          <div style={{ marginTop: 22, background: "white", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 18 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Top de {selectedGenre.name} ({weekLabel})</h3>
-              <Link href="/discover" style={{ fontSize: 12, color: "#86868B", textDecoration: "none", fontWeight: 600 }}>Limpar filtro</Link>
-            </div>
-            {topGenreArtists.length === 0 && topGenreSongs.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#86868B" }}>
-                Ainda não há artistas ou músicas desse gênero nas paradas da semana.
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#6B6B70", marginBottom: 8 }}>Artistas</div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {topGenreArtists.map((artist, idx) => (
-                      <Link
-                        key={`${artist.name}-${idx}`}
-                        href={buildArtistPath(artist.name, artist.spotifyId)}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "32px 1fr auto",
-                          alignItems: "center",
-                          gap: 10,
-                          background: "#F8F8FA",
-                          borderRadius: 12,
-                          padding: "10px 12px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#86868B" }}>#{idx + 1}</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1D1D1F" }}>{artist.name}</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#FA243C" }}>{artist.points} pts</div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#6B6B70", marginBottom: 8 }}>Músicas</div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {topGenreSongs.map((song, idx) => (
-                      <Link
-                        key={`${song.title}-${song.artist}-${idx}`}
-                        href={buildSongPath({ title: song.title, artist: song.artist, spotifyId: song.spotifyId })}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "32px 1fr auto",
-                          alignItems: "center",
-                          gap: 10,
-                          background: "#F8F8FA",
-                          borderRadius: 12,
-                          padding: "10px 12px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#86868B" }}>#{idx + 1}</div>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#1D1D1F" }}>{song.title}</div>
-                          <div style={{ fontSize: 12, color: "#86868B" }}>{song.artist}</div>
-                        </div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#FA243C" }}>{song.points} pts</div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </section>
 
       <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>
