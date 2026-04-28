@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   ChevronLeft, Heart, Repeat2, Share, Play, Star, MessageCircle,
@@ -61,6 +61,7 @@ type OverlapRow = {
 
 export default function ChartDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const raw = params?.id;
   const id = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
 
@@ -78,6 +79,7 @@ export default function ChartDetailPage() {
   const [likeCount, setLikeCount] = useState(0);
   const [repostCount, setRepostCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
+  const [deletingChart, setDeletingChart] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -185,6 +187,25 @@ export default function ChartDetailPage() {
     }
   }
 
+  async function deleteChart() {
+    if (!isDbChart || !isOwner || deletingChart || !id) return;
+    const confirmed = window.confirm("Tem certeza que deseja excluir esta parada? Essa ação não pode ser desfeita.");
+    if (!confirmed) return;
+    setDeletingChart(true);
+    try {
+      const res = await fetch(`/api/charts/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("Não foi possível excluir a parada agora.");
+        return;
+      }
+      router.push(`/profile/${encodeURIComponent(user?.handle ?? "")}`);
+    } catch {
+      alert("Erro de conexão ao excluir a parada.");
+    } finally {
+      setDeletingChart(false);
+    }
+  }
+
   if (phase === "loading") {
     return (
       <Shell title="" noPadding>
@@ -279,7 +300,7 @@ export default function ChartDetailPage() {
               </div>
             )}
             {isOwner && (
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <Link
                   href={`/chart/${chart.id}/edit`}
                   style={{
@@ -296,6 +317,27 @@ export default function ChartDetailPage() {
                 >
                   Editar parada
                 </Link>
+                <button
+                  type="button"
+                  onClick={deleteChart}
+                  disabled={deletingChart}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    border: "1px solid rgba(250,36,60,0.25)",
+                    background: "rgba(250,36,60,0.08)",
+                    color: "#FA243C",
+                    borderRadius: 10,
+                    padding: "7px 12px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: deletingChart ? "not-allowed" : "pointer",
+                    opacity: deletingChart ? 0.6 : 1,
+                  }}
+                >
+                  {deletingChart ? "Excluindo..." : "Excluir parada"}
+                </button>
               </div>
             )}
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronLeft, Flame, Trophy, BadgeCheck, Trash2 } from "lucide-react";
+import { ChevronLeft, Flame, Trophy, BadgeCheck } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartCard } from "@/components/chart/ChartCard";
@@ -223,7 +223,6 @@ export default function ProfilePage() {
   const [chartPage, setChartPage] = useState(1);
   const [loadingChartPage, setLoadingChartPage] = useState(false);
   const [statsPage, setStatsPage] = useState(1);
-  const [deletingChartId, setDeletingChartId] = useState<string | null>(null);
   const CHARTS_PER_PAGE = 6;
   const STATS_PER_PAGE = 100;
 
@@ -378,51 +377,6 @@ export default function ProfilePage() {
   const hasCharts = (payload?.totalCharts ?? user.charts.length) > 0;
   const totalCharts = payload?.totalCharts ?? user.charts.length;
   const totalRankedSlots = statsUser ? statsUser.charts.reduce((acc, c) => acc + c.entries.length, 0) : 0;
-
-  async function handleDeleteChart(chartId: string) {
-    if (deletingChartId) return;
-    const confirmed = window.confirm("Tem certeza que deseja excluir esta parada? Essa ação não pode ser desfeita.");
-    if (!confirmed) return;
-
-    setDeletingChartId(chartId);
-    try {
-      const res = await fetch(`/api/charts/${chartId}`, { method: "DELETE" });
-      if (!res.ok) {
-        alert("Não foi possível excluir a parada agora.");
-        return;
-      }
-
-      setPayload((prev) => {
-        if (!prev) return prev;
-        const nextCharts = prev.user.charts.filter((c) => c.id !== chartId);
-        const nextTotalCharts = Math.max((prev.totalCharts ?? prev.user.charts.length) - 1, 0);
-        return {
-          ...prev,
-          user: { ...prev.user, charts: nextCharts },
-          totalCharts: nextTotalCharts,
-        };
-      });
-      setFullPayload((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          user: { ...prev.user, charts: prev.user.charts.filter((c) => c.id !== chartId) },
-        };
-      });
-
-      const remainingInPage = (payload?.user.charts ?? []).filter((c) => c.id !== chartId).length;
-      const currentPage = payload?.page ?? chartPage;
-      if (remainingInPage === 0 && currentPage > 1) {
-        setChartPage(currentPage - 1);
-      } else {
-        setChartPage(currentPage);
-      }
-    } catch {
-      alert("Erro de conexão ao excluir a parada.");
-    } finally {
-      setDeletingChartId(null);
-    }
-  }
 
   return (
     <Shell title="" noPadding>
@@ -671,7 +625,7 @@ export default function ProfilePage() {
                     <div style={{ marginBottom: 12, color: "#86868B", fontSize: 13 }}>Carregando página {chartPage}…</div>
                   )}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-                    {pageCharts.map((chart, i) => (
+                    {pageCharts.map((chart) => (
                       <div key={chart.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <ChartCard
                           user={user}
@@ -679,32 +633,6 @@ export default function ProfilePage() {
                           showFollowActions={!isOwn}
                           showUserHeader={false}
                         />
-                        {isOwn && source === "db" ? (
-                          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteChart(chart.id)}
-                              disabled={deletingChartId === chart.id}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                border: "1px solid rgba(250,36,60,0.25)",
-                                background: "rgba(250,36,60,0.08)",
-                                color: "#FA243C",
-                                borderRadius: 999,
-                                padding: "8px 12px",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                cursor: deletingChartId === chart.id ? "not-allowed" : "pointer",
-                                opacity: deletingChartId === chart.id ? 0.6 : 1,
-                              }}
-                            >
-                              <Trash2 size={14} />
-                              {deletingChartId === chart.id ? "Excluindo..." : "Excluir parada"}
-                            </button>
-                          </div>
-                        ) : null}
                       </div>
                     ))}
                   </div>
