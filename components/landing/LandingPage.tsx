@@ -227,6 +227,45 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
                 <div><b style={{ color: "#1D1D1F", fontWeight: 600 }}>+24 mil</b> curadores ativos esta semana</div>
               </div>
             </div>
+
+            {isMobile && (
+              <div style={{
+                marginTop: 36,
+                background: "white",
+                borderRadius: 20,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
+                padding: 20,
+                border: "1px solid rgba(0,0,0,0.04)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                  <Avatar user={previewUser} size={36} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>{previewUser.name}</div>
+                    <div style={{ fontSize: 11, color: "#86868B" }}>Top 10 · Esta semana · 2026</div>
+                  </div>
+                  <div style={{ padding: "4px 10px", background: "rgba(250,36,60,0.08)", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#FA243C" }}>NOVA</div>
+                </div>
+                {heroEntries.map((entry) => (
+                  <div key={entry.position} style={{
+                    display: "grid",
+                    gridTemplateColumns: "28px 40px 1fr auto",
+                    gap: 10, alignItems: "center",
+                    padding: "9px 0",
+                    borderTop: "1px solid rgba(0,0,0,0.04)",
+                  }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: entry.position <= 3 ? "#FA243C" : "#86868B", textAlign: "center" as const }}>
+                      {entry.position}
+                    </div>
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: `linear-gradient(135deg, ${entry.palette[0]}, ${entry.palette[1]})` }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.title}</div>
+                      <div style={{ fontSize: 11, color: "#86868B", marginTop: 1 }}>{entry.artist}</div>
+                    </div>
+                    <StatusBadge status={entry.status} delta={entry.delta} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right: hero visual */}
@@ -327,6 +366,26 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
         </div>
       </section>
 
+      {/* SOCIAL PROOF / PRESS STRIP */}
+      <section style={{
+        padding: isMobile ? "20px 24px" : "24px 56px",
+        borderTop: "1px solid rgba(0,0,0,0.05)", borderBottom: "1px solid rgba(0,0,0,0.05)",
+        background: "white",
+      }}>
+        <div style={{
+          maxWidth: 1200, margin: "0 auto",
+          display: "flex", alignItems: "center",
+          gap: isMobile ? 20 : 40,
+          justifyContent: "space-between",
+          flexWrap: "wrap" as const,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#86868B", letterSpacing: "0.05em", textTransform: "uppercase" as const, flexShrink: 0 }}>Visto em</div>
+          {(isMobile ? ["PITCHFORK", "ROLLING STONE", "NPR Music"] : ["PITCHFORK", "ROLLING STONE", "NPR Music", "THE FADER", "CRACK MAGAZINE"]).map((b) => (
+            <div key={b} style={{ fontSize: 14, fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em", fontFamily: "serif", opacity: 0.7 }}>{b}</div>
+          ))}
+        </div>
+      </section>
+
 {/* COMO FUNCIONA — 3 steps */}
       <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -384,6 +443,31 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
                 </div>
               ))}
             </div>
+
+            {isMobile && (
+              <div style={{ marginTop: 28, marginLeft: -24, marginRight: -24, overflowX: "auto", paddingLeft: 24 }}>
+                <div style={{ display: "flex", gap: 14, paddingRight: 24, paddingBottom: 4, width: "max-content" }}>
+                  {COMMUNITIES.slice(0, 4).map((c) => (
+                    <div key={c.id} style={{
+                      width: 180, borderRadius: 16, overflow: "hidden",
+                      background: "white", border: "1px solid rgba(0,0,0,0.06)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.06)", flexShrink: 0,
+                    }}>
+                      <div style={{
+                        height: 64, display: "grid", placeItems: "center",
+                        background: `linear-gradient(135deg, ${c.cover[0]}, ${c.cover[1]})`,
+                      }}>
+                        <div style={{ fontSize: 28 }}>{c.icon}</div>
+                      </div>
+                      <div style={{ padding: 12 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>{c.name}</div>
+                        <div style={{ fontSize: 11, color: "#86868B", marginTop: 2 }}>{c.members.toLocaleString("pt-BR")} membros</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Visual: stack of community cards */}
@@ -430,164 +514,250 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
         </div>
       </section>
 
-      {/* GLOBAL CHART PREVIEW */}
+      {/* PARADA GLOBAL — dark feature section */}
       <section id="parada-global" style={{
-        padding: isMobile ? "60px 24px" : "80px 56px",
-        background: "white",
-        borderTop: "1px solid rgba(0,0,0,0.05)", borderBottom: "1px solid rgba(0,0,0,0.05)",
+        padding: isMobile ? "60px 24px" : "100px 56px",
+        background: "#0F0F12", color: "white",
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ marginBottom: 40 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 10 }}>Ao vivo</div>
-            <h2 style={{ fontSize: isMobile ? 32 : 42, fontWeight: 800, letterSpacing: "-0.04em", color: "#1D1D1F", margin: 0 }}>
-              Parada global desta semana
-            </h2>
-            <p style={{ fontSize: 14, color: "#86868B", marginTop: 8 }}>
-              Baseada nos tops de {top8[0]?.voters ?? 0}+ curadores ativos
-            </p>
-          </div>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-            gap: 10,
-          }}>
-            {top8.map((entry) => (
-              <div key={entry.position} style={{
-                display: "grid",
-                gridTemplateColumns: "32px 48px 1fr auto",
-                gap: 12, alignItems: "center",
-                padding: "12px 16px",
-                background: "#FBFBFD", borderRadius: 14,
-                border: "1px solid rgba(0,0,0,0.06)",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-              }}>
-                <div style={{
-                  fontSize: entry.position <= 3 ? 18 : 13,
-                  fontWeight: 800,
-                  color: entry.position <= 3 ? "#FA243C" : "#86868B",
-                  textAlign: "center" as const,
-                  letterSpacing: "-0.02em",
-                }}>
-                  {entry.position}
-                </div>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 10, flexShrink: 0,
-                  background: `linear-gradient(135deg, ${entry.cover.palette[0]}, ${entry.cover.palette[1]})`,
-                }} />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 14, fontWeight: 700, color: "#1D1D1F",
-                    whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis",
-                    letterSpacing: "-0.01em",
-                  }}>
-                    {entry.song.title}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>{entry.song.artist}</div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column" as const, alignItems: "flex-end", gap: 4 }}>
-                  <StatusBadge status={entry.status} delta={entry.delta} />
-                  <div style={{ fontSize: 11, color: "#86868B" }}>{entry.points} pts</div>
-                </div>
+        <div style={{
+          maxWidth: 1200, margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gap: 60, alignItems: "center",
+        }}>
+          {/* Left: live chart preview */}
+          <div style={{ position: "relative" }}>
+            <div style={{
+              background: "rgba(255,255,255,0.05)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 20, padding: 24,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FA243C", boxShadow: "0 0 0 3px rgba(250,36,60,0.2)" }} />
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, opacity: 0.7 }}>Parada global · ao vivo</div>
+                <div style={{ flex: 1 }} />
+                <div style={{ fontSize: 11, opacity: 0.6 }}>{top8[0]?.voters ?? 0}+ curadores</div>
               </div>
-            ))}
+              {top8.slice(0, 6).map((entry, i) => {
+                const maxPoints = top8[0]?.points ?? 1;
+                return (
+                  <div key={entry.position} style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "10px 0",
+                    borderTop: i === 0 ? "none" : "1px solid rgba(255,255,255,0.06)",
+                  }}>
+                    <div style={{
+                      width: 28, fontSize: 18, fontWeight: 800,
+                      fontVariantNumeric: "tabular-nums", textAlign: "center" as const,
+                      color: i < 3 ? "#FA243C" : "rgba(255,255,255,0.5)",
+                    }}>{entry.position}</div>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 8, flexShrink: 0,
+                      background: `linear-gradient(135deg, ${entry.cover.palette[0]}, ${entry.cover.palette[1]})`,
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.title}</div>
+                      <div style={{ fontSize: 11, opacity: 0.6, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.artist}</div>
+                    </div>
+                    <div style={{ width: 80, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                      <div style={{ height: "100%", width: `${Math.round((entry.points / maxPoints) * 100)}%`, background: "linear-gradient(90deg, #FA243C, #FF8C42)" }} />
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", width: 50, textAlign: "right" as const, opacity: 0.9 }}>{entry.points.toLocaleString("pt-BR")}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div style={{ textAlign: "center" as const, marginTop: 32 }}>
+          {/* Right: copy */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14 }}>Parada Global</div>
+            <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 18px 0", lineHeight: 1.1 }}>
+              O que o mundo<br />está ouvindo agora.
+            </h2>
+            <p style={{ fontSize: 16, opacity: 0.75, lineHeight: 1.55, marginBottom: 30, margin: "0 0 30px 0" }}>
+              Não é algoritmo de play. São paradas reais, montadas por gente real, agregadas por sistema de pontos transparente. A música #1 de cada usuário vale 100 pontos. A #2, 99. E por aí vai.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 32 }}>
+              {[["24,1 mil", "Curadores ativos"], ["418 mil", "Músicas votadas"], ["56", "Comunidades"]].map(([n, l]) => (
+                <div key={l}>
+                  <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.035em", background: "linear-gradient(135deg, #FA243C, #FF8C42)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{n}</div>
+                  <div style={{ fontSize: 12, opacity: 0.6 }}>{l}</div>
+                </div>
+              ))}
+            </div>
             <button
               onClick={handleSignIn}
               disabled={signingIn}
               style={{
-                padding: "12px 28px", borderRadius: 100,
-                background: "transparent", color: "#1D1D1F",
-                border: "1.5px solid rgba(0,0,0,0.12)", fontSize: 14, fontWeight: 700,
-                cursor: signingIn ? "not-allowed" : "pointer",
+                padding: "13px 28px", borderRadius: 100,
+                background: "#FA243C", color: "white",
+                border: "none", fontSize: 14, fontWeight: 700,
+                letterSpacing: "-0.01em", cursor: signingIn ? "not-allowed" : "pointer",
+                boxShadow: "0 4px 18px rgba(250,36,60,0.4)",
+                opacity: signingIn ? 0.7 : 1,
               }}
             >
-              Ver parada completa →
+              {signingIn ? "Entrando…" : "Ver parada completa →"}
             </button>
           </div>
         </div>
       </section>
 
-      {/* CURATORS / CTA */}
-      <section style={{
-        padding: isMobile ? "60px 24px" : "80px 56px",
-        background: "#1D1D1F",
-      }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", textAlign: "center" as const }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 16 }}>
-            Comunidade
+      {/* FEATURE GRID — 6 recursos */}
+      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ textAlign: "center" as const, marginBottom: 50 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Recursos</div>
+            <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.1, color: "#1D1D1F" }}>
+              Pensado para quem leva<br />música a sério.
+            </h2>
           </div>
-          <h2 style={{
-            fontSize: isMobile ? 32 : 48, fontWeight: 800,
-            letterSpacing: "-0.04em", color: "white", margin: "0 0 12px 0",
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+            gap: 18,
           }}>
-            Mais de 3.200 curadores<br />já estão na plataforma.
-          </h2>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", margin: "0 0 48px 0" }}>
-            De Pop a Metal, de Sertanejo a K-Pop — todo gosto tem espaço aqui.
-          </p>
-
-          {/* Avatar stack */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 48 }}>
-            {USERS_DATA.map((u, i) => (
-              <div key={u.id} style={{
-                marginLeft: i === 0 ? 0 : -14,
-                border: "3px solid #1D1D1F",
-                borderRadius: "50%",
-                zIndex: USERS_DATA.length - i,
-                position: "relative",
-              }}>
-                <Avatar user={u} size={52} />
+            {[
+              { icon: "🎯", title: "Estatísticas Billboard", desc: "Pico, semanas na parada, mudança de posição, #1s históricos. Tudo que importa." },
+              { icon: "🎨", title: "Três formatos de parada", desc: "Lista clássica, grid de capas visual ou pódio com top 3 em destaque. Você escolhe." },
+              { icon: "🤝", title: "Match de gosto", desc: "Veja quem tem gosto parecido com o seu e descubra músicas pelas paradas dos outros." },
+              { icon: "📊", title: "Trajetória de músicas", desc: "Acompanhe como cada música se moveu na sua parada nas últimas 6 semanas." },
+              { icon: "🔔", title: "Notificações inteligentes", desc: "Curadores que você segue postaram uma nova parada? Sua música subiu? A gente avisa." },
+              { icon: "🎵", title: "Importe do Spotify", desc: "Conecte sua conta Spotify ou Apple Music e gere sua parada a partir do histórico." },
+            ].map((f) => (
+              <div key={f.title} style={{ padding: 24, borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", background: "#FBFBFD" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
+                <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6, color: "#1D1D1F" }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>{f.desc}</div>
               </div>
             ))}
-            <div style={{
-              marginLeft: -14, width: 52, height: 52,
-              borderRadius: "50%", background: "#FA243C",
-              border: "3px solid #1D1D1F",
-              display: "grid", placeItems: "center",
-              fontSize: 11, fontWeight: 800, color: "white",
-              letterSpacing: "-0.01em", position: "relative",
-              zIndex: 0,
-            }}>
-              +3k
-            </div>
           </div>
+        </div>
+      </section>
 
+      {/* TESTIMONIALS */}
+      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "#FBFBFD" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ textAlign: "center" as const, marginBottom: 50 }}>
+            <h2 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 800, letterSpacing: "-0.035em", margin: 0, lineHeight: 1.1, color: "#1D1D1F" }}>Curadores. Críticos. Fãs.</h2>
+          </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+            gap: 18,
+          }}>
+            {[
+              { user: USERS_DATA[2], role: "Curador · Rockeiros", quote: "Finalmente um lugar onde minha parada importa. Largei de vez aquelas listas chatas no Notes." },
+              { user: USERS_DATA[4], role: "Crítica musical", quote: "A parada agregada de Divas Pop é melhor curadoria que a maioria das playlists editoriais que vejo por aí." },
+              { user: USERS_DATA[0], role: "DJ · Pop 2000s", quote: "Posto vídeo de set semanal na minha comunidade e o engajamento é real. Gente que ouve, não que faz scroll." },
+            ].map((t, i) => (
+              <div key={i} style={{ background: "white", borderRadius: 18, padding: 26, border: "1px solid rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: 24, color: "#FA243C", lineHeight: 1, marginBottom: 14, fontWeight: 800 }}>&ldquo;</div>
+                <div style={{ fontSize: 15, color: "#1D1D1F", lineHeight: 1.5, marginBottom: 20, letterSpacing: "-0.01em" }}>{t.quote}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Avatar user={t.user} size={36} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>{t.user.name}</div>
+                    <div style={{ fontSize: 11, color: "#86868B" }}>{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px" }}>
+        <div style={{
+          maxWidth: 1000, margin: "0 auto",
+          borderRadius: 32, overflow: "hidden",
+          position: "relative",
+          background: "linear-gradient(135deg, #FA243C 0%, #8338EC 100%)",
+          padding: isMobile ? "60px 32px" : "80px 60px",
+          textAlign: "center" as const, color: "white",
+        }}>
+          <div style={{ position: "absolute", top: -30, left: -30, opacity: 0.15, pointerEvents: "none" }}>
+            <div style={{ width: 120, height: 120, borderRadius: 16, background: `linear-gradient(135deg, ${COVER_PALETTES[0][0]}, ${COVER_PALETTES[0][1]})`, transform: "rotate(-12deg)" }} />
+          </div>
+          <div style={{ position: "absolute", bottom: -40, right: -30, opacity: 0.15, pointerEvents: "none" }}>
+            <div style={{ width: 140, height: 140, borderRadius: 16, background: `linear-gradient(135deg, ${COVER_PALETTES[7][0]}, ${COVER_PALETTES[7][1]})`, transform: "rotate(15deg)" }} />
+          </div>
+          <h2 style={{ fontSize: isMobile ? 36 : 54, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05, position: "relative" }}>
+            Sua próxima parada<br />fecha segunda.
+          </h2>
+          <p style={{ fontSize: 17, opacity: 0.9, maxWidth: 520, margin: "0 auto 32px auto", lineHeight: 1.5, position: "relative" }}>
+            Crie uma conta grátis em 30 segundos. Sem cartão de crédito. Sem pegadinha.
+          </p>
           <button
             onClick={handleSignIn}
             disabled={signingIn}
             style={{
-              padding: "16px 40px", borderRadius: 100,
-              background: "#FA243C", color: "white",
-              border: "none", fontSize: 16, fontWeight: 700,
-              letterSpacing: "-0.01em", cursor: signingIn ? "not-allowed" : "pointer",
-              boxShadow: "0 4px 20px rgba(250,36,60,0.4)",
-              opacity: signingIn ? 0.7 : 1,
+              background: "white", color: "#FA243C",
+              border: "none", padding: "16px 32px",
+              borderRadius: 100, fontSize: 15, fontWeight: 700,
+              cursor: signingIn ? "not-allowed" : "pointer",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              position: "relative", opacity: signingIn ? 0.7 : 1,
             }}
           >
-            {signingIn ? "Entrando…" : "Entrar na comunidade"}
+            {signingIn ? "Entrando…" : "Começar agora — é grátis"}
           </button>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer style={{
-        padding: isMobile ? "24px 24px" : "24px 56px",
-        borderTop: "1px solid rgba(0,0,0,0.06)",
-        display: "flex", alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap" as const, gap: 12,
+        padding: isMobile ? "40px 24px 28px" : "56px 56px 36px",
+        background: "white",
+        borderTop: "1px solid rgba(0,0,0,0.05)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center" }}>
-            <ChartifyIcon size={13} />
+        <div style={{
+          maxWidth: 1200, margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr 1fr" : "1.5fr 1fr 1fr 1fr 1fr",
+          gap: isMobile ? 32 : 40,
+        }}>
+          <div style={{ gridColumn: isMobile ? "1 / -1" : undefined }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center" }}>
+                <ChartifyIcon size={16} />
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>Chartify</div>
+            </div>
+            <div style={{ fontSize: 13, color: "#86868B", lineHeight: 1.5, maxWidth: 280 }}>
+              A rede social de paradas musicais semanais. Feita por quem ouve, pra quem ouve.
+            </div>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>Chartify</span>
+          {[
+            ["Produto", ["Como funciona", "Comunidades", "Parada Global", "Curadores", "Mobile"]],
+            ["Empresa", ["Sobre", "Blog", "Carreiras", "Imprensa"]],
+            ["Recursos", ["Central de ajuda", "Importar Spotify", "API", "Status"]],
+            ["Legal", ["Termos", "Privacidade", "Cookies", "DMCA"]],
+          ].map(([title, items]) => (
+            <div key={title as string}>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "#1D1D1F" }}>{title}</div>
+              {(items as string[]).map((it) => (
+                <div key={it} style={{ fontSize: 13, color: "#86868B", marginBottom: 8, cursor: "pointer" }}>{it}</div>
+              ))}
+            </div>
+          ))}
         </div>
-        <div style={{ fontSize: 12, color: "#86868B" }}>
-          © 2026 Chartify · Todos os direitos reservados
+        <div style={{
+          maxWidth: 1200, margin: "40px auto 0",
+          paddingTop: 24, borderTop: "1px solid rgba(0,0,0,0.05)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap" as const, gap: 8,
+          fontSize: 12, color: "#86868B",
+        }}>
+          <div>© 2026 Chartify. Todos os direitos reservados.</div>
+          <div style={{ display: "flex", gap: 14 }}>
+            <span>🌐 PT-BR</span>
+            <span>·</span>
+            <span>Feito com ♥ no Brasil</span>
+          </div>
         </div>
       </footer>
 
