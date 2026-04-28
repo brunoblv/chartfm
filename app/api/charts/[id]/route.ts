@@ -228,6 +228,22 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     }
     const spotifyId = e.spotifyId?.trim() || null;
     if (spotifyId) {
+      // A song may have been created manually (no spotifyId) with the same title+artist.
+      // Upserting by spotifyId would try to CREATE a new record and hit the (title, artist) unique constraint.
+      // Promote the existing record instead.
+      const existingByName = await prisma.song.findFirst({
+        where: { title, artist, spotifyId: null },
+        select: { id: true, spotifyId: true, albumSpotifyId: true },
+      });
+      if (existingByName) {
+        const song = await prisma.song.update({
+          where: { id: existingByName.id },
+          data: { spotifyId, album: e.album ?? null },
+          select: { id: true, spotifyId: true, albumSpotifyId: true },
+        });
+        songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
+        continue;
+      }
       const song = await prisma.song.upsert({
         where: { spotifyId },
         update: {

@@ -255,32 +255,51 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const song = await prisma.song.upsert({
-      where: { spotifyId },
-      update: {
-        title: metadata?.title ?? e.title,
-        artist: mainArtistName,
-        album: metadata?.album.title ?? e.album ?? null,
-        artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
-        albumSpotifyId: albumSpotifyId ?? undefined,
-        durationMs: metadata?.durationMs ?? undefined,
-        previewUrl: metadata?.previewUrl ?? undefined,
-        spotifyUrl: metadata?.spotifyUrl ?? undefined,
-        trackNumber: metadata?.trackNumber ?? undefined,
-      },
-      create: {
-        title: metadata?.title ?? e.title,
-        artist: mainArtistName,
-        album: metadata?.album.title ?? e.album ?? null,
-        spotifyId,
-        artistSpotifyId: primaryArtist?.spotifyId ?? null,
-        albumSpotifyId,
-        durationMs: metadata?.durationMs ?? null,
-        previewUrl: metadata?.previewUrl ?? null,
-        spotifyUrl: metadata?.spotifyUrl ?? null,
-        trackNumber: metadata?.trackNumber ?? null,
-      },
+    const resolvedTitle = metadata?.title ?? e.title;
+    const existingByName = await prisma.song.findFirst({
+      where: { title: resolvedTitle, artist: mainArtistName, spotifyId: null },
+      select: { id: true },
     });
+    const song = existingByName
+      ? await prisma.song.update({
+          where: { id: existingByName.id },
+          data: {
+            spotifyId,
+            album: metadata?.album.title ?? e.album ?? null,
+            artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
+            albumSpotifyId: albumSpotifyId ?? undefined,
+            durationMs: metadata?.durationMs ?? undefined,
+            previewUrl: metadata?.previewUrl ?? undefined,
+            spotifyUrl: metadata?.spotifyUrl ?? undefined,
+            trackNumber: metadata?.trackNumber ?? undefined,
+          },
+        })
+      : await prisma.song.upsert({
+          where: { spotifyId },
+          update: {
+            title: resolvedTitle,
+            artist: mainArtistName,
+            album: metadata?.album.title ?? e.album ?? null,
+            artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
+            albumSpotifyId: albumSpotifyId ?? undefined,
+            durationMs: metadata?.durationMs ?? undefined,
+            previewUrl: metadata?.previewUrl ?? undefined,
+            spotifyUrl: metadata?.spotifyUrl ?? undefined,
+            trackNumber: metadata?.trackNumber ?? undefined,
+          },
+          create: {
+            title: resolvedTitle,
+            artist: mainArtistName,
+            album: metadata?.album.title ?? e.album ?? null,
+            spotifyId,
+            artistSpotifyId: primaryArtist?.spotifyId ?? null,
+            albumSpotifyId,
+            durationMs: metadata?.durationMs ?? null,
+            previewUrl: metadata?.previewUrl ?? null,
+            spotifyUrl: metadata?.spotifyUrl ?? null,
+            trackNumber: metadata?.trackNumber ?? null,
+          },
+        });
 
     // Artistas secundários (feats) no relacionamento song_feats
     if (song.spotifyId) {
