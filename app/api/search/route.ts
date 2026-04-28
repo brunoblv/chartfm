@@ -8,14 +8,28 @@ export async function GET(req: NextRequest) {
   if (q.length < 2) {
     return NextResponse.json({ songs: [], artists: [], users: [] });
   }
+  const terms = q.split(/\s+/).filter(Boolean).slice(0, 6);
+
+  const songTermFilters = terms.map((term) => ({
+    OR: [
+      { title: { contains: term, mode: "insensitive" as const } },
+      { artist: { contains: term, mode: "insensitive" as const } },
+    ],
+  }));
+  const artistTermFilters = terms.map((term) => ({
+    name: { contains: term, mode: "insensitive" as const },
+  }));
+  const userTermFilters = terms.map((term) => ({
+    OR: [
+      { name: { contains: term, mode: "insensitive" as const } },
+      { handle: { contains: term, mode: "insensitive" as const } },
+    ],
+  }));
 
   const [songs, artists, users] = await Promise.all([
     prisma.song.findMany({
       where: {
-        OR: [
-          { title: { contains: q, mode: "insensitive" } },
-          { artist: { contains: q, mode: "insensitive" } },
-        ],
+        AND: songTermFilters,
       },
       select: {
         id: true,
@@ -30,17 +44,14 @@ export async function GET(req: NextRequest) {
       orderBy: { title: "asc" },
     }),
     prisma.artist.findMany({
-      where: { name: { contains: q, mode: "insensitive" } },
+      where: { AND: artistTermFilters },
       select: { spotifyId: true, name: true, imageUrl: true },
       take: 4,
       orderBy: { name: "asc" },
     }),
     prisma.user.findMany({
       where: {
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { handle: { contains: q, mode: "insensitive" } },
-        ],
+        AND: userTermFilters,
       },
       select: { handle: true, name: true, avatarColor: true, image: true },
       take: 3,
