@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, Play, Star } from "lucide-react";
+import { ChevronLeft, Star } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { buildWeekIndexFromDate, getPreviousClosedWeekDate } from "@/lib/chart-week";
 import { Shell } from "@/components/layout/Shell";
@@ -328,7 +328,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               >
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{i + 1}</div>
                 <div style={{ padding: "6px 6px" }}>
-                  <Cover cover={s.cover} song={{ title: s.title, artist: canonicalArtist, album: canonicalAlbum }} size={44} rounded={8} />
+                  <Cover cover={s.cover} song={{ title: s.title, artist: canonicalArtist, album: canonicalAlbum, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
                 </div>
                 <div style={{ padding: "0 12px", minWidth: 0 }}>
                   <Link
