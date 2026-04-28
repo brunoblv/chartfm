@@ -12,13 +12,29 @@ function isSpotifyId(s: string): boolean {
   return /^[A-Za-z0-9]{22}$/.test(s) && /[A-Z]/.test(s);
 }
 
+/** Prisma `cuid()` (~25 chars, começa por `c`) — segmento único em `/song/<id>` sem Spotify. */
+function isInternalSongId(s: string): boolean {
+  const t = s.trim();
+  return /^c[a-z0-9]{8,32}$/i.test(t) && t.length >= 20 && t.length <= 36;
+}
+
 export function buildSongPath(song: {
   title: string;
   artist: string;
+  id?: string | null;
+  slugArtist?: string | null;
   spotifyId?: string | null;
 }): string {
-  const slug = `${slugify(song.title)}_${slugify(song.artist)}`;
-  if (song.spotifyId) return `/song/${song.spotifyId}_${slug}`;
+  const sid = song.spotifyId?.trim();
+  if (sid) {
+    const artistForSlug = (song.slugArtist ?? song.artist).trim();
+    const slug = `${slugify(song.title)}_${slugify(artistForSlug)}`;
+    return `/song/${sid}_${slug}`;
+  }
+  const internalId = song.id?.trim();
+  if (internalId) return `/song/${internalId}`;
+  const artistForSlug = (song.slugArtist ?? song.artist).trim();
+  const slug = `${slugify(song.title)}_${slugify(artistForSlug)}`;
   return `/song/${slug}`;
 }
 
@@ -29,19 +45,29 @@ export function buildArtistPath(name: string, spotifyId?: string | null): string
 
 export type ParsedSongSlug =
   | { type: "spotify"; spotifyId: string }
-  | { type: "slug"; title: string; artist: string };
+  | { type: "internalId"; songId: string }
+  | { type: "slug"; titleSlug: string; artistSlug: string };
 
 export function parseSongSlug(slug: string): ParsedSongSlug | null {
-  const sep = slug.indexOf("_");
-  if (sep === -1) return null;
-  const prefix = slug.slice(0, sep);
-  const rest = slug.slice(sep + 1);
+  let raw: string;
+  try {
+    raw = decodeURIComponent(slug.trim());
+  } catch {
+    raw = slug.trim();
+  }
+  if (!raw) return null;
+
+  if (!raw.includes("_")) {
+    if (isInternalSongId(raw)) return { type: "internalId", songId: raw };
+    return null;
+  }
+
+  const sep = raw.indexOf("_");
+  const prefix = raw.slice(0, sep);
+  const rest = raw.slice(sep + 1);
   if (isSpotifyId(prefix)) return { type: "spotify", spotifyId: prefix };
-  // Fallback: prefix = title slug, rest = artist slug
-  const title = prefix.replace(/-/g, " ").trim();
-  const artist = rest.replace(/-/g, " ").trim();
-  if (!title || !artist) return null;
-  return { type: "slug", title, artist };
+  if (!prefix || !rest) return null;
+  return { type: "slug", titleSlug: prefix, artistSlug: rest };
 }
 
 export type ParsedArtistSlug =

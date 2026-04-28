@@ -19,8 +19,15 @@ export interface User {
 }
 
 export interface Song {
+  /** ID na tabela `Song` (Prisma cuid). Usado em `/song/<id>` quando não há `spotifyId` — links estáveis para importações. */
+  id?: string | null;
   title: string;
   artist: string;
+  /**
+   * Texto em `Song.artist` na BD (import/planilha). Usado no slug de `/song/...` quando `artist` é
+   * substituído por `artistRef.name` para exibição — evita URL que não bate com a resolução na página.
+   */
+  slugArtist?: string | null;
   /** Artistas secundários (feats), sem incluir o principal. */
   featArtists?: string[];
   album: string;

@@ -101,7 +101,7 @@ export function mapTrackToResult(track: SpotifyTrackApi) {
   };
 }
 
-export async function searchSpotifyTracks(query: string, limit = 10) {
+export async function searchSpotifyTracks(query: string, limit = 10, market: string = "BR") {
   const token = await getAccessToken();
   if (!token) return [];
 
@@ -111,7 +111,7 @@ export async function searchSpotifyTracks(query: string, limit = 10) {
   url.searchParams.set("q", q);
   url.searchParams.set("type", "track");
   url.searchParams.set("limit", String(lim));
-  url.searchParams.set("market", "BR");
+  url.searchParams.set("market", market);
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
@@ -162,13 +162,13 @@ function parseSpotifyReleaseDate(raw: string | undefined): Date | null {
   return null;
 }
 
-export async function getSpotifyTrackMetadataById(trackId: string): Promise<SpotifyTrackMetadata | null> {
+export async function getSpotifyTrackMetadataById(trackId: string, market: string = "BR"): Promise<SpotifyTrackMetadata | null> {
   const token = await getAccessToken();
   if (!token) return null;
   const id = trackId.trim();
   if (!id) return null;
 
-  const res = await fetch(`${API_BASE}/tracks/${encodeURIComponent(id)}?market=BR`, {
+  const res = await fetch(`${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 0 },
   });

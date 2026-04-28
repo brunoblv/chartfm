@@ -35,9 +35,11 @@ async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntr
       coverSeed: true,
       song: {
         select: {
+          id: true,
           title: true,
           artist: true,
           album: true,
+          coverImageUrl: true,
           spotifyId: true,
           artistSpotifyId: true,
           artistRef: { select: { spotifyId: true, name: true } },
@@ -165,9 +167,11 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
         coverSeed: true,
         song: {
           select: {
+            id: true,
             title: true,
             artist: true,
             album: true,
+            coverImageUrl: true,
             spotifyId: true,
             artistSpotifyId: true,
             artistRef: { select: { spotifyId: true, name: true } },
@@ -187,9 +191,11 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
         coverSeed: true,
         song: {
           select: {
+            id: true,
             title: true,
             artist: true,
             album: true,
+            coverImageUrl: true,
             spotifyId: true,
             artistSpotifyId: true,
             artistRef: { select: { spotifyId: true, name: true } },

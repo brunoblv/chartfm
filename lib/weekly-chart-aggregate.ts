@@ -9,9 +9,11 @@ export type WeeklyChartEntryRow = {
   coverPaletteB: string;
   coverSeed: number;
   song: {
+    id: string;
     title: string;
     artist: string;
     album: string | null;
+    coverImageUrl?: string | null;
     spotifyId: string | null;
     artistSpotifyId: string | null;
     artistRef: { spotifyId: string; name: string } | null;
@@ -261,12 +263,15 @@ export function aggregateGlobalSongs(
     const prevPoints = comparisonBySong.get(row.key) ?? 0;
     const growthPct = prevPoints > 0 ? ((row.pts - prevPoints) / prevPoints) * 100 : null;
     const s = row.best.song;
+    const manualCover = s.coverImageUrl?.trim() || null;
     const song: Song = {
+      id: s.id,
       title: s.title,
       artist: s.artist,
       album: s.album ?? "",
       spotifyId: s.spotifyId ?? null,
       artistSpotifyId: s.artistSpotifyId ?? null,
+      imageUrl: manualCover,
     };
     return {
       position,
@@ -274,6 +279,7 @@ export function aggregateGlobalSongs(
       cover: {
         palette: [row.best.coverPaletteA, row.best.coverPaletteB] as [string, string],
         seed: row.best.coverSeed,
+        imageUrl: manualCover,
       },
       points: row.pts,
       voters: row.charts.size,

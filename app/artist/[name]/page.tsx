@@ -25,13 +25,16 @@ function songKey(title: string, artist: string): string {
 
 type ArtistSongRow = {
   key: string;
+  songId: string;
+  spotifyId: string | null;
+  dbArtist: string;
   title: string;
   album: string;
   points: number;
   weeks: number;
   peak: number;
   number1s: number;
-  cover: { palette: [string, string]; seed: number };
+  cover: { palette: [string, string]; seed: number; imageUrl?: string | null };
   currentWeekPos: number;
 };
 
@@ -82,9 +85,12 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
       },
       song: {
         select: {
+          id: true,
           title: true,
           artist: true,
           album: true,
+          coverImageUrl: true,
+          spotifyId: true,
         },
       },
     },
@@ -114,8 +120,12 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
     if (e.position === 1) number1s += 1;
 
     const key = songKey(e.song.title, e.song.artist);
+    const manual = e.song.coverImageUrl?.trim() || null;
     const cur = songsMap.get(key) ?? {
       key,
+      songId: e.song.id,
+      spotifyId: e.song.spotifyId,
+      dbArtist: e.song.artist,
       title: e.song.title,
       album: e.song.album ?? "",
       points: 0,
@@ -126,9 +136,11 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
       cover: {
         palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
         seed: e.coverSeed,
+        imageUrl: manual ?? undefined,
       },
     };
     cur.points += pts;
+    if (manual) cur.cover = { ...cur.cover, imageUrl: manual };
     songsMap.set(key, cur);
   }
 
@@ -329,7 +341,18 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
                   <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album }} size={44} rounded={8} />
                 </div>
                 <div style={{ padding: "0 12px", minWidth: 0 }}>
-                  <Link href={buildSongPath({ title: s.title, artist: canonicalName })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{s.title}</Link>
+                  <Link
+                    href={buildSongPath({
+                      title: s.title,
+                      artist: canonicalName,
+                      id: s.spotifyId ? undefined : s.songId,
+                      slugArtist: s.dbArtist,
+                      spotifyId: s.spotifyId,
+                    })}
+                    style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}
+                  >
+                    {s.title}
+                  </Link>
                   <div style={{ fontSize: 12, color: "#86868B" }}>{s.album}</div>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.points}</div>

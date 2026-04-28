@@ -22,6 +22,8 @@ export function Cover({ cover, song, size = 56, rounded = 10, className, style: 
 
   useEffect(() => {
     if (direct) return;
+    // Sem track Spotify associada: não buscar capa por texto (import/planilha errava com outra faixa).
+    if (!song?.spotifyId?.trim()) return;
     if (!song?.title?.trim() || !song?.artist?.trim()) return;
     let cancelled = false;
     const params = new URLSearchParams({ title: song.title, artist: song.artist });
@@ -34,7 +36,7 @@ export function Cover({ cover, song, size = 56, rounded = 10, className, style: 
     return () => {
       cancelled = true;
     };
-  }, [direct, song?.title, song?.artist]);
+  }, [direct, song?.title, song?.artist, song?.spotifyId]);
 
   const [a, b] = cover.palette;
   const seed = cover.seed;

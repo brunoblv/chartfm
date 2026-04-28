@@ -129,7 +129,17 @@ async function getTimelineFeed(
           coverPaletteA: true,
           coverPaletteB: true,
           coverSeed: true,
-          song: { select: { title: true, artist: true, album: true, spotifyId: true, artistSpotifyId: true } },
+          song: {
+            select: {
+              id: true,
+              title: true,
+              artist: true,
+              album: true,
+              coverImageUrl: true,
+              spotifyId: true,
+              artistSpotifyId: true,
+            },
+          },
         },
       },
     },
@@ -174,13 +184,16 @@ async function getTimelineFeed(
         cover: {
           palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
           seed: e.coverSeed,
+          imageUrl: e.song.coverImageUrl?.trim() || null,
         },
         song: {
+          id: e.song.id,
           title: e.song.title,
           artist: e.song.artist,
           album: e.song.album ?? "",
           spotifyId: e.song.spotifyId ?? null,
           artistSpotifyId: e.song.artistSpotifyId ?? null,
+          imageUrl: e.song.coverImageUrl?.trim() || null,
         },
       })),
     },
@@ -530,9 +543,11 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
       coverSeed: true,
       song: {
         select: {
+          id: true,
           title: true,
           artist: true,
           album: true,
+          coverImageUrl: true,
           spotifyId: true,
           artistSpotifyId: true,
           artistRef: { select: { spotifyId: true, name: true } },
@@ -562,9 +577,11 @@ async function getGlobalTopSongs(weekIdx: number, limit = 3) {
       coverSeed: true,
       song: {
         select: {
+          id: true,
           title: true,
           artist: true,
           album: true,
+          coverImageUrl: true,
           spotifyId: true,
           artistSpotifyId: true,
           artistRef: { select: { spotifyId: true, name: true } },

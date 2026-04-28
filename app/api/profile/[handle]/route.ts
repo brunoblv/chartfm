@@ -72,9 +72,11 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
             coverSeed: true,
             song: {
               select: {
+                id: true,
                 title: true,
                 artist: true,
                 album: true,
+                coverImageUrl: true,
                 spotifyId: true,
                 artistSpotifyId: true,
                 artistRef: {

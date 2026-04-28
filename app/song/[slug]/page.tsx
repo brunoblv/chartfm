@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
-import { parseSongSlug, buildArtistPath } from "@/lib/music-routes";
+import { parseSongSlug, buildArtistPath, slugify } from "@/lib/music-routes";
 import type { ParsedSongSlug } from "@/lib/music-routes";
 
 function pointsForPosition(position: number): number {
@@ -15,14 +15,38 @@ function songKey(title: string, artist: string): string {
   return `${title.trim().toLowerCase()}|${artist.trim().toLowerCase()}`;
 }
 
-function buildSongWhereFromSlug(parsed: ParsedSongSlug) {
-  if (parsed.type === "spotify") return { song: { spotifyId: parsed.spotifyId } };
-  return {
-    song: {
-      title: { equals: parsed.title, mode: "insensitive" as const },
-      artist: { equals: parsed.artist, mode: "insensitive" as const },
-    },
-  };
+async function resolveSongId(parsed: ParsedSongSlug): Promise<string | null> {
+  if (parsed.type === "internalId") {
+    const song = await prisma.song.findUnique({
+      where: { id: parsed.songId },
+      select: { id: true },
+    });
+    return song?.id ?? null;
+  }
+  if (parsed.type === "spotify") {
+    const song = await prisma.song.findUnique({
+      where: { spotifyId: parsed.spotifyId },
+      select: { id: true },
+    });
+    return song?.id ?? null;
+  }
+  // Slug-based: broad filter by first word of artist slug, then match via slugify in memory
+  const firstArtistWord = parsed.artistSlug.split("-").find((w) => w.length > 0) ?? parsed.artistSlug;
+  const candidates = await prisma.song.findMany({
+    where: { artist: { contains: firstArtistWord, mode: "insensitive" } },
+    select: { id: true, title: true, artist: true },
+  });
+  const match = candidates.find(
+    (s) => slugify(s.title) === parsed.titleSlug && slugify(s.artist) === parsed.artistSlug,
+  );
+  if (match) return match.id;
+  // Fallback: importações antigas / `contains` falhou — varre um lote e compara só pelo slug
+  const pool = await prisma.song.findMany({
+    select: { id: true, title: true, artist: true },
+    take: 12000,
+    orderBy: { id: "asc" },
+  });
+  return pool.find((s) => slugify(s.title) === parsed.titleSlug && slugify(s.artist) === parsed.artistSlug)?.id ?? null;
 }
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -41,10 +65,24 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     );
   }
 
+  const songId = await resolveSongId(parsed);
+  if (!songId) {
+    return (
+      <Shell title="Música" subtitle="Não encontrada">
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para essa música.</p>
+          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+            ← Voltar para descobrir
+          </Link>
+        </div>
+      </Shell>
+    );
+  }
+
   const entries = await prisma.chartEntry.findMany({
     where: {
       chart: { isPublished: true },
-      ...buildSongWhereFromSlug(parsed),
+      songId,
     },
     select: {
       position: true,
@@ -53,7 +91,16 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
       coverPaletteB: true,
       coverSeed: true,
       chart: { select: { weekIndex: true, userId: true } },
-      song: { select: { title: true, artist: true, album: true, spotifyId: true, artistSpotifyId: true } },
+      song: {
+        select: {
+          title: true,
+          artist: true,
+          album: true,
+          coverImageUrl: true,
+          spotifyId: true,
+          artistSpotifyId: true,
+        },
+      },
     },
   });
 
@@ -76,6 +123,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const album = first.song.album ?? "";
   const spotifyId = first.song.spotifyId;
   const artistSpotifyId = first.song.artistSpotifyId;
+  const coverImageUrl = first.song.coverImageUrl?.trim() || null;
   const totalPoints = entries.reduce((sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)), 0);
   const users = new Set(entries.map((e) => e.chart.userId)).size;
   const chartEntries = entries.length;
@@ -161,8 +209,18 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         </Link>
         <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
           <Cover
-            cover={{ palette: [first.coverPaletteA, first.coverPaletteB], seed: first.coverSeed }}
-            song={{ title, artist, album, spotifyId: spotifyId ?? undefined }}
+            cover={{
+              palette: [first.coverPaletteA, first.coverPaletteB],
+              seed: first.coverSeed,
+              imageUrl: coverImageUrl,
+            }}
+            song={{
+              title,
+              artist,
+              album,
+              spotifyId: spotifyId ?? undefined,
+              imageUrl: coverImageUrl,
+            }}
             size={180}
             rounded={14}
           />

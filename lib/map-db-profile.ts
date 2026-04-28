@@ -32,9 +32,11 @@ type PrismaProfileUser = {
       coverPaletteB: string;
       coverSeed: number;
       song: {
+        id: string;
         title: string;
         artist: string;
         album: string | null;
+        coverImageUrl?: string | null;
         spotifyId?: string | null;
         artistSpotifyId?: string | null;
         artistRef?: { name: string } | null;
@@ -68,9 +70,11 @@ type PrismaChartRow = {
     coverPaletteB: string;
     coverSeed: number;
     song: {
+      id: string;
       title: string;
       artist: string;
       album: string | null;
+      coverImageUrl?: string | null;
       spotifyId?: string | null;
       artistSpotifyId?: string | null;
       artistRef?: { name: string } | null;
@@ -88,26 +92,33 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
     likes: c.likes,
     comments: c.comments,
     reposts: c.reposts,
-    entries: c.entries.map((e) => ({
+    entries: c.entries.map((e) => {
+      const img = e.song.coverImageUrl?.trim() || null;
+      return {
       position: e.position,
       song: {
+        id: e.song.id,
         title: e.song.title,
         artist: e.song.artistRef?.name?.trim() || e.song.artist,
+        slugArtist: e.song.artist,
         featArtists: (e.song.feats ?? []).map((f) => f.artist.name),
         album: e.song.album ?? "",
         spotifyId: e.song.spotifyId ?? null,
         artistSpotifyId: e.song.artistSpotifyId ?? null,
+        imageUrl: img,
       },
       cover: {
         palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
         seed: e.coverSeed,
+        imageUrl: img,
       },
       status: entryStatus(e.status),
       delta: e.delta,
       prevPos: e.prevPos,
       peak: e.peak,
       weeks: e.weeks,
-    })),
+      };
+    }),
   };
 }
 
