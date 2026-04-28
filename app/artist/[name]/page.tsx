@@ -470,7 +470,7 @@ export default async function ArtistPage({
                     </div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 110px", padding: "8px 16px", gap: 0 }}>
-                      {["#", "", "Música", "Seus pontos", "Vezes", "Melhor pos."].map((h, i) => (
+                      {["#", "", "Música", "Seus pontos", "Semanas", "Melhor pos."].map((h, i) => (
                         <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
                       ))}
                     </div>
@@ -512,7 +512,7 @@ export default async function ArtistPage({
                             <div style={{ fontSize: 12, color: "#86868B" }}>{s.album}</div>
                           </div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.userPoints}</div>
-                          <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.appearances}×</div>
+                          <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.appearances}</div>
                           <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                             {s.bestPosition === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
                             #{s.bestPosition}
