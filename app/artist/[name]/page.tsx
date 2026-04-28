@@ -350,10 +350,10 @@ export default async function ArtistPage({
   ];
 
   const tabDefs: { id: Tab; label: string }[] = [
-    { id: "songs", label: "Músicas" },
-    { id: "albums", label: "Álbuns" },
-    { id: "user-songs", label: "Músicas na parada" },
-    { id: "user-albums", label: "Álbuns por pontuação" },
+    { id: "songs", label: "Músicas Global 100" },
+    { id: "albums", label: "Albuns overall" },
+    { id: "user-songs", label: "Músicas na sua parada" },
+    { id: "user-albums", label: "Albuns na sua parada" },
   ];
 
   // ── JSX ───────────────────────────────────────────────────────────────────
