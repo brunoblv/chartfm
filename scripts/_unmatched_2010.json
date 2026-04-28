@@ -1,0 +1,656 @@
+[
+  {
+    "title": "2 Different Tears",
+    "artist": "Wonder Girls",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "A Boy",
+    "artist": "G-Dragon",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Arriety's Song",
+    "artist": "Cécile Corbel",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Ayyy Girl",
+    "artist": "JYJ feat. Kanye West & Malik Yusef",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "A~ing♡",
+    "artist": "Orange Caramel",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Bad Girl Good Girl",
+    "artist": "miss A",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Bang!",
+    "artist": "After School",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Bbi Ri Bba Bba",
+    "artist": "Narsha",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Beautiful Hangover",
+    "artist": "BIGBANG",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Because of you",
+    "artist": "After School",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Better Together",
+    "artist": "Se7en",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Bo Peep Bo Peep",
+    "artist": "T-Ara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Break Out!",
+    "artist": "TVXQ!",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Breathe",
+    "artist": "G-Dragon",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Breathe",
+    "artist": "miss A",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Butterfly",
+    "artist": "G-Dragon feat. Jin Jung",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Bye now!",
+    "artist": "ICONIQ",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Can We Go Back",
+    "artist": "Koda Kumi",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Can't Nobody",
+    "artist": "2NE1",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Can't let you go even if i die",
+    "artist": "2AM",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Change",
+    "artist": "HyunA feat. Junhyung",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Change Myself",
+    "artist": "ICONIQ",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Change Ur World",
+    "artist": "KAT-TUN",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Chitty Chitty Bang Bang",
+    "artist": "Lee Hyori",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Chu~♡",
+    "artist": "f(x)",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Clap Your Hands",
+    "artist": "2NE1",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Copy & Paste",
+    "artist": "BoA",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Crystal Girl",
+    "artist": "ICONIQ",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Don't look back",
+    "artist": "Ayumi Hamasaki",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Dreamin'",
+    "artist": "JASMINE",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Fallen Angel",
+    "artist": "Zin Taehwa feat. Jed",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "G.O.O.D Luv",
+    "artist": "MBLAQ",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Game",
+    "artist": "BoA",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Go Away",
+    "artist": "2NE1",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Gold",
+    "artist": "UVERworld",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Good Day",
+    "artist": "IU",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Heart and Soul",
+    "artist": "AAA",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "High High",
+    "artist": "GD&TOP",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Hoot",
+    "artist": "Girls' Generation",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "How Dare You",
+    "artist": "SISTAR",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Huh",
+    "artist": "4minute",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Hurricane Venus",
+    "artist": "BoA",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I Go Crazy because of you",
+    "artist": "T-Ara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I My Me Mine",
+    "artist": "4minute",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I was wrong",
+    "artist": "2AM",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I'll back off so you can live better",
+    "artist": "G.NA feat. Junhyung",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I'll be back",
+    "artist": "2PM",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I'm A Loner",
+    "artist": "CNBLUE",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I'm Really Hurt",
+    "artist": "T-Ara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "I'm lovin' you",
+    "artist": "ICONIQ x EXILE ATSUSHI",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Irreversible",
+    "artist": "Gain",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "It Hurts",
+    "artist": "2NE1",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Jealous",
+    "artist": "JASMINE",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Jumping",
+    "artist": "Kara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Kanashimi Wa Kitto",
+    "artist": "UVERworld",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Koe wo kikasete",
+    "artist": "BIGBANG",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Like Crazy",
+    "artist": "2AM",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Like the first time",
+    "artist": "T-Ara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Lollipop",
+    "artist": "Koda Kumi",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Lollipop Pt.2",
+    "artist": "BIGBANG",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Love Game",
+    "artist": "Namie Amuro",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Love Like This",
+    "artist": "SS501",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Love Love Love",
+    "artist": "After School",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Love Song",
+    "artist": "Rain",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Love Story",
+    "artist": "Jewelry",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Love Ya",
+    "artist": "SS501",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Loveless",
+    "artist": "Yamashita Tomohisa",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Lupin",
+    "artist": "Kara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Madonna",
+    "artist": "Secret",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Magic",
+    "artist": "Secret",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Magic Girl",
+    "artist": "Orange Caramel",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Mamma Mia",
+    "artist": "Narsha feat. Sunny Hill",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Mamoritai ~White Wishes~",
+    "artist": "BoA",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Microphone",
+    "artist": "Ayumi Hamasaki",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Mister",
+    "artist": "Kara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "My Girl",
+    "artist": "Brian feat. Supreme Team",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "NU ABO",
+    "artist": "f(x)",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "No more",
+    "artist": "JASMINE",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "No.1",
+    "artist": "UVERworld",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Oh!",
+    "artist": "Girls' Generation",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "One in a million",
+    "artist": "Yamashita Tomohisa",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Possibility",
+    "artist": "BoA feat. Daichi Miura",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Push Push",
+    "artist": "SISTAR",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Qualia",
+    "artist": "UVERworld",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Queen",
+    "artist": "Son Dambi",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Run Devil Run",
+    "artist": "Girls' Generation",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Shady Girl",
+    "artist": "SISTAR",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "She's Gone",
+    "artist": "G-Dragon feat. Kush",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Shock",
+    "artist": "Beast",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Sign",
+    "artist": "Brown Eyed Girls",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Stand By U'",
+    "artist": "TVXQ!",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Suki de, Suki de, Suki de.",
+    "artist": "Koda Kumi",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Suspicious Man",
+    "artist": "Lee Jung Hyun",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Swing",
+    "artist": "Lee Hyori feat. Gary",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Tell Me Goodbye",
+    "artist": "BIGBANG",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "This is not a game",
+    "artist": "JASMINE",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Toki wo tomete",
+    "artist": "TVXQ!",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Vari2ty",
+    "artist": "Jewelry",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "What's wrong?",
+    "artist": "T-Ara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Without U",
+    "artist": "2PM",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Wonder Woman",
+    "artist": "Seeya, Davichi, T-Ara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Woo Weekend",
+    "artist": "BoA",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "Yayaya",
+    "artist": "T-Ara",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "You were...",
+    "artist": "Ayumi Hamasaki",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "You wouldn't answer my calls",
+    "artist": "2AM",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "You're so beautiful",
+    "artist": "Koda Kumi",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "crossroad",
+    "artist": "Ayumi Hamasaki",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "dB Rider",
+    "artist": "Son Dambi",
+    "best_score": -1,
+    "best_candidate": null
+  },
+  {
+    "title": "love song",
+    "artist": "Ayumi Hamasaki",
+    "best_score": -1,
+    "best_candidate": null
+  }
+]

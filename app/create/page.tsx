@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Plus, X, GripVertical, ExternalLink } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
@@ -72,6 +73,15 @@ type SpotifyApiTrack = {
   imageUrl: string | null;
 };
 
+type DbSong = {
+  id: string;
+  title: string;
+  artist: string;
+  album: string | null;
+  spotifyId: string | null;
+  coverUrl: string | null;
+};
+
 type LatestChartResponse = {
   id: string;
   weekLabel: string;
@@ -88,6 +98,8 @@ type LatestChartResponse = {
 export default function CreatePage() {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { data: session } = useSession();
+  const isLastfmUser = session?.user?.handle === "bruno";
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [search, setSearch] = useState("");
@@ -95,10 +107,12 @@ export default function CreatePage() {
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [spotifyTracks, setSpotifyTracks] = useState<Song[]>([]);
   const [spotifyLoading, setSpotifyLoading] = useState(false);
+  const [dbSongs, setDbSongs] = useState<Song[]>([]);
   const [spotifyConfigured, setSpotifyConfigured] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [importingLast, setImportingLast] = useState(false);
+  const [importingLastfm, setImportingLastfm] = useState(false);
   const [paradaNome, setParadaNome] = useState<string | null>(null);
   const [searchBump, setSearchBump] = useState(0);
   const enterImmediateRef = useRef(false);
@@ -126,30 +140,60 @@ export default function CreatePage() {
     const q = search.trim();
     if (q.length < 1) {
       setSpotifyTracks([]);
+      setDbSongs([]);
       setSpotifyLoading(false);
       return;
     }
     const immediate = enterImmediateRef.current;
     enterImmediateRef.current = false;
-    const delay = immediate ? 0 : 400;
+    const delay = immediate ? 0 : 700;
     const ac = new AbortController();
     const timer = setTimeout(async () => {
       setSpotifyLoading(true);
       try {
-        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, { signal: ac.signal });
-        const data = (await res.json()) as { tracks?: SpotifyApiTrack[]; configured?: boolean };
-        if (data.configured === false) setSpotifyConfigured(false);
+        const fetches: [Promise<Response>, Promise<Response | null>] = [
+          fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, { signal: ac.signal }),
+          q.length >= 2
+            ? fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ac.signal })
+            : Promise.resolve(null),
+        ];
+        const [spotifyRes, dbRes] = await Promise.all(fetches);
+
+        if (ac.signal.aborted) return;
+
+        const spotifyData = (await spotifyRes.json()) as { tracks?: SpotifyApiTrack[]; configured?: boolean };
+        if (spotifyData.configured === false) setSpotifyConfigured(false);
         else setSpotifyConfigured(true);
-        const tracks: Song[] = (data.tracks ?? []).map((t) => ({
-          title: t.title,
-          artist: t.artist,
-          album: t.album,
-          imageUrl: t.imageUrl ?? undefined,
-          spotifyId: t.spotifyId,
-        }));
-        if (!ac.signal.aborted) setSpotifyTracks(tracks);
+        setSpotifyTracks(
+          (spotifyData.tracks ?? []).map((t) => ({
+            title: t.title,
+            artist: t.artist,
+            album: t.album,
+            imageUrl: t.imageUrl ?? undefined,
+            spotifyId: t.spotifyId,
+          }))
+        );
+
+        if (dbRes) {
+          const dbData = (await dbRes.json()) as { songs?: DbSong[] };
+          setDbSongs(
+            (dbData.songs ?? []).map((s) => ({
+              id: s.id,
+              title: s.title,
+              artist: s.artist,
+              album: s.album ?? "",
+              spotifyId: s.spotifyId ?? undefined,
+              imageUrl: s.coverUrl ?? undefined,
+            }))
+          );
+        } else {
+          setDbSongs([]);
+        }
       } catch {
-        if (!ac.signal.aborted) setSpotifyTracks([]);
+        if (!ac.signal.aborted) {
+          setSpotifyTracks([]);
+          setDbSongs([]);
+        }
       } finally {
         if (!ac.signal.aborted) setSpotifyLoading(false);
       }
@@ -236,6 +280,31 @@ export default function CreatePage() {
       setPublishError("Erro de conexão ao importar a última parada.");
     } finally {
       setImportingLast(false);
+    }
+  };
+
+  const importFromLastfm = async () => {
+    setImportingLastfm(true);
+    setPublishError(null);
+    try {
+      const res = await fetch("/api/lastfm/import", { method: "POST" });
+      const data = await res.json() as { songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>; error?: string };
+      if (!res.ok) {
+        setPublishError(data.error ?? "Erro ao importar do Last.fm.");
+        return;
+      }
+      const songs: Song[] = (data.songs ?? []).slice(0, 200).map((s) => ({
+        title: s.title,
+        artist: s.artist,
+        album: s.album,
+        spotifyId: s.spotifyId ?? undefined,
+        imageUrl: s.imageUrl ?? undefined,
+      }));
+      setEntries(songs);
+    } catch {
+      setPublishError("Erro de conexão ao importar do Last.fm.");
+    } finally {
+      setImportingLastfm(false);
     }
   };
 
@@ -347,13 +416,24 @@ export default function CreatePage() {
         )}
 
         <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-          Catálogo local
+          {search.trim().length >= 2 ? "No catálogo" : "Catálogo local"}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {filtered.map((song) => {
-            const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
-            return renderSongRow(song, added);
-          })}
+          {search.trim().length >= 2 ? (
+            dbSongs.length > 0 ? (
+              dbSongs.map((song) => {
+                const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
+                return renderSongRow(song, added);
+              })
+            ) : (
+              <div style={{ fontSize: 12, color: "#86868B" }}>Nenhuma música no catálogo.</div>
+            )
+          ) : (
+            filtered.map((song) => {
+              const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
+              return renderSongRow(song, added);
+            })
+          )}
         </div>
       </div>
 
@@ -385,6 +465,28 @@ export default function CreatePage() {
             {entries.length === 0 ? "Nenhuma música ainda" : `${entries.length} música${entries.length === 1 ? "" : "s"}`}
           </div>
         </div>
+        {isLastfmUser && (
+          <button
+            type="button"
+            onClick={importFromLastfm}
+            disabled={importingLastfm}
+            title="Gerar parada automaticamente com base nos seus plays do Last.fm (top 100)"
+            style={{
+              border: "1px solid rgba(250,36,60,0.3)",
+              background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
+              color: "#FA243C",
+              borderRadius: 10,
+              padding: "8px 12px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: importingLastfm ? "not-allowed" : "pointer",
+              opacity: importingLastfm ? 0.65 : 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {importingLastfm ? "Buscando Last.fm…" : "↺ Last.fm"}
+          </button>
+        )}
         <button
           type="button"
           onClick={importLastChart}

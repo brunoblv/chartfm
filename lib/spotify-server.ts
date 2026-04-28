@@ -5,6 +5,9 @@
 
 const AUTH_URL = "https://accounts.spotify.com/api/token";
 const API_BASE = "https://api.spotify.com/v1";
+const SPOTIFY_RETRY_MAX_ATTEMPTS = 4;
+const SPOTIFY_RETRY_BASE_DELAY_MS = 450;
+const SPOTIFY_RETRY_MAX_DELAY_MS = 15000;
 
 type SpotifyImage = { url: string; height: number | null; width: number | null };
 
@@ -39,6 +42,50 @@ const tokenState: { accessToken: string | null; expiresAt: number } = {
 const coverCache = new Map<string, string | null>();
 const COVER_CACHE_MAX = 500;
 
+type SearchCacheEntry = { tracks: { spotifyId: string; title: string; artist: string; album: string; imageUrl: string | null; previewUrl: string | null; externalUrl: string }[]; expiresAt: number };
+const searchCache = new Map<string, SearchCacheEntry>();
+const SEARCH_CACHE_MAX = 200;
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseRetryAfterMs(value: string | null): number | null {
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds > 0) return Math.round(seconds * 1000);
+  return null;
+}
+
+async function spotifyFetch(
+  input: string | URL,
+  init: RequestInit,
+  maxAttempts: number = SPOTIFY_RETRY_MAX_ATTEMPTS,
+): Promise<Response | null> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    let res: Response;
+    try {
+      res = await fetch(input, init);
+    } catch {
+      if (attempt >= maxAttempts) return null;
+      await sleep(SPOTIFY_RETRY_BASE_DELAY_MS * attempt);
+      continue;
+    }
+
+    if (res.status !== 429) return res;
+    if (attempt >= maxAttempts) return res;
+
+    const retryAfterMs = parseRetryAfterMs(res.headers.get("retry-after"));
+    const delay = Math.min(
+      SPOTIFY_RETRY_MAX_DELAY_MS,
+      retryAfterMs ?? SPOTIFY_RETRY_BASE_DELAY_MS * attempt,
+    );
+    await sleep(delay);
+  }
+  return null;
+}
+
 function trimKey(artist: string, title: string) {
   return `${artist.trim().toLowerCase()}|${title.trim().toLowerCase()}`;
 }
@@ -49,6 +96,14 @@ function cacheSet(key: string, url: string | null) {
     if (first !== undefined) coverCache.delete(first);
   }
   coverCache.set(key, url);
+}
+
+function searchCacheSet(key: string, tracks: SearchCacheEntry["tracks"]) {
+  if (searchCache.size >= SEARCH_CACHE_MAX) {
+    const first = searchCache.keys().next().value;
+    if (first !== undefined) searchCache.delete(first);
+  }
+  searchCache.set(key, { tracks, expiresAt: Date.now() + SEARCH_CACHE_TTL_MS });
 }
 
 export function spotifyConfigured(): boolean {
@@ -64,7 +119,7 @@ async function getAccessToken(): Promise<string | null> {
     return tokenState.accessToken;
   }
 
-  const res = await fetch(AUTH_URL, {
+  const res = await spotifyFetch(AUTH_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -73,7 +128,7 @@ async function getAccessToken(): Promise<string | null> {
     body: "grant_type=client_credentials",
   });
 
-  if (!res.ok) return null;
+  if (!res?.ok) return null;
 
   const data = (await res.json()) as { access_token: string; expires_in: number };
   tokenState.accessToken = data.access_token;
@@ -139,11 +194,16 @@ function pickBestVersion(tracks: SpotifyTrackApi[]): SpotifyTrackApi {
 }
 
 export async function searchSpotifyTracks(query: string, limit = 10, market: string = "BR") {
+  const q = query.trim();
+  const lim = Math.min(50, Math.max(1, limit));
+  const cacheKey = `${q}|${lim}|${market}`;
+
+  const cached = searchCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) return cached.tracks;
+
   const token = await getAccessToken();
   if (!token) return [];
 
-  const q = query.trim();
-  const lim = Math.min(50, Math.max(1, limit));
   // Busca mais candidatos para ter opções suficientes após deduplicação
   const fetchLimit = Math.min(50, lim * 4);
   const url = new URL(`${API_BASE}/search`);
@@ -152,12 +212,12 @@ export async function searchSpotifyTracks(query: string, limit = 10, market: str
   url.searchParams.set("limit", String(fetchLimit));
   url.searchParams.set("market", market);
 
-  const res = await fetch(url.toString(), {
+  const res = await spotifyFetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 0 },
   });
 
-  if (!res.ok) return [];
+  if (!res?.ok) return [];
 
   const json = (await res.json()) as SpotifySearchJson;
   const items = json.tracks?.items ?? [];
@@ -172,10 +232,13 @@ export async function searchSpotifyTracks(query: string, limit = 10, market: str
     else groups.set(key, [item]);
   }
 
-  return [...groups.values()]
+  const tracks = [...groups.values()]
     .map(pickBestVersion)
     .slice(0, lim)
     .map(mapTrackToResult);
+
+  searchCacheSet(cacheKey, tracks);
+  return tracks;
 }
 
 export type SpotifyTrackMetadata = {
@@ -234,11 +297,11 @@ export async function listSpotifyAlbumTracks(
   let url: string | null =
     `${API_BASE}/albums/${encodeURIComponent(aid)}/tracks?limit=50&market=${encodeURIComponent(market)}`;
   while (url) {
-    const res = await fetch(url, {
+    const res = await spotifyFetch(url, {
       headers: { Authorization: `Bearer ${token}` },
       next: { revalidate: 0 },
     });
-    if (!res.ok) break;
+    if (!res?.ok) break;
     const json = (await res.json()) as SpotifyAlbumTracksPageJson;
     for (const it of json.items ?? []) {
       if (it?.id && it?.name) out.push({ spotifyId: it.id, title: it.name });
@@ -268,11 +331,11 @@ export async function getSpotifyAlbumMetadataById(
   const id = albumSpotifyId.trim();
   if (!id) return null;
 
-  const res = await fetch(
+  const res = await spotifyFetch(
     `${API_BASE}/albums/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`,
     { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
   );
-  if (!res.ok) return null;
+  if (!res?.ok) return null;
   const a = (await res.json()) as SpotifyAlbumApi;
   if (!a?.id) return null;
   return {
@@ -292,11 +355,11 @@ export async function getSpotifyTrackMetadataById(trackId: string, market: strin
   const id = trackId.trim();
   if (!id) return null;
 
-  const res = await fetch(`${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, {
+  const res = await spotifyFetch(`${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 0 },
   });
-  if (!res.ok) return null;
+  if (!res?.ok) return null;
   const track = (await res.json()) as SpotifyTrackApi;
 
   const artists = track.artists
@@ -361,11 +424,11 @@ export async function getSpotifyArtistById(spotifyId: string): Promise<SpotifyAr
   const id = spotifyId.trim();
   if (!id) return null;
 
-  const res = await fetch(`${API_BASE}/artists/${encodeURIComponent(id)}`, {
+  const res = await spotifyFetch(`${API_BASE}/artists/${encodeURIComponent(id)}`, {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 3600 },
   });
-  if (!res.ok) return null;
+  if (!res?.ok) return null;
 
   const artist = (await res.json()) as SpotifyArtistApi;
   if (!artist?.id) return null;
@@ -400,11 +463,11 @@ export async function searchSpotifyArtists(
   url.searchParams.set("limit", String(lim));
   url.searchParams.set("market", market);
 
-  const res = await fetch(url.toString(), {
+  const res = await spotifyFetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 3600 },
   });
-  if (!res.ok) return [];
+  if (!res?.ok) return [];
 
   const json = (await res.json()) as SpotifyArtistSearchJson;
   const items = json.artists?.items ?? [];
@@ -423,11 +486,11 @@ export async function getSpotifyArtistTopTracks(
   const id = artistSpotifyId.trim();
   if (!id) return [];
 
-  const res = await fetch(
+  const res = await spotifyFetch(
     `${API_BASE}/artists/${encodeURIComponent(id)}/top-tracks?market=${encodeURIComponent(market)}`,
     { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
   );
-  if (!res.ok) return [];
+  if (!res?.ok) return [];
   const json = (await res.json()) as SpotifyTopTracksJson;
   return json.tracks ?? [];
 }
@@ -448,12 +511,12 @@ export async function resolveCoverImageUrl(artist: string, title: string): Promi
   url.searchParams.set("limit", "1");
   url.searchParams.set("market", "BR");
 
-  const res = await fetch(url.toString(), {
+  const res = await spotifyFetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 0 },
   });
 
-  if (!res.ok) {
+  if (!res?.ok) {
     cacheSet(key, null);
     return null;
   }
