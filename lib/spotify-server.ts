@@ -253,28 +253,59 @@ type SpotifyArtistSearchJson = {
 };
 
 export async function searchSpotifyArtist(
-  name: string
+  name: string,
+  market: string = "BR",
 ): Promise<SpotifyArtistProfile | null> {
-  const token = await getAccessToken();
-  if (!token) return null;
+  const many = await searchSpotifyArtists(name, 1, market);
+  return many[0] ?? null;
+}
 
+/** Vários artistas (para backfill / desambiguação). */
+export async function searchSpotifyArtists(
+  name: string,
+  limit = 5,
+  market: string = "US",
+): Promise<SpotifyArtistProfile[]> {
+  const token = await getAccessToken();
+  if (!token) return [];
+
+  const lim = Math.min(10, Math.max(1, limit));
   const url = new URL(`${API_BASE}/search`);
   url.searchParams.set("q", name.trim());
   url.searchParams.set("type", "artist");
-  url.searchParams.set("limit", "1");
-  url.searchParams.set("market", "BR");
+  url.searchParams.set("limit", String(lim));
+  url.searchParams.set("market", market);
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 3600 },
   });
-  if (!res.ok) return null;
+  if (!res.ok) return [];
 
   const json = (await res.json()) as SpotifyArtistSearchJson;
-  const artist = json.artists?.items?.[0];
-  if (!artist) return null;
+  const items = json.artists?.items ?? [];
+  return items.map(mapArtistApiToProfile);
+}
 
-  return mapArtistApiToProfile(artist);
+type SpotifyTopTracksJson = { tracks: SpotifyTrackApi[] };
+
+/** Top tracks do artista (útil quando a pesquisa global de faixa não encontra). */
+export async function getSpotifyArtistTopTracks(
+  artistSpotifyId: string,
+  market: string = "US",
+): Promise<SpotifyTrackApi[]> {
+  const token = await getAccessToken();
+  if (!token) return [];
+  const id = artistSpotifyId.trim();
+  if (!id) return [];
+
+  const res = await fetch(
+    `${API_BASE}/artists/${encodeURIComponent(id)}/top-tracks?market=${encodeURIComponent(market)}`,
+    { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
+  );
+  if (!res.ok) return [];
+  const json = (await res.json()) as SpotifyTopTracksJson;
+  return json.tracks ?? [];
 }
 
 export async function resolveCoverImageUrl(artist: string, title: string): Promise<string | null> {

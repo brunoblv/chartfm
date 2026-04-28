@@ -5,6 +5,9 @@
  *   npx tsx scripts/backfill-song-spotify.ts
  *   npx tsx scripts/backfill-song-spotify.ts --dry-run
  *   npx tsx scripts/backfill-song-spotify.ts --limit=30
+ *   npx tsx scripts/backfill-song-spotify.ts --offset=500 --limit=200
+ *
+ * Mercados e fallback (top tracks do artista) aumentam a taxa de match em K-pop/J-pop.
  *
  * Requer .env com SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET e DATABASE_URL.
  */
@@ -14,7 +17,10 @@ import path from "node:path";
 import { prisma } from "../lib/prisma";
 import {
   getSpotifyArtistById,
+  getSpotifyArtistTopTracks,
   getSpotifyTrackMetadataById,
+  mapTrackToResult,
+  searchSpotifyArtists,
   searchSpotifyTracks,
   spotifyConfigured,
   type SpotifyTrackMetadata,
@@ -53,47 +59,160 @@ function sanitizeQueryPart(s: string): string {
   return s.replace(/"/g, "").replace(/\s+/g, " ").trim().slice(0, 120);
 }
 
-function pickBestTrackId(
-  wantTitle: string,
-  wantArtist: string,
-  hits: { spotifyId: string; title: string; artist: string }[],
-): string | null {
-  if (!hits.length) return null;
+/** Remove sufixos entre parêntesis (ex.: versões, lixo de planilha). */
+function stripParenSuffixes(title: string, maxRounds = 4): string {
+  let s = title.trim();
+  for (let i = 0; i < maxRounds; i++) {
+    const m = s.match(/^(.+?)\s*\([^)]*\)\s*$/);
+    if (m && m[1].trim().length >= 2) s = m[1].trim();
+    else break;
+  }
+  return s.trim() || title.trim();
+}
+
+type TrackHit = { spotifyId: string; title: string; artist: string };
+
+function tokenOverlapScore(a: string, b: string): number {
+  const ta = new Set(a.split(" ").filter((w) => w.length > 1));
+  const tb = new Set(b.split(" ").filter((w) => w.length > 1));
+  if (!ta.size || !tb.size) return 0;
+  let n = 0;
+  for (const w of ta) if (tb.has(w)) n += 1;
+  return Math.round((n / Math.max(ta.size, tb.size)) * 50);
+}
+
+function scoreTrackMatch(wantTitle: string, wantArtist: string, h: TrackHit): number {
   const wt = normalizeKey(wantTitle);
-  const wa = normalizeKey(wantArtist.split(",")[0] ?? wantArtist).split(" feat ")[0] ?? "";
+  const waRaw = normalizeKey(wantArtist.split(",")[0] ?? wantArtist);
+  const wa = waRaw.split(" feat ")[0] ?? waRaw;
+  const ct = normalizeKey(h.title);
+  const ca = normalizeKey(h.artist.split(",")[0] ?? h.artist);
+  let s = 0;
+  if (ct === wt) s += 100;
+  else if (ct.includes(wt) || wt.includes(ct)) s += 58;
+  else s += tokenOverlapScore(wt, ct);
+  if (ca === wa) s += 90;
+  else if (ca.includes(wa) || wa.includes(ca)) s += 48;
+  else s += tokenOverlapScore(wa, ca) * 0.6;
+  return Math.round(s);
+}
+
+function pickBestTrackId(wantTitle: string, wantArtist: string, hits: TrackHit[]): string | null {
+  if (!hits.length) return null;
   let bestId: string | null = null;
   let bestScore = -1;
   for (const h of hits) {
-    const ct = normalizeKey(h.title);
-    const ca = normalizeKey(h.artist.split(",")[0] ?? h.artist);
-    let s = 0;
-    if (ct === wt) s += 100;
-    else if (ct.includes(wt) || wt.includes(ct)) s += 55;
-    if (ca === wa) s += 90;
-    else if (ca.includes(wa) || wa.includes(ca)) s += 45;
-    if (s > bestScore) {
-      bestScore = s;
+    const sc = scoreTrackMatch(wantTitle, wantArtist, h);
+    if (sc > bestScore) {
+      bestScore = sc;
       bestId = h.spotifyId;
     }
   }
-  if (bestScore < 35) return hits[0]?.spotifyId ?? null;
-  return bestId;
+  if (bestScore >= 35) return bestId;
+  if (bestScore >= 28 && hits.length <= 8) return bestId;
+  if (bestScore >= 26 && hits.length === 1) return bestId;
+  return null;
+}
+
+function mainArtistFrom(artist: string): string {
+  return (
+    artist
+      .split(",")[0]
+      ?.trim()
+      .split(/\s+feat\.?\s+/i)[0]
+      ?.trim()
+      .split(/\s+&\s+/)[0]
+      ?.trim() ?? artist
+  );
+}
+
+function buildTrackQueries(title: string, mainArtist: string, fullArtist: string): string[] {
+  const t0 = sanitizeQueryPart(title);
+  const t1 = sanitizeQueryPart(stripParenSuffixes(title));
+  const ma = sanitizeQueryPart(mainArtist);
+  const fa = sanitizeQueryPart(fullArtist);
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (q: string) => {
+    if (q.length < 3) return;
+    if (seen.has(q)) return;
+    seen.add(q);
+    out.push(q);
+  };
+  if (t0 && ma) {
+    push(`track:"${t0}" artist:"${ma}"`);
+    push(`${t0} ${ma}`);
+    if (fa && fa !== ma) push(`${t0} ${fa}`);
+  }
+  if (t1 && ma && t1 !== t0) {
+    push(`track:"${t1}" artist:"${ma}"`);
+    push(`${t1} ${ma}`);
+  }
+  return out;
+}
+
+async function mergeSearchHits(
+  title: string,
+  artist: string,
+  markets: string[],
+  perQueryLimit: number,
+  delayMs: number,
+): Promise<TrackHit[]> {
+  const main = mainArtistFrom(artist);
+  const queries = buildTrackQueries(title, main, artist);
+  const byId = new Map<string, TrackHit>();
+  for (const market of markets) {
+    for (const q of queries) {
+      const batch = await searchSpotifyTracks(q, perQueryLimit, market);
+      for (const h of batch) {
+        if (!byId.has(h.spotifyId)) byId.set(h.spotifyId, h);
+      }
+      await sleep(delayMs);
+    }
+  }
+  return [...byId.values()];
+}
+
+async function mergeTopTrackHits(
+  artist: string,
+  markets: string[],
+  artistSearchLimit: number,
+  delayMs: number,
+): Promise<TrackHit[]> {
+  const main = mainArtistFrom(artist);
+  const byId = new Map<string, TrackHit>();
+  for (const market of markets) {
+    const profiles = await searchSpotifyArtists(main, artistSearchLimit, market);
+    await sleep(delayMs);
+    for (const ar of profiles) {
+      const tops = await getSpotifyArtistTopTracks(ar.spotifyId, market);
+      await sleep(delayMs);
+      for (const t of tops) {
+        const row = mapTrackToResult(t);
+        const h: TrackHit = { spotifyId: row.spotifyId, title: row.title, artist: row.artist };
+        if (!byId.has(h.spotifyId)) byId.set(h.spotifyId, h);
+      }
+    }
+  }
+  return [...byId.values()];
 }
 
 async function searchTrackCandidates(title: string, artist: string, markets: string[]) {
-  const mainArtist = artist.split(",")[0]?.trim().split(/\s+feat\.?\s+/i)[0]?.trim() ?? artist;
-  const queries = [
-    `track:"${sanitizeQueryPart(title)}" artist:"${sanitizeQueryPart(mainArtist)}"`,
-    `${sanitizeQueryPart(title)} ${sanitizeQueryPart(mainArtist)}`,
-    `${sanitizeQueryPart(title)} ${sanitizeQueryPart(artist)}`,
-  ];
-  for (const market of markets) {
-    for (const q of queries) {
-      const hits = await searchSpotifyTracks(q, 8, market);
-      if (hits.length) return { hits, market } as const;
-    }
+  const delay = 45;
+  const searchHits = await mergeSearchHits(title, artist, markets, 15, delay);
+  let merged = [...searchHits];
+  const bestIdEarly = pickBestTrackId(title, artist, merged);
+  const hitEarly = bestIdEarly ? merged.find((h) => h.spotifyId === bestIdEarly) : undefined;
+  const earlyScore = hitEarly ? scoreTrackMatch(title, artist, hitEarly) : 0;
+  if (!bestIdEarly || earlyScore < 42) {
+    const extra = await mergeTopTrackHits(artist, markets.slice(0, 4), 5, delay);
+    const map = new Map<string, TrackHit>();
+    for (const h of merged) map.set(h.spotifyId, h);
+    for (const h of extra) map.set(h.spotifyId, h);
+    merged = [...map.values()];
   }
-  return { hits: [] as { spotifyId: string; title: string; artist: string }[], market: "BR" } as const;
+  const metaMarket = markets[0] ?? "US";
+  return { hits: merged, market: metaMarket } as const;
 }
 
 async function applyMetadata(localSongId: string, meta: SpotifyTrackMetadata, dryRun: boolean) {
@@ -218,7 +337,9 @@ async function main() {
   const argv = process.argv.slice(2);
   const dryRun = argv.includes("--dry-run");
   const limitArg = argv.find((a) => a.startsWith("--limit="));
-  const limit = limitArg ? Math.max(1, parseInt(limitArg.split("=")[1] ?? "50", 10) || 50) : 500;
+  const limit = limitArg ? Math.max(1, parseInt(limitArg.split("=")[1] ?? "50", 10) || 50) : 2000;
+  const offsetArg = argv.find((a) => a.startsWith("--offset="));
+  const offset = offsetArg ? Math.max(0, parseInt(offsetArg.split("=")[1] ?? "0", 10) || 0) : 0;
 
   if (!spotifyConfigured()) {
     console.error("Defina SPOTIFY_CLIENT_ID e SPOTIFY_CLIENT_SECRET no .env");
@@ -229,15 +350,16 @@ async function main() {
     where: { spotifyId: null },
     select: { id: true, title: true, artist: true, album: true },
     orderBy: { id: "asc" },
+    skip: offset,
     take: limit,
   });
 
-  console.log(`candidatas=${songs.length} dry_run=${dryRun}`);
+  console.log(`candidatas=${songs.length} offset=${offset} dry_run=${dryRun}`);
   let ok = 0;
   let skip = 0;
   let fail = 0;
 
-  const markets = ["BR", "JP"];
+  const markets = ["US", "JP", "KR", "BR", "GB"];
 
   for (const s of songs) {
     const { hits, market } = await searchTrackCandidates(s.title, s.artist, markets);
@@ -245,7 +367,7 @@ async function main() {
     if (!trackId) {
       console.log(`SKIP no_hit "${s.title}" — ${s.artist}`);
       skip += 1;
-      await sleep(120);
+      await sleep(80);
       continue;
     }
 
@@ -253,7 +375,7 @@ async function main() {
     if (!meta) {
       console.log(`SKIP no_meta ${trackId} "${s.title}"`);
       skip += 1;
-      await sleep(120);
+      await sleep(80);
       continue;
     }
 
@@ -268,7 +390,7 @@ async function main() {
       console.log(`OK   "${s.title}" — ${s.artist} -> ${meta.spotifyId}`);
       ok += 1;
     }
-    await sleep(180);
+    await sleep(100);
   }
 
   console.log(JSON.stringify({ ok, skip, fail, dryRun }));
