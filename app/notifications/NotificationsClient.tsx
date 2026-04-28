@@ -19,12 +19,15 @@ export type NotifRow = {
     avatarColor: string;
     image: string | null;
   } | null;
+  isFollowingBack?: boolean;
 };
 
 export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
   const [items, setItems] = useState(initial);
   const [isPending, startTransition] = useTransition();
-  const [followedBack, setFollowedBack] = useState<Set<string>>(new Set());
+  const [followedBack, setFollowedBack] = useState<Set<string>>(
+    () => new Set(initial.filter((n) => n.isFollowingBack).map((n) => n.id))
+  );
 
   const unreadCount = items.filter((n) => !n.read).length;
 

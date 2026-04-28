@@ -26,6 +26,24 @@ export default async function NotificationsPage() {
     },
   });
 
+  // Collect unique actor IDs from follow notifications to check follow-back state
+  const followActorIds = [
+    ...new Set(
+      rows
+        .filter((r) => r.type === "follow" && r.actor)
+        .map((r) => r.actor!.id)
+    ),
+  ];
+
+  const alreadyFollowing = new Set<string>();
+  if (followActorIds.length > 0) {
+    const existing = await prisma.userFollow.findMany({
+      where: { followerId: session.user.id, followingId: { in: followActorIds } },
+      select: { followingId: true },
+    });
+    for (const f of existing) alreadyFollowing.add(f.followingId);
+  }
+
   const notifications: NotifRow[] = rows.map((r) => ({
     id: r.id,
     type: r.type,
@@ -42,6 +60,7 @@ export default async function NotificationsPage() {
           image: r.actor.image,
         }
       : null,
+    isFollowingBack: r.type === "follow" && r.actor ? alreadyFollowing.has(r.actor.id) : undefined,
   }));
 
   return (
