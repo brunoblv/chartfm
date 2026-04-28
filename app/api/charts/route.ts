@@ -257,14 +257,14 @@ export async function POST(req: NextRequest) {
 
     const resolvedTitle = metadata?.title ?? e.title;
     const existingByName = await prisma.song.findFirst({
-      where: { title: resolvedTitle, artist: mainArtistName, spotifyId: null },
-      select: { id: true },
+      where: { title: resolvedTitle, artist: mainArtistName },
+      select: { id: true, spotifyId: true },
     });
     const song = existingByName
       ? await prisma.song.update({
           where: { id: existingByName.id },
           data: {
-            spotifyId,
+            ...(existingByName.spotifyId == null ? { spotifyId } : {}),
             album: metadata?.album.title ?? e.album ?? null,
             artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
             albumSpotifyId: albumSpotifyId ?? undefined,

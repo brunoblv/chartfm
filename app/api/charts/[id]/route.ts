@@ -232,13 +232,13 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       // Upserting by spotifyId would try to CREATE a new record and hit the (title, artist) unique constraint.
       // Promote the existing record instead.
       const existingByName = await prisma.song.findFirst({
-        where: { title, artist, spotifyId: null },
+        where: { title, artist },
         select: { id: true, spotifyId: true, albumSpotifyId: true },
       });
       if (existingByName) {
         const song = await prisma.song.update({
           where: { id: existingByName.id },
-          data: { spotifyId, album: e.album ?? null },
+          data: { ...(existingByName.spotifyId == null ? { spotifyId } : {}), album: e.album ?? null },
           select: { id: true, spotifyId: true, albumSpotifyId: true },
         });
         songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
