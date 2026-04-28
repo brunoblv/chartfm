@@ -101,16 +101,55 @@ export function mapTrackToResult(track: SpotifyTrackApi) {
   };
 }
 
+// Tags que indicam versões não-originais de um álbum
+const EDITION_PATTERN =
+  /\b(deluxe|super\s+deluxe|special\s+edition|bonus\s+track|expanded|anniversary|remaster(?:ed)?|reissue|edition|re-?release)\b/i;
+
+// Sufixos de faixa que devem ser ignorados ao agrupar versões do mesmo song
+const TRACK_SUFFIX_PATTERN =
+  /\s*[\-–—]\s*(remaster(?:ed)?|radio\s+edit|single\s+version|album\s+version|acoustic|demo|instrumental|live|mono|stereo)[^)]*$/i;
+const TRACK_PAREN_PATTERN =
+  /\s*\((?:remaster(?:ed)?|radio\s+edit|single\s+version|album\s+version|acoustic|demo|instrumental|live|mono|stereo)[^)]*\)/gi;
+
+function canonicalSongKey(track: SpotifyTrackApi): string {
+  const title = track.name
+    .replace(TRACK_PAREN_PATTERN, "")
+    .replace(TRACK_SUFFIX_PATTERN, "")
+    .toLowerCase()
+    .trim();
+  const artist = (track.artists[0]?.name ?? "").toLowerCase().trim();
+  return `${artist}|${title}`;
+}
+
+function sortReleaseMs(raw: string | undefined): number {
+  if (!raw) return Infinity;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return new Date(`${raw}T00:00:00Z`).getTime();
+  if (/^\d{4}-\d{2}$/.test(raw)) return new Date(`${raw}-01T00:00:00Z`).getTime();
+  if (/^\d{4}$/.test(raw)) return new Date(`${raw}-01-01T00:00:00Z`).getTime();
+  return Infinity;
+}
+
+function pickBestVersion(tracks: SpotifyTrackApi[]): SpotifyTrackApi {
+  return [...tracks].sort((a, b) => {
+    const aEdition = EDITION_PATTERN.test(a.album.name) ? 1 : 0;
+    const bEdition = EDITION_PATTERN.test(b.album.name) ? 1 : 0;
+    if (aEdition !== bEdition) return aEdition - bEdition;
+    return sortReleaseMs(a.album.release_date) - sortReleaseMs(b.album.release_date);
+  })[0];
+}
+
 export async function searchSpotifyTracks(query: string, limit = 10, market: string = "BR") {
   const token = await getAccessToken();
   if (!token) return [];
 
   const q = query.trim();
   const lim = Math.min(50, Math.max(1, limit));
+  // Busca mais candidatos para ter opções suficientes após deduplicação
+  const fetchLimit = Math.min(50, lim * 4);
   const url = new URL(`${API_BASE}/search`);
   url.searchParams.set("q", q);
   url.searchParams.set("type", "track");
-  url.searchParams.set("limit", String(lim));
+  url.searchParams.set("limit", String(fetchLimit));
   url.searchParams.set("market", market);
 
   const res = await fetch(url.toString(), {
@@ -122,7 +161,21 @@ export async function searchSpotifyTracks(query: string, limit = 10, market: str
 
   const json = (await res.json()) as SpotifySearchJson;
   const items = json.tracks?.items ?? [];
-  return items.map(mapTrackToResult);
+
+  // Agrupa por (título normalizado, artista principal) e escolhe a melhor versão:
+  // sem tags de edição primeiro, depois a mais antiga
+  const groups = new Map<string, SpotifyTrackApi[]>();
+  for (const item of items) {
+    const key = canonicalSongKey(item);
+    const group = groups.get(key);
+    if (group) group.push(item);
+    else groups.set(key, [item]);
+  }
+
+  return [...groups.values()]
+    .map(pickBestVersion)
+    .slice(0, lim)
+    .map(mapTrackToResult);
 }
 
 export type SpotifyTrackMetadata = {
@@ -160,6 +213,77 @@ function parseSpotifyReleaseDate(raw: string | undefined): Date | null {
   if (/^\d{4}-\d{2}$/.test(raw)) return new Date(`${raw}-01T00:00:00.000Z`);
   if (/^\d{4}$/.test(raw)) return new Date(`${raw}-01-01T00:00:00.000Z`);
   return null;
+}
+
+type SpotifyAlbumTracksPageJson = {
+  items: { id: string; name: string }[];
+  next: string | null;
+};
+
+/** IDs e títulos das faixas tal como listadas no álbum (evita “canonical” de outro relançamento). */
+export async function listSpotifyAlbumTracks(
+  albumSpotifyId: string,
+  market: string = "MX",
+): Promise<{ spotifyId: string; title: string }[]> {
+  const token = await getAccessToken();
+  if (!token) return [];
+  const aid = albumSpotifyId.trim();
+  if (!aid) return [];
+
+  const out: { spotifyId: string; title: string }[] = [];
+  let url: string | null =
+    `${API_BASE}/albums/${encodeURIComponent(aid)}/tracks?limit=50&market=${encodeURIComponent(market)}`;
+  while (url) {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 0 },
+    });
+    if (!res.ok) break;
+    const json = (await res.json()) as SpotifyAlbumTracksPageJson;
+    for (const it of json.items ?? []) {
+      if (it?.id && it?.name) out.push({ spotifyId: it.id, title: it.name });
+    }
+    url = json.next ?? null;
+  }
+  return out;
+}
+
+type SpotifyAlbumApi = {
+  id: string;
+  name: string;
+  album_type?: string;
+  images: SpotifyImage[];
+  release_date?: string;
+  total_tracks?: number;
+  external_urls?: { spotify?: string };
+};
+
+/** Metadados do álbum (capa, datas) para alinhar com um `album_id` concreto no catálogo. */
+export async function getSpotifyAlbumMetadataById(
+  albumSpotifyId: string,
+  market: string = "MX",
+): Promise<SpotifyTrackMetadata["album"] | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
+  const id = albumSpotifyId.trim();
+  if (!id) return null;
+
+  const res = await fetch(
+    `${API_BASE}/albums/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`,
+    { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
+  );
+  if (!res.ok) return null;
+  const a = (await res.json()) as SpotifyAlbumApi;
+  if (!a?.id) return null;
+  return {
+    spotifyId: a.id,
+    title: a.name,
+    coverUrl: pickAlbumImageUrl(a.images),
+    albumType: mapAlbumType(a.album_type),
+    releaseDate: parseSpotifyReleaseDate(a.release_date),
+    totalTracks: a.total_tracks ?? null,
+    spotifyUrl: a.external_urls?.spotify ?? null,
+  };
 }
 
 export async function getSpotifyTrackMetadataById(trackId: string, market: string = "BR"): Promise<SpotifyTrackMetadata | null> {
