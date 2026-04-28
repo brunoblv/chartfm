@@ -4,11 +4,15 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, 100) ?? "";
+  const rawQ = req.nextUrl.searchParams.get("q")?.slice(0, 100) ?? "";
+  const q = rawQ.replace(/\s+/g, " ").trim();
   if (q.length < 2) {
     return NextResponse.json({ songs: [], artists: [], users: [] });
   }
-  const terms = q.split(/\s+/).filter(Boolean).slice(0, 6);
+  const terms = (q.match(/[\p{L}\p{N}]+/gu) ?? [])
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2)
+    .slice(0, 6);
 
   const songTermFilters = terms.map((term) => ({
     OR: [
@@ -29,7 +33,11 @@ export async function GET(req: NextRequest) {
   const [songs, artists, users] = await Promise.all([
     prisma.song.findMany({
       where: {
-        AND: songTermFilters,
+        OR: [
+          { title: { contains: q, mode: "insensitive" as const } },
+          { artist: { contains: q, mode: "insensitive" as const } },
+          ...(songTermFilters.length > 0 ? [{ AND: songTermFilters }] : []),
+        ],
       },
       select: {
         id: true,
@@ -44,14 +52,23 @@ export async function GET(req: NextRequest) {
       orderBy: { title: "asc" },
     }),
     prisma.artist.findMany({
-      where: { AND: artistTermFilters },
+      where: {
+        OR: [
+          { name: { contains: q, mode: "insensitive" as const } },
+          ...(artistTermFilters.length > 0 ? [{ AND: artistTermFilters }] : []),
+        ],
+      },
       select: { spotifyId: true, name: true, imageUrl: true },
       take: 4,
       orderBy: { name: "asc" },
     }),
     prisma.user.findMany({
       where: {
-        AND: userTermFilters,
+        OR: [
+          { name: { contains: q, mode: "insensitive" as const } },
+          { handle: { contains: q, mode: "insensitive" as const } },
+          ...(userTermFilters.length > 0 ? [{ AND: userTermFilters }] : []),
+        ],
       },
       select: { handle: true, name: true, avatarColor: true, image: true },
       take: 3,

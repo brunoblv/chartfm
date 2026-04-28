@@ -146,54 +146,79 @@ export default function CreatePage() {
     }
     const immediate = enterImmediateRef.current;
     enterImmediateRef.current = false;
-    const delay = immediate ? 0 : 700;
+    const delay = immediate ? 0 : 220;
     const ac = new AbortController();
     const timer = setTimeout(async () => {
       setSpotifyLoading(true);
+      setSpotifyTracks([]);
+
       try {
-        const fetches: [Promise<Response>, Promise<Response | null>] = [
-          fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, { signal: ac.signal }),
-          q.length >= 2
-            ? fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ac.signal })
-            : Promise.resolve(null),
-        ];
-        const [spotifyRes, dbRes] = await Promise.all(fetches);
-
-        if (ac.signal.aborted) return;
-
-        const spotifyData = (await spotifyRes.json()) as { tracks?: SpotifyApiTrack[]; configured?: boolean };
-        if (spotifyData.configured === false) setSpotifyConfigured(false);
-        else setSpotifyConfigured(true);
-        setSpotifyTracks(
-          (spotifyData.tracks ?? []).map((t) => ({
-            title: t.title,
-            artist: t.artist,
-            album: t.album,
-            imageUrl: t.imageUrl ?? undefined,
-            spotifyId: t.spotifyId,
-          }))
-        );
-
-        if (dbRes) {
-          const dbData = (await dbRes.json()) as { songs?: DbSong[] };
-          setDbSongs(
-            (dbData.songs ?? []).map((s) => ({
-              id: s.id,
-              title: s.title,
-              artist: s.artist,
-              album: s.album ?? "",
-              spotifyId: s.spotifyId ?? undefined,
-              imageUrl: s.coverUrl ?? undefined,
-            }))
-          );
+        if (q.length >= 2) {
+          const dbRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ac.signal });
+          if (ac.signal.aborted) return;
+          if (!dbRes.ok) {
+            setDbSongs([]);
+          } else {
+            try {
+              const dbData = (await dbRes.json()) as { songs?: DbSong[] };
+              if (ac.signal.aborted) return;
+              setDbSongs(
+                (dbData.songs ?? []).map((s) => ({
+                  id: s.id,
+                  title: s.title,
+                  artist: s.artist,
+                  album: s.album ?? "",
+                  spotifyId: s.spotifyId ?? undefined,
+                  imageUrl: s.coverUrl ?? undefined,
+                }))
+              );
+            } catch {
+              if (ac.signal.aborted) return;
+              setDbSongs([]);
+            }
+          }
         } else {
           setDbSongs([]);
         }
-      } catch {
-        if (!ac.signal.aborted) {
+
+        if (ac.signal.aborted) return;
+
+        const spotifyRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
+          signal: ac.signal,
+        });
+        if (ac.signal.aborted) return;
+        if (!spotifyRes.ok) {
+          setSpotifyConfigured(false);
           setSpotifyTracks([]);
-          setDbSongs([]);
+          return;
         }
+
+        try {
+          const spotifyData = (await spotifyRes.json()) as {
+            tracks?: SpotifyApiTrack[];
+            configured?: boolean;
+          };
+          if (ac.signal.aborted) return;
+          setSpotifyConfigured(spotifyData.configured !== false);
+          setSpotifyTracks(
+            (spotifyData.tracks ?? []).map((t) => ({
+              title: t.title,
+              artist: t.artist,
+              album: t.album,
+              imageUrl: t.imageUrl ?? undefined,
+              spotifyId: t.spotifyId,
+            }))
+          );
+        } catch {
+          if (ac.signal.aborted) return;
+          setSpotifyConfigured(false);
+          setSpotifyTracks([]);
+        }
+      } catch {
+        if (ac.signal.aborted) return;
+        setSpotifyConfigured(false);
+        setSpotifyTracks([]);
+        setDbSongs([]);
       } finally {
         if (!ac.signal.aborted) setSpotifyLoading(false);
       }
