@@ -70,6 +70,24 @@ export function parseSongSlug(slug: string): ParsedSongSlug | null {
   return { type: "slug", titleSlug: prefix, artistSlug: rest };
 }
 
+export function buildAlbumPath(album: string, artist: string): string {
+  return `/album/${slugify(artist)}_${slugify(album)}`;
+}
+
+export type ParsedAlbumSlug = { artistSlug: string; albumSlug: string };
+
+export function parseAlbumSlug(slug: string): ParsedAlbumSlug | null {
+  let raw: string;
+  try {
+    raw = decodeURIComponent(slug.trim());
+  } catch {
+    raw = slug.trim();
+  }
+  const sep = raw.indexOf("_");
+  if (sep === -1) return null;
+  return { artistSlug: raw.slice(0, sep), albumSlug: raw.slice(sep + 1) };
+}
+
 export type ParsedArtistSlug =
   | { type: "spotify"; spotifyId: string }
   | { type: "slug"; name: string };

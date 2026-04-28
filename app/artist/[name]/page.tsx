@@ -6,7 +6,7 @@ import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
 import { COVER_PALETTES } from "@/lib/data";
-import { buildSongPath, parseArtistSlug } from "@/lib/music-routes";
+import { buildSongPath, parseArtistSlug, buildAlbumPath } from "@/lib/music-routes";
 
 function artistColor(name: string): [string, string] {
   let hash = 0;
@@ -21,6 +21,20 @@ function pointsForPosition(position: number): number {
 
 function songKey(title: string, artist: string): string {
   return `${title.trim().toLowerCase()}|${artist.trim().toLowerCase()}`;
+}
+
+const PAGE_SIZE = 10;
+
+function buildPageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "...")[] = [1];
+  if (current > 3) pages.push("...");
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (current < total - 2) pages.push("...");
+  pages.push(total);
+  return pages;
 }
 
 type ArtistSongRow = {
@@ -38,8 +52,14 @@ type ArtistSongRow = {
   currentWeekPos: number;
 };
 
-export default async function ArtistPage({ params }: { params: Promise<{ name: string }> }) {
-  const { name } = await params;
+export default async function ArtistPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ name: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const [{ name }, { page: pageParam }] = await Promise.all([params, searchParams]);
   const parsed = parseArtistSlug(name);
 
   const artistRef = await prisma.artist.findFirst({
@@ -202,8 +222,38 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
         currentWeekPos: globalStats?.currentWeekPos ?? 9999,
       };
     })
-    .sort((a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points)
-    .slice(0, 10);
+    .sort((a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points);
+
+  const currentPage = Math.min(Math.max(1, parseInt(pageParam ?? "1", 10)), Math.ceil(songs.length / PAGE_SIZE) || 1);
+  const totalPages = Math.ceil(songs.length / PAGE_SIZE);
+  const paginatedSongs = songs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Build top albums from allEntries
+  type AlbumRow = { name: string; songs: number; points: number; cover: { palette: [string, string]; seed: number; imageUrl?: string | null } };
+  const albumsMapRaw = new Map<string, { name: string; songTitles: Set<string>; points: number; cover: { palette: [string, string]; seed: number; imageUrl?: string | null } }>();
+  for (const e of allEntries) {
+    const albumName = e.song.album?.trim() || "Single";
+    if (albumName === "Single") continue;
+    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+    const manual = e.song.coverImageUrl?.trim() || null;
+    const existing = albumsMapRaw.get(albumName);
+    if (!existing) {
+      albumsMapRaw.set(albumName, {
+        name: albumName,
+        songTitles: new Set([e.song.title]),
+        points: pts,
+        cover: { palette: [e.coverPaletteA, e.coverPaletteB] as [string, string], seed: e.coverSeed, imageUrl: manual },
+      });
+    } else {
+      existing.points += pts;
+      existing.songTitles.add(e.song.title);
+      if (manual && !existing.cover.imageUrl) existing.cover = { ...existing.cover, imageUrl: manual };
+    }
+  }
+  const topAlbums: AlbumRow[] = [...albumsMapRaw.values()]
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 6)
+    .map((a) => ({ name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
 
   const fanMap = new Map<
     string,
@@ -310,45 +360,29 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
           ))}
         </div>
 
-        {/* Popular songs */}
+        {/* Songs */}
         <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: 40 }}>
-          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Músicas populares</h2>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Músicas</h2>
+            <span style={{ fontSize: 13, color: "#86868B" }}>{songs.length} no total</span>
           </div>
           <div style={{ padding: "0 8px" }}>
-            {/* Header */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px",
-              padding: "8px 16px",
-              gap: 0,
-            }}>
+            <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
               {["#", "", "Música", "Pontos", "Semanas", "Pico", "#1s"].map((h, i) => (
                 <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
               ))}
             </div>
-            {songs.map((s, i) => (
-              <div key={s.title} style={{
-                display: "grid",
-                gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px",
-                alignItems: "center",
-                padding: "4px 16px",
-                borderRadius: 8,
-                gap: 0,
-              }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#000000", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{i + 1}</div>
+            {paginatedSongs.map((s, i) => (
+              <div key={s.key} style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", alignItems: "center", padding: "4px 16px", borderRadius: 8, gap: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#000000", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>
+                  {(currentPage - 1) * PAGE_SIZE + i + 1}
+                </div>
                 <div style={{ padding: "6px 6px" }}>
                   <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album }} size={44} rounded={8} />
                 </div>
                 <div style={{ padding: "0 12px", minWidth: 0 }}>
                   <Link
-                    href={buildSongPath({
-                      title: s.title,
-                      artist: canonicalName,
-                      id: s.spotifyId ? undefined : s.songId,
-                      slugArtist: s.dbArtist,
-                      spotifyId: s.spotifyId,
-                    })}
+                    href={buildSongPath({ title: s.title, artist: canonicalName, id: s.spotifyId ? undefined : s.songId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })}
                     style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}
                   >
                     {s.title}
@@ -359,15 +393,81 @@ export default async function ArtistPage({ params }: { params: Promise<{ name: s
                 <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
                 <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                   {s.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
-                  #{s.peak}
+                  {s.peak > 0 ? `#${s.peak}` : "—"}
                 </div>
-                <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>
-                  {s.number1s}
-                </div>
+                <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 13, color: "#86868B" }}>
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, songs.length)} de {songs.length}
+              </span>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {currentPage > 1 ? (
+                  <Link
+                    href={`?page=${currentPage - 1}`}
+                    style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "#1D1D1F" }}
+                  >
+                    ←
+                  </Link>
+                ) : (
+                  <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, fontWeight: 600, color: "#C7C7CC", cursor: "not-allowed" }}>←</span>
+                )}
+                {buildPageNumbers(currentPage, totalPages).map((p, idx) =>
+                  p === "..." ? (
+                    <span key={`ellipsis-${idx}`} style={{ padding: "6px 4px", fontSize: 13, color: "#86868B" }}>…</span>
+                  ) : (
+                    <Link
+                      key={p}
+                      href={`?page=${p}`}
+                      style={{
+                        padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none",
+                        background: p === currentPage ? palette[0] : "transparent",
+                        color: p === currentPage ? "white" : "#1D1D1F",
+                        border: p === currentPage ? "none" : "1px solid rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      {p}
+                    </Link>
+                  )
+                )}
+                {currentPage < totalPages ? (
+                  <Link
+                    href={`?page=${currentPage + 1}`}
+                    style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "#1D1D1F" }}
+                  >
+                    →
+                  </Link>
+                ) : (
+                  <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, fontWeight: 600, color: "#C7C7CC", cursor: "not-allowed" }}>→</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Top albums */}
+        {topAlbums.length > 0 && (
+          <div style={{ marginBottom: 40 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Álbuns mais pontuados</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
+              {topAlbums.map((album) => (
+                <Link key={album.name} href={buildAlbumPath(album.name, canonicalName)} style={{ textDecoration: "none" }}>
+                  <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 16, transition: "box-shadow 0.15s" }}>
+                    <Cover cover={album.cover} song={{ title: album.name, artist: canonicalName, album: album.name }} size={128} rounded={10} />
+                    <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "#1D1D1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.name}</div>
+                    <div style={{ fontSize: 12, color: "#86868B" }}>{album.songs} {album.songs === 1 ? "faixa" : "faixas"}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: palette[0], marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{album.points} pts</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Top fans */}
         <div>
