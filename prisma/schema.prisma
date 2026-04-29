@@ -90,6 +90,7 @@ model Album {
 model Song {
   id      String       @id @default(cuid())
   title   String
+  exhibitionName String? @map("exhibition_name")
   artist  String
   album   String?
   /// Capa manual (URL absoluta ou path /covers/... em public) quando não há arte no Spotify

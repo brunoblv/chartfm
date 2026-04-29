@@ -31,7 +31,7 @@ export async function GET() {
     weekLabel: chart.weekLabel,
     dateRange: chart.dateRange,
     entries: chart.entries.map((e) => ({
-      title: e.song.title,
+      title: e.song.exhibitionName?.trim() || e.song.title,
       artist: e.song.artist,
       album: e.song.album ?? "",
       spotifyId: e.song.spotifyId ?? null,

@@ -101,7 +101,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   }
 
   const currentSongIds = [...new Set(row.entries.map((e) => e.songId))];
-  const songIdToKey = new Map(row.entries.map((e) => [e.songId, `${e.song.title}\0${e.song.artist}`]));
+  const songIdToKey = new Map(
+    row.entries.map((e) => [e.songId, `${e.song.exhibitionName?.trim() || e.song.title}\0${e.song.artist}`]),
+  );
   const [previousChart, nextChart] = await Promise.all([
     prisma.chart.findFirst({
       where: { userId: row.userId, weekIndex: { lt: row.weekIndex } },

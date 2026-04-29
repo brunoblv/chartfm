@@ -45,7 +45,7 @@ function coverForSong(song: Song): CoverModel {
   return song.imageUrl ? { ...base, imageUrl: song.imageUrl } : base;
 }
 
-const SPOTIFY_SEARCH_DISABLED = true;
+const SPOTIFY_SEARCH_DISABLED = false;
 
 export default function EditChartPage() {
   const params = useParams();

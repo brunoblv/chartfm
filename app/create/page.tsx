@@ -96,7 +96,7 @@ type LatestChartResponse = {
   error?: string;
 };
 
-const SPOTIFY_SEARCH_DISABLED = true;
+const SPOTIFY_SEARCH_DISABLED = false;
 
 export default function CreatePage() {
   const router = useRouter();

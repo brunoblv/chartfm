@@ -34,6 +34,7 @@ type PrismaProfileUser = {
       song: {
         id: string;
         title: string;
+        exhibitionName?: string | null;
         artist: string;
         album: string | null;
         coverImageUrl?: string | null;
@@ -73,6 +74,7 @@ type PrismaChartRow = {
     song: {
       id: string;
       title: string;
+      exhibitionName?: string | null;
       artist: string;
       album: string | null;
       coverImageUrl?: string | null;
@@ -100,7 +102,7 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
       position: e.position,
       song: {
         id: e.song.id,
-        title: e.song.title,
+        title: e.song.exhibitionName?.trim() || e.song.title,
         artist: e.song.artistRef?.name?.trim() || e.song.artist,
         slugArtist: e.song.artist,
         featArtists: (e.song.feats ?? []).map((f) => f.artist.name),

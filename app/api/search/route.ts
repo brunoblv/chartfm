@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         title: true,
+        exhibitionName: true,
         artist: true,
         album: true,
         spotifyId: true,
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     songs: songs.map((s) => ({
       id: s.id,
-      title: s.title,
+      title: s.exhibitionName?.trim() || s.title,
       artist: s.artist,
       album: s.album ?? null,
       spotifyId: s.spotifyId,

@@ -74,6 +74,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
               select: {
                 id: true,
                 title: true,
+                exhibitionName: true,
                 artist: true,
                 album: true,
                 coverImageUrl: true,
@@ -121,7 +122,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
   const songKeyById = new Map<string, string>();
   for (const chart of dbUser.charts) {
     for (const entry of chart.entries) {
-      songKeyById.set(entry.songId, `${entry.song.title}\0${entry.song.artist}`);
+      const displayTitle = entry.song.exhibitionName?.trim() || entry.song.title;
+      songKeyById.set(entry.songId, `${displayTitle}\0${entry.song.artist}`);
     }
   }
 
