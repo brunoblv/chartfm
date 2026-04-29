@@ -20,6 +20,25 @@ const PALETTES: [string, string][] = [
   ["#8338EC", "#FB5607"],
 ];
 
+function isoWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function isoWeeksInYear(year: number): number {
+  return isoWeek(new Date(Date.UTC(year, 11, 28)));
+}
+
+function prevWeekIndex(index: number): number {
+  const year = Math.floor(index / 100);
+  const week = index % 100;
+  if (week > 1) return year * 100 + (week - 1);
+  const prevYear = year - 1;
+  return prevYear * 100 + isoWeeksInYear(prevYear);
+}
+
 function paletteFor(artist: string, title: string) {
   const key = artist + title;
   let hash = 0;
@@ -135,10 +154,6 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   );
   const personalOnesBySong = new Map(personalOnesAgg.map((h) => [h.songId, h._count._all]));
   const globalOnesBySong = new Map(globalOnesAgg.map((h) => [h.songId, h._count._all]));
-  const prevPosBySong = new Map<string, number>();
-  for (const rowPrev of prevPositionsRaw) {
-    if (!prevPosBySong.has(rowPrev.songId)) prevPosBySong.set(rowPrev.songId, rowPrev.position);
-  }
 
   const personalNumberOnes: Record<string, number> = {};
   for (const [songId, total] of personalOnesBySong.entries()) {
@@ -156,9 +171,14 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     const hist = historyBySong.get(entry.songId);
     const weeks = hist?.weeks ?? 1;
     const peak = hist?.peak ?? entry.position;
-    const prevPos = prevPosBySong.get(entry.songId) ?? null;
+    const expectedPrevWeek = prevWeekIndex(row.weekIndex);
+    const prevPos =
+      prevPositionsRaw.find((h) => h.songId === entry.songId && h.chart.weekIndex === expectedPrevWeek)?.position ?? null;
     const delta = prevPos === null ? null : prevPos - entry.position;
-    let status: "new" | "up" | "down" | "same" = "new";
+    const hasOlderAppearance = prevPositionsRaw.some(
+      (h) => h.songId === entry.songId && h.chart.weekIndex < expectedPrevWeek,
+    );
+    let status: "new" | "return" | "up" | "down" | "same" = hasOlderAppearance ? "return" : "new";
     if (prevPos !== null) {
       if (delta === 0) status = "same";
       else if ((delta ?? 0) > 0) status = "up";
@@ -299,10 +319,18 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   }
 
   const previousChart = await prisma.chart.findFirst({
-    where: { userId: chart.userId, weekIndex: { lt: chart.weekIndex } },
+    where: { userId: chart.userId, weekIndex: prevWeekIndex(chart.weekIndex) },
     include: { entries: true },
-    orderBy: { weekIndex: "desc" },
   });
+  const historicalRows = await prisma.chartEntry.findMany({
+    where: {
+      songId: { in: [...new Set(songs.map((s) => s.id))] },
+      chart: { userId: chart.userId, weekIndex: { lt: chart.weekIndex } },
+    },
+    select: { songId: true },
+    distinct: ["songId"],
+  });
+  const historicalSongIds = new Set(historicalRows.map((r) => r.songId));
 
   const entryData = entries.map((e, i) => {
     const song = songs[i];
@@ -318,7 +346,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
         albumSpotifyId: song.albumSpotifyId,
         points,
         position: pos,
-        status: "new",
+        status: historicalSongIds.has(song.id) ? "return" : "new",
         delta: null,
         prevPos: null,
         peak: pos,

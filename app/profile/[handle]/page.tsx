@@ -66,7 +66,7 @@ type ArtistTableRow = {
   peak: number;
   prevPos: number | null;
   delta: number | null;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   growthPct: number | null;
 };
 
@@ -79,7 +79,7 @@ type SongTableRow = {
   peak: number;
   prevPos: number | null;
   delta: number | null;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   growthPct: number | null;
   cover: Chart["entries"][number]["cover"];
 };

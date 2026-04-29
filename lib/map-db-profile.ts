@@ -48,7 +48,7 @@ type PrismaProfileUser = {
 };
 
 function entryStatus(s: string): ChartEntry["status"] {
-  if (s === "up" || s === "down" || s === "same" || s === "new") return s;
+  if (s === "up" || s === "down" || s === "same" || s === "new" || s === "return") return s;
   return "same";
 }
 

@@ -177,7 +177,7 @@ async function getTimelineFeed(
       reposts: c.reposts,
       entries: c.entries.map((e) => ({
         position: e.position,
-        status: e.status as "new" | "up" | "down" | "same",
+        status: e.status as "new" | "return" | "up" | "down" | "same",
         delta: e.delta,
         prevPos: e.prevPos,
         peak: e.peak,
@@ -558,15 +558,47 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
     },
   });
 
-  return aggregateTopArtists(entries, limit).map(({ name, totalPoints, chartCount }) => ({ name, totalPoints, chartCount }));
+  const ranked = aggregateTopArtists(entries, limit);
+  const spotifyIds = ranked.map((r) => r.spotifyId).filter((id): id is string => Boolean(id));
+  const names = ranked.map((r) => r.name);
+  const artistRows = (spotifyIds.length || names.length)
+    ? await prisma.artist.findMany({
+        where: {
+          OR: [
+            ...(spotifyIds.length ? [{ spotifyId: { in: spotifyIds } }] : []),
+            ...(names.length ? [{ name: { in: names } }] : []),
+          ],
+        },
+        select: { spotifyId: true, name: true, imageUrl: true },
+      })
+    : [];
+  const bySpotifyId = new Map(
+    artistRows.filter((a) => a.spotifyId).map((a) => [a.spotifyId as string, a.imageUrl]),
+  );
+  const byName = new Map(artistRows.map((a) => [a.name.toLowerCase(), a.imageUrl]));
+
+  return ranked.map(({ name, totalPoints, chartCount, spotifyId }) => ({
+    name,
+    totalPoints,
+    chartCount,
+    imageUrl: (spotifyId ? bySpotifyId.get(spotifyId) : null) ?? byName.get(name.toLowerCase()) ?? null,
+  }));
 }
 
 async function getGlobalTopSongs(weekIdx: number, limit = 3) {
   const snapshot = await prisma.globalSnapshot.findUnique({ where: { weekIndex: weekIdx } });
+  const hasCoverInSlice = (
+    rows: Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"],
+  ) => rows.slice(0, limit).some((r) => Boolean(r.cover?.imageUrl));
+
   if (snapshot) {
     const weeklySongs =
       snapshot.weeklySongs as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"];
-    return weeklySongs.slice(0, limit);
+    if (hasCoverInSlice(weeklySongs)) {
+      return weeklySongs.slice(0, limit);
+    }
+    // Fallback para snapshots antigos sem capa persistida.
+    // Recalcula ao vivo usando Album.coverUrl.
   }
   const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
     where: { chart: { weekIndex: weekIdx } },
@@ -599,7 +631,7 @@ function TrendingArtists({
   artists,
   weekLabel,
 }: {
-  artists: { name: string; totalPoints: number; chartCount: number }[];
+  artists: { name: string; totalPoints: number; chartCount: number; imageUrl: string | null }[];
   weekLabel: string;
 }) {
   if (artists.length === 0) return null;
@@ -616,7 +648,9 @@ function TrendingArtists({
             <div style={{ fontSize: 14, fontWeight: 700, color: "#86868B", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
             <div style={{
               width: 40, height: 40, borderRadius: "50%",
-              background: `linear-gradient(135deg, ${COVER_PALETTES[i * 3][0]}, ${COVER_PALETTES[i * 3][1]})`,
+              background: a.imageUrl
+                ? `url(${a.imageUrl}) center/cover no-repeat`
+                : `linear-gradient(135deg, ${COVER_PALETTES[i * 3][0]}, ${COVER_PALETTES[i * 3][1]})`,
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               flexShrink: 0,
             }} />

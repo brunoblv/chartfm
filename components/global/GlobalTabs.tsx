@@ -13,7 +13,7 @@ type SongEntry = {
   position: number;
   song: { title: string; artist: string; album?: string | null; spotifyId?: string | null; artistSpotifyId?: string | null };
   cover: CoverData;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   delta?: number | null;
   prevPos?: number | null;
   peak: number;
@@ -28,7 +28,7 @@ type ArtistEntry = {
   spotifyId?: string | null;
   totalPoints: number;
   chartCount: number;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   delta: number | null;
   prevPos: number | null;
   peak: number;

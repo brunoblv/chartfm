@@ -43,7 +43,7 @@ export interface ChartEntry {
   position: number;
   song: Song;
   cover: Cover;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   delta: number | null;
   prevPos: number | null;
   peak: number;
@@ -77,7 +77,7 @@ export interface GlobalChartEntry {
   cover: Cover;
   points: number;
   voters: number;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   delta: number | null;
   prevPos?: number | null;
   growthPct?: number | null;

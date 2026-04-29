@@ -1,5 +1,5 @@
 interface MovementBadgeProps {
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   delta?: number | null;
   compact?: boolean;
 }
@@ -25,6 +25,13 @@ export function MovementBadge({ status, delta, compact = false }: MovementBadgeP
     return (
       <span style={{ ...base, background: "#000", color: "#fff" }} aria-label="nova entrada">
         NOVA
+      </span>
+    );
+  }
+  if (status === "return") {
+    return (
+      <span style={{ ...base, background: "#111827", color: "#FFFFFF" }} aria-label="retorno">
+        RETORNO
       </span>
     );
   }

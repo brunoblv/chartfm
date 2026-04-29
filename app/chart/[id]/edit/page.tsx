@@ -635,7 +635,7 @@ export default function EditChartPage() {
   );
 
   return (
-    <Shell title="Editar parada">
+    <Shell title="">
       <div style={{ maxWidth: 1100 }}>
         <Link
           href={`/chart/${chartId}`}

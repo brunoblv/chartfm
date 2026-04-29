@@ -11,7 +11,7 @@ type ArtistRow = {
   spotifyId?: string | null;
   listeners: number;
   users: number;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   delta: number | null;
 };
 
@@ -21,7 +21,7 @@ type SongRow = {
   spotifyId?: string | null;
   artistSpotifyId?: string | null;
   users: number;
-  status: "new" | "up" | "down" | "same";
+  status: "new" | "return" | "up" | "down" | "same";
   delta: number | null;
 };
 

@@ -351,11 +351,20 @@ export async function POST(req: NextRequest) {
   }
 
   // Previous chart for delta calculations
+  const previousWeekIdx = prevWeekIndex(weekIndex);
   const previousChart = await prisma.chart.findFirst({
-    where: { userId, weekIndex: { lt: weekIndex } },
+    where: { userId, weekIndex: previousWeekIdx },
     include: { entries: true },
-    orderBy: { weekIndex: "desc" },
   });
+  const historicalRows = await prisma.chartEntry.findMany({
+    where: {
+      songId: { in: [...new Set(songs.map((s) => s.id))] },
+      chart: { userId, weekIndex: { lt: weekIndex } },
+    },
+    select: { songId: true },
+    distinct: ["songId"],
+  });
+  const historicalSongIds = new Set(historicalRows.map((r) => r.songId));
 
   const entryData = entries.map((e, i) => {
     const song = songs[i];
@@ -371,7 +380,7 @@ export async function POST(req: NextRequest) {
         albumSpotifyId: song.albumSpotifyId,
         points,
         position: pos,
-        status: "new",
+        status: historicalSongIds.has(song.id) ? "return" : "new",
         delta: null,
         prevPos: null,
         peak: pos,
