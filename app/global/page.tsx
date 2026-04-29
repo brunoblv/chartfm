@@ -7,6 +7,7 @@ import { computeGlobalSnapshotData, getOrCreateRankingWeekSnapshot } from "@/lib
 import Link from "next/link";
 
 type ArtistImageKey = { name: string; spotifyId: string | null };
+type GlobalSongLike = Awaited<ReturnType<typeof computeGlobalSnapshotData>>["weeklySongs"][number];
 
 function isMissingImageUrl(url: string | null | undefined): boolean {
   return url === undefined || url === null || url === "";
@@ -83,6 +84,37 @@ async function resolveArtistImages(artists: ArtistImageKey[]): Promise<Map<strin
   return imageMap;
 }
 
+async function hydrateSongCovers(entries: GlobalSongLike[]): Promise<GlobalSongLike[]> {
+  if (!entries.length) return entries;
+  const ids = [...new Set(entries.map((e) => e.song.id).filter(Boolean))];
+  const rows = await prisma.song.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      spotifyId: true,
+      coverImageUrl: true,
+      albumRef: { select: { coverUrl: true } },
+    },
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const bySpotifyId = new Map(rows.filter((r) => r.spotifyId).map((r) => [r.spotifyId as string, r]));
+
+  return entries.map((entry) => {
+    const ref = byId.get(entry.song.id) ?? (entry.song.spotifyId ? bySpotifyId.get(entry.song.spotifyId) : undefined);
+    const imageUrl =
+      ref?.coverImageUrl?.trim() ||
+      ref?.albumRef?.coverUrl?.trim() ||
+      entry.song.imageUrl?.trim() ||
+      entry.cover.imageUrl?.trim() ||
+      null;
+    return {
+      ...entry,
+      song: { ...entry.song, imageUrl },
+      cover: { ...entry.cover, imageUrl },
+    };
+  });
+}
+
 type GlobalPageProps = {
   searchParams?: Promise<{ week?: string }> | { week?: string };
 };
@@ -127,8 +159,8 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
       };
   const weekNow = snapshot.weekLabel;
   const weekRangeNow = snapshot.dateRange;
-  const globalSongs = snapshot.payload.weeklySongs;
-  const overallSongs = snapshot.payload.overallSongs;
+  const globalSongs = await hydrateSongCovers(snapshot.payload.weeklySongs);
+  const overallSongs = await hydrateSongCovers(snapshot.payload.overallSongs);
   const topArtists = snapshot.payload.weeklyArtists;
   const topArtistsOverall = snapshot.payload.overallArtists;
   const uniqueParadas = await prisma.chart.count({ where: { weekIndex } });
