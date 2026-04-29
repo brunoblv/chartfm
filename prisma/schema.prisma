@@ -188,6 +188,8 @@ model ChartEntry {
 
   @@unique([chartId, position])
   @@index([chartId, position], map: "idx_chart_entries_chart_position")
+  @@index([songId], map: "idx_chart_entries_song_id")
+  @@index([songId, position], map: "idx_chart_entries_song_position")
   @@index([songSpotifyId], map: "idx_chart_entries_song_spotify_id")
   @@index([albumSpotifyId], map: "idx_chart_entries_album_spotify_id")
 }

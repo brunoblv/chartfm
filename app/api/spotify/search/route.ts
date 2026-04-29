@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
+const SPOTIFY_SEARCH_TIMEOUT_MS = 2500;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("spotify_search_timeout")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, 200) ?? "";
@@ -21,12 +38,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const tracks = await searchSpotifyTracks(q, limit);
+    const tracks = await withTimeout(searchSpotifyTracks(q, limit), SPOTIFY_SEARCH_TIMEOUT_MS);
     return NextResponse.json({ tracks, configured: true });
-  } catch {
+  } catch (err) {
+    const isTimeout = err instanceof Error && err.message === "spotify_search_timeout";
     return NextResponse.json(
-      { tracks: [], configured: true, error: "spotify_request_failed" },
-      { status: 502 }
+      { tracks: [], configured: true, error: isTimeout ? "spotify_request_timeout" : "spotify_request_failed" },
+      { status: isTimeout ? 504 : 502 }
     );
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Plus, X, GripVertical, ExternalLink } from "lucide-react";
@@ -10,6 +10,7 @@ import { Cover } from "@/components/ui/Cover";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverModel, Song } from "@/lib/types";
+import { ADMIN_LASTFM_COVER_FALLBACK_KEY } from "@/lib/admin-flags";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -95,27 +96,34 @@ type LatestChartResponse = {
   error?: string;
 };
 
+const SPOTIFY_SEARCH_DISABLED = true;
+
 export default function CreatePage() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { data: session } = useSession();
-  const isLastfmUser = session?.user?.handle === "bruno";
+  const isAdmin = session?.user?.handle === "bruno";
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
-  const [search, setSearch] = useState("");
+  const [dbQuery, setDbQuery] = useState("");
+  const [lastfmQuery, setLastfmQuery] = useState("");
+  const [spotifyQuery, setSpotifyQuery] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const [spotifyTracks, setSpotifyTracks] = useState<Song[]>([]);
+  const [lastfmTracks, setLastfmTracks] = useState<Song[]>([]);
+  const [dbLoading, setDbLoading] = useState(false);
+  const [lastfmLoading, setLastfmLoading] = useState(false);
   const [spotifyLoading, setSpotifyLoading] = useState(false);
   const [dbSongs, setDbSongs] = useState<Song[]>([]);
   const [spotifyConfigured, setSpotifyConfigured] = useState(true);
+  const [lastfmConfigured, setLastfmConfigured] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [importingLast, setImportingLast] = useState(false);
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [paradaNome, setParadaNome] = useState<string | null>(null);
-  const [searchBump, setSearchBump] = useState(0);
-  const enterImmediateRef = useRef(false);
+  const [adminCoverFallback, setAdminCoverFallback] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/parada")
@@ -128,61 +136,157 @@ export default function CreatePage() {
       .catch(() => {});
   }, [router]);
 
-  const filtered = search
+  useEffect(() => {
+    if (!isAdmin) {
+      setAdminCoverFallback(false);
+      return;
+    }
+    const sync = () => {
+      try {
+        setAdminCoverFallback(localStorage.getItem(ADMIN_LASTFM_COVER_FALLBACK_KEY) === "1");
+      } catch {
+        setAdminCoverFallback(false);
+      }
+    };
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("chartify-admin-flags-updated", sync as EventListener);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("chartify-admin-flags-updated", sync as EventListener);
+    };
+  }, [isAdmin]);
+
+  const filtered = dbQuery
     ? SONG_POOL.filter(
         (s) =>
-          s.title.toLowerCase().includes(search.toLowerCase()) ||
-          s.artist.toLowerCase().includes(search.toLowerCase())
+          s.title.toLowerCase().includes(dbQuery.toLowerCase()) ||
+          s.artist.toLowerCase().includes(dbQuery.toLowerCase())
       ).slice(0, 8)
     : SONG_POOL.slice(0, 6);
 
   useEffect(() => {
-    const q = search.trim();
-    if (q.length < 1) {
-      setSpotifyTracks([]);
+    const q = dbQuery.trim();
+    if (q.length < 2) {
       setDbSongs([]);
-      setSpotifyLoading(false);
+      setDbLoading(false);
       return;
     }
-    const immediate = enterImmediateRef.current;
-    enterImmediateRef.current = false;
-    const delay = immediate ? 0 : 220;
+    const ac = new AbortController();
+    const timer = setTimeout(async () => {
+      setDbLoading(true);
+      try {
+        const dbRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ac.signal });
+        if (ac.signal.aborted) return;
+        if (!dbRes.ok) {
+          setDbSongs([]);
+        } else {
+          const dbData = (await dbRes.json()) as { songs?: DbSong[] };
+          if (ac.signal.aborted) return;
+          setDbSongs(
+            (dbData.songs ?? []).map((s) => ({
+              id: s.id,
+              title: s.title,
+              artist: s.artist,
+              album: s.album ?? "",
+              spotifyId: s.spotifyId ?? undefined,
+              imageUrl: s.coverUrl ?? undefined,
+            }))
+          );
+        }
+      } catch {
+        if (!ac.signal.aborted) setDbSongs([]);
+      } finally {
+        if (!ac.signal.aborted) setDbLoading(false);
+      }
+    }, 220);
+    return () => {
+      ac.abort();
+      clearTimeout(timer);
+    };
+  }, [dbQuery]);
+
+  useEffect(() => {
+    const q = lastfmQuery.trim();
+    if (q.length < 1) {
+      setLastfmTracks([]);
+      setLastfmLoading(false);
+      setLastfmConfigured(true);
+      return;
+    }
+    const ac = new AbortController();
+    const timer = setTimeout(async () => {
+      setLastfmLoading(true);
+      try {
+        const coverFallbackParam = adminCoverFallback ? "&coverFallback=1" : "";
+        const lfRes = await fetch(
+          `/api/lastfm/search?q=${encodeURIComponent(q)}&limit=12${coverFallbackParam}`,
+          { signal: ac.signal },
+        );
+        if (ac.signal.aborted) return;
+        if (!lfRes.ok) {
+          setLastfmConfigured(true);
+          setLastfmTracks([]);
+        } else {
+          const lfData = (await lfRes.json()) as {
+            tracks?: Array<{
+              title: string;
+              artist: string;
+              album: string | null;
+              imageUrl: string | null;
+              url: string | null;
+            }>;
+            configured?: boolean;
+          };
+          if (ac.signal.aborted) return;
+          setLastfmConfigured(lfData.configured !== false);
+          if (lfData.configured === false) {
+            setLastfmTracks([]);
+          } else {
+            setLastfmTracks(
+              (lfData.tracks ?? []).map((t) => ({
+                title: t.title,
+                artist: t.artist,
+                album: t.album ?? "",
+                imageUrl: t.imageUrl ?? undefined,
+                lastfmUrl: t.url ?? undefined,
+              }))
+            );
+          }
+        }
+      } catch {
+        if (!ac.signal.aborted) {
+          setLastfmTracks([]);
+          setLastfmConfigured(true);
+        }
+      } finally {
+        if (!ac.signal.aborted) setLastfmLoading(false);
+      }
+    }, 220);
+    return () => {
+      ac.abort();
+      clearTimeout(timer);
+    };
+  }, [lastfmQuery, adminCoverFallback]);
+
+  useEffect(() => {
+    if (SPOTIFY_SEARCH_DISABLED) {
+      setSpotifyTracks([]);
+      setSpotifyLoading(false);
+      setSpotifyConfigured(false);
+      return;
+    }
+    const q = spotifyQuery.trim();
+    if (q.length < 1) {
+      setSpotifyTracks([]);
+      setSpotifyLoading(false);
+      setSpotifyConfigured(true);
+      return;
+    }
     const ac = new AbortController();
     const timer = setTimeout(async () => {
       setSpotifyLoading(true);
-      setSpotifyTracks([]);
-
       try {
-        if (q.length >= 2) {
-          const dbRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ac.signal });
-          if (ac.signal.aborted) return;
-          if (!dbRes.ok) {
-            setDbSongs([]);
-          } else {
-            try {
-              const dbData = (await dbRes.json()) as { songs?: DbSong[] };
-              if (ac.signal.aborted) return;
-              setDbSongs(
-                (dbData.songs ?? []).map((s) => ({
-                  id: s.id,
-                  title: s.title,
-                  artist: s.artist,
-                  album: s.album ?? "",
-                  spotifyId: s.spotifyId ?? undefined,
-                  imageUrl: s.coverUrl ?? undefined,
-                }))
-              );
-            } catch {
-              if (ac.signal.aborted) return;
-              setDbSongs([]);
-            }
-          }
-        } else {
-          setDbSongs([]);
-        }
-
-        if (ac.signal.aborted) return;
-
         const spotifyRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
           signal: ac.signal,
         });
@@ -190,44 +294,42 @@ export default function CreatePage() {
         if (!spotifyRes.ok) {
           setSpotifyConfigured(false);
           setSpotifyTracks([]);
-          return;
-        }
-
-        try {
-          const spotifyData = (await spotifyRes.json()) as {
-            tracks?: SpotifyApiTrack[];
-            configured?: boolean;
-          };
-          if (ac.signal.aborted) return;
-          setSpotifyConfigured(spotifyData.configured !== false);
-          setSpotifyTracks(
-            (spotifyData.tracks ?? []).map((t) => ({
-              title: t.title,
-              artist: t.artist,
-              album: t.album,
-              imageUrl: t.imageUrl ?? undefined,
-              spotifyId: t.spotifyId,
-            }))
-          );
-        } catch {
-          if (ac.signal.aborted) return;
-          setSpotifyConfigured(false);
-          setSpotifyTracks([]);
+        } else {
+          try {
+            const spotifyData = (await spotifyRes.json()) as {
+              tracks?: SpotifyApiTrack[];
+              configured?: boolean;
+            };
+            if (ac.signal.aborted) return;
+            setSpotifyConfigured(spotifyData.configured !== false);
+            setSpotifyTracks(
+              (spotifyData.tracks ?? []).map((t) => ({
+                title: t.title,
+                artist: t.artist,
+                album: t.album,
+                imageUrl: t.imageUrl ?? undefined,
+                spotifyId: t.spotifyId,
+              }))
+            );
+          } catch {
+            if (ac.signal.aborted) return;
+            setSpotifyConfigured(false);
+            setSpotifyTracks([]);
+          }
         }
       } catch {
         if (ac.signal.aborted) return;
         setSpotifyConfigured(false);
         setSpotifyTracks([]);
-        setDbSongs([]);
       } finally {
         if (!ac.signal.aborted) setSpotifyLoading(false);
       }
-    }, delay);
+    }, 220);
     return () => {
       ac.abort();
       clearTimeout(timer);
     };
-  }, [search, searchBump]);
+  }, [spotifyQuery]);
 
   const addSong = (song: Song) => {
     if (entries.some((e) => e.title === song.title && e.artist === song.artist)) return;
@@ -264,7 +366,7 @@ export default function CreatePage() {
       const res = await fetch("/api/charts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entries, weekDate }),
+        body: JSON.stringify({ entries, weekDate, fastPublish: true }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -336,7 +438,10 @@ export default function CreatePage() {
   const renderSongRow = (song: Song, added: boolean) => {
     const cover = coverForSong(song);
     return (
-      <div key={`${song.title}-${song.artist}-${song.spotifyId ?? "local"}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px", borderRadius: 8 }}>
+      <div
+        key={`${song.title}-${song.artist}-${song.spotifyId ?? song.lastfmUrl ?? "local"}`}
+        style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px", borderRadius: 8 }}
+      >
         <Cover cover={cover} song={song} size={40} rounded={6} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
@@ -353,6 +458,18 @@ export default function CreatePage() {
               >
                 <ExternalLink size={10} />
                 Spotify
+              </a>
+            ) : song.lastfmUrl ? (
+              <a
+                href={song.lastfmUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ color: "#D51007", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 600 }}
+                title="Abrir no Last.fm"
+              >
+                <ExternalLink size={10} />
+                Last.fm
               </a>
             ) : null}
           </div>
@@ -393,71 +510,148 @@ export default function CreatePage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Buscar música</div>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            e.preventDefault();
-            const q = search.trim();
-            if (q.length < 1) return;
-            enterImmediateRef.current = true;
-            setSearchBump((b) => b + 1);
-          }}
-          placeholder="Título ou artista (Spotify + catálogo)…"
-          style={{
-            width: "100%",
-            border: "1px solid rgba(0,0,0,0.1)",
-            borderRadius: 10,
-            padding: "10px 14px",
-            fontSize: 14,
-            outline: "none",
-            color: "#1D1D1F",
-            marginBottom: 14,
-            boxSizing: "border-box",
-          }}
-        />
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
+            1) Catálogo
+          </div>
+          <input
+            value={dbQuery}
+            onChange={(e) => setDbQuery(e.target.value)}
+            placeholder="Pesquisar no catálogo local"
+            style={{
+              width: "100%",
+              border: "1px solid rgba(0,0,0,0.1)",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 14,
+              outline: "none",
+              color: "#1D1D1F",
+              marginBottom: 10,
+              boxSizing: "border-box",
+            }}
+          />
+          {dbQuery.trim().length >= 2 ? (
+            <>
+              {dbLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+              {!dbLoading &&
+                (dbSongs.length > 0 ? (
+                  dbSongs.map((song) => {
+                    const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
+                    return renderSongRow(song, added);
+                  })
+                ) : (
+                  <div style={{ fontSize: 12, color: "#86868B" }}>Nenhuma música no catálogo.</div>
+                ))}
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, color: "#86868B", marginBottom: 10, lineHeight: 1.45 }}>
+                Digite ao menos 2 caracteres para buscar no catálogo completo. Sugestões locais:
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {filtered.map((song) => {
+                  const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
+                  return renderSongRow(song, added);
+                })}
+              </div>
+            </>
+          )}
+        </div>
 
-        {search.trim().length >= 1 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-              Spotify
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              2) Last.fm
             </div>
-            {spotifyLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
-            {!spotifyLoading && !spotifyConfigured && (
-              <div style={{ fontSize: 12, color: "#86868B", lineHeight: 1.5 }}>
-                Configure <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> e <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> no arquivo <code style={{ fontSize: 11 }}>.env</code>.
+            {isAdmin && (
+              <div style={{ fontSize: 11, color: adminCoverFallback ? "#0F9D58" : "#86868B", fontWeight: 700 }}>
+                Capa CAA: {adminCoverFallback ? "ON" : "OFF"}
               </div>
             )}
-            {!spotifyLoading && spotifyConfigured && spotifyTracks.length === 0 && (
-              <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Spotify.</div>
-            )}
-            {!spotifyLoading &&
-              spotifyTracks.map((song) => {
-                const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
-                return renderSongRow(song, added);
-              })}
           </div>
-        )}
-
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-          {search.trim().length >= 2 ? "No catálogo" : "Catálogo local"}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {search.trim().length >= 2 ? (
-            dbSongs.length > 0 ? (
-              dbSongs.map((song) => {
-                const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
-                return renderSongRow(song, added);
-              })
-            ) : (
-              <div style={{ fontSize: 12, color: "#86868B" }}>Nenhuma música no catálogo.</div>
-            )
+          <input
+            value={lastfmQuery}
+            onChange={(e) => setLastfmQuery(e.target.value)}
+            placeholder="Pesquisar no Last.fm"
+            style={{
+              width: "100%",
+              border: "1px solid rgba(0,0,0,0.1)",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 14,
+              outline: "none",
+              color: "#1D1D1F",
+              marginBottom: 10,
+              boxSizing: "border-box",
+            }}
+          />
+          {lastfmQuery.trim().length < 1 ? (
+            <div style={{ fontSize: 12, color: "#86868B" }}>Digite para pesquisar no Last.fm.</div>
           ) : (
-            filtered.map((song) => {
-              const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
-              return renderSongRow(song, added);
-            })
+            <>
+              {lastfmLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+              {!lastfmLoading && !lastfmConfigured && (
+                <div style={{ fontSize: 12, color: "#86868B", lineHeight: 1.5 }}>
+                  Configure <code style={{ fontSize: 11 }}>API_KEY</code> (Last.fm) no arquivo <code style={{ fontSize: 11 }}>.env</code>.
+                </div>
+              )}
+              {!lastfmLoading && lastfmConfigured && lastfmTracks.length === 0 && (
+                <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Last.fm.</div>
+              )}
+              {!lastfmLoading &&
+                lastfmConfigured &&
+                lastfmTracks.map((song) => {
+                  const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
+                  return renderSongRow(song, added);
+                })}
+            </>
+          )}
+        </div>
+
+        <div style={{ marginBottom: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
+            3) Spotify
+          </div>
+          <input
+            value={spotifyQuery}
+            onChange={(e) => setSpotifyQuery(e.target.value)}
+            placeholder={SPOTIFY_SEARCH_DISABLED ? "Spotify desativado temporariamente" : "Pesquisar no Spotify"}
+            disabled={SPOTIFY_SEARCH_DISABLED}
+            style={{
+              width: "100%",
+              border: "1px solid rgba(0,0,0,0.1)",
+              borderRadius: 10,
+              padding: "10px 14px",
+              fontSize: 14,
+              outline: "none",
+              color: SPOTIFY_SEARCH_DISABLED ? "#86868B" : "#1D1D1F",
+              background: SPOTIFY_SEARCH_DISABLED ? "#F5F5F7" : "white",
+              marginBottom: 10,
+              boxSizing: "border-box",
+            }}
+          />
+          {SPOTIFY_SEARCH_DISABLED ? (
+            <div style={{ fontSize: 12, color: "#86868B" }}>Busca no Spotify está desativada no momento.</div>
+          ) : spotifyQuery.trim().length < 1 ? (
+            <div style={{ fontSize: 12, color: "#86868B" }}>Digite para pesquisar no Spotify.</div>
+          ) : (
+            <>
+              {spotifyLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+              {!spotifyLoading && !spotifyConfigured && (
+                <div style={{ fontSize: 12, color: "#86868B", lineHeight: 1.5 }}>
+                  Configure <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> e <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> no arquivo{" "}
+                  <code style={{ fontSize: 11 }}>.env</code>.
+                </div>
+              )}
+              {!spotifyLoading && spotifyConfigured && spotifyTracks.length === 0 && (
+                <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Spotify.</div>
+              )}
+              {!spotifyLoading &&
+                spotifyTracks.map((song) => {
+                  const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
+                  return renderSongRow(song, added);
+                })}
+            </>
           )}
         </div>
       </div>
@@ -490,7 +684,7 @@ export default function CreatePage() {
             {entries.length === 0 ? "Nenhuma música ainda" : `${entries.length} música${entries.length === 1 ? "" : "s"}`}
           </div>
         </div>
-        {isLastfmUser && (
+        {isAdmin && (
           <button
             type="button"
             onClick={importFromLastfm}

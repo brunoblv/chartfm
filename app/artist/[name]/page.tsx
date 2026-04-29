@@ -69,6 +69,7 @@ type UserSongRow = {
 };
 
 type AlbumRow = {
+  albumId: number | null;
   name: string;
   songs: number;
   points: number;
@@ -92,10 +93,12 @@ export default async function ArtistPage({
   const parsed = parseArtistSlug(name);
   const artistRef = await prisma.artist.findFirst({
     where:
-      parsed.type === "spotify"
-        ? { spotifyId: parsed.spotifyId }
-        : { name: { equals: parsed.name, mode: "insensitive" } },
-    select: { spotifyId: true, name: true, imageUrl: true, spotifyUrl: true },
+      parsed.type === "dbId"
+        ? { id: parsed.artistId }
+        : parsed.type === "spotify"
+          ? { spotifyId: parsed.spotifyId }
+          : { name: { equals: parsed.name, mode: "insensitive" } },
+    select: { id: true, spotifyId: true, name: true, imageUrl: true, spotifyUrl: true },
   });
   const requestedName = parsed.type === "slug" ? parsed.name : (artistRef?.name ?? "");
   const canonicalName = artistRef?.name ?? requestedName;
@@ -133,6 +136,7 @@ export default async function ArtistPage({
           album: true,
           coverImageUrl: true,
           spotifyId: true,
+          albumRef: { select: { id: true, coverUrl: true } },
         },
       },
     },
@@ -162,7 +166,7 @@ export default async function ArtistPage({
     totalPoints += pts;
     if (e.position === 1) number1s += 1;
     const key = songKey(e.song.title, e.song.artist);
-    const manual = e.song.coverImageUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || null;
     const cur = songsMap.get(key) ?? {
       key,
       songId: e.song.id,
@@ -243,15 +247,16 @@ export default async function ArtistPage({
     .sort((a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points);
 
   // ── All albums ────────────────────────────────────────────────────────────
-  const albumsMapRaw = new Map<string, { name: string; songTitles: Set<string>; points: number; cover: AlbumRow["cover"] }>();
+  const albumsMapRaw = new Map<string, { albumId: number | null; name: string; songTitles: Set<string>; points: number; cover: AlbumRow["cover"] }>();
   for (const e of allEntries) {
     const albumName = e.song.album?.trim() || "Single";
     if (albumName === "Single") continue;
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
-    const manual = e.song.coverImageUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || null;
     const existing = albumsMapRaw.get(albumName);
     if (!existing) {
       albumsMapRaw.set(albumName, {
+        albumId: e.song.albumRef?.id ?? null,
         name: albumName,
         songTitles: new Set([e.song.title]),
         points: pts,
@@ -265,7 +270,7 @@ export default async function ArtistPage({
   }
   const allAlbums: AlbumRow[] = [...albumsMapRaw.values()]
     .sort((a, b) => b.points - a.points)
-    .map((a) => ({ name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
+    .map((a) => ({ albumId: a.albumId, name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
 
   // ── User-specific data ────────────────────────────────────────────────────
   const userEntries = currentUserId ? allEntries.filter((e) => e.chart.userId === currentUserId) : [];
@@ -273,7 +278,7 @@ export default async function ArtistPage({
   const userSongsMap = new Map<string, UserSongRow>();
   for (const e of userEntries) {
     const key = songKey(e.song.title, e.song.artist);
-    const manual = e.song.coverImageUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || null;
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
     const cur = userSongsMap.get(key) ?? {
       key,
@@ -304,7 +309,7 @@ export default async function ArtistPage({
     const albumName = e.song.album?.trim() || "Single";
     if (albumName === "Single") continue;
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
-    const manual = e.song.coverImageUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || null;
     const existing = userAlbumsMapRaw.get(albumName);
     if (!existing) {
       userAlbumsMapRaw.set(albumName, {
@@ -485,7 +490,7 @@ export default async function ArtistPage({
                             <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
                           </div>
                           <div style={{ padding: "0 12px", minWidth: 0 }}>
-                            <Link href={buildSongPath({ title: s.title, artist: canonicalName, id: s.spotifyId ? undefined : s.songId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
+                            <Link href={buildSongPath({ title: s.title, artist: canonicalName, id: s.songId, artistId: artistRef?.id, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
                               {s.title}
                             </Link>
                             <div style={{ fontSize: 12, color: "#86868B" }}>{s.album}</div>
@@ -506,7 +511,7 @@ export default async function ArtistPage({
                             <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
                           </div>
                           <div style={{ padding: "0 12px", minWidth: 0 }}>
-                            <Link href={buildSongPath({ title: s.title, artist: canonicalName, id: s.spotifyId ? undefined : s.songId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
+                            <Link href={buildSongPath({ title: s.title, artist: canonicalName, id: s.songId, artistId: artistRef?.id, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
                               {s.title}
                             </Link>
                             <div style={{ fontSize: 12, color: "#86868B" }}>{s.album}</div>
@@ -586,7 +591,7 @@ export default async function ArtistPage({
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
                   {(tab === "albums" ? allAlbums : userAlbums).map((album) => (
-                    <Link key={album.name} href={buildAlbumPath(album.name, canonicalName)} style={{ textDecoration: "none" }}>
+                    <Link key={album.name} href={buildAlbumPath(album.name, canonicalName, { artistId: artistRef?.id, albumId: album.albumId })} style={{ textDecoration: "none" }}>
                       <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 16 }}>
                         <Cover cover={album.cover} song={{ title: album.name, artist: canonicalName, album: album.name }} size={128} rounded={10} />
                         <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "#1D1D1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.name}</div>

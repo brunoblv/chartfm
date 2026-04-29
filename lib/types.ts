@@ -35,6 +35,8 @@ export interface Song {
   artistSpotifyId?: string | null;
   /** Capa oficial (Spotify); o componente Cover também pode resolver via API se ausente */
   imageUrl?: string | null;
+  /** Página da faixa no Last.fm (busca fallback) */
+  lastfmUrl?: string | null;
 }
 
 export interface ChartEntry {

@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const entries: EntryInput[] = body.entries ?? [];
+  const fastPublish = body.fastPublish === true;
 
   if (!Array.isArray(entries) || entries.length === 0) {
     return NextResponse.json({ error: "Adicione ao menos uma música" }, { status: 400 });
@@ -159,7 +160,7 @@ export async function POST(req: NextRequest) {
   for (const e of entries) {
     const spotifyId = e.spotifyId?.trim() || null;
     if (!spotifyId) {
-      const resolvedArtist = await spotifyArtistByName(e.artist);
+      const resolvedArtist = fastPublish ? null : await spotifyArtistByName(e.artist);
       if (resolvedArtist) {
         await prisma.artist.upsert({
           where: { spotifyId: resolvedArtist.spotifyId },
@@ -205,7 +206,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const metadata = await getSpotifyTrackMetadataById(spotifyId);
+    const metadata = fastPublish ? null : await getSpotifyTrackMetadataById(spotifyId);
     const primaryArtist = metadata?.primaryArtist;
     const albumSpotifyId = metadata?.album.spotifyId ?? null;
     const mainArtistName = primaryArtist?.name?.trim() || metadata?.artists?.[0]?.name?.trim() || e.artist;

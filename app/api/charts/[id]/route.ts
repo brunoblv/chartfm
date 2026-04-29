@@ -57,6 +57,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
         include: {
           song: {
             include: {
+              albumRef: {
+                select: { coverUrl: true },
+              },
               artistRef: {
                 select: { name: true },
               },
@@ -80,20 +83,6 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
   const currentSongIds = [...new Set(row.entries.map((e) => e.songId))];
   const songIdToKey = new Map(row.entries.map((e) => [e.songId, `${e.song.title}\0${e.song.artist}`]));
-
-  const [history, globalOnes] = await Promise.all([
-    prisma.chartEntry.findMany({
-      where: {
-        songId: { in: currentSongIds },
-        chart: { userId: row.userId, weekIndex: { lte: row.weekIndex } },
-      },
-      select: { songId: true, position: true, chart: { select: { weekIndex: true } } },
-    }),
-    prisma.chartEntry.findMany({
-      where: { position: 1, songId: { in: currentSongIds } },
-      select: { songId: true },
-    }),
-  ]);
   const [previousChart, nextChart] = await Promise.all([
     prisma.chart.findFirst({
       where: { userId: row.userId, weekIndex: { lt: row.weekIndex } },
@@ -107,35 +96,67 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     }),
   ]);
 
+  const [historyAgg, personalOnesAgg, globalOnesAgg, prevPositionsRaw] = await Promise.all([
+    prisma.chartEntry.groupBy({
+      by: ["songId"],
+      where: {
+        songId: { in: currentSongIds },
+        chart: { userId: row.userId, weekIndex: { lte: row.weekIndex } },
+      },
+      _count: { _all: true },
+      _min: { position: true },
+    }),
+    prisma.chartEntry.groupBy({
+      by: ["songId"],
+      where: {
+        songId: { in: currentSongIds },
+        position: 1,
+        chart: { userId: row.userId, weekIndex: { lte: row.weekIndex } },
+      },
+      _count: { _all: true },
+    }),
+    prisma.chartEntry.groupBy({
+      by: ["songId"],
+      where: { position: 1, songId: { in: currentSongIds } },
+      _count: { _all: true },
+    }),
+    prisma.chartEntry.findMany({
+      where: {
+        songId: { in: currentSongIds },
+        chart: { userId: row.userId, weekIndex: { lt: row.weekIndex } },
+      },
+      select: { songId: true, position: true, chart: { select: { weekIndex: true } } },
+      orderBy: [{ chart: { weekIndex: "desc" } }],
+    }),
+  ]);
+
+  const historyBySong = new Map(
+    historyAgg.map((h) => [h.songId, { weeks: h._count._all, peak: h._min.position ?? null }]),
+  );
+  const personalOnesBySong = new Map(personalOnesAgg.map((h) => [h.songId, h._count._all]));
+  const globalOnesBySong = new Map(globalOnesAgg.map((h) => [h.songId, h._count._all]));
+  const prevPosBySong = new Map<string, number>();
+  for (const rowPrev of prevPositionsRaw) {
+    if (!prevPosBySong.has(rowPrev.songId)) prevPosBySong.set(rowPrev.songId, rowPrev.position);
+  }
+
   const personalNumberOnes: Record<string, number> = {};
-  for (const h of history) {
-    if (h.position === 1) {
-      const key = songIdToKey.get(h.songId);
-      if (key) personalNumberOnes[key] = (personalNumberOnes[key] ?? 0) + 1;
-    }
+  for (const [songId, total] of personalOnesBySong.entries()) {
+    const key = songIdToKey.get(songId);
+    if (key) personalNumberOnes[key] = total;
   }
 
   const globalNumberOnes: Record<string, number> = {};
-  for (const g of globalOnes) {
-    const key = songIdToKey.get(g.songId);
-    if (key) globalNumberOnes[key] = (globalNumberOnes[key] ?? 0) + 1;
-  }
-
-  const bySong = new Map<string, { weekIndex: number; position: number }[]>();
-  for (const h of history) {
-    const arr = bySong.get(h.songId) ?? [];
-    arr.push({ weekIndex: h.chart.weekIndex, position: h.position });
-    bySong.set(h.songId, arr);
+  for (const [songId, total] of globalOnesBySong.entries()) {
+    const key = songIdToKey.get(songId);
+    if (key) globalNumberOnes[key] = total;
   }
 
   const entriesWithComputedStats = row.entries.map((entry) => {
-    const hist = bySong.get(entry.songId) ?? [];
-    const weeks = hist.length;
-    const peak = hist.length ? Math.min(...hist.map((h) => h.position)) : entry.position;
-    const prev = hist
-      .filter((h) => h.weekIndex < row.weekIndex)
-      .sort((a, b) => b.weekIndex - a.weekIndex)[0];
-    const prevPos = prev?.position ?? null;
+    const hist = historyBySong.get(entry.songId);
+    const weeks = hist?.weeks ?? 1;
+    const peak = hist?.peak ?? entry.position;
+    const prevPos = prevPosBySong.get(entry.songId) ?? null;
     const delta = prevPos === null ? null : prevPos - entry.position;
     let status: "new" | "up" | "down" | "same" = "new";
     if (prevPos !== null) {

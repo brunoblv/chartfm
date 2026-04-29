@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { ADMIN_LASTFM_COVER_FALLBACK_KEY } from "@/lib/admin-flags";
 
 const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
   { href: "/", label: "Início", icon: Home },
@@ -26,7 +27,9 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
   const { data: session, status } = useSession();
   const authed = status === "authenticated" && !!session?.user?.handle;
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [adminCoverFallback, setAdminCoverFallback] = useState(false);
   const profileHandle = authed ? session!.user.handle! : null;
+  const isAdmin = authed && session?.user?.handle === "bruno";
   const profilePath = profileHandle ? `/profile/${profileHandle}` : "/login";
   const profileActive =
     !!profileHandle &&
@@ -65,6 +68,27 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
       cancelled = true;
     };
   }, [authed, pathname]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    try {
+      setAdminCoverFallback(localStorage.getItem(ADMIN_LASTFM_COVER_FALLBACK_KEY) === "1");
+    } catch {
+      setAdminCoverFallback(false);
+    }
+  }, [isAdmin]);
+
+  const toggleAdminCoverFallback = () => {
+    if (!isAdmin) return;
+    const next = !adminCoverFallback;
+    setAdminCoverFallback(next);
+    try {
+      localStorage.setItem(ADMIN_LASTFM_COVER_FALLBACK_KEY, next ? "1" : "0");
+      window.dispatchEvent(new CustomEvent("chartify-admin-flags-updated"));
+    } catch {
+      // sem persistência se storage indisponível
+    }
+  };
 
   if (isMobile) {
     return (
@@ -118,6 +142,9 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
             authed={authed}
             session={session}
             onNavClick={handleNavClick}
+            isAdmin={isAdmin}
+            adminCoverFallback={adminCoverFallback}
+            onToggleAdminCoverFallback={toggleAdminCoverFallback}
           />
         </aside>
       </>
@@ -160,6 +187,9 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
         authed={authed}
         session={session}
         onNavClick={() => {}}
+        isAdmin={isAdmin}
+        adminCoverFallback={adminCoverFallback}
+        onToggleAdminCoverFallback={toggleAdminCoverFallback}
       />
     </aside>
   );
@@ -176,6 +206,9 @@ function SidebarContent({
   authed,
   session,
   onNavClick,
+  isAdmin,
+  adminCoverFallback,
+  onToggleAdminCoverFallback,
 }: {
   pathname: string;
   profilePath: string;
@@ -187,7 +220,12 @@ function SidebarContent({
   authed: boolean;
   session: ReturnType<typeof useSession>["data"];
   onNavClick: () => void;
+  isAdmin: boolean;
+  adminCoverFallback: boolean;
+  onToggleAdminCoverFallback: () => void;
 }) {
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+
   return (
     <>
       {NAV.map(({ href, label, icon: Icon, requiresAuth }) => {
@@ -195,7 +233,7 @@ function SidebarContent({
         const locked = requiresAuth && !authed;
         const isNotifications = href === "/notifications";
         const showUnreadBadge = isNotifications && authed && unreadNotifications > 0;
-        return (
+        const link = (
           <Link
             key={href}
             href={locked ? "/login" : href}
@@ -236,6 +274,86 @@ function SidebarContent({
             {showUnreadBadge && <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "#FA243C" }} />}
           </Link>
         );
+
+        if (isNotifications && isAdmin) {
+          return (
+            <Fragment key={href}>
+              {link}
+              <div style={{ margin: "2px 0 4px" }}>
+                <button
+                  type="button"
+                  onClick={() => setAdminMenuOpen((o) => !o)}
+                  aria-expanded={adminMenuOpen}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "9px 10px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: adminMenuOpen ? "rgba(250,36,60,0.08)" : "transparent",
+                    color: "#1D1D1F",
+                    fontWeight: adminMenuOpen ? 600 : 500,
+                    fontSize: 15,
+                    letterSpacing: "-0.01em",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <Shield size={20} />
+                  <span style={{ flex: 1 }}>Admin</span>
+                  <ChevronDown
+                    size={18}
+                    color="#86868B"
+                    style={{ transform: adminMenuOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms ease" }}
+                  />
+                </button>
+                {adminMenuOpen && (
+                  <div
+                    style={{
+                      marginLeft: 8,
+                      marginTop: 4,
+                      marginBottom: 6,
+                      padding: "8px 8px 10px",
+                      borderLeft: "2px solid rgba(250,36,60,0.25)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={onToggleAdminCoverFallback}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        border: "1px solid rgba(0,0,0,0.1)",
+                        background: "white",
+                        borderRadius: 8,
+                        padding: "8px 10px",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "#1D1D1F",
+                      }}
+                      title="Ativa busca de capa no Cover Art Archive quando Last.fm vier sem imagem"
+                    >
+                      <span>Capa Last.fm via CAA</span>
+                      <span style={{ color: adminCoverFallback ? "#0F9D58" : "#86868B" }}>
+                        {adminCoverFallback ? "ON" : "OFF"}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </Fragment>
+          );
+        }
+
+        return link;
       })}
 
       <div style={{ padding: "14px 10px 6px 10px" }}>

@@ -16,12 +16,26 @@ function songKey(title: string, artist: string): string {
 }
 
 async function resolveSongId(parsed: ParsedSongSlug): Promise<string | null> {
+  if (parsed.type === "artistSongIds") {
+    const song = await prisma.song.findFirst({
+      where: { id: parsed.songId, artistRef: { id: parsed.artistId } },
+      select: { id: true },
+    });
+    if (song?.id) return song.id;
+    const fallback = await prisma.song.findUnique({ where: { id: parsed.songId }, select: { id: true } });
+    return fallback?.id ?? null;
+  }
   if (parsed.type === "internalId") {
     const song = await prisma.song.findUnique({
       where: { id: parsed.songId },
       select: { id: true },
     });
-    return song?.id ?? null;
+    if (song?.id) return song.id;
+    const entry = await prisma.chartEntry.findUnique({
+      where: { id: parsed.songId },
+      select: { songId: true },
+    });
+    return entry?.songId ?? null;
   }
   if (parsed.type === "spotify") {
     const song = await prisma.song.findUnique({
@@ -97,8 +111,10 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           artist: true,
           album: true,
           coverImageUrl: true,
+          albumRef: { select: { coverUrl: true } },
           spotifyId: true,
           artistSpotifyId: true,
+          artistRef: { select: { id: true } },
         },
       },
     },
@@ -123,7 +139,8 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const album = first.song.album ?? "";
   const spotifyId = first.song.spotifyId;
   const artistSpotifyId = first.song.artistSpotifyId;
-  const coverImageUrl = first.song.coverImageUrl?.trim() || null;
+  const artistDbId = first.song.artistRef?.id ?? null;
+  const coverImageUrl = first.song.albumRef?.coverUrl?.trim() || null;
   const totalPoints = entries.reduce((sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)), 0);
   const users = new Set(entries.map((e) => e.chart.userId)).size;
   const chartEntries = entries.length;
@@ -226,7 +243,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           />
           <div style={{ minWidth: 280 }}>
             <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.05 }}>{title}</div>
-            <Link href={buildArtistPath(artist, artistSpotifyId)} style={{ display: "inline-block", marginTop: 8, fontSize: 16, fontWeight: 600, color: "#1D1D1F", textDecoration: "none" }}>
+            <Link href={buildArtistPath(artist, artistSpotifyId, artistDbId)} style={{ display: "inline-block", marginTop: 8, fontSize: 16, fontWeight: 600, color: "#1D1D1F", textDecoration: "none" }}>
               {artist}
             </Link>
             {album && <div style={{ fontSize: 14, color: "#86868B", marginTop: 6 }}>{album}</div>}

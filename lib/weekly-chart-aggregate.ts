@@ -14,6 +14,7 @@ export type WeeklyChartEntryRow = {
     artist: string;
     album: string | null;
     coverImageUrl?: string | null;
+    albumRef?: { coverUrl?: string | null } | null;
     spotifyId: string | null;
     artistSpotifyId: string | null;
     artistRef: { spotifyId: string; name: string } | null;
@@ -263,7 +264,7 @@ export function aggregateGlobalSongs(
     const prevPoints = comparisonBySong.get(row.key) ?? 0;
     const growthPct = prevPoints > 0 ? ((row.pts - prevPoints) / prevPoints) * 100 : null;
     const s = row.best.song;
-    const manualCover = s.coverImageUrl?.trim() || null;
+    const manualCover = s.albumRef?.coverUrl?.trim() || null;
     const song: Song = {
       id: s.id,
       title: s.title,

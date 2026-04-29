@@ -40,24 +40,37 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     );
   }
 
-  const { artistSlug, albumSlug } = parsed;
-  const firstArtistWord = artistSlug.split("-").find((w) => w.length > 0) ?? artistSlug;
+  const firstArtistWord = parsed.type === "slug"
+    ? (parsed.artistSlug.split("-").find((w) => w.length > 0) ?? parsed.artistSlug)
+    : null;
 
-  // Resolve artist
-  const artistRef = await prisma.artist.findFirst({
-    where: { name: { contains: firstArtistWord, mode: "insensitive" } },
-    select: { spotifyId: true, name: true, imageUrl: true, spotifyUrl: true },
-  });
+  const artistRef = parsed.type === "artistAlbumIds"
+    ? await prisma.artist.findUnique({
+        where: { id: parsed.artistId },
+        select: { id: true, spotifyId: true, name: true, imageUrl: true, spotifyUrl: true },
+      })
+    : await prisma.artist.findFirst({
+        where: { name: { contains: firstArtistWord ?? "", mode: "insensitive" } },
+        select: { id: true, spotifyId: true, name: true, imageUrl: true, spotifyUrl: true },
+      });
 
-  // Fetch all entries for this artist, then filter by album in memory
+  // Fetch entries; when IDs are provided, use direct DB ids.
   const allEntries = await prisma.chartEntry.findMany({
-    where: {
-      chart: { isPublished: true },
-      OR: [
-        ...(artistRef?.spotifyId ? [{ song: { artistSpotifyId: artistRef.spotifyId } }] : []),
-        { song: { artist: { contains: firstArtistWord, mode: "insensitive" } } },
-      ],
-    },
+    where: parsed.type === "artistAlbumIds"
+      ? {
+          chart: { isPublished: true },
+          song: {
+            albumRef: { id: parsed.albumId },
+            artistRef: { id: parsed.artistId },
+          },
+        }
+      : {
+          chart: { isPublished: true },
+          OR: [
+            ...(artistRef?.spotifyId ? [{ song: { artistSpotifyId: artistRef.spotifyId } }] : []),
+            { song: { artist: { contains: firstArtistWord ?? "", mode: "insensitive" } } },
+          ],
+        },
     select: {
       position: true,
       points: true,
@@ -82,15 +95,17 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           coverImageUrl: true,
           spotifyId: true,
           artistSpotifyId: true,
+          albumRef: { select: { id: true, coverUrl: true } },
+          artistRef: { select: { id: true } },
         },
       },
     },
   });
 
-  // Filter to this album only (slugify match)
-  const albumEntries = allEntries.filter(
-    (e) => slugify(e.song.album ?? "") === albumSlug,
-  );
+  // Filter to this album only (slugify match for legacy slug)
+  const albumEntries = parsed.type === "artistAlbumIds"
+    ? allEntries
+    : allEntries.filter((e) => slugify(e.song.album ?? "") === parsed.albumSlug);
 
   if (albumEntries.length === 0) {
     return (
@@ -108,7 +123,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   const canonicalAlbum = albumEntries[0].song.album ?? "";
   const canonicalArtist =
     artistRef?.name ?? albumEntries[0].song.artist;
-  const coverImageUrl = albumEntries.find((e) => e.song.coverImageUrl?.trim())?.song.coverImageUrl?.trim() ?? null;
+  const coverImageUrl = albumEntries.find((e) => e.song.albumRef?.coverUrl?.trim())?.song.albumRef?.coverUrl?.trim() ?? null;
   const firstEntry = albumEntries[0];
   const palette = albumColor(canonicalAlbum + canonicalArtist);
 
@@ -138,7 +153,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     if (e.position === 1) number1sAlbum += 1;
 
     const key = songKey(e.song.title, e.song.artist);
-    const manual = e.song.coverImageUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || null;
     const cur = songsMap.get(key) ?? {
       key,
       songId: e.song.id,
@@ -244,6 +259,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   ];
 
   const artistSpotifyId = albumEntries[0].song.artistSpotifyId;
+  const artistDbId = artistRef?.id ?? albumEntries[0].song.artistRef?.id ?? null;
 
   return (
     <Shell title="" noPadding>
@@ -253,7 +269,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         padding: "48px 40px 40px 40px",
       }}>
         <Link
-          href={buildArtistPath(canonicalArtist, artistSpotifyId)}
+          href={buildArtistPath(canonicalArtist, artistSpotifyId, artistDbId)}
           style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 500, textDecoration: "none", marginBottom: 32 }}
         >
           <ChevronLeft size={16} />
@@ -278,7 +294,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               {canonicalAlbum}
             </h1>
             <Link
-              href={buildArtistPath(canonicalArtist, artistSpotifyId)}
+              href={buildArtistPath(canonicalArtist, artistSpotifyId, artistDbId)}
               style={{ display: "inline-block", fontSize: 18, fontWeight: 600, color: "rgba(255,255,255,0.9)", textDecoration: "none", marginBottom: 20 }}
             >
               {canonicalArtist}
@@ -332,7 +348,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                 </div>
                 <div style={{ padding: "0 12px", minWidth: 0 }}>
                   <Link
-                    href={buildSongPath({ title: s.title, artist: canonicalArtist, id: s.spotifyId ? undefined : s.songId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })}
+                    href={buildSongPath({ title: s.title, artist: canonicalArtist, id: s.songId, artistId: artistDbId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })}
                     style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}
                   >
                     {s.title}
