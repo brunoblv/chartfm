@@ -424,31 +424,31 @@ function GlobalTeaser({
 }) {
   const top3 = topSongs.slice(0, 3);
   return (
-    <Link href="/global" style={{ textDecoration: "none", color: "inherit" }}>
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: "#000", color: "white", display: "grid", placeItems: "center" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Parada Global</div>
-          <div style={{ flex: 1 }} />
-          <div style={{ fontSize: 11, color: "#86868B" }}>{weekLabel}</div>
+    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <div style={{ width: 24, height: 24, borderRadius: 6, background: "#000", color: "white", display: "grid", placeItems: "center" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {top3.map((e) => (
-            <div key={e.position} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <PositionNumber n={e.position} size={14} />
-              <Cover cover={e.cover} song={e.song} size={36} rounded={6} />
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: 14, fontSize: 12, color: "#FA243C", fontWeight: 600 }}>Ver parada completa →</div>
+        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Parada Global</div>
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 11, color: "#86868B" }}>{weekLabel}</div>
       </div>
-    </Link>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {top3.map((e) => (
+          <div key={e.position} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <PositionNumber n={e.position} size={14} />
+            <Cover cover={e.cover} song={e.song} size={36} rounded={6} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
+            </div>
+          </div>
+        ))}
+      </div>
+      <Link href="/global" style={{ marginTop: 14, fontSize: 12, color: "#FA243C", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
+        Ver parada completa →
+      </Link>
+    </div>
   );
 }
 

@@ -304,7 +304,7 @@ export default async function ArtistPage({
   }
   const userSongs = [...userSongsMap.values()].sort((a, b) => b.userPoints - a.userPoints);
 
-  const userAlbumsMapRaw = new Map<string, { name: string; songTitles: Set<string>; points: number; cover: AlbumRow["cover"] }>();
+  const userAlbumsMapRaw = new Map<string, { albumId: number | null; name: string; songTitles: Set<string>; points: number; cover: AlbumRow["cover"] }>();
   for (const e of userEntries) {
     const albumName = e.song.album?.trim() || "Single";
     if (albumName === "Single") continue;
@@ -313,6 +313,7 @@ export default async function ArtistPage({
     const existing = userAlbumsMapRaw.get(albumName);
     if (!existing) {
       userAlbumsMapRaw.set(albumName, {
+        albumId: e.song.albumRef?.id ?? null,
         name: albumName,
         songTitles: new Set([e.song.title]),
         points: pts,
@@ -326,7 +327,7 @@ export default async function ArtistPage({
   }
   const userAlbums: AlbumRow[] = [...userAlbumsMapRaw.values()]
     .sort((a, b) => b.points - a.points)
-    .map((a) => ({ name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
+    .map((a) => ({ albumId: a.albumId, name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
 
   // ── Pagination ────────────────────────────────────────────────────────────
   const activeSongs = tab === "user-songs" ? userSongs : songs;
