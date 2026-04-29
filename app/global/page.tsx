@@ -86,7 +86,7 @@ async function resolveArtistImages(artists: ArtistImageKey[]): Promise<Map<strin
 
 async function hydrateSongCovers(entries: GlobalSongLike[]): Promise<GlobalSongLike[]> {
   if (!entries.length) return entries;
-  const ids = [...new Set(entries.map((e) => e.song.id).filter(Boolean))];
+  const ids = [...new Set(entries.map((e) => e.song.id).filter((id): id is string => Boolean(id)))];
   const rows = await prisma.song.findMany({
     where: { id: { in: ids } },
     select: {
@@ -100,7 +100,9 @@ async function hydrateSongCovers(entries: GlobalSongLike[]): Promise<GlobalSongL
   const bySpotifyId = new Map(rows.filter((r) => r.spotifyId).map((r) => [r.spotifyId as string, r]));
 
   return entries.map((entry) => {
-    const ref = byId.get(entry.song.id) ?? (entry.song.spotifyId ? bySpotifyId.get(entry.song.spotifyId) : undefined);
+    const refById = entry.song.id ? byId.get(entry.song.id) : undefined;
+    const refBySpotifyId = entry.song.spotifyId ? bySpotifyId.get(entry.song.spotifyId) : undefined;
+    const ref = refById ?? refBySpotifyId;
     const imageUrl =
       ref?.coverImageUrl?.trim() ||
       ref?.albumRef?.coverUrl?.trim() ||
