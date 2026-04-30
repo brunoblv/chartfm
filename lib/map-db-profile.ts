@@ -97,7 +97,7 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
     comments: c.comments,
     reposts: c.reposts,
     entries: c.entries.map((e) => {
-      const img = e.song.albumRef?.coverUrl?.trim() || null;
+      const img = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
       return {
       position: e.position,
       song: {

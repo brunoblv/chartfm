@@ -22,8 +22,8 @@ export function Cover({ cover, song, size = 56, rounded = 10, className, style: 
 
   useEffect(() => {
     if (direct) return;
-    // Evita tempestade de requisições em listas/grids grandes (miniaturas).
-    if (size <= 64) return;
+    // Evita requisições para ícones minúsculos (ex: favicons).
+    if (size > 0 && size < 40) return;
     // Sem track Spotify associada: não buscar capa por texto (import/planilha errava com outra faixa).
     if (!song?.spotifyId?.trim()) return;
     if (!song?.title?.trim() || !song?.artist?.trim()) return;

@@ -45,6 +45,15 @@ PALETTES = [
 
 MONTH_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
+# Regras de canonização pontuais para garantir título/álbum oficiais no cadastro.
+SONG_CANONICAL_OVERRIDES: dict[tuple[str, str], dict[str, str]] = {
+    ("UVERworld", "Kanashimi Wa Kitto"): {
+        "title": "哀しみはきっと",
+        "artist": "UVERworld",
+        "album": "Neo SOUND BEST",
+    },
+}
+
 
 def iso_week_parts(d: date) -> tuple[int, int]:
     iso = d.isocalendar()
@@ -88,6 +97,13 @@ def parse_artist_title(cell_b: str) -> tuple[str, str] | None:
     return artist, title
 
 
+def apply_song_override(artist: str, title: str) -> tuple[str, str, str | None]:
+    override = SONG_CANONICAL_OVERRIDES.get((artist, title))
+    if not override:
+        return artist, title, None
+    return override.get("artist", artist), override.get("title", title), override.get("album")
+
+
 def parse_week_date(cell_b) -> date | None:
     if cell_b is None:
         return None
@@ -119,7 +135,7 @@ def sheet_year_name(name: str) -> int | None:
 
 
 def parse_year_sheet(ws: openpyxl.worksheet.worksheet.Worksheet) -> list[dict]:
-    """Devolve lista de semanas: { 'ref_date', 'entries': [{position, artist, title, points}] }."""
+    """Devolve lista de semanas: { 'ref_date', 'entries': [{position, artist, title, album, points}] }."""
     weeks: list[dict] = []
     current: dict | None = None
 
@@ -147,12 +163,13 @@ def parse_year_sheet(ws: openpyxl.worksheet.worksheet.Worksheet) -> list[dict]:
         if not parsed:
             continue
         artist, title = parsed
+        artist, title, album = apply_song_override(artist, title)
         if isinstance(c, (int, float)):
             points = int(c)
         else:
             points = max(0, 101 - pos)
         current["entries"].append(
-            {"position": pos, "artist": artist, "title": title, "points": points}
+            {"position": pos, "artist": artist, "title": title, "album": album, "points": points}
         )
 
     if current and current["entries"]:
@@ -275,14 +292,20 @@ def main():
                         new_song_keys.add(key)
 
             if new_song_keys:
-                rows = [(uuid.uuid4().hex, title, artist, None) for (title, artist) in sorted(new_song_keys)]
+                new_song_rows = []
+                for (title, artist) in sorted(new_song_keys):
+                    album = None
+                    override = SONG_CANONICAL_OVERRIDES.get((artist, title))
+                    if override:
+                        album = override.get("album")
+                    new_song_rows.append((uuid.uuid4().hex, title, artist, album))
                 execute_values(
                     cur,
                     'INSERT INTO "Song" (id, title, artist, album) VALUES %s ON CONFLICT (title, artist) DO NOTHING',
-                    rows,
+                    new_song_rows,
                     page_size=200,
                 )
-                created_songs = len(rows)
+                created_songs = len(new_song_rows)
                 cur.execute('SELECT id, title, artist, "spotify_id", "album_spotify_id" FROM "Song"')
                 song_map = {(r[1], r[2]): (r[0], r[3], r[4]) for r in cur.fetchall()}
 
