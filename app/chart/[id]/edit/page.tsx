@@ -464,6 +464,7 @@ export default function EditChartPage() {
         )}
       </div>
 
+      {false && (
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
@@ -513,6 +514,7 @@ export default function EditChartPage() {
           </>
         )}
       </div>
+      )}
 
       <div style={{ marginBottom: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
