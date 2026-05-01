@@ -27,6 +27,7 @@ export async function GET() {
       paradaNome: true,
       genres: true,
       image: true,
+      lastfmUser: true,
     },
   });
   if (!user) {
@@ -48,12 +49,14 @@ export async function PATCH(req: Request) {
     bio?: string | null;
     paradaNome?: string | null;
     genres?: string[];
+    lastfmUser?: string | null;
   };
 
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const handle = typeof body.handle === "string" ? normalizeHandle(body.handle) : "";
   const bio = typeof body.bio === "string" ? body.bio.trim() : "";
   const paradaNome = typeof body.paradaNome === "string" ? body.paradaNome.trim() : "";
+  const lastfmUser = typeof body.lastfmUser === "string" ? body.lastfmUser.trim() : "";
   const genres = Array.isArray(body.genres)
     ? body.genres.map((g) => String(g).trim()).filter(Boolean).slice(0, 15)
     : [];
@@ -81,6 +84,7 @@ export async function PATCH(req: Request) {
       bio: bio || null,
       paradaNome: paradaNome || null,
       genres,
+      lastfmUser: lastfmUser || null,
     },
   });
 

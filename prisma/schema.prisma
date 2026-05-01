@@ -25,6 +25,7 @@ model User {
   updatedAt            DateTime          @updatedAt
   paradaNome           String?
   genres               String[]          @default([])
+  lastfmUser           String?
   charts               Chart[]
   likes                ChartLike[]
   reposts              ChartRepost[]

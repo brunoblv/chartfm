@@ -18,6 +18,7 @@ type ProfileData = {
   bio: string | null;
   paradaNome: string | null;
   genres: string[];
+  lastfmUser: string | null;
 };
 
 export default function SettingsPage() {
@@ -32,6 +33,7 @@ export default function SettingsPage() {
     bio: "",
     paradaNome: "",
     genres: [],
+    lastfmUser: "",
   });
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function SettingsPage() {
           bio: data.bio ?? "",
           paradaNome: data.paradaNome ?? "",
           genres: data.genres ?? [],
+          lastfmUser: data.lastfmUser ?? "",
         });
       })
       .catch((e: Error) => setError(e.message))
@@ -81,6 +84,7 @@ export default function SettingsPage() {
           bio: form.bio,
           paradaNome: form.paradaNome,
           genres: form.genres,
+          lastfmUser: form.lastfmUser,
         }),
       });
       const data = await res.json();
@@ -126,6 +130,16 @@ export default function SettingsPage() {
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Nome da parada</span>
               <input value={form.paradaNome ?? ""} onChange={(e) => setForm((f) => ({ ...f, paradaNome: e.target.value }))} style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }} />
+            </label>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Usuário Last.fm</span>
+              <input
+                value={form.lastfmUser ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, lastfmUser: e.target.value }))}
+                placeholder="seu-usuario-lastfm"
+                style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
+              />
             </label>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

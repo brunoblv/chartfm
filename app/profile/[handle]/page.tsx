@@ -466,6 +466,23 @@ export default function ProfilePage() {
                   Nova parada
                 </Link>
                 <Link
+                  href="/settings"
+                  style={{
+                    background: "rgba(0,0,0,0.06)",
+                    border: "none",
+                    padding: "10px 22px",
+                    borderRadius: 100,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#1D1D1F",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  Editar perfil
+                </Link>
+                <Link
                   href="/parada/setup"
                   style={{
                     background: "rgba(0,0,0,0.06)",
