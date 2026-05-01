@@ -40,11 +40,25 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
     parsed.type === "artistAlbumIds"
       ? await prisma.album.findUnique({
           where: { id: parsed.albumId },
-          select: { id: true, title: true, exhibitionName: true, coverUrl: true },
+          select: {
+            id: true,
+            title: true,
+            exhibitionName: true,
+            coverUrl: true,
+            artistSpotifyId: true,
+            artist: { select: { name: true, spotifyId: true } },
+          },
         })
       : (
           await prisma.album.findMany({
-            select: { id: true, title: true, exhibitionName: true, coverUrl: true, artist: { select: { name: true } } },
+            select: {
+              id: true,
+              title: true,
+              exhibitionName: true,
+              coverUrl: true,
+              artistSpotifyId: true,
+              artist: { select: { name: true, spotifyId: true } },
+            },
             take: 300,
           })
         ).find((a) => slugify(a.title) === parsed.albumSlug && slugify(a.artist.name) === parsed.artistSlug);
@@ -72,6 +86,8 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
             title: album.title,
             romanization: album.exhibitionName ?? "",
             coverUrl: album.coverUrl ?? "",
+            artist: album.artist.name,
+            artistSpotifyId: album.artistSpotifyId,
           }}
         />
       </div>

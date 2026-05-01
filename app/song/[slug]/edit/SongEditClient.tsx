@@ -128,8 +128,16 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
         <input
           value={artistQuery}
           onChange={(e) => {
-            setArtistQuery(e.target.value);
-            setArtistSpotifyId("");
+            const v = e.target.value;
+            setArtistQuery(v);
+            const t = v.trim();
+            const initA = initialSong.artist.trim();
+            const initId = initialSong.artistSpotifyId.trim();
+            if (initId && t.toLowerCase() === initA.toLowerCase()) {
+              setArtistSpotifyId(initialSong.artistSpotifyId);
+            } else {
+              setArtistSpotifyId("");
+            }
           }}
           style={inputStyle}
         />
@@ -158,8 +166,16 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
         <input
           value={albumQuery}
           onChange={(e) => {
-            setAlbumQuery(e.target.value);
-            setAlbumSpotifyId("");
+            const v = e.target.value;
+            setAlbumQuery(v);
+            const t = v.trim();
+            const initAl = initialSong.album.trim();
+            const initId = initialSong.albumSpotifyId.trim();
+            if (initId && t.toLowerCase() === initAl.toLowerCase()) {
+              setAlbumSpotifyId(initialSong.albumSpotifyId);
+            } else {
+              setAlbumSpotifyId("");
+            }
           }}
           style={inputStyle}
         />

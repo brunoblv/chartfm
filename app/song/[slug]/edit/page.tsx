@@ -105,6 +105,15 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
     );
   }
 
+  let artistSpotifyIdForEdit = song.artistSpotifyId?.trim() ?? "";
+  if (!artistSpotifyIdForEdit) {
+    const guessed = await prisma.artist.findFirst({
+      where: { name: { equals: song.artist, mode: "insensitive" } },
+      select: { spotifyId: true },
+    });
+    artistSpotifyIdForEdit = guessed?.spotifyId ?? "";
+  }
+
   return (
     <Shell title="">
       <div style={{ maxWidth: 760, margin: "32px auto", padding: "0 20px 48px" }}>
@@ -121,7 +130,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
             romanization: song.exhibitionName ?? "",
             artist: song.artist,
             album: song.album ?? "",
-            artistSpotifyId: song.artistSpotifyId ?? "",
+            artistSpotifyId: artistSpotifyIdForEdit,
             albumSpotifyId: song.albumSpotifyId ?? "",
           }}
         />

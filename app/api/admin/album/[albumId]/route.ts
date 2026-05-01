@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ albumI
   return NextResponse.json({ album });
 }
 
-type PatchBody = { title?: unknown; romanization?: unknown; coverUrl?: unknown };
+type PatchBody = { title?: unknown; romanization?: unknown; coverUrl?: unknown; artistSpotifyId?: unknown };
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ albumId: string }> }) {
   const guard = await ensurePrivilegedUser();
@@ -46,13 +46,26 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ album
   const coverUrl = typeof body.coverUrl === "string" ? body.coverUrl.trim() : "";
   if (!title) return NextResponse.json({ error: "title_required" }, { status: 400 });
 
-  const existing = await prisma.album.findUnique({ where: { id }, select: { spotifyId: true } });
+  const existing = await prisma.album.findUnique({ where: { id }, select: { spotifyId: true, artistSpotifyId: true } });
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  let nextArtistSpotifyId = existing.artistSpotifyId;
+  if (typeof body.artistSpotifyId === "string" && body.artistSpotifyId.trim()) {
+    const aid = body.artistSpotifyId.trim();
+    const artist = await prisma.artist.findUnique({ where: { spotifyId: aid }, select: { spotifyId: true } });
+    if (!artist) return NextResponse.json({ error: "artist_not_found" }, { status: 404 });
+    nextArtistSpotifyId = aid;
+  }
 
   const album = await prisma.album.update({
     where: { id },
-    data: { title, exhibitionName: romanization || null, coverUrl: coverUrl || null },
-    select: { id: true, title: true, exhibitionName: true, coverUrl: true, spotifyId: true },
+    data: {
+      title,
+      exhibitionName: romanization || null,
+      coverUrl: coverUrl || null,
+      artistSpotifyId: nextArtistSpotifyId,
+    },
+    select: { id: true, title: true, exhibitionName: true, coverUrl: true, spotifyId: true, artistSpotifyId: true },
   });
 
   await prisma.song.updateMany({
