@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, Star } from "lucide-react";
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { buildWeekIndexFromDate, getPreviousClosedWeekDate } from "@/lib/chart-week";
 import { Shell } from "@/components/layout/Shell";
@@ -7,6 +8,8 @@ import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
 import { COVER_PALETTES } from "@/lib/data";
 import { parseAlbumSlug, buildArtistPath, buildSongPath, slugify } from "@/lib/music-routes";
+import { authOptions } from "@/lib/auth-options";
+import { isPrivilegedRole } from "@/lib/permissions";
 
 function pointsForPosition(position: number): number {
   return 101 - position;
@@ -24,6 +27,11 @@ function albumColor(name: string): [string, string] {
 }
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
+  const session = await getServerSession(authOptions);
+  const me = session?.user?.id
+    ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } })
+    : null;
+  const canEditAlbum = isPrivilegedRole(me?.role);
   const { slug } = await params;
   const parsed = parseAlbumSlug(slug);
 
@@ -95,7 +103,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           coverImageUrl: true,
           spotifyId: true,
           artistSpotifyId: true,
-          albumRef: { select: { id: true, coverUrl: true } },
+          albumRef: { select: { id: true, coverUrl: true, exhibitionName: true } },
           artistRef: { select: { id: true } },
         },
       },
@@ -120,7 +128,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     );
   }
 
-  const canonicalAlbum = albumEntries[0].song.album ?? "";
+  const canonicalAlbum = (albumEntries[0].song.albumRef?.exhibitionName?.trim() || albumEntries[0].song.album) ?? "";
   const canonicalArtist =
     artistRef?.name ?? albumEntries[0].song.artist;
   const coverImageUrl = albumEntries.find((e) => e.song.albumRef?.coverUrl?.trim())?.song.albumRef?.coverUrl?.trim() ?? null;
@@ -304,6 +312,13 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               <span><strong>{songsMap.size}</strong> faixas</span>
               <span><strong>{totalPoints}</strong> pontos</span>
             </div>
+            {canEditAlbum && (
+              <div style={{ marginTop: 10 }}>
+                <Link href={`/album/${slug}/edit`} style={{ color: "white", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>
+                  Editar álbum
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

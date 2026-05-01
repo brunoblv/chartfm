@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { COVER_PALETTES } from "@/lib/data";
 import { buildSongPath, parseArtistSlug, buildAlbumPath } from "@/lib/music-routes";
 import { authOptions } from "@/lib/auth-options";
+import { isPrivilegedRole } from "@/lib/permissions";
 
 function artistColor(name: string): [string, string] {
   let hash = 0;
@@ -89,6 +90,10 @@ export default async function ArtistPage({
 
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id ?? null;
+  const me = currentUserId
+    ? await prisma.user.findUnique({ where: { id: currentUserId }, select: { role: true } })
+    : null;
+  const canEditArtist = isPrivilegedRole(me?.role);
 
   const parsed = parseArtistSlug(name);
   const artistRef = await prisma.artist.findFirst({
@@ -98,10 +103,11 @@ export default async function ArtistPage({
         : parsed.type === "spotify"
           ? { spotifyId: parsed.spotifyId }
           : { name: { equals: parsed.name, mode: "insensitive" } },
-    select: { id: true, spotifyId: true, name: true, imageUrl: true, spotifyUrl: true },
+    select: { id: true, spotifyId: true, name: true, exhibitionName: true, imageUrl: true, spotifyUrl: true },
   });
   const requestedName = parsed.type === "slug" ? parsed.name : (artistRef?.name ?? "");
-  const canonicalName = artistRef?.name ?? requestedName;
+  const canonicalDbName = artistRef?.name ?? requestedName;
+  const canonicalName = artistRef?.exhibitionName?.trim() || canonicalDbName;
   const palette = artistColor(canonicalName);
 
   const allEntries = await prisma.chartEntry.findMany({
@@ -109,7 +115,7 @@ export default async function ArtistPage({
       chart: { isPublished: true },
       OR: [
         ...(artistRef?.spotifyId ? [{ song: { artistSpotifyId: artistRef.spotifyId } }] : []),
-        { song: { artist: { equals: canonicalName, mode: "insensitive" } } },
+        { song: { artist: { equals: canonicalDbName, mode: "insensitive" } } },
       ],
     },
     select: {
@@ -400,6 +406,13 @@ export default async function ArtistPage({
               <Play size={16} fill={palette[0]} />
               Ouvir
             </a>
+            {canEditArtist && artistRef?.id ? (
+              <div style={{ marginTop: 10 }}>
+                <Link href={`/artist/${name}/edit`} style={{ color: "white", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>
+                  Editar artista
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { chartWeekUnixRangeFromAnchor, getChartWeekRange, parseChartWeekPickerDa
 import { fetchRecentTracks, fetchTracksBetweenUnix } from "@/lib/lastfm";
 import { scoreLastfmTracks } from "@/lib/lastfm-chart-engine";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -93,6 +94,76 @@ async function enrichBatch(
   );
 }
 
+function buildSongIdentityKey(song: EnrichedSong): string {
+  if (song.spotifyId) return `sp:${song.spotifyId}`;
+  return `na:${normalizeKey(song.title)}|||${normalizeKey(song.artist.split(",")[0] ?? song.artist)}`;
+}
+
+async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[]> {
+  const out: EnrichedSong[] = [];
+  const seen = new Set<string>();
+  const cache = new Map<string, EnrichedSong | null>();
+
+  for (const item of items) {
+    const cacheKey = buildSongIdentityKey(item);
+    let resolved = cache.get(cacheKey) ?? null;
+
+    if (!cache.has(cacheKey)) {
+      const primaryArtist = item.artist.split(",")[0]?.trim() || item.artist.trim();
+      const bySpotify = item.spotifyId
+        ? await prisma.song.findUnique({
+            where: { spotifyId: item.spotifyId },
+            select: {
+              title: true,
+              artist: true,
+              album: true,
+              spotifyId: true,
+              coverImageUrl: true,
+              albumRef: { select: { coverUrl: true } },
+            },
+          })
+        : null;
+
+      const byText = bySpotify
+        ? null
+        : await prisma.song.findFirst({
+            where: {
+              title: { equals: item.title, mode: "insensitive" },
+              artist: { equals: primaryArtist, mode: "insensitive" },
+            },
+            select: {
+              title: true,
+              artist: true,
+              album: true,
+              spotifyId: true,
+              coverImageUrl: true,
+              albumRef: { select: { coverUrl: true } },
+            },
+          });
+
+      const dbSong = bySpotify ?? byText;
+      resolved = dbSong
+        ? {
+            title: dbSong.title,
+            artist: dbSong.artist,
+            album: dbSong.album ?? item.album,
+            spotifyId: dbSong.spotifyId ?? item.spotifyId,
+            imageUrl: dbSong.coverImageUrl ?? dbSong.albumRef?.coverUrl ?? item.imageUrl,
+          }
+        : item;
+
+      cache.set(cacheKey, resolved);
+    }
+
+    const dedupeKey = buildSongIdentityKey(resolved);
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    out.push(resolved);
+  }
+
+  return out;
+}
+
 // POST /api/lastfm/import — exclusivo para @bruno
 // Body: { weekDate?: "YYYY-MM-DD" } — semana (seg–dom) dessa data; sem weekDate = últimos 28 dias.
 // As duas rotas usam scoreLastfmTracks: (últimos 7d ×5)+(8–14d ×3)+(15–21d ×2)+(22–28d ×1) em relação à âncora.
@@ -145,7 +216,7 @@ export async function POST(req: NextRequest) {
       enriched.push(...batch);
     }
 
-    const songs = enriched.slice(0, 200);
+    const songs = (await preferExistingSongs(enriched)).slice(0, 200);
     return NextResponse.json({ songs, total: top200.length }, { headers: NO_CACHE_HEADERS });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500, headers: NO_CACHE_HEADERS });

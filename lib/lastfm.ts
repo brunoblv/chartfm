@@ -20,6 +20,58 @@ interface RawTrack {
   "@attr"?: { nowplaying?: string };
 }
 
+const VERSION_HINT_RE = /\bremix(?:es)?\b/i;
+
+function normalizeKeyPart(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripVersionBrackets(track: string): string {
+  let out = track;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    out = out.replace(/\s*[\[(]([^\])]+)[\])]\s*$/g, (full, inner) => {
+      if (VERSION_HINT_RE.test(String(inner))) {
+        changed = true;
+        return "";
+      }
+      return full;
+    });
+  }
+  return out.trim();
+}
+
+function stripVersionDashSuffix(track: string): string {
+  let out = track.trim();
+  const m = out.match(/\s[-–]\s(.+)$/);
+  if (m && VERSION_HINT_RE.test(m[1] ?? "")) {
+    out = out.slice(0, m.index).trim();
+  }
+  return out;
+}
+
+function canonicalizeTrackName(track: string): string {
+  let out = track.trim();
+  out = stripVersionBrackets(out);
+  out = stripVersionDashSuffix(out);
+  out = out.replace(/\s+/g, " ").trim();
+  return out || track.trim();
+}
+
+function canonicalizeArtistName(artist: string): string {
+  return artist
+    .replace(/\s+(feat\.?|ft\.?|featuring|with)\s+.+$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function fetchPage(
   username: string,
   apiKey: string,
@@ -69,9 +121,11 @@ export async function fetchTracksBetweenUnix(from: number, toExclusive: number):
     for (const track of result.tracks) {
       if (track["@attr"]?.nowplaying || !track.date?.uts) continue;
 
-      const trackName = track.name.trim();
-      const artistName = track.artist["#text"].trim();
-      const key = `${trackName.toLowerCase()}|||${artistName.toLowerCase()}`;
+      const rawTrackName = track.name.trim();
+      const rawArtistName = track.artist["#text"].trim();
+      const trackName = canonicalizeTrackName(rawTrackName);
+      const artistName = canonicalizeArtistName(rawArtistName) || rawArtistName;
+      const key = `${normalizeKeyPart(trackName)}|||${normalizeKeyPart(artistName)}`;
       const dateStr = new Date(Number(track.date.uts) * 1000).toISOString().slice(0, 10);
 
       if (!grouped.has(key)) {

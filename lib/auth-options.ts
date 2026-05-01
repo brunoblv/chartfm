@@ -47,6 +47,7 @@ export const authOptions: NextAuthOptions = {
           token.name = db.name;
           token.picture = db.image ?? user.image ?? undefined;
           token.streak = db.streak;
+          token.role = db.role;
         }
       } else if (token.prismaUserId) {
         const db = await prisma.user.findUnique({ where: { id: token.prismaUserId } });
@@ -55,6 +56,7 @@ export const authOptions: NextAuthOptions = {
           token.name = db.name;
           token.picture = db.image ?? undefined;
           token.streak = db.streak;
+          token.role = db.role;
         }
       }
       return token;
@@ -66,6 +68,7 @@ export const authOptions: NextAuthOptions = {
         session.user.name = (token.name as string) ?? session.user.name;
         session.user.image = (token.picture as string | undefined) ?? session.user.image;
         session.user.streak = typeof token.streak === "number" ? token.streak : 0;
+        session.user.role = (token.role as "USER" | "ADMIN" | "DEV" | undefined) ?? "USER";
       }
       return session;
     },

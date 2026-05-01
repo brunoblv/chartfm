@@ -10,7 +10,6 @@ import { Cover } from "@/components/ui/Cover";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverModel, Song } from "@/lib/types";
-import { ADMIN_LASTFM_COVER_FALLBACK_KEY } from "@/lib/admin-flags";
 import { getChartWeekRange } from "@/lib/chart-week";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
@@ -94,7 +93,7 @@ export default function CreatePage() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { data: session } = useSession();
-  const isAdmin = session?.user?.handle === "bruno";
+  const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "DEV";
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [dbQuery, setDbQuery] = useState("");
@@ -115,7 +114,6 @@ export default function CreatePage() {
   const [importingLast, setImportingLast] = useState(false);
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [paradaNome, setParadaNome] = useState<string | null>(null);
-  const [adminCoverFallback, setAdminCoverFallback] = useState(false);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
 
@@ -147,27 +145,6 @@ export default function CreatePage() {
       window.removeEventListener("pageshow", onPageShow);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isAdmin) {
-      setAdminCoverFallback(false);
-      return;
-    }
-    const sync = () => {
-      try {
-        setAdminCoverFallback(localStorage.getItem(ADMIN_LASTFM_COVER_FALLBACK_KEY) === "1");
-      } catch {
-        setAdminCoverFallback(false);
-      }
-    };
-    sync();
-    window.addEventListener("storage", sync);
-    window.addEventListener("chartify-admin-flags-updated", sync as EventListener);
-    return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("chartify-admin-flags-updated", sync as EventListener);
-    };
-  }, [isAdmin]);
 
   const filtered = dbQuery
     ? SONG_POOL.filter(
@@ -230,9 +207,8 @@ export default function CreatePage() {
     const timer = setTimeout(async () => {
       setLastfmLoading(true);
       try {
-        const coverFallbackParam = adminCoverFallback ? "&coverFallback=1" : "";
         const lfRes = await fetch(
-          `/api/lastfm/search?q=${encodeURIComponent(q)}&limit=12${coverFallbackParam}`,
+          `/api/lastfm/search?q=${encodeURIComponent(q)}&limit=12`,
           { signal: ac.signal },
         );
         if (ac.signal.aborted) return;
@@ -279,7 +255,7 @@ export default function CreatePage() {
       ac.abort();
       clearTimeout(timer);
     };
-  }, [lastfmQuery, adminCoverFallback]);
+  }, [lastfmQuery]);
 
   useEffect(() => {
     if (SPOTIFY_SEARCH_DISABLED) {
@@ -612,11 +588,6 @@ export default function CreatePage() {
             <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
               Last.fm
             </div>
-            {isAdmin && (
-              <div style={{ fontSize: 11, color: adminCoverFallback ? "#0F9D58" : "#86868B", fontWeight: 700 }}>
-                Capa CAA: {adminCoverFallback ? "ON" : "OFF"}
-              </div>
-            )}
           </div>
           <input
             value={lastfmQuery}

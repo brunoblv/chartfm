@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { ADMIN_LASTFM_COVER_FALLBACK_KEY } from "@/lib/admin-flags";
 
 const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
   { href: "/", label: "Início", icon: Home },
@@ -27,9 +27,8 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
   const { data: session, status } = useSession();
   const authed = status === "authenticated" && !!session?.user?.handle;
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [adminCoverFallback, setAdminCoverFallback] = useState(false);
   const profileHandle = authed ? session!.user.handle! : null;
-  const isAdmin = authed && session?.user?.handle === "bruno";
+  const isAdmin = authed && (session?.user?.role === "ADMIN" || session?.user?.role === "DEV");
   const profilePath = profileHandle ? `/profile/${profileHandle}` : "/login";
   const profileActive =
     !!profileHandle &&
@@ -68,27 +67,6 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
       cancelled = true;
     };
   }, [authed, pathname]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    try {
-      setAdminCoverFallback(localStorage.getItem(ADMIN_LASTFM_COVER_FALLBACK_KEY) === "1");
-    } catch {
-      setAdminCoverFallback(false);
-    }
-  }, [isAdmin]);
-
-  const toggleAdminCoverFallback = () => {
-    if (!isAdmin) return;
-    const next = !adminCoverFallback;
-    setAdminCoverFallback(next);
-    try {
-      localStorage.setItem(ADMIN_LASTFM_COVER_FALLBACK_KEY, next ? "1" : "0");
-      window.dispatchEvent(new CustomEvent("chartify-admin-flags-updated"));
-    } catch {
-      // sem persistência se storage indisponível
-    }
-  };
 
   if (isMobile) {
     return (
@@ -143,8 +121,6 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
             session={session}
             onNavClick={handleNavClick}
             isAdmin={isAdmin}
-            adminCoverFallback={adminCoverFallback}
-            onToggleAdminCoverFallback={toggleAdminCoverFallback}
           />
         </aside>
       </>
@@ -188,8 +164,6 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
         session={session}
         onNavClick={() => {}}
         isAdmin={isAdmin}
-        adminCoverFallback={adminCoverFallback}
-        onToggleAdminCoverFallback={toggleAdminCoverFallback}
       />
     </aside>
   );
@@ -207,8 +181,6 @@ function SidebarContent({
   session,
   onNavClick,
   isAdmin,
-  adminCoverFallback,
-  onToggleAdminCoverFallback,
 }: {
   pathname: string;
   profilePath: string;
@@ -221,8 +193,6 @@ function SidebarContent({
   session: ReturnType<typeof useSession>["data"];
   onNavClick: () => void;
   isAdmin: boolean;
-  adminCoverFallback: boolean;
-  onToggleAdminCoverFallback: () => void;
 }) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
@@ -322,30 +292,22 @@ function SidebarContent({
                       gap: 8,
                     }}
                   >
-                    <button
-                      type="button"
-                      onClick={onToggleAdminCoverFallback}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 8,
-                        border: "1px solid rgba(0,0,0,0.1)",
-                        background: "white",
-                        borderRadius: 8,
-                        padding: "8px 10px",
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#1D1D1F",
-                      }}
-                      title="Ativa busca de capa no Cover Art Archive quando Last.fm vier sem imagem"
-                    >
-                      <span>Capa Last.fm via CAA</span>
-                      <span style={{ color: adminCoverFallback ? "#0F9D58" : "#86868B" }}>
-                        {adminCoverFallback ? "ON" : "OFF"}
-                      </span>
-                    </button>
+                    <Link href="/admin/music" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music")}>
+                      <Music2 size={14} />
+                      <span>Editar músicas</span>
+                    </Link>
+                    <Link href="/admin/artists" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/artists")}>
+                      <Library size={14} />
+                      <span>Editar artistas</span>
+                    </Link>
+                    <Link href="/admin/albums" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/albums")}>
+                      <Disc3 size={14} />
+                      <span>Editar álbuns</span>
+                    </Link>
+                    <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
+                      <UserCog size={14} />
+                      <span>Editar usuários</span>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -519,3 +481,22 @@ function SidebarContent({
     </>
   );
 }
+
+const adminLinkStyle = (pathname: string, href: string): CSSProperties => {
+  const active = pathname === href || pathname.startsWith(`${href}/`);
+  return {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    border: "1px solid rgba(0,0,0,0.08)",
+    background: active ? "rgba(250,36,60,0.08)" : "white",
+    borderRadius: 8,
+    padding: "8px 10px",
+    cursor: "pointer",
+    fontSize: 12,
+    fontWeight: 600,
+    color: active ? "#FA243C" : "#1D1D1F",
+    textDecoration: "none",
+    transition: "background 120ms ease, color 120ms ease",
+  };
+};

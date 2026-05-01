@@ -75,84 +75,6 @@ function normalizeSearchMatches(raw: unknown): Array<{ name: string; artist: str
   return out;
 }
 
-function extractAlbumMbid(track: Record<string, unknown>): string | null {
-  const al = track.album;
-  if (!al || typeof al !== "object") return null;
-  const mb = (al as Record<string, unknown>).mbid;
-  if (typeof mb === "string" && mb.trim()) return mb.trim();
-  return null;
-}
-
-type CaaImage = {
-  types?: string[];
-  thumbnails?: Record<string, string>;
-  image?: string;
-};
-
-function normalizeCoverUrl(url: string): string {
-  if (url.startsWith("http://coverartarchive.org")) {
-    return `https://${url.slice("http://".length)}`;
-  }
-  return url;
-}
-
-function pickFrontCoverFromCaaPayload(data: unknown): string | null {
-  if (!data || typeof data !== "object") return null;
-  const images = (data as { images?: unknown }).images;
-  if (!Array.isArray(images)) return null;
-
-  const isFront = (img: unknown) => {
-    if (!img || typeof img !== "object") return false;
-    const types = (img as CaaImage).types;
-    return Array.isArray(types) && types.includes("Front");
-  };
-
-  const candidates = images.filter(isFront);
-  const list = candidates.length > 0 ? candidates : images;
-
-  for (const img of list) {
-    if (!img || typeof img !== "object") continue;
-    const o = img as CaaImage;
-    const th = o.thumbnails;
-    if (th && typeof th === "object") {
-      for (const k of ["1200", "500", "250", "large", "small"]) {
-        const u = th[k];
-        if (typeof u === "string" && u.startsWith("http")) return normalizeCoverUrl(u);
-      }
-      for (const u of Object.values(th)) {
-        if (typeof u === "string" && u.startsWith("http")) return normalizeCoverUrl(u);
-      }
-    }
-    if (typeof o.image === "string" && o.image.startsWith("http")) return normalizeCoverUrl(o.image);
-  }
-  return null;
-}
-
-/** Cover Art Archive (MusicBrainz): tenta release-group e depois release. */
-async function fetchCoverArtArchiveImage(albumMbid: string): Promise<string | null> {
-  const id = albumMbid.trim();
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-
-  const headers = {
-    Accept: "application/json",
-    "User-Agent": "chartify/0.1 (capa via Cover Art Archive)",
-  };
-
-  for (const kind of ["release-group", "release"] as const) {
-    const url = `https://coverartarchive.org/${kind}/${encodeURIComponent(id)}`;
-    const res = await fetch(url, { headers, cache: "no-store" });
-    if (res.status === 404) continue;
-    if (!res.ok) continue;
-    try {
-      const data: unknown = await res.json();
-      const picked = pickFrontCoverFromCaaPayload(data);
-      if (picked) return picked;
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
 
 function mapGetInfoTrack(track: Record<string, unknown>): LastfmSearchTrack {
   const title = String(track.name ?? "").trim();
@@ -183,72 +105,12 @@ function mapGetInfoTrack(track: Record<string, unknown>): LastfmSearchTrack {
   return { title, artist, album, imageUrl, url, mbid };
 }
 
-const MUSICBRAINZ_UA = "chartify/0.1 (+https://github.com)";
-
-let lastMusicbrainzFetchAt = 0;
-
-async function throttleMusicbrainz(): Promise<void> {
-  const elapsed = Date.now() - lastMusicbrainzFetchAt;
-  const minGapMs = 1100;
-  if (elapsed < minGapMs) {
-    await new Promise((r) => setTimeout(r, minGapMs - elapsed));
-  }
-  lastMusicbrainzFetchAt = Date.now();
-}
-
-function stripQuotes(s: string): string {
-  return s.replace(/"/g, "").trim();
-}
-
-/** Resolve MusicBrainz Release Group id via busca (Last.fm muitas vezes não manda `album.mbid`). */
-async function musicbrainzReleaseGroupId(artist: string, album: string | null): Promise<string | null> {
-  const ar = stripQuotes(artist);
-  if (!ar) return null;
-
-  let query: string;
-  if (album && album.trim()) {
-    const al = stripQuotes(album);
-    if (al) query = `"${al}" AND artist:"${ar}"`;
-    else query = `"${ar}"`;
-  } else {
-    query = `"${ar}"`;
-  }
-
-  await throttleMusicbrainz();
-  const url = `https://musicbrainz.org/ws/2/release-group?fmt=json&limit=1&query=${encodeURIComponent(query)}`;
-  const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": MUSICBRAINZ_UA },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-
-  const data = (await res.json()) as { "release-groups"?: Array<{ id?: string }> };
-  const rg = data["release-groups"];
-  if (!Array.isArray(rg) || !rg[0]?.id) return null;
-  return rg[0].id;
-}
-
-async function resolveCoverArtArchiveForTrack(
-  artist: string,
-  album: string | null,
-  albumMbidFromLastfm: string | null,
-): Promise<string | null> {
-  if (albumMbidFromLastfm) {
-    const direct = await fetchCoverArtArchiveImage(albumMbidFromLastfm);
-    if (direct) return direct;
-  }
-  const rg = await musicbrainzReleaseGroupId(artist, album);
-  if (!rg) return null;
-  return fetchCoverArtArchiveImage(rg);
-}
-
 /**
  * Busca faixas no Last.fm: `track.search` + `track.getInfo` por resultado (sequencial, para respeitar rate limit).
  */
 export async function searchLastfmTracks(
   query: string,
   limit: number,
-  opts?: { coverFallback?: boolean },
 ): Promise<LastfmSearchTrack[]> {
   const q = query.trim();
   if (!q || !lastfmSearchApiConfigured()) return [];
@@ -286,17 +148,7 @@ export async function searchLastfmTracks(
       const track = (infoPayload as { track?: unknown })?.track;
       if (track && typeof track === "object") {
         const raw = track as Record<string, unknown>;
-        let row = mapGetInfoTrack(raw);
-        if (opts?.coverFallback && !row.imageUrl) {
-          const albumMbid = extractAlbumMbid(raw);
-          try {
-            const caa = await resolveCoverArtArchiveForTrack(row.artist, row.album, albumMbid);
-            if (caa) row = { ...row, imageUrl: caa };
-          } catch {
-            // mantém capa do Last.fm (se houver)
-          }
-        }
-        out.push(row);
+        out.push(mapGetInfoTrack(raw));
         continue;
       }
     } catch {

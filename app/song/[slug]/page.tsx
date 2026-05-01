@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { ChevronLeft, Play, Star } from "lucide-react";
+import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
+import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug, buildArtistPath, slugify } from "@/lib/music-routes";
 import type { ParsedSongSlug } from "@/lib/music-routes";
 
@@ -64,6 +67,11 @@ async function resolveSongId(parsed: ParsedSongSlug): Promise<string | null> {
 }
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
+  const session = await getServerSession(authOptions);
+  const me = session?.user?.id
+    ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } })
+    : null;
+  const canEditSong = isPrivilegedRole(me?.role);
   const { slug } = await params;
   const parsed = parseSongSlug(slug);
   if (!parsed) {
@@ -257,6 +265,13 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
                 <Play size={14} fill="white" />
                 Ouvir
               </a>
+            )}
+            {canEditSong && (
+              <div style={{ marginTop: 10 }}>
+                <Link href={`/song/${slug}/edit`} style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>
+                  Editar música
+                </Link>
+              </div>
             )}
           </div>
         </div>
