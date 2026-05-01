@@ -102,11 +102,11 @@ function buildSongIdentityKey(song: EnrichedSong): string {
 async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[]> {
   const out: EnrichedSong[] = [];
   const seen = new Set<string>();
-  const cache = new Map<string, EnrichedSong | null>();
+  const cache = new Map<string, EnrichedSong>();
 
   for (const item of items) {
     const cacheKey = buildSongIdentityKey(item);
-    let resolved = cache.get(cacheKey) ?? null;
+    let resolved = cache.get(cacheKey);
 
     if (!cache.has(cacheKey)) {
       const primaryArtist = item.artist.split(",")[0]?.trim() || item.artist.trim();
@@ -155,6 +155,7 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
       cache.set(cacheKey, resolved);
     }
 
+    if (!resolved) continue;
     const dedupeKey = buildSongIdentityKey(resolved);
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
