@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
 const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
@@ -292,9 +292,13 @@ function SidebarContent({
                       gap: 8,
                     }}
                   >
-                    <Link href="/admin/music" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music")}>
+                    <Link href="/admin/music" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music", true)}>
                       <Music2 size={14} />
                       <span>Editar músicas</span>
+                    </Link>
+                    <Link href="/admin/music/no-album" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music/no-album")}>
+                      <AlertCircle size={14} />
+                      <span>Músicas sem álbum</span>
                     </Link>
                     <Link href="/admin/artists" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/artists")}>
                       <Library size={14} />
@@ -486,8 +490,8 @@ function SidebarContent({
   );
 }
 
-const adminLinkStyle = (pathname: string, href: string): CSSProperties => {
-  const active = pathname === href || pathname.startsWith(`${href}/`);
+const adminLinkStyle = (pathname: string, href: string, exactOnly?: boolean): CSSProperties => {
+  const active = exactOnly ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
   return {
     display: "flex",
     alignItems: "center",
