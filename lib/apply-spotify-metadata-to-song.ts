@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getSpotifyArtistById, type SpotifyTrackMetadata } from "./spotify-server";
 
@@ -19,7 +20,14 @@ export async function applySpotifyMetadataToSong(
 
   const owner = await prisma.song.findUnique({
     where: { id: localSongId },
-    select: { id: true, title: true, artist: true, album: true, spotifyId: true },
+    select: {
+      id: true,
+      title: true,
+      artist: true,
+      album: true,
+      coverImageUrl: true,
+      spotifyId: true,
+    },
   });
   if (!owner) return { ok: false, reason: "song_missing" };
 
@@ -83,17 +91,24 @@ export async function applySpotifyMetadataToSong(
     });
   }
 
+  const albumName = owner.album?.trim() ? owner.album : (meta.album.title ?? null);
+  const coverPatch: Prisma.SongUpdateInput = {};
+  if (!owner.coverImageUrl?.trim() && meta.album.coverUrl?.trim()) {
+    coverPatch.coverImageUrl = meta.album.coverUrl;
+  }
+
   await prisma.song.update({
     where: { id: localSongId },
     data: {
       spotifyId: meta.spotifyId,
       artistSpotifyId: primaryArtist?.spotifyId ?? null,
       albumSpotifyId: albumSpotifyId ?? null,
-      album: owner.album ?? meta.album.title ?? undefined,
+      album: albumName,
       durationMs: meta.durationMs ?? undefined,
       previewUrl: meta.previewUrl ?? undefined,
       spotifyUrl: meta.spotifyUrl ?? undefined,
       trackNumber: meta.trackNumber ?? undefined,
+      ...coverPatch,
     },
   });
 

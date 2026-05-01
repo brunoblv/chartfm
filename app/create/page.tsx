@@ -780,7 +780,7 @@ export default function CreatePage() {
   );
 
   return (
-    <Shell title={tituloParada}>
+    <Shell title="">
       <div style={{ maxWidth: 1100 }}>
 
         {/* Cabeçalho */}

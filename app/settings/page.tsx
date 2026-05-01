@@ -118,7 +118,7 @@ export default function SettingsPage() {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Handle</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>User</span>
               <input value={form.handle} onChange={(e) => setForm((f) => ({ ...f, handle: e.target.value }))} style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }} />
             </label>
 
