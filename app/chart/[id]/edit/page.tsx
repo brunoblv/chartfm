@@ -418,7 +418,7 @@ export default function EditChartPage() {
       <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Buscar música</div>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-          1) Catálogo
+          Catálogo
         </div>
         <input
           value={dbQuery}
@@ -468,7 +468,7 @@ export default function EditChartPage() {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-            2) Last.fm
+            Last.fm
           </div>
           {isAdmin && (
             <div style={{ fontSize: 11, color: adminCoverFallback ? "#0F9D58" : "#86868B", fontWeight: 700 }}>
@@ -518,7 +518,7 @@ export default function EditChartPage() {
 
       <div style={{ marginBottom: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-          3) Spotify
+          Spotify
         </div>
         <input
           value={spotifyQuery}
