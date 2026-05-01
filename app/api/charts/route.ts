@@ -107,13 +107,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Adicione ao menos uma música" }, { status: 400 });
   }
 
-  const MAX_ENTRIES = 1000;
-  if (entries.length > MAX_ENTRIES) {
-    return NextResponse.json(
-      { error: `Limite de ${MAX_ENTRIES} músicas por parada. Reduza a lista e tente de novo.` },
-      { status: 400 }
-    );
-  }
+  if (entries.length > 100) entries.splice(100);
 
   const userId = session.user.id;
   const today = new Date();

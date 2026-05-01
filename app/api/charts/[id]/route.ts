@@ -254,9 +254,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   if (!Array.isArray(entries) || entries.length === 0) {
     return NextResponse.json({ error: "Adicione ao menos uma música" }, { status: 400 });
   }
-  if (entries.length > 1000) {
-    return NextResponse.json({ error: "Limite de 1000 músicas por parada" }, { status: 400 });
-  }
+  if (entries.length > 100) entries.splice(100);
 
   const chart = await prisma.chart.findUnique({
     where: { id: chartId },
