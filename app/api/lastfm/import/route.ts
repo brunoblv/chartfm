@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { chartWeekUnixRangeFromAnchor, parseChartWeekPickerDate } from "@/lib/chart-week";
+import { chartWeekUnixRangeFromAnchor, getChartWeekRange, parseChartWeekPickerDate } from "@/lib/chart-week";
 import { fetchRecentTracks, fetchTracksBetweenUnix } from "@/lib/lastfm";
-import { rankLastfmTracksByPlayCount, scoreLastfmTracks } from "@/lib/lastfm-chart-engine";
+import { scoreLastfmTracks } from "@/lib/lastfm-chart-engine";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
@@ -33,7 +33,9 @@ async function enrichBatch(
 }
 
 // POST /api/lastfm/import — exclusivo para @bruno
-// Body: { weekDate?: "YYYY-MM-DD" } — semana (seg–dom) dessa data; sem weekDate mantém comportamento antigo (28 dias).
+// Body: { weekDate?: "YYYY-MM-DD" } — semana (seg–dom) dessa data; sem weekDate = últimos 28 dias.
+// As duas rotas usam scoreLastfmTracks (decaimento diário 0,85 + multiplicadores por bloco de 7 dias).
+// Na semana escolhida, a âncora é o domingo fim da parada (dia 0 = mais peso).
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.handle || session.user.handle !== "bruno") {
@@ -66,7 +68,9 @@ export async function POST(req: NextRequest) {
       }
       const { from, toExclusive } = chartWeekUnixRangeFromAnchor(anchor);
       const weekPlays = await fetchTracksBetweenUnix(from, toExclusive);
-      top200 = rankLastfmTracksByPlayCount(weekPlays, 200);
+      const { end: weekEnd } = getChartWeekRange(anchor);
+      const scoreAnchor = new Date(Date.UTC(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate()));
+      top200 = scoreLastfmTracks(weekPlays, scoreAnchor, 200);
     } else {
       const days = typeof body.recentDays === "number" && body.recentDays > 0 && body.recentDays <= 90 ? body.recentDays : 28;
       const recentPlays = await fetchRecentTracks(days);

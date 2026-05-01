@@ -39,8 +39,9 @@ function prevSundayKey(current: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-function computeScore(dayPlays: TrackPlays["dayPlays"], today: Date): number {
-  const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+/** `referenceDay`: “hoje” do modelo — diffDays=0 nesse dia civil (UTC); dias anteriores perdem peso (DAY_DECAY) e blocos de 7 dias (WEEK_MULTIPLIERS). */
+function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): number {
+  const todayMs = Date.UTC(referenceDay.getUTCFullYear(), referenceDay.getUTCMonth(), referenceDay.getUTCDate());
   let score = 0;
 
   for (const { date, plays } of dayPlays) {
@@ -61,30 +62,14 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], today: Date): number {
 
 export function scoreLastfmTracks(
   trackPlays: TrackPlays[],
-  today: Date = new Date(),
+  /** Último dia do período com peso máximo (import 28d: use `new Date()`; import por semana: domingo fim da parada). */
+  referenceDay: Date = new Date(),
   limit = 200,
   minScore = 0,
 ): Array<{ track: string; artist: string; album: string; score: number }> {
   return trackPlays
-    .map((tp) => ({ track: tp.track, artist: tp.artist, album: tp.album, score: computeScore(tp.dayPlays, today) }))
+    .map((tp) => ({ track: tp.track, artist: tp.artist, album: tp.album, score: computeScore(tp.dayPlays, referenceDay) }))
     .filter((s) => s.score > minScore)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
-}
-
-/** Ordena por número total de plays (ex.: janela já limitada a uma semana no Last.fm). */
-export function rankLastfmTracksByPlayCount(
-  trackPlays: TrackPlays[],
-  limit = 200,
-): Array<{ track: string; artist: string; album: string; score: number }> {
-  return trackPlays
-    .map((tp) => ({
-      track: tp.track,
-      artist: tp.artist,
-      album: tp.album,
-      score: tp.dayPlays.reduce((acc, d) => acc + d.plays, 0),
-    }))
-    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
