@@ -1,5 +1,17 @@
 from __future__ import annotations
 
+"""
+Import BANG20 (aba por ano no .xlsx) com busca Spotify lenta e segura.
+
+- `--year` escolhe a aba (ex.: 2011).
+- Linhas `Artista feat. X, "Título"`: grava só o artista principal em `Song.artist`;
+  feats entram em `song_feats` via ordem de artistas da faixa no Spotify.
+- Pacing: `--delay-seconds` + `--delay-jitter-seconds`; retries em 429.
+
+Exemplo 2011:
+  python scripts/import_bang20_2010_slow.py --xlsx "C:/.../BANG20oficial.xlsx" --year 2011
+"""
+
 import argparse
 import base64
 import json
@@ -81,6 +93,36 @@ def parse_artist_title(cell_b: str) -> Optional[tuple[str, str]]:
     return artist, title
 
 
+# Só divide por feat/ft/featuring — não por vírgula (evita confundir "2NE1, \"Título\"").
+_FEAT_TAIL_IN_ARTIST = re.compile(
+    r"^(?P<main>.+?)\s+(?:feat\.?|ft\.?|featuring)\s+(?P<feats>.+)$",
+    re.IGNORECASE,
+)
+
+
+def split_main_artist_and_feat_names(artist_cell: str) -> tuple[str, list[str]]:
+    """Artista principal + nomes de feats (só texto da planilha; IDs vêm do Spotify)."""
+    s = (artist_cell or "").strip()
+    m = _FEAT_TAIL_IN_ARTIST.match(s)
+    if not m:
+        return s, []
+    main = m.group("main").strip()
+    raw = m.group("feats").strip()
+    parts = re.split(r"\s*&\s*|\s*,\s*|\s+and\s+", raw, flags=re.IGNORECASE)
+    feats = [p.strip() for p in parts if p.strip()]
+    return main or s, feats
+
+
+def clean_title_feat_credits(title: str) -> str:
+    """Remove créditos feat no fim do título (ex.: \"(feat. X)\" ou \" feat. X\")."""
+    t = (title or "").strip()
+    if not t:
+        return t
+    t = re.sub(r"\s*\([^)]*\b(?:feat\.?|ft\.?|featuring)\b[^)]*\)\s*$", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\s+(?:feat\.?|ft\.?|featuring)\s+.+$", "", t, flags=re.IGNORECASE)
+    return t.strip()
+
+
 def parse_week_date(cell_b) -> Optional[date]:
     if cell_b is None:
         return None
@@ -128,7 +170,11 @@ def parse_year_sheet(ws: openpyxl.worksheet.worksheet.Worksheet) -> list[dict]:
         if not parsed:
             continue
 
-        artist, title = parsed
+        artist_raw, title_raw = parsed
+        artist, _ = split_main_artist_and_feat_names(artist_raw)
+        title = clean_title_feat_credits(title_raw)
+        if not artist or not title:
+            continue
         points = int(c) if isinstance(c, (int, float)) else max(0, 101 - pos)
         current["entries"].append({"position": pos, "artist": artist, "title": title, "points": points})
 
@@ -299,6 +345,28 @@ def upsert_album_row(
     )
 
 
+def upsert_song_feats_from_spotify_artists(cur, song_spotify_id: str, artists_after_primary: list) -> None:
+    """Preenche `song_feats` com artistas adicionais da faixa (Spotify devolve ordem: principal primeiro)."""
+    if not song_spotify_id or not artists_after_primary:
+        return
+    for a in artists_after_primary:
+        if not isinstance(a, dict):
+            continue
+        aid = a.get("id")
+        aname = (a.get("name") or "").strip() if isinstance(a.get("name"), str) else ""
+        if not aid:
+            continue
+        upsert_artist_row(cur, str(aid), aname or "Artista", None, None)
+        cur.execute(
+            """
+            INSERT INTO "song_feats" ("song_spotify_id", "artist_spotify_id", "created_at")
+            VALUES (%s, %s, NOW())
+            ON CONFLICT ("song_spotify_id", "artist_spotify_id") DO NOTHING
+            """,
+            (song_spotify_id, str(aid)),
+        )
+
+
 def upsert_catalog_from_best(cur, best: dict) -> None:
     """Cria/atualiza artista e álbum catalog (FKs esperadas pela app), alinhado a apply-spotify-metadata-to-song.ts."""
     aid = best.get("primary_artist_spotify_id")
@@ -443,11 +511,15 @@ def main() -> None:
         default=0.2,
         help="Aleatório extra após delay base (suaviza picos síncronos)",
     )
-    ap.add_argument("--out-missing", default="scripts/_bang20_2010_not_found_spotify.json", help="JSON de não encontrados")
+    ap.add_argument(
+        "--out-missing",
+        default=None,
+        help="JSON de não encontrados (padrão: scripts/_bang20_<ano>_not_found_spotify.json)",
+    )
     ap.add_argument(
         "--out-collisions",
-        default="scripts/_bang20_2010_spotify_id_collisions.json",
-        help="JSON: match no Spotify mas spotify_id já usado por outra música no banco",
+        default=None,
+        help="JSON de colisões de spotify_id (padrão: scripts/_bang20_<ano>_spotify_id_collisions.json)",
     )
     ap.add_argument(
         "--markets",
@@ -456,6 +528,11 @@ def main() -> None:
     )
     ap.add_argument("--queries-per-song", type=int, default=1, help="Máximo de queries por música")
     args = ap.parse_args()
+
+    if not args.out_missing:
+        args.out_missing = str(ROOT / "scripts" / f"_bang20_{args.year}_not_found_spotify.json")
+    if not args.out_collisions:
+        args.out_collisions = str(ROOT / "scripts" / f"_bang20_{args.year}_spotify_id_collisions.json")
 
     db_url = (os.environ.get("DIRECT_URL") or os.environ.get("DATABASE_URL") or "").strip().strip('"').strip("'")
     if not db_url:
@@ -545,6 +622,7 @@ def main() -> None:
             used_spotify_ids: set[str] = {row[0] for row in cur.fetchall() if row[0]}
 
             new_song_rows = []
+            pending_song_feats: list[tuple[str, list]] = []
             for title, artist in sorted(needed_keys):
                 key = (title, artist)
                 if key in song_map:
@@ -592,6 +670,7 @@ def main() -> None:
                                     "album_cover_url": pick_best_image_url(album.get("images") or []),
                                     "album_spotify_page_url": (album.get("external_urls") or {}).get("spotify"),
                                     "best_market": market,
+                                    "all_artists": list(artists_li),
                                 }
                         # Com título + artista praticamente exatos já basta aceitar candidato forte.
                         if best_score >= 148:
@@ -617,6 +696,9 @@ def main() -> None:
                         upsert_catalog_from_best(cur, best)
                         used_spotify_ids.add(sid)
                         found_on_spotify += 1
+                        all_au = best.get("all_artists") or []
+                        if len(all_au) > 1:
+                            pending_song_feats.append((sid, all_au[1:]))
 
                     new_song_rows.append(
                         (
@@ -691,6 +773,9 @@ def main() -> None:
                         "duration_ms": r[9],
                         "track_number": r[10],
                     }
+
+                for sid, tail in pending_song_feats:
+                    upsert_song_feats_from_spotify_artists(cur, sid, tail)
 
             for wk in weeks_to_create:
                 end = week_sunday(wk["date"])

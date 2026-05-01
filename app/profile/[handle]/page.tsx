@@ -223,7 +223,7 @@ export default function ProfilePage() {
   const [chartPage, setChartPage] = useState(1);
   const [loadingChartPage, setLoadingChartPage] = useState(false);
   const [statsPage, setStatsPage] = useState(1);
-  const CHARTS_PER_PAGE = 6;
+  const CHARTS_PER_PAGE = 8;
   const STATS_PER_PAGE = 100;
 
   useEffect(() => {

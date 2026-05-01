@@ -15,9 +15,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
   }
   const mode = url.searchParams.get("mode") === "full" ? "full" : "summary";
   const pageRaw = Number(url.searchParams.get("page") ?? "1");
-  const perPageRaw = Number(url.searchParams.get("perPage") ?? "6");
+  const perPageRaw = Number(url.searchParams.get("perPage") ?? "8");
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
-  const perPage = Number.isFinite(perPageRaw) && perPageRaw > 0 ? Math.min(50, Math.floor(perPageRaw)) : 6;
+  const perPage = Number.isFinite(perPageRaw) && perPageRaw > 0 ? Math.min(50, Math.floor(perPageRaw)) : 8;
 
   const [session, dbUserBase] = await Promise.all([
     getServerSession(authOptions),
