@@ -8,6 +8,7 @@ import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 type EnrichedSong = {
   title: string;

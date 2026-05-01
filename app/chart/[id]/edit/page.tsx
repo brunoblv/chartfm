@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, GripVertical, Plus, X, ExternalLink } from "lucide-react";
@@ -78,6 +78,8 @@ export default function EditChartPage() {
   const [spotifyConfigured, setSpotifyConfigured] = useState(true);
   const [lastfmConfigured, setLastfmConfigured] = useState(true);
   const [adminCoverFallback, setAdminCoverFallback] = useState(false);
+  const lastfmImportRunRef = useRef(0);
+  const lastfmImportAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!chartId) return;
@@ -326,6 +328,11 @@ export default function EditChartPage() {
       setError("Não foi possível determinar a semana desta parada para importar do Last.fm.");
       return;
     }
+    lastfmImportAbortRef.current?.abort();
+    const runId = ++lastfmImportRunRef.current;
+    const ac = new AbortController();
+    lastfmImportAbortRef.current = ac;
+
     setImportingLastfm(true);
     setError(null);
     try {
@@ -333,15 +340,22 @@ export default function EditChartPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weekDate: lastfmImportWeekDate }),
+        signal: ac.signal,
+        cache: "no-store",
       });
+      if (runId !== lastfmImportRunRef.current) return;
+
       const data = (await res.json()) as {
         songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>;
         error?: string;
       };
       if (!res.ok) {
+        if (runId !== lastfmImportRunRef.current) return;
         setError(data.error ?? "Erro ao importar do Last.fm.");
         return;
       }
+      if (runId !== lastfmImportRunRef.current) return;
+
       const songs: Song[] = (data.songs ?? []).slice(0, 200).map((s) => ({
         title: s.title,
         artist: s.artist,
@@ -350,10 +364,12 @@ export default function EditChartPage() {
         imageUrl: s.imageUrl ?? undefined,
       }));
       setEntries(songs);
-    } catch {
+    } catch (e: unknown) {
+      if (runId !== lastfmImportRunRef.current) return;
+      if (e instanceof Error && e.name === "AbortError") return;
       setError("Erro de conexão ao importar do Last.fm.");
     } finally {
-      setImportingLastfm(false);
+      if (runId === lastfmImportRunRef.current) setImportingLastfm(false);
     }
   };
 

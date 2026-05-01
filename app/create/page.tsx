@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Plus, X, GripVertical, ExternalLink } from "lucide-react";
@@ -116,6 +116,8 @@ export default function CreatePage() {
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [paradaNome, setParadaNome] = useState<string | null>(null);
   const [adminCoverFallback, setAdminCoverFallback] = useState(false);
+  const lastfmImportRunRef = useRef(0);
+  const lastfmImportAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     fetch("/api/user/parada")
@@ -374,17 +376,26 @@ export default function CreatePage() {
   };
 
   const importLastChart = async () => {
+    const wd = weekDate.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(wd)) {
+      setPublishError("Selecione uma data válida no campo Data para importar a parada da semana anterior.");
+      return;
+    }
     setImportingLast(true);
     setPublishError(null);
     try {
-      const res = await fetch("/api/charts/latest");
-      const data = (await res.json()) as LatestChartResponse;
+      const res = await fetch(`/api/charts/latest?weekDate=${encodeURIComponent(wd)}`, { cache: "no-store" });
+      const data = (await res.json()) as LatestChartResponse & { error?: string };
       if (!res.ok) {
         if (res.status === 404) {
-          setPublishError("Você ainda não tem uma parada anterior para importar.");
+          setPublishError("Não há parada publicada na semana anterior à do campo Data.");
           return;
         }
-        setPublishError(data.error ?? "Não foi possível importar a última parada.");
+        if (res.status === 400) {
+          setPublishError(data.error ?? "Data inválida.");
+          return;
+        }
+        setPublishError(data.error ?? "Não foi possível importar a parada anterior.");
         return;
       }
       setEntries(
@@ -396,13 +407,18 @@ export default function CreatePage() {
         }))
       );
     } catch {
-      setPublishError("Erro de conexão ao importar a última parada.");
+      setPublishError("Erro de conexão ao importar a parada anterior.");
     } finally {
       setImportingLast(false);
     }
   };
 
   const importFromLastfm = async () => {
+    lastfmImportAbortRef.current?.abort();
+    const runId = ++lastfmImportRunRef.current;
+    const ac = new AbortController();
+    lastfmImportAbortRef.current = ac;
+
     setImportingLastfm(true);
     setPublishError(null);
     try {
@@ -410,12 +426,22 @@ export default function CreatePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weekDate }),
+        signal: ac.signal,
+        cache: "no-store",
       });
-      const data = await res.json() as { songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>; error?: string };
+      if (runId !== lastfmImportRunRef.current) return;
+
+      const data = (await res.json()) as {
+        songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>;
+        error?: string;
+      };
       if (!res.ok) {
+        if (runId !== lastfmImportRunRef.current) return;
         setPublishError(data.error ?? "Erro ao importar do Last.fm.");
         return;
       }
+      if (runId !== lastfmImportRunRef.current) return;
+
       const songs: Song[] = (data.songs ?? []).slice(0, 200).map((s) => ({
         title: s.title,
         artist: s.artist,
@@ -424,10 +450,12 @@ export default function CreatePage() {
         imageUrl: s.imageUrl ?? undefined,
       }));
       setEntries(songs);
-    } catch {
+    } catch (e: unknown) {
+      if (runId !== lastfmImportRunRef.current) return;
+      if (e instanceof Error && e.name === "AbortError") return;
       setPublishError("Erro de conexão ao importar do Last.fm.");
     } finally {
-      setImportingLastfm(false);
+      if (runId === lastfmImportRunRef.current) setImportingLastfm(false);
     }
   };
 
@@ -708,6 +736,7 @@ export default function CreatePage() {
           type="button"
           onClick={importLastChart}
           disabled={importingLast}
+          title="Copia a parada que você publicou na semana ISO imediatamente anterior à do campo Data"
           style={{
             border: "1px solid rgba(0,0,0,0.12)",
             background: "white",
@@ -721,7 +750,7 @@ export default function CreatePage() {
             whiteSpace: "nowrap",
           }}
         >
-          {importingLast ? "Importando..." : "Importar última"}
+          {importingLast ? "Importando..." : "Importar anterior"}
         </button>
       </div>
 

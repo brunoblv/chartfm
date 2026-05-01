@@ -49,6 +49,20 @@ export function buildWeekIndexFromDate(date: Date): number {
   return isoWeekYear(date) * 100 + isoWeek(date);
 }
 
+/** Semana ISO da data 28/12 (última semana ISO do ano civil). */
+function isoWeeksInYear(year: number): number {
+  return isoWeek(new Date(Date.UTC(year, 11, 28)));
+}
+
+/** `weekIndex` codificado como `ano*100 + semanaISO` (igual ao banco). Semana imediatamente anterior. */
+export function prevChartWeekIndex(weekIndex: number): number {
+  const year = Math.floor(weekIndex / 100);
+  const week = weekIndex % 100;
+  if (week > 1) return year * 100 + (week - 1);
+  const prevYear = year - 1;
+  return prevYear * 100 + isoWeeksInYear(prevYear);
+}
+
 /**
  * Rankings semanais (global/trending) sempre exibem a semana encerrada.
  * Ex.: na terça da semana 18, mostramos resultados da semana 17.
