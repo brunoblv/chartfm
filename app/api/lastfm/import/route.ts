@@ -148,7 +148,7 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
             artist: dbSong.artist,
             album: dbSong.album ?? item.album,
             spotifyId: dbSong.spotifyId ?? item.spotifyId,
-            imageUrl: dbSong.coverImageUrl ?? dbSong.albumRef?.coverUrl ?? item.imageUrl,
+            imageUrl: dbSong.albumRef?.coverUrl ?? null,
           }
         : item;
 

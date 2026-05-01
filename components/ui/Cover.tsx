@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { Cover as CoverType, Song } from "@/lib/types";
 
 type SongRef = Pick<Song, "title" | "artist"> & Partial<Pick<Song, "imageUrl" | "album" | "spotifyId">>;
 
 interface CoverProps {
   cover: CoverType;
-  /** Quando informado sem imageUrl na capa/música, busca a arte na API `/api/spotify/cover`. */
   song?: SongRef;
   size?: number;
   rounded?: number;
@@ -16,29 +14,8 @@ interface CoverProps {
 }
 
 export function Cover({ cover, song, size = 56, rounded = 10, className, style: extraStyle }: CoverProps) {
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const direct = cover.imageUrl || song?.imageUrl || null;
-  const imageUrl = direct || resolvedUrl;
-
-  useEffect(() => {
-    if (direct) return;
-    // Evita requisições para ícones minúsculos (ex: favicons).
-    if (size > 0 && size < 40) return;
-    // Sem track Spotify associada: não buscar capa por texto (import/planilha errava com outra faixa).
-    if (!song?.spotifyId?.trim()) return;
-    if (!song?.title?.trim() || !song?.artist?.trim()) return;
-    let cancelled = false;
-    const params = new URLSearchParams({ title: song.title, artist: song.artist });
-    fetch(`/api/spotify/cover?${params.toString()}`)
-      .then((r) => r.json() as Promise<{ url?: string | null }>)
-      .then((data) => {
-        if (!cancelled && data.url) setResolvedUrl(data.url);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [direct, song?.title, song?.artist, song?.spotifyId]);
+  const imageUrl = direct;
 
   const [a, b] = cover.palette;
   const seed = cover.seed;

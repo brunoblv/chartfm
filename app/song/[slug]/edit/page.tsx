@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug, slugify } from "@/lib/music-routes";
 import type { ParsedSongSlug } from "@/lib/music-routes";
+import { Shell } from "@/components/layout/Shell";
 import { SongEditClient } from "./SongEditClient";
 
 async function resolveSongId(parsed: ParsedSongSlug): Promise<string | null> {
@@ -39,18 +40,22 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return (
-      <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-        <p>Você precisa entrar para editar músicas.</p>
-      </div>
+      <Shell title="">
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+          <p>Você precisa entrar para editar músicas.</p>
+        </div>
+      </Shell>
     );
   }
 
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } });
   if (!isPrivilegedRole(me?.role)) {
     return (
-      <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-        <p>Acesso permitido somente para DEV e ADMIN.</p>
-      </div>
+      <Shell title="">
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+          <p>Acesso permitido somente para DEV e ADMIN.</p>
+        </div>
+      </Shell>
     );
   }
 
@@ -58,18 +63,22 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   const parsed = parseSongSlug(slug);
   if (!parsed) {
     return (
-      <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-        <p>Música não encontrada.</p>
-      </div>
+      <Shell title="">
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+          <p>Música não encontrada.</p>
+        </div>
+      </Shell>
     );
   }
 
   const songId = await resolveSongId(parsed);
   if (!songId) {
     return (
-      <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-        <p>Música não encontrada.</p>
-      </div>
+      <Shell title="">
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+          <p>Música não encontrada.</p>
+        </div>
+      </Shell>
     );
   }
 
@@ -88,31 +97,35 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   });
   if (!song) {
     return (
-      <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-        <p>Música não encontrada.</p>
-      </div>
+      <Shell title="">
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+          <p>Música não encontrada.</p>
+        </div>
+      </Shell>
     );
   }
 
   return (
-    <div style={{ maxWidth: 760, margin: "32px auto", padding: "0 20px 48px" }}>
-      <Link href={`/song/${slug}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
-        ← Voltar para a música
-      </Link>
-      <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>Editar música</h1>
-      <p style={{ color: "#86868B", marginTop: 0 }}>Disponível apenas para perfis DEV e ADMIN.</p>
-      <SongEditClient
-        initialSong={{
-          id: song.id,
-          slug,
-          title: song.title,
-          romanization: song.exhibitionName ?? "",
-          artist: song.artist,
-          album: song.album ?? "",
-          artistSpotifyId: song.artistSpotifyId ?? "",
-          albumSpotifyId: song.albumSpotifyId ?? "",
-        }}
-      />
-    </div>
+    <Shell title="">
+      <div style={{ maxWidth: 760, margin: "32px auto", padding: "0 20px 48px" }}>
+        <Link href={`/song/${slug}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
+          ← Voltar para a música
+        </Link>
+        <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>Editar música</h1>
+        <p style={{ color: "#86868B", marginTop: 0 }}>Disponível apenas para perfis DEV e ADMIN.</p>
+        <SongEditClient
+          initialSong={{
+            id: song.id,
+            slug,
+            title: song.title,
+            romanization: song.exhibitionName ?? "",
+            artist: song.artist,
+            album: song.album ?? "",
+            artistSpotifyId: song.artistSpotifyId ?? "",
+            albumSpotifyId: song.albumSpotifyId ?? "",
+          }}
+        />
+      </div>
+    </Shell>
   );
 }

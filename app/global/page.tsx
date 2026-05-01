@@ -103,12 +103,7 @@ async function hydrateSongCovers(entries: GlobalSongLike[]): Promise<GlobalSongL
     const refById = entry.song.id ? byId.get(entry.song.id) : undefined;
     const refBySpotifyId = entry.song.spotifyId ? bySpotifyId.get(entry.song.spotifyId) : undefined;
     const ref = refById ?? refBySpotifyId;
-    const imageUrl =
-      ref?.coverImageUrl?.trim() ||
-      ref?.albumRef?.coverUrl?.trim() ||
-      entry.song.imageUrl?.trim() ||
-      entry.cover.imageUrl?.trim() ||
-      null;
+    const imageUrl = ref?.albumRef?.coverUrl?.trim() || null;
     return {
       ...entry,
       song: { ...entry.song, imageUrl },
