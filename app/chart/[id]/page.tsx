@@ -92,7 +92,7 @@ export default function ChartDetailPage() {
     setMockItem(null);
     (async () => {
       try {
-        const res = await fetch(`/api/charts/${encodeURIComponent(id)}`);
+        const res = await fetch(`/api/charts/${encodeURIComponent(id)}`, { cache: "no-store" });
         if (cancelled) return;
         if (res.ok) {
           const data = (await res.json()) as ChartDetailExtended;

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { buildWeekIndexFromDate, parseChartWeekPickerDate, prevChartWeekIndex } from "@/lib/chart-week";
+import {
+  buildDateRangeFromDate,
+  buildWeekIndexFromDate,
+  buildWeekLabelFromDate,
+  parseChartWeekPickerDate,
+  prevChartWeekIndex,
+} from "@/lib/chart-week";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -24,8 +30,13 @@ export async function GET(req: NextRequest) {
 
   const currentWeekIndex = buildWeekIndexFromDate(anchor);
   const previousWeekIndex = prevChartWeekIndex(currentWeekIndex);
+  const previousDate = new Date(anchor);
+  previousDate.setDate(previousDate.getDate() - 7);
+  const previousWeekLabel = buildWeekLabelFromDate(previousDate);
+  const previousDateRange = buildDateRangeFromDate(previousDate);
+  const legacyPreviousWeekOnly = previousWeekIndex % 100;
 
-  const chart = await prisma.chart.findUnique({
+  let chart = await prisma.chart.findUnique({
     where: { userId_weekIndex: { userId: session.user.id, weekIndex: previousWeekIndex } },
     include: {
       entries: {
@@ -34,6 +45,28 @@ export async function GET(req: NextRequest) {
       },
     },
   });
+
+  // Compatibilidade com dados legados: algumas paradas antigas podem ter `weekIndex`
+  // salvo só com o número da semana (ex.: 17), sem o ano codificado.
+  if (!chart) {
+    chart = await prisma.chart.findFirst({
+      where: {
+        userId: session.user.id,
+        OR: [
+          { weekIndex: legacyPreviousWeekOnly },
+          { weekLabel: previousWeekLabel },
+          { dateRange: previousDateRange },
+        ],
+      },
+      orderBy: { publishedAt: "desc" },
+      include: {
+        entries: {
+          orderBy: { position: "asc" },
+          include: { song: true },
+        },
+      },
+    });
+  }
 
   if (!chart) {
     return NextResponse.json({ error: "no_chart_for_previous_week" }, { status: 404 });

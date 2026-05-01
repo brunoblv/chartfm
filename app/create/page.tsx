@@ -131,6 +131,24 @@ export default function CreatePage() {
   }, [router]);
 
   useEffect(() => {
+    const resetDraft = () => {
+      setEntries([]);
+      setPublishError(null);
+      setImportingLast(false);
+      setImportingLastfm(false);
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      // Quando a página volta do histórico do navegador (bfcache),
+      // limpamos o rascunho para evitar reaproveitar lista editada anterior.
+      if (event.persisted) resetDraft();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isAdmin) {
       setAdminCoverFallback(false);
       return;
@@ -423,10 +441,15 @@ export default function CreatePage() {
     setImportingLastfm(true);
     setPublishError(null);
     try {
-      const res = await fetch("/api/lastfm/import", {
+      const requestNonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const res = await fetch(`/api/lastfm/import?ts=${Date.now()}&nonce=${encodeURIComponent(requestNonce)}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekDate }),
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, max-age=0",
+          Pragma: "no-cache",
+        },
+        body: JSON.stringify({ weekDate, nonce: requestNonce }),
         signal: ac.signal,
         cache: "no-store",
       });

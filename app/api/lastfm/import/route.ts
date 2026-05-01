@@ -18,13 +18,73 @@ type EnrichedSong = {
   imageUrl: string | null;
 };
 
+function normalizeKey(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenOverlapScore(a: string, b: string): number {
+  const ta = new Set(a.split(" ").filter((w) => w.length > 1));
+  const tb = new Set(b.split(" ").filter((w) => w.length > 1));
+  if (!ta.size || !tb.size) return 0;
+  let n = 0;
+  for (const w of ta) if (tb.has(w)) n += 1;
+  return Math.round((n / Math.max(ta.size, tb.size)) * 50);
+}
+
+function scoreTrackMatch(wantTitle: string, wantArtist: string, gotTitle: string, gotArtist: string): number {
+  const wt = normalizeKey(wantTitle);
+  const waRaw = normalizeKey(wantArtist.split(",")[0] ?? wantArtist);
+  const wa = waRaw.split(" feat ")[0] ?? waRaw;
+  const ct = normalizeKey(gotTitle);
+  const ca = normalizeKey(gotArtist.split(",")[0] ?? gotArtist);
+  let s = 0;
+  if (ct === wt) s += 100;
+  else if (ct.includes(wt) || wt.includes(ct)) s += 58;
+  else s += tokenOverlapScore(wt, ct);
+  if (ca === wa) s += 90;
+  else if (ca.includes(wa) || wa.includes(ca)) s += 48;
+  else s += tokenOverlapScore(wa, ca) * 0.6;
+  return Math.round(s);
+}
+
+function pickBestTrackMatch(
+  item: { track: string; artist: string },
+  matches: Array<{ title: string; artist: string; album: string; spotifyId: string; imageUrl: string | null }>,
+) {
+  if (!matches.length) return null;
+  let best: (typeof matches)[number] | null = null;
+  let bestScore = -1;
+  for (const m of matches) {
+    const sc = scoreTrackMatch(item.track, item.artist, m.title, m.artist);
+    if (sc > bestScore) {
+      best = m;
+      bestScore = sc;
+    }
+  }
+  // Evita casar músicas com artista/título muito diferentes (ex.: karaokê/covers).
+  if (bestScore < 120) return null;
+  return best;
+}
+
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  Pragma: "no-cache",
+  Expires: "0",
+};
+
 async function enrichBatch(
   items: Array<{ track: string; artist: string; album: string }>,
 ): Promise<EnrichedSong[]> {
   return Promise.all(
     items.map(async (item) => {
-      const matches = await searchSpotifyTracks(`${item.track} ${item.artist}`, 1);
-      const m = matches[0];
+      const matches = await searchSpotifyTracks(`${item.track} ${item.artist}`, 8);
+      const m = pickBestTrackMatch(item, matches);
       if (m) {
         return { title: m.title, artist: m.artist, album: m.album, spotifyId: m.spotifyId, imageUrl: m.imageUrl ?? null };
       }
@@ -40,11 +100,11 @@ async function enrichBatch(
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.handle || session.user.handle !== "bruno") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
   }
 
   if (!spotifyConfigured()) {
-    return NextResponse.json({ error: "Spotify não configurado" }, { status: 503 });
+    return NextResponse.json({ error: "Spotify não configurado" }, { status: 503, headers: NO_CACHE_HEADERS });
   }
 
   let body: { weekDate?: unknown; recentDays?: unknown } = {};
@@ -62,10 +122,10 @@ export async function POST(req: NextRequest) {
     if (useWeek) {
       const anchor = parseChartWeekPickerDate(weekDateStr);
       if (!anchor) {
-        return NextResponse.json({ error: "Data da semana inválida" }, { status: 400 });
+        return NextResponse.json({ error: "Data da semana inválida" }, { status: 400, headers: NO_CACHE_HEADERS });
       }
       if (anchor.getTime() > Date.now()) {
-        return NextResponse.json({ error: "Não é possível importar semana futura" }, { status: 400 });
+        return NextResponse.json({ error: "Não é possível importar semana futura" }, { status: 400, headers: NO_CACHE_HEADERS });
       }
       const { from, toExclusive } = chartWeekUnixRangeFromAnchor(anchor);
       const weekPlays = await fetchTracksBetweenUnix(from, toExclusive);
@@ -86,8 +146,8 @@ export async function POST(req: NextRequest) {
     }
 
     const songs = enriched.slice(0, 200);
-    return NextResponse.json({ songs, total: top200.length });
+    return NextResponse.json({ songs, total: top200.length }, { headers: NO_CACHE_HEADERS });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: String(err) }, { status: 500, headers: NO_CACHE_HEADERS });
   }
 }

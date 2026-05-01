@@ -6,6 +6,11 @@ import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 
 export const runtime = "nodejs";
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  Pragma: "no-cache",
+  Expires: "0",
+};
 
 const PALETTES: [string, string][] = [
   ["#FF6B6B", "#FFE66D"],
@@ -52,7 +57,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   const { id } = await context.params;
   const chartId = typeof id === "string" ? id.trim() : "";
   if (!chartId) {
-    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_id" }, { status: 400, headers: NO_CACHE_HEADERS });
   }
 
   const row = await prisma.chart.findUnique({
@@ -98,7 +103,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   });
 
   if (!row) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_CACHE_HEADERS });
   }
 
   const currentSongIds = [...new Set(row.entries.map((e) => e.songId))];
@@ -218,16 +223,19 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   const mapped = mapPrismaChartDetail({ ...row, entries: entriesWithComputedStats });
   const lastfmImportWeekDate = lastfmWeekPickerValueFromChart(mapped.chart);
 
-  return NextResponse.json({
-    ...mapped,
-    lastfmImportWeekDate,
-    previousChart,
-    nextChart,
-    personalNumberOnes,
-    globalNumberOnes,
-    liked,
-    reposted,
-  });
+  return NextResponse.json(
+    {
+      ...mapped,
+      lastfmImportWeekDate,
+      previousChart,
+      nextChart,
+      personalNumberOnes,
+      globalNumberOnes,
+      liked,
+      reposted,
+    },
+    { headers: NO_CACHE_HEADERS },
+  );
 }
 
 type EntryInput = {
