@@ -35,7 +35,7 @@ async function enrichBatch(
 // POST /api/lastfm/import — exclusivo para @bruno
 // Body: { weekDate?: "YYYY-MM-DD" } — semana (seg–dom) dessa data; sem weekDate = últimos 28 dias.
 // As duas rotas usam scoreLastfmTracks (multiplicadores por bloco de 7 dias; sem decaimento por dia).
-// Na semana escolhida, a âncora é o domingo fim da parada (dia 0 = mais peso).
+// Na semana escolhida, a âncora é o domingo fim da parada (blocos de 7 dias vs. essa data).
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.handle || session.user.handle !== "bruno") {

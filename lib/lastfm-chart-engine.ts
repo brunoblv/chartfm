@@ -1,7 +1,7 @@
 import type { TrackPlays } from "./lastfm";
 
 // Week multipliers: index = week number (0 = most recent)
-const WEEK_MULTIPLIERS = [1.0, 0.8, 0.5, 0.2] as const;
+const WEEK_MULTIPLIERS = [1.0, 0.9, 0.8, 0.7] as const;
 // Minimum score: equivalente a 3 plays no bloco da semana mais recente
 const MIN_SCORE = 3 * WEEK_MULTIPLIERS[0];
 
