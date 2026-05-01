@@ -11,6 +11,7 @@ import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverModel, Song } from "@/lib/types";
 import { ADMIN_LASTFM_COVER_FALLBACK_KEY } from "@/lib/admin-flags";
+import { getChartWeekRange } from "@/lib/chart-week";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -27,15 +28,6 @@ function isoWeekYear(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
   return d.getUTCFullYear();
-}
-
-function weekRange(date: Date): { start: Date; end: Date } {
-  const end = new Date(date);
-  const day = end.getDay();
-  end.setDate(end.getDate() + (day === 0 ? 0 : 7 - day));
-  const start = new Date(end);
-  start.setDate(end.getDate() - 6);
-  return { start, end };
 }
 
 function formatPtDayMonth(date: Date): string {
@@ -414,7 +406,11 @@ export default function CreatePage() {
     setImportingLastfm(true);
     setPublishError(null);
     try {
-      const res = await fetch("/api/lastfm/import", { method: "POST" });
+      const res = await fetch("/api/lastfm/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekDate }),
+      });
       const data = await res.json() as { songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>; error?: string };
       if (!res.ok) {
         setPublishError(data.error ?? "Erro ao importar do Last.fm.");
@@ -503,7 +499,7 @@ export default function CreatePage() {
   const semanaAtual = isoWeekNumber(weekDateObj);
   const anoSemanaIso = isoWeekYear(weekDateObj);
   const tituloParadaSemanaAno = `${nomeParadaCard} - Semana ${semanaAtual} - ${anoSemanaIso}`;
-  const { start: inicioSemana, end: fimSemana } = weekRange(weekDateObj);
+  const { start: inicioSemana, end: fimSemana } = getChartWeekRange(weekDateObj);
   const subtituloSemana = `Semana ${semanaAtual} - de ${formatPtDayMonth(inicioSemana)} a ${formatPtDayMonth(fimSemana)}`;
 
   const searchPanel = (
@@ -691,7 +687,7 @@ export default function CreatePage() {
             type="button"
             onClick={importFromLastfm}
             disabled={importingLastfm}
-            title="Gerar parada automaticamente com base nos seus plays do Last.fm (top 100)"
+            title="Importa scrobbles do Last.fm na semana do campo Data (segunda a domingo), ranqueados por plays"
             style={{
               border: "1px solid rgba(250,36,60,0.3)",
               background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",

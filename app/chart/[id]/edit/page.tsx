@@ -15,6 +15,7 @@ import { ADMIN_LASTFM_COVER_FALLBACK_KEY } from "@/lib/admin-flags";
 type ChartDetailResponse = {
   user: { id: string; handle: string; name: string };
   chart: Pick<Chart, "id" | "weekLabel" | "dateRange" | "entries">;
+  lastfmImportWeekDate?: string | null;
 };
 
 type SpotifyApiTrack = {
@@ -58,8 +59,10 @@ export default function EditChartPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [importingLastfm, setImportingLastfm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weekLabel, setWeekLabel] = useState("");
+  const [lastfmImportWeekDate, setLastfmImportWeekDate] = useState<string | null>(null);
   const [entries, setEntries] = useState<Song[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
@@ -87,6 +90,7 @@ export default function EditChartPage() {
         }
         const data = (await res.json()) as ChartDetailResponse;
         setWeekLabel(data.chart.weekLabel);
+        setLastfmImportWeekDate(typeof data.lastfmImportWeekDate === "string" && data.lastfmImportWeekDate ? data.lastfmImportWeekDate : null);
         setEntries(
           data.chart.entries.map((e) => ({
             id: e.song.id,
@@ -315,6 +319,42 @@ export default function EditChartPage() {
     setEntries(arr);
     setDragIndex(null);
     setDragOver(null);
+  };
+
+  const importFromLastfm = async () => {
+    if (!lastfmImportWeekDate) {
+      setError("Não foi possível determinar a semana desta parada para importar do Last.fm.");
+      return;
+    }
+    setImportingLastfm(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/lastfm/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekDate: lastfmImportWeekDate }),
+      });
+      const data = (await res.json()) as {
+        songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>;
+        error?: string;
+      };
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao importar do Last.fm.");
+        return;
+      }
+      const songs: Song[] = (data.songs ?? []).slice(0, 200).map((s) => ({
+        title: s.title,
+        artist: s.artist,
+        album: s.album,
+        spotifyId: s.spotifyId ?? undefined,
+        imageUrl: s.imageUrl ?? undefined,
+      }));
+      setEntries(songs);
+    } catch {
+      setError("Erro de conexão ao importar do Last.fm.");
+    } finally {
+      setImportingLastfm(false);
+    }
   };
 
   const saveChart = async () => {
@@ -567,24 +607,62 @@ export default function EditChartPage() {
 
   const chartList = (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ padding: "18px 20px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div
+        style={{
+          padding: "18px 20px",
+          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
         <div style={{ fontSize: 16, fontWeight: 700 }}>Top {entries.length}</div>
-        <button
-          onClick={saveChart}
-          disabled={saving || entries.length === 0}
-          style={{
-            background: entries.length === 0 ? "#E5E7EB" : "#FA243C",
-            color: entries.length === 0 ? "#9CA3AF" : "white",
-            border: "none",
-            padding: "9px 18px",
-            borderRadius: 100,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: saving || entries.length === 0 ? "not-allowed" : "pointer",
-          }}
-        >
-          {saving ? "Salvando..." : "Salvar edição"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={importFromLastfm}
+              disabled={importingLastfm || !lastfmImportWeekDate}
+              title={
+                lastfmImportWeekDate
+                  ? "Substitui a lista pelos scrobbles do Last.fm na semana desta parada (ranqueados por plays)"
+                  : "Período da parada não permite import automático do Last.fm"
+              }
+              style={{
+                border: "1px solid rgba(250,36,60,0.3)",
+                background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
+                color: "#FA243C",
+                borderRadius: 100,
+                padding: "9px 16px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: importingLastfm || !lastfmImportWeekDate ? "not-allowed" : "pointer",
+                opacity: importingLastfm || !lastfmImportWeekDate ? 0.55 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {importingLastfm ? "Last.fm…" : "↺ Last.fm"}
+            </button>
+          )}
+          <button
+            onClick={saveChart}
+            disabled={saving || entries.length === 0}
+            style={{
+              background: entries.length === 0 ? "#E5E7EB" : "#FA243C",
+              color: entries.length === 0 ? "#9CA3AF" : "white",
+              border: "none",
+              padding: "9px 18px",
+              borderRadius: 100,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: saving || entries.length === 0 ? "not-allowed" : "pointer",
+            }}
+          >
+            {saving ? "Salvando..." : "Salvar edição"}
+          </button>
+        </div>
       </div>
       {entries.map((song, i) => {
         const cover = coverForSong(song);

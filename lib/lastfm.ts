@@ -51,21 +51,20 @@ async function fetchPage(
   return { tracks, totalPages };
 }
 
-export async function fetchRecentTracks(days = 28): Promise<TrackPlays[]> {
+/** Scrobbles com `from <= uts < to` (parâmetros do Last.fm: after `from`, before `to`). */
+export async function fetchTracksBetweenUnix(from: number, toExclusive: number): Promise<TrackPlays[]> {
   const username = process.env.LASTFM_USERNAME;
   const apiKey = process.env.API_KEY;
 
   if (!username || !apiKey) throw new Error("LASTFM_USERNAME and API_KEY must be set in env");
-
-  const now = Math.floor(Date.now() / 1000);
-  const from = now - days * 86400;
+  if (from >= toExclusive) return [];
 
   let page = 1;
   let totalPages = 1;
   const grouped = new Map<string, TrackPlays>();
 
   do {
-    const result = await fetchPage(username, apiKey, from, now, page);
+    const result = await fetchPage(username, apiKey, from, toExclusive, page);
 
     for (const track of result.tracks) {
       if (track["@attr"]?.nowplaying || !track.date?.uts) continue;
@@ -94,4 +93,9 @@ export async function fetchRecentTracks(days = 28): Promise<TrackPlays[]> {
   } while (page <= totalPages);
 
   return Array.from(grouped.values());
+}
+
+export async function fetchRecentTracks(days = 28): Promise<TrackPlays[]> {
+  const now = Math.floor(Date.now() / 1000);
+  return fetchTracksBetweenUnix(now - days * 86400, now + 1);
 }

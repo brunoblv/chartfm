@@ -72,6 +72,23 @@ export function scoreLastfmTracks(
     .slice(0, limit);
 }
 
+/** Ordena por número total de plays (ex.: janela já limitada a uma semana no Last.fm). */
+export function rankLastfmTracksByPlayCount(
+  trackPlays: TrackPlays[],
+  limit = 200,
+): Array<{ track: string; artist: string; album: string; score: number }> {
+  return trackPlays
+    .map((tp) => ({
+      track: tp.track,
+      artist: tp.artist,
+      album: tp.album,
+      score: tp.dayPlays.reduce((acc, d) => acc + d.plays, 0),
+    }))
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
 export function computeLastfmChart(
   trackPlays: TrackPlays[],
   history: LastfmSnapshotHistory,

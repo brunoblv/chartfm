@@ -26,7 +26,8 @@ function isoWeekYear(date: Date): number {
   return d.getUTCFullYear();
 }
 
-function weekRange(date: Date): { start: Date; end: Date } {
+/** Segunda a domingo (domingo = fim da semana), mesmo critério do rótulo da parada. */
+export function getChartWeekRange(date: Date): { start: Date; end: Date } {
   const end = new Date(date);
   const day = end.getDay();
   end.setDate(end.getDate() + (day === 0 ? 0 : 7 - day));
@@ -40,7 +41,7 @@ export function buildWeekLabelFromDate(date: Date): string {
 }
 
 export function buildDateRangeFromDate(date: Date): string {
-  const { start, end } = weekRange(date);
+  const { start, end } = getChartWeekRange(date);
   return `${formatDatePtBr(start)} a ${formatDatePtBr(end)}`;
 }
 
@@ -123,7 +124,7 @@ function monthNameToNumber(rawMonth: string): number | null {
   return monthMap[key] ?? null;
 }
 
-function parseDateRangeToDates(dateRange: string, fallbackYear: number): { start: Date; end: Date } | null {
+export function parseDateRangeToDates(dateRange: string, fallbackYear: number): { start: Date; end: Date } | null {
   const trimmed = dateRange.trim();
   const numericMatch = trimmed.match(
     /^(\d{2})\/(\d{2})\/(\d{4})\s+a\s+(\d{2})\/(\d{2})\/(\d{4})$/,
@@ -162,6 +163,48 @@ function parseWeekYear(weekLabel: string): number {
 function parseWeekNumber(weekLabel: string): number | null {
   const m = weekLabel.match(/Semana\s+(\d+)/i);
   return m ? Number(m[1]) : null;
+}
+
+export function formatPickerDateFromDate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** Valor do campo de data (AAAA-MM-DD) alinhado ao início da semana da parada salva — para import Last.fm na edição. */
+export function lastfmWeekPickerValueFromChart(chart: { dateRange: string; weekLabel: string }): string | null {
+  const weekLabel = normalizeWeekLabel(chart.weekLabel);
+  const dateRange = normalizeDateRange(chart.dateRange);
+  const year = parseWeekYear(weekLabel);
+  const parsed = parseDateRangeToDates(dateRange, year);
+  if (!parsed) return null;
+  return formatPickerDateFromDate(parsed.start);
+}
+
+/** Mesmo parsing do campo `weekDate` em `POST /api/charts`. */
+export function parseChartWeekPickerDate(input: unknown): Date | null {
+  if (typeof input !== "string") return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
+  const [y, m, d] = input.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+/**
+ * Intervalo Unix [from, to) para a semana da parada (meia-noite local na segunda
+ * até meia-noite exclusiva na segunda após o domingo).
+ */
+export function chartWeekUnixRangeFromAnchor(weekAnchor: Date): { from: number; toExclusive: number } {
+  const { start, end } = getChartWeekRange(weekAnchor);
+  const fromMs = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0).getTime();
+  const dayAfter = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0, 0);
+  dayAfter.setDate(dayAfter.getDate() + 1);
+  return {
+    from: Math.floor(fromMs / 1000),
+    toExclusive: Math.floor(dayAfter.getTime() / 1000),
+  };
 }
 
 export function formatChartPeriod(chart: Pick<Chart, "weekLabel" | "dateRange">): string {

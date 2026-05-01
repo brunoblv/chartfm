@@ -92,7 +92,7 @@ export async function applySpotifyMetadataToSong(
   }
 
   const albumName = owner.album?.trim() ? owner.album : (meta.album.title ?? null);
-  const coverPatch: Prisma.SongUpdateInput = {};
+  const coverPatch: Prisma.SongUncheckedUpdateInput = {};
   if (!owner.coverImageUrl?.trim() && meta.album.coverUrl?.trim()) {
     coverPatch.coverImageUrl = meta.album.coverUrl;
   }

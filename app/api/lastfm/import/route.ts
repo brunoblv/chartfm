@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { fetchRecentTracks } from "@/lib/lastfm";
-import { scoreLastfmTracks } from "@/lib/lastfm-chart-engine";
+import { chartWeekUnixRangeFromAnchor, parseChartWeekPickerDate } from "@/lib/chart-week";
+import { fetchRecentTracks, fetchTracksBetweenUnix } from "@/lib/lastfm";
+import { rankLastfmTracksByPlayCount, scoreLastfmTracks } from "@/lib/lastfm-chart-engine";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
@@ -32,8 +33,8 @@ async function enrichBatch(
 }
 
 // POST /api/lastfm/import — exclusivo para @bruno
-// Busca Last.fm (28 dias), pontua, enriquece com Spotify em paralelo (batches de 8), retorna top 100.
-export async function POST() {
+// Body: { weekDate?: "YYYY-MM-DD" } — semana (seg–dom) dessa data; sem weekDate mantém comportamento antigo (28 dias).
+export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.handle || session.user.handle !== "bruno") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -43,9 +44,34 @@ export async function POST() {
     return NextResponse.json({ error: "Spotify não configurado" }, { status: 503 });
   }
 
+  let body: { weekDate?: unknown; recentDays?: unknown } = {};
   try {
-    const trackPlays = await fetchRecentTracks(28);
-    const top200 = scoreLastfmTracks(trackPlays, new Date(), 200);
+    body = (await req.json()) as typeof body;
+  } catch {
+    body = {};
+  }
+  const weekDateStr = typeof body.weekDate === "string" ? body.weekDate.trim() : "";
+  const useWeek = /^\d{4}-\d{2}-\d{2}$/.test(weekDateStr);
+
+  try {
+    let top200: Array<{ track: string; artist: string; album: string; score: number }>;
+
+    if (useWeek) {
+      const anchor = parseChartWeekPickerDate(weekDateStr);
+      if (!anchor) {
+        return NextResponse.json({ error: "Data da semana inválida" }, { status: 400 });
+      }
+      if (anchor.getTime() > Date.now()) {
+        return NextResponse.json({ error: "Não é possível importar semana futura" }, { status: 400 });
+      }
+      const { from, toExclusive } = chartWeekUnixRangeFromAnchor(anchor);
+      const weekPlays = await fetchTracksBetweenUnix(from, toExclusive);
+      top200 = rankLastfmTracksByPlayCount(weekPlays, 200);
+    } else {
+      const days = typeof body.recentDays === "number" && body.recentDays > 0 && body.recentDays <= 90 ? body.recentDays : 28;
+      const recentPlays = await fetchRecentTracks(days);
+      top200 = scoreLastfmTracks(recentPlays, new Date(), 200);
+    }
 
     const BATCH = 8;
     const enriched: EnrichedSong[] = [];
