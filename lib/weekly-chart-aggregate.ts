@@ -264,7 +264,7 @@ export function aggregateGlobalSongs(
     const prevPoints = comparisonBySong.get(row.key) ?? 0;
     const growthPct = prevPoints > 0 ? ((row.pts - prevPoints) / prevPoints) * 100 : null;
     const s = row.best.song;
-    const manualCover = s.albumRef?.coverUrl?.trim() || null;
+    const manualCover = s.albumRef?.coverUrl?.trim() || s.coverImageUrl?.trim() || null;
     const song: Song = {
       id: s.id,
       title: s.title,

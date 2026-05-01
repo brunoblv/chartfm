@@ -185,7 +185,7 @@ async function getTimelineFeed(
         cover: {
           palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
           seed: e.coverSeed,
-          imageUrl: e.song.albumRef?.coverUrl?.trim() || null,
+          imageUrl: e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null,
         },
         song: {
           id: e.song.id,
@@ -194,7 +194,7 @@ async function getTimelineFeed(
           album: e.song.album ?? "",
           spotifyId: e.song.spotifyId ?? null,
           artistSpotifyId: e.song.artistSpotifyId ?? null,
-          imageUrl: e.song.albumRef?.coverUrl?.trim() || null,
+          imageUrl: e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null,
         },
       })),
     },

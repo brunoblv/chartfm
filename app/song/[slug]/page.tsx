@@ -148,7 +148,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const spotifyId = first.song.spotifyId;
   const artistSpotifyId = first.song.artistSpotifyId;
   const artistDbId = first.song.artistRef?.id ?? null;
-  const coverImageUrl = first.song.albumRef?.coverUrl?.trim() || null;
+  const coverImageUrl = first.song.albumRef?.coverUrl?.trim() || first.song.coverImageUrl?.trim() || null;
   const totalPoints = entries.reduce((sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)), 0);
   const users = new Set(entries.map((e) => e.chart.userId)).size;
   const chartEntries = entries.length;

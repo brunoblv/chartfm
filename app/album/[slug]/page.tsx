@@ -161,7 +161,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     if (e.position === 1) number1sAlbum += 1;
 
     const key = songKey(e.song.title, e.song.artist);
-    const manual = e.song.albumRef?.coverUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
     const cur = songsMap.get(key) ?? {
       key,
       songId: e.song.id,

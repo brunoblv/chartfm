@@ -172,7 +172,7 @@ export default async function ArtistPage({
     totalPoints += pts;
     if (e.position === 1) number1s += 1;
     const key = songKey(e.song.title, e.song.artist);
-    const manual = e.song.albumRef?.coverUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
     const cur = songsMap.get(key) ?? {
       key,
       songId: e.song.id,
@@ -258,7 +258,7 @@ export default async function ArtistPage({
     const albumName = e.song.album?.trim() || "Single";
     if (albumName === "Single") continue;
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
-    const manual = e.song.albumRef?.coverUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
     const existing = albumsMapRaw.get(albumName);
     if (!existing) {
       albumsMapRaw.set(albumName, {
@@ -284,7 +284,7 @@ export default async function ArtistPage({
   const userSongsMap = new Map<string, UserSongRow>();
   for (const e of userEntries) {
     const key = songKey(e.song.title, e.song.artist);
-    const manual = e.song.albumRef?.coverUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
     const cur = userSongsMap.get(key) ?? {
       key,
@@ -315,7 +315,7 @@ export default async function ArtistPage({
     const albumName = e.song.album?.trim() || "Single";
     if (albumName === "Single") continue;
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
-    const manual = e.song.albumRef?.coverUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
     const existing = userAlbumsMapRaw.get(albumName);
     if (!existing) {
       userAlbumsMapRaw.set(albumName, {
