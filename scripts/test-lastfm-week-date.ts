@@ -58,7 +58,7 @@ async function main() {
   const plays = await fetchTracksBetweenUnix(from, toExclusive);
   const ranked = scoreLastfmTracks(plays, scoreAnchor, 200);
 
-  console.log("\nTop 50 (score = plays × peso da semana de 7 dias; âncora = domingo fim da semana):\n");
+  console.log("\nTop 50 (score: 7d×5 + 8–14d×3 + 15–21d×2 + 22–28d×1; âncora = domingo fim da semana):\n");
   for (let i = 0; i < ranked.length; i++) {
     const r = ranked[i];
     console.log(`${String(i + 1).padStart(3, " ")}  score=${r.score.toFixed(2).padStart(8, " ")}  ${r.artist} — ${r.track}`);

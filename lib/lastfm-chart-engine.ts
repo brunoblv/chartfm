@@ -1,9 +1,19 @@
 import type { TrackPlays } from "./lastfm";
 
-// Week multipliers: index = week number (0 = most recent)
-const WEEK_MULTIPLIERS = [1.0, 0.9, 0.8, 0.7] as const;
-// Minimum score: equivalente a 3 plays no bloco da semana mais recente
-const MIN_SCORE = 3 * WEEK_MULTIPLIERS[0];
+/**
+ * Peso por idade do play em relação a `referenceDay` (diffDays = dias corridos UTC):
+ * 0–6: ×5 | 7–13: ×3 | 14–20: ×2 | 21–27: ×1 (fora da janela 28 dias → 0).
+ */
+function playBlockWeight(diffDays: number): number {
+  if (diffDays < 0 || diffDays > 27) return 0;
+  if (diffDays <= 6) return 5;
+  if (diffDays <= 13) return 3;
+  if (diffDays <= 20) return 2;
+  return 1;
+}
+
+// Equivalente a 3 plays nos últimos 7 dias (3 × 5)
+const MIN_SCORE = 3 * playBlockWeight(0);
 
 export type ChartEntryStatus = "new" | "up" | "down" | "steady" | "re-entry";
 
@@ -39,8 +49,8 @@ function prevSundayKey(current: string): string {
 }
 
 /**
- * `referenceDay`: fim do período em dia civil UTC — cada play entra num bloco de 7 dias
- * (0 = mais recente) e só pesa `WEEK_MULTIPLIERS[weekIndex]` (sem decaimento por dia).
+ * Score total = Σ plays(dia) × peso do bloco de 28 dias em que cai o dia,
+ * com `referenceDay` = “hoje” do modelo (últimos 7 dias = diffDays 0–6).
  */
 function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): number {
   const todayMs = Date.UTC(referenceDay.getUTCFullYear(), referenceDay.getUTCMonth(), referenceDay.getUTCDate());
@@ -50,12 +60,10 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): num
     const playMs = new Date(date + "T00:00:00Z").getTime();
     const diffDays = Math.round((todayMs - playMs) / 86_400_000);
 
-    if (diffDays < 0 || diffDays > 27) continue;
+    const w = playBlockWeight(diffDays);
+    if (w === 0) continue;
 
-    const weekIndex = Math.floor(diffDays / 7); // 0–3
-    const weekMult = WEEK_MULTIPLIERS[weekIndex];
-
-    score += plays * weekMult;
+    score += plays * w;
   }
 
   return score;
@@ -63,7 +71,7 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): num
 
 export function scoreLastfmTracks(
   trackPlays: TrackPlays[],
-  /** Fim do período em UTC (import 28d: `new Date()`; import por semana: domingo fim da parada). Peso só por bloco de 7 dias. */
+  /** Fim do período em UTC (import 28d: `new Date()`; import por semana: domingo fim da parada). Blocos ×5 / ×3 / ×2 / ×1. */
   referenceDay: Date = new Date(),
   limit = 200,
   minScore = 0,
