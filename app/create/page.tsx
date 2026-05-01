@@ -419,6 +419,7 @@ export default function CreatePage() {
     const ac = new AbortController();
     lastfmImportAbortRef.current = ac;
 
+    setEntries([]);
     setImportingLastfm(true);
     setPublishError(null);
     try {

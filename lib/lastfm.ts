@@ -38,7 +38,7 @@ async function fetchPage(
     page: String(page),
   });
 
-  const res = await fetch(`${BASE_URL}?${params.toString()}`, { next: { revalidate: 0 } });
+  const res = await fetch(`${BASE_URL}?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`Last.fm HTTP ${res.status}`);
 
   const data = await res.json();
