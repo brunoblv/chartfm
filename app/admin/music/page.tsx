@@ -57,7 +57,7 @@ export default async function AdminMusicPage({
             <tbody>
               {songs.map((s) => (
                 <tr key={s.id}>
-                  <td style={tdStyle}>{s.title}</td>
+                  <td style={tdStyle}>{s.title} <span style={{ color: "#86868B", fontSize: 12 }}>({s.id})</span></td>
                   <td style={tdStyle}>{s.artist}</td>
                   <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12 }}>{s.spotifyId ?? "—"}</td>
                   <td style={tdStyle}>

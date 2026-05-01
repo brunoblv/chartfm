@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
 const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
@@ -303,6 +303,10 @@ function SidebarContent({
                     <Link href="/admin/albums" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/albums")}>
                       <Disc3 size={14} />
                       <span>Editar álbuns</span>
+                    </Link>
+                    <Link href="/admin/albums/no-cover" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/albums/no-cover")}>
+                      <ImageOff size={14} />
+                      <span>Álbuns sem capa</span>
                     </Link>
                     <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
                       <UserCog size={14} />

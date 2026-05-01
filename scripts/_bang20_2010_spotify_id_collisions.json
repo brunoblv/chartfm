@@ -1,0 +1,20 @@
+[
+  {
+    "title": "A Boy",
+    "artist": "G-Dragon",
+    "spotify_id": "4zXViIlvKDAjvIG5Keff87",
+    "reason": "spotify_id_já_existe_no_banco_ou_neste_batch"
+  },
+  {
+    "title": "Bo Peep Bo Peep",
+    "artist": "T-Ara",
+    "spotify_id": "69rmGEncOKu3QeVCO0bWVK",
+    "reason": "spotify_id_já_existe_no_banco_ou_neste_batch"
+  },
+  {
+    "title": "Breathe",
+    "artist": "G-Dragon",
+    "spotify_id": "4afjJiKWON0PV4GSPe5tPV",
+    "reason": "spotify_id_já_existe_no_banco_ou_neste_batch"
+  }
+]

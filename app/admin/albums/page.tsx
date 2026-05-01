@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
+import { CreateAlbumClient } from "./CreateAlbumClient";
 
 export default async function AdminAlbumsPage({
   searchParams,
@@ -20,8 +21,8 @@ export default async function AdminAlbumsPage({
   const query = (q ?? "").trim();
   const albums = query
     ? await prisma.album.findMany({
-        where: { title: { contains: query, mode: "insensitive" } },
-        select: { id: true, title: true, artist: { select: { id: true, name: true } } },
+        where: { OR: [{ title: { contains: query, mode: "insensitive" } }, { artist: { name: { contains: query, mode: "insensitive" } } }] },
+        select: { id: true, title: true, artist: { select: { id: true, name: true, spotifyId: true } }, songs: { select: { id: true, title: true, artist: true }, orderBy: { title: "asc" } } },
         take: 40,
         orderBy: { title: "asc" },
       })
@@ -30,6 +31,7 @@ export default async function AdminAlbumsPage({
   return (
     <Shell title="Admin" subtitle="Editar álbuns">
       <div style={{ maxWidth: 980 }}>
+        <CreateAlbumClient />
         <form method="GET" style={{ marginBottom: 16 }}>
           <input
             name="q"
@@ -44,6 +46,7 @@ export default async function AdminAlbumsPage({
               <tr style={{ background: "rgba(0,0,0,0.03)" }}>
                 <th style={thStyle}>Álbum</th>
                 <th style={thStyle}>Artista</th>
+                <th style={thStyle}>Músicas</th>
                 <th style={thStyle}>Ações</th>
               </tr>
             </thead>
@@ -51,7 +54,19 @@ export default async function AdminAlbumsPage({
               {albums.map((a) => (
                 <tr key={a.id}>
                   <td style={tdStyle}>{a.title}</td>
-                  <td style={tdStyle}>{a.artist.name}</td>
+                  <td style={tdStyle}>
+                    {a.artist.name} <span style={{ color: "#86868B", fontSize: 12 }}>({a.artist.id})</span>
+                  </td>
+                  <td style={{ ...tdStyle, maxWidth: 320 }}>
+                    {a.songs.length === 0
+                      ? <span style={{ color: "#86868B", fontSize: 13 }}>Nenhuma</span>
+                      : <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>
+                          {a.songs.map((s) => (
+                            <li key={s.id} style={{ fontSize: 12, color: "#1D1D1F" }}>{s.title}</li>
+                          ))}
+                        </ul>
+                    }
+                  </td>
                   <td style={tdStyle}>
                     <Link href={`/album/${a.artist.id}_${a.id}/edit`} style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}>
                       Editar
