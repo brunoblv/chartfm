@@ -2,9 +2,8 @@ import type { TrackPlays } from "./lastfm";
 
 // Week multipliers: index = week number (0 = most recent)
 const WEEK_MULTIPLIERS = [1.0, 0.8, 0.5, 0.2] as const;
-const DAY_DECAY = 0.85;
-// Minimum score: equivalent to 3 plays on the current day (week 1, day 0)
-const MIN_SCORE = 3 * Math.pow(DAY_DECAY, 0) * WEEK_MULTIPLIERS[0]; // 3.0
+// Minimum score: equivalente a 3 plays no bloco da semana mais recente
+const MIN_SCORE = 3 * WEEK_MULTIPLIERS[0];
 
 export type ChartEntryStatus = "new" | "up" | "down" | "steady" | "re-entry";
 
@@ -39,7 +38,10 @@ function prevSundayKey(current: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** `referenceDay`: “hoje” do modelo — diffDays=0 nesse dia civil (UTC); dias anteriores perdem peso (DAY_DECAY) e blocos de 7 dias (WEEK_MULTIPLIERS). */
+/**
+ * `referenceDay`: fim do período em dia civil UTC — cada play entra num bloco de 7 dias
+ * (0 = mais recente) e só pesa `WEEK_MULTIPLIERS[weekIndex]` (sem decaimento por dia).
+ */
 function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): number {
   const todayMs = Date.UTC(referenceDay.getUTCFullYear(), referenceDay.getUTCMonth(), referenceDay.getUTCDate());
   let score = 0;
@@ -51,10 +53,9 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): num
     if (diffDays < 0 || diffDays > 27) continue;
 
     const weekIndex = Math.floor(diffDays / 7); // 0–3
-    const dayWeight = Math.pow(DAY_DECAY, diffDays);
     const weekMult = WEEK_MULTIPLIERS[weekIndex];
 
-    score += plays * dayWeight * weekMult;
+    score += plays * weekMult;
   }
 
   return score;
@@ -62,7 +63,7 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): num
 
 export function scoreLastfmTracks(
   trackPlays: TrackPlays[],
-  /** Último dia do período com peso máximo (import 28d: use `new Date()`; import por semana: domingo fim da parada). */
+  /** Fim do período em UTC (import 28d: `new Date()`; import por semana: domingo fim da parada). Peso só por bloco de 7 dias. */
   referenceDay: Date = new Date(),
   limit = 200,
   minScore = 0,
