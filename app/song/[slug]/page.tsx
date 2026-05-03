@@ -218,19 +218,6 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const currentUserId = session?.user?.id ?? null;
   const myEntries = currentUserId ? entries.filter((e) => e.chart.userId === currentUserId) : [];
 
-  type WeekArrival = { weekIndex: number; period: string; debuts: number; returns: number };
-  const arrivalsByWeek = new Map<number, WeekArrival>();
-  for (const e of myEntries) {
-    if (e.status !== "new" && e.status !== "return") continue;
-    const ch = e.chart;
-    const period = formatChartPeriod({ weekLabel: ch.weekLabel, dateRange: ch.dateRange });
-    const prev = arrivalsByWeek.get(ch.weekIndex) ?? { weekIndex: ch.weekIndex, period, debuts: 0, returns: 0 };
-    if (e.status === "new") prev.debuts += 1;
-    else prev.returns += 1;
-    arrivalsByWeek.set(ch.weekIndex, prev);
-  }
-  const arrivalWeeksSorted = [...arrivalsByWeek.values()].sort((a, b) => a.weekIndex - b.weekIndex);
-
   const myAppearancesSorted = [...myEntries]
     .sort((a, b) => a.chart.weekIndex - b.chart.weekIndex)
     .map((e) => ({
@@ -357,38 +344,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
 
         {currentUserId && myAppearancesSorted.length === 0 && (
           <div style={{ marginTop: 20, padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
-            Esta música ainda não aparece em nenhuma das suas paradas publicadas. Quando você votar com ela, a lista acima mostrará posição, data e ano de cada semana.
-          </div>
-        )}
-
-        {currentUserId && myAppearancesSorted.length > 0 && arrivalWeeksSorted.length > 0 && (
-          <div style={{ marginTop: 20, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 18 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Suas datas de entrada</h2>
-            <p style={{ fontSize: 13, color: "#86868B", marginBottom: 14, lineHeight: 1.45 }}>
-              Semanas em que a música entrou na sua parada como estreia ou retorno.
-            </p>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 0 }}>
-              {arrivalWeeksSorted.map((row, i) => {
-                const parts: string[] = [];
-                if (row.debuts > 0) parts.push(`${row.debuts} estreia${row.debuts === 1 ? "" : "s"}`);
-                if (row.returns > 0) parts.push(`${row.returns} retorno${row.returns === 1 ? "" : "s"}`);
-                const last = i === arrivalWeeksSorted.length - 1;
-                return (
-                  <li
-                    key={row.weekIndex}
-                    style={{
-                      fontSize: 14,
-                      lineHeight: 1.45,
-                      paddingBottom: last ? 0 : 12,
-                      borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.06)",
-                    }}
-                  >
-                    <div style={{ fontWeight: 600, color: "#1D1D1F" }}>{row.period}</div>
-                    {parts.length > 0 && <div style={{ fontSize: 12, color: "#86868B", marginTop: 4 }}>{parts.join(" · ")}</div>}
-                  </li>
-                );
-              })}
-            </ul>
+            Esta música ainda não aparece em nenhuma das suas paradas publicadas. Quando você votar com ela, aparecerá aqui a posição, a data e o ano de cada semana.
           </div>
         )}
 
