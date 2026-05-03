@@ -19,6 +19,10 @@ export default async function AdminDuplicatesHomePage() {
           <strong>Músicas duplicadas</strong>
           <span style={subStyle}>Agrupa por título + artista normalizados e permite merge.</span>
         </Link>
+        <Link href="/admin/duplicates/songs-by-artist" style={cardStyle}>
+          <strong>Músicas homônimas por artista</strong>
+          <span style={subStyle}>Busca um artista e mostra músicas de mesmo nome para merge entre versões.</span>
+        </Link>
         <Link href="/admin/duplicates/artists" style={cardStyle}>
           <strong>Artistas duplicados</strong>
           <span style={subStyle}>Agrupa por nome normalizado e permite merge com atualização de referências.</span>
