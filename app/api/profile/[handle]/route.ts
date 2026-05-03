@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { buildPublicProfilePayload } from "@/lib/map-db-profile";
+import { applyComputedEntryStatsToCharts } from "@/lib/chart-entry-stats";
 
 export const runtime = "nodejs";
 
@@ -43,7 +44,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
   if (!dbUserBase) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  const [totalCharts, charts] = await Promise.all([
+  const [totalCharts, charts, chartStatsHistory] = await Promise.all([
     prisma.chart.count({ where: { userId: dbUserBase.id } }),
     prisma.chart.findMany({
       where: { userId: dbUserBase.id },
@@ -60,6 +61,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         entries: {
           orderBy: { position: "asc" },
           select: {
+            id: true,
             songId: true,
             position: true,
             status: true,
@@ -97,8 +99,40 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         },
       },
     }),
+    prisma.chart.findMany({
+      where: { userId: dbUserBase.id },
+      orderBy: { weekIndex: "asc" },
+      select: {
+        weekIndex: true,
+        entries: {
+          orderBy: { position: "asc" },
+          select: { id: true, songId: true, position: true },
+        },
+      },
+    }),
   ]);
-  const dbUser = { ...dbUserBase, charts };
+  const statsByEntryId = new Map(
+    applyComputedEntryStatsToCharts(chartStatsHistory).flatMap((chart) =>
+      chart.entries.map((entry) => [entry.id, entry] as const),
+    ),
+  );
+  const computedCharts = charts.map((chart) => ({
+    ...chart,
+    entries: chart.entries.map((entry) => {
+      const stats = statsByEntryId.get(entry.id);
+      return stats
+        ? {
+            ...entry,
+            status: stats.status,
+            delta: stats.delta,
+            prevPos: stats.prevPos,
+            peak: stats.peak,
+            weeks: stats.weeks,
+          }
+        : entry;
+    }),
+  }));
+  const dbUser = { ...dbUserBase, charts: computedCharts };
 
   let isFollowing = false;
   if (session?.user?.id && session.user.id !== dbUserBase.id) {

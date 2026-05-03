@@ -1,25 +1,173 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
-import { COMMUNITIES, USERS_DATA } from "@/lib/data";
+import { prisma } from "@/lib/prisma";
 
-export default function CommunitiesPage() {
-  const myComms = COMMUNITIES.slice(0, 3);
-  const exploreComms = COMMUNITIES;
+type CommunityCard = {
+  id: string;
+  slug: string;
+  name: string;
+  tagline: string;
+  icon: string;
+  logoUrl: string | null;
+  cover: [string, string];
+  members: number;
+  posts: number;
+  memberSample: {
+    id: string;
+    name: string;
+    avatar: string;
+    imageUrl: string | null;
+  }[];
+  newPosts: number;
+};
+
+function toCommunityCard(
+  community: {
+    id: string;
+    slug: string;
+    name: string;
+    tagline: string;
+    icon: string;
+    logoUrl: string | null;
+    coverA: string;
+    coverB: string;
+    members: number;
+    posts: number;
+    communityMembers: {
+      joinedAt: Date;
+      user: {
+        id: string;
+        name: string;
+        avatarColor: string;
+        image: string | null;
+      };
+    }[];
+    communityPosts?: { createdAt: Date }[];
+  },
+): CommunityCard {
+  const yesterday = Date.now() - 24 * 60 * 60 * 1000;
+
+  return {
+    id: community.id,
+    slug: community.slug,
+    name: community.name,
+    tagline: community.tagline,
+    icon: community.icon,
+    logoUrl: community.logoUrl,
+    cover: [community.coverA, community.coverB],
+    members: community.members,
+    posts: community.posts,
+    memberSample: community.communityMembers.map(({ user }) => ({
+      id: user.id,
+      name: user.name,
+      avatar: user.avatarColor,
+      imageUrl: user.image,
+    })),
+    newPosts: community.communityPosts?.filter((post) => post.createdAt.getTime() >= yesterday).length ?? 0,
+  };
+}
+
+export default async function CommunitiesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string | string[] }>;
+}) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ?? null;
+  const params = await searchParams;
+  const rawQuery = Array.isArray(params?.q) ? params?.q[0] : params?.q;
+  const query = rawQuery?.trim() ?? "";
+  const publicCommunityWhere = {
+    isPublic: true,
+    ...(query
+      ? {
+          OR: [
+            { name: { contains: query, mode: "insensitive" as const } },
+            { tagline: { contains: query, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [myRows, exploreRows] = await Promise.all([
+    userId
+      ? prisma.community.findMany({
+          where: { communityMembers: { some: { userId } } },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            tagline: true,
+            icon: true,
+            logoUrl: true,
+            coverA: true,
+            coverB: true,
+            members: true,
+            posts: true,
+            communityMembers: {
+              orderBy: { joinedAt: "asc" },
+              take: 3,
+              select: {
+                joinedAt: true,
+                user: { select: { id: true, name: true, avatarColor: true, image: true } },
+              },
+            },
+            communityPosts: {
+              where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+              select: { createdAt: true },
+            },
+          },
+        })
+      : Promise.resolve([]),
+    prisma.community.findMany({
+      where: publicCommunityWhere,
+      orderBy: [{ members: "desc" }, { createdAt: "desc" }],
+      take: 24,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        icon: true,
+        logoUrl: true,
+        coverA: true,
+        coverB: true,
+        members: true,
+        posts: true,
+        communityMembers: {
+          orderBy: { joinedAt: "asc" },
+          take: 3,
+          select: {
+            joinedAt: true,
+            user: { select: { id: true, name: true, avatarColor: true, image: true } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const myComms = myRows.map(toCommunityCard);
+  const exploreComms = exploreRows.map(toCommunityCard);
+  const myCommunityIds = new Set(myComms.map((community) => community.id));
 
   return (
     <Shell title="Comunidades" subtitle="Encontre sua tribo musical">
       {/* Header actions */}
       <div style={{ display: "flex", gap: 12, marginBottom: 32, alignItems: "center" }}>
-        <div style={{
+        <form action="/communities" style={{
           flex: 1, display: "flex", alignItems: "center", gap: 8,
           background: "white", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10,
           padding: "10px 14px",
         }}>
           <Search size={16} color="#86868B" />
-          <input placeholder="Buscar comunidades..." style={{ border: "none", outline: "none", fontSize: 14, color: "#1D1D1F", flex: 1, background: "transparent" }} />
-        </div>
+          <input name="q" defaultValue={query} placeholder="Buscar comunidades..." style={{ border: "none", outline: "none", fontSize: 14, color: "#1D1D1F", flex: 1, background: "transparent" }} />
+        </form>
         <Link href="/community/create" style={{
           background: "#FA243C", color: "white", textDecoration: "none",
           padding: "10px 22px", borderRadius: 10, fontSize: 14, fontWeight: 700,
@@ -30,9 +178,11 @@ export default function CommunitiesPage() {
       </div>
 
       {/* Suas comunidades */}
+      {userId && (
       <section style={{ marginBottom: 48 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Suas comunidades</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        {myComms.length > 0 ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
           {myComms.map((c) => (
             <Link key={c.id} href={`/community/${c.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
               <div style={{
@@ -44,24 +194,38 @@ export default function CommunitiesPage() {
                   background: `linear-gradient(135deg, ${c.cover[0]}, ${c.cover[1]})`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 26,
+                  overflow: "hidden",
                 }}>
-                  {c.icon}
+                  {c.logoUrl ? (
+                    <img src={c.logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    c.icon
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
                   <div style={{ fontSize: 12, color: "#86868B" }}>{c.members.toLocaleString("pt-BR")} membros</div>
-                  <div style={{ fontSize: 12, color: "#FA243C", fontWeight: 600, marginTop: 2 }}>12 posts novos</div>
+                  <div style={{ fontSize: 12, color: "#FA243C", fontWeight: 600, marginTop: 2 }}>
+                    {c.newPosts === 1 ? "1 post novo" : `${c.newPosts} posts novos`}
+                  </div>
                 </div>
               </div>
             </Link>
           ))}
         </div>
+        ) : (
+          <div style={{ background: "white", borderRadius: 12, border: "1px solid rgba(0,0,0,0.06)", padding: 18, color: "#86868B", fontSize: 14 }}>
+            Você ainda não participa de nenhuma comunidade.
+          </div>
+        )}
       </section>
+      )}
 
       {/* Explorar */}
       <section>
         <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Explorar comunidades</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+        {exploreComms.length > 0 ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
           {exploreComms.map((c) => (
             <div key={c.id} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
               {/* Banner */}
@@ -71,7 +235,11 @@ export default function CommunitiesPage() {
                 position: "relative",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <div style={{ fontSize: 56 }}>{c.icon}</div>
+                {c.logoUrl ? (
+                  <img src={c.logoUrl} alt="" style={{ width: 76, height: 76, borderRadius: 20, objectFit: "cover", boxShadow: "0 8px 24px rgba(0,0,0,0.18)" }} />
+                ) : (
+                  <div style={{ fontSize: 56 }}>{c.icon}</div>
+                )}
                 <div style={{
                   position: "absolute", top: 10, right: 10,
                   background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)",
@@ -92,7 +260,7 @@ export default function CommunitiesPage() {
                   <div style={{ display: "flex" }}>
                     {(c.memberSample ?? []).slice(0, 3).map((u, i) => (
                       <div key={u.id} style={{ marginLeft: i === 0 ? 0 : -8, border: "2px solid white", borderRadius: "50%" }}>
-                        <Avatar user={u} size={24} />
+                        <Avatar user={u} imageUrl={u.imageUrl} size={24} />
                       </div>
                     ))}
                   </div>
@@ -102,13 +270,18 @@ export default function CommunitiesPage() {
                     background: "#1D1D1F", color: "white", textDecoration: "none",
                     padding: "7px 16px", borderRadius: 20, fontSize: 12, fontWeight: 700,
                   }}>
-                    Participar
+                    {myCommunityIds.has(c.id) ? "Abrir" : "Participar"}
                   </Link>
                 </div>
               </div>
             </div>
           ))}
         </div>
+        ) : (
+          <div style={{ background: "white", borderRadius: 12, border: "1px solid rgba(0,0,0,0.06)", padding: 18, color: "#86868B", fontSize: 14 }}>
+            {query ? "Nenhuma comunidade encontrada para essa busca." : "Nenhuma comunidade pública foi criada ainda."}
+          </div>
+        )}
       </section>
     </Shell>
   );

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
+import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
 
 export const runtime = "nodejs";
 const NO_CACHE_HEADERS = {
@@ -397,6 +398,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       },
     }),
   ]);
+  await recomputePersistedChartEntryStats(prisma, chart.userId, chart.weekIndex);
 
   return NextResponse.json({ ok: true });
 }

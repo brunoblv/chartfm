@@ -22,6 +22,7 @@ type PrismaProfileUser = {
     comments: number;
     reposts: number;
     entries: Array<{
+      songId: string;
       position: number;
       status: string;
       delta: number | null;
@@ -62,6 +63,7 @@ type PrismaChartRow = {
   comments: number;
   reposts: number;
   entries: Array<{
+    songId: string;
     position: number;
     status: string;
     delta: number | null;
