@@ -25,9 +25,10 @@ export default async function AdminMusicPage({
           OR: [
             { title: { contains: query, mode: "insensitive" } },
             { artist: { contains: query, mode: "insensitive" } },
+            { album: { contains: query, mode: "insensitive" } },
           ],
         },
-        select: { id: true, title: true, artist: true, spotifyId: true },
+        select: { id: true, title: true, artist: true, album: true, spotifyId: true },
         take: 40,
         orderBy: { title: "asc" },
       })
@@ -50,6 +51,7 @@ export default async function AdminMusicPage({
               <tr style={{ background: "rgba(0,0,0,0.03)" }}>
                 <th style={thStyle}>Música</th>
                 <th style={thStyle}>Artista</th>
+                <th style={thStyle}>Álbum</th>
                 <th style={thStyle}>Spotify ID</th>
                 <th style={thStyle}>Ações</th>
               </tr>
@@ -57,8 +59,9 @@ export default async function AdminMusicPage({
             <tbody>
               {songs.map((s) => (
                 <tr key={s.id}>
-                  <td style={tdStyle}>{s.title} <span style={{ color: "#86868B", fontSize: 12 }}>({s.id})</span></td>
+                  <td style={tdStyle}>{s.title}</td>
                   <td style={tdStyle}>{s.artist}</td>
+                  <td style={tdStyle}>{s.album?.trim() ? s.album : "—"}</td>
                   <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12 }}>{s.spotifyId ?? "—"}</td>
                   <td style={tdStyle}>
                     <Link
