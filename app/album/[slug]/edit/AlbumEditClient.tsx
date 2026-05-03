@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 
 type AlbumEditInitial = {
   id: number;
@@ -15,6 +16,10 @@ type AlbumEditInitial = {
 
 type ArtistOption = { spotifyId: string; name: string };
 
+function usableArtistOptions(items: ArtistOption[]) {
+  return items.filter((a) => a.spotifyId.trim() && a.name.trim());
+}
+
 export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditInitial }) {
   const [title, setTitle] = useState(initialAlbum.title);
   const [romanization, setRomanization] = useState(initialAlbum.romanization);
@@ -25,10 +30,15 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [artistTypeaheadActive, setArtistTypeaheadActive] = useState(false);
 
   useEffect(() => {
+    if (!artistTypeaheadActive) {
+      setArtistOptions([]);
+      return;
+    }
     const q = artistQuery.trim();
-    if (q.length < 2) {
+    if (!isAdminMusicTypeaheadQueryReady(q)) {
       setArtistOptions([]);
       return;
     }
@@ -41,7 +51,7 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
         });
         if (!res.ok) return;
         const data = (await res.json()) as { items: ArtistOption[] };
-        setArtistOptions(data.items ?? []);
+        setArtistOptions(usableArtistOptions(data.items ?? []));
       } catch {
         // ignore abort/network for typeahead
       }
@@ -50,7 +60,7 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
       ctrl.abort();
       clearTimeout(timer);
     };
-  }, [artistQuery]);
+  }, [artistQuery, artistTypeaheadActive]);
 
   const canSave = useMemo(
     () => title.trim().length > 0 && artistSpotifyId.trim().length > 0 && !saving,
@@ -98,6 +108,7 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
         <input
           value={artistQuery}
           onChange={(e) => {
+            setArtistTypeaheadActive(true);
             const v = e.target.value;
             setArtistQuery(v);
             const t = v.trim();

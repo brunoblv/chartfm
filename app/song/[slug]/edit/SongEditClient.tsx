@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 
 type SongEditInitial = {
   id: string;
@@ -16,6 +17,14 @@ type SongEditInitial = {
 
 type ArtistOption = { spotifyId: string; name: string };
 type AlbumOption = { spotifyId: string; title: string; artistName: string };
+
+function usableArtistOptions(items: ArtistOption[]) {
+  return items.filter((a) => a.spotifyId.trim() && a.name.trim());
+}
+
+function usableAlbumOptions(items: AlbumOption[]) {
+  return items.filter((a) => a.spotifyId.trim() && a.title.trim());
+}
 
 export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }) {
   const [title, setTitle] = useState(initialSong.title);
@@ -32,10 +41,17 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Só busca sugestões depois que o usuário mexer no campo (evita lista ao abrir a página). */
+  const [artistTypeaheadActive, setArtistTypeaheadActive] = useState(false);
+  const [albumTypeaheadActive, setAlbumTypeaheadActive] = useState(false);
 
   useEffect(() => {
+    if (!artistTypeaheadActive) {
+      setArtistOptions([]);
+      return;
+    }
     const q = artistQuery.trim();
-    if (q.length < 2) {
+    if (!isAdminMusicTypeaheadQueryReady(q)) {
       setArtistOptions([]);
       return;
     }
@@ -48,7 +64,7 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
         });
         if (!res.ok) return;
         const data = (await res.json()) as { items: ArtistOption[] };
-        setArtistOptions(data.items ?? []);
+        setArtistOptions(usableArtistOptions(data.items ?? []));
       } catch {
         // ignore abort/network for typeahead
       }
@@ -57,11 +73,15 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
       ctrl.abort();
       clearTimeout(timer);
     };
-  }, [artistQuery]);
+  }, [artistQuery, artistTypeaheadActive]);
 
   useEffect(() => {
+    if (!albumTypeaheadActive) {
+      setAlbumOptions([]);
+      return;
+    }
     const q = albumQuery.trim();
-    if (q.length < 2) {
+    if (!isAdminMusicTypeaheadQueryReady(q)) {
       setAlbumOptions([]);
       return;
     }
@@ -74,7 +94,7 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
         });
         if (!res.ok) return;
         const data = (await res.json()) as { items: AlbumOption[] };
-        setAlbumOptions(data.items ?? []);
+        setAlbumOptions(usableAlbumOptions(data.items ?? []));
       } catch {
         // ignore abort/network for typeahead
       }
@@ -83,7 +103,7 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
       ctrl.abort();
       clearTimeout(timer);
     };
-  }, [albumQuery]);
+  }, [albumQuery, albumTypeaheadActive]);
 
   const canSave = useMemo(() => title.trim().length > 0 && artistSpotifyId.trim().length > 0 && !saving, [title, artistSpotifyId, saving]);
 
@@ -128,6 +148,7 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
         <input
           value={artistQuery}
           onChange={(e) => {
+            setArtistTypeaheadActive(true);
             const v = e.target.value;
             setArtistQuery(v);
             const t = v.trim();
@@ -166,6 +187,7 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
         <input
           value={albumQuery}
           onChange={(e) => {
+            setAlbumTypeaheadActive(true);
             const v = e.target.value;
             setAlbumQuery(v);
             const t = v.trim();

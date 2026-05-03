@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import type { CSSProperties } from "react";
+import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 
 type ArtistOption = { spotifyId: string; name: string };
 
@@ -27,7 +28,7 @@ export function CreateAlbumClient() {
 
   useEffect(() => {
     const q = artistName.trim();
-    if (q.length < 2) {
+    if (!isAdminMusicTypeaheadQueryReady(q)) {
       setArtistOptions([]);
       setArtistSearchLoading(false);
       setArtistSearchFailed(false);
@@ -112,7 +113,7 @@ export function CreateAlbumClient() {
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: SS501 / Rebirth" style={inputStyle} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={labelStyle}>Artista * (digite 2+ letras para sugestões)</span>
+            <span style={labelStyle}>Artista * (digite para ver sugestões cadastradas)</span>
             <div style={{ position: "relative" }}>
               <input
                 value={artistName}
@@ -139,13 +140,13 @@ export function CreateAlbumClient() {
                 </div>
               )}
             </div>
-            {artistSearchLoading && artistName.trim().length >= 2 && (
+            {artistSearchLoading && isAdminMusicTypeaheadQueryReady(artistName.trim()) && (
               <span style={{ fontSize: 12, color: "#86868B" }}>Buscando…</span>
             )}
-            {!artistSearchLoading && artistName.trim().length >= 2 && artistOptions.length === 0 && artistSearchFailed && (
+            {!artistSearchLoading && isAdminMusicTypeaheadQueryReady(artistName.trim()) && artistOptions.length === 0 && artistSearchFailed && (
               <span style={{ fontSize: 12, color: "#C5291C" }}>Não foi possível carregar sugestões. Atualize a página ou confira se você está logado como admin.</span>
             )}
-            {!artistSearchLoading && artistName.trim().length >= 2 && artistOptions.length === 0 && !artistSearchFailed && (
+            {!artistSearchLoading && isAdminMusicTypeaheadQueryReady(artistName.trim()) && artistOptions.length === 0 && !artistSearchFailed && (
               <span style={{ fontSize: 12, color: "#86868B" }}>
                 Nenhum artista cadastrado com esse trecho — você ainda pode salvar; um artista manual será criado se necessário.
               </span>
