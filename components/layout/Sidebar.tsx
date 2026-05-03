@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
 const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
@@ -299,6 +299,10 @@ function SidebarContent({
                     <Link href="/admin/music/no-album" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music/no-album")}>
                       <AlertCircle size={14} />
                       <span>Músicas sem álbum</span>
+                    </Link>
+                    <Link href="/admin/missing-info" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/missing-info")}>
+                      <ListChecks size={14} />
+                      <span>Informações faltando</span>
                     </Link>
                     <Link href="/admin/artists" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/artists")}>
                       <Library size={14} />
