@@ -88,6 +88,11 @@ async function main() {
   }
 
   const meta = await getSpotifyTrackMetadataById(TRACK_ID, "KR");
+  if (!meta) {
+    console.error("Sem metadados Spotify para", TRACK_ID);
+    process.exit(1);
+  }
+
   const titleNorm = meta?.title?.toLowerCase().replace(/\s+/g, "") ?? "";
   if (!titleNorm.includes("dejavu")) {
     console.error("Meta inesperada:", meta?.title, meta?.primaryArtist?.name);
