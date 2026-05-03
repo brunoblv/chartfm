@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug, buildArtistPath } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
+import { formatChartPeriod } from "@/lib/chart-week";
 
 function pointsForPosition(position: number): number {
   return 101 - position;
@@ -61,10 +62,18 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     select: {
       position: true,
       points: true,
+      status: true,
       coverPaletteA: true,
       coverPaletteB: true,
       coverSeed: true,
-      chart: { select: { weekIndex: true, userId: true } },
+      chart: {
+        select: {
+          weekIndex: true,
+          userId: true,
+          weekLabel: true,
+          dateRange: true,
+        },
+      },
       song: {
         select: {
           title: true,
@@ -197,6 +206,30 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     }
   }
 
+  type WeekArrival = { weekIndex: number; period: string; debuts: number; returns: number };
+  const arrivalsByWeek = new Map<number, WeekArrival>();
+  for (const e of entries) {
+    if (e.status !== "new" && e.status !== "return") continue;
+    const ch = e.chart;
+    const period = formatChartPeriod({ weekLabel: ch.weekLabel, dateRange: ch.dateRange });
+    const prev = arrivalsByWeek.get(ch.weekIndex) ?? { weekIndex: ch.weekIndex, period, debuts: 0, returns: 0 };
+    if (e.status === "new") prev.debuts += 1;
+    else prev.returns += 1;
+    arrivalsByWeek.set(ch.weekIndex, prev);
+  }
+  const arrivalWeeksSorted = [...arrivalsByWeek.values()].sort((a, b) => a.weekIndex - b.weekIndex);
+
+  const presenceByWeek = new Map<number, string>();
+  for (const e of entries) {
+    const ch = e.chart;
+    if (!presenceByWeek.has(ch.weekIndex)) {
+      presenceByWeek.set(ch.weekIndex, formatChartPeriod({ weekLabel: ch.weekLabel, dateRange: ch.dateRange }));
+    }
+  }
+  const presenceWeeksSorted = [...presenceByWeek.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([weekIndex, period]) => ({ weekIndex, period }));
+
   return (
     <Shell title="" noPadding>
       <div style={{ padding: "48px 40px 40px 40px" }}>
@@ -269,6 +302,66 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             {peak === 9999 ? "—" : `#${peak}`}
           </div>
         </div>
+
+        {hasChartPresence && arrivalWeeksSorted.length > 0 && (
+          <div style={{ marginTop: 20, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 18 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Datas de entrada</h2>
+            <p style={{ fontSize: 13, color: "#86868B", marginBottom: 14, lineHeight: 1.45 }}>
+              Semanas em que a música entrou como estreia ou retorno nas paradas publicadas.
+            </p>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 0 }}>
+              {arrivalWeeksSorted.map((row, i) => {
+                const parts: string[] = [];
+                if (row.debuts > 0) parts.push(`${row.debuts} estreia${row.debuts === 1 ? "" : "s"}`);
+                if (row.returns > 0) parts.push(`${row.returns} retorno${row.returns === 1 ? "" : "s"}`);
+                const last = i === arrivalWeeksSorted.length - 1;
+                return (
+                  <li
+                    key={row.weekIndex}
+                    style={{
+                      fontSize: 14,
+                      lineHeight: 1.45,
+                      paddingBottom: last ? 0 : 12,
+                      borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, color: "#1D1D1F" }}>{row.period}</div>
+                    {parts.length > 0 && <div style={{ fontSize: 12, color: "#86868B", marginTop: 4 }}>{parts.join(" · ")}</div>}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {hasChartPresence && arrivalWeeksSorted.length === 0 && presenceWeeksSorted.length > 0 && (
+          <div style={{ marginTop: 20, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 18 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Semanas em paradas</h2>
+            <p style={{ fontSize: 13, color: "#86868B", marginBottom: 14, lineHeight: 1.45 }}>
+              Não há registro de estreia ou retorno nestes dados. Abaixo, todas as semanas em que a música apareceu em paradas publicadas.
+            </p>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 0 }}>
+              {presenceWeeksSorted.map((row, i) => {
+                const last = i === presenceWeeksSorted.length - 1;
+                return (
+                  <li
+                    key={row.weekIndex}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "#1D1D1F",
+                      lineHeight: 1.45,
+                      paddingBottom: last ? 0 : 12,
+                      borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    {row.period}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         <div style={{ marginTop: 20 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 14 }}>Top 5 usuários da música</h2>
