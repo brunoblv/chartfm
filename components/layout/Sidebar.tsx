@@ -379,6 +379,30 @@ function SidebarContent({
 
       <div style={{ flex: 1 }} />
 
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "10px 10px 14px" }}>
+        {[
+          { href: "/sobre", label: "Sobre" },
+          { href: "/contato", label: "Contato" },
+          { href: "/termos-de-uso", label: "Termos" },
+          { href: "/politica-de-privacidade", label: "Privacidade" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavClick}
+            style={{
+              color: "#86868B",
+              fontSize: 11,
+              fontWeight: 600,
+              textDecoration: "none",
+              lineHeight: 1.3,
+            }}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
       {authed ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "10px 8px", borderRadius: 10, background: "rgba(0,0,0,0.04)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

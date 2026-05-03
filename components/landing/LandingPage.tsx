@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { USERS_DATA, COVER_PALETTES, COMMUNITIES } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
@@ -67,6 +68,38 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
     { position: 3, title: "Manchild",             artist: "Sabrina Carpenter", palette: ["#FF6B9D", "#FF8C42"], status: "up",   delta: 1    },
     { position: 4, title: "Homewrecker",          artist: "Sombr",            palette: ["#3A3A4A", "#1A1A2E"], status: "down", delta: 1    },
   ];
+  const footerGroups: { title: string; items: { label: string; href: string }[] }[] = [
+    {
+      title: "Produto",
+      items: [
+        { label: "Como funciona", href: "#como-funciona" },
+        { label: "Comunidades", href: "#comunidades" },
+        { label: "Parada Global", href: "#parada-global" },
+      ],
+    },
+    {
+      title: "Empresa",
+      items: [
+        { label: "Sobre", href: "/sobre" },
+        { label: "Contato", href: "/contato" },
+      ],
+    },
+    {
+      title: "Recursos",
+      items: [
+        { label: "Importar Spotify", href: "/login" },
+        { label: "Comunidades", href: "/communities" },
+      ],
+    },
+    {
+      title: "Legal",
+      items: [
+        { label: "Termos de Uso", href: "/termos-de-uso" },
+        { label: "Privacidade", href: "/politica-de-privacidade" },
+        { label: "Contato LGPD", href: "/contato" },
+      ],
+    },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "#FBFBFD", fontFamily: "inherit" }}>
@@ -87,10 +120,10 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
         </div>
         {!isMobile && (
           <div style={{ display: "flex", gap: 28, fontSize: 14, color: "#1D1D1F", fontWeight: 500 }}>
-            <span style={{ cursor: "pointer" }}>Como funciona</span>
-            <span style={{ cursor: "pointer" }}>Comunidades</span>
-            <span style={{ cursor: "pointer" }}>Parada Global</span>
-            <span style={{ cursor: "pointer" }}>Curadores</span>
+            <Link href="#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>Como funciona</Link>
+            <Link href="#comunidades" style={{ color: "inherit", textDecoration: "none" }}>Comunidades</Link>
+            <Link href="#parada-global" style={{ color: "inherit", textDecoration: "none" }}>Parada Global</Link>
+            <Link href="/sobre" style={{ color: "inherit", textDecoration: "none" }}>Sobre</Link>
           </div>
         )}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -387,7 +420,7 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
       </section>
 
 {/* COMO FUNCIONA — 3 steps */}
-      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>
+      <section id="como-funciona" style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center" as const, marginBottom: 60 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Como funciona</div>
@@ -415,7 +448,7 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
       </section>
 
       {/* COMMUNITIES FEATURE */}
-      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px" }}>
+      <section id="comunidades" style={{ padding: isMobile ? "60px 24px" : "100px 56px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 60, alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#8338EC", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14 }}>Comunidades</div>
@@ -731,16 +764,17 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
               A rede social de paradas musicais semanais. Feita por quem ouve, pra quem ouve.
             </div>
           </div>
-          {[
-            ["Produto", ["Como funciona", "Comunidades", "Parada Global", "Curadores", "Mobile"]],
-            ["Empresa", ["Sobre", "Blog", "Carreiras", "Imprensa"]],
-            ["Recursos", ["Central de ajuda", "Importar Spotify", "API", "Status"]],
-            ["Legal", ["Termos", "Privacidade", "Cookies", "DMCA"]],
-          ].map(([title, items]) => (
-            <div key={title as string}>
+          {footerGroups.map(({ title, items }) => (
+            <div key={title}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "#1D1D1F" }}>{title}</div>
-              {(items as string[]).map((it) => (
-                <div key={it} style={{ fontSize: 13, color: "#86868B", marginBottom: 8, cursor: "pointer" }}>{it}</div>
+              {items.map((it) => (
+                <Link
+                  key={it.label}
+                  href={it.href}
+                  style={{ display: "block", fontSize: 13, color: "#86868B", marginBottom: 8, textDecoration: "none" }}
+                >
+                  {it.label}
+                </Link>
               ))}
             </div>
           ))}

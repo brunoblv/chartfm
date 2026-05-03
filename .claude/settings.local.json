@@ -5,7 +5,9 @@
       "Bash(python *)",
       "Bash(npx tsc *)",
       "Bash(python3 *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

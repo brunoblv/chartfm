@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { signIn, getProviders } from "next-auth/react";
 import { COVER_PALETTES, USERS_DATA } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
@@ -187,8 +188,8 @@ export default function LoginPage() {
 
           <div style={{ marginTop: 32, fontSize: 11, color: "#86868B", textAlign: "center", lineHeight: 1.5 }}>
             Ao continuar, você concorda com os{" "}
-            <span style={{ textDecoration: "underline" }}>Termos</span> e a{" "}
-            <span style={{ textDecoration: "underline" }}>Política de Privacidade</span>.
+            <Link href="/termos-de-uso" style={{ color: "inherit", textDecoration: "underline" }}>Termos</Link> e a{" "}
+            <Link href="/politica-de-privacidade" style={{ color: "inherit", textDecoration: "underline" }}>Política de Privacidade</Link>.
           </div>
         </div>
       </div>
