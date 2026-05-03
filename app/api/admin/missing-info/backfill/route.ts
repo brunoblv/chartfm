@@ -15,6 +15,9 @@ import {
 
 export const runtime = "nodejs";
 
+const MAX_BATCH_SIZE = 2;
+const SPOTIFY_ITEM_DELAY_MS = 900;
+
 const songMissingWhere: Prisma.SongWhereInput = {
   OR: [
     { spotifyId: null },
@@ -42,6 +45,10 @@ async function ensurePrivilegedUser() {
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } });
   if (!isPrivilegedRole(me?.role)) return { ok: false as const, status: 403 };
   return { ok: true as const };
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function normalize(value: string) {
@@ -133,7 +140,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = (await req.json().catch(() => ({}))) as { limit?: unknown };
-  const limit = Math.min(10, Math.max(1, typeof body.limit === "number" ? Math.floor(body.limit) : 5));
+  const limit = Math.min(MAX_BATCH_SIZE, Math.max(1, typeof body.limit === "number" ? Math.floor(body.limit) : MAX_BATCH_SIZE));
 
   const [songs, artists, albums] = await Promise.all([
     prisma.song.findMany({
@@ -167,7 +174,9 @@ export async function POST(req: NextRequest) {
   let failed = 0;
   const errors: string[] = [];
 
-  for (const item of queue) {
+  for (const [index, item] of queue.entries()) {
+    if (index > 0) await sleep(SPOTIFY_ITEM_DELAY_MS);
+
     try {
       const result =
         item.type === "song"

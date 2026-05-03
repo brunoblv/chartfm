@@ -17,6 +17,13 @@ type Props = {
   initialTotal: number;
 };
 
+const CLIENT_BATCH_LIMIT = 2;
+const CLIENT_BATCH_DELAY_MS = 1200;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function MissingInfoBackfillClient({ initialTotal }: Props) {
   const [running, setRunning] = useState(false);
   const [total, setTotal] = useState(initialTotal);
@@ -50,7 +57,7 @@ export function MissingInfoBackfillClient({ initialTotal }: Props) {
         const res = await fetch("/api/admin/missing-info/backfill", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ limit: 5 }),
+          body: JSON.stringify({ limit: CLIENT_BATCH_LIMIT }),
         });
         const data = (await res.json()) as BackfillResponse;
 
@@ -82,6 +89,7 @@ export function MissingInfoBackfillClient({ initialTotal }: Props) {
         }
 
         if (batchProcessed === 0) break;
+        if (nextRemaining > 0) await sleep(CLIENT_BATCH_DELAY_MS);
       }
     } catch {
       setMessage("Erro de conexão durante a atualização.");
@@ -108,7 +116,7 @@ export function MissingInfoBackfillClient({ initialTotal }: Props) {
             Completar dados pelo Spotify
           </div>
           <div style={{ marginTop: 5, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
-            Atualiza capas, links, duração, álbum, artista, gêneros e datas quando houver correspondência confiável.
+            Atualiza capas, links, duração, álbum, artista, gêneros e datas em lotes pequenos, com pausas para respeitar o limite do Spotify.
           </div>
         </div>
 
