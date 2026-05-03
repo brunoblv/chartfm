@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const metadata = fastPublish ? null : await getSpotifyTrackMetadataById(spotifyId);
+    const metadata = await getSpotifyTrackMetadataById(spotifyId);
     const primaryArtist = metadata?.primaryArtist;
     const albumSpotifyId = metadata?.album.spotifyId ?? null;
     const mainArtistName = primaryArtist?.name?.trim() || metadata?.artists?.[0]?.name?.trim() || e.artist;

@@ -256,7 +256,7 @@ export default function EditChartPage() {
                 title: t.title,
                 artist: t.artist,
                 album: t.album,
-                imageUrl: undefined,
+                imageUrl: t.imageUrl ?? undefined,
                 spotifyId: t.spotifyId,
               })),
             );
