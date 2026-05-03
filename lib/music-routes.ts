@@ -66,7 +66,8 @@ export function buildArtistPath(name: string, spotifyId?: string | null, artistI
 
 export type ParsedSongSlug =
   | { type: "artistSongIds"; artistId: number; songId: string }
-  | { type: "spotify"; spotifyId: string }
+  /** `slugSuffix` = parte após o spotifyId (`slugTítulo_slugArtista`), usada para fallback se o id não bater com a faixa. */
+  | { type: "spotify"; spotifyId: string; slugSuffix?: string }
   | { type: "internalId"; songId: string }
   | { type: "slug"; titleSlug: string; artistSlug: string };
 
@@ -88,7 +89,7 @@ export function parseSongSlug(slug: string): ParsedSongSlug | null {
   const prefix = raw.slice(0, sep);
   const rest = raw.slice(sep + 1);
   if (isPositiveIntId(prefix) && rest) return { type: "artistSongIds", artistId: Number(prefix), songId: rest };
-  if (isSpotifyId(prefix)) return { type: "spotify", spotifyId: prefix };
+  if (isSpotifyId(prefix)) return { type: "spotify", spotifyId: prefix, slugSuffix: rest || undefined };
   if (!prefix || !rest) return null;
   return { type: "slug", titleSlug: prefix, artistSlug: rest };
 }

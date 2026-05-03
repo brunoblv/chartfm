@@ -7,8 +7,8 @@ import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { parseSongSlug, buildArtistPath, slugify } from "@/lib/music-routes";
-import type { ParsedSongSlug } from "@/lib/music-routes";
+import { parseSongSlug, buildArtistPath } from "@/lib/music-routes";
+import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 
 function pointsForPosition(position: number): number {
   return 101 - position;
@@ -16,54 +16,6 @@ function pointsForPosition(position: number): number {
 
 function songKey(title: string, artist: string): string {
   return `${title.trim().toLowerCase()}|${artist.trim().toLowerCase()}`;
-}
-
-async function resolveSongId(parsed: ParsedSongSlug): Promise<string | null> {
-  if (parsed.type === "artistSongIds") {
-    const song = await prisma.song.findFirst({
-      where: { id: parsed.songId, artistRef: { id: parsed.artistId } },
-      select: { id: true },
-    });
-    if (song?.id) return song.id;
-    const fallback = await prisma.song.findUnique({ where: { id: parsed.songId }, select: { id: true } });
-    return fallback?.id ?? null;
-  }
-  if (parsed.type === "internalId") {
-    const song = await prisma.song.findUnique({
-      where: { id: parsed.songId },
-      select: { id: true },
-    });
-    if (song?.id) return song.id;
-    const entry = await prisma.chartEntry.findUnique({
-      where: { id: parsed.songId },
-      select: { songId: true },
-    });
-    return entry?.songId ?? null;
-  }
-  if (parsed.type === "spotify") {
-    const song = await prisma.song.findUnique({
-      where: { spotifyId: parsed.spotifyId },
-      select: { id: true },
-    });
-    return song?.id ?? null;
-  }
-  // Slug-based: broad filter by first word of artist slug, then match via slugify in memory
-  const firstArtistWord = parsed.artistSlug.split("-").find((w) => w.length > 0) ?? parsed.artistSlug;
-  const candidates = await prisma.song.findMany({
-    where: { artist: { contains: firstArtistWord, mode: "insensitive" } },
-    select: { id: true, title: true, artist: true },
-  });
-  const match = candidates.find(
-    (s) => slugify(s.title) === parsed.titleSlug && slugify(s.artist) === parsed.artistSlug,
-  );
-  if (match) return match.id;
-  // Fallback: importações antigas / `contains` falhou — varre um lote e compara só pelo slug
-  const pool = await prisma.song.findMany({
-    select: { id: true, title: true, artist: true },
-    take: 12000,
-    orderBy: { id: "asc" },
-  });
-  return pool.find((s) => slugify(s.title) === parsed.titleSlug && slugify(s.artist) === parsed.artistSlug)?.id ?? null;
 }
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -87,7 +39,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     );
   }
 
-  const songId = await resolveSongId(parsed);
+  const songId = await resolveSongIdFromParsed(parsed);
   if (!songId) {
     return (
       <Shell title="Música" subtitle="Não encontrada">
@@ -128,7 +80,23 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     },
   });
 
-  if (entries.length === 0) {
+  const songRow =
+    entries[0]?.song ??
+    (await prisma.song.findUnique({
+      where: { id: songId },
+      select: {
+        title: true,
+        artist: true,
+        album: true,
+        coverImageUrl: true,
+        albumRef: { select: { coverUrl: true } },
+        spotifyId: true,
+        artistSpotifyId: true,
+        artistRef: { select: { id: true } },
+      },
+    }));
+
+  if (!songRow) {
     return (
       <Shell title="Música" subtitle="Não encontrada">
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
@@ -142,14 +110,18 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   }
 
   const first = entries[0];
-  const title = first.song.title;
-  const artist = first.song.artist;
-  const album = first.song.album ?? "";
-  const spotifyId = first.song.spotifyId;
-  const artistSpotifyId = first.song.artistSpotifyId;
-  const artistDbId = first.song.artistRef?.id ?? null;
-  const coverImageUrl = first.song.albumRef?.coverUrl?.trim() || first.song.coverImageUrl?.trim() || null;
+  const title = songRow.title;
+  const artist = songRow.artist;
+  const album = songRow.album ?? "";
+  const spotifyId = songRow.spotifyId;
+  const artistSpotifyId = songRow.artistSpotifyId;
+  const artistDbId = songRow.artistRef?.id ?? null;
+  const coverImageUrl = songRow.albumRef?.coverUrl?.trim() || songRow.coverImageUrl?.trim() || null;
+  const paletteA = first?.coverPaletteA ?? "#FA243C";
+  const paletteB = first?.coverPaletteB ?? "#FFE66D";
+  const coverSeed = first?.coverSeed ?? 0;
   const totalPoints = entries.reduce((sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)), 0);
+  const hasChartPresence = entries.length > 0;
   const users = new Set(entries.map((e) => e.chart.userId)).size;
   const chartEntries = entries.length;
   const topUsersMap = new Map<
@@ -235,8 +207,8 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
           <Cover
             cover={{
-              palette: [first.coverPaletteA, first.coverPaletteB],
-              seed: first.coverSeed,
+              palette: [paletteA, paletteB],
+              seed: coverSeed,
               imageUrl: coverImageUrl,
             }}
             song={{
@@ -322,6 +294,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
 
+        {!hasChartPresence && (
+          <div style={{ marginTop: 20, padding: 14, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B" }}>
+            Esta faixa ainda não aparece em nenhuma parada publicada. Os números abaixo ficam zerados até alguém votar com ela.
+          </div>
+        )}
         <div style={{ marginTop: 24, fontSize: 13, color: "#86868B" }}>
           Entradas em paradas de usuários: {chartEntries}
         </div>

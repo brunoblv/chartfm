@@ -3,38 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { parseSongSlug, slugify } from "@/lib/music-routes";
-import type { ParsedSongSlug } from "@/lib/music-routes";
+import { parseSongSlug } from "@/lib/music-routes";
+import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { Shell } from "@/components/layout/Shell";
 import { SongEditClient } from "./SongEditClient";
-
-async function resolveSongId(parsed: ParsedSongSlug): Promise<string | null> {
-  if (parsed.type === "spotify") {
-    const song = await prisma.song.findUnique({ where: { spotifyId: parsed.spotifyId }, select: { id: true } });
-    return song?.id ?? null;
-  }
-  if (parsed.type === "internalId") {
-    const song = await prisma.song.findUnique({ where: { id: parsed.songId }, select: { id: true } });
-    return song?.id ?? null;
-  }
-  if (parsed.type === "artistSongIds") {
-    const song = await prisma.song.findFirst({
-      where: { id: parsed.songId, artistRef: { id: parsed.artistId } },
-      select: { id: true },
-    });
-    if (song?.id) return song.id;
-    const fallback = await prisma.song.findUnique({ where: { id: parsed.songId }, select: { id: true } });
-    return fallback?.id ?? null;
-  }
-
-  const firstArtistWord = parsed.artistSlug.split("-").find((w) => w.length > 0) ?? parsed.artistSlug;
-  const candidates = await prisma.song.findMany({
-    where: { artist: { contains: firstArtistWord, mode: "insensitive" } },
-    select: { id: true, title: true, artist: true },
-  });
-  const match = candidates.find((s) => slugify(s.title) === parsed.titleSlug && slugify(s.artist) === parsed.artistSlug);
-  return match?.id ?? null;
-}
 
 export default async function SongEditPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);
@@ -71,7 +43,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
     );
   }
 
-  const songId = await resolveSongId(parsed);
+  const songId = await resolveSongIdFromParsed(parsed);
   if (!songId) {
     return (
       <Shell title="">
