@@ -12,6 +12,7 @@ import {
   searchSpotifyTracks,
   spotifyConfigured,
 } from "@/lib/spotify-server";
+import { buildSongPath } from "@/lib/music-routes";
 
 export const runtime = "nodejs";
 
@@ -86,6 +87,60 @@ async function updateSong(song: { id: string; title: string; artist: string; spo
   return { updated: result.ok, reason: result.reason };
 }
 
+function manualLabel(item: QueueItem) {
+  if (item.type === "song") return `${item.ref.title} - ${item.ref.artist}`;
+  if (item.type === "artist") return item.ref.name;
+  return `${item.ref.title} - ${item.ref.artist.name}`;
+}
+
+function manualHref(item: QueueItem) {
+  if (item.type === "song") {
+    return `${buildSongPath({
+      id: item.ref.id,
+      title: item.ref.title,
+      artist: item.ref.artist,
+      spotifyId: item.ref.spotifyId,
+    })}/edit`;
+  }
+  if (item.type === "artist") return `/artist/${item.ref.id}/edit`;
+  return `/album/${item.ref.artist.id}_${item.ref.id}/edit`;
+}
+
+async function makeManualItem(item: QueueItem, reason: string) {
+  const manualItem: {
+    type: "song" | "artist" | "album";
+    id: string;
+    label: string;
+    href: string;
+    reason: string;
+    conflict?: { label: string; href: string };
+  } = {
+    type: item.type,
+    id: item.type === "song" ? item.ref.id : item.ref.spotifyId,
+    label: manualLabel(item),
+    href: manualHref(item),
+    reason,
+  };
+
+  if (reason.startsWith("spotify_id_conflict:")) {
+    const conflictSongId = reason.split(":")[1]?.trim();
+    if (conflictSongId) {
+      const conflictSong = await prisma.song.findUnique({
+        where: { id: conflictSongId },
+        select: { id: true, title: true, artist: true, spotifyId: true },
+      });
+      if (conflictSong) {
+        manualItem.conflict = {
+          label: `${conflictSong.title} - ${conflictSong.artist}`,
+          href: `${buildSongPath(conflictSong)}/edit`,
+        };
+      }
+    }
+  }
+
+  return manualItem;
+}
+
 async function updateArtist(artist: { spotifyId: string }) {
   const profile = await getSpotifyArtistById(artist.spotifyId);
   if (!profile) return { updated: false, reason: "spotify_artist_not_found" };
@@ -139,25 +194,39 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as { limit?: unknown };
+  const body = (await req.json().catch(() => ({}))) as {
+    limit?: unknown;
+    exclude?: {
+      songIds?: unknown;
+      artistSpotifyIds?: unknown;
+      albumSpotifyIds?: unknown;
+    };
+  };
   const limit = Math.min(MAX_BATCH_SIZE, Math.max(1, typeof body.limit === "number" ? Math.floor(body.limit) : MAX_BATCH_SIZE));
+  const excludedSongIds = new Set(Array.isArray(body.exclude?.songIds) ? body.exclude.songIds.filter((id): id is string => typeof id === "string") : []);
+  const excludedArtistSpotifyIds = new Set(
+    Array.isArray(body.exclude?.artistSpotifyIds) ? body.exclude.artistSpotifyIds.filter((id): id is string => typeof id === "string") : [],
+  );
+  const excludedAlbumSpotifyIds = new Set(
+    Array.isArray(body.exclude?.albumSpotifyIds) ? body.exclude.albumSpotifyIds.filter((id): id is string => typeof id === "string") : [],
+  );
 
   const [songs, artists, albums] = await Promise.all([
     prisma.song.findMany({
-      where: songMissingWhere,
+      where: { AND: [songMissingWhere, excludedSongIds.size ? { id: { notIn: [...excludedSongIds] } } : {}] },
       select: { id: true, title: true, artist: true, spotifyId: true },
       orderBy: [{ spotifyId: "desc" }, { artist: "asc" }, { title: "asc" }],
       take: limit,
     }),
     prisma.artist.findMany({
-      where: artistMissingWhere,
-      select: { spotifyId: true },
+      where: { AND: [artistMissingWhere, excludedArtistSpotifyIds.size ? { spotifyId: { notIn: [...excludedArtistSpotifyIds] } } : {}] },
+      select: { id: true, name: true, spotifyId: true },
       orderBy: { name: "asc" },
       take: limit,
     }),
     prisma.album.findMany({
-      where: albumMissingWhere,
-      select: { spotifyId: true },
+      where: { AND: [albumMissingWhere, excludedAlbumSpotifyIds.size ? { spotifyId: { notIn: [...excludedAlbumSpotifyIds] } } : {}] },
+      select: { id: true, title: true, spotifyId: true, artist: { select: { id: true, name: true } } },
       orderBy: { title: "asc" },
       take: limit,
     }),
@@ -173,6 +242,13 @@ export async function POST(req: NextRequest) {
   let skipped = 0;
   let failed = 0;
   const errors: string[] = [];
+  const manualItems: {
+    type: "song" | "artist" | "album";
+    id: string;
+    label: string;
+    href: string;
+    reason: string;
+  }[] = [];
 
   for (const [index, item] of queue.entries()) {
     if (index > 0) await sleep(SPOTIFY_ITEM_DELAY_MS);
@@ -189,10 +265,13 @@ export async function POST(req: NextRequest) {
       else {
         skipped += 1;
         errors.push(`${item.type}: ${result.reason}`);
+        manualItems.push(await makeManualItem(item, result.reason));
       }
     } catch (err) {
       failed += 1;
-      errors.push(`${item.type}: ${err instanceof Error ? err.message : "update_failed"}`);
+      const reason = err instanceof Error ? err.message : "update_failed";
+      errors.push(`${item.type}: ${reason}`);
+      manualItems.push(await makeManualItem(item, reason));
     }
   }
 
@@ -211,5 +290,11 @@ export async function POST(req: NextRequest) {
     failed,
     remaining: songRemaining + artistRemaining + albumRemaining,
     errors: errors.slice(-6),
+    manualItems,
   });
 }
+
+type QueueItem =
+  | { type: "song"; ref: { id: string; title: string; artist: string; spotifyId: string | null } }
+  | { type: "artist"; ref: { id: number; name: string; spotifyId: string } }
+  | { type: "album"; ref: { id: number; title: string; spotifyId: string; artist: { id: number; name: string } } };
