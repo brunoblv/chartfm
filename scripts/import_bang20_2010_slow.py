@@ -241,6 +241,37 @@ def build_queries(title: str, artist: str) -> list[str]:
     return out
 
 
+def find_song_row_by_spotify_id(cur, sid: str, song_map: dict[tuple[str, str], dict]) -> Optional[dict]:
+    """Música que já tem este spotify_id na BD ou já mapeada neste batch (ordem: query, depois song_map)."""
+    cur.execute(
+        """
+        SELECT id, title, artist, album, "spotify_id", "artist_spotify_id", "album_spotify_id",
+               "spotify_url", "preview_url", "duration_ms", "track_number"
+        FROM "Song" WHERE spotify_id = %s LIMIT 1
+        """,
+        (sid,),
+    )
+    r = cur.fetchone()
+    if r:
+        return {
+            "id": r[0],
+            "title": r[1],
+            "artist": r[2],
+            "album": r[3],
+            "spotify_id": r[4],
+            "artist_spotify_id": r[5],
+            "album_spotify_id": r[6],
+            "spotify_url": r[7],
+            "preview_url": r[8],
+            "duration_ms": r[9],
+            "track_number": r[10],
+        }
+    for v in song_map.values():
+        if (v.get("spotify_id") or "") == sid:
+            return dict(v)
+    return None
+
+
 def strip_spotify_metadata(best: dict) -> None:
     """Limpa tudo que liga esta linha ao Spotify/catalog quando não pode gravar a faixa (ex.: collision de spotify_id)."""
     best["spotify_id"] = None
@@ -577,6 +608,7 @@ def main() -> None:
     found_on_spotify = 0
     not_found_spotify: list[dict] = []
     spotify_id_collisions: list[dict] = []
+    reused_canonical_spotify = 0
 
     try:
         with conn.cursor() as cur:
@@ -623,6 +655,7 @@ def main() -> None:
 
             new_song_rows = []
             pending_song_feats: list[tuple[str, list]] = []
+            collision_sheet_keys: list[tuple[str, str, str]] = []
             for title, artist in sorted(needed_keys):
                 key = (title, artist)
                 if key in song_map:
@@ -683,12 +716,28 @@ def main() -> None:
                 if best and best_score >= 35:
                     sid = best.get("spotify_id")
                     if sid and sid in used_spotify_ids:
+                        owner = find_song_row_by_spotify_id(cur, sid, song_map)
+                        if owner:
+                            spotify_id_collisions.append(
+                                {
+                                    "title": title,
+                                    "artist": artist,
+                                    "spotify_id": sid,
+                                    "reason": "reused_existing_same_spotify_track",
+                                    "canonical_title": owner["title"],
+                                    "canonical_artist": owner["artist"],
+                                }
+                            )
+                            song_map[key] = dict(owner)
+                            collision_sheet_keys.append((title, artist, sid))
+                            reused_canonical_spotify += 1
+                            continue
                         spotify_id_collisions.append(
                             {
                                 "title": title,
                                 "artist": artist,
                                 "spotify_id": sid,
-                                "reason": "spotify_id_já_existe_no_banco_ou_neste_batch",
+                                "reason": "spotify_id_sem_owner_inesperado",
                             }
                         )
                         strip_spotify_metadata(best)
@@ -774,6 +823,15 @@ def main() -> None:
                         "track_number": r[10],
                     }
 
+                for st, sa, spot_id in collision_sheet_keys:
+                    hit = None
+                    for v in song_map.values():
+                        if (v.get("spotify_id") or "") == spot_id:
+                            hit = v
+                            break
+                    if hit:
+                        song_map[(st, sa)] = dict(hit)
+
                 for sid, tail in pending_song_feats:
                     upsert_song_feats_from_spotify_artists(cur, sid, tail)
 
@@ -840,6 +898,7 @@ def main() -> None:
         print(f"songs_found_on_spotify={found_on_spotify}")
         print(f"songs_not_found_on_spotify={len(not_found_spotify)}")
         print(f"spotify_id_collisions={len(spotify_id_collisions)}")
+        print(f"reused_canonical_spotify={reused_canonical_spotify}")
         print(f"missing_output={out_path.resolve()}")
         print(f"collisions_output={col_path.resolve()}")
         print(f"streak={streak}")

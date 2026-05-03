@@ -404,6 +404,21 @@ export default function ChartDetailPage() {
         </div>
       </div>
 
+      {/* Stats row */}
+      <div style={{
+        padding: "24px 40px",
+        display: "grid",
+        gridTemplateColumns: "repeat(5, 1fr)",
+        gap: 20,
+        borderBottom: "1px solid rgba(0,0,0,0.06)",
+      }}>
+        <StatBlock label="Novas entradas" value={chart.entries.filter(e => e.status === "new" || e.status === "return").length} accent="#1D1D1F" />
+        <StatBlock label="Subiram" value={chart.entries.filter(e => e.status === "up").length} accent="#1B873F" />
+        <StatBlock label="Caíram" value={chart.entries.filter(e => e.status === "down").length} accent="#C5291C" />
+        <StatBlock label="Estabilizadas" value={chart.entries.filter(e => e.status === "same").length} accent="#86868B" />
+        <StatBlock label="Músicas" value={chart.entries.length} accent="#FA243C" sub={`nesta parada`} />
+      </div>
+
       <div style={{ padding: "0 40px 80px 40px" }}>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 24 }}>
@@ -448,6 +463,16 @@ export default function ChartDetailPage() {
       {tab === "overlap" && <OverlapTab chartId={chart.id} isDbChart={isDbChart} />}
       </div>
     </Shell>
+  );
+}
+
+function StatBlock({ label, value, accent, sub }: { label: string; value: number | string; accent: string; sub?: string }) {
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.03em", color: accent, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>{sub}</div>}
+    </div>
   );
 }
 
@@ -546,28 +571,37 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
   }
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
+  // Podium order: 2nd | 1st | 3rd
   const podiumOrder = [top3[1], top3[0], top3[2]];
+  const medalColors: Record<number, string> = { 1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32" };
+  const podiumOffsets: Record<number, number> = { 1: 0, 2: 40, 3: 60 };
 
   return (
     <>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 16, padding: "40px 0 60px 0" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 24, padding: "60px 0 60px 0" }}>
         {podiumOrder.map((e) => (
-          <div key={e.position} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div
+            key={e.position}
+            style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+              transform: `translateY(${podiumOffsets[e.position] ?? 0}px)`,
+            }}
+          >
             <div style={{ position: "relative" }}>
               <Cover cover={e.cover} song={e.song} size={160} rounded={16} style={{ boxShadow: "0 12px 30px rgba(0,0,0,0.18)" }} />
               <div style={{
                 position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)",
                 width: 36, height: 36, borderRadius: "50%",
-                background: "#000000",
-                color: "#FFFFFF",
+                background: medalColors[e.position] ?? "#1D1D1F",
+                color: e.position === 1 ? "#7A5000" : e.position === 2 ? "#555" : "#fff",
                 display: "grid", placeItems: "center", fontSize: 15, fontWeight: 800,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
               }}>
                 {e.position}
               </div>
             </div>
-            <div style={{ textAlign: "center" }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160, textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+            <div style={{ textAlign: "center", maxWidth: 160 }}>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
               <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
             </div>
           </div>

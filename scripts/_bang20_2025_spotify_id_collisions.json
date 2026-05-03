@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Daylight",
+    "artist": "Nana",
+    "spotify_id": "3VOfC4REtKINTPwnQU3nUr",
+    "reason": "spotify_id_já_existe_no_banco_ou_neste_batch"
+  },
+  {
+    "title": "Flames",
+    "artist": "Nickthereal",
+    "spotify_id": "3exRuC3R1JuOhee7wjkW3c",
+    "reason": "spotify_id_já_existe_no_banco_ou_neste_batch"
+  },
+  {
+    "title": "Focus",
+    "artist": "Hearts2Hearts",
+    "spotify_id": "6jYiHr12NVKLzn0X7K8aSK",
+    "reason": "spotify_id_já_existe_no_banco_ou_neste_batch"
+  },
+  {
+    "title": "Tropical Therapy",
+    "artist": "One Ok Rock",
+    "spotify_id": "0aXrPDQKpsGlZKVzEnurSK",
+    "reason": "spotify_id_já_existe_no_banco_ou_neste_batch"
+  }
+]

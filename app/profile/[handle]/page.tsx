@@ -14,7 +14,7 @@ import { Cover } from "@/components/ui/Cover";
 import { USERS_DATA, COVER_PALETTES } from "@/lib/data";
 import type { Chart, UserWithCharts } from "@/lib/types";
 
-type Tab = "charts" | "artists_overall" | "artists_year" | "songs_overall" | "songs_year";
+type Tab = "charts" | "artists_overall" | "artists_year" | "songs_overall" | "songs_year" | "evolution";
 
 type ApiProfile = {
   user: UserWithCharts;
@@ -441,7 +441,16 @@ export default function ProfilePage() {
                 Ainda sem bio. As informações vêm da sua conta Google; em breve poderá editar aqui.
               </p>
             ) : null}
-            <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "#86868B", flexWrap: "wrap" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "#86868B", flexWrap: "wrap" }}>
+              <span><b style={{ color: "#1D1D1F" }}>{user.followers.toLocaleString("pt-BR")}</b> seguidores</span>
+              <span><b style={{ color: "#1D1D1F" }}>{user.following}</b> seguindo</span>
+              {user.streak > 0 && (
+                <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#FA243C", fontWeight: 600 }}>
+                  <Flame size={14} fill="#FA243C" />
+                  <b>{user.streak}</b> semanas de streak
+                </span>
+              )}
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 8, paddingBottom: 8, flexWrap: "wrap" }}>
@@ -590,6 +599,7 @@ export default function ProfilePage() {
           {(
             [
               ["charts", "Paradas"],
+              ["evolution", "Evolução"],
               ["artists_overall", "Artistas overall"],
               ["artists_year", "Artistas anual"],
               ["songs_overall", "Músicas overall"],
@@ -658,6 +668,10 @@ export default function ProfilePage() {
               );
             })()}
           </>
+        )}
+
+        {tab === "evolution" && (
+          <EvolutionChart user={statsUser ?? user} />
         )}
 
         {(tab === "artists_overall" || tab === "artists_year") && hasCharts && (

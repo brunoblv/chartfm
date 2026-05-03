@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Heart, MessageCircle, Repeat2, Share, BadgeCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
-
+import { MovementBadge } from "@/components/ui/MovementBadge";
 import { PositionNumber } from "@/components/ui/PositionNumber";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { formatChartPeriod } from "@/lib/chart-week";
@@ -110,7 +110,7 @@ export function ChartCard({
             key={entry.position}
             style={{
               display: "grid",
-              gridTemplateColumns: "28px 44px 1fr",
+              gridTemplateColumns: "28px 44px 1fr auto",
               alignItems: "center",
               gap: 12,
               padding: "8px 4px",
@@ -162,6 +162,7 @@ export function ChartCard({
                 {formatSongArtist(entry.song)}
               </Link>
             </div>
+            <MovementBadge status={entry.status} delta={entry.delta} compact />
           </div>
         ))}
         {remaining > 0 && (
@@ -201,26 +202,24 @@ export function ChartCard({
           }}
         >
           <Heart size={18} fill={liked ? "currentColor" : "none"} />
+          <span>{likeCount > 0 ? likeCount : ""}</span>
         </button>
-        {[
-          { icon: <MessageCircle size={18} /> },
-          { icon: <Repeat2 size={18} /> },
-        ].map(({ icon }, i) => (
-          <button key={i} style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "8px 12px",
-            borderRadius: 8,
-            background: "transparent",
-            border: "none",
-            color: "#6B6B70",
-            fontSize: 13,
-            fontWeight: 500,
-          }}>
-            {icon}
-          </button>
-        ))}
+        <button style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "8px 12px", borderRadius: 8, background: "transparent",
+          border: "none", color: "#6B6B70", fontSize: 13, fontWeight: 500,
+        }}>
+          <MessageCircle size={18} />
+          <span>{chart.comments > 0 ? chart.comments : ""}</span>
+        </button>
+        <button style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "8px 12px", borderRadius: 8, background: "transparent",
+          border: "none", color: "#6B6B70", fontSize: 13, fontWeight: 500,
+        }}>
+          <Repeat2 size={18} />
+          <span>{chart.reposts > 0 ? chart.reposts : ""}</span>
+        </button>
         <div style={{ flex: 1 }} />
         <button style={{ display: "flex", alignItems: "center", padding: "8px 12px", borderRadius: 8, background: "transparent", border: "none", color: "#6B6B70" }}>
           <Share size={18} />
