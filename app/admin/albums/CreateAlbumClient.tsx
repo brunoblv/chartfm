@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { CSSProperties } from "react";
+
+type ArtistOption = { spotifyId: string; name: string };
 
 type CreatedAlbum = {
   id: number;
@@ -19,6 +21,48 @@ export function CreateAlbumClient() {
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<CreatedAlbum | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [artistOptions, setArtistOptions] = useState<ArtistOption[]>([]);
+  const [artistSearchLoading, setArtistSearchLoading] = useState(false);
+  const [artistSearchFailed, setArtistSearchFailed] = useState(false);
+
+  useEffect(() => {
+    const q = artistName.trim();
+    if (q.length < 2) {
+      setArtistOptions([]);
+      setArtistSearchLoading(false);
+      setArtistSearchFailed(false);
+      return;
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      setArtistSearchLoading(true);
+      setArtistSearchFailed(false);
+      try {
+        const res = await fetch(`/api/admin/music/search?kind=artist&q=${encodeURIComponent(q)}`, {
+          signal: ctrl.signal,
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          setArtistOptions([]);
+          if (!ctrl.signal.aborted) setArtistSearchFailed(true);
+          return;
+        }
+        const data = (await res.json()) as { items?: ArtistOption[] };
+        setArtistOptions(data.items ?? []);
+      } catch {
+        if (!ctrl.signal.aborted) {
+          setArtistOptions([]);
+          setArtistSearchFailed(true);
+        }
+      } finally {
+        if (!ctrl.signal.aborted) setArtistSearchLoading(false);
+      }
+    }, 180);
+    return () => {
+      ctrl.abort();
+      clearTimeout(timer);
+    };
+  }, [artistName]);
 
   const canSave = useMemo(() => title.trim().length > 0 && artistName.trim().length > 0 && !saving, [title, artistName, saving]);
 
@@ -68,8 +112,44 @@ export function CreateAlbumClient() {
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: SS501 / Rebirth" style={inputStyle} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={labelStyle}>Artista *</span>
-            <input value={artistName} onChange={(e) => setArtistName(e.target.value)} placeholder="Ex: SS501" style={inputStyle} />
+            <span style={labelStyle}>Artista * (digite 2+ letras para sugestões)</span>
+            <div style={{ position: "relative" }}>
+              <input
+                value={artistName}
+                onChange={(e) => setArtistName(e.target.value)}
+                placeholder="Ex: SS501"
+                style={inputStyle}
+                autoComplete="off"
+              />
+              {artistOptions.length > 0 && (
+                <div style={dropdownStyle}>
+                  {artistOptions.map((a) => (
+                    <button
+                      key={a.spotifyId}
+                      type="button"
+                      onClick={() => {
+                        setArtistName(a.name);
+                        setArtistOptions([]);
+                      }}
+                      style={optionStyle}
+                    >
+                      {a.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {artistSearchLoading && artistName.trim().length >= 2 && (
+              <span style={{ fontSize: 12, color: "#86868B" }}>Buscando…</span>
+            )}
+            {!artistSearchLoading && artistName.trim().length >= 2 && artistOptions.length === 0 && artistSearchFailed && (
+              <span style={{ fontSize: 12, color: "#C5291C" }}>Não foi possível carregar sugestões. Atualize a página ou confira se você está logado como admin.</span>
+            )}
+            {!artistSearchLoading && artistName.trim().length >= 2 && artistOptions.length === 0 && !artistSearchFailed && (
+              <span style={{ fontSize: 12, color: "#86868B" }}>
+                Nenhum artista cadastrado com esse trecho — você ainda pode salvar; um artista manual será criado se necessário.
+              </span>
+            )}
           </label>
           <label style={{ display: "grid", gap: 6 }}>
             <span style={labelStyle}>Romanização</span>
@@ -134,3 +214,30 @@ const buttonStyle = (enabled: boolean): CSSProperties => ({
   cursor: enabled ? "pointer" : "not-allowed",
   fontSize: 14,
 });
+
+const dropdownStyle: CSSProperties = {
+  position: "absolute",
+  zIndex: 20,
+  top: "100%",
+  left: 0,
+  right: 0,
+  marginTop: 4,
+  background: "#fff",
+  border: "1px solid rgba(0,0,0,0.12)",
+  borderRadius: 10,
+  overflow: "hidden",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+  maxHeight: 220,
+  overflowY: "auto",
+};
+
+const optionStyle: CSSProperties = {
+  width: "100%",
+  textAlign: "left",
+  border: "none",
+  borderBottom: "1px solid rgba(0,0,0,0.06)",
+  background: "#fff",
+  padding: "9px 10px",
+  cursor: "pointer",
+  fontSize: 13,
+};

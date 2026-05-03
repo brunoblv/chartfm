@@ -311,6 +311,60 @@ export async function listSpotifyAlbumTracks(
   return out;
 }
 
+type SpotifyArtistAlbumsPageJson = {
+  items: {
+    id: string;
+    name: string;
+    album_type?: string;
+    release_date?: string;
+  }[];
+  next: string | null;
+};
+
+export type SpotifyArtistAlbumRef = {
+  spotifyId: string;
+  name: string;
+  albumType: string | null;
+  releaseDate: string | null;
+};
+
+/** Álbuns/singles/compilações vinculados ao artista (GET /artists/{id}/albums, todas as páginas). */
+export async function listSpotifyArtistAlbums(
+  artistSpotifyId: string,
+  market: string = "KR",
+): Promise<SpotifyArtistAlbumRef[]> {
+  const token = await getAccessToken();
+  if (!token) return [];
+  const id = artistSpotifyId.trim();
+  if (!id) return [];
+
+  const includeGroups = ["album", "single", "appears_on", "compilation"].join(",");
+  const out: SpotifyArtistAlbumRef[] = [];
+  let url: string | null =
+    `${API_BASE}/artists/${encodeURIComponent(id)}/albums?include_groups=${encodeURIComponent(includeGroups)}&market=${encodeURIComponent(market)}&limit=50`;
+
+  while (url) {
+    const res = await spotifyFetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 0 },
+    });
+    if (!res?.ok) break;
+    const json = (await res.json()) as SpotifyArtistAlbumsPageJson;
+    for (const it of json.items ?? []) {
+      if (it?.id && it?.name) {
+        out.push({
+          spotifyId: it.id,
+          name: it.name,
+          albumType: it.album_type ?? null,
+          releaseDate: it.release_date ?? null,
+        });
+      }
+    }
+    url = json.next ?? null;
+  }
+  return out;
+}
+
 type SpotifyAlbumApi = {
   id: string;
   name: string;
