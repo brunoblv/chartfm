@@ -1,11 +1,11 @@
 /**
- * BANG20 oficial 2008, abas conforme `_scan_bang20_doushite.py`:
- * garante nas paradas de romulolima22 que a faixa nos (weekIndex, posição) esperados
- * aponta para a Song canónica «Doushite kimi wo suki ni natte shimattandarou?» / «TVXQ!».
+ * BANG20 oficial (abas 2008, 2009): paradas de romulolima22 — posições da Doushite
+ * alinhadas com a Song canónica «Doushite kimi wo suki ni natte shimattandarou?» / «TVXQ!».
  *
  * Uso:
- *   npx tsx scripts/sync-bang20-doushite-romulo.ts --dry-run
- *   npx tsx scripts/sync-bang20-doushite-romulo.ts --apply
+ *   npx tsx scripts/sync-bang20-doushite-romulo.ts --year 2008 --dry-run
+ *   npx tsx scripts/sync-bang20-doushite-romulo.ts --year 2009 --apply
+ *   (se omitir --year, usa 2008)
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -17,8 +17,8 @@ const HANDLE = "romulolima22";
 const SHEET_TITLE = "Doushite kimi wo suki ni natte shimattandarou?";
 const SHEET_ARTIST = "TVXQ!";
 
-/** Linhas lidas do BANG20oficial.xlsx aba 2008 (ISO da semana de referência B col ≈ Domingo implícito no import). */
-const EXPECTED: readonly [weekIndex: number, position: number][] = [
+/** Aba 2008 — lidas do BANG20oficial.xlsx (`scripts/_bang20_scan_doushite_year.py 2008`). */
+const EXPECTED_2008: readonly [weekIndex: number, position: number][] = [
   [200829, 1],
   [200830, 1],
   [200831, 1],
@@ -45,7 +45,38 @@ const EXPECTED: readonly [weekIndex: number, position: number][] = [
   [200852, 10],
 ];
 
+/** Aba 2009 */
+const EXPECTED_2009: readonly [weekIndex: number, position: number][] = [
+  [200901, 15],
+  [200902, 16],
+  [200903, 17],
+  [200904, 18],
+  [200905, 20],
+  [200906, 18],
+];
+
+const BY_CALENDAR_YEAR: Record<number, readonly [number, number][]> = {
+  2008: EXPECTED_2008,
+  2009: EXPECTED_2009,
+};
+
+function parseCalendarYear(): number {
+  const i = process.argv.indexOf("--year");
+  if (i >= 0 && process.argv[i + 1]) {
+    const y = parseInt(process.argv[i + 1], 10);
+    if (!Number.isNaN(y) && BY_CALENDAR_YEAR[y]) return y;
+    if (!Number.isNaN(y)) {
+      console.error(`Ano não suportado: ${y}. Use: ${Object.keys(BY_CALENDAR_YEAR).join(", ")}`);
+      process.exit(1);
+    }
+  }
+  return 2008;
+}
+
 async function main() {
+  const year = parseCalendarYear();
+  const expected = BY_CALENDAR_YEAR[year];
+
   const dryRun = process.argv.includes("--dry-run");
   const apply = process.argv.includes("--apply");
   if ((!dryRun && !apply) || (dryRun && apply)) {
@@ -83,7 +114,7 @@ async function main() {
   };
   const rows: Row[] = [];
 
-  for (const [weekIndex, position] of EXPECTED) {
+  for (const [weekIndex, position] of expected) {
     const chart = await prisma.chart.findFirst({
       where: { userId: user.id, weekIndex },
       select: { id: true },
@@ -141,6 +172,7 @@ async function main() {
   console.log(
     JSON.stringify(
       {
+        bang20SheetYear: year,
         canonicalId: canonical.id,
         canonical: { title: canonical.title, artist: canonical.artist, spotifyId: canonical.spotifyId },
         counts: {

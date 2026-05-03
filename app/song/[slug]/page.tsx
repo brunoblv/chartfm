@@ -19,6 +19,14 @@ function songKey(title: string, artist: string): string {
   return `${title.trim().toLowerCase()}|${artist.trim().toLowerCase()}`;
 }
 
+/** Apenas o intervalo de datas (sem o sufixo "Semana …"). */
+function chartDateRangeOnly(chart: { weekLabel: string; dateRange: string }): string {
+  const full = formatChartPeriod(chart);
+  const marker = " - ";
+  const cut = full.lastIndexOf(marker);
+  return cut >= 0 ? full.slice(0, cut) : full;
+}
+
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);
   const me = session?.user?.id
@@ -68,6 +76,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
       coverSeed: true,
       chart: {
         select: {
+          id: true,
           weekIndex: true,
           userId: true,
           weekLabel: true,
@@ -206,9 +215,12 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     }
   }
 
+  const currentUserId = session?.user?.id ?? null;
+  const myEntries = currentUserId ? entries.filter((e) => e.chart.userId === currentUserId) : [];
+
   type WeekArrival = { weekIndex: number; period: string; debuts: number; returns: number };
   const arrivalsByWeek = new Map<number, WeekArrival>();
-  for (const e of entries) {
+  for (const e of myEntries) {
     if (e.status !== "new" && e.status !== "return") continue;
     const ch = e.chart;
     const period = formatChartPeriod({ weekLabel: ch.weekLabel, dateRange: ch.dateRange });
@@ -219,16 +231,14 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   }
   const arrivalWeeksSorted = [...arrivalsByWeek.values()].sort((a, b) => a.weekIndex - b.weekIndex);
 
-  const presenceByWeek = new Map<number, string>();
-  for (const e of entries) {
-    const ch = e.chart;
-    if (!presenceByWeek.has(ch.weekIndex)) {
-      presenceByWeek.set(ch.weekIndex, formatChartPeriod({ weekLabel: ch.weekLabel, dateRange: ch.dateRange }));
-    }
-  }
-  const presenceWeeksSorted = [...presenceByWeek.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([weekIndex, period]) => ({ weekIndex, period }));
+  const myAppearancesSorted = [...myEntries]
+    .sort((a, b) => a.chart.weekIndex - b.chart.weekIndex)
+    .map((e) => ({
+      chartId: e.chart.id,
+      position: e.position,
+      dateRange: chartDateRangeOnly({ weekLabel: e.chart.weekLabel, dateRange: e.chart.dateRange }),
+      year: Math.floor(e.chart.weekIndex / 100),
+    }));
 
   return (
     <Shell title="" noPadding>
@@ -303,11 +313,59 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
 
-        {hasChartPresence && arrivalWeeksSorted.length > 0 && (
+        {!currentUserId && (
+          <div style={{ marginTop: 20, padding: 16, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
+            <span style={{ color: "#1D1D1F", fontWeight: 600 }}>Suas paradas com esta música</span>
+            {" — "}
+            entre na sua conta para ver posição, datas e ano em cada semana em que você publicou esta faixa.
+          </div>
+        )}
+
+        {currentUserId && myAppearancesSorted.length > 0 && (
           <div style={{ marginTop: 20, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 18 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Datas de entrada</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Nas suas paradas</h2>
             <p style={{ fontSize: 13, color: "#86868B", marginBottom: 14, lineHeight: 1.45 }}>
-              Semanas em que a música entrou como estreia ou retorno nas paradas publicadas.
+              Cada linha é uma semana em que a música apareceu na sua parada publicada: posição na lista, intervalo da semana e ano.
+            </p>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 0 }}>
+              {myAppearancesSorted.map((row, i) => {
+                const last = i === myAppearancesSorted.length - 1;
+                return (
+                  <li
+                    key={row.chartId}
+                    style={{
+                      fontSize: 14,
+                      lineHeight: 1.45,
+                      paddingBottom: last ? 0 : 12,
+                      borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "8px 14px" }}>
+                      <span style={{ fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>#{row.position}</span>
+                      <span style={{ fontWeight: 600, color: "#1D1D1F" }}>{row.dateRange}</span>
+                      <span style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{row.year}</span>
+                      <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+                        Ver parada →
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {currentUserId && myAppearancesSorted.length === 0 && (
+          <div style={{ marginTop: 20, padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
+            Esta música ainda não aparece em nenhuma das suas paradas publicadas. Quando você votar com ela, a lista acima mostrará posição, data e ano de cada semana.
+          </div>
+        )}
+
+        {currentUserId && myAppearancesSorted.length > 0 && arrivalWeeksSorted.length > 0 && (
+          <div style={{ marginTop: 20, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 18 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Suas datas de entrada</h2>
+            <p style={{ fontSize: 13, color: "#86868B", marginBottom: 14, lineHeight: 1.45 }}>
+              Semanas em que a música entrou na sua parada como estreia ou retorno.
             </p>
             <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 0 }}>
               {arrivalWeeksSorted.map((row, i) => {
@@ -327,35 +385,6 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
                   >
                     <div style={{ fontWeight: 600, color: "#1D1D1F" }}>{row.period}</div>
                     {parts.length > 0 && <div style={{ fontSize: 12, color: "#86868B", marginTop: 4 }}>{parts.join(" · ")}</div>}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-
-        {hasChartPresence && arrivalWeeksSorted.length === 0 && presenceWeeksSorted.length > 0 && (
-          <div style={{ marginTop: 20, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 18 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Semanas em paradas</h2>
-            <p style={{ fontSize: 13, color: "#86868B", marginBottom: 14, lineHeight: 1.45 }}>
-              Não há registro de estreia ou retorno nestes dados. Abaixo, todas as semanas em que a música apareceu em paradas publicadas.
-            </p>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 0 }}>
-              {presenceWeeksSorted.map((row, i) => {
-                const last = i === presenceWeeksSorted.length - 1;
-                return (
-                  <li
-                    key={row.weekIndex}
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "#1D1D1F",
-                      lineHeight: 1.45,
-                      paddingBottom: last ? 0 : 12,
-                      borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.06)",
-                    }}
-                  >
-                    {row.period}
                   </li>
                 );
               })}
