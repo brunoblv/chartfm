@@ -128,22 +128,34 @@ export function parseAlbumSlug(slug: string): ParsedAlbumSlug | null {
 
 export type ParsedArtistSlug =
   | { type: "dbId"; artistId: number }
-  | { type: "spotify"; spotifyId: string }
+  /** `nameSlug` = trecho após `spotifyId_` no path (para título e fallback de match por nome). */
+  | { type: "spotify"; spotifyId: string; nameSlug?: string }
   | { type: "slug"; name: string };
 
 export function parseArtistSlug(slug: string): ParsedArtistSlug {
   const trimmed = slug.trim();
   if (isPositiveIntId(trimmed)) return { type: "dbId", artistId: Number(trimmed) };
-  const sep = slug.indexOf("_");
+  const sep = trimmed.indexOf("_");
   if (sep !== -1) {
-    const prefix = slug.slice(0, sep);
-    if (isSpotifyId(prefix)) return { type: "spotify", spotifyId: prefix };
+    const prefix = trimmed.slice(0, sep);
+    if (isSpotifyId(prefix)) {
+      const rawSuffix = trimmed.slice(sep + 1);
+      let nameSlug: string | undefined;
+      if (rawSuffix) {
+        try {
+          nameSlug = decodeURIComponent(rawSuffix);
+        } catch {
+          nameSlug = rawSuffix;
+        }
+      }
+      return nameSlug ? { type: "spotify", spotifyId: prefix, nameSlug } : { type: "spotify", spotifyId: prefix };
+    }
   }
   // Fallback: encoded name (decodeURIComponent preserves original name exactly)
   try {
-    const name = decodeURIComponent(slug);
+    const name = decodeURIComponent(trimmed);
     return { type: "slug", name };
   } catch {
-    return { type: "slug", name: slug };
+    return { type: "slug", name: trimmed };
   }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, Play, Star } from "lucide-react";
+import type { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { buildWeekIndexFromDate, getPreviousClosedWeekDate } from "@/lib/chart-week";
@@ -10,6 +11,7 @@ import { COVER_PALETTES } from "@/lib/data";
 import { buildSongPath, parseArtistSlug, buildAlbumPath } from "@/lib/music-routes";
 import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { getSpotifyArtistById } from "@/lib/spotify-server";
 
 function artistColor(name: string): [string, string] {
   let hash = 0;
@@ -105,18 +107,65 @@ export default async function ArtistPage({
           : { name: { equals: parsed.name, mode: "insensitive" } },
     select: { id: true, spotifyId: true, name: true, exhibitionName: true, imageUrl: true, spotifyUrl: true },
   });
-  const requestedName = parsed.type === "slug" ? parsed.name : (artistRef?.name ?? "");
-  const canonicalDbName = artistRef?.name ?? requestedName;
-  const canonicalName = artistRef?.exhibitionName?.trim() || canonicalDbName;
+
+  /** Perfil Spotify quando não há linha em `Artist` (evita URL vazia na query e melhora o hero). */
+  const spotifyProfile =
+    !artistRef && parsed.type === "spotify" ? await getSpotifyArtistById(parsed.spotifyId) : null;
+
+  const slugNameHint =
+    parsed.type === "spotify" && parsed.nameSlug?.trim()
+      ? parsed.nameSlug.replace(/-/g, " ").replace(/\s+/g, " ").trim()
+      : "";
+
+  const entryOrFilters: Prisma.ChartEntryWhereInput[] = [];
+  const spotifyIdsForSong = new Set<string>();
+  if (parsed.type === "spotify") spotifyIdsForSong.add(parsed.spotifyId);
+  if (artistRef?.spotifyId) spotifyIdsForSong.add(artistRef.spotifyId);
+  for (const sid of spotifyIdsForSong) {
+    entryOrFilters.push({ song: { artistSpotifyId: sid } });
+  }
+  const nameCandidates = new Set<string>();
+  if (parsed.type === "slug") nameCandidates.add(parsed.name.trim());
+  if (artistRef?.name?.trim()) nameCandidates.add(artistRef.name.trim());
+  if (slugNameHint) nameCandidates.add(slugNameHint);
+  if (spotifyProfile?.name?.trim()) nameCandidates.add(spotifyProfile.name.trim());
+  for (const n of nameCandidates) {
+    if (n) entryOrFilters.push({ song: { artist: { equals: n, mode: "insensitive" } } });
+  }
+
+  if (entryOrFilters.length === 0) {
+    return (
+      <Shell title="Artista" subtitle="Não encontrado">
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para este artista.</p>
+          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+            ← Voltar para descobrir
+          </Link>
+        </div>
+      </Shell>
+    );
+  }
+
+  const canonicalDbName =
+    artistRef?.name?.trim() ||
+    (parsed.type === "slug" ? parsed.name.trim() : "") ||
+    spotifyProfile?.name?.trim() ||
+    slugNameHint ||
+    "";
+  const canonicalName =
+    artistRef?.exhibitionName?.trim() ||
+    artistRef?.name ||
+    spotifyProfile?.name ||
+    (parsed.type === "slug" ? parsed.name : "") ||
+    slugNameHint ||
+    canonicalDbName ||
+    "Artista";
   const palette = artistColor(canonicalName);
 
   const allEntries = await prisma.chartEntry.findMany({
     where: {
       chart: { isPublished: true },
-      OR: [
-        ...(artistRef?.spotifyId ? [{ song: { artistSpotifyId: artistRef.spotifyId } }] : []),
-        { song: { artist: { equals: canonicalDbName, mode: "insensitive" } } },
-      ],
+      OR: entryOrFilters,
     },
     select: {
       position: true,
@@ -382,8 +431,8 @@ export default async function ArtistPage({
         <div style={{ display: "flex", gap: 40, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div style={{
             width: 200, height: 200, borderRadius: "50%", flexShrink: 0,
-            background: artistRef?.imageUrl
-              ? `url(${artistRef.imageUrl}) center/cover no-repeat`
+            background: (artistRef?.imageUrl ?? spotifyProfile?.imageUrl)
+              ? `url(${artistRef?.imageUrl ?? spotifyProfile?.imageUrl}) center/cover no-repeat`
               : `radial-gradient(circle at 30% 30%, ${palette[1]}, ${palette[0]})`,
             boxShadow: "0 16px 40px rgba(0,0,0,0.3)",
           }} />
@@ -397,7 +446,7 @@ export default async function ArtistPage({
               <span><strong>{totalPoints}</strong> pontos</span>
             </div>
             <a
-              href={artistRef?.spotifyUrl ?? `https://open.spotify.com/search/${encodeURIComponent(canonicalName)}`}
+              href={artistRef?.spotifyUrl ?? spotifyProfile?.spotifyUrl ?? `https://open.spotify.com/search/${encodeURIComponent(canonicalName)}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "white", color: palette[0], padding: "12px 24px", borderRadius: 100, fontSize: 14, fontWeight: 700, textDecoration: "none" }}
