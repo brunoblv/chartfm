@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
-import { buildSongPath } from "@/lib/music-routes";
+import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { getRankingWeekReference } from "@/lib/chart-week";
 
 const GENRES = [
@@ -63,7 +63,8 @@ export default async function DiscoverGenrePage({
           title: true,
           artist: true,
           spotifyId: true,
-          artistRef: { select: { name: true, genres: true } },
+          artistSpotifyId: true,
+          artistRef: { select: { id: true, spotifyId: true, name: true, genres: true } },
         },
       },
     },
@@ -74,7 +75,10 @@ export default async function DiscoverGenrePage({
     {
       title: string;
       artist: string;
+      slugArtist: string;
       spotifyId: string | null;
+      artistSpotifyId: string | null;
+      artistRefId: number | null;
       points: number;
       users: Set<string>;
     }
@@ -90,7 +94,10 @@ export default async function DiscoverGenrePage({
     const current = bySong.get(key) ?? {
       title,
       artist: artistName,
+      slugArtist: row.song.artist.trim(),
       spotifyId: row.song.spotifyId ?? null,
+      artistSpotifyId: row.song.artistSpotifyId ?? row.song.artistRef?.spotifyId ?? null,
+      artistRefId: row.song.artistRef?.id ?? null,
       points: 0,
       users: new Set<string>(),
     };
@@ -123,9 +130,8 @@ export default async function DiscoverGenrePage({
       ) : (
         <div style={{ display: "grid", gap: 8 }}>
           {songs.map((song, idx) => (
-            <Link
+            <div
               key={`${song.title}-${song.artist}-${idx}`}
-              href={buildSongPath({ title: song.title, artist: song.artist, spotifyId: song.spotifyId })}
               style={{
                 display: "grid",
                 gridTemplateColumns: "40px 1fr auto auto",
@@ -135,17 +141,26 @@ export default async function DiscoverGenrePage({
                 border: "1px solid rgba(0,0,0,0.06)",
                 borderRadius: 12,
                 padding: "12px 14px",
-                textDecoration: "none",
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 700, color: "#86868B" }}>#{idx + 1}</div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1D1D1F" }}>{song.title}</div>
-                <div style={{ fontSize: 12, color: "#86868B" }}>{song.artist}</div>
+              <div style={{ minWidth: 0 }}>
+                <Link
+                  href={buildSongPath({ title: song.title, artist: song.artist, slugArtist: song.slugArtist, spotifyId: song.spotifyId })}
+                  style={{ display: "block", fontSize: 14, fontWeight: 700, color: "#1D1D1F", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                >
+                  {song.title}
+                </Link>
+                <Link
+                  href={buildArtistPath(song.artist, song.artistSpotifyId, song.artistRefId)}
+                  style={{ display: "block", fontSize: 12, color: "#86868B", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}
+                >
+                  {song.artist}
+                </Link>
               </div>
               <div style={{ fontSize: 12, color: "#86868B", fontWeight: 600 }}>{song.users.size} usuários</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#FA243C" }}>{song.points} pts</div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

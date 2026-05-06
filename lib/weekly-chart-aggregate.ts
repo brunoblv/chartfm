@@ -13,10 +13,10 @@ export type WeeklyChartEntryRow = {
     title: string;
     artist: string;
     album: string | null;
-    albumRef?: { coverUrl?: string | null } | null;
+    albumRef?: { id?: number | null; coverUrl?: string | null } | null;
     spotifyId: string | null;
     artistSpotifyId: string | null;
-    artistRef: { spotifyId: string; name: string } | null;
+    artistRef: { spotifyId: string; name: string; id?: number | null } | null;
     feats?: Array<{ artist: { spotifyId: string; name: string } }>;
   };
 };
@@ -267,10 +267,13 @@ export function aggregateGlobalSongs(
     const song: Song = {
       id: s.id,
       title: s.title,
-      artist: s.artist,
+      artist: artistDisplayName(s),
+      slugArtist: s.artist,
       album: s.album ?? "",
       spotifyId: s.spotifyId ?? null,
       artistSpotifyId: s.artistSpotifyId ?? null,
+      artistRefId: s.artistRef?.id ?? null,
+      albumRefId: s.albumRef?.id ?? null,
       imageUrl: manualCover,
     };
     return {

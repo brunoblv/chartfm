@@ -12,7 +12,9 @@ import { FollowButton } from "@/components/ui/FollowButton";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { Cover } from "@/components/ui/Cover";
 import { USERS_DATA, COVER_PALETTES } from "@/lib/data";
-import type { Chart, UserWithCharts } from "@/lib/types";
+import type { Chart, Song, UserWithCharts } from "@/lib/types";
+import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
+import { formatSongArtist } from "@/lib/song-artist";
 
 type Tab = "charts" | "artists_overall" | "artists_year" | "songs_overall" | "songs_year" | "evolution";
 
@@ -908,7 +910,7 @@ function EvolutionChart({ user }: { user: UserWithCharts }) {
     );
   }
 
-  const top5 = latest.entries.slice(0, 5).map((e) => e.song);
+  const top5: Song[] = latest.entries.slice(0, 5).map((e) => e.song);
 
   const denom = Math.max(1, weekCount - 1);
   const xFor = (i: number) => pad.left + (i / denom) * chartW;
@@ -970,10 +972,14 @@ function EvolutionChart({ user }: { user: UserWithCharts }) {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
         {top5.map((song, si) => (
-          <div key={si} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 12, height: 12, borderRadius: 3, background: colors[si] }} />
-            <span style={{ fontSize: 13, fontWeight: 500 }}>{song.title}</span>
-            <span style={{ fontSize: 12, color: "#86868B" }}>· {song.artist}</span>
+          <div key={si} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ width: 12, height: 12, borderRadius: 3, background: colors[si], flexShrink: 0 }} />
+            <Link href={buildSongPath(song)} style={{ fontSize: 13, fontWeight: 500, color: "#1D1D1F", textDecoration: "none" }}>
+              {song.title}
+            </Link>
+            <Link href={buildArtistPath(song.artist, song.artistSpotifyId, song.artistRefId)} style={{ fontSize: 12, color: "#86868B", textDecoration: "none" }}>
+              · {formatSongArtist(song)}
+            </Link>
           </div>
         ))}
       </div>

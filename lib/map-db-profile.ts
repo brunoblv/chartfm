@@ -38,10 +38,10 @@ type PrismaProfileUser = {
         exhibitionName?: string | null;
         artist: string;
         album: string | null;
-        albumRef?: { coverUrl?: string | null } | null;
+        albumRef?: { id?: number; coverUrl?: string | null } | null;
         spotifyId?: string | null;
         artistSpotifyId?: string | null;
-        artistRef?: { name: string } | null;
+        artistRef?: { id?: number; name: string } | null;
         feats?: Array<{ artist: { name: string } }>;
       };
     }>;
@@ -78,10 +78,10 @@ type PrismaChartRow = {
       exhibitionName?: string | null;
       artist: string;
       album: string | null;
-      albumRef?: { coverUrl?: string | null } | null;
+      albumRef?: { id?: number; coverUrl?: string | null } | null;
       spotifyId?: string | null;
       artistSpotifyId?: string | null;
-      artistRef?: { name: string } | null;
+      artistRef?: { id?: number; name: string } | null;
       feats?: Array<{ artist: { name: string } }>;
     };
   }>;
@@ -109,6 +109,8 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
         album: e.song.album ?? "",
         spotifyId: e.song.spotifyId ?? null,
         artistSpotifyId: e.song.artistSpotifyId ?? null,
+        artistRefId: e.song.artistRef?.id ?? null,
+        albumRefId: e.song.albumRef?.id ?? null,
         imageUrl: img,
       },
       cover: {

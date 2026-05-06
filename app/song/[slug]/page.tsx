@@ -7,7 +7,7 @@ import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { parseSongSlug, buildArtistPath } from "@/lib/music-routes";
+import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { formatChartPeriod } from "@/lib/chart-week";
 
@@ -88,7 +88,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           title: true,
           artist: true,
           album: true,
-          albumRef: { select: { coverUrl: true } },
+          albumRef: { select: { id: true, coverUrl: true } },
           spotifyId: true,
           artistSpotifyId: true,
           artistRef: { select: { id: true } },
@@ -105,7 +105,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         title: true,
         artist: true,
         album: true,
-        albumRef: { select: { coverUrl: true } },
+        albumRef: { select: { id: true, coverUrl: true } },
         spotifyId: true,
         artistSpotifyId: true,
         artistRef: { select: { id: true } },
@@ -132,6 +132,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const spotifyId = songRow.spotifyId;
   const artistSpotifyId = songRow.artistSpotifyId;
   const artistDbId = songRow.artistRef?.id ?? null;
+  const albumDbId = songRow.albumRef?.id ?? null;
   const coverImageUrl = songRow.albumRef?.coverUrl?.trim() || null;
   const paletteA = first?.coverPaletteA ?? "#FA243C";
   const paletteB = first?.coverPaletteB ?? "#FFE66D";
@@ -254,7 +255,14 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             <Link href={buildArtistPath(artist, artistSpotifyId, artistDbId)} style={{ display: "inline-block", marginTop: 8, fontSize: 16, fontWeight: 600, color: "#1D1D1F", textDecoration: "none" }}>
               {artist}
             </Link>
-            {album && <div style={{ fontSize: 14, color: "#86868B", marginTop: 6 }}>{album}</div>}
+            {album.trim() ? (
+              <Link
+                href={buildAlbumPath(album.trim(), artist, { artistId: artistDbId, albumId: albumDbId })}
+                style={{ display: "inline-block", fontSize: 14, color: "#86868B", marginTop: 6, textDecoration: "none" }}
+              >
+                {album}
+              </Link>
+            ) : null}
             {spotifyId && (
               <a
                 href={`https://open.spotify.com/track/${spotifyId}`}

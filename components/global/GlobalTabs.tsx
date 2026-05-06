@@ -11,7 +11,17 @@ import Link from "next/link";
 
 type SongEntry = {
   position: number;
-  song: { title: string; artist: string; album?: string | null; spotifyId?: string | null; artistSpotifyId?: string | null };
+  song: {
+    id?: string | null;
+    title: string;
+    artist: string;
+    slugArtist?: string | null;
+    album?: string | null;
+    spotifyId?: string | null;
+    artistSpotifyId?: string | null;
+    artistRefId?: number | null;
+    featArtists?: string[];
+  };
   cover: CoverData;
   status: "new" | "return" | "up" | "down" | "same";
   delta?: number | null;
@@ -214,9 +224,9 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
           }}>
             {e.position}
           </div>
-          <div style={{ padding: "6px 8px" }}>
+          <Link href={buildSongPath(e.song)} style={{ padding: "6px 8px", lineHeight: 0 }}>
             <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={coverSize} rounded={isLarge ? 14 : 10} />
-          </div>
+          </Link>
           <div style={{ padding: "0 8px" }}>
             <MovementBadge status={e.status} delta={e.delta} />
           </div>
@@ -224,7 +234,7 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
             <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: titleSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "inherit", textDecoration: "none" }}>
               {e.song.title}
             </Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: artistSize, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: artistSize, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
           </div>
           <div style={{ fontSize: valueSize, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.prevPos ?? "—"}

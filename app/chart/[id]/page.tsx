@@ -14,7 +14,7 @@ import { MovementBadge } from "@/components/ui/MovementBadge";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
-import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
+import { buildAlbumPath, buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, TimelineItem, User } from "@/lib/types";
@@ -509,14 +509,18 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
             <div style={{ fontSize: e.position <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12 }}>
               {e.position}
             </div>
-            <div style={{ padding: "4px 8px 4px 0" }}>
+            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
               <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
-            </div>
+            </Link>
             <div style={{ padding: "0 8px" }}><MovementBadge status={e.status} delta={e.delta} /></div>
             <div style={{ minWidth: 0, padding: "0 12px" }}>
               <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
-              <div style={{ fontSize: 11, color: "#86868B" }}>{e.song.album}</div>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+              {e.song.album?.trim() ? (
+                <Link href={buildAlbumPath(e.song.album.trim(), e.song.artist, { artistId: e.song.artistRefId, albumId: e.song.albumRefId })} style={{ display: "block", fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                  {e.song.album}
+                </Link>
+              ) : null}
             </div>
             <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {e.prevPos ?? "—"}
@@ -546,7 +550,9 @@ function GridVariant({ entries }: { entries: ChartEntry[] }) {
       {entries.map((e) => (
         <div key={e.position} style={{ borderRadius: 14, overflow: "hidden", background: "white", border: "1px solid rgba(0,0,0,0.06)" }}>
           <div style={{ position: "relative", aspectRatio: "1" }}>
-            <Cover cover={e.cover} song={e.song} size={0} rounded={0} style={{ width: "100%", minHeight: 180 }} />
+            <Link href={buildSongPath(e.song)} style={{ display: "block", lineHeight: 0 }}>
+              <Cover cover={e.cover} song={e.song} size={0} rounded={0} style={{ width: "100%", minHeight: 180 }} />
+            </Link>
             <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", color: "white", fontSize: 14, fontWeight: 700, padding: "3px 8px", borderRadius: 6, fontVariantNumeric: "tabular-nums" }}>
               #{e.position}
             </div>
@@ -556,7 +562,7 @@ function GridVariant({ entries }: { entries: ChartEntry[] }) {
           </div>
           <div style={{ padding: "10px 12px" }}>
             <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
             <div style={{ fontSize: 11, color: "#86868B", marginTop: 4 }}>Pico #{e.peak} · {e.weeks} sem.</div>
           </div>
         </div>
@@ -588,7 +594,9 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
             }}
           >
             <div style={{ position: "relative" }}>
-              <Cover cover={e.cover} song={e.song} size={160} rounded={16} style={{ boxShadow: "0 12px 30px rgba(0,0,0,0.18)" }} />
+              <Link href={buildSongPath(e.song)} style={{ display: "block", lineHeight: 0 }}>
+                <Cover cover={e.cover} song={e.song} size={160} rounded={16} style={{ boxShadow: "0 12px 30px rgba(0,0,0,0.18)" }} />
+              </Link>
               <div style={{
                 position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)",
                 width: 36, height: 36, borderRadius: "50%",
@@ -602,7 +610,7 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
             </div>
             <div style={{ textAlign: "center", maxWidth: 160 }}>
               <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 12, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
             </div>
           </div>
         ))}

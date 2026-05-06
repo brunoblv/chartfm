@@ -135,9 +135,10 @@ async function getTimelineFeed(
               title: true,
               artist: true,
               album: true,
-              albumRef: { select: { coverUrl: true } },
+              albumRef: { select: { id: true, coverUrl: true } },
               spotifyId: true,
               artistSpotifyId: true,
+              artistRef: { select: { id: true, name: true } },
             },
           },
         },
@@ -189,10 +190,13 @@ async function getTimelineFeed(
         song: {
           id: e.song.id,
           title: e.song.title,
-          artist: e.song.artist,
+          artist: e.song.artistRef?.name?.trim() || e.song.artist,
+          slugArtist: e.song.artist,
           album: e.song.album ?? "",
           spotifyId: e.song.spotifyId ?? null,
           artistSpotifyId: e.song.artistSpotifyId ?? null,
+          artistRefId: e.song.artistRef?.id ?? null,
+          albumRefId: e.song.albumRef?.id ?? null,
           imageUrl: e.song.albumRef?.coverUrl?.trim() || null,
         },
       })),
@@ -436,10 +440,12 @@ function GlobalTeaser({
         {top3.map((e) => (
           <div key={e.position} style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <PositionNumber n={e.position} size={14} />
-            <Cover cover={e.cover} song={e.song} size={36} rounded={6} />
+            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+              <Cover cover={e.cover} song={e.song} size={36} rounded={6} />
+            </Link>
             <div style={{ minWidth: 0, flex: 1 }}>
               <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId)} style={{ display: "block", fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
             </div>
           </div>
         ))}
@@ -547,10 +553,10 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
           title: true,
           artist: true,
           album: true,
-          albumRef: { select: { coverUrl: true } },
+          albumRef: { select: { id: true, coverUrl: true } },
           spotifyId: true,
           artistSpotifyId: true,
-          artistRef: { select: { spotifyId: true, name: true } },
+          artistRef: { select: { id: true, spotifyId: true, name: true } },
         },
       },
     },
@@ -613,10 +619,10 @@ async function getGlobalTopSongs(weekIdx: number, limit = 3) {
           title: true,
           artist: true,
           album: true,
-          albumRef: { select: { coverUrl: true } },
+          albumRef: { select: { id: true, coverUrl: true } },
           spotifyId: true,
           artistSpotifyId: true,
-          artistRef: { select: { spotifyId: true, name: true } },
+          artistRef: { select: { id: true, spotifyId: true, name: true } },
         },
       },
     },

@@ -85,10 +85,10 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
           song: {
             include: {
               albumRef: {
-                select: { coverUrl: true },
+                select: { id: true, coverUrl: true },
               },
               artistRef: {
-                select: { name: true },
+                select: { id: true, name: true },
               },
               feats: {
                 include: {

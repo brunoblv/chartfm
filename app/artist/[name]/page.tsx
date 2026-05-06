@@ -50,6 +50,7 @@ type SongRow = {
   dbArtist: string;
   title: string;
   album: string;
+  albumRefId: number | null;
   points: number;
   cover: { palette: [string, string]; seed: number; imageUrl?: string | null };
   weeks: number;
@@ -65,6 +66,7 @@ type UserSongRow = {
   dbArtist: string;
   title: string;
   album: string;
+  albumRefId: number | null;
   userPoints: number;
   appearances: number;
   bestPosition: number;
@@ -228,6 +230,7 @@ export default async function ArtistPage({
       dbArtist: e.song.artist,
       title: e.song.title,
       album: e.song.album ?? "",
+      albumRefId: e.song.albumRef?.id ?? null,
       points: 0,
       weeks: 0,
       peak: 9999,
@@ -241,6 +244,7 @@ export default async function ArtistPage({
     };
     cur.points += pts;
     if (manual) cur.cover = { ...cur.cover, imageUrl: manual };
+    if (cur.albumRefId == null && e.song.albumRef?.id != null) cur.albumRefId = e.song.albumRef.id;
     songsMap.set(key, cur);
   }
 
@@ -341,6 +345,7 @@ export default async function ArtistPage({
       dbArtist: e.song.artist,
       title: e.song.title,
       album: e.song.album ?? "",
+      albumRefId: e.song.albumRef?.id ?? null,
       userPoints: 0,
       appearances: 0,
       bestPosition: 9999,
@@ -354,6 +359,7 @@ export default async function ArtistPage({
     cur.appearances += 1;
     cur.bestPosition = Math.min(cur.bestPosition, e.position);
     if (manual) cur.cover = { ...cur.cover, imageUrl: manual };
+    if (cur.albumRefId == null && e.song.albumRef?.id != null) cur.albumRefId = e.song.albumRef.id;
     userSongsMap.set(key, cur);
   }
   const userSongs = [...userSongsMap.values()].sort((a, b) => b.userPoints - a.userPoints);
@@ -555,7 +561,11 @@ export default async function ArtistPage({
                             <Link href={buildSongPath({ title: s.title, artist: canonicalName, id: s.songId, artistId: artistRef?.id, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
                               {s.title}
                             </Link>
-                            <div style={{ fontSize: 12, color: "#86868B" }}>{s.album}</div>
+                            {s.album.trim() ? (
+                              <Link href={buildAlbumPath(s.album.trim(), canonicalName, { artistId: artistRef?.id, albumId: s.albumRefId })} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                                {s.album}
+                              </Link>
+                            ) : null}
                           </div>
                           <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.points}</div>
                           <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
@@ -576,7 +586,11 @@ export default async function ArtistPage({
                             <Link href={buildSongPath({ title: s.title, artist: canonicalName, id: s.songId, artistId: artistRef?.id, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
                               {s.title}
                             </Link>
-                            <div style={{ fontSize: 12, color: "#86868B" }}>{s.album}</div>
+                            {s.album.trim() ? (
+                              <Link href={buildAlbumPath(s.album.trim(), canonicalName, { artistId: artistRef?.id, albumId: s.albumRefId })} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                                {s.album}
+                              </Link>
+                            ) : null}
                           </div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.userPoints}</div>
                           <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.appearances}</div>

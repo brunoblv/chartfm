@@ -33,6 +33,10 @@ export interface Song {
   album: string;
   spotifyId?: string | null;
   artistSpotifyId?: string | null;
+  /** ID em `artists` (links `/artist/{id}`) quando a faixa está ligada a `Artist`. */
+  artistRefId?: number | null;
+  /** ID em `albums` (links `/album/{artistId}_{albumId}`) quando a faixa está ligada a `Album`. */
+  albumRefId?: number | null;
   /** URL da capa (normalmente `Album.coverUrl` carregada na query) */
   imageUrl?: string | null;
   /** Página da faixa no Last.fm (busca fallback) */

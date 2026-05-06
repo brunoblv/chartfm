@@ -125,7 +125,7 @@ export function ChartCard({
             >
               <PositionNumber n={entry.position} size={18} />
             </Link>
-            <Link href={`/chart/${chart.id}`} prefetch={false} style={{ textDecoration: "none", color: "inherit", lineHeight: 0 }}>
+            <Link href={buildSongPath(entry.song)} prefetch={false} style={{ textDecoration: "none", color: "inherit", lineHeight: 0 }}>
               <Cover cover={entry.cover} song={entry.song} size={44} rounded={8} />
             </Link>
             <div style={{ minWidth: 0 }}>
@@ -147,7 +147,7 @@ export function ChartCard({
                 {entry.song.title}
               </Link>
               <Link
-                href={buildArtistPath(entry.song.artist, entry.song.artistSpotifyId)}
+                href={buildArtistPath(entry.song.artist, entry.song.artistSpotifyId, entry.song.artistRefId)}
                 prefetch={false}
                 style={{
                   display: "block",

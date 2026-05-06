@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { getServerSession } from "next-auth";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -15,6 +16,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4600084865044867"
+          strategy="beforeInteractive"
+          crossOrigin="anonymous"
+        />
         <Providers session={session}>{children}</Providers>
       </body>
     </html>

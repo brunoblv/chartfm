@@ -79,11 +79,11 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
                 exhibitionName: true,
                 artist: true,
                 album: true,
-                albumRef: { select: { coverUrl: true } },
+                albumRef: { select: { id: true, coverUrl: true } },
                 spotifyId: true,
                 artistSpotifyId: true,
                 artistRef: {
-                  select: { name: true },
+                  select: { id: true, name: true },
                 },
                 feats: {
                   select: {
