@@ -92,7 +92,6 @@ async function hydrateSongCovers(entries: GlobalSongLike[]): Promise<GlobalSongL
     select: {
       id: true,
       spotifyId: true,
-      coverImageUrl: true,
       albumRef: { select: { coverUrl: true } },
     },
   });
@@ -103,7 +102,7 @@ async function hydrateSongCovers(entries: GlobalSongLike[]): Promise<GlobalSongL
     const refById = entry.song.id ? byId.get(entry.song.id) : undefined;
     const refBySpotifyId = entry.song.spotifyId ? bySpotifyId.get(entry.song.spotifyId) : undefined;
     const ref = refById ?? refBySpotifyId;
-    const imageUrl = ref?.albumRef?.coverUrl?.trim() || ref?.coverImageUrl?.trim() || null;
+    const imageUrl = ref?.albumRef?.coverUrl?.trim() || null;
     return {
       ...entry,
       song: { ...entry.song, imageUrl },

@@ -79,7 +79,6 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
                 exhibitionName: true,
                 artist: true,
                 album: true,
-                coverImageUrl: true,
                 albumRef: { select: { coverUrl: true } },
                 spotifyId: true,
                 artistSpotifyId: true,

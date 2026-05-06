@@ -58,13 +58,11 @@ async function main() {
       album: ALBUM_TITLE,
       artistSpotifyId,
       albumSpotifyId,
-      coverImageUrl: COVER_PUBLIC_PATH,
     },
     update: {
       album: ALBUM_TITLE,
       artistSpotifyId,
       albumSpotifyId,
-      coverImageUrl: COVER_PUBLIC_PATH,
     },
     select: {
       id: true,
@@ -74,7 +72,6 @@ async function main() {
       spotifyId: true,
       artistSpotifyId: true,
       albumSpotifyId: true,
-      coverImageUrl: true,
     },
   });
 

@@ -38,7 +38,6 @@ type PrismaProfileUser = {
         exhibitionName?: string | null;
         artist: string;
         album: string | null;
-        coverImageUrl?: string | null;
         albumRef?: { coverUrl?: string | null } | null;
         spotifyId?: string | null;
         artistSpotifyId?: string | null;
@@ -79,7 +78,6 @@ type PrismaChartRow = {
       exhibitionName?: string | null;
       artist: string;
       album: string | null;
-      coverImageUrl?: string | null;
       albumRef?: { coverUrl?: string | null } | null;
       spotifyId?: string | null;
       artistSpotifyId?: string | null;
@@ -99,7 +97,7 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
     comments: c.comments,
     reposts: c.reposts,
     entries: c.entries.map((e) => {
-      const img = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
+      const img = e.song.albumRef?.coverUrl?.trim() || null;
       return {
       position: e.position,
       song: {

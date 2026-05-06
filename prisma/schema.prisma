@@ -103,8 +103,6 @@ model Song {
   exhibitionName String? @map("exhibition_name")
   artist  String
   album   String?
-  /// Capa manual (URL absoluta ou path /covers/... em public) quando não há arte no Spotify
-  coverImageUrl String? @map("cover_image_url")
   entries ChartEntry[]
   spotifyId       String?      @unique @map("spotify_id")
   artistSpotifyId String?      @map("artist_spotify_id")

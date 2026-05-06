@@ -1,4 +1,3 @@
-import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getSpotifyArtistById, type SpotifyTrackMetadata } from "./spotify-server";
 
@@ -25,7 +24,6 @@ export async function applySpotifyMetadataToSong(
       title: true,
       artist: true,
       album: true,
-      coverImageUrl: true,
       spotifyId: true,
     },
   });
@@ -92,10 +90,6 @@ export async function applySpotifyMetadataToSong(
   }
 
   const albumName = owner.album?.trim() ? owner.album : (meta.album.title ?? null);
-  const coverPatch: Prisma.SongUncheckedUpdateInput = {};
-  if (!owner.coverImageUrl?.trim() && meta.album.coverUrl?.trim()) {
-    coverPatch.coverImageUrl = meta.album.coverUrl;
-  }
 
   await prisma.song.update({
     where: { id: localSongId },
@@ -108,7 +102,6 @@ export async function applySpotifyMetadataToSong(
       previewUrl: meta.previewUrl ?? undefined,
       spotifyUrl: meta.spotifyUrl ?? undefined,
       trackNumber: meta.trackNumber ?? undefined,
-      ...coverPatch,
     },
   });
 

@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -36,23 +37,37 @@ async function main() {
     title: { equals: title, mode: "insensitive" as const },
   }));
 
-  const r = await prisma.song.updateMany({
-    where: {
-      artist: ARTIST,
-      OR: [
-        { album: { contains: "Mirotic", mode: "insensitive" } },
-        { album: { contains: "MIROTIC", mode: "insensitive" } },
-        { album: { contains: "Fourth Album", mode: "insensitive" } },
-        { title: { contains: "mirotic", mode: "insensitive" } },
-        ...titleOr,
-      ],
-    },
-    data: {
-      coverImageUrl: COVER,
-      album: ALBUM,
-    },
+  const whereSong: Prisma.SongWhereInput = {
+    artist: ARTIST,
+    OR: [
+      { album: { contains: "Mirotic", mode: "insensitive" } },
+      { album: { contains: "MIROTIC", mode: "insensitive" } },
+      { album: { contains: "Fourth Album", mode: "insensitive" } },
+      { title: { contains: "mirotic", mode: "insensitive" } },
+      ...titleOr,
+    ],
+  };
+
+  const songs = await prisma.song.findMany({
+    where: whereSong,
+    select: { albumSpotifyId: true },
   });
-  console.log("songs_updated", r.count);
+  const ids = [...new Set(songs.map((s) => s.albumSpotifyId).filter((id): id is string => Boolean(id?.trim())))];
+
+  let albums = 0;
+  for (const spotifyId of ids) {
+    const r = await prisma.album.updateMany({
+      where: { spotifyId },
+      data: { coverUrl: COVER },
+    });
+    albums += r.count;
+  }
+
+  const titles = await prisma.song.updateMany({
+    where: whereSong,
+    data: { album: ALBUM },
+  });
+  console.log(JSON.stringify({ albums_updated: albums, songs_title_updated: titles.count, album_spotify_ids: ids.length }));
 }
 
 main()

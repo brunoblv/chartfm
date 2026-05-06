@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ album
 
   await prisma.song.updateMany({
     where: { OR: [{ albumSpotifyId: existing.spotifyId }, { albumSpotifyId: spotifyId }] },
-    data: { album: title, ...(coverUrl ? { coverImageUrl: coverUrl } : {}) },
+    data: { album: title },
   });
 
   return NextResponse.json({ album });

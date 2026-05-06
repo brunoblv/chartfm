@@ -118,7 +118,6 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
               artist: true,
               album: true,
               spotifyId: true,
-              coverImageUrl: true,
               albumRef: { select: { coverUrl: true } },
             },
           })
@@ -136,7 +135,6 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
               artist: true,
               album: true,
               spotifyId: true,
-              coverImageUrl: true,
               albumRef: { select: { coverUrl: true } },
             },
           });

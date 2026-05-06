@@ -33,7 +33,7 @@ export interface Song {
   album: string;
   spotifyId?: string | null;
   artistSpotifyId?: string | null;
-  /** Capa oficial (Spotify); o componente Cover também pode resolver via API se ausente */
+  /** URL da capa (normalmente `Album.coverUrl` carregada na query) */
   imageUrl?: string | null;
   /** Página da faixa no Last.fm (busca fallback) */
   lastfmUrl?: string | null;

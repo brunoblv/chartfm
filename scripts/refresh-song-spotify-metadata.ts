@@ -2,7 +2,7 @@
  * Atualiza na tabela `Song` tudo o que a Web API do Spotify pode preencher quando a linha
  * tem `spotify_id` e ainda há colunas opcionais vazias (null ou string vazia).
  *
- * Colunas consideradas: `album`, `cover_image_url`, `artist_spotify_id`, `album_spotify_id`,
+ * Colunas consideradas: `album`, `artist_spotify_id`, `album_spotify_id`,
  * `duration_ms`, `spotify_url`, `track_number` e, opcionalmente, `preview_url` (ver abaixo).
  * `exhibition_name` não existe na resposta de faixa do Spotify — não é preenchida aqui.
  *
@@ -77,8 +77,6 @@ function incompleteWhere(force: boolean, includePreview: boolean): Prisma.SongWh
     OR: [
       { album: null },
       { album: "" },
-      { coverImageUrl: null },
-      { coverImageUrl: "" },
       { artistSpotifyId: null },
       { albumSpotifyId: null },
       { durationMs: null },
@@ -106,7 +104,6 @@ async function main() {
       artist: true,
       album: true,
       spotifyId: true,
-      coverImageUrl: true,
       artistSpotifyId: true,
       albumSpotifyId: true,
       durationMs: true,

@@ -26,7 +26,17 @@ const songMissingWhere: Prisma.SongWhereInput = {
     { albumSpotifyId: null },
     { album: null },
     { album: "" },
-    { coverImageUrl: null },
+    {
+      AND: [
+        { albumSpotifyId: { not: null } },
+        {
+          OR: [
+            { albumRef: null },
+            { albumRef: { OR: [{ coverUrl: null }, { coverUrl: "" }] } },
+          ],
+        },
+      ],
+    },
     { spotifyUrl: null },
     { durationMs: null },
   ],
@@ -172,13 +182,6 @@ async function updateAlbum(album: { spotifyId: string }) {
       totalTracks: meta.totalTracks,
     },
   });
-
-  if (meta.coverUrl) {
-    await prisma.song.updateMany({
-      where: { albumSpotifyId: album.spotifyId, OR: [{ coverImageUrl: null }, { coverImageUrl: "" }] },
-      data: { coverImageUrl: meta.coverUrl },
-    });
-  }
 
   return { updated: true, reason: "updated" };
 }

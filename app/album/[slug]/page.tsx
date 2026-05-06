@@ -100,7 +100,6 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           title: true,
           artist: true,
           album: true,
-          coverImageUrl: true,
           spotifyId: true,
           artistSpotifyId: true,
           albumRef: { select: { id: true, coverUrl: true, exhibitionName: true } },
@@ -161,7 +160,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     if (e.position === 1) number1sAlbum += 1;
 
     const key = songKey(e.song.title, e.song.artist);
-    const manual = e.song.albumRef?.coverUrl?.trim() || e.song.coverImageUrl?.trim() || null;
+    const manual = e.song.albumRef?.coverUrl?.trim() || null;
     const cur = songsMap.get(key) ?? {
       key,
       songId: e.song.id,

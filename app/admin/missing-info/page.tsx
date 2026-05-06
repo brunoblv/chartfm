@@ -18,7 +18,17 @@ const songMissingWhere: Prisma.SongWhereInput = {
     { albumSpotifyId: null },
     { album: null },
     { album: "" },
-    { coverImageUrl: null },
+    {
+      AND: [
+        { albumSpotifyId: { not: null } },
+        {
+          OR: [
+            { albumRef: null },
+            { albumRef: { OR: [{ coverUrl: null }, { coverUrl: "" }] } },
+          ],
+        },
+      ],
+    },
     { spotifyUrl: null },
     { durationMs: null },
   ],
@@ -53,12 +63,12 @@ export default async function AdminMissingInfoPage() {
         title: true,
         artist: true,
         album: true,
-        coverImageUrl: true,
         spotifyId: true,
         artistSpotifyId: true,
         albumSpotifyId: true,
         spotifyUrl: true,
         durationMs: true,
+        albumRef: { select: { coverUrl: true } },
       },
       orderBy: [{ artist: "asc" }, { title: "asc" }],
       take: PAGE_SIZE,
@@ -125,7 +135,7 @@ export default async function AdminMissingInfoPage() {
                         [!s.artistSpotifyId, "artista"],
                         [!s.albumSpotifyId, "álbum"],
                         [!s.album?.trim(), "nome do álbum"],
-                        [!s.coverImageUrl, "capa"],
+                        [Boolean(s.albumSpotifyId) && !s.albumRef?.coverUrl?.trim(), "capa"],
                         [!s.spotifyUrl, "link"],
                         [!s.durationMs, "duração"],
                       ])}

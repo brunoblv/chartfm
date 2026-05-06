@@ -216,7 +216,7 @@ type SongRow = {
   albumSpotifyId: string | null;
   spotifyUrl: string | null;
   durationMs: number | null;
-  coverImageUrl: string | null;
+  albumRef: { coverUrl: string | null } | null;
 };
 
 function needsBackfill(s: SongRow): boolean {
@@ -226,7 +226,7 @@ function needsBackfill(s: SongRow): boolean {
   if (!s.spotifyUrl?.trim()) return true;
   if (s.durationMs == null) return true;
   if (!s.album?.trim()) return true;
-  if (!s.coverImageUrl?.trim()) return true;
+  if (s.albumSpotifyId?.trim() && !s.albumRef?.coverUrl?.trim()) return true;
   return false;
 }
 
@@ -332,7 +332,7 @@ async function main() {
       albumSpotifyId: true,
       spotifyUrl: true,
       durationMs: true,
-      coverImageUrl: true,
+      albumRef: { select: { coverUrl: true } },
     },
     orderBy: { title: "asc" },
   });

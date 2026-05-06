@@ -88,7 +88,6 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           title: true,
           artist: true,
           album: true,
-          coverImageUrl: true,
           albumRef: { select: { coverUrl: true } },
           spotifyId: true,
           artistSpotifyId: true,
@@ -106,7 +105,6 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         title: true,
         artist: true,
         album: true,
-        coverImageUrl: true,
         albumRef: { select: { coverUrl: true } },
         spotifyId: true,
         artistSpotifyId: true,
@@ -134,7 +132,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const spotifyId = songRow.spotifyId;
   const artistSpotifyId = songRow.artistSpotifyId;
   const artistDbId = songRow.artistRef?.id ?? null;
-  const coverImageUrl = songRow.albumRef?.coverUrl?.trim() || songRow.coverImageUrl?.trim() || null;
+  const coverImageUrl = songRow.albumRef?.coverUrl?.trim() || null;
   const paletteA = first?.coverPaletteA ?? "#FA243C";
   const paletteB = first?.coverPaletteB ?? "#FFE66D";
   const coverSeed = first?.coverSeed ?? 0;

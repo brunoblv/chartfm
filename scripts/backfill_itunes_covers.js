@@ -53,7 +53,10 @@ async function main() {
   const maxToProcess = Number(process.env.MAX_TO_PROCESS || 0);
   const country = process.env.ITUNES_COUNTRY || "BR";
 
-  const whereMissing = { OR: [{ coverImageUrl: null }, { coverImageUrl: "" }] };
+  const whereMissing = {
+    albumSpotifyId: { not: null },
+    OR: [{ albumRef: null }, { albumRef: { OR: [{ coverUrl: null }, { coverUrl: "" }] } }],
+  };
   const totalMissing = await prisma.song.count({ where: whereMissing });
 
   console.log(
@@ -73,7 +76,7 @@ async function main() {
   while (true) {
     const remaining = await prisma.song.findMany({
       where: whereMissing,
-      select: { id: true, title: true, artist: true, coverImageUrl: true },
+      select: { id: true, title: true, artist: true, albumSpotifyId: true },
       orderBy: { id: "asc" },
       take: batchSize,
     });
@@ -101,10 +104,10 @@ async function main() {
 
       if (!coverUrl) {
         skippedNoResult += 1;
-      } else if (!dryRun) {
-        await prisma.song.update({
-          where: { id: song.id },
-          data: { coverImageUrl: coverUrl },
+      } else if (!dryRun && song.albumSpotifyId) {
+        await prisma.album.updateMany({
+          where: { spotifyId: song.albumSpotifyId, OR: [{ coverUrl: null }, { coverUrl: "" }] },
+          data: { coverUrl: coverUrl },
         });
         updated += 1;
       } else {
