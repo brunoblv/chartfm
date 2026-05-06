@@ -4,7 +4,7 @@
  *
  * Álbum de referência: https://open.spotify.com/album/0LB4KYFkN5TZgTmwPeCNq0
  *
- * Uso (raiz do chartify):
+ * Uso (raiz do chartfm):
  *   npx tsx scripts/fix-belinda-luz-sin-gravedad-utopia-track.ts
  *   npx tsx scripts/fix-belinda-luz-sin-gravedad-utopia-track.ts --dry-run
  */

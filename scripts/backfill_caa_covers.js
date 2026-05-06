@@ -21,7 +21,7 @@ function normalize(text) {
 
 const USER_AGENT =
   process.env.MB_USER_AGENT ||
-  "chartify-cover-backfill/1.0 (contact: local-dev)";
+  "chartfm-cover-backfill/1.0 (contact: local-dev)";
 
 async function mbRecordingSearch(title, artist) {
   const query = `recording:"${title}" AND artist:"${artist}"`;

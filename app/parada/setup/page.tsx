@@ -57,7 +57,7 @@ export default function ParadaSetupPage() {
               <line x1="18" y1="20" x2="18" y2="4" />
             </svg>
           </div>
-          <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.025em" }}>Chartify</div>
+          <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.025em" }}>ChartFM</div>
         </div>
       </div>
 

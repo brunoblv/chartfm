@@ -1,7 +1,7 @@
 /**
  * Preenche Spotify (track id, artist id, album id, URLs, etc.) em músicas sem spotify_id.
  *
- * Uso (na raiz do chartify):
+ * Uso (na raiz do chartfm):
  *   npx tsx scripts/backfill-song-spotify.ts
  *   npx tsx scripts/backfill-song-spotify.ts --dry-run
  *   npx tsx scripts/backfill-song-spotify.ts --limit=30

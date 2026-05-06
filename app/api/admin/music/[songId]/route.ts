@@ -41,6 +41,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ songId
 
 type PatchBody = {
   title?: unknown;
+  spotifyId?: unknown;
   romanization?: unknown;
   artistSpotifyId?: unknown;
   albumSpotifyId?: unknown;
@@ -56,12 +57,19 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
 
   const body = (await req.json()) as PatchBody;
   const title = typeof body.title === "string" ? body.title.trim() : "";
+  const spotifyId = typeof body.spotifyId === "string" ? body.spotifyId.trim() : "";
   const romanization = typeof body.romanization === "string" ? body.romanization.trim() : "";
   const artistSpotifyId = typeof body.artistSpotifyId === "string" ? body.artistSpotifyId.trim() : "";
   const albumSpotifyId = typeof body.albumSpotifyId === "string" ? body.albumSpotifyId.trim() : "";
 
   if (!title) return NextResponse.json({ error: "title_required" }, { status: 400 });
   if (!artistSpotifyId) return NextResponse.json({ error: "artist_required" }, { status: 400 });
+
+  const existing = await prisma.song.findUnique({
+    where: { id },
+    select: { id: true, spotifyId: true },
+  });
+  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const artist = await prisma.artist.findUnique({
     where: { spotifyId: artistSpotifyId },
@@ -82,6 +90,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
       where: { id },
       data: {
         title,
+        spotifyId: spotifyId || null,
         exhibitionName: romanization || null,
         artist: artist.name,
         artistSpotifyId: artist.spotifyId,
@@ -92,6 +101,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
         id: true,
         title: true,
         exhibitionName: true,
+        spotifyId: true,
         artist: true,
         album: true,
         artistSpotifyId: true,

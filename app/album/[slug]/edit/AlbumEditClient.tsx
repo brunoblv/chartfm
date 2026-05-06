@@ -8,6 +8,7 @@ type AlbumEditInitial = {
   id: number;
   slug: string;
   title: string;
+  spotifyId: string;
   romanization: string;
   coverUrl: string;
   artist: string;
@@ -22,6 +23,7 @@ function usableArtistOptions(items: ArtistOption[]) {
 
 export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditInitial }) {
   const [title, setTitle] = useState(initialAlbum.title);
+  const [spotifyId, setSpotifyId] = useState(initialAlbum.spotifyId);
   const [romanization, setRomanization] = useState(initialAlbum.romanization);
   const [coverUrl, setCoverUrl] = useState(initialAlbum.coverUrl);
   const [artistQuery, setArtistQuery] = useState(initialAlbum.artist);
@@ -63,8 +65,8 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
   }, [artistQuery, artistTypeaheadActive]);
 
   const canSave = useMemo(
-    () => title.trim().length > 0 && artistSpotifyId.trim().length > 0 && !saving,
-    [title, artistSpotifyId, saving],
+    () => title.trim().length > 0 && spotifyId.trim().length > 0 && artistSpotifyId.trim().length > 0 && !saving,
+    [title, spotifyId, artistSpotifyId, saving],
   );
 
   async function submit() {
@@ -78,6 +80,7 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
+          spotifyId: spotifyId.trim(),
           romanization: romanization.trim(),
           coverUrl: coverUrl.trim(),
           artistSpotifyId: artistSpotifyId.trim(),
@@ -101,6 +104,10 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
       <label style={{ display: "grid", gap: 6 }}>
         <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome</span>
         <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
+      </label>
+      <label style={{ display: "grid", gap: 6 }}>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
+        <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
       </label>
 
       <label style={{ display: "grid", gap: 6, position: "relative" }}>

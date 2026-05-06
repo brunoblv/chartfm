@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidade | Chartify",
-  description: "Como o Chartify coleta, usa e protege dados pessoais.",
+  title: "Política de Privacidade | ChartFM",
+  description: "Como o ChartFM coleta, usa e protege dados pessoais.",
 };
 
 export default function PrivacyPolicyPage() {
@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
         {
           title: "1. Dados que coletamos",
           body: [
-            "Coletamos dados informados ou gerados durante o uso do Chartify, como nome, e-mail, imagem de perfil, identificador do Google, handle, bio, gêneros musicais, paradas publicadas, curtidas, comentários, reposts, comunidades, posts e preferências de conta.",
+            "Coletamos dados informados ou gerados durante o uso do ChartFM, como nome, e-mail, imagem de perfil, identificador do Google, handle, bio, gêneros musicais, paradas publicadas, curtidas, comentários, reposts, comunidades, posts e preferências de conta.",
             "Também coletamos dados técnicos necessários para segurança, login, prevenção de abuso e funcionamento do serviço, como cookies de sessão, registros de acesso e informações básicas do dispositivo ou navegador.",
           ],
         },
@@ -37,7 +37,7 @@ export default function PrivacyPolicyPage() {
         {
           title: "4. Compartilhamento",
           body: [
-            "Podemos compartilhar dados com provedores necessários ao funcionamento do Chartify, como autenticação Google, hospedagem, banco de dados, ferramentas de segurança, analytics e plataformas de anúncios, sempre limitado à finalidade aplicável.",
+            "Podemos compartilhar dados com provedores necessários ao funcionamento do ChartFM, como autenticação Google, hospedagem, banco de dados, ferramentas de segurança, analytics e plataformas de anúncios, sempre limitado à finalidade aplicável.",
             "Paradas, perfis, comentários, comunidades e posts marcados como públicos podem ser vistos por outros usuários e visitantes.",
           ],
         },

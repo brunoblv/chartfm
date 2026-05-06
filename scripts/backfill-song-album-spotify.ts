@@ -7,7 +7,7 @@
  * Pacing “tempo mínimo seguro”: --delay-ms entre músicas (padrão 850) + --jitter-ms aleatório;
  * entre queries de busca na mesma música usa max(120, delayMs/5).
  *
- * Uso (raiz chartify):
+ * Uso (raiz chartfm):
  *   npx tsx scripts/backfill-song-album-spotify.ts --dry-run --limit=10
  *   npx tsx scripts/backfill-song-album-spotify.ts --delay-ms=850 --jitter-ms=200 --limit=200
  *   npx tsx scripts/backfill-song-album-spotify.ts --market=BR --fallback-markets=JP,US,KR

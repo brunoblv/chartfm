@@ -4,7 +4,7 @@
  *
  * Usa GET /tracks + applySpotifyMetadataToSong — mesmo fluxo robusto da app (inclui albumType).
  *
- * Uso (raiz chartify):
+ * Uso (raiz chartfm):
  *   npx tsx scripts/backfill-song-catalog-from-spotify.ts
  *   npx tsx scripts/backfill-song-catalog-from-spotify.ts --dry-run
  *   npx tsx scripts/backfill-song-catalog-from-spotify.ts --limit=80 --delay-ms=850

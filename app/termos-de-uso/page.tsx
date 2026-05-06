@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso | Chartify",
-  description: "Regras de uso da plataforma Chartify.",
+  title: "Termos de Uso | ChartFM",
+  description: "Regras de uso da plataforma ChartFM.",
 };
 
 export default function TermsPage() {
   return (
     <LegalPage
       title="Termos de Uso"
-      subtitle="Regras para usar, publicar e participar do Chartify."
+      subtitle="Regras para usar, publicar e participar do ChartFM."
       updatedAt="03/05/2026"
       sections={[
         {
           title: "1. Aceite dos termos",
           body: [
-            "Ao acessar ou usar o Chartify, você concorda com estes Termos de Uso e com a Política de Privacidade. Se não concordar, não utilize a plataforma.",
+            "Ao acessar ou usar o ChartFM, você concorda com estes Termos de Uso e com a Política de Privacidade. Se não concordar, não utilize a plataforma.",
           ],
         },
         {
@@ -29,7 +29,7 @@ export default function TermsPage() {
         {
           title: "3. Conteúdo do usuário",
           body: [
-            "Você mantém responsabilidade pelo conteúdo que publica, incluindo paradas, comentários, posts, imagens, nomes e descrições. Ao publicar, você nos autoriza a exibir esse conteúdo dentro do Chartify.",
+            "Você mantém responsabilidade pelo conteúdo que publica, incluindo paradas, comentários, posts, imagens, nomes e descrições. Ao publicar, você nos autoriza a exibir esse conteúdo dentro do ChartFM.",
             "Não publique conteúdo ilegal, ofensivo, discriminatório, enganoso, que viole direitos autorais ou que exponha dados pessoais de terceiros sem autorização.",
           ],
         },
@@ -37,13 +37,13 @@ export default function TermsPage() {
           title: "4. Rankings e disponibilidade",
           body: [
             "Paradas, rankings globais e estatísticas podem ser recalculados, corrigidos ou indisponibilizados em caso de erro técnico, abuso, moderação ou manutenção.",
-            "O Chartify pode mudar recursos, limites, formatos e critérios de exibição para melhorar a plataforma.",
+            "O ChartFM pode mudar recursos, limites, formatos e critérios de exibição para melhorar a plataforma.",
           ],
         },
         {
           title: "5. Publicidade e cookies",
           body: [
-            "O Chartify pode exibir anúncios e usar cookies conforme descrito na Política de Privacidade. Cookies não essenciais dependem do consentimento do usuário quando exigido por lei.",
+            "O ChartFM pode exibir anúncios e usar cookies conforme descrito na Política de Privacidade. Cookies não essenciais dependem do consentimento do usuário quando exigido por lei.",
           ],
         },
         {
@@ -55,7 +55,7 @@ export default function TermsPage() {
         {
           title: "7. Limitação de responsabilidade",
           body: [
-            "O Chartify é fornecido no estado em que se encontra. Embora trabalhemos para manter estabilidade e segurança, não garantimos disponibilidade ininterrupta ou ausência total de erros.",
+            "O ChartFM é fornecido no estado em que se encontra. Embora trabalhemos para manter estabilidade e segurança, não garantimos disponibilidade ininterrupta ou ausência total de erros.",
           ],
         },
       ]}

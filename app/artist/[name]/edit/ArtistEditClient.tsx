@@ -7,19 +7,21 @@ type ArtistEditInitial = {
   id: number;
   slug: string;
   name: string;
+  spotifyId: string;
   romanization: string;
   imageUrl: string;
 };
 
 export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditInitial }) {
   const [name, setName] = useState(initialArtist.name);
+  const [spotifyId, setSpotifyId] = useState(initialArtist.spotifyId);
   const [romanization, setRomanization] = useState(initialArtist.romanization);
   const [imageUrl, setImageUrl] = useState(initialArtist.imageUrl);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const canSave = useMemo(() => name.trim().length > 0 && !saving, [name, saving]);
+  const canSave = useMemo(() => name.trim().length > 0 && spotifyId.trim().length > 0 && !saving, [name, spotifyId, saving]);
 
   async function submit() {
     if (!canSave) return;
@@ -30,7 +32,12 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
       const res = await fetch(`/api/admin/artist/${initialArtist.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), romanization: romanization.trim(), imageUrl: imageUrl.trim() }),
+        body: JSON.stringify({
+          name: name.trim(),
+          spotifyId: spotifyId.trim(),
+          romanization: romanization.trim(),
+          imageUrl: imageUrl.trim(),
+        }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -50,6 +57,10 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
       <label style={{ display: "grid", gap: 6 }}>
         <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome</span>
         <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
+      </label>
+      <label style={{ display: "grid", gap: 6 }}>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
+        <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
       </label>
       <label style={{ display: "grid", gap: 6 }}>
         <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>

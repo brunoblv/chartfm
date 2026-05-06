@@ -99,6 +99,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
             id: song.id,
             slug,
             title: song.title,
+            spotifyId: song.spotifyId ?? "",
             romanization: song.exhibitionName ?? "",
             artist: song.artist,
             album: song.album ?? "",

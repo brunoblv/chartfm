@@ -8,6 +8,7 @@ type SongEditInitial = {
   id: string;
   slug: string;
   title: string;
+  spotifyId: string;
   romanization: string;
   artist: string;
   album: string;
@@ -28,6 +29,7 @@ function usableAlbumOptions(items: AlbumOption[]) {
 
 export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }) {
   const [title, setTitle] = useState(initialSong.title);
+  const [spotifyId, setSpotifyId] = useState(initialSong.spotifyId);
   const [romanization, setRomanization] = useState(initialSong.romanization);
 
   const [artistQuery, setArtistQuery] = useState(initialSong.artist);
@@ -118,6 +120,7 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
+          spotifyId: spotifyId.trim(),
           romanization: romanization.trim(),
           artistSpotifyId: artistSpotifyId.trim(),
           albumSpotifyId: albumSpotifyId.trim() || null,
@@ -141,6 +144,10 @@ export function SongEditClient({ initialSong }: { initialSong: SongEditInitial }
       <label style={{ display: "grid", gap: 6 }}>
         <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome da música</span>
         <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
+      </label>
+      <label style={{ display: "grid", gap: 6 }}>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
+        <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
       </label>
 
       <label style={{ display: "grid", gap: 6, position: "relative" }}>

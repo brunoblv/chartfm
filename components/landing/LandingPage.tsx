@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { GlobalChartEntry } from "@/lib/types";
 
-function ChartifyIcon({ size = 18, color = "white" }: { size?: number; color?: string }) {
+function ChartFMIcon({ size = 18, color = "white" }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" stroke={color} strokeWidth="2.4" fill="none" strokeLinecap="round">
       <line x1="6" y1="20" x2="6" y2="14" />
@@ -114,9 +114,9 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center", boxShadow: "0 2px 6px rgba(250,36,60,0.3)" }}>
-            <ChartifyIcon size={18} />
+            <ChartFMIcon size={18} />
           </div>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>Chartify</span>
+          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>ChartFM</span>
         </div>
         {!isMobile && (
           <div style={{ display: "flex", gap: 28, fontSize: 14, color: "#1D1D1F", fontWeight: 500 }}>
@@ -756,9 +756,9 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
           <div style={{ gridColumn: isMobile ? "1 / -1" : undefined }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: 7, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center" }}>
-                <ChartifyIcon size={16} />
+                <ChartFMIcon size={16} />
               </div>
-              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>Chartify</div>
+              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>ChartFM</div>
             </div>
             <div style={{ fontSize: 13, color: "#86868B", lineHeight: 1.5, maxWidth: 280 }}>
               A rede social de paradas musicais semanais. Feita por quem ouve, pra quem ouve.
@@ -786,7 +786,7 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
           flexWrap: "wrap" as const, gap: 8,
           fontSize: 12, color: "#86868B",
         }}>
-          <div>© 2026 Chartify. Todos os direitos reservados.</div>
+          <div>© 2026 ChartFM. Todos os direitos reservados.</div>
           <div style={{ display: "flex", gap: 14 }}>
             <span>🌐 PT-BR</span>
             <span>·</span>

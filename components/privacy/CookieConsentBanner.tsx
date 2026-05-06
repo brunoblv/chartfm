@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "chartify_cookie_consent";
+const STORAGE_KEY = "chartfm_cookie_consent";
 
 type ConsentValue = "accepted" | "essential";
 
@@ -16,7 +16,7 @@ export function CookieConsentBanner() {
 
   const saveConsent = (value: ConsentValue) => {
     localStorage.setItem(STORAGE_KEY, value);
-    window.dispatchEvent(new CustomEvent("chartify-cookie-consent", { detail: value }));
+    window.dispatchEvent(new CustomEvent("chartfm-cookie-consent", { detail: value }));
     setVisible(false);
   };
 
@@ -60,7 +60,7 @@ export function CookieConsentBanner() {
             Usamos cookies
           </div>
           <p style={{ fontSize: 13, lineHeight: 1.45, color: "#6B6B70", margin: 0 }}>
-            O Chartify usa cookies essenciais para login e segurança. Com sua permissão, também podemos usar cookies de
+            O ChartFM usa cookies essenciais para login e segurança. Com sua permissão, também podemos usar cookies de
             medição e anúncios, inclusive de parceiros como Google AdSense. Veja a{" "}
             <Link href="/politica-de-privacidade" style={{ color: "#FA243C", fontWeight: 600 }}>
               Política de Privacidade

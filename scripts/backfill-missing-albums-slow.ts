@@ -13,7 +13,7 @@
  * Para faixas difíceis (sem hit), usa também `scripts/backfill-song-album-spotify.ts`
  * (fallback top-tracks + jitter).
  *
- * Uso (raiz chartify):
+ * Uso (raiz chartfm):
  *   npx tsx scripts/backfill-missing-albums-slow.ts --dry-run --limit=20
  *   npx tsx scripts/backfill-missing-albums-slow.ts --apply --delay-ms=1000 --limit=200
  *   npx tsx scripts/backfill-missing-albums-slow.ts --apply --only-empty-text-album

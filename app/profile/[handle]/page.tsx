@@ -201,7 +201,7 @@ function buildAchievements(user: UserWithCharts, numberOnes: number) {
     { emoji: "🏆", name: "Chart topper", desc: numberOnes > 0 ? `${numberOnes} faixa(s) em #1` : "Busque o primeiro #1" },
     { emoji: "🌟", name: "Rede", desc: `${user.followers.toLocaleString("pt-BR")} seguidores` },
     { emoji: "📊", name: "Paradas", desc: `${user.charts.length} publicação(ões)` },
-    { emoji: "💎", name: "Membro", desc: "Chartify" },
+    { emoji: "💎", name: "Membro", desc: "ChartFM" },
   ];
   return list;
 }

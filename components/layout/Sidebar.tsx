@@ -103,7 +103,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
                   <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
                 </svg>
               </div>
-              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>Chartify</span>
+              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>ChartFM</span>
             </div>
             <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "#86868B" }}>
               <X size={20} />
@@ -150,7 +150,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
             <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
           </svg>
         </div>
-        <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>Chartify</span>
+        <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>ChartFM</span>
       </div>
       <SidebarContent
         pathname={pathname}

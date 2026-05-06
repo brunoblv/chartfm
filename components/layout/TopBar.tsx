@@ -11,7 +11,7 @@ interface TopBarProps {
   onMenuToggle?: () => void;
 }
 
-function ChartifyIcon({ size = 16 }: { size?: number }) {
+function ChartFMIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round">
       <line x1="6" y1="20" x2="6" y2="14" />
@@ -47,11 +47,11 @@ export function TopBar({ isMobile = false }: TopBarProps) {
             display: "grid", placeItems: "center",
             flexShrink: 0,
           }}>
-            <ChartifyIcon size={16} />
+            <ChartFMIcon size={16} />
           </div>
 
           <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F", flex: 1 }}>
-            Chartify
+            ChartFM
           </span>
 
           {/* Search toggle */}

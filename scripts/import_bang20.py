@@ -1,11 +1,11 @@
 """
-Importa paradas do ficheiro BANG20 (formato oficial .xlsx) para um utilizador Chartify.
+Importa paradas do ficheiro BANG20 (formato oficial .xlsx) para um utilizador ChartFM.
 
 Formato por aba (ano): coluna A = posição, B = 'Artista, "Título" (estatísticas)', C = pontos/estatística.
 Cabeçalhos de semana: célula B com data em inglês (ex.: January 5th, 2008). Ignorar abas cujo nome começa por BOF.
 
 Uso (teste só 2008):
-  cd chartify
+  cd chartfm
   python scripts/import_bang20.py --xlsx "C:\\path\\BANG20oficial.xlsx" --handle romulolima22 --year 2008
 
 Requer: openpyxl, psycopg2-binary, python-dateutil, python-dotenv (ou variável DATABASE_URL).
@@ -214,7 +214,7 @@ def recompute_streak(cur, user_id: str) -> int:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Import BANG20 xlsx into Chartify charts")
+    ap = argparse.ArgumentParser(description="Import BANG20 xlsx into ChartFM charts")
     ap.add_argument("--xlsx", required=True, help="Caminho para BANG20oficial.xlsx")
     ap.add_argument("--handle", default="romulolima22", help="Handle do utilizador")
     ap.add_argument(
@@ -228,7 +228,7 @@ def main():
     # psycopg2 não aceita ?pgbouncer=true; Prisma usa DIRECT_URL para sessão directa.
     db_url = (os.environ.get("DIRECT_URL") or os.environ.get("DATABASE_URL") or "").strip().strip('"').strip("'")
     if not db_url:
-        raise SystemExit("Defina DIRECT_URL ou DATABASE_URL (ex.: .env na raiz do chartify).")
+        raise SystemExit("Defina DIRECT_URL ou DATABASE_URL (ex.: .env na raiz do chartfm).")
 
     wb = openpyxl.load_workbook(args.xlsx, data_only=True)
     sheet_names: list[str] = []

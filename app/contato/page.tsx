@@ -2,20 +2,20 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Contato | Chartify",
-  description: "Canais de contato do Chartify.",
+  title: "Contato | ChartFM",
+  description: "Canais de contato do ChartFM.",
 };
 
 export default function ContactPage() {
   return (
     <LegalPage
       title="Contato"
-      subtitle="Fale com o Chartify sobre suporte, privacidade ou parcerias."
+      subtitle="Fale com o ChartFM sobre suporte, privacidade ou parcerias."
       sections={[
         {
           title: "Suporte e privacidade",
           body: [
-            "Para suporte, pedidos relacionados a dados pessoais, revisão de consentimento, remoção de conteúdo ou dúvidas sobre LGPD, envie uma mensagem para: contato@chartify.app.",
+            "Para suporte, pedidos relacionados a dados pessoais, revisão de consentimento, remoção de conteúdo ou dúvidas sobre LGPD, envie uma mensagem para: contato@chartfm.app.",
             "Ao escrever, inclua o e-mail da sua conta, seu handle e uma descrição objetiva do pedido para que possamos localizar as informações corretas.",
           ],
         },

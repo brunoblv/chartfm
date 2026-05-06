@@ -5,7 +5,7 @@
  * Também remapeia entradas de paradas (`ChartEntry.songId`) para a música correta,
  * preservando histórico já publicado.
  *
- * Uso (raiz do chartify):
+ * Uso (raiz do chartfm):
  *   npx tsx scripts/fix-kitten-i-did-it.ts --dry-run
  *   npx tsx scripts/fix-kitten-i-did-it.ts
  */
