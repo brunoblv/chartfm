@@ -70,12 +70,19 @@ type ArtistTableRow = {
   delta: number | null;
   status: "new" | "return" | "up" | "down" | "same";
   growthPct: number | null;
+  artistSpotifyId?: string | null;
+  artistRefId?: number | null;
 };
 
 type SongTableRow = {
   position: number;
   title: string;
   artist: string;
+  songId?: string | null;
+  slugArtist?: string | null;
+  spotifyId?: string | null;
+  artistSpotifyId?: string | null;
+  artistRefId?: number | null;
   totalPoints: number;
   weeks: number;
   peak: number;
@@ -96,8 +103,23 @@ function colorForArtist(name: string): [string, string] {
   return COVER_PALETTES[Math.abs(hash) % COVER_PALETTES.length];
 }
 
+function mergeArtistRouteMeta(
+  cur: { artistSpotifyId?: string | null; artistRefId?: number | null },
+  song: Song,
+  key: string,
+) {
+  const primary = song.artist.trim() === key;
+  if (!primary) return;
+  if (song.artistRefId != null && cur.artistRefId == null) cur.artistRefId = song.artistRefId;
+  const sid = song.artistSpotifyId?.trim();
+  if (sid && !cur.artistSpotifyId) cur.artistSpotifyId = sid;
+}
+
 function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTableRow[] {
-  const map = new Map<string, { points: number; songs: Set<string>; weeks: Set<number>; peak: number }>();
+  const map = new Map<
+    string,
+    { points: number; songs: Set<string>; weeks: Set<number>; peak: number; artistSpotifyId?: string | null; artistRefId?: number | null }
+  >();
   charts.forEach((c) => {
     c.entries.forEach((e) => {
       const artists = [e.song.artist, ...(e.song.featArtists ?? [])]
@@ -105,11 +127,17 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTable
         .filter(Boolean);
       const unique = [...new Set(artists)];
       unique.forEach((key) => {
-        const cur = map.get(key) ?? { points: 0, songs: new Set<string>(), weeks: new Set<number>(), peak: e.position };
+        const cur = map.get(key) ?? {
+          points: 0,
+          songs: new Set<string>(),
+          weeks: new Set<number>(),
+          peak: e.position,
+        };
         cur.points += pointsForPosition(e.position);
         cur.songs.add(e.song.title);
         cur.weeks.add(c.week);
         cur.peak = Math.min(cur.peak, e.position);
+        mergeArtistRouteMeta(cur, e.song, key);
         map.set(key, cur);
       });
     });
@@ -146,20 +174,67 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTable
       delta,
       status,
       growthPct,
+      artistSpotifyId: v.artistSpotifyId,
+      artistRefId: v.artistRefId,
     };
   });
 }
 
+function mergeSongRouteMeta(
+  cur: {
+    songId?: string | null;
+    slugArtist?: string | null;
+    spotifyId?: string | null;
+    artistSpotifyId?: string | null;
+    artistRefId?: number | null;
+  },
+  song: Song,
+) {
+  if (song.artistRefId != null && cur.artistRefId == null) cur.artistRefId = song.artistRefId;
+  const asid = song.artistSpotifyId?.trim();
+  if (asid && !cur.artistSpotifyId) cur.artistSpotifyId = asid;
+  const sid = song.spotifyId?.trim();
+  if (sid && !cur.spotifyId) cur.spotifyId = sid;
+  const id = song.id?.trim();
+  if (id && !cur.songId) cur.songId = id;
+  const slugA = song.slugArtist?.trim();
+  if (slugA && !cur.slugArtist) cur.slugArtist = slugA;
+}
+
 function aggregateSongs(charts: Chart[], previousCharts: Chart[]): SongTableRow[] {
-  const map = new Map<string, { title: string; artist: string; points: number; weeks: Set<number>; peak: number; cover: Chart["entries"][number]["cover"] }>();
+  const map = new Map<
+    string,
+    {
+      title: string;
+      artist: string;
+      points: number;
+      weeks: Set<number>;
+      peak: number;
+      cover: Chart["entries"][number]["cover"];
+      songId?: string | null;
+      slugArtist?: string | null;
+      spotifyId?: string | null;
+      artistSpotifyId?: string | null;
+      artistRefId?: number | null;
+    }
+  >();
   charts.forEach((c) => {
     c.entries.forEach((e) => {
       const key = `${e.song.title}\0${e.song.artist}`;
-      const cur = map.get(key) ?? { title: e.song.title, artist: e.song.artist, points: 0, weeks: new Set<number>(), peak: e.position, cover: e.cover };
+      const cur = map.get(key) ?? {
+        title: e.song.title,
+        artist: e.song.artist,
+        points: 0,
+        weeks: new Set<number>(),
+        peak: e.position,
+        cover: e.cover,
+      };
       cur.points += pointsForPosition(e.position);
       cur.weeks.add(c.week);
+      const prevPeak = cur.peak;
       cur.peak = Math.min(cur.peak, e.position);
-      if (e.position < cur.peak) cur.cover = e.cover;
+      if (e.position < prevPeak) cur.cover = e.cover;
+      mergeSongRouteMeta(cur, e.song);
       map.set(key, cur);
     });
   });
@@ -183,6 +258,11 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[]): SongTableRow[
       position,
       title: v.title,
       artist: v.artist,
+      songId: v.songId,
+      slugArtist: v.slugArtist,
+      spotifyId: v.spotifyId,
+      artistSpotifyId: v.artistSpotifyId,
+      artistRefId: v.artistRefId,
       totalPoints: v.points,
       weeks: v.weeks.size,
       peak: v.peak,
@@ -829,37 +909,46 @@ function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; arti
           <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
-      {rows.map((r) => (
-        <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-          <div style={{ padding: "4px 8px" }}>
-            {artistImages[r.name] ? (
-              <img
-                src={artistImages[r.name] as string}
-                alt={r.name}
-                width={44}
-                height={44}
-                style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${colorForArtist(r.name)[0]}, ${colorForArtist(r.name)[1]})`,
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
-                }}
-              />
-            )}
+      {rows.map((r) => {
+        const artistHref = buildArtistPath(r.name, r.artistSpotifyId, r.artistRefId);
+        return (
+          <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+            <Link href={artistHref} prefetch={false} style={{ padding: "4px 8px", lineHeight: 0 }}>
+              {artistImages[r.name] ? (
+                <img
+                  src={artistImages[r.name] as string}
+                  alt={r.name}
+                  width={44}
+                  height={44}
+                  style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${colorForArtist(r.name)[0]}, ${colorForArtist(r.name)[1]})`,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                  }}
+                />
+              )}
+            </Link>
+            <Link
+              href={artistHref}
+              prefetch={false}
+              style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#1D1D1F", textDecoration: "none" }}
+            >
+              {r.name}
+            </Link>
+            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
+            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
+            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
           </div>
-          <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
-          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
-          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
-          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -872,19 +961,44 @@ function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
           <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
-      {rows.map((r) => (
-        <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
-          <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-          <div style={{ padding: "4px 8px" }}><Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={48} rounded={8} /></div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</div>
-            <div style={{ fontSize: 12, color: "#86868B" }}>{r.artist}</div>
+      {rows.map((r) => {
+        const songHref = buildSongPath({
+          title: r.title,
+          artist: r.artist,
+          id: r.songId,
+          artistId: r.artistRefId,
+          slugArtist: r.slugArtist,
+          spotifyId: r.spotifyId,
+        });
+        const artistHref = buildArtistPath(r.artist, r.artistSpotifyId, r.artistRefId);
+        return (
+          <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+            <Link href={songHref} prefetch={false} style={{ padding: "4px 8px", lineHeight: 0 }}>
+              <Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={48} rounded={8} />
+            </Link>
+            <div style={{ minWidth: 0 }}>
+              <Link
+                href={songHref}
+                prefetch={false}
+                style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#1D1D1F", textDecoration: "none" }}
+              >
+                {r.title}
+              </Link>
+              <Link
+                href={artistHref}
+                prefetch={false}
+                style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}
+              >
+                {formatSongArtist({ artist: r.artist })}
+              </Link>
+            </div>
+            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
+            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
           </div>
-          <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
-          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
