@@ -21,20 +21,11 @@ export default async function RootLayout({
 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
-        <meta
-          name="google-adsense-account"
-          content="ca-pub-4600084865044867"
-        />
-      </head>
-
       <body>
         <Script
-          id="adsense-script"
-          async
-          strategy="beforeInteractive"
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4600084865044867"
-          crossOrigin="anonymous"
+          id="profitablecpm-network-script"
+          strategy="afterInteractive"
+          src="https://pl29363019.profitablecpmratenetwork.com/a0/c3/dd/a0c3dda5049d5ce35a4c2fc66b14b8d7.js"
         />
 
         <Providers session={session}>
