@@ -37,6 +37,21 @@ export default async function RootLayout({
           crossOrigin="anonymous"
         />
 
+        <Script
+          id="gtag-js"
+          async
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-VKENNK522F"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-VKENNK522F');
+          `}
+        </Script>
+
         <Providers session={session}>
           {children}
         </Providers>
