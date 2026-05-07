@@ -232,6 +232,11 @@ export async function POST(req: NextRequest) {
     const songs = (await preferExistingSongs(enriched)).slice(0, limit);
     return NextResponse.json({ songs, total: topTracks.length }, { headers: NO_CACHE_HEADERS });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500, headers: NO_CACHE_HEADERS });
+    const msg = String(err);
+    const isUserError = msg.includes("não encontrado") || msg.includes("not found") || msg.includes("HTTP 404");
+    return NextResponse.json(
+      { error: isUserError ? "Usuário Last.fm não encontrado. Verifique o nome de usuário nas configurações." : msg },
+      { status: isUserError ? 400 : 500, headers: NO_CACHE_HEADERS },
+    );
   }
 }

@@ -91,7 +91,10 @@ async function fetchPage(
   });
 
   const res = await fetch(`${BASE_URL}?${params.toString()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Last.fm HTTP ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("Usuário Last.fm não encontrado. Verifique o nome de usuário nas configurações.");
+    throw new Error(`Last.fm HTTP ${res.status}`);
+  }
 
   const data = await res.json();
   if (data.error) throw new Error(`Last.fm error ${data.error}: ${data.message}`);

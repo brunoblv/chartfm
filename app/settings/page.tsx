@@ -247,12 +247,16 @@ export default function SettingsPage() {
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Usuário Last.fm</span>
                   <input
                     value={form.lastfmUser ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, lastfmUser: e.target.value }))}
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      const match = raw.match(/last\.fm\/user\/([^/?#\s]+)/i);
+                      setForm((f) => ({ ...f, lastfmUser: match ? match[1] : e.target.value }));
+                    }}
                     placeholder="seu-usuario-lastfm"
                     style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
                   />
                   <span style={{ fontSize: 11, color: "#86868B" }}>
-                    Necessário para importar suas músicas mais ouvidas do Last.fm.
+                    Só o nome de usuário (ex: <strong>blvbruno</strong>), não a URL completa. Se colar o link do perfil, o usuário será extraído automaticamente.
                   </span>
                 </div>
 
