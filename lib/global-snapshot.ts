@@ -25,7 +25,7 @@ function asPayload(snapshot: {
 
 async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntryRow[]> {
   return prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: weekIdx } },
+    where: { chart: { weekIndex: weekIdx }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,
@@ -52,15 +52,17 @@ async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntr
 
 async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
   const rows = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: { lte: upToWeekIdx } } },
+    where: { chart: { weekIndex: { lte: upToWeekIdx } }, position: { lte: 100 } },
     select: {
       position: true,
+      points: true,
       chart: { select: { weekIndex: true } },
       song: { select: { spotifyId: true, title: true, artist: true } },
     },
   });
 
-  const map = new Map<string, { peak: number; weeks: Set<number> }>();
+  // Agrupa pontos por semana → música para calcular rank global por semana
+  const weekSongPoints = new Map<number, Map<string, number>>();
   for (const r of rows) {
     const key = r.song.spotifyId
       ? `song_spotify:${r.song.spotifyId}`
@@ -68,18 +70,32 @@ async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string,
           .trim()
           .replace(/\s+/g, " ")
           .toLowerCase()}`;
-    const cur = map.get(key) ?? { peak: r.position, weeks: new Set<number>() };
-    cur.peak = Math.min(cur.peak, r.position);
-    cur.weeks.add(r.chart.weekIndex);
-    map.set(key, cur);
+    const weekMap = weekSongPoints.get(r.chart.weekIndex) ?? new Map<string, number>();
+    const pts = r.points > 0 ? r.points : 101 - r.position;
+    weekMap.set(key, (weekMap.get(key) ?? 0) + pts);
+    weekSongPoints.set(r.chart.weekIndex, weekMap);
   }
 
-  return new Map([...map.entries()].map(([k, v]) => [k, { peak: v.peak, weeks: v.weeks.size }]));
+  // Para cada semana, ranqueia músicas e conta apenas as top 100
+  const stats = new Map<string, { peak: number; weeks: number }>();
+  for (const [, songMap] of weekSongPoints) {
+    const sorted = [...songMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100);
+    for (let i = 0; i < sorted.length; i++) {
+      const [key] = sorted[i];
+      const globalPos = i + 1;
+      const cur = stats.get(key) ?? { peak: globalPos, weeks: 0 };
+      cur.peak = Math.min(cur.peak, globalPos);
+      cur.weeks += 1;
+      stats.set(key, cur);
+    }
+  }
+
+  return stats;
 }
 
 async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
   const rows = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: { lte: upToWeekIdx } } },
+    where: { chart: { weekIndex: { lte: upToWeekIdx } }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,
@@ -132,7 +148,7 @@ async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<strin
   }
   for (const [, arr] of weeklyRanks) {
     const sorted = arr.sort((a, b) => b.pts - a.pts);
-    for (let i = 0; i < sorted.length; i++) {
+    for (let i = 0; i < Math.min(sorted.length, 100); i++) {
       const a = sorted[i];
       const cur = stats.get(a.key) ?? { peak: i + 1, weeks: 0 };
       cur.peak = Math.min(cur.peak, i + 1);
@@ -157,7 +173,7 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
   ]);
   const [overallEntries, prevOverallEntries] = await Promise.all([
     prisma.chartEntry.findMany({
-      where: { chart: { weekIndex: { lte: weekIdx } } },
+      where: { chart: { weekIndex: { lte: weekIdx } }, position: { lte: 100 } },
       select: {
         position: true,
         points: true,
@@ -181,7 +197,7 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
       },
     }),
     prisma.chartEntry.findMany({
-      where: { chart: { weekIndex: { lte: prevWeekIdx } } },
+      where: { chart: { weekIndex: { lte: prevWeekIdx } }, position: { lte: 100 } },
       select: {
         position: true,
         points: true,

@@ -165,6 +165,7 @@ export function aggregateTopArtists(
     }
     [...prevByArtist.entries()]
       .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
       .forEach(([k], i) => prevPosByArtist.set(k, i + 1));
   }
 
@@ -238,6 +239,7 @@ export function aggregateGlobalSongs(
     }
     [...prevMap.entries()]
       .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
       .forEach(([key], i) => prevPosBySong.set(key, i + 1));
   }
 
