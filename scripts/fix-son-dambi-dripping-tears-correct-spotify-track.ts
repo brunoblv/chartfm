@@ -102,9 +102,14 @@ async function main() {
     console.error("Metadados Spotify vazios");
     process.exit(1);
   }
-  const artistNorm = norm(meta.primaryArtist?.name ?? "");
+  const primaryArtistName = meta.primaryArtist?.name;
+  if (!primaryArtistName) {
+    console.error("Artista principal ausente nos metadados Spotify");
+    process.exit(1);
+  }
+  const artistNorm = norm(primaryArtistName);
   if (!artistNorm.includes("dam") && !artistNorm.includes("son") && !artistNorm.includes("dambi")) {
-    console.error("Artista Spotify inesperado:", meta.primaryArtist?.name);
+    console.error("Artista Spotify inesperado:", primaryArtistName);
     process.exit(1);
   }
 
@@ -116,7 +121,7 @@ async function main() {
         dryRun,
         before: row,
         spotifyTitle: meta.title,
-        spotifyArtist: meta.primaryArtist?.name,
+        spotifyArtist: primaryArtistName,
         chartEntries: nEntries,
       },
       null,
@@ -139,7 +144,7 @@ async function main() {
     where: { id: SONG_ID },
     data: {
       title: meta.title,
-      artist: meta.primaryArtist.name,
+      artist: primaryArtistName,
       album: meta.album.title ?? undefined,
     },
   });
