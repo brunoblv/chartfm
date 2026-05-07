@@ -37,6 +37,11 @@ export default async function AdminMusicPage({
   return (
     <Shell title="Admin" subtitle="Editar músicas">
       <div style={{ maxWidth: 980 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <Link href="/admin/music/versions" style={navChipStyle}>Versões (live, remix, acoustic…)</Link>
+          <Link href="/admin/music/no-album" style={navChipStyle}>Sem álbum</Link>
+        </div>
+
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <form method="GET" style={{ flex: "1 1 240px", minWidth: 200 }}>
             <input
@@ -105,3 +110,14 @@ export default async function AdminMusicPage({
 
 const thStyle: CSSProperties = { textAlign: "left", padding: "10px 12px", fontSize: 12, color: "#6B6B70", fontWeight: 700 };
 const tdStyle: CSSProperties = { padding: "10px 12px", borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#1D1D1F" };
+const navChipStyle: CSSProperties = {
+  display: "inline-block",
+  padding: "7px 12px",
+  borderRadius: 999,
+  border: "1px solid rgba(0,0,0,0.12)",
+  fontSize: 13,
+  fontWeight: 600,
+  textDecoration: "none",
+  color: "#1D1D1F",
+  background: "white",
+};

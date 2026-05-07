@@ -53,31 +53,132 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
   }
 
   return (
-    <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
-      </label>
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
-        <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
-      </label>
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
-        <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
-      </label>
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa (URL da imagem)</span>
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} />
-      </label>
+    <>
+      <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
+          <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
+          <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa (URL da imagem)</span>
+          <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} />
+        </label>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-        <button type="button" onClick={submit} disabled={!canSave} style={buttonStyle(canSave)}>
-          {saving ? "Salvando..." : "Salvar alterações"}
-        </button>
-        {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
-        {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
+          <button type="button" onClick={submit} disabled={!canSave} style={buttonStyle(canSave)}>
+            {saving ? "Salvando..." : "Salvar alterações"}
+          </button>
+          {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
+          {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
+        </div>
       </div>
+
+      <hr style={{ border: "none", borderTop: "1px solid rgba(0,0,0,0.08)", margin: "32px 0" }} />
+      <ArtistCreateSection />
+    </>
+  );
+}
+
+function ArtistCreateSection() {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [spotifyId, setSpotifyId] = useState("");
+  const [romanization, setRomanization] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const canSave = useMemo(() => name.trim().length > 0 && spotifyId.trim().length > 0 && !saving, [name, spotifyId, saving]);
+
+  async function submit() {
+    if (!canSave) return;
+    setSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/artist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          spotifyId: spotifyId.trim(),
+          romanization: romanization.trim(),
+          imageUrl: imageUrl.trim(),
+        }),
+      });
+      const data = (await res.json()) as { error?: string; artist?: { name: string } };
+      if (!res.ok) {
+        setError(data.error === "spotify_id_already_exists" ? "Spotify ID já cadastrado." : (data.error ?? "Não foi possível criar."));
+        return;
+      }
+      setMessage(`Artista "${data.artist?.name}" criado com sucesso.`);
+      setName("");
+      setSpotifyId("");
+      setRomanization("");
+      setImageUrl("");
+    } catch {
+      setError("Erro de conexão ao criar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          border: "1px solid rgba(0,0,0,0.12)",
+          background: "white",
+          borderRadius: 10,
+          padding: "9px 14px",
+          fontWeight: 700,
+          fontSize: 14,
+          cursor: "pointer",
+          color: "#1D1D1F",
+        }}
+      >
+        {open ? "▲ Ocultar" : "▼ Criar novo artista"}
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome *</span>
+            <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder="Nome do artista" />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID *</span>
+            <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} placeholder="Ex: 1Xyo4u8uXC1ZmMpatF05PJ" />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
+            <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} placeholder="Nome em caracteres latinos (opcional)" />
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa (URL da imagem)</span>
+            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} placeholder="https://... (opcional)" />
+          </label>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button type="button" onClick={submit} disabled={!canSave} style={buttonStyle(canSave)}>
+              {saving ? "Criando..." : "Criar artista"}
+            </button>
+            {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
+            {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

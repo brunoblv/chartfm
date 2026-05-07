@@ -66,6 +66,10 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
       artistSpotifyId: true,
       albumSpotifyId: true,
       spotifyId: true,
+      feats: {
+        select: { id: true, artistSpotifyId: true, artist: { select: { name: true } } },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   if (!song) {
@@ -108,6 +112,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
             artistSpotifyId: artistSpotifyIdForEdit,
             albumSpotifyId: song.albumSpotifyId ?? "",
           }}
+          initialFeats={song.feats.map((f) => ({ id: f.id, artistSpotifyId: f.artistSpotifyId, artistName: f.artist.name }))}
         />
       </div>
     </Shell>

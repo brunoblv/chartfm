@@ -87,6 +87,7 @@ type UserSongRow = {
   userPoints: number;
   appearances: number;
   bestPosition: number;
+  number1s: number;
   cover: { palette: [string, string]; seed: number; imageUrl?: string | null };
 };
 
@@ -540,6 +541,7 @@ export default async function ArtistPage({
       userPoints: 0,
       appearances: 0,
       bestPosition: 9999,
+      number1s: 0,
       cover: {
         palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
         seed: e.coverSeed,
@@ -549,6 +551,7 @@ export default async function ArtistPage({
     cur.userPoints += pts;
     cur.appearances += 1;
     cur.bestPosition = Math.min(cur.bestPosition, e.position);
+    if (e.position === 1) cur.number1s += 1;
     if (manual) cur.cover = { ...cur.cover, imageUrl: manual };
     if (cur.albumRefId == null && e.song.albumRef?.id != null) cur.albumRefId = e.song.albumRef.id;
     userSongsMap.set(key, cur);
@@ -580,6 +583,10 @@ export default async function ArtistPage({
     .sort((a, b) => b.points - a.points)
     .map((a) => ({ albumId: a.albumId, name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
 
+  const userTotalPoints = userSongs.reduce((sum, s) => sum + s.userPoints, 0);
+  const userNumber1s = userSongs.reduce((sum, s) => sum + s.number1s, 0);
+  const userTotalAppearances = userEntries.length;
+
   // ── Pagination ────────────────────────────────────────────────────────────
   const activeSongs = tab === "user-songs" ? userSongs : songs;
   const totalPages = Math.ceil(activeSongs.length / PAGE_SIZE);
@@ -599,19 +606,35 @@ export default async function ArtistPage({
   }
   const bigFans = [...fanMap.values()].sort((a, b) => b.points - a.points).slice(0, 4);
 
-  const stats = [
+  const isUserTab = tab === "user-songs" || tab === "user-albums";
+
+  const globalStats = [
     { label: "Usuários únicos", value: listenersSet.size, icon: "🎧", color: "#FA243C" },
     { label: "Músicas cadastradas", value: songs.length, icon: "🎵", color: "#8338EC" },
     { label: "Número 1s", value: number1s, icon: "👑", color: "#FFD700" },
     { label: "Pontos totais", value: totalPoints, icon: "⭐", color: "#FB5607" },
   ];
 
-  const tabDefs: { id: Tab; label: string }[] = [
+  const userStatsCards = [
+    { label: "Músicas votadas", value: userSongs.length, icon: "🎵", color: "#8338EC" },
+    { label: "Semanas nas paradas", value: userTotalAppearances, icon: "🎧", color: "#FA243C" },
+    { label: "#1s seus", value: userNumber1s, icon: "👑", color: "#FFD700" },
+    { label: "Seus pontos", value: userTotalPoints, icon: "⭐", color: "#FB5607" },
+  ];
+
+  const activeStats = isUserTab && currentUserId ? userStatsCards : globalStats;
+
+  const globalSubTabs: { id: Tab; label: string }[] = [
     { id: "songs", label: "Músicas" },
     { id: "albums", label: "Álbuns" },
-    { id: "user-songs", label: "Músicas na sua parada" },
-    { id: "user-albums", label: "Álbuns na sua parada" },
   ];
+
+  const userSubTabs: { id: Tab; label: string }[] = [
+    { id: "user-songs", label: "Músicas" },
+    { id: "user-albums", label: "Álbuns" },
+  ];
+
+  const subTabs = isUserTab ? userSubTabs : globalSubTabs;
 
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
@@ -663,9 +686,39 @@ export default async function ArtistPage({
       </div>
 
       <div style={{ padding: "36px 40px 80px 40px" }}>
+        {/* Super-tab nav: Global 100 | Do usuário */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 0, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+          {(["songs", "user-songs"] as const).map((superTab) => {
+            const isActive = isUserTab ? superTab === "user-songs" : superTab === "songs";
+            const label = superTab === "songs" ? "Global 100" : "Do usuário";
+            // preserve the sub-tab (music vs album) when switching super-tab
+            const targetTab = superTab === "songs"
+              ? (tab === "user-albums" ? "albums" : "songs")
+              : (tab === "albums" ? "user-albums" : "user-songs");
+            return (
+              <Link
+                key={superTab}
+                href={`?tab=${isActive ? tab : targetTab}`}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: 14,
+                  fontWeight: isActive ? 700 : 500,
+                  textDecoration: "none",
+                  color: isActive ? palette[0] : "#86868B",
+                  borderBottom: `2px solid ${isActive ? palette[0] : "transparent"}`,
+                  marginBottom: -1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
         {/* Stats cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 40 }}>
-          {stats.map((s) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 28, marginBottom: 28 }}>
+          {activeStats.map((s) => (
             <div key={s.label} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.color + "18", display: "grid", placeItems: "center", marginBottom: 12, fontSize: 22 }}>{s.icon}</div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
@@ -674,9 +727,9 @@ export default async function ArtistPage({
           ))}
         </div>
 
-        {/* Tab nav */}
+        {/* Sub-tab nav: Músicas | Álbuns */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 0 }}>
-          {tabDefs.map((t) => (
+          {subTabs.map((t) => (
             <Link
               key={t.id}
               href={`?tab=${t.id}`}
@@ -739,8 +792,8 @@ export default async function ArtistPage({
                       ))}
                     </div>
                   ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 110px", padding: "8px 16px", gap: 0 }}>
-                      {["#", "", "Música", "Seus pontos", "Semanas", "Melhor pos."].map((h, i) => (
+                    <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 80px 110px", padding: "8px 16px", gap: 0 }}>
+                      {["#", "", "Música", "Seus pontos", "Semanas", "#1s", "Melhor pos."].map((h, i) => (
                         <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
                       ))}
                     </div>
@@ -774,7 +827,7 @@ export default async function ArtistPage({
                         </div>
                       ))
                     : (paginatedSongs as UserSongRow[]).map((s, i) => (
-                        <div key={s.key} style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 110px", alignItems: "center", padding: "4px 16px", borderRadius: 8, gap: 0 }}>
+                        <div key={s.key} style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 80px 110px", alignItems: "center", padding: "4px 16px", borderRadius: 8, gap: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{(safePage - 1) * PAGE_SIZE + i + 1}</div>
                           <div style={{ padding: "6px 6px" }}>
                             <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
@@ -791,6 +844,10 @@ export default async function ArtistPage({
                           </div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.userPoints}</div>
                           <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.appearances}</div>
+                          <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
+                            {s.number1s > 0 && <Star size={12} color="#FA243C" fill="#FA243C" />}
+                            {s.number1s}
+                          </div>
                           <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                             {s.bestPosition === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
                             #{s.bestPosition}

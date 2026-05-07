@@ -118,8 +118,28 @@ export default function CreatePage() {
   const [lastfmImportCount, setLastfmImportCount] = useState(200);
   const [userLastfmUser, setUserLastfmUser] = useState<string | null>(null);
   const [userChartSize, setUserChartSize] = useState<number | null>(null);
+  const [globalTopSongs, setGlobalTopSongs] = useState<Song[]>([]);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    fetch("/api/global/top")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { songs?: Array<{ id: string; title: string; artist: string; album: string; spotifyId: string | null; coverUrl: string | null }> } | null) => {
+        if (!data?.songs?.length) return;
+        setGlobalTopSongs(
+          data.songs.map((s) => ({
+            id: s.id,
+            title: s.title,
+            artist: s.artist,
+            album: s.album,
+            spotifyId: s.spotifyId ?? undefined,
+            imageUrl: s.coverUrl ?? undefined,
+          }))
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/user/parada")
@@ -161,14 +181,6 @@ export default function CreatePage() {
       window.removeEventListener("pageshow", onPageShow);
     };
   }, []);
-
-  const filtered = dbQuery
-    ? SONG_POOL.filter(
-        (s) =>
-          s.title.toLowerCase().includes(dbQuery.toLowerCase()) ||
-          s.artist.toLowerCase().includes(dbQuery.toLowerCase())
-      ).slice(0, 8)
-    : SONG_POOL.slice(0, 6);
 
   useEffect(() => {
     const q = dbQuery.trim();
@@ -588,10 +600,10 @@ export default function CreatePage() {
           ) : (
             <>
               <div style={{ fontSize: 12, color: "#86868B", marginBottom: 10, lineHeight: 1.45 }}>
-                Digite ao menos 2 caracteres para buscar no catálogo completo. Sugestões locais:
+                Digite ao menos 2 caracteres para buscar no catálogo completo.{globalTopSongs.length > 0 ? " Top 5 da última parada global:" : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {filtered.map((song) => {
+                {(globalTopSongs.length > 0 ? globalTopSongs : SONG_POOL.slice(0, 5)).map((song) => {
                   const added = entries.some((e) => e.title === song.title && e.artist === song.artist);
                   return renderSongRow(song, added);
                 })}

@@ -493,7 +493,7 @@ export default function EditChartPage() {
         ) : (
           <>
             <div style={{ fontSize: 12, color: "#86868B", marginBottom: 10, lineHeight: 1.45 }}>
-              Digite ao menos 2 caracteres para buscar no catálogo completo. Sugestões locais:
+              Digite ao menos 2 caracteres para buscar no catálogo completo. 
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {filtered.map((song) => {
