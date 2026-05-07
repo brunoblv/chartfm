@@ -33,6 +33,7 @@ model User {
   genres               String[]          @default([])
   role                 UserRole          @default(USER)
   lastfmUser           String?
+  chartSize            Int?              @map("chart_size")
   charts               Chart[]
   likes                ChartLike[]
   reposts              ChartRepost[]

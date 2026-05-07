@@ -163,21 +163,33 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
   return out;
 }
 
-// POST /api/lastfm/import — exclusivo para @bruno
-// Body: { weekDate?: "YYYY-MM-DD" } — semana (seg–dom) dessa data; sem weekDate = últimos 28 dias.
+// POST /api/lastfm/import
+// Body: { weekDate?: "YYYY-MM-DD", limit?: number } — semana (seg–dom) dessa data; sem weekDate = últimos 28 dias.
+// Usa o lastfmUser do perfil do usuário autenticado para buscar os scrobbles.
 // As duas rotas usam scoreLastfmTracks: (últimos 7d ×5)+(8–14d ×3)+(15–21d ×2)+(22–28d ×1) em relação à âncora.
-// Na semana escolhida, a âncora é o domingo fim da parada (blocos de 7 dias vs. essa data).
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.handle || session.user.handle !== "bruno") {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
+  }
+
+  const userRecord = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { lastfmUser: true },
+  });
+
+  if (!userRecord?.lastfmUser) {
+    return NextResponse.json(
+      { error: "Configure seu usuário do Last.fm nas configurações de perfil para usar esta função." },
+      { status: 400, headers: NO_CACHE_HEADERS },
+    );
   }
 
   if (!spotifyConfigured()) {
     return NextResponse.json({ error: "Spotify não configurado" }, { status: 503, headers: NO_CACHE_HEADERS });
   }
 
-  let body: { weekDate?: unknown; recentDays?: unknown } = {};
+  let body: { weekDate?: unknown; recentDays?: unknown; limit?: unknown } = {};
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -185,9 +197,11 @@ export async function POST(req: NextRequest) {
   }
   const weekDateStr = typeof body.weekDate === "string" ? body.weekDate.trim() : "";
   const useWeek = /^\d{4}-\d{2}-\d{2}$/.test(weekDateStr);
+  const limit = typeof body.limit === "number" && body.limit > 0 && body.limit <= 200 ? Math.round(body.limit) : 200;
+  const lastfmUsername = userRecord.lastfmUser;
 
   try {
-    let top200: Array<{ track: string; artist: string; album: string; score: number }>;
+    let topTracks: Array<{ track: string; artist: string; album: string; score: number }>;
 
     if (useWeek) {
       const anchor = parseChartWeekPickerDate(weekDateStr);
@@ -198,25 +212,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Não é possível importar semana futura" }, { status: 400, headers: NO_CACHE_HEADERS });
       }
       const { from, toExclusive } = chartWeekUnixRangeFromAnchor(anchor);
-      const weekPlays = await fetchTracksBetweenUnix(from, toExclusive);
+      const weekPlays = await fetchTracksBetweenUnix(from, toExclusive, lastfmUsername);
       const { end: weekEnd } = getChartWeekRange(anchor);
       const scoreAnchor = new Date(Date.UTC(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate()));
-      top200 = scoreLastfmTracks(weekPlays, scoreAnchor, 200);
+      topTracks = scoreLastfmTracks(weekPlays, scoreAnchor, limit);
     } else {
       const days = typeof body.recentDays === "number" && body.recentDays > 0 && body.recentDays <= 90 ? body.recentDays : 28;
-      const recentPlays = await fetchRecentTracks(days);
-      top200 = scoreLastfmTracks(recentPlays, new Date(), 200);
+      const recentPlays = await fetchRecentTracks(days, lastfmUsername);
+      topTracks = scoreLastfmTracks(recentPlays, new Date(), limit);
     }
 
     const BATCH = 8;
     const enriched: EnrichedSong[] = [];
-    for (let i = 0; i < top200.length; i += BATCH) {
-      const batch = await enrichBatch(top200.slice(i, i + BATCH));
+    for (let i = 0; i < topTracks.length; i += BATCH) {
+      const batch = await enrichBatch(topTracks.slice(i, i + BATCH));
       enriched.push(...batch);
     }
 
-    const songs = (await preferExistingSongs(enriched)).slice(0, 200);
-    return NextResponse.json({ songs, total: top200.length }, { headers: NO_CACHE_HEADERS });
+    const songs = (await preferExistingSongs(enriched)).slice(0, limit);
+    return NextResponse.json({ songs, total: topTracks.length }, { headers: NO_CACHE_HEADERS });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500, headers: NO_CACHE_HEADERS });
   }

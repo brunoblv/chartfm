@@ -7,6 +7,7 @@ import { ChevronLeft, Plus, X, GripVertical, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
+import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverModel, Song } from "@/lib/types";
@@ -93,7 +94,6 @@ export default function CreatePage() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { data: session } = useSession();
-  const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "DEV";
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [dbQuery, setDbQuery] = useState("");
@@ -114,6 +114,10 @@ export default function CreatePage() {
   const [importingLast, setImportingLast] = useState(false);
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [paradaNome, setParadaNome] = useState<string | null>(null);
+  const [showLastfmModal, setShowLastfmModal] = useState(false);
+  const [lastfmImportCount, setLastfmImportCount] = useState(200);
+  const [userLastfmUser, setUserLastfmUser] = useState<string | null>(null);
+  const [userChartSize, setUserChartSize] = useState<number | null>(null);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
 
@@ -127,6 +131,18 @@ export default function CreatePage() {
       })
       .catch(() => {});
   }, [router]);
+
+  useEffect(() => {
+    fetch("/api/user/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { lastfmUser?: string | null; chartSize?: number | null } | null) => {
+        if (!data) return;
+        setUserLastfmUser(data.lastfmUser ?? null);
+        setUserChartSize(data.chartSize ?? null);
+        if (data.chartSize) setLastfmImportCount(Math.min(200, data.chartSize));
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const resetDraft = () => {
@@ -351,10 +367,11 @@ export default function CreatePage() {
     setPublishing(true);
     setPublishError(null);
     try {
+      const publishEntries = userChartSize ? entries.slice(0, userChartSize) : entries;
       const res = await fetch("/api/charts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entries, weekDate, fastPublish: true }),
+        body: JSON.stringify({ entries: publishEntries, weekDate, fastPublish: true }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -407,12 +424,13 @@ export default function CreatePage() {
     }
   };
 
-  const importFromLastfm = async () => {
+  const importFromLastfm = async (limit: number = 200) => {
     lastfmImportAbortRef.current?.abort();
     const runId = ++lastfmImportRunRef.current;
     const ac = new AbortController();
     lastfmImportAbortRef.current = ac;
 
+    setShowLastfmModal(false);
     setEntries([]);
     setImportingLastfm(true);
     setPublishError(null);
@@ -425,7 +443,7 @@ export default function CreatePage() {
           "Cache-Control": "no-store, no-cache, max-age=0",
           Pragma: "no-cache",
         },
-        body: JSON.stringify({ weekDate, nonce: requestNonce }),
+        body: JSON.stringify({ weekDate, nonce: requestNonce, limit }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -442,7 +460,7 @@ export default function CreatePage() {
       }
       if (runId !== lastfmImportRunRef.current) return;
 
-      const songs: Song[] = (data.songs ?? []).slice(0, 200).map((s) => ({
+      const songs: Song[] = (data.songs ?? []).slice(0, limit).map((s) => ({
         title: s.title,
         artist: s.artist,
         album: s.album,
@@ -705,12 +723,12 @@ export default function CreatePage() {
             {entries.length === 0 ? "Nenhuma música ainda" : `${entries.length} música${entries.length === 1 ? "" : "s"}`}
           </div>
         </div>
-        {isAdmin && (
+        {session?.user && (
           <button
             type="button"
-            onClick={importFromLastfm}
+            onClick={() => !importingLastfm && setShowLastfmModal(true)}
             disabled={importingLastfm}
-            title="Importa scrobbles do Last.fm na semana do campo Data (segunda a domingo), ranqueados por plays"
+            title="Importar suas músicas mais ouvidas do Last.fm para esta semana"
             style={{
               border: "1px solid rgba(250,36,60,0.3)",
               background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -752,44 +770,63 @@ export default function CreatePage() {
       <div>
         {entries.map((song, i) => {
           const cover = coverForSong(song);
+          const isBeyondCut = userChartSize !== null && i >= userChartSize;
           return (
-            <div
-              key={`${song.title}-${song.artist}-${i}`}
-              draggable
-              onDragStart={() => handleDragStart(i)}
-              onDragOver={(e) => handleDragOver(e, i)}
-              onDrop={() => handleDrop(i)}
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMobile ? "32px 36px 52px 1fr 32px" : "40px 44px 64px 1fr 40px 40px",
-                alignItems: "center",
-                padding: isMobile ? "10px 12px" : "10px 20px",
-                borderBottom: "1px solid rgba(0,0,0,0.04)",
-                background: dragOver === i ? "rgba(250,36,60,0.04)" : "white",
-                cursor: "grab",
-                gap: 0,
-              }}
-            >
-              <div style={{ color: "#C7C7CC", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <GripVertical size={16} />
+            <div key={`${song.title}-${song.artist}-${i}`}>
+              {userChartSize !== null && i === userChartSize && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: isMobile ? "6px 12px" : "6px 20px", background: "rgba(250,36,60,0.04)" }}>
+                  <div style={{ flex: 1, height: 1, background: "rgba(250,36,60,0.25)" }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#FA243C", whiteSpace: "nowrap" }}>
+                    Corte da parada · posição {userChartSize}
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: "rgba(250,36,60,0.25)" }} />
+                </div>
+              )}
+              <div
+                draggable
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={(e) => handleDragOver(e, i)}
+                onDrop={() => handleDrop(i)}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "32px 36px 52px 1fr 32px" : "40px 44px 64px 1fr 40px 40px",
+                  alignItems: "center",
+                  padding: isMobile ? "10px 12px" : "10px 20px",
+                  borderBottom: "1px solid rgba(0,0,0,0.04)",
+                  background: dragOver === i ? "rgba(250,36,60,0.04)" : isBeyondCut ? "rgba(0,0,0,0.02)" : "white",
+                  cursor: "grab",
+                  gap: 0,
+                  opacity: isBeyondCut ? 0.45 : 1,
+                }}
+              >
+                <div style={{ color: "#C7C7CC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <GripVertical size={16} />
+                </div>
+                <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 8 }}>
+                  {i + 1}
+                </div>
+                <div style={{ padding: "0 8px" }}>
+                  <Cover cover={cover} song={song} size={isMobile ? 36 : 48} rounded={8} />
+                </div>
+                <div style={{ minWidth: 0, padding: "0 8px" }}>
+                  <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
+                  <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
+                </div>
+                {!isMobile && <div />}
+                <button onClick={() => removeSong(i)} style={{ background: "none", border: "none", color: "#C7C7CC", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={18} />
+                </button>
               </div>
-              <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 8 }}>
-                {i + 1}
-              </div>
-              <div style={{ padding: "0 8px" }}>
-                <Cover cover={cover} song={song} size={isMobile ? 36 : 48} rounded={8} />
-              </div>
-              <div style={{ minWidth: 0, padding: "0 8px" }}>
-                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-                <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
-              </div>
-              {!isMobile && <div />}
-              <button onClick={() => removeSong(i)} style={{ background: "none", border: "none", color: "#C7C7CC", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <X size={18} />
-              </button>
             </div>
           );
         })}
+        {userChartSize !== null && entries.length > userChartSize && (
+          <div style={{ padding: "10px 16px", background: "rgba(250,36,60,0.05)", borderTop: "1px solid rgba(250,36,60,0.1)", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: "#FA243C", fontWeight: 600 }}>
+              {entries.length - userChartSize} música{entries.length - userChartSize === 1 ? "" : "s"} além do tamanho da parada serão descartadas ao publicar.
+            </span>
+          </div>
+        )}
         {entries.length === 0 && (
           <div style={{ padding: "40px 24px", textAlign: "center", color: "#86868B", fontSize: 14 }}>
             {isMobile ? "Use a busca de músicas re adicione à parada" : "Adicione músicas da busca ao lado →"}
@@ -815,26 +852,7 @@ export default function CreatePage() {
               <p style={{ fontSize: 14, color: "#86868B", marginTop: 6, marginBottom: 0 }}>{subtituloSemana}</p>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  border: "1px solid rgba(0,0,0,0.12)",
-                  borderRadius: 10,
-                  padding: "8px 10px",
-                  background: "white",
-                }}
-              >
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#6B6B70", whiteSpace: "nowrap" }}>Semana</span>
-                <input
-                  type="date"
-                  value={weekDate}
-                  max={toInputDate(new Date())}
-                  onChange={(e) => setWeekDate(e.target.value)}
-                  style={{ border: "none", outline: "none", fontSize: 13, color: "#1D1D1F", background: "transparent" }}
-                />
-              </label>
+              <WeekCalendar value={weekDate} onChange={setWeekDate} />
               <button
                 onClick={publishChart}
                 disabled={publishing || entries.length === 0}
@@ -878,6 +896,198 @@ export default function CreatePage() {
           </div>
         )}
       </div>
+
+      {/* Modal de importação do Last.fm */}
+      {showLastfmModal && (
+        <div
+          onClick={() => setShowLastfmModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: isMobile ? "flex-end" : "center",
+            justifyContent: "center",
+            padding: isMobile ? 0 : 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "white",
+              borderRadius: isMobile ? "20px 20px 0 0" : 20,
+              padding: isMobile ? "28px 20px 32px" : "32px 28px",
+              width: "100%",
+              maxWidth: isMobile ? "100%" : 480,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
+            {/* Handle para bottom sheet mobile */}
+            {isMobile && (
+              <div style={{ display: "flex", justifyContent: "center", marginTop: -12, marginBottom: -8 }}>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(0,0,0,0.15)" }} />
+              </div>
+            )}
+
+            {/* Título */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(250,36,60,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                  ↺
+                </div>
+                <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Last.fm</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: "#86868B", lineHeight: 1.5 }}>
+                Seus scrobbles do Last.fm para a semana selecionada serão analisados. As músicas mais ouvidas serão ranqueadas e importadas para a sua parada.
+              </p>
+            </div>
+
+            {/* Conta Last.fm */}
+            <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+              {userLastfmUser ? (
+                <>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FA243C", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 14, color: "white", fontWeight: 800 }}>♪</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#86868B", fontWeight: 600 }}>Conta Last.fm</div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>@{userLastfmUser}</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(250,36,60,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                    ⚠️
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#B91C1C" }}>Usuário Last.fm não configurado</div>
+                    <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>
+                      Configure nas{" "}
+                      <a href="/settings" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+                        configurações de perfil
+                      </a>
+                      {" "}para usar esta função.
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Quantidade de músicas */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                Quantas músicas importar?
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <input
+                  type="range"
+                  min={1}
+                  max={200}
+                  value={lastfmImportCount}
+                  onChange={(e) => setLastfmImportCount(Number(e.target.value))}
+                  disabled={!userLastfmUser}
+                  style={{ flex: 1, accentColor: "#FA243C", cursor: userLastfmUser ? "pointer" : "not-allowed" }}
+                />
+                <div style={{
+                  minWidth: 52,
+                  textAlign: "center",
+                  background: "rgba(250,36,60,0.06)",
+                  border: "1px solid rgba(250,36,60,0.2)",
+                  borderRadius: 8,
+                  padding: "6px 8px",
+                  fontSize: 16,
+                  fontWeight: 800,
+                  color: "#FA243C",
+                  fontVariantNumeric: "tabular-nums",
+                }}>
+                  {lastfmImportCount}
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: "#86868B" }}>
+                Máximo de 200 músicas. O algoritmo prioriza as mais tocadas na semana selecionada.
+              </div>
+            </div>
+
+            {/* Info sobre tamanho da parada */}
+            <div style={{
+              background: userChartSize ? "rgba(250,36,60,0.04)" : "rgba(0,0,0,0.03)",
+              border: userChartSize ? "1px solid rgba(250,36,60,0.15)" : "1px solid rgba(0,0,0,0.06)",
+              borderRadius: 12,
+              padding: "12px 14px",
+              display: "flex",
+              gap: 10,
+              alignItems: "flex-start",
+            }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>{userChartSize ? "✂️" : "ℹ️"}</span>
+              <div>
+                {userChartSize ? (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                      Sua parada tem {userChartSize} posições
+                    </div>
+                    <div style={{ fontSize: 12, color: "#86868B", marginTop: 3, lineHeight: 1.5 }}>
+                      Ao publicar, músicas além da {userChartSize}ª posição serão automaticamente descartadas. Importe mais músicas para ter opções e reordene a lista antes de publicar.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                      Tamanho da parada não definido
+                    </div>
+                    <div style={{ fontSize: 12, color: "#86868B", marginTop: 3, lineHeight: 1.5 }}>
+                      Defina o tamanho da sua parada nas{" "}
+                      <a href="/settings" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>configurações</a>
+                      {" "}para que o corte seja aplicado automaticamente ao publicar.
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowLastfmModal(false)}
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 100,
+                  border: "1px solid rgba(0,0,0,0.12)",
+                  background: "white",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  color: "#1D1D1F",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => importFromLastfm(lastfmImportCount)}
+                disabled={!userLastfmUser}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 100,
+                  border: "none",
+                  background: userLastfmUser ? "#FA243C" : "#E5E7EB",
+                  color: userLastfmUser ? "white" : "#9CA3AF",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: userLastfmUser ? "pointer" : "not-allowed",
+                  boxShadow: userLastfmUser ? "0 2px 8px rgba(250,36,60,0.3)" : "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Importar {lastfmImportCount} música{lastfmImportCount === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }

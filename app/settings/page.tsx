@@ -20,6 +20,7 @@ type ProfileData = {
   paradaNome: string | null;
   genres: string[];
   lastfmUser: string | null;
+  chartSize: number | null;
 };
 
 type Tab = "perfil" | "conta";
@@ -38,6 +39,7 @@ export default function SettingsPage() {
     paradaNome: "",
     genres: [],
     lastfmUser: "",
+    chartSize: null,
   });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -63,6 +65,7 @@ export default function SettingsPage() {
           paradaNome: data.paradaNome ?? "",
           genres: data.genres ?? [],
           lastfmUser: data.lastfmUser ?? "",
+          chartSize: data.chartSize ?? null,
         });
       })
       .catch((e: Error) => setError(e.message))
@@ -93,6 +96,7 @@ export default function SettingsPage() {
           paradaNome: form.paradaNome,
           genres: form.genres,
           lastfmUser: form.lastfmUser,
+          chartSize: form.chartSize,
         }),
       });
       const data = await res.json();
@@ -239,7 +243,7 @@ export default function SettingsPage() {
                   />
                 </label>
 
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Usuário Last.fm</span>
                   <input
                     value={form.lastfmUser ?? ""}
@@ -247,7 +251,29 @@ export default function SettingsPage() {
                     placeholder="seu-usuario-lastfm"
                     style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
                   />
-                </label>
+                  <span style={{ fontSize: 11, color: "#86868B" }}>
+                    Necessário para importar suas músicas mais ouvidas do Last.fm.
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Tamanho da parada</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={form.chartSize ?? ""}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10);
+                      setForm((f) => ({ ...f, chartSize: isNaN(v) ? null : Math.min(200, Math.max(1, v)) }));
+                    }}
+                    placeholder="Ex: 20"
+                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14, width: "100%", boxSizing: "border-box" }}
+                  />
+                  <span style={{ fontSize: 11, color: "#86868B" }}>
+                    Quantas músicas tem a sua parada (máx. 200). Ao publicar, só as primeiras N músicas são salvas.
+                  </span>
+                </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Gêneros</span>
