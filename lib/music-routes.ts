@@ -36,10 +36,13 @@ export function buildSongPath(song: {
   artist: string;
   id?: string | null;
   artistId?: number | string | null;
+  /** Alias de `artistId` (campo em `Song` no Prisma / tipos). */
+  artistRefId?: number | string | null;
   slugArtist?: string | null;
   spotifyId?: string | null;
 }): string {
-  const artistDbId = song.artistId != null ? String(song.artistId).trim() : "";
+  const rawArtistKey = song.artistId ?? song.artistRefId;
+  const artistDbId = rawArtistKey != null ? String(rawArtistKey).trim() : "";
   const songDbId = song.id?.trim() ?? "";
   if (isPositiveIntId(artistDbId) && songDbId) {
     return `/song/${artistDbId}_${songDbId}`;

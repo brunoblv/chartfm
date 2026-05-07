@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, Play, Star } from "lucide-react";
+import { ChevronLeft, Star } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth-options";
@@ -252,28 +252,19 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           />
           <div style={{ minWidth: 280 }}>
             <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.05 }}>{title}</div>
-            <Link href={buildArtistPath(artist, artistSpotifyId, artistDbId)} style={{ display: "inline-block", marginTop: 8, fontSize: 16, fontWeight: 600, color: "#1D1D1F", textDecoration: "none" }}>
-              {artist}
-            </Link>
-            {album.trim() ? (
-              <Link
-                href={buildAlbumPath(album.trim(), artist, { artistId: artistDbId, albumId: albumDbId })}
-                style={{ display: "inline-block", fontSize: 14, color: "#86868B", marginTop: 6, textDecoration: "none" }}
-              >
-                {album}
+            <div style={{ marginTop: 10, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+              <Link href={buildArtistPath(artist, artistSpotifyId, artistDbId)} style={{ display: "block", fontSize: 16, fontWeight: 600, color: "#1D1D1F", textDecoration: "none", lineHeight: 1.35 }}>
+                {artist}
               </Link>
-            ) : null}
-            {spotifyId && (
-              <a
-                href={`https://open.spotify.com/track/${spotifyId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 8, background: "#1DB954", color: "white", textDecoration: "none", borderRadius: 100, padding: "10px 18px", fontSize: 14, fontWeight: 700 }}
-              >
-                <Play size={14} fill="white" />
-                Ouvir
-              </a>
-            )}
+              {album.trim() ? (
+                <Link
+                  href={buildAlbumPath(album.trim(), artist, { artistId: artistDbId, albumId: albumDbId })}
+                  style={{ display: "block", fontSize: 14, color: "#86868B", textDecoration: "none", lineHeight: 1.35 }}
+                >
+                  {album}
+                </Link>
+              ) : null}
+            </div>
             {canEditSong && (
               <div style={{ marginTop: 10 }}>
                 <Link href={`/song/${slug}/edit`} style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>

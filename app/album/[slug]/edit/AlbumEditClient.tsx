@@ -17,11 +17,34 @@ type AlbumEditInitial = {
 
 type ArtistOption = { spotifyId: string; name: string };
 
+export type AlbumSongRow = {
+  id: string;
+  title: string;
+  artist: string;
+  spotifyId: string | null;
+  trackNumber: number | null;
+};
+
+type SpotifyAlbumTrackRow = { spotifyId: string; title: string; inDatabase: boolean };
+
 function usableArtistOptions(items: ArtistOption[]) {
   return items.filter((a) => a.spotifyId.trim() && a.name.trim());
 }
 
-export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditInitial }) {
+function sortAlbumSongs(a: AlbumSongRow, b: AlbumSongRow) {
+  const na = a.trackNumber ?? 9999;
+  const nb = b.trackNumber ?? 9999;
+  if (na !== nb) return na - nb;
+  return a.title.localeCompare(b.title, "pt", { sensitivity: "base" });
+}
+
+export function AlbumEditClient({
+  initialAlbum,
+  initialSongs,
+}: {
+  initialAlbum: AlbumEditInitial;
+  initialSongs: AlbumSongRow[];
+}) {
   const [title, setTitle] = useState(initialAlbum.title);
   const [spotifyId, setSpotifyId] = useState(initialAlbum.spotifyId);
   const [romanization, setRomanization] = useState(initialAlbum.romanization);
@@ -33,6 +56,11 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [artistTypeaheadActive, setArtistTypeaheadActive] = useState(false);
+  const [songs, setSongs] = useState<AlbumSongRow[]>(() => [...initialSongs].sort(sortAlbumSongs));
+  const [spotifyTracks, setSpotifyTracks] = useState<SpotifyAlbumTrackRow[] | null>(null);
+  const [spotifyLoadMsg, setSpotifyLoadMsg] = useState<string | null>(null);
+  const [loadingSpotifyList, setLoadingSpotifyList] = useState(false);
+  const [addingTrackId, setAddingTrackId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!artistTypeaheadActive) {
@@ -68,6 +96,71 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
     () => title.trim().length > 0 && spotifyId.trim().length > 0 && artistSpotifyId.trim().length > 0 && !saving,
     [title, spotifyId, artistSpotifyId, saving],
   );
+
+  async function loadSpotifyTracklist() {
+    setLoadingSpotifyList(true);
+    setSpotifyLoadMsg(null);
+    try {
+      const res = await fetch(`/api/admin/album/${initialAlbum.id}/spotify-tracks`, { cache: "no-store" });
+      const data = (await res.json()) as {
+        tracks?: SpotifyAlbumTrackRow[];
+        configured?: boolean;
+        message?: string;
+      };
+      if (!res.ok) {
+        setSpotifyTracks([]);
+        setSpotifyLoadMsg("Não foi possível carregar as faixas do Spotify.");
+        return;
+      }
+      if (data.configured === false) {
+        setSpotifyTracks([]);
+        setSpotifyLoadMsg(data.message ?? "Spotify não configurado.");
+        return;
+      }
+      setSpotifyTracks(data.tracks ?? []);
+      if (data.message && (data.tracks ?? []).length === 0) {
+        setSpotifyLoadMsg(data.message);
+      }
+    } catch {
+      setSpotifyTracks([]);
+      setSpotifyLoadMsg("Erro de conexão ao buscar faixas no Spotify.");
+    } finally {
+      setLoadingSpotifyList(false);
+    }
+  }
+
+  async function addTrackFromSpotify(trackSpotifyId: string) {
+    setAddingTrackId(trackSpotifyId);
+    setSpotifyLoadMsg(null);
+    try {
+      const res = await fetch(`/api/admin/album/${initialAlbum.id}/songs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackSpotifyId }),
+      });
+      const data = (await res.json()) as { song?: AlbumSongRow; error?: string; message?: string };
+      if (!res.ok) {
+        setSpotifyLoadMsg(data.message ?? data.error ?? "Não foi possível adicionar a faixa.");
+        return;
+      }
+      if (data.song) {
+        setSongs((prev) => {
+          const map = new Map(prev.map((s) => [s.id, s]));
+          map.set(data.song!.id, data.song!);
+          return Array.from(map.values()).sort(sortAlbumSongs);
+        });
+        setSpotifyTracks((prev) =>
+          prev
+            ? prev.map((t) => (t.spotifyId === trackSpotifyId ? { ...t, inDatabase: true } : t))
+            : prev,
+        );
+      }
+    } catch {
+      setSpotifyLoadMsg("Erro de conexão ao adicionar faixa.");
+    } finally {
+      setAddingTrackId(null);
+    }
+  }
 
   async function submit() {
     if (!canSave) return;
@@ -157,6 +250,100 @@ export function AlbumEditClient({ initialAlbum }: { initialAlbum: AlbumEditIniti
         <input value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} style={inputStyle} />
       </label>
 
+      <div
+        style={{
+          marginTop: 8,
+          paddingTop: 18,
+          borderTop: "1px solid rgba(0,0,0,0.08)",
+          display: "grid",
+          gap: 12,
+        }}
+      >
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#1D1D1F" }}>Músicas no catálogo</div>
+        <p style={{ margin: 0, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
+          Faixas ligadas a este álbum no banco ({songs.length}). Use o Spotify abaixo para importar as que faltam.
+        </p>
+        {songs.length === 0 ? (
+          <div style={{ fontSize: 13, color: "#86868B" }}>Nenhuma música cadastrada para este álbum ainda.</div>
+        ) : (
+          <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 6 }}>
+            {songs.map((s) => (
+              <li
+                key={s.id}
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: 10,
+                  padding: "8px 10px",
+                  background: "rgba(0,0,0,0.03)",
+                  borderRadius: 10,
+                  fontSize: 13,
+                }}
+              >
+                <span style={{ color: "#86868B", fontVariantNumeric: "tabular-nums", minWidth: 28 }}>
+                  {s.trackNumber != null ? `${s.trackNumber}.` : "—"}
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontWeight: 600 }}>{s.title}</span>
+                  <span style={{ color: "#6B6B70" }}> — {s.artist}</span>
+                </span>
+                {s.spotifyId ? (
+                  <a
+                    href={`https://open.spotify.com/track/${s.spotifyId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#1DB954", fontSize: 12, fontWeight: 600, textDecoration: "none", flexShrink: 0 }}
+                  >
+                    Spotify
+                  </a>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+          <button type="button" onClick={loadSpotifyTracklist} disabled={loadingSpotifyList} style={secondaryButtonStyle(loadingSpotifyList)}>
+            {loadingSpotifyList ? "Carregando…" : "Carregar faixas do Spotify"}
+          </button>
+        </div>
+        {spotifyLoadMsg && <div style={{ fontSize: 13, color: "#C5291C" }}>{spotifyLoadMsg}</div>}
+        {spotifyTracks && spotifyTracks.length > 0 && (
+          <div style={{ display: "grid", gap: 8, maxHeight: 320, overflowY: "auto", paddingRight: 4 }}>
+            {spotifyTracks.map((t) => (
+              <div
+                key={t.spotifyId}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 10px",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  borderRadius: 10,
+                  background: "#fff",
+                }}
+              >
+                <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>{t.title}</span>
+                </span>
+                {t.inDatabase ? (
+                  <span style={{ fontSize: 12, color: "#0F9D58", fontWeight: 600 }}>No catálogo</span>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={addingTrackId !== null}
+                    onClick={() => addTrackFromSpotify(t.spotifyId)}
+                    style={smallAddButtonStyle(addingTrackId === null)}
+                  >
+                    {addingTrackId === t.spotifyId ? "…" : "Adicionar"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
         <button type="button" onClick={submit} disabled={!canSave} style={buttonStyle(canSave)}>
           {saving ? "Salvando..." : "Salvar alterações"}
@@ -211,6 +398,31 @@ const buttonStyle = (enabled: boolean): CSSProperties => ({
   borderRadius: 10,
   padding: "10px 14px",
   fontWeight: 700,
+  opacity: enabled ? 1 : 0.55,
+  cursor: enabled ? "pointer" : "not-allowed",
+});
+
+const secondaryButtonStyle = (enabled: boolean): CSSProperties => ({
+  border: "1px solid rgba(0,0,0,0.14)",
+  background: "#fff",
+  color: "#1D1D1F",
+  borderRadius: 10,
+  padding: "9px 14px",
+  fontWeight: 600,
+  fontSize: 13,
+  opacity: enabled ? 1 : 0.55,
+  cursor: enabled ? "pointer" : "not-allowed",
+});
+
+const smallAddButtonStyle = (enabled: boolean): CSSProperties => ({
+  border: "none",
+  background: "#FA243C",
+  color: "#fff",
+  borderRadius: 8,
+  padding: "6px 12px",
+  fontWeight: 700,
+  fontSize: 12,
+  flexShrink: 0,
   opacity: enabled ? 1 : 0.55,
   cursor: enabled ? "pointer" : "not-allowed",
 });

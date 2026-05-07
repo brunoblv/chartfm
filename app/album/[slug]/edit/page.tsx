@@ -73,6 +73,12 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
     );
   }
 
+  const albumSongs = await prisma.song.findMany({
+    where: { albumSpotifyId: album.spotifyId },
+    select: { id: true, title: true, artist: true, spotifyId: true, trackNumber: true },
+    orderBy: [{ trackNumber: "asc" }, { title: "asc" }],
+  });
+
   return (
     <Shell title="">
       <div style={{ maxWidth: 760, margin: "32px auto", padding: "0 20px 48px" }}>
@@ -92,6 +98,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
             artist: album.artist.name,
             artistSpotifyId: album.artistSpotifyId,
           }}
+          initialSongs={albumSongs}
         />
       </div>
     </Shell>

@@ -37,14 +37,34 @@ export default async function AdminMusicPage({
   return (
     <Shell title="Admin" subtitle="Editar músicas">
       <div style={{ maxWidth: 980 }}>
-        <form method="GET" style={{ marginBottom: 16 }}>
-          <input
-            name="q"
-            defaultValue={query}
-            placeholder="Buscar por música ou artista"
-            style={{ width: "100%", maxWidth: 520, padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.15)" }}
-          />
-        </form>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <form method="GET" style={{ flex: "1 1 240px", minWidth: 200 }}>
+            <input
+              name="q"
+              defaultValue={query}
+              placeholder="Buscar por música ou artista"
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.15)" }}
+            />
+          </form>
+          <Link
+            href="/admin/music/new"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "10px 16px",
+              borderRadius: 10,
+              background: "#FA243C",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 14,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Adicionar música
+          </Link>
+        </div>
         <div style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>

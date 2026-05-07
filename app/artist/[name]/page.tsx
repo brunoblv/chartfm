@@ -31,6 +31,23 @@ const PAGE_SIZE = 10;
 const VALID_TABS = ["songs", "albums", "user-songs", "user-albums"] as const;
 type Tab = typeof VALID_TABS[number];
 
+function catalogSongCover(songId: string, manual: string | null | undefined): SongRow["cover"] {
+  let hash = 0;
+  for (let i = 0; i < songId.length; i++) hash = (hash * 31 + songId.charCodeAt(i)) | 0;
+  const pal = COVER_PALETTES[Math.abs(hash) % COVER_PALETTES.length];
+  return {
+    palette: [pal[0], pal[1]] as [string, string],
+    seed: Math.abs(hash) % 1000,
+    imageUrl: manual?.trim() || undefined,
+  };
+}
+
+function hashSeed(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % 1000;
+}
+
 function buildPageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const pages: (number | "...")[] = [1];
@@ -198,7 +215,8 @@ export default async function ArtistPage({
     },
   });
 
-  if (allEntries.length === 0) {
+  const hasArtistIdentity = Boolean(artistRef ?? spotifyProfile);
+  if (allEntries.length === 0 && !hasArtistIdentity) {
     return (
       <Shell title="Artista" subtitle="Não encontrado">
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
@@ -210,6 +228,29 @@ export default async function ArtistPage({
       </Shell>
     );
   }
+
+  const songCatalogOr: Prisma.SongWhereInput[] = [];
+  for (const sid of spotifyIdsForSong) songCatalogOr.push({ artistSpotifyId: sid });
+  for (const n of nameCandidates) {
+    const t = n?.trim();
+    if (t) songCatalogOr.push({ artist: { equals: t, mode: "insensitive" } });
+  }
+
+  const allRegisteredSongs =
+    songCatalogOr.length > 0
+      ? await prisma.song.findMany({
+          where: { OR: songCatalogOr },
+          select: {
+            id: true,
+            title: true,
+            artist: true,
+            album: true,
+            spotifyId: true,
+            albumRef: { select: { id: true, coverUrl: true } },
+          },
+          orderBy: [{ title: "asc" }],
+        })
+      : [];
 
   // ── Global stats ──────────────────────────────────────────────────────────
   const listenersSet = new Set(allEntries.map((e) => e.chart.userId));
@@ -273,6 +314,9 @@ export default async function ArtistPage({
   }
 
   const artistSongKeys = new Set(songsMap.keys());
+  for (const s of allRegisteredSongs) {
+    artistSongKeys.add(songKey(s.title, s.artist));
+  }
   const globalStatsBySong = new Map<string, { weeks: number; peak: number; number1s: number; currentWeekPos: number }>();
   for (const key of artistSongKeys) {
     globalStatsBySong.set(key, { weeks: 0, peak: 9999, number1s: 0, currentWeekPos: 9999 });
@@ -291,22 +335,76 @@ export default async function ArtistPage({
     });
   }
 
-  const songs = [...songsMap.values()]
-    .map((s) => {
-      const gs = globalStatsBySong.get(s.key);
-      return {
-        ...s,
-        weeks: gs?.weeks ?? 0,
-        peak: gs?.peak === 9999 ? 0 : (gs?.peak ?? 0),
-        number1s: gs?.number1s ?? 0,
-        currentWeekPos: gs?.currentWeekPos ?? 9999,
-      };
-    })
-    .sort((a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points);
+  const mergedSongsById = new Map<string, SongRow>();
+  const registeredSongIds = new Set(allRegisteredSongs.map((s) => s.id));
 
-  // ── All albums ────────────────────────────────────────────────────────────
+  for (const db of allRegisteredSongs) {
+    const key = songKey(db.title, db.artist);
+    const fromChart = songsMap.get(key);
+    const gs = globalStatsBySong.get(key)!;
+    const manual = db.albumRef?.coverUrl?.trim() || null;
+    const row: SongRow = fromChart
+      ? {
+          ...fromChart,
+          songId: db.id,
+          spotifyId: db.spotifyId ?? fromChart.spotifyId,
+          dbArtist: db.artist,
+          title: db.title,
+          album: db.album ?? fromChart.album,
+          albumRefId: db.albumRef?.id ?? fromChart.albumRefId,
+          cover: manual ? { ...fromChart.cover, imageUrl: manual } : fromChart.cover,
+          weeks: gs.weeks,
+          peak: gs.peak === 9999 ? 0 : gs.peak,
+          number1s: gs.number1s,
+          currentWeekPos: gs.currentWeekPos,
+        }
+      : {
+          key,
+          songId: db.id,
+          spotifyId: db.spotifyId,
+          dbArtist: db.artist,
+          title: db.title,
+          album: db.album ?? "",
+          albumRefId: db.albumRef?.id ?? null,
+          points: 0,
+          cover: catalogSongCover(db.id, manual),
+          weeks: gs.weeks,
+          peak: gs.peak === 9999 ? 0 : gs.peak,
+          number1s: gs.number1s,
+          currentWeekPos: gs.currentWeekPos,
+        };
+    mergedSongsById.set(db.id, row);
+  }
+
+  for (const row of songsMap.values()) {
+    if (registeredSongIds.has(row.songId)) continue;
+    const gs = globalStatsBySong.get(row.key)!;
+    mergedSongsById.set(row.songId, {
+      ...row,
+      weeks: gs.weeks,
+      peak: gs.peak === 9999 ? 0 : gs.peak,
+      number1s: gs.number1s,
+      currentWeekPos: gs.currentWeekPos,
+    });
+  }
+
+  const songs = [...mergedSongsById.values()].sort(
+    (a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points || a.title.localeCompare(b.title),
+  );
+
+  // ── Pontos por álbum (paradas) ───────────────────────────────────────────
+  const pointsByAlbumDbId = new Map<number, number>();
+  const chartPaletteByAlbumDbId = new Map<number, { a: string; b: string; seed: number }>();
   const albumsMapRaw = new Map<string, { albumId: number | null; name: string; songTitles: Set<string>; points: number; cover: AlbumRow["cover"] }>();
   for (const e of allEntries) {
+    const aid = e.song.albumRef?.id;
+    if (aid != null) {
+      const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+      pointsByAlbumDbId.set(aid, (pointsByAlbumDbId.get(aid) ?? 0) + pts);
+      if (!chartPaletteByAlbumDbId.has(aid)) {
+        chartPaletteByAlbumDbId.set(aid, { a: e.coverPaletteA, b: e.coverPaletteB, seed: e.coverSeed });
+      }
+    }
     const albumName = e.song.album?.trim() || "Single";
     if (albumName === "Single") continue;
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
@@ -326,9 +424,102 @@ export default async function ArtistPage({
       if (manual && !existing.cover.imageUrl) existing.cover = { ...existing.cover, imageUrl: manual };
     }
   }
-  const allAlbums: AlbumRow[] = [...albumsMapRaw.values()]
+
+  const spotifyIdsArr = [...spotifyIdsForSong];
+  const dbAlbumRows =
+    spotifyIdsArr.length > 0
+      ? await prisma.album.findMany({
+          where: { artistSpotifyId: { in: spotifyIdsArr } },
+          select: {
+            id: true,
+            spotifyId: true,
+            title: true,
+            coverUrl: true,
+            _count: { select: { songs: true } },
+          },
+          orderBy: [{ releaseDate: "desc" }],
+        })
+      : [];
+
+  const fromDbAlbums: AlbumRow[] = dbAlbumRows.map((a) => {
+    const pts = pointsByAlbumDbId.get(a.id) ?? 0;
+    const palFromChart = chartPaletteByAlbumDbId.get(a.id);
+    const pal = palFromChart
+      ? ([palFromChart.a, palFromChart.b] as [string, string])
+      : artistColor(a.title);
+    const manual = a.coverUrl?.trim() || null;
+    return {
+      albumId: a.id,
+      name: a.title,
+      songs: a._count.songs,
+      points: pts,
+      cover: {
+        palette: pal,
+        seed: palFromChart?.seed ?? hashSeed(a.spotifyId),
+        imageUrl: manual ?? undefined,
+      },
+    };
+  });
+
+  const dbAlbumIds = new Set(dbAlbumRows.map((d) => d.id));
+  const dbAlbumTitles = new Set(dbAlbumRows.map((d) => d.title.toLowerCase()));
+
+  const fromChartNamesOnly: AlbumRow[] = [...albumsMapRaw.values()]
+    .filter((raw) => {
+      if (raw.albumId != null && dbAlbumIds.has(raw.albumId)) return false;
+      if (dbAlbumTitles.has(raw.name.toLowerCase())) return false;
+      return true;
+    })
     .sort((a, b) => b.points - a.points)
     .map((a) => ({ albumId: a.albumId, name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
+
+  /** Álbuns referenciados por músicas do artista que não estão na lista `Album` deste Spotify id (ex.: outro selo). */
+  const catalogAlbumsFromSongs = new Map<number, AlbumRow>();
+  for (const s of allRegisteredSongs) {
+    const ref = s.albumRef;
+    if (!ref?.id) continue;
+    if (dbAlbumIds.has(ref.id)) continue;
+    const name = s.album?.trim() || ref.id.toString();
+    const pts = pointsByAlbumDbId.get(ref.id) ?? 0;
+    const manual = ref.coverUrl?.trim() || null;
+    const pal = chartPaletteByAlbumDbId.get(ref.id);
+    const palette = pal ? ([pal.a, pal.b] as [string, string]) : artistColor(name);
+    const seed = pal?.seed ?? hashSeed(s.id + String(ref.id));
+    const prev = catalogAlbumsFromSongs.get(ref.id);
+    const trackCount = (prev?.songs ?? 0) + 1;
+    const displayName = (s.album?.trim() || prev?.name || name).trim();
+    catalogAlbumsFromSongs.set(ref.id, {
+      albumId: ref.id,
+      name: displayName,
+      songs: trackCount,
+      points: pts,
+      cover: {
+        palette,
+        seed,
+        imageUrl: manual ?? prev?.cover.imageUrl,
+      },
+    });
+  }
+
+  const allAlbums: AlbumRow[] = (() => {
+    if (fromDbAlbums.length > 0) {
+      const byId = new Map<number, AlbumRow>();
+      for (const a of fromDbAlbums) {
+        if (a.albumId != null) byId.set(a.albumId, a);
+      }
+      for (const extra of [...catalogAlbumsFromSongs.values(), ...fromChartNamesOnly]) {
+        if (extra.albumId != null && byId.has(extra.albumId)) continue;
+        if (extra.albumId != null) byId.set(extra.albumId, extra);
+      }
+      return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (catalogAlbumsFromSongs.size > 0) {
+      return [...catalogAlbumsFromSongs.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return [...albumsMapRaw.values()]
+      .sort((a, b) => b.points - a.points)
+      .map((a) => ({ albumId: a.albumId, name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
+  })();
 
   // ── User-specific data ────────────────────────────────────────────────────
   const userEntries = currentUserId ? allEntries.filter((e) => e.chart.userId === currentUserId) : [];
@@ -410,16 +601,16 @@ export default async function ArtistPage({
 
   const stats = [
     { label: "Usuários únicos", value: listenersSet.size, icon: "🎧", color: "#FA243C" },
-    { label: "Músicas rankeadas", value: songsMap.size, icon: "🎵", color: "#8338EC" },
+    { label: "Músicas cadastradas", value: songs.length, icon: "🎵", color: "#8338EC" },
     { label: "Número 1s", value: number1s, icon: "👑", color: "#FFD700" },
     { label: "Pontos totais", value: totalPoints, icon: "⭐", color: "#FB5607" },
   ];
 
   const tabDefs: { id: Tab; label: string }[] = [
-    { id: "songs", label: "Músicas Global 100" },
-    { id: "albums", label: "Albuns overall" },
+    { id: "songs", label: "Músicas" },
+    { id: "albums", label: "Álbuns" },
     { id: "user-songs", label: "Músicas na sua parada" },
-    { id: "user-albums", label: "Albuns na sua parada" },
+    { id: "user-albums", label: "Álbuns na sua parada" },
   ];
 
   // ── JSX ───────────────────────────────────────────────────────────────────
@@ -447,7 +638,7 @@ export default async function ArtistPage({
             <h1 style={{ fontSize: 72, fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1, marginBottom: 16 }}>{canonicalName}</h1>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 14, opacity: 0.9, marginBottom: 24 }}>
               <span><strong>{listenersSet.size}</strong> ouvintes</span>
-              <span><strong>{songsMap.size}</strong> músicas rankeadas</span>
+              <span><strong>{songs.length}</strong> músicas cadastradas</span>
               <span><strong>{number1s}</strong> #1s</span>
               <span><strong>{totalPoints}</strong> pontos</span>
             </div>
@@ -524,6 +715,12 @@ export default async function ArtistPage({
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhuma música nas suas paradas</div>
                 <div style={{ fontSize: 14 }}>Você ainda não adicionou músicas deste artista às suas paradas.</div>
+              </div>
+            ) : tab === "songs" && songs.length === 0 ? (
+              <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhuma música cadastrada</div>
+                <div style={{ fontSize: 14 }}>Ainda não há faixas deste artista no banco de dados.</div>
               </div>
             ) : (
               <>
@@ -655,6 +852,12 @@ export default async function ArtistPage({
                 <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhum álbum nas suas paradas</div>
                 <div style={{ fontSize: 14 }}>Você ainda não adicionou músicas deste artista às suas paradas.</div>
               </div>
+            ) : tab === "albums" && allAlbums.length === 0 ? (
+              <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 48, textAlign: "center", color: "#86868B" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>💿</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhum álbum cadastrado</div>
+                <div style={{ fontSize: 14 }}>Ainda não há álbuns deste artista vinculados no banco ou nas paradas.</div>
+              </div>
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -683,22 +886,24 @@ export default async function ArtistPage({
         )}
 
         {/* Top fans */}
-        <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {bigFans.map(({ user, points }) => (
-              <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
-                <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, textAlign: "center" }}>
-                  <Avatar user={user} imageUrl={user.image} size={56} />
-                  <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "#1D1D1F" }}>{user.name}</div>
-                  <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>Pontos no artista</div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
-                </div>
-              </Link>
-            ))}
+        {allEntries.length > 0 ? (
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+              {bigFans.map(({ user, points }) => (
+                <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
+                  <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, textAlign: "center" }}>
+                    <Avatar user={user} imageUrl={user.image} size={56} />
+                    <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "#1D1D1F" }}>{user.name}</div>
+                    <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>Pontos no artista</div>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </Shell>
   );
