@@ -10,7 +10,7 @@ import { Cover } from "@/components/ui/Cover";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Song, Cover as CoverModel, Chart } from "@/lib/types";
-import { buildSongPath } from "@/lib/music-routes";
+
 
 type ChartDetailResponse = {
   user: { id: string; handle: string; name: string };
@@ -48,16 +48,6 @@ function coverForSong(song: Song): CoverModel {
 
 const SPOTIFY_SEARCH_DISABLED = false;
 
-/** URL gerada sem `artistRefId` (comportamento antigo do app — priorizava Spotify no path). */
-function buildSongPathWithoutArtistDbId(song: Song): string {
-  return buildSongPath({
-    title: song.title,
-    artist: song.artist,
-    id: song.id,
-    slugArtist: song.slugArtist,
-    spotifyId: song.spotifyId,
-  });
-}
 
 export default function EditChartPage() {
   const params = useParams();
@@ -672,10 +662,6 @@ export default function EditChartPage() {
       </div>
       {entries.map((song, i) => {
         const cover = coverForSong(song);
-        const canonicalPath = buildSongPath(song);
-        const legacyPath = buildSongPathWithoutArtistDbId(song);
-        const slugDiffersFromCanonical = canonicalPath !== legacyPath;
-        const missingStableId = !song.id?.trim() && !song.spotifyId?.trim();
         return (
           <div
             key={`${song.id ?? ""}-${song.title}-${song.artist}-${i}`}
@@ -706,46 +692,6 @@ export default function EditChartPage() {
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
               <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
-              <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.35 }}>
-                <Link
-                  href={canonicalPath}
-                  prefetch={false}
-                  style={{ color: "#2563EB", textDecoration: "none", wordBreak: "break-all" }}
-                  title="Abrir página da música (URL canônica)"
-                >
-                  {canonicalPath}
-                </Link>
-                {slugDiffersFromCanonical && (
-                  <div
-                    style={{
-                      marginTop: 6,
-                      padding: "6px 8px",
-                      borderRadius: 8,
-                      background: "rgba(245, 158, 11, 0.12)",
-                      border: "1px solid rgba(245, 158, 11, 0.35)",
-                      color: "#92400E",
-                      fontSize: 11,
-                    }}
-                  >
-                    A URL antiga desta faixa usava só o ID do Spotify no endereço; o link acima (artista + faixa no banco) é o canônico e costuma abrir certo. Links antigos podem falhar se o texto não bater com o Spotify.
-                  </div>
-                )}
-                {missingStableId && (
-                  <div
-                    style={{
-                      marginTop: 6,
-                      padding: "6px 8px",
-                      borderRadius: 8,
-                      background: "rgba(220, 38, 38, 0.08)",
-                      border: "1px solid rgba(220, 38, 38, 0.2)",
-                      color: "#991B1B",
-                      fontSize: 11,
-                    }}
-                  >
-                    Sem ID no banco nem no Spotify — a página da música depende só do texto no endereço. Busque a faixa no Spotify abaixo e substitua esta linha para padronizar.
-                  </div>
-                )}
-              </div>
             </div>
             <button
               onClick={() => removeSong(i)}
