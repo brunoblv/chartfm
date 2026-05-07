@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { getServerSession } from "next-auth";
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 import "./globals.css";
 
@@ -42,20 +43,13 @@ export default async function RootLayout({
           async
           strategy="afterInteractive"
           src="https://www.googletagmanager.com/gtag/js?id=G-VKENNK522F"
-        />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-VKENNK522F');
-          `}
-        </Script>
+        />      
 
         <Providers session={session}>
           {children}
         </Providers>
       </body>
+      <GoogleAnalytics gaId="G-VKENNK522F" />
     </html>
   );
 }
