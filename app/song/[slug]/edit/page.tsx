@@ -6,7 +6,6 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { Shell } from "@/components/layout/Shell";
-import { AddSongManual } from "@/components/admin/AddSongManual";
 import { SongEditClient } from "./SongEditClient";
 
 export default async function SongEditPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -99,7 +98,6 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
         </Link>
         <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>Editar música</h1>
         <p style={{ color: "#86868B", marginTop: 0 }}>Disponível apenas para perfis DEV e ADMIN.</p>
-        <AddSongManual />
         <SongEditClient
           initialSong={{
             id: song.id,

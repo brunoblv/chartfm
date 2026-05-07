@@ -234,32 +234,33 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
           <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
           <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
         </label>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!canSave}
-            style={{
-              border: "none",
-              background: "#FA243C",
-              color: "#fff",
-              borderRadius: 10,
-              padding: "10px 14px",
-              fontWeight: 700,
-              opacity: canSave ? 1 : 0.55,
-              cursor: canSave ? "pointer" : "not-allowed",
-            }}
-          >
-            {saving ? "Salvando..." : "Salvar alterações"}
-          </button>
-          {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
-          {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
-        </div>
       </div>
 
       <hr style={{ border: "none", borderTop: "1px solid rgba(0,0,0,0.08)", margin: "32px 0" }} />
       <FeatsSection songId={initialSong.id} hasSongSpotifyId={initialSong.spotifyId.trim().length > 0} initialFeats={initialFeats} />
+      <hr style={{ border: "none", borderTop: "1px solid rgba(0,0,0,0.08)", margin: "32px 0" }} />
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!canSave}
+          style={{
+            border: "none",
+            background: "#FA243C",
+            color: "#fff",
+            borderRadius: 10,
+            padding: "10px 14px",
+            fontWeight: 700,
+            opacity: canSave ? 1 : 0.55,
+            cursor: canSave ? "pointer" : "not-allowed",
+          }}
+        >
+          {saving ? "Salvando..." : "Salvar alterações"}
+        </button>
+        {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
+        {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
+      </div>
     </>
   );
 }

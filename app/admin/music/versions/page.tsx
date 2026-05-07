@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
+import { SpotifyFixButton } from "./SpotifyFixButton";
 
 const PAGE_SIZE = 100;
 
@@ -234,7 +235,7 @@ export default async function AdminMusicVersionsPage({
                 <th style={thStyle}>Artista</th>
                 <th style={thStyle}>Álbum</th>
                 <th style={{ ...thStyle, textAlign: "right" }}>Entradas</th>
-                <th style={thStyle}>Ações</th>
+                <th style={{ ...thStyle, textAlign: "center" }}>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -278,13 +279,16 @@ export default async function AdminMusicVersionsPage({
                     <td style={{ ...tdStyle, textAlign: "right", fontWeight: 600 }}>
                       {s._count.entries}
                     </td>
-                    <td style={tdStyle}>
-                      <Link
-                        href={`${songPath}/edit`}
-                        style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700, fontSize: 13 }}
-                      >
-                        Editar
-                      </Link>
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                        <Link
+                          href={`${songPath}/edit`}
+                          style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700, fontSize: 13 }}
+                        >
+                          Editar
+                        </Link>
+                        <SpotifyFixButton songId={s.id} songTitle={s.title} />
+                      </div>
                     </td>
                   </tr>
                 );
