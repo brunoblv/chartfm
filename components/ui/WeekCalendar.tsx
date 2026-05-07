@@ -83,6 +83,7 @@ type Props = {
 
 export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
   const [open, setOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<false | "months" | "years">(false);
   const [publishedIndexes, setPublishedIndexes] = useState<Set<number>>(new Set());
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -93,6 +94,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
 
   const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(selectedDate.getMonth());
+  const [yearRangeStart, setYearRangeStart] = useState(() => Math.floor(selectedDate.getFullYear() / 12) * 12);
 
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -107,7 +109,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setPickerMode(false); setYearRangeStart(Math.floor(viewYear / 12) * 12); return; }
     const handleClick = (e: MouseEvent) => {
       if (
         popoverRef.current &&
@@ -185,28 +187,124 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
             width: 300,
           }}
         >
-          {/* Month navigation */}
+          {/* Navigation header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <button
               type="button"
-              onClick={goToPrev}
+              onClick={() => {
+                if (pickerMode === "years") setYearRangeStart(s => s - 12);
+                else if (pickerMode === "months") setViewYear(y => y - 1);
+                else goToPrev();
+              }}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#1D1D1F", display: "flex", alignItems: "center", padding: 4, borderRadius: 6 }}
             >
               <ChevronLeft size={18} />
             </button>
-            <span style={{ fontSize: 14, fontWeight: 700 }}>
-              {MONTH_NAMES_PT[viewMonth]} {viewYear}
-            </span>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {/* Month label — only in days mode */}
+              {!pickerMode && (
+                <button
+                  type="button"
+                  onClick={() => setPickerMode("months")}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#1D1D1F", borderRadius: 6, padding: "4px 6px", display: "flex", alignItems: "center", gap: 3 }}
+                >
+                  {MONTH_NAMES_PT[viewMonth]}
+                  <ChevronRight size={12} style={{ color: "#86868B", transform: "rotate(90deg)" }} />
+                </button>
+              )}
+              {/* Year label — in days/months mode clickable to years; in years mode just label */}
+              {pickerMode === "years" ? (
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#1D1D1F", padding: "4px 6px" }}>
+                  {yearRangeStart}–{yearRangeStart + 11}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setYearRangeStart(Math.floor(viewYear / 12) * 12); setPickerMode("years"); }}
+                  style={{ background: pickerMode === "months" ? "rgba(0,0,0,0.06)" : "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#1D1D1F", borderRadius: 6, padding: "4px 6px", display: "flex", alignItems: "center", gap: 3 }}
+                >
+                  {viewYear}
+                  <ChevronRight size={12} style={{ color: "#86868B", transform: pickerMode === "months" ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.15s" }} />
+                </button>
+              )}
+            </div>
+
             <button
               type="button"
-              onClick={goToNext}
+              onClick={() => {
+                if (pickerMode === "years") setYearRangeStart(s => s + 12);
+                else if (pickerMode === "months") setViewYear(y => y + 1);
+                else goToNext();
+              }}
               style={{ background: "none", border: "none", cursor: "pointer", color: "#1D1D1F", display: "flex", alignItems: "center", padding: 4, borderRadius: 6 }}
             >
               <ChevronRight size={18} />
             </button>
           </div>
 
+          {/* Year picker grid */}
+          {pickerMode === "years" && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 12 }}>
+              {Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((yr) => {
+                const isSelected = yr === viewYear;
+                const isFuture = yr > today.getFullYear();
+                return (
+                  <button
+                    key={yr}
+                    type="button"
+                    disabled={isFuture}
+                    onClick={() => { setViewYear(yr); setPickerMode("months"); }}
+                    style={{
+                      background: isSelected ? "rgba(250,36,60,0.1)" : "rgba(0,0,0,0.03)",
+                      border: isSelected ? "1.5px solid rgba(250,36,60,0.35)" : "1.5px solid transparent",
+                      borderRadius: 8,
+                      padding: "8px 4px",
+                      cursor: isFuture ? "default" : "pointer",
+                      fontSize: 13,
+                      fontWeight: isSelected ? 700 : 500,
+                      color: isFuture ? "#C7C7CC" : isSelected ? "#FA243C" : "#1D1D1F",
+                      textAlign: "center",
+                    }}
+                  >
+                    {yr}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Month picker grid */}
+          {pickerMode === "months" && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 12 }}>
+              {MONTH_NAMES_PT.map((name, idx) => {
+                const isCurrentMonth = idx === viewMonth;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => { setViewMonth(idx); setPickerMode(false); }}
+                    style={{
+                      background: isCurrentMonth ? "rgba(250,36,60,0.1)" : "rgba(0,0,0,0.03)",
+                      border: isCurrentMonth ? "1.5px solid rgba(250,36,60,0.35)" : "1.5px solid transparent",
+                      borderRadius: 8,
+                      padding: "7px 4px",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: isCurrentMonth ? 700 : 500,
+                      color: isCurrentMonth ? "#FA243C" : "#1D1D1F",
+                      textAlign: "center",
+                    }}
+                  >
+                    {name.slice(0, 3)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Day headers */}
+          {!pickerMode && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr) 12px", marginBottom: 4 }}>
             {DAY_NAMES.map((d) => (
               <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", paddingBottom: 6 }}>
@@ -215,9 +313,10 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
             ))}
             <div /> {/* dot column header */}
           </div>
+          )}
 
           {/* Weeks */}
-          {weeks.map((week, wi) => {
+          {!pickerMode && weeks.map((week, wi) => {
             const monday = week[0];
             const wIdx = weekIndex(monday);
             const isSelected = wIdx === selectedWi;
@@ -306,7 +405,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
           })}
 
           {/* Legend */}
-          <div style={{ display: "flex", gap: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 11, color: "#86868B" }}>
+          {!pickerMode && <div style={{ display: "flex", gap: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 11, color: "#86868B" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#1B873F" }} />
               Com parada
@@ -315,7 +414,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
               <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#E5E5EA" }} />
               Sem parada
             </div>
-          </div>
+          </div>}
         </div>
       )}
     </div>
