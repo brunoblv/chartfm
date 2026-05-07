@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function isoWeekNumber(date: Date): number {
@@ -84,7 +84,9 @@ type Props = {
 export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
   const [open, setOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<false | "months" | "years">(false);
+  const [yearInput, setYearInput] = useState("");
   const [publishedIndexes, setPublishedIndexes] = useState<Set<number>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -100,6 +102,13 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
     fetch("/api/charts/weeks")
       .then((r) => r.json())
       .then((data: { weekIndexes?: number[] }) => {
@@ -110,6 +119,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
 
   useEffect(() => {
     if (!open) { setPickerMode(false); setYearRangeStart(Math.floor(viewYear / 12) * 12); return; }
+    if (isMobile) return;
     const handleClick = (e: MouseEvent) => {
       if (
         popoverRef.current &&
@@ -122,7 +132,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+  }, [open, isMobile]);
 
   const weeks = getMonthWeeks(viewYear, viewMonth);
 
@@ -145,6 +155,32 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
   const isoWk = isoWeekNumber(selectedDate);
   const isoYr = isoWeekYear(selectedDate);
   const triggerLabel = `${label} ${isoWk} · ${isoYr}`;
+
+  const popoverStyle: React.CSSProperties = isMobile
+    ? {
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        background: "white",
+        borderRadius: "20px 20px 0 0",
+        boxShadow: "0 -4px 32px rgba(0,0,0,0.16)",
+        padding: "12px 16px 32px",
+        width: "100%",
+      }
+    : {
+        position: "absolute",
+        top: "calc(100% + 8px)",
+        right: 0,
+        zIndex: 1000,
+        background: "white",
+        borderRadius: 16,
+        border: "1px solid rgba(0,0,0,0.1)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+        padding: 16,
+        width: 300,
+      };
 
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
@@ -171,22 +207,25 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
         <ChevronRight size={14} style={{ color: "#86868B", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} />
       </button>
 
+      {open && isMobile && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 999 }}
+        />
+      )}
+
       {open && (
         <div
           ref={popoverRef}
-          style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            right: 0,
-            zIndex: 1000,
-            background: "white",
-            borderRadius: 16,
-            border: "1px solid rgba(0,0,0,0.1)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-            padding: 16,
-            width: 300,
-          }}
+          style={popoverStyle}
         >
+          {/* Bottom sheet handle (mobile only) */}
+          {isMobile && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(0,0,0,0.15)", marginBottom: 8 }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>Selecionar semana</span>
+            </div>
+          )}
           {/* Navigation header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <button
@@ -221,7 +260,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => { setYearRangeStart(Math.floor(viewYear / 12) * 12); setPickerMode("years"); }}
+                  onClick={() => { setYearRangeStart(Math.floor(viewYear / 12) * 12); setYearInput(""); setPickerMode("years"); }}
                   style={{ background: pickerMode === "months" ? "rgba(0,0,0,0.06)" : "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#1D1D1F", borderRadius: 6, padding: "4px 6px", display: "flex", alignItems: "center", gap: 3 }}
                 >
                   {viewYear}
@@ -271,6 +310,43 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* Year direct input */}
+          {pickerMode === "years" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, paddingTop: 4, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+              <span style={{ fontSize: 11, color: "#86868B", whiteSpace: "nowrap" }}>Ir para o ano:</span>
+              <input
+                type="number"
+                min={1900}
+                max={today.getFullYear()}
+                value={yearInput}
+                placeholder={String(viewYear)}
+                onChange={(e) => setYearInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const yr = parseInt(yearInput, 10);
+                    if (yr >= 1900 && yr <= today.getFullYear()) {
+                      setViewYear(yr);
+                      setYearRangeStart(Math.floor(yr / 12) * 12);
+                      setPickerMode("months");
+                    }
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  border: "1px solid rgba(0,0,0,0.15)",
+                  borderRadius: 6,
+                  padding: "4px 8px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#1D1D1F",
+                  outline: "none",
+                  width: 0,
+                  appearance: "textfield",
+                }}
+              />
             </div>
           )}
 
@@ -361,7 +437,7 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
                         fontSize: 12,
                         fontWeight: isToday ? 800 : 500,
                         color: isFuture ? "#C7C7CC" : !inMonth ? "#C7C7CC" : isSelected ? "#FA243C" : "#1D1D1F",
-                        padding: "5px 2px",
+                        padding: isMobile ? "9px 2px" : "5px 2px",
                         borderRadius: 6,
                         position: "relative",
                       }}
