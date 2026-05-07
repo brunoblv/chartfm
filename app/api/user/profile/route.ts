@@ -60,7 +60,7 @@ export async function PATCH(req: Request) {
   const paradaNome = typeof body.paradaNome === "string" ? body.paradaNome.trim() : "";
   const lastfmUser = typeof body.lastfmUser === "string" ? body.lastfmUser.trim() : "";
   const rawChartSize = typeof body.chartSize === "number" ? Math.round(body.chartSize) : null;
-  const chartSize = rawChartSize !== null && rawChartSize >= 1 && rawChartSize <= 200 ? rawChartSize : null;
+  const chartSize = rawChartSize !== null && rawChartSize >= 1 && rawChartSize <= 100 ? rawChartSize : null;
   const genres = Array.isArray(body.genres)
     ? body.genres.map((g) => String(g).trim()).filter(Boolean).slice(0, 15)
     : [];

@@ -261,17 +261,17 @@ export default function SettingsPage() {
                   <input
                     type="number"
                     min={1}
-                    max={200}
+                    max={100}
                     value={form.chartSize ?? ""}
                     onChange={(e) => {
                       const v = parseInt(e.target.value, 10);
-                      setForm((f) => ({ ...f, chartSize: isNaN(v) ? null : Math.min(200, Math.max(1, v)) }));
+                      setForm((f) => ({ ...f, chartSize: isNaN(v) ? null : Math.min(100, Math.max(1, v)) }));
                     }}
                     placeholder="Ex: 20"
                     style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14, width: "100%", boxSizing: "border-box" }}
                   />
                   <span style={{ fontSize: 11, color: "#86868B" }}>
-                    Quantas músicas tem a sua parada (máx. 200). Ao publicar, só as primeiras N músicas são salvas.
+                    Quantas músicas tem a sua parada (máx. 100). Ao publicar, só as primeiras N músicas são salvas.
                   </span>
                 </div>
 
