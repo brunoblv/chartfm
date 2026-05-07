@@ -1,15 +1,15 @@
 import Link from "next/link";
-import { ChevronLeft, Star } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
-import { Avatar } from "@/components/ui/Avatar";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { formatChartPeriod } from "@/lib/chart-week";
+import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
 
 function pointsForPosition(position: number): number {
   return 101 - position;
@@ -223,8 +223,16 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
       chartId: e.chart.id,
       position: e.position,
       dateRange: chartDateRangeOnly({ weekLabel: e.chart.weekLabel, dateRange: e.chart.dateRange }),
+      weekOfYear: e.chart.weekIndex % 100,
       year: Math.floor(e.chart.weekIndex / 100),
     }));
+
+  const myStats = {
+    appearances: myEntries.length,
+    bestPosition: myEntries.length > 0 ? Math.min(...myEntries.map((e) => e.position)) : 9999,
+    points: myEntries.reduce((sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)), 0),
+    number1s: myEntries.filter((e) => e.position === 1).length,
+  };
 
   return (
     <Shell title="" noPadding>
@@ -275,99 +283,13 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
 
-        <div style={{ marginTop: 30, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-          {[
-            { label: "Pontos totais", value: totalPoints },
-            { label: "Usuários únicos", value: users },
-            { label: "Semanas no Top 100", value: weeksTop100 },
-            { label: "#1s no Top 100", value: number1s },
-          ].map((s) => (
-            <div key={s.label} style={{ background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 16 }}>
-              <div style={{ fontSize: 11, color: "#86868B", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.label}</div>
-              <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 16, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 16 }}>
-          <div style={{ fontSize: 12, color: "#86868B", marginBottom: 6 }}>Pico no Global Top 100</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 28, fontWeight: 800 }}>
-            {peak === 1 && <Star size={18} color="#FA243C" fill="#FA243C" />}
-            {peak === 9999 ? "—" : `#${peak}`}
-          </div>
-        </div>
-
-        {!currentUserId && (
-          <div style={{ marginTop: 20, padding: 16, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
-            <span style={{ color: "#1D1D1F", fontWeight: 600 }}>Suas paradas com esta música</span>
-            {" — "}
-            entre na sua conta para ver posição, datas e ano em cada semana em que você publicou esta faixa.
-          </div>
-        )}
-
-        {currentUserId && myAppearancesSorted.length > 0 && (
-          <div style={{ marginTop: 20, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 18 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6 }}>Nas suas paradas</h2>
-            <p style={{ fontSize: 13, color: "#86868B", marginBottom: 14, lineHeight: 1.45 }}>
-              Cada linha é uma semana em que a música apareceu na sua parada publicada: posição na lista, intervalo da semana e ano.
-            </p>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 0 }}>
-              {myAppearancesSorted.map((row, i) => {
-                const last = i === myAppearancesSorted.length - 1;
-                return (
-                  <li
-                    key={row.chartId}
-                    style={{
-                      fontSize: 14,
-                      lineHeight: 1.45,
-                      paddingBottom: last ? 0 : 12,
-                      borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.06)",
-                    }}
-                  >
-                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "8px 14px" }}>
-                      <span style={{ fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>#{row.position}</span>
-                      <span style={{ fontWeight: 600, color: "#1D1D1F" }}>{row.dateRange}</span>
-                      <span style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{row.year}</span>
-                      <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
-                        Ver parada →
-                      </Link>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-
-        {currentUserId && myAppearancesSorted.length === 0 && (
-          <div style={{ marginTop: 20, padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
-            Esta música ainda não aparece em nenhuma das suas paradas publicadas. Quando você votar com ela, aparecerá aqui a posição, a data e o ano de cada semana.
-          </div>
-        )}
-
-        <div style={{ marginTop: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 14 }}>Top 5 usuários da música</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
-            {topUsers.map((row) => (
-              <Link key={row.user.id} href={`/profile/${row.user.handle}`} style={{ textDecoration: "none" }}>
-                <div style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.06)", padding: 14, textAlign: "center" }}>
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Avatar
-                      user={{ name: row.user.name, avatar: row.user.avatarColor }}
-                      imageUrl={row.user.image}
-                      size={52}
-                    />
-                  </div>
-                  <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: "#1D1D1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {row.user.name}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#86868B" }}>@{row.user.handle}</div>
-                  <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: "#FA243C" }}>{row.points} pts</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+        <SongAppearancesTabs
+          currentUserId={currentUserId}
+          myAppearances={myAppearancesSorted}
+          myStats={myStats}
+          globalStats={{ totalPoints, uniqueUsers: users, weeksTop100, number1s, peak }}
+          topUsers={topUsers}
+        />
 
         {!hasChartPresence && (
           <div style={{ marginTop: 20, padding: 14, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B" }}>
