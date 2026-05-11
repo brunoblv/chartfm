@@ -45,6 +45,8 @@ model User {
   posts                Post[]
   postLikes            PostLike[]
   postReplies          PostReply[]
+  albumReviews         AlbumReview[]
+  albumReviewHelpful   AlbumReviewHelpful[]
   ownedCommunities     Community[]        @relation("CommunityOwner")
   followerLinks        UserFollow[]       @relation("UserFollows")
   followingLinks       UserFollow[]       @relation("UserFollowing")
@@ -93,6 +95,7 @@ model Album {
   artist          Artist      @relation(fields: [artistSpotifyId], references: [spotifyId])
   songs           Song[]      @relation("AlbumSongs")
   chartEntries    ChartEntry[] @relation("ChartEntryAlbumSpotify")
+  reviews         AlbumReview[]
 
   @@index([spotifyId], map: "idx_albums_spotify_id")
   @@index([artistSpotifyId], map: "idx_albums_artist_spotify_id")
@@ -368,4 +371,35 @@ model GlobalSnapshot {
 
   @@index([weekIndex], map: "idx_global_snapshots_week_index")
   @@map("global_snapshots")
+}
+
+model AlbumReview {
+  id           String               @id @default(cuid())
+  albumId      Int                  @map("album_id")
+  userId       String               @map("user_id")
+  rating       Int
+  title        String
+  body         String
+  helpful      Int                  @default(0)
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  album        Album                @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  helpfulVotes AlbumReviewHelpful[]
+
+  @@unique([albumId, userId])
+  @@index([albumId])
+  @@map("album_reviews")
+}
+
+model AlbumReviewHelpful {
+  id        String      @id @default(cuid())
+  reviewId  String      @map("review_id")
+  userId    String      @map("user_id")
+  createdAt DateTime    @default(now()) @map("created_at")
+  review    AlbumReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@map("album_review_helpful")
 }

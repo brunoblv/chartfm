@@ -380,7 +380,7 @@ function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 12, color: "#86868B" }}>{publishers.length} pessoas</div>
       </div>
-      <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 4 }}>
+      <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingTop: 4, paddingBottom: 4, paddingLeft: 4 }}>
         {publishers.map((p) => (
           <Link
             key={p.userId}
