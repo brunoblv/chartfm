@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { User } from "@/lib/types";
 
 function shade(hex: string, amt: number): string {
@@ -34,10 +35,17 @@ export function Avatar({ user, imageUrl, size = 40, ring = false, className }: A
           borderRadius: "50%",
           overflow: "hidden",
           flexShrink: 0,
+          position: "relative",
           boxShadow: ring ? `0 0 0 2px white, 0 0 0 4px ${user.avatar}` : "0 1px 2px rgba(0,0,0,0.06)",
         }}
       >
-        <img src={imageUrl} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        <Image
+          src={imageUrl}
+          alt={user.name}
+          fill
+          sizes={`${size * 2}px`}
+          style={{ objectFit: "cover" }}
+        />
       </div>
     );
   }

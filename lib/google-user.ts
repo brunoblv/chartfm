@@ -21,6 +21,12 @@ async function allocateHandle(base: string): Promise<string> {
   return `${base}${Date.now().toString(36)}`;
 }
 
+function upgradeGooglePhoto(url: string | null | undefined): string | null {
+  if (!url) return null;
+  // Google photos have =sNN-c at the end — upgrade to 400px for sharper display
+  return url.replace(/=s\d+-c(\?.*)?$/, "=s400-c$1");
+}
+
 export async function ensureGoogleUser(params: {
   email: string;
   name: string | null | undefined;
@@ -30,6 +36,7 @@ export async function ensureGoogleUser(params: {
   const email = params.email.toLowerCase().trim();
   const displayName = params.name?.trim() || email.split("@")[0] || "Usuário";
   const googleId = params.googleId;
+  const image = upgradeGooglePhoto(params.image);
 
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { googleId }] },
@@ -40,7 +47,7 @@ export async function ensureGoogleUser(params: {
       where: { id: existing.id },
       data: {
         name: displayName,
-        image: params.image ?? existing.image,
+        image: image ?? existing.image,
         googleId,
         email,
       },
@@ -57,7 +64,7 @@ export async function ensureGoogleUser(params: {
       handle,
       name: displayName,
       email,
-      image: params.image ?? null,
+      image: image ?? null,
       googleId,
       avatarColor,
     },

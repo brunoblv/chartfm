@@ -57,6 +57,8 @@ export function AlbumEditClient({
   const [error, setError] = useState<string | null>(null);
   const [artistTypeaheadActive, setArtistTypeaheadActive] = useState(false);
   const [songs, setSongs] = useState<AlbumSongRow[]>(() => [...initialSongs].sort(sortAlbumSongs));
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [spotifyTracks, setSpotifyTracks] = useState<SpotifyAlbumTrackRow[] | null>(null);
   const [spotifyLoadMsg, setSpotifyLoadMsg] = useState<string | null>(null);
   const [loadingSpotifyList, setLoadingSpotifyList] = useState(false);
@@ -162,6 +164,26 @@ export function AlbumEditClient({
     }
   }
 
+  async function uploadCover(file: File) {
+    setUploadingCover(true);
+    setCoverUploadError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/admin/album/${initialAlbum.id}/cover`, { method: "POST", body: fd });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) {
+        setCoverUploadError(data.error ?? "Não foi possível enviar a capa.");
+        return;
+      }
+      setCoverUrl(data.url ?? "");
+    } catch {
+      setCoverUploadError("Erro de conexão ao enviar capa.");
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
   async function submit() {
     if (!canSave) return;
     setSaving(true);
@@ -245,10 +267,49 @@ export function AlbumEditClient({
         <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
         <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
       </label>
-      <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa (URL da imagem)</span>
-        <input value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} style={inputStyle} />
-      </label>
+      <div style={{ display: "grid", gap: 6 }}>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa</span>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} style={{ ...inputStyle, flex: 1 }} placeholder="URL da imagem" />
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: uploadingCover ? "rgba(0,0,0,0.1)" : "#1D1D1F",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: uploadingCover ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            {uploadingCover ? "Enviando…" : "Upload"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: "none" }}
+              disabled={uploadingCover}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) uploadCover(f);
+                e.target.value = "";
+              }}
+            />
+          </label>
+        </div>
+        {coverUploadError && <span style={{ fontSize: 12, color: "#C5291C" }}>{coverUploadError}</span>}
+        {coverUrl && (
+          <img
+            src={coverUrl.split("?")[0]}
+            alt="Capa do álbum"
+            style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, marginTop: 4 }}
+          />
+        )}
+      </div>
 
       <div
         style={{

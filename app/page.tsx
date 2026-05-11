@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Script from "next/script";
 import { redirect } from "next/navigation";
 import { Flame } from "lucide-react";
 import { getServerSession } from "next-auth";
@@ -294,16 +293,6 @@ export default async function HomePage() {
   const sidebar = (
     <>
       <GlobalTeaser topSongs={globalTopSongs} weekLabel={rankingWeek.weekLabel} />
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <Script
-          id="profitablecpm-invoke-f37009a68e0836a6b9f2b75ecd1c0a7f"
-          async
-          strategy="afterInteractive"
-          data-cfasync="false"
-          src="https://pl29363071.profitablecpmratenetwork.com/f37009a68e0836a6b9f2b75ecd1c0a7f/invoke.js"
-        />
-        <div id="container-f37009a68e0836a6b9f2b75ecd1c0a7f" />
-      </div>
       <SuggestedUsers users={suggestedUsers.map((u) => ({ ...u, isFollowing: followingIds.has(u.id) }))} />
       <TrendingArtists artists={trendingArtists} weekLabel={rankingWeek.weekLabel} />
     </>

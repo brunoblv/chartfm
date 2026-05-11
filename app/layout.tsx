@@ -33,17 +33,10 @@ export default async function RootLayout({
         <Script
           id="adsense-script"
           async
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4600084865044867"
           crossOrigin="anonymous"
         />
-
-        <Script
-          id="gtag-js"
-          async
-          strategy="afterInteractive"
-          src="https://www.googletagmanager.com/gtag/js?id=G-VKENNK522F"
-        />      
 
         <Providers session={session}>
           {children}

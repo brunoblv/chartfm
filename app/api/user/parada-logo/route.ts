@@ -2,12 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { writeFile, unlink, readdir } from "fs/promises";
+import { join } from "path";
+import { existsSync, mkdirSync } from "fs";
 
 export const runtime = "nodejs";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
+const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "parada-logos");
+
+function ensureDir() {
+  if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+async function deleteOldLogos(userId: string) {
+  try {
+    const files = await readdir(UPLOAD_DIR);
+    await Promise.all(
+      files
+        .filter((f) => f.startsWith(`${userId}.`))
+        .map((f) => unlink(join(UPLOAD_DIR, f)).catch(() => null))
+    );
+  } catch {
+    // dir may not exist yet
+  }
+}
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -33,29 +53,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Arquivo muito grande (máx. 5 MB)" }, { status: 400 });
   }
 
-  let supabase;
-  try {
-    supabase = getSupabaseAdmin();
-  } catch (e) {
-    return NextResponse.json({ error: (e as Error).message }, { status: 503 });
-  }
+  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const filename = `${session.user.id}.${ext}`;
+
+  ensureDir();
+  await deleteOldLogos(session.user.id);
 
   const bytes = await file.arrayBuffer();
-  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const path = `${session.user.id}/logo.${ext}`;
+  await writeFile(join(UPLOAD_DIR, filename), Buffer.from(bytes));
 
-  const { error: uploadError } = await supabase.storage
-    .from("parada-logos")
-    .upload(path, Buffer.from(bytes), { contentType: file.type, upsert: true });
-
-  if (uploadError) {
-    console.error("Supabase parada-logo upload error:", uploadError);
-    return NextResponse.json({ error: "Erro ao fazer upload. Verifique se o bucket 'parada-logos' existe no Supabase Storage." }, { status: 500 });
-  }
-
-  const { data } = supabase.storage.from("parada-logos").getPublicUrl(path);
-  const url = `${data.publicUrl}?v=${Date.now()}`;
-
+  const url = `/uploads/parada-logos/${filename}?v=${Date.now()}`;
   await prisma.user.update({ where: { id: session.user.id }, data: { paradaLogo: url } });
 
   return NextResponse.json({ url });
@@ -67,6 +74,7 @@ export async function DELETE(_req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  await deleteOldLogos(session.user.id);
   await prisma.user.update({ where: { id: session.user.id }, data: { paradaLogo: null } });
 
   return NextResponse.json({ ok: true });
