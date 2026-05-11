@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "../.."
+		},
+		{
+			"path": "../../../../Charts (3)"
 		}
 	],
 	"settings": {

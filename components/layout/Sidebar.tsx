@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 
 const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean; badge?: string }[] = [
   { href: "/", label: "Início", icon: Home },
@@ -99,11 +100,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
         >
           <div style={{ padding: "4px 10px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-                  <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
-                </svg>
-              </div>
+              <ChartFMLogo size={32} />
               <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>ChartFM</span>
             </div>
             <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "#86868B" }}>
@@ -146,11 +143,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
       }}
     >
       <div style={{ padding: "4px 10px 16px 10px", display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-            <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
-          </svg>
-        </div>
+        <ChartFMLogo size={32} />
         <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", color: "#1D1D1F" }}>ChartFM</span>
       </div>
       <SidebarContent

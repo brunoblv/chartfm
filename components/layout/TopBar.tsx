@@ -5,20 +5,11 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Bell, X } from "lucide-react";
 import { SearchBar } from "./SearchBar";
+import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 
 interface TopBarProps {
   isMobile?: boolean;
   onMenuToggle?: () => void;
-}
-
-function ChartFMIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round">
-      <line x1="6" y1="20" x2="6" y2="14" />
-      <line x1="12" y1="20" x2="12" y2="8" />
-      <line x1="18" y1="20" x2="18" y2="4" />
-    </svg>
-  );
 }
 
 export function TopBar({ isMobile = false }: TopBarProps) {
@@ -41,14 +32,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
       >
         <div style={{ padding: "12px 16px 10px", display: "flex", alignItems: "center", gap: 10 }}>
           {/* Logo */}
-          <div style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: "#FA243C",
-            display: "grid", placeItems: "center",
-            flexShrink: 0,
-          }}>
-            <ChartFMIcon size={16} />
-          </div>
+          <ChartFMLogo size={30} />
 
           <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F", flex: 1 }}>
             ChartFM

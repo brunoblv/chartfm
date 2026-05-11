@@ -7,16 +7,7 @@ import { USERS_DATA, COVER_PALETTES, COMMUNITIES } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { GlobalChartEntry } from "@/lib/types";
-
-function ChartFMIcon({ size = 18, color = "white" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" stroke={color} strokeWidth="2.4" fill="none" strokeLinecap="round">
-      <line x1="6" y1="20" x2="6" y2="14" />
-      <line x1="12" y1="20" x2="12" y2="8" />
-      <line x1="18" y1="20" x2="18" y2="4" />
-    </svg>
-  );
-}
+import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 
 function StatusBadge({ status, delta }: { status: string; delta?: number | null }) {
   if (status === "new") return (
@@ -113,9 +104,7 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
         height: 60, display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center", boxShadow: "0 2px 6px rgba(250,36,60,0.3)" }}>
-            <ChartFMIcon size={18} />
-          </div>
+          <ChartFMLogo size={32} style={{ boxShadow: "0 2px 6px rgba(250,36,60,0.3)", borderRadius: 9 }} />
           <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>ChartFM</span>
         </div>
         {!isMobile && (
@@ -755,9 +744,7 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
         }}>
           <div style={{ gridColumn: isMobile ? "1 / -1" : undefined }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center" }}>
-                <ChartFMIcon size={16} />
-              </div>
+              <ChartFMLogo size={28} />
               <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>ChartFM</div>
             </div>
             <div style={{ fontSize: 13, color: "#86868B", lineHeight: 1.5, maxWidth: 280 }}>

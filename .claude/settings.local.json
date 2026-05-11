@@ -15,7 +15,9 @@
       "Bash(Select-Object FullName, PSIsContainer)",
       "Bash(xargs ls -la)",
       "Bash(npm uninstall *)",
-      "PowerShell(head -20)"
+      "PowerShell(head -20)",
+      "Bash(findstr /v node_modules)",
+      "Bash(findstr /v .next)"
     ]
   }
 }

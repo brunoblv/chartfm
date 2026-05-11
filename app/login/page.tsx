@@ -6,6 +6,7 @@ import { signIn, getProviders } from "next-auth/react";
 import { COVER_PALETTES, USERS_DATA } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 
 function GoogleLogo({ size = 16 }: { size?: number }) {
   return (
@@ -18,15 +19,6 @@ function GoogleLogo({ size = 16 }: { size?: number }) {
   );
 }
 
-function ChartFMIcon({ size = 20, color = "white" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" stroke={color} strokeWidth="2.4" fill="none" strokeLinecap="round">
-      <line x1="6" y1="20" x2="6" y2="14" />
-      <line x1="12" y1="20" x2="12" y2="8" />
-      <line x1="18" y1="20" x2="18" y2="4" />
-    </svg>
-  );
-}
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -63,9 +55,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 9, background: "#FA243C", display: "grid", placeItems: "center" }}>
-            <ChartFMIcon size={20} />
-          </div>
+          <ChartFMLogo size={36} />
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em" }}>ChartFM</div>
         </div>
 
