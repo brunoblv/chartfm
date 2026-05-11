@@ -77,6 +77,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
           streak: true,
           verified: true,
           image: true,
+          paradaLogo: true,
         },
       },
       entries: {

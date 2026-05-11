@@ -140,6 +140,7 @@ export default function ChartDetailPage() {
   const user = dbPayload?.user ?? mockItem?.user;
   const chart = dbPayload?.chart ?? mockItem?.chart;
   const ownerImageUrl = dbPayload?.imageUrl ?? null;
+  const ownerParadaLogo = dbPayload?.paradaLogo ?? null;
   const personalNumberOnes = dbPayload?.personalNumberOnes ?? {};
   const globalNumberOnes = dbPayload?.globalNumberOnes ?? {};
   const isDbChart = !!dbPayload;
@@ -257,11 +258,17 @@ export default function ChartDetailPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {/* Mosaic + title side-by-side */}
             <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 16 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: 88, height: 88, borderRadius: 14, overflow: "hidden", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
-                {chart.entries.slice(0, 4).map((e, i) => (
-                  <Cover key={i} cover={e.cover} song={e.song} size={43} rounded={0} />
-                ))}
-              </div>
+              {ownerParadaLogo ? (
+                <div style={{ width: 88, height: 88, borderRadius: 14, overflow: "hidden", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
+                  <img src={ownerParadaLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: 88, height: 88, borderRadius: 14, overflow: "hidden", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
+                  {chart.entries.slice(0, 4).map((e, i) => (
+                    <Cover key={i} cover={e.cover} song={e.song} size={43} rounded={0} />
+                  ))}
+                </div>
+              )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2, marginBottom: 4 }}>
                   {tituloDetalheParada}
@@ -340,12 +347,18 @@ export default function ChartDetailPage() {
         ) : (
           /* ── DESKTOP HERO ── */
           <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-            {/* Mosaic cover */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, width: 200, height: 200, borderRadius: 18, overflow: "hidden", flexShrink: 0, boxShadow: "0 16px 40px rgba(0,0,0,0.15)" }}>
-              {chart.entries.slice(0, 4).map((e, i) => (
-                <Cover key={i} cover={e.cover} song={e.song} size={98} rounded={0} />
-              ))}
-            </div>
+            {/* Mosaic cover / logo */}
+            {ownerParadaLogo ? (
+              <div style={{ width: 200, height: 200, borderRadius: 18, overflow: "hidden", flexShrink: 0, boxShadow: "0 16px 40px rgba(0,0,0,0.15)" }}>
+                <img src={ownerParadaLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, width: 200, height: 200, borderRadius: 18, overflow: "hidden", flexShrink: 0, boxShadow: "0 16px 40px rgba(0,0,0,0.15)" }}>
+                {chart.entries.slice(0, 4).map((e, i) => (
+                  <Cover key={i} cover={e.cover} song={e.song} size={98} rounded={0} />
+                ))}
+              </div>
+            )}
 
             {/* Info block */}
             <div style={{ flex: 1, minWidth: 280 }}>

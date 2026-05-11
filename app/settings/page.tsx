@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Camera, ImagePlus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
+import { Avatar } from "@/components/ui/Avatar";
 
 const ALL_GENRES = [
   "Pop", "Indie", "Rock", "R&B", "Hip Hop",
@@ -21,12 +22,15 @@ type ProfileData = {
   genres: string[];
   lastfmUser: string | null;
   chartSize: number | null;
+  image: string | null;
+  paradaLogo: string | null;
 };
 
-type Tab = "perfil" | "conta";
+type Tab = "perfil" | "parada" | "conta";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [tab, setTab] = useState<Tab>("perfil");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,11 +44,20 @@ export default function SettingsPage() {
     genres: [],
     lastfmUser: "",
     chartSize: null,
+    image: null,
+    paradaLogo: null,
   });
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/user/profile")
@@ -66,6 +79,8 @@ export default function SettingsPage() {
           genres: data.genres ?? [],
           lastfmUser: data.lastfmUser ?? "",
           chartSize: data.chartSize ?? null,
+          image: data.image ?? null,
+          paradaLogo: data.paradaLogo ?? null,
         });
       })
       .catch((e: Error) => setError(e.message))
@@ -112,6 +127,80 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleAvatarFile(file: File) {
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/user/avatar", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        setAvatarError(data.error ?? "Erro ao enviar foto.");
+        return;
+      }
+      setForm((f) => ({ ...f, image: data.url }));
+    } catch {
+      setAvatarError("Erro de conexão.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function removeAvatar() {
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      const res = await fetch("/api/user/avatar", { method: "DELETE" });
+      if (!res.ok) {
+        setAvatarError("Erro ao remover foto.");
+        return;
+      }
+      setForm((f) => ({ ...f, image: null }));
+    } catch {
+      setAvatarError("Erro de conexão.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function handleLogoFile(file: File) {
+    setUploadingLogo(true);
+    setLogoError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/user/parada-logo", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        setLogoError(data.error ?? "Erro ao enviar logo.");
+        return;
+      }
+      setForm((f) => ({ ...f, paradaLogo: data.url }));
+    } catch {
+      setLogoError("Erro de conexão.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  async function removeLogo() {
+    setUploadingLogo(true);
+    setLogoError(null);
+    try {
+      const res = await fetch("/api/user/parada-logo", { method: "DELETE" });
+      if (!res.ok) {
+        setLogoError("Erro ao remover logo.");
+        return;
+      }
+      setForm((f) => ({ ...f, paradaLogo: null }));
+    } catch {
+      setLogoError("Erro de conexão.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   async function deleteAccount() {
     setDeleting(true);
     setDeleteError(null);
@@ -133,8 +222,11 @@ export default function SettingsPage() {
 
   const TABS: { id: Tab; label: string }[] = [
     { id: "perfil", label: "Perfil" },
+    { id: "parada", label: "Parada" },
     { id: "conta", label: "Conta" },
   ];
+
+  const avatarUser = { name: form.name || session?.user?.name || "?", avatar: "#FA243C" };
 
   return (
     <Shell title="Configurações" subtitle="Edite seus dados de perfil">
@@ -206,6 +298,99 @@ export default function SettingsPage() {
                   gap: 14,
                 }}
               >
+                {/* Avatar upload */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Foto de perfil</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                      <Avatar user={avatarUser} imageUrl={form.image} size={72} />
+                      <button
+                        type="button"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        style={{
+                          position: "absolute",
+                          bottom: -2,
+                          right: -2,
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          background: "#1D1D1F",
+                          border: "2px solid white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: uploadingAvatar ? "not-allowed" : "pointer",
+                          opacity: uploadingAvatar ? 0.6 : 1,
+                        }}
+                      >
+                        <Camera size={12} color="white" />
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={uploadingAvatar}
+                        style={{
+                          background: "white",
+                          border: "1px solid rgba(0,0,0,0.15)",
+                          borderRadius: 100,
+                          padding: "8px 16px",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: uploadingAvatar ? "not-allowed" : "pointer",
+                          color: "#1D1D1F",
+                          opacity: uploadingAvatar ? 0.6 : 1,
+                        }}
+                      >
+                        {uploadingAvatar ? "Enviando..." : "Trocar foto"}
+                      </button>
+                      {form.image && (
+                        <button
+                          type="button"
+                          onClick={removeAvatar}
+                          disabled={uploadingAvatar}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: "4px 0",
+                            fontSize: 12,
+                            color: "#B91C1C",
+                            cursor: uploadingAvatar ? "not-allowed" : "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            opacity: uploadingAvatar ? 0.5 : 1,
+                          }}
+                        >
+                          <Trash2 size={12} />
+                          Remover foto
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {avatarError && (
+                    <span style={{ fontSize: 12, color: "#B91C1C" }}>{avatarError}</span>
+                  )}
+                  <span style={{ fontSize: 11, color: "#86868B" }}>
+                    JPG, PNG ou WebP · máx. 5 MB
+                  </span>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleAvatarFile(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+
+                <div style={{ height: 1, background: "rgba(0,0,0,0.06)" }} />
+
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Nome</span>
                   <input
@@ -234,15 +419,6 @@ export default function SettingsPage() {
                   />
                 </label>
 
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Nome da parada</span>
-                  <input
-                    value={form.paradaNome ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, paradaNome: e.target.value }))}
-                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
-                  />
-                </label>
-
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Usuário Last.fm</span>
                   <input
@@ -259,6 +435,169 @@ export default function SettingsPage() {
                     Só o nome de usuário (ex: <strong>blvbruno</strong>), não a URL completa. Se colar o link do perfil, o usuário será extraído automaticamente.
                   </span>
                 </div>
+
+                {error && <div style={{ fontSize: 13, color: "#B91C1C" }}>{error}</div>}
+                {success && <div style={{ fontSize: 13, color: "#166534" }}>{success}</div>}
+
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={save}
+                    disabled={saving}
+                    style={{
+                      background: "#FA243C",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 100,
+                      padding: "10px 20px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: saving ? "not-allowed" : "pointer",
+                      opacity: saving ? 0.7 : 1,
+                    }}
+                  >
+                    {saving ? "Salvando..." : "Salvar alterações"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Aba Parada */}
+            {tab === "parada" && (
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: 18,
+                  border: "1px solid rgba(0,0,0,0.06)",
+                  padding: 22,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 20,
+                }}
+              >
+                {/* Logo da parada */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#1D1D1F", marginBottom: 4 }}>
+                      Logo da parada
+                    </div>
+                    <div style={{ fontSize: 13, color: "#86868B", lineHeight: 1.5 }}>
+                      Aparece no lugar das 4 capas na página de detalhes da sua parada. Se não tiver um logo, as capas das músicas são exibidas automaticamente.
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
+                    {/* Preview quadrado */}
+                    <div
+                      style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        flexShrink: 0,
+                        border: "1px solid rgba(0,0,0,0.10)",
+                        background: "rgba(0,0,0,0.04)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      {form.paradaLogo ? (
+                        <img
+                          src={form.paradaLogo}
+                          alt="Logo da parada"
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        />
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "#86868B" }}>
+                          <ImagePlus size={28} strokeWidth={1.5} />
+                          <span style={{ fontSize: 11, fontWeight: 500 }}>Sem logo</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Ações */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                        style={{
+                          background: "#1D1D1F",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 100,
+                          padding: "10px 20px",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: uploadingLogo ? "not-allowed" : "pointer",
+                          opacity: uploadingLogo ? 0.6 : 1,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <ImagePlus size={14} />
+                        {uploadingLogo ? "Enviando..." : form.paradaLogo ? "Trocar logo" : "Enviar logo"}
+                      </button>
+                      {form.paradaLogo && (
+                        <button
+                          type="button"
+                          onClick={removeLogo}
+                          disabled={uploadingLogo}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid rgba(185,28,28,0.3)",
+                            borderRadius: 100,
+                            padding: "8px 16px",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "#B91C1C",
+                            cursor: uploadingLogo ? "not-allowed" : "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            opacity: uploadingLogo ? 0.5 : 1,
+                          }}
+                        >
+                          <Trash2 size={13} />
+                          Remover logo
+                        </button>
+                      )}
+                      <span style={{ fontSize: 11, color: "#86868B", maxWidth: 220, lineHeight: 1.5 }}>
+                        Use uma imagem quadrada para melhor resultado. JPG, PNG ou WebP · máx. 5 MB.
+                      </span>
+                    </div>
+                  </div>
+
+                  {logoError && (
+                    <div style={{ fontSize: 13, color: "#B91C1C" }}>{logoError}</div>
+                  )}
+
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleLogoFile(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
+
+                <div style={{ height: 1, background: "rgba(0,0,0,0.06)" }} />
+
+                {/* Nome da parada e tamanho — também aqui para conveniência */}
+                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Nome da parada</span>
+                  <input
+                    value={form.paradaNome ?? ""}
+                    onChange={(e) => setForm((f) => ({ ...f, paradaNome: e.target.value }))}
+                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
+                  />
+                </label>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Tamanho da parada</span>

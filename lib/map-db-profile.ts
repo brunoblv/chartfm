@@ -12,6 +12,7 @@ type PrismaProfileUser = {
   verified: boolean;
   image: string | null;
   paradaNome: string | null;
+  paradaLogo?: string | null;
   genres: string[];
   charts: Array<{
     id: string;
@@ -149,6 +150,7 @@ export type PublicProfilePayload = {
   user: UserWithCharts;
   imageUrl: string | null;
   paradaNome: string | null;
+  paradaLogo: string | null;
   genres: string[];
   isFollowing: boolean;
 };
@@ -161,6 +163,7 @@ export function buildPublicProfilePayload(
     user: mapPrismaUserToUserWithCharts(db),
     imageUrl: db.image,
     paradaNome: db.paradaNome,
+    paradaLogo: db.paradaLogo ?? null,
     genres: db.genres ?? [],
     isFollowing,
   };
@@ -177,12 +180,14 @@ type PrismaChartOwner = {
   streak: number;
   verified: boolean;
   image: string | null;
+  paradaLogo: string | null;
 };
 
 export type ChartDetailPayload = {
   user: User;
   chart: Chart;
   imageUrl: string | null;
+  paradaLogo: string | null;
   previousChart?: { id: string; weekLabel: string } | null;
   nextChart?: { id: string; weekLabel: string } | null;
   personalNumberOnes?: Record<string, number>;
@@ -205,5 +210,6 @@ export function mapPrismaChartDetail(chart: PrismaChartRow & { user: PrismaChart
     },
     chart: mapPrismaChartRowToChart(chart),
     imageUrl: chart.user.image,
+    paradaLogo: chart.user.paradaLogo,
   };
 }

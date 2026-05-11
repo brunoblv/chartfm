@@ -5,15 +5,16 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
-const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean }[] = [
+const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean; badge?: string }[] = [
   { href: "/", label: "Início", icon: Home },
   { href: "/discover", label: "Descobrir", icon: Search },
   { href: "/global", label: "Parada Global", icon: Globe },
   { href: "/communities", label: "Comunidades", icon: Users },
   { href: "/notifications", label: "Notificações", icon: Bell, requiresAuth: true },
+  { href: "/novidades", label: "O que há de novo", icon: Sparkles, badge: "Novo" },
 ];
 
 interface SidebarProps {
@@ -198,7 +199,7 @@ function SidebarContent({
 
   return (
     <>
-      {NAV.map(({ href, label, icon: Icon, requiresAuth }) => {
+      {NAV.map(({ href, label, icon: Icon, requiresAuth, badge }) => {
         const active = pathname === href;
         const locked = requiresAuth && !authed;
         const isNotifications = href === "/notifications";
@@ -240,7 +241,23 @@ function SidebarContent({
                 />
               )}
             </div>
-            <span>{label}</span>
+            <span style={{ flex: 1 }}>{label}</span>
+            {badge && !active && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.03em",
+                  background: "rgba(250,36,60,0.12)",
+                  color: "#FA243C",
+                  borderRadius: 100,
+                  padding: "2px 7px",
+                  flexShrink: 0,
+                }}
+              >
+                {badge}
+              </span>
+            )}
             {showUnreadBadge && <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "#FA243C" }} />}
           </Link>
         );

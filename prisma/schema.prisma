@@ -34,6 +34,7 @@ model User {
   role                 UserRole          @default(USER)
   lastfmUser           String?
   chartSize            Int?              @map("chart_size")
+  paradaLogo           String?           @map("parada_logo")
   charts               Chart[]
   likes                ChartLike[]
   reposts              ChartRepost[]

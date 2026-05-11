@@ -36,6 +36,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         verified: true,
         image: true,
         paradaNome: true,
+        paradaLogo: true,
         genres: true,
       },
     }),

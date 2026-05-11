@@ -25,6 +25,7 @@ export async function GET() {
       name: true,
       bio: true,
       paradaNome: true,
+      paradaLogo: true,
       genres: true,
       image: true,
       lastfmUser: true,
