@@ -77,6 +77,7 @@ export default function EditChartPage() {
   const [spotifyLoading, setSpotifyLoading] = useState(false);
   const [dbSongs, setDbSongs] = useState<Song[]>([]);
   const [spotifyConfigured, setSpotifyConfigured] = useState(true);
+  const [spotifyUnavailable, setSpotifyUnavailable] = useState(false);
   const [lastfmConfigured, setLastfmConfigured] = useState(true);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
@@ -239,13 +240,23 @@ export default function EditChartPage() {
     const ac = new AbortController();
     const timer = setTimeout(async () => {
       setSpotifyLoading(true);
+      setSpotifyUnavailable(false);
       try {
         const spotifyRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
           signal: ac.signal,
         });
         if (ac.signal.aborted) return;
         if (!spotifyRes.ok) {
-          setSpotifyConfigured(false);
+          try {
+            const errData = (await spotifyRes.json()) as { configured?: boolean };
+            if (!ac.signal.aborted && errData.configured === false) {
+              setSpotifyConfigured(false);
+            } else if (!ac.signal.aborted) {
+              setSpotifyUnavailable(true);
+            }
+          } catch {
+            if (!ac.signal.aborted) setSpotifyUnavailable(true);
+          }
           setSpotifyTracks([]);
         } else {
           try {
@@ -254,7 +265,11 @@ export default function EditChartPage() {
               configured?: boolean;
             };
             if (ac.signal.aborted) return;
-            setSpotifyConfigured(spotifyData.configured !== false);
+            if (spotifyData.configured === false) {
+              setSpotifyConfigured(false);
+            } else {
+              setSpotifyConfigured(true);
+            }
             setSpotifyTracks(
               (spotifyData.tracks ?? []).map((t) => ({
                 title: t.title,
@@ -266,13 +281,13 @@ export default function EditChartPage() {
             );
           } catch {
             if (ac.signal.aborted) return;
-            setSpotifyConfigured(false);
+            setSpotifyUnavailable(true);
             setSpotifyTracks([]);
           }
         }
       } catch {
         if (ac.signal.aborted) return;
-        setSpotifyConfigured(false);
+        setSpotifyUnavailable(true);
         setSpotifyTracks([]);
       } finally {
         if (!ac.signal.aborted) setSpotifyLoading(false);
@@ -587,7 +602,10 @@ export default function EditChartPage() {
                 <code style={{ fontSize: 11 }}>.env</code>.
               </div>
             )}
-            {!spotifyLoading && spotifyConfigured && spotifyTracks.length === 0 && (
+            {!spotifyLoading && spotifyConfigured && spotifyUnavailable && (
+              <div style={{ fontSize: 12, color: "#86868B" }}>Spotify indisponível no momento. Tente novamente.</div>
+            )}
+            {!spotifyLoading && spotifyConfigured && !spotifyUnavailable && spotifyTracks.length === 0 && (
               <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Spotify.</div>
             )}
             {!spotifyLoading &&

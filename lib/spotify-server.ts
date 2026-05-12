@@ -623,10 +623,10 @@ export type SpotifyAlbumSearchResult = {
 };
 
 const ALBUM_EDITION_PAREN_PATTERN =
-  /\s*\((?:deluxe|super\s+deluxe|special|bonus\s+track[s]?|expanded|anniversary|remaster(?:ed)?|reissue|re-?release|edition|version|explicit)[^)]*\)/gi;
+  /\s*\((?:deluxe|super\s+deluxe|special|bonus(?:\s+track[s]?)?|expanded|anniversary|remaster(?:ed)?|reissue|re-?release|edition|version|explicit)[^)]*\)/gi;
 
 const ALBUM_EDITION_SUFFIX_PATTERN =
-  /\s*[\-–—]\s*(?:deluxe|super\s+deluxe|special\s+edition|bonus\s+track[s]?|expanded|anniversary|remaster(?:ed)?|reissue|re-?release)[^\-–—]*$/i;
+  /\s*[\-–—]\s*(?:deluxe|super\s+deluxe|special\s+edition|bonus(?:\s+track[s]?)?|expanded|anniversary|remaster(?:ed)?|reissue|re-?release)[^\-–—]*$/i;
 
 function canonicalAlbumKey(album: SpotifyAlbumSearchItem): string {
   const title = album.name
@@ -674,18 +674,35 @@ export async function searchSpotifyAlbums(
   const json = (await res.json()) as SpotifyAlbumSearchJson;
   const items = json.albums?.items ?? [];
 
-  const groups = new Map<string, SpotifyAlbumSearchItem[]>();
-  for (const item of items) {
-    const key = canonicalAlbumKey(item);
-    const group = groups.get(key);
-    if (group) group.push(item);
-    else groups.set(key, [item]);
-  }
+  try {
+    const groups = new Map<string, SpotifyAlbumSearchItem[]>();
+    for (const item of items) {
+      const key = canonicalAlbumKey(item);
+      const group = groups.get(key);
+      if (group) group.push(item);
+      else groups.set(key, [item]);
+    }
 
-  return [...groups.values()]
-    .map(pickBestAlbum)
-    .slice(0, lim)
-    .map((a) => {
+    return [...groups.values()]
+      .map(pickBestAlbum)
+      .slice(0, lim)
+      .map((a) => {
+        const rd = parseSpotifyReleaseDate(a.release_date);
+        return {
+          spotifyId: a.id,
+          title: a.name,
+          artist: a.artists.map((ar) => ar.name).join(", "),
+          artistSpotifyId: a.artists[0]?.id ?? null,
+          coverUrl: pickAlbumImageUrl(a.images),
+          albumType: mapAlbumType(a.album_type),
+          releaseDate: rd ? rd.toISOString().slice(0, 10) : null,
+          totalTracks: a.total_tracks ?? null,
+          spotifyUrl: a.external_urls?.spotify ?? null,
+        };
+      });
+  } catch (err) {
+    console.error("[searchSpotifyAlbums] dedup error, falling back to raw results:", err);
+    return items.slice(0, lim).map((a) => {
       const rd = parseSpotifyReleaseDate(a.release_date);
       return {
         spotifyId: a.id,
@@ -699,6 +716,7 @@ export async function searchSpotifyAlbums(
         spotifyUrl: a.external_urls?.spotify ?? null,
       };
     });
+  }
 }
 
 export async function resolveCoverImageUrl(artist: string, title: string): Promise<string | null> {
