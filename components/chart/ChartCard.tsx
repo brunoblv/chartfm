@@ -71,6 +71,15 @@ export function ChartCard({
     }}>
       {showUserHeader && (
         <header style={{ padding: "20px 24px 16px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+          {user.paradaLogo && (
+            <img
+              src={user.paradaLogo}
+              alt=""
+              width={32}
+              height={32}
+              style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+            />
+          )}
           <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
             <Avatar user={user} imageUrl={user.imageUrl} size={44} />
           </Link>
@@ -96,7 +105,7 @@ export function ChartCard({
       {/* Chart title */}
       <Link href={`/chart/${chart.id}`} style={{ textDecoration: "none", color: "inherit" }}>
         <div style={{ padding: "8px 24px 0 24px", fontSize: 26, fontWeight: 700, letterSpacing: "-0.03em" }}>
-          Top {chart.entries.length}
+          {user.paradaNome || `Top ${chart.entries.length}`}
         </div>
         <div style={{ padding: "4px 24px 16px 24px", fontSize: 13, color: "#86868B", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span>{formattedPeriod}</span>

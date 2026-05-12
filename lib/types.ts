@@ -16,6 +16,8 @@ export interface User {
   following: number;
   streak: number;
   verified?: boolean;
+  paradaNome?: string | null;
+  paradaLogo?: string | null;
 }
 
 export interface Song {

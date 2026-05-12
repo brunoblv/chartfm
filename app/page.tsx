@@ -6,7 +6,6 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { HomeGrid } from "@/components/layout/HomeGrid";
-import { ChartCard } from "@/components/chart/ChartCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { FollowButton } from "@/components/ui/FollowButton";
@@ -17,6 +16,7 @@ import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import { TimelineTabs, type ReviewItem } from "@/components/home/TimelineTabs";
 import type { UserWithCharts } from "@/lib/types";
 
 function daysUntilSundayBRT(): number {
@@ -114,6 +114,8 @@ async function getTimelineFeed(
           streak: true,
           bio: true,
           following: true,
+          paradaNome: true,
+          paradaLogo: true,
         },
       },
       entries: {
@@ -165,6 +167,8 @@ async function getTimelineFeed(
       following: c.user.following,
       streak: c.user.streak,
       verified: c.user.verified,
+      paradaNome: c.user.paradaNome,
+      paradaLogo: c.user.paradaLogo,
       charts: [],
     } as UserWithCharts,
     chart: {
@@ -251,7 +255,7 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeed, publishedToday] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeed, publishedToday, reviewsFeed] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
@@ -259,6 +263,7 @@ export default async function HomePage() {
       getSuggestedUsers(session.user.id, userGenres, 3),
       getTimelineFeed(session.user.id, currentWeekIdx, followingIds),
       getPublishedThisWeek(session.user.id, currentWeekIdx, followingIds),
+      getReviewsFeed(session.user.id),
     ]);
 
   const feed = (
@@ -267,26 +272,7 @@ export default async function HomePage() {
 
       {publishedToday.length > 0 && <FriendsRow publishers={publishedToday} />}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 2px 0 2px" }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>Timeline</div>
-        <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.06)" }} />
-        <button style={{ background: "none", border: "none", fontSize: 13, fontWeight: 600, color: "#FA243C", cursor: "pointer" }}>Filtrar</button>
-      </div>
-
-      {timelineFeed.length > 0 ? (
-        timelineFeed.map((t) => (
-          <ChartCard key={t.chart.id} user={t.user} chart={t.chart} postedAgo={t.postedAgo} isFollowing={t.isFollowing} />
-        ))
-      ) : (
-        <div style={{
-          background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)",
-          padding: "48px 24px", textAlign: "center",
-        }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Nenhuma parada por aqui ainda</div>
-          <div style={{ fontSize: 13, color: "#86868B" }}>Siga mais pessoas para ver as paradas delas aqui</div>
-        </div>
-      )}
+      <TimelineTabs timelineFeed={timelineFeed} reviewsFeed={reviewsFeed} />
     </div>
   );
 
@@ -586,6 +572,63 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
     totalPoints,
     chartCount,
     imageUrl: (spotifyId ? bySpotifyId.get(spotifyId) : null) ?? byName.get(name.toLowerCase()) ?? null,
+  }));
+}
+
+async function getReviewsFeed(userId: string): Promise<ReviewItem[]> {
+  const rows = await prisma.albumReview.findMany({
+    where: { userId: { not: userId } },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      rating: true,
+      body: true,
+      createdAt: true,
+      user: {
+        select: {
+          id: true,
+          handle: true,
+          name: true,
+          avatarColor: true,
+          image: true,
+          verified: true,
+        },
+      },
+      album: {
+        select: {
+          id: true,
+          title: true,
+          exhibitionName: true,
+          coverUrl: true,
+          artist: {
+            select: { id: true, name: true, exhibitionName: true },
+          },
+        },
+      },
+    },
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    rating: r.rating,
+    body: r.body,
+    postedAgo: formatRelativeTime(r.createdAt),
+    user: {
+      id: r.user.id,
+      handle: r.user.handle,
+      name: r.user.name,
+      avatar: r.user.avatarColor,
+      imageUrl: r.user.image ?? null,
+      verified: r.user.verified,
+    },
+    album: {
+      id: r.album.id,
+      artistId: r.album.artist.id,
+      title: r.album.exhibitionName || r.album.title,
+      coverUrl: r.album.coverUrl ?? null,
+      artistName: r.album.artist.exhibitionName || r.album.artist.name,
+    },
   }));
 }
 
