@@ -378,8 +378,7 @@ model AlbumReview {
   albumId      Int                  @map("album_id")
   userId       String               @map("user_id")
   rating       Int
-  title        String
-  body         String
+  body         String?
   helpful      Int                  @default(0)
   createdAt    DateTime             @default(now()) @map("created_at")
   updatedAt    DateTime             @updatedAt @map("updated_at")

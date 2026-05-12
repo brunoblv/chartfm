@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import type { User } from "@/lib/types";
 
 function shade(hex: string, amt: number): string {
@@ -19,13 +22,15 @@ interface AvatarProps {
 }
 
 export function Avatar({ user, imageUrl, size = 40, ring = false, className }: AvatarProps) {
+  const [imgError, setImgError] = useState(false);
+
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
     .slice(0, 2)
     .join("");
 
-  if (imageUrl) {
+  if (imageUrl && !imgError) {
     return (
       <div
         className={className}
@@ -45,6 +50,7 @@ export function Avatar({ user, imageUrl, size = 40, ring = false, className }: A
           fill
           sizes={`${size * 2}px`}
           style={{ objectFit: "cover" }}
+          onError={() => setImgError(true)}
         />
       </div>
     );

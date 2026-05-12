@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Star, Award } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 
@@ -14,6 +14,8 @@ const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?
   { href: "/discover", label: "Descobrir", icon: Search },
   { href: "/global", label: "Parada Global", icon: Globe },
   { href: "/communities", label: "Comunidades", icon: Users },
+  { href: "/albums", label: "Álbuns", icon: Star },
+  { href: "/criticsfm", label: "CriticsFM", icon: Award },
   { href: "/notifications", label: "Notificações", icon: Bell, requiresAuth: true },
   { href: "/novidades", label: "O que há de novo", icon: Sparkles, badge: "Novo" },
 ];

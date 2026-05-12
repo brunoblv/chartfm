@@ -372,7 +372,19 @@ type SpotifyAlbumApi = {
   images: SpotifyImage[];
   release_date?: string;
   total_tracks?: number;
+  label?: string;
   external_urls?: { spotify?: string };
+};
+
+export type SpotifyAlbumDetails = {
+  spotifyId: string;
+  title: string;
+  coverUrl: string | null;
+  albumType: string | null;
+  releaseDate: string | null;
+  totalTracks: number | null;
+  spotifyUrl: string | null;
+  label: string | null;
 };
 
 /** Metadados do álbum (capa, datas) para alinhar com um `album_id` concreto no catálogo. */
@@ -400,6 +412,35 @@ export async function getSpotifyAlbumMetadataById(
     releaseDate: parseSpotifyReleaseDate(a.release_date),
     totalTracks: a.total_tracks ?? null,
     spotifyUrl: a.external_urls?.spotify ?? null,
+  };
+}
+
+export async function getSpotifyAlbumDetails(
+  albumSpotifyId: string,
+  market: string = "BR",
+): Promise<SpotifyAlbumDetails | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
+  const id = albumSpotifyId.trim();
+  if (!id) return null;
+
+  const res = await spotifyFetch(
+    `${API_BASE}/albums/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`,
+    { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 3600 } },
+  );
+  if (!res?.ok) return null;
+  const a = (await res.json()) as SpotifyAlbumApi;
+  if (!a?.id) return null;
+  const rd = parseSpotifyReleaseDate(a.release_date);
+  return {
+    spotifyId: a.id,
+    title: a.name,
+    coverUrl: pickAlbumImageUrl(a.images),
+    albumType: mapAlbumType(a.album_type),
+    releaseDate: rd ? rd.toISOString().slice(0, 10) : null,
+    totalTracks: a.total_tracks ?? null,
+    spotifyUrl: a.external_urls?.spotify ?? null,
+    label: a.label ?? null,
   };
 }
 

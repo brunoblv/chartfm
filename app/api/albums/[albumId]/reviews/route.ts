@@ -17,7 +17,6 @@ export async function GET(
     select: {
       id: true,
       rating: true,
-      title: true,
       body: true,
       helpful: true,
       createdAt: true,
@@ -40,19 +39,18 @@ export async function POST(
   if (isNaN(albumId)) return NextResponse.json({ error: "Invalid albumId" }, { status: 400 });
 
   const body = await req.json();
-  const { rating, title, reviewBody } = body as { rating: number; title: string; reviewBody: string };
+  const { rating, reviewBody } = body as { rating: number; reviewBody?: string };
 
   if (typeof rating !== "number" || rating < 0 || rating > 100)
     return NextResponse.json({ error: "Rating must be 0–100" }, { status: 400 });
-  if (!title?.trim()) return NextResponse.json({ error: "Title required" }, { status: 400 });
-  if (!reviewBody || reviewBody.trim().length < 50)
+  if (reviewBody && reviewBody.trim().length > 0 && reviewBody.trim().length < 50)
     return NextResponse.json({ error: "Review too short (min 50 chars)" }, { status: 400 });
 
   const review = await prisma.albumReview.upsert({
     where: { albumId_userId: { albumId, userId: session.user.id } },
-    create: { albumId, userId: session.user.id, rating, title: title.trim(), body: reviewBody.trim() },
-    update: { rating, title: title.trim(), body: reviewBody.trim() },
-    select: { id: true, rating: true, title: true, body: true, helpful: true, createdAt: true },
+    create: { albumId, userId: session.user.id, rating, body: reviewBody?.trim() || null },
+    update: { rating, body: reviewBody?.trim() || null },
+    select: { id: true, rating: true, body: true, helpful: true, createdAt: true },
   });
 
   return NextResponse.json(review);

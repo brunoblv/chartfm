@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { getServerSession } from "next-auth";
 import { GoogleAnalytics } from '@next/third-parties/google'
 
@@ -27,16 +26,15 @@ export default async function RootLayout({
           name="google-adsense-account"
           content="ca-pub-4600084865044867"
         />
-      </head>
-
-      <body>
-        <Script
-          id="adsense-script"
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script
           async
-          strategy="afterInteractive"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4600084865044867"
           crossOrigin="anonymous"
         />
+      </head>
+
+      <body>
 
         <Providers session={session}>
           {children}

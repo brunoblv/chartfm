@@ -1,0 +1,231 @@
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
+import { notFound } from "next/navigation";
+import { Shell } from "@/components/layout/Shell";
+import { prisma } from "@/lib/prisma";
+import { buildAlbumPath } from "@/lib/music-routes";
+import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
+import { getSpotifyAlbumDetails } from "@/lib/spotify-server";
+import { AlbumReviewsClient } from "./AlbumReviewsClient";
+
+export const revalidate = 0;
+
+export default async function CriticsFMAlbumPage({
+  params,
+}: {
+  params: Promise<{ albumId: string }>;
+}) {
+  const { albumId: rawId } = await params;
+  const albumId = parseInt(rawId, 10);
+  if (isNaN(albumId)) notFound();
+
+  const [album, reviewStats] = await Promise.all([
+    prisma.album.findUnique({
+      where: { id: albumId },
+      select: {
+        id: true,
+        title: true,
+        exhibitionName: true,
+        coverUrl: true,
+        releaseDate: true,
+        albumType: true,
+        totalTracks: true,
+        spotifyId: true,
+        spotifyUrl: true,
+        artist: {
+          select: { id: true, name: true, exhibitionName: true, genres: true },
+        },
+      },
+    }),
+    prisma.albumReview.aggregate({
+      where: { albumId },
+      _avg: { rating: true },
+      _count: { id: true },
+    }),
+  ]);
+
+  if (!album) notFound();
+
+  const albumTitle = album.exhibitionName || album.title;
+  const artistName = album.artist.exhibitionName || album.artist.name;
+  const spotifyDetails = album.spotifyId ? await getSpotifyAlbumDetails(album.spotifyId) : null;
+  const avgScore = reviewStats._avg.rating ? Math.round(reviewStats._avg.rating) : 0;
+  const reviewCount = reviewStats._count.id;
+  const albumHref = buildAlbumPath(albumTitle, artistName, {
+    artistId: album.artist.id,
+    albumId: album.id,
+  });
+
+  return (
+    <Shell title="" noPadding>
+      {/* Header */}
+      <div
+        style={{
+          background: "white",
+          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          padding: "24px 40px",
+        }}
+      >
+        <Link
+          href="/criticsfm"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            color: "#86868B",
+            fontSize: 13,
+            fontWeight: 600,
+            textDecoration: "none",
+            marginBottom: 20,
+          }}
+        >
+          <ChevronLeft size={15} />
+          CriticsFM
+        </Link>
+
+        <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+          {/* Cover */}
+          {album.coverUrl ? (
+            <img
+              src={album.coverUrl}
+              alt={albumTitle}
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 12,
+                objectFit: "cover",
+                flexShrink: 0,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 12,
+                background: "rgba(0,0,0,0.06)",
+                flexShrink: 0,
+                display: "grid",
+                placeItems: "center",
+                fontSize: 32,
+                fontWeight: 800,
+                color: "#AEAEB2",
+              }}
+            >
+              {albumTitle[0]?.toUpperCase()}
+            </div>
+          )}
+
+          {/* Info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 800,
+                    letterSpacing: "-0.03em",
+                    color: "#1D1D1F",
+                    lineHeight: 1.1,
+                    marginBottom: 6,
+                  }}
+                >
+                  {albumTitle}
+                </div>
+                <Link
+                  href={`/artist/${album.artist.id}`}
+                  style={{ fontSize: 16, fontWeight: 600, color: "#86868B", textDecoration: "none" }}
+                >
+                  {artistName}
+                </Link>
+                <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  {album.releaseDate && (
+                    <span style={{ fontSize: 13, color: "#AEAEB2" }}>
+                      {album.releaseDate.getFullYear()}
+                    </span>
+                  )}
+                  {album.albumType && (
+                    <span style={{ fontSize: 13, color: "#AEAEB2" }}>
+                      {album.albumType === "ALBUM" ? "LP" : album.albumType}
+                    </span>
+                  )}
+                  <Link
+                    href={albumHref}
+                    style={{ fontSize: 12, color: "#FA243C", fontWeight: 600, textDecoration: "none" }}
+                  >
+                    Ver nas paradas →
+                  </Link>
+                </div>
+              </div>
+
+              {/* Score */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+                <div
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 16,
+                    background: reviewCount > 0 ? scoreBg(avgScore) : "rgba(0,0,0,0.04)",
+                    color: reviewCount > 0 ? scoreColor(avgScore) : "#AEAEB2",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: reviewCount > 0 ? 30 : 22,
+                    fontWeight: 800,
+                    fontVariantNumeric: "tabular-nums",
+                    border: reviewCount > 0 ? `2px solid ${scoreColor(avgScore)}30` : "2px solid rgba(0,0,0,0.08)",
+                  }}
+                >
+                  {reviewCount > 0 ? avgScore : "—"}
+                </div>
+                <div>
+                  {reviewCount > 0 && (
+                    <div style={{ fontSize: 15, fontWeight: 700, color: scoreColor(avgScore) }}>
+                      {scoreLabel(avgScore)}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>
+                    {reviewCount > 0
+                      ? `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"}`
+                      : "Sem avaliações"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      color: "#FA243C",
+                      marginTop: 4,
+                    }}
+                  >
+                    CriticsFM
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Reviews */}
+      <div style={{ padding: "32px 40px 80px" }}>
+        <AlbumReviewsClient
+          albumDbId={albumId}
+          albumTitle={albumTitle}
+          albumArtist={artistName}
+          initialAvgScore={avgScore}
+          initialReviewCount={reviewCount}
+          albumDetails={{
+            releaseDate: album.releaseDate?.toISOString().slice(0, 10) ?? null,
+            albumType: album.albumType ?? null,
+            totalTracks: album.totalTracks ?? null,
+            genres: album.artist.genres,
+            spotifyUrl: album.spotifyUrl ?? spotifyDetails?.spotifyUrl ?? null,
+            label: spotifyDetails?.label ?? null,
+          }}
+        />
+      </div>
+    </Shell>
+  );
+}

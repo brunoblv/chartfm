@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, Star } from "lucide-react";
+import { ChevronLeft, Star, MessageSquare } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { buildWeekIndexFromDate, getPreviousClosedWeekDate } from "@/lib/chart-week";
@@ -10,6 +10,7 @@ import { COVER_PALETTES } from "@/lib/data";
 import { parseAlbumSlug, buildArtistPath, buildSongPath, slugify } from "@/lib/music-routes";
 import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { AlbumDetailClient } from "./AlbumDetailClient";
 
 function pointsForPosition(position: number): number {
   return 101 - position;
@@ -62,7 +63,6 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         select: { id: true, spotifyId: true, name: true, imageUrl: true, spotifyUrl: true },
       });
 
-  // Fetch entries; when IDs are provided, use direct DB ids.
   const allEntries = await prisma.chartEntry.findMany({
     where: parsed.type === "artistAlbumIds"
       ? {
@@ -102,14 +102,13 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           album: true,
           spotifyId: true,
           artistSpotifyId: true,
-          albumRef: { select: { id: true, coverUrl: true, exhibitionName: true } },
+          albumRef: { select: { id: true, coverUrl: true, exhibitionName: true, releaseDate: true } },
           artistRef: { select: { id: true } },
         },
       },
     },
   });
 
-  // Filter to this album only (slugify match for legacy slug)
   const albumEntries = parsed.type === "artistAlbumIds"
     ? allEntries
     : allEntries.filter((e) => slugify(e.song.album ?? "") === parsed.albumSlug);
@@ -128,9 +127,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   }
 
   const canonicalAlbum = (albumEntries[0].song.albumRef?.exhibitionName?.trim() || albumEntries[0].song.album) ?? "";
-  const canonicalArtist =
-    artistRef?.name ?? albumEntries[0].song.artist;
+  const canonicalArtist = artistRef?.name ?? albumEntries[0].song.artist;
   const coverImageUrl = albumEntries.find((e) => e.song.albumRef?.coverUrl?.trim())?.song.albumRef?.coverUrl?.trim() ?? null;
+  const releaseDate = albumEntries.find((e) => e.song.albumRef?.releaseDate)?.song.albumRef?.releaseDate ?? null;
   const firstEntry = albumEntries[0];
   const palette = albumColor(canonicalAlbum + canonicalArtist);
 
@@ -183,7 +182,6 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     songsMap.set(key, cur);
   }
 
-  // Compute global weekly stats per song
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const currentWeekDate = getPreviousClosedWeekDate(nowBRT);
   const currentWeekIdx = buildWeekIndexFromDate(currentWeekDate);
@@ -239,7 +237,6 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     })
     .sort((a, b) => b.points - a.points);
 
-  // Top fans
   const fanMap = new Map<string, { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }>();
   for (const e of albumEntries) {
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
@@ -267,6 +264,134 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
   const artistSpotifyId = albumEntries[0].song.artistSpotifyId;
   const artistDbId = artistRef?.id ?? albumEntries[0].song.artistRef?.id ?? null;
+
+  // Find the Album DB record ID for reviews
+  const albumDbId = parsed.type === "artistAlbumIds"
+    ? parsed.albumId
+    : (albumEntries.find((e) => e.song.albumRef?.id)?.song.albumRef?.id ?? null);
+
+  // — Stats section (for "Estatísticas" tab) —
+  const statsSection = (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 40 }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
+            <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: s.color }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: 40 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Faixas</h2>
+        </div>
+        <div style={{ padding: "0 8px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
+            {["#", "", "Música", "Pontos", "Semanas", "Pico", "#1s"].map((h, i) => (
+              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
+            ))}
+          </div>
+          {songs.map((s, i) => (
+            <div
+              key={s.key}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px",
+                alignItems: "center",
+                padding: "4px 16px",
+                borderRadius: 8,
+                gap: 0,
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{i + 1}</div>
+              <div style={{ padding: "6px 6px" }}>
+                <Cover cover={s.cover} song={{ title: s.title, artist: canonicalArtist, album: canonicalAlbum, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
+              </div>
+              <div style={{ padding: "0 12px", minWidth: 0 }}>
+                <Link
+                  href={buildSongPath({ title: s.title, artist: canonicalArtist, id: s.songId, artistId: artistDbId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })}
+                  style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}
+                >
+                  {s.title}
+                </Link>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.points}</div>
+              <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
+              <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
+                {s.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
+                {s.peak > 0 ? `#${s.peak}` : "—"}
+              </div>
+              <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {topFans.length > 0 && (
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs do álbum</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            {topFans.map(({ user, points }) => (
+              <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
+                <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, textAlign: "center" }}>
+                  <Avatar user={user} imageUrl={user.image} size={56} />
+                  <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "#1D1D1F" }}>{user.name}</div>
+                  <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>Pontos no álbum</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // — Tracklist section —
+  const tracklistSection = (
+    <div style={{ maxWidth: 800 }}>
+      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "50px minmax(0,1fr) 90px 90px 90px", padding: "12px 24px", fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+          <div>#</div>
+          <div>Música</div>
+          <div style={{ textAlign: "right" }}>Pontos</div>
+          <div style={{ textAlign: "right" }}>Semanas</div>
+          <div style={{ textAlign: "right" }}>Pico</div>
+        </div>
+        {songs.map((s, i) => (
+          <div
+            key={s.key}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "50px minmax(0,1fr) 90px 90px 90px",
+              alignItems: "center",
+              padding: "14px 24px",
+              borderBottom: i < songs.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none",
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Cover cover={s.cover} song={{ title: s.title, artist: canonicalArtist, album: canonicalAlbum }} size={36} rounded={6} />
+              <Link
+                href={buildSongPath({ title: s.title, artist: canonicalArtist, id: s.songId, artistId: artistDbId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })}
+                style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", textDecoration: "none", color: "inherit" }}
+              >
+                {s.title}
+              </Link>
+            </div>
+            <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{s.points}</div>
+            <div style={{ textAlign: "right", fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{s.weeks}</div>
+            <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
+              {s.peak === 1 && <Star size={11} color="#FA243C" fill="#FA243C" />}
+              {s.peak > 0 ? `#${s.peak}` : "—"}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <Shell title="" noPadding>
@@ -307,99 +432,59 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               {canonicalArtist}
             </Link>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 14, opacity: 0.9 }}>
+              {releaseDate && (
+                <span>{releaseDate.getFullYear()}</span>
+              )}
               <span><strong>{listenersSet.size}</strong> ouvintes</span>
               <span><strong>{songsMap.size}</strong> faixas</span>
               <span><strong>{totalPoints}</strong> pontos</span>
             </div>
-            {canEditAlbum && (
-              <div style={{ marginTop: 10 }}>
-                <Link href={`/album/${slug}/edit`} style={{ color: "white", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>
+            <div style={{ display: "flex", gap: 12, marginTop: 16, alignItems: "center", flexWrap: "wrap" }}>
+              {albumDbId && (
+                <Link
+                  href={`/criticsfm/${albumDbId}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(255,255,255,0.18)",
+                    color: "white",
+                    textDecoration: "none",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    padding: "8px 16px",
+                    borderRadius: 100,
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <MessageSquare size={14} />
+                  Reviews no CriticsFM
+                </Link>
+              )}
+              {canEditAlbum && (
+                <Link
+                  href={`/album/${slug}/edit`}
+                  style={{ color: "rgba(255,255,255,0.8)", textDecoration: "none", fontSize: 13, fontWeight: 700 }}
+                >
                   Editar álbum
                 </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+
         </div>
       </div>
 
-      <div style={{ padding: "36px 40px 80px 40px" }}>
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 40 }}>
-          {stats.map((s) => (
-            <div key={s.label} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: s.color }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Tracklist */}
-        <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: 40 }}>
-          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Faixas</h2>
-          </div>
-          <div style={{ padding: "0 8px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
-              {["#", "", "Música", "Pontos", "Semanas", "Pico", "#1s"].map((h, i) => (
-                <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
-              ))}
-            </div>
-            {songs.map((s, i) => (
-              <div
-                key={s.key}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px",
-                  alignItems: "center",
-                  padding: "4px 16px",
-                  borderRadius: 8,
-                  gap: 0,
-                }}
-              >
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{i + 1}</div>
-                <div style={{ padding: "6px 6px" }}>
-                  <Cover cover={s.cover} song={{ title: s.title, artist: canonicalArtist, album: canonicalAlbum, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
-                </div>
-                <div style={{ padding: "0 12px", minWidth: 0 }}>
-                  <Link
-                    href={buildSongPath({ title: s.title, artist: canonicalArtist, id: s.songId, artistId: artistDbId, slugArtist: s.dbArtist, spotifyId: s.spotifyId })}
-                    style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}
-                  >
-                    {s.title}
-                  </Link>
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.points}</div>
-                <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
-                <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
-                  {s.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
-                  {s.peak > 0 ? `#${s.peak}` : "—"}
-                </div>
-                <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Top fans */}
-        {topFans.length > 0 && (
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs do álbum</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-              {topFans.map(({ user, points }) => (
-                <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
-                  <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, textAlign: "center" }}>
-                    <Avatar user={user} imageUrl={user.image} size={56} />
-                    <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "#1D1D1F" }}>{user.name}</div>
-                    <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>Pontos no álbum</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Tabbed content */}
+      <AlbumDetailClient
+        albumDbId={albumDbId}
+        albumTitle={canonicalAlbum}
+        albumArtist={canonicalArtist}
+        palette={palette}
+        statsSection={statsSection}
+        tracklistSection={tracklistSection}
+      />
     </Shell>
   );
 }
