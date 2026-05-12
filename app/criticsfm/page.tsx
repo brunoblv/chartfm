@@ -34,7 +34,6 @@ export default async function CriticsFMPage() {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 500,
     }),
     prisma.albumReview.groupBy({
       by: ["albumId"],

@@ -31,6 +31,14 @@ export default async function AdminAlbumsPage({
   return (
     <Shell title="Admin" subtitle="Editar álbuns">
       <div style={{ maxWidth: 980 }}>
+        <div style={{ marginBottom: 16 }}>
+          <Link
+            href="/admin/duplicates/albums"
+            style={{ fontSize: 13, color: "#FA243C", textDecoration: "none", fontWeight: 600 }}
+          >
+            → Mergear álbuns duplicados (Deluxe, Bonus Edition, etc.)
+          </Link>
+        </div>
         <CreateAlbumClient />
         <form method="GET" style={{ marginBottom: 16 }}>
           <input

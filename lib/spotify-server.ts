@@ -374,6 +374,7 @@ type SpotifyAlbumApi = {
   total_tracks?: number;
   label?: string;
   external_urls?: { spotify?: string };
+  artists?: { id: string; name: string }[];
 };
 
 export type SpotifyAlbumDetails = {
@@ -385,6 +386,8 @@ export type SpotifyAlbumDetails = {
   totalTracks: number | null;
   spotifyUrl: string | null;
   label: string | null;
+  artistSpotifyId: string | null;
+  artistName: string | null;
 };
 
 /** Metadados do álbum (capa, datas) para alinhar com um `album_id` concreto no catálogo. */
@@ -441,6 +444,8 @@ export async function getSpotifyAlbumDetails(
     totalTracks: a.total_tracks ?? null,
     spotifyUrl: a.external_urls?.spotify ?? null,
     label: a.label ?? null,
+    artistSpotifyId: a.artists?.[0]?.id ?? null,
+    artistName: a.artists?.[0]?.name ?? null,
   };
 }
 
@@ -588,6 +593,112 @@ export async function getSpotifyArtistTopTracks(
   if (!res?.ok) return [];
   const json = (await res.json()) as SpotifyTopTracksJson;
   return json.tracks ?? [];
+}
+
+type SpotifyAlbumSearchItem = {
+  id: string;
+  name: string;
+  album_type?: string;
+  images: SpotifyImage[];
+  release_date?: string;
+  total_tracks?: number;
+  external_urls?: { spotify?: string };
+  artists: { id: string; name: string }[];
+};
+
+type SpotifyAlbumSearchJson = {
+  albums?: { items: SpotifyAlbumSearchItem[] };
+};
+
+export type SpotifyAlbumSearchResult = {
+  spotifyId: string;
+  title: string;
+  artist: string;
+  artistSpotifyId: string | null;
+  coverUrl: string | null;
+  albumType: string | null;
+  releaseDate: string | null;
+  totalTracks: number | null;
+  spotifyUrl: string | null;
+};
+
+const ALBUM_EDITION_PAREN_PATTERN =
+  /\s*\((?:deluxe|super\s+deluxe|special|bonus\s+track[s]?|expanded|anniversary|remaster(?:ed)?|reissue|re-?release|edition|version|explicit)[^)]*\)/gi;
+
+const ALBUM_EDITION_SUFFIX_PATTERN =
+  /\s*[\-–—]\s*(?:deluxe|super\s+deluxe|special\s+edition|bonus\s+track[s]?|expanded|anniversary|remaster(?:ed)?|reissue|re-?release)[^\-–—]*$/i;
+
+function canonicalAlbumKey(album: SpotifyAlbumSearchItem): string {
+  const title = album.name
+    .replace(ALBUM_EDITION_PAREN_PATTERN, "")
+    .replace(ALBUM_EDITION_SUFFIX_PATTERN, "")
+    .toLowerCase()
+    .trim();
+  const artist = (album.artists[0]?.name ?? "").toLowerCase().trim();
+  return `${artist}|${title}`;
+}
+
+function pickBestAlbum(albums: SpotifyAlbumSearchItem[]): SpotifyAlbumSearchItem {
+  return [...albums].sort((a, b) => {
+    const aEdition = EDITION_PATTERN.test(a.name) ? 1 : 0;
+    const bEdition = EDITION_PATTERN.test(b.name) ? 1 : 0;
+    if (aEdition !== bEdition) return aEdition - bEdition;
+    return sortReleaseMs(a.release_date) - sortReleaseMs(b.release_date);
+  })[0];
+}
+
+export async function searchSpotifyAlbums(
+  query: string,
+  limit = 8,
+  market: string = "BR",
+): Promise<SpotifyAlbumSearchResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const token = await getAccessToken();
+  if (!token) return [];
+
+  const lim = Math.min(20, Math.max(1, limit));
+  const fetchLimit = Math.min(50, lim * 4);
+  const url = new URL(`${API_BASE}/search`);
+  url.searchParams.set("q", q);
+  url.searchParams.set("type", "album");
+  url.searchParams.set("limit", String(fetchLimit));
+  url.searchParams.set("market", market);
+
+  const res = await spotifyFetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 0 },
+  });
+  if (!res?.ok) return [];
+
+  const json = (await res.json()) as SpotifyAlbumSearchJson;
+  const items = json.albums?.items ?? [];
+
+  const groups = new Map<string, SpotifyAlbumSearchItem[]>();
+  for (const item of items) {
+    const key = canonicalAlbumKey(item);
+    const group = groups.get(key);
+    if (group) group.push(item);
+    else groups.set(key, [item]);
+  }
+
+  return [...groups.values()]
+    .map(pickBestAlbum)
+    .slice(0, lim)
+    .map((a) => {
+      const rd = parseSpotifyReleaseDate(a.release_date);
+      return {
+        spotifyId: a.id,
+        title: a.name,
+        artist: a.artists.map((ar) => ar.name).join(", "),
+        artistSpotifyId: a.artists[0]?.id ?? null,
+        coverUrl: pickAlbumImageUrl(a.images),
+        albumType: mapAlbumType(a.album_type),
+        releaseDate: rd ? rd.toISOString().slice(0, 10) : null,
+        totalTracks: a.total_tracks ?? null,
+        spotifyUrl: a.external_urls?.spotify ?? null,
+      };
+    });
 }
 
 export async function resolveCoverImageUrl(artist: string, title: string): Promise<string | null> {
