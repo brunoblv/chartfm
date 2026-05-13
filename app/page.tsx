@@ -49,13 +49,12 @@ type PublisherRow = {
 
 async function getPublishedThisWeek(
   userId: string,
-  weekIdx: number,
   followingIds: Set<string>,
 ): Promise<PublisherRow[]> {
   const charts = await prisma.chart.findMany({
-    where: { userId: { not: userId }, weekIndex: weekIdx, isPublished: true },
+    where: { userId: { not: userId }, isPublished: true },
     orderBy: { publishedAt: "desc" },
-    take: 14,
+    take: 15,
     select: {
       id: true,
       user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
@@ -270,7 +269,7 @@ export default async function HomePage() {
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
       getSuggestedUsers(session.user.id, userGenres, 3),
       getTimelineFeed(session.user.id, currentWeekIdx, followingIds),
-      getPublishedThisWeek(session.user.id, currentWeekIdx, followingIds),
+      getPublishedThisWeek(session.user.id, followingIds),
       getReviewsFeed(session.user.id),
     ]);
 
@@ -370,7 +369,7 @@ function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
   return (
     <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: "18px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Publicaram hoje</div>
+        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Últimas paradas</div>
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 12, color: "#86868B" }}>{publishers.length} pessoas</div>
       </div>
