@@ -38,6 +38,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         paradaNome: true,
         paradaLogo: true,
         genres: true,
+        lastfmUser: true,
+        twitterUser: true,
+        instagramUser: true,
       },
     }),
   ]);

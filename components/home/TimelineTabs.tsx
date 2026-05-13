@@ -35,6 +35,7 @@ export type TimelineItem = {
   chart: Chart;
   postedAgo: string;
   isFollowing: boolean;
+  isLiked: boolean;
 };
 
 function ReviewCard({ review }: { review: ReviewItem }) {
@@ -276,6 +277,7 @@ export function TimelineTabs({
                 chart={t.chart}
                 postedAgo={t.postedAgo}
                 isFollowing={t.isFollowing}
+                initialLiked={t.isLiked}
               />
             ))
           ) : (

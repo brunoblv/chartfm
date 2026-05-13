@@ -155,7 +155,14 @@ async function getTimelineFeed(
     return b.publishedAt.getTime() - a.publishedAt.getTime();
   });
 
-  return rows.slice(0, 15).map((c) => ({
+  const sliced = rows.slice(0, 15);
+  const likedRows = await prisma.chartLike.findMany({
+    where: { userId, chartId: { in: sliced.map((c) => c.id) } },
+    select: { chartId: true },
+  });
+  const likedSet = new Set(likedRows.map((r) => r.chartId));
+
+  return sliced.map((c) => ({
     user: {
       id: c.user.id,
       handle: c.user.handle,
@@ -207,6 +214,7 @@ async function getTimelineFeed(
     },
     postedAgo: formatRelativeTime(c.publishedAt),
     isFollowing: followingIds.has(c.user.id),
+    isLiked: likedSet.has(c.id),
   }));
 }
 

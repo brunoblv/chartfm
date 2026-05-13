@@ -33,6 +33,8 @@ model User {
   genres               String[]          @default([])
   role                 UserRole          @default(USER)
   lastfmUser           String?
+  twitterUser          String?
+  instagramUser        String?
   chartSize            Int?              @map("chart_size")
   paradaLogo           String?           @map("parada_logo")
   charts               Chart[]

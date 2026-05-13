@@ -19,6 +19,30 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
+    date: "2026-05-12",
+    label: "12 de maio de 2026",
+    entries: [
+      {
+        title: "CriticsFM — avalie e descubra álbuns",
+        tag: "novo",
+        description:
+          "Uma nova seção do site dedicada a álbuns. Você pode explorar o catálogo, ver a nota média de cada álbum com base nas avaliações dos usuários, escrever sua própria review e marcar reviews de outros como úteis. Acesse pelo menu lateral ou em /criticsfm.",
+      },
+      {
+        title: "Reviews de álbuns no feed da tela inicial",
+        tag: "novo",
+        description:
+          'A tela inicial ganhou uma segunda aba “Reviews” ao lado de “Paradas”. Ela exibe as avaliações de álbuns mais recentes dos usuários do site, com nota, capa e trecho do texto — tudo sem sair da home.',
+      },
+      {
+        title: "Logo e nome da parada aparecem no card",
+        tag: "melhoria",
+        description:
+          'Os cards de parada no feed agora exibem o logo personalizado (quando definido) e o nome da parada em vez do genérico "Top X". O logo também aparece no cabeçalho do card ao lado do avatar do usuário.',
+      },
+    ],
+  },
+  {
     date: "2026-05-11",
     label: "11 de maio de 2026",
     entries: [

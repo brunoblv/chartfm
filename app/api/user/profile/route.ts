@@ -29,6 +29,8 @@ export async function GET() {
       genres: true,
       image: true,
       lastfmUser: true,
+      twitterUser: true,
+      instagramUser: true,
       chartSize: true,
     },
   });
@@ -52,6 +54,8 @@ export async function PATCH(req: Request) {
     paradaNome?: string | null;
     genres?: string[];
     lastfmUser?: string | null;
+    twitterUser?: string | null;
+    instagramUser?: string | null;
     chartSize?: number | null;
   };
 
@@ -60,6 +64,8 @@ export async function PATCH(req: Request) {
   const bio = typeof body.bio === "string" ? body.bio.trim() : "";
   const paradaNome = typeof body.paradaNome === "string" ? body.paradaNome.trim() : "";
   const lastfmUser = typeof body.lastfmUser === "string" ? body.lastfmUser.trim() : "";
+  const twitterUser = typeof body.twitterUser === "string" ? body.twitterUser.trim().replace(/^@/, "") : "";
+  const instagramUser = typeof body.instagramUser === "string" ? body.instagramUser.trim().replace(/^@/, "") : "";
   const rawChartSize = typeof body.chartSize === "number" ? Math.round(body.chartSize) : null;
   const chartSize = rawChartSize !== null && rawChartSize >= 1 && rawChartSize <= 100 ? rawChartSize : null;
   const genres = Array.isArray(body.genres)
@@ -90,6 +96,8 @@ export async function PATCH(req: Request) {
       paradaNome: paradaNome || null,
       genres,
       lastfmUser: lastfmUser || null,
+      twitterUser: twitterUser || null,
+      instagramUser: instagramUser || null,
       chartSize,
     },
   });

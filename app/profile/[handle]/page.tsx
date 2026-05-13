@@ -24,6 +24,9 @@ type ApiProfile = {
   paradaNome: string | null;
   genres: string[];
   isFollowing: boolean;
+  lastfmUser?: string | null;
+  twitterUser?: string | null;
+  instagramUser?: string | null;
   mode?: "summary" | "full";
   page?: number;
   perPage?: number;
@@ -31,6 +34,30 @@ type ApiProfile = {
   artistImages?: Record<string, string | null>;
   globalNumberOnes?: Record<string, number>;
 };
+
+function IconX({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.259 5.63 5.905-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function IconInstagram({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+    </svg>
+  );
+}
+
+function IconLastfm({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M10.87 17.45l-.77-2.1s-1.26 1.41-3.15 1.41c-1.66 0-2.85-1.45-2.85-3.76 0-2.97 1.49-4.03 2.97-4.03 2.15 0 2.85 1.4 3.44 3.16l.77 2.41c.77 2.32 2.21 4.19 6.36 4.19 2.97 0 4.98-9.06 4.98-9.06l-.79-.79h-2.85l-1.01 4.88c-.1.53-.47.88-.95.88-1.06 0-1.19-.65-1.59-2.1l-.83-2.82C13.69 6.64 12.18 5.14 8.12 5.14c-4.02 0-6.55 2.51-6.55 7.26 0 4.52 2.67 7.02 6.39 7.02 3.52 0 2.91-1.97 2.91-1.97z" />
+    </svg>
+  );
+}
 
 function countDistinctNumberOnes(charts: Chart[]) {
   const keys = new Set<string>();
@@ -402,6 +429,9 @@ export default function ProfilePage() {
   const artistImages = (fullPayload?.artistImages ?? payload?.artistImages) ?? {};
   const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
+  const twitterUser = payload?.twitterUser ?? null;
+  const instagramUser = payload?.instagramUser ?? null;
+  const lastfmUser = payload?.lastfmUser ?? null;
 
   const topArtists = useMemo(() => (statsUser ? buildTopArtists(statsUser) : []), [statsUser]);
   const numberOnes = useMemo(() => (statsUser ? countDistinctNumberOnes(statsUser.charts) : 0), [statsUser]);
@@ -517,12 +547,85 @@ export default function ProfilePage() {
               </div>
             )}
             {user.bio ? (
-              <p style={{ fontSize: 15, color: "#1D1D1F", marginBottom: 16, maxWidth: 560, lineHeight: 1.5 }}>{user.bio}</p>
+              <p style={{ fontSize: 15, color: "#1D1D1F", marginBottom: 12, maxWidth: 560, lineHeight: 1.5 }}>{user.bio}</p>
             ) : isOwn && source === "db" ? (
-              <p style={{ fontSize: 15, color: "#86868B", marginBottom: 16, maxWidth: 560, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 15, color: "#86868B", marginBottom: 12, maxWidth: 560, lineHeight: 1.5 }}>
                 Ainda sem bio. As informações vêm da sua conta Google; em breve poderá editar aqui.
               </p>
             ) : null}
+            {(twitterUser || instagramUser || lastfmUser) && source === "db" && (
+              <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                {twitterUser && (
+                  <a
+                    href={`https://x.com/${twitterUser}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`X: @${twitterUser}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 12px",
+                      background: "#000",
+                      color: "white",
+                      borderRadius: 100,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <IconX size={14} />
+                    @{twitterUser}
+                  </a>
+                )}
+                {instagramUser && (
+                  <a
+                    href={`https://instagram.com/${instagramUser}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Instagram: @${instagramUser}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 12px",
+                      background: "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
+                      color: "white",
+                      borderRadius: 100,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <IconInstagram size={14} />
+                    @{instagramUser}
+                  </a>
+                )}
+                {lastfmUser && (
+                  <a
+                    href={`https://www.last.fm/user/${lastfmUser}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Last.fm: ${lastfmUser}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 12px",
+                      background: "#D51007",
+                      color: "white",
+                      borderRadius: 100,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <IconLastfm size={14} />
+                    {lastfmUser}
+                  </a>
+                )}
+              </div>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "#86868B", flexWrap: "wrap" }}>
               <span><b style={{ color: "#1D1D1F" }}>{user.followers.toLocaleString("pt-BR")}</b> seguidores</span>
               <span><b style={{ color: "#1D1D1F" }}>{user.following}</b> seguindo</span>

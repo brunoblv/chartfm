@@ -19,6 +19,7 @@ interface ChartCardProps {
   postedAgo?: string;
   highlightTop?: number;
   isFollowing?: boolean;
+  initialLiked?: boolean;
   showFollowActions?: boolean;
   showUserHeader?: boolean;
 }
@@ -29,13 +30,14 @@ export function ChartCard({
   postedAgo,
   highlightTop = 5,
   isFollowing,
+  initialLiked = false,
   showFollowActions = true,
   showUserHeader = true,
 }: ChartCardProps) {
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
   const formattedPeriod = formatChartPeriod(chart);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(chart.likes);
   const [liking, setLiking] = useState(false);
 

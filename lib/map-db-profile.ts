@@ -14,6 +14,9 @@ type PrismaProfileUser = {
   paradaNome: string | null;
   paradaLogo?: string | null;
   genres: string[];
+  lastfmUser?: string | null;
+  twitterUser?: string | null;
+  instagramUser?: string | null;
   charts: Array<{
     id: string;
     weekIndex: number;
@@ -153,6 +156,9 @@ export type PublicProfilePayload = {
   paradaLogo: string | null;
   genres: string[];
   isFollowing: boolean;
+  lastfmUser: string | null;
+  twitterUser: string | null;
+  instagramUser: string | null;
 };
 
 export function buildPublicProfilePayload(
@@ -166,6 +172,9 @@ export function buildPublicProfilePayload(
     paradaLogo: db.paradaLogo ?? null,
     genres: db.genres ?? [],
     isFollowing,
+    lastfmUser: db.lastfmUser ?? null,
+    twitterUser: db.twitterUser ?? null,
+    instagramUser: db.instagramUser ?? null,
   };
 }
 

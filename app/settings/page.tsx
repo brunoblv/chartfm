@@ -21,6 +21,8 @@ type ProfileData = {
   paradaNome: string | null;
   genres: string[];
   lastfmUser: string | null;
+  twitterUser: string | null;
+  instagramUser: string | null;
   chartSize: number | null;
   image: string | null;
   paradaLogo: string | null;
@@ -43,6 +45,8 @@ export default function SettingsPage() {
     paradaNome: "",
     genres: [],
     lastfmUser: "",
+    twitterUser: "",
+    instagramUser: "",
     chartSize: null,
     image: null,
     paradaLogo: null,
@@ -78,6 +82,8 @@ export default function SettingsPage() {
           paradaNome: data.paradaNome ?? "",
           genres: data.genres ?? [],
           lastfmUser: data.lastfmUser ?? "",
+          twitterUser: data.twitterUser ?? "",
+          instagramUser: data.instagramUser ?? "",
           chartSize: data.chartSize ?? null,
           image: data.image ?? null,
           paradaLogo: data.paradaLogo ?? null,
@@ -111,6 +117,8 @@ export default function SettingsPage() {
           paradaNome: form.paradaNome,
           genres: form.genres,
           lastfmUser: form.lastfmUser,
+          twitterUser: form.twitterUser,
+          instagramUser: form.instagramUser,
           chartSize: form.chartSize,
         }),
       });
@@ -424,21 +432,59 @@ export default function SettingsPage() {
                   />
                 </label>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Usuário Last.fm</span>
-                  <input
-                    value={form.lastfmUser ?? ""}
-                    onChange={(e) => {
-                      const raw = e.target.value.trim();
-                      const match = raw.match(/last\.fm\/user\/([^/?#\s]+)/i);
-                      setForm((f) => ({ ...f, lastfmUser: match ? match[1] : e.target.value }));
-                    }}
-                    placeholder="seu-usuario-lastfm"
-                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
-                  />
-                  <span style={{ fontSize: 11, color: "#86868B" }}>
-                    Só o nome de usuário (ex: <strong>blvbruno</strong>), não a URL completa. Se colar o link do perfil, o usuário será extraído automaticamente.
-                  </span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>Redes sociais</span>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>X (Twitter)</span>
+                    <div style={{ position: "relative" }}>
+                      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#86868B", fontSize: 14, pointerEvents: "none" }}>@</span>
+                      <input
+                        value={form.twitterUser ?? ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/^@/, "").trim();
+                          const match = raw.match(/(?:x\.com|twitter\.com)\/([^/?#\s]+)/i);
+                          setForm((f) => ({ ...f, twitterUser: match ? match[1] : e.target.value.replace(/^@/, "") }));
+                        }}
+                        placeholder="seu_usuario"
+                        style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Instagram</span>
+                    <div style={{ position: "relative" }}>
+                      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#86868B", fontSize: 14, pointerEvents: "none" }}>@</span>
+                      <input
+                        value={form.instagramUser ?? ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/^@/, "").trim();
+                          const match = raw.match(/instagram\.com\/([^/?#\s]+)/i);
+                          setForm((f) => ({ ...f, instagramUser: match ? match[1] : e.target.value.replace(/^@/, "") }));
+                        }}
+                        placeholder="seu_usuario"
+                        style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Last.fm</span>
+                    <input
+                      value={form.lastfmUser ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        const match = raw.match(/last\.fm\/user\/([^/?#\s]+)/i);
+                        setForm((f) => ({ ...f, lastfmUser: match ? match[1] : e.target.value }));
+                      }}
+                      placeholder="seu-usuario-lastfm"
+                      style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 11, color: "#86868B" }}>
+                      Cole o link do perfil ou só o nome de usuário — o usuário é extraído automaticamente.
+                    </span>
+                  </div>
                 </div>
 
                 {error && <div style={{ fontSize: 13, color: "#B91C1C" }}>{error}</div>}
