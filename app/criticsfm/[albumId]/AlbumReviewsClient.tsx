@@ -393,8 +393,8 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
                 borderBottom: "1px solid rgba(0,0,0,0.04)",
               }}
             >
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F", flex: 1 }}>{value}</span>
-              <span style={{ fontSize: 11, color: "#86868B", flexShrink: 0 }}>/ {key}</span>
+              <span style={{ fontSize: 11, color: "#86868B", flex: 1 }}>{key}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F", flexShrink: 0 }}>{value}</span>
             </div>
           ))}
         </div>

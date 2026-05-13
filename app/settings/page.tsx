@@ -171,14 +171,19 @@ export default function SettingsPage() {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/user/parada-logo", { method: "POST", body: fd });
-      const data = await res.json();
       if (!res.ok) {
-        setLogoError(data.error ?? "Erro ao enviar logo.");
+        let message = "Erro ao enviar logo.";
+        try {
+          const data = await res.json();
+          message = data.error ?? message;
+        } catch {}
+        setLogoError(message);
         return;
       }
+      const data = await res.json();
       setForm((f) => ({ ...f, paradaLogo: data.url }));
     } catch {
-      setLogoError("Erro de conexão.");
+      setLogoError("Erro de conexão. Tente novamente.");
     } finally {
       setUploadingLogo(false);
     }
