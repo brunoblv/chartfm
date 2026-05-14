@@ -102,7 +102,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
 
-  const isNewUser = session?.user?.needsHandle !== false || session?.user?.needsHandle === true;
+  const isNewUser = session?.user?.needsHandle !== false;
   const [step, setStep] = useState<1 | 2>(isNewUser ? 1 : 2);
 
   // Step 1 — handle
