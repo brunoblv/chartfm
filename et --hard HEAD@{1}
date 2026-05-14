@@ -1,0 +1,112 @@
+[33m10e32434[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33m1077bc09[m HEAD@{1}: reset: moving to HEAD~1
+[33me3695354[m HEAD@{2}: reset: moving to HEAD~1
+[33ma9144b7f[m HEAD@{3}: commit: fix: enhance Spotify song merging logic and response handling
+[33me3695354[m HEAD@{4}: commit: fix: update TypeScript route import and filter out instrumental tracks
+[33m1077bc09[m HEAD@{5}: commit: fix: update TypeScript route import and adjust published charts retrieval
+[33m10e32434[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{6}: commit: feat: enhance user profile and timeline features with social media integration
+[33m04c0efca[m HEAD@{7}: commit: fix: update TypeScript route import and enhance response handling
+[33m9534bb04[m HEAD@{8}: commit: feat: update file upload handling and improve error management
+[33md33570f5[m HEAD@{9}: commit: feat: integrate reviews feed and enhance user profile display
+[33m14ce6d17[m HEAD@{10}: commit: feat: improve Spotify integration with availability handling and error messaging
+[33m7649552b[m HEAD@{11}: commit: feat: enhance album management with duplicate merging and Spotify search integration
+[33mb6d4cf87[m HEAD@{12}: commit: fix: update album review API and schema for improved functionality
+[33m7a5b901a[m HEAD@{13}: commit: feat: add album review models and update user and album schemas
+[33mffa0d0eb[m HEAD@{14}: commit: feat: enhance AdminArtistsPage with new artist creation panel and improved search functionality
+[33m7339a570[m HEAD@{15}: commit: feat: implement user avatar and logo upload functionality
+[33m78ab46ca[m HEAD@{16}: commit: fix: update TypeScript route imports for consistency
+[33m3d480604[m HEAD@{17}: commit: feat: upload de avatar, logo da parada e página de novidades
+[33m255d7e7a[m HEAD@{18}: commit: refactor: enhance AdminMusicVersionsPage layout and integrate SpotifyFixButton
+[33me6bf9e51[m HEAD@{19}: commit: refactor: enhance AdminMusicPage layout and add navigation links
+[33m5bd15ff8[m HEAD@{20}: commit: refactor: streamline user profile settings and enhance input validation
+[33m923b4982[m HEAD@{21}: commit: refactor: update TypeScript route imports and enhance song page component
+[33mae25b11e[m HEAD@{22}: commit: refactor: remove unused song path functions and clean up EditChartPage component
+[33m92dde42a[m HEAD@{23}: commit: fix: improve Last.fm user error handling and input validation
+[33md6161515[m HEAD@{24}: commit: fix: update chart size limits in user profile and settings
+[33m26f8d64b[m HEAD@{25}: commit: feat: enhance WeekCalendar component with mobile responsiveness and year input
+[33ma44df720[m HEAD@{26}: commit: feat: enhance WeekCalendar component with picker mode functionality
+[33m97ec848d[m HEAD@{27}: commit: feat: enhance Last.fm integration and user profile management
+[33me1b9c1c0[m HEAD@{28}: commit: fix: update TypeScript route imports and streamline Prisma client initialization
+[33m0ef86b0b[m HEAD@{29}: commit: feat: integrate @next/third-parties for enhanced analytics and tracking
+[33mf37b144c[m HEAD@{30}: commit: feat: integrate Google Tag Manager for enhanced tracking and analytics
+[33m22d142c6[m HEAD@{31}: commit: feat: enhance global snapshot and chart entry handling with song updates
+[33m955f9192[m HEAD@{32}: commit: feat: enhance global snapshot and weekly chart data aggregation
+[33m26b369f1[m HEAD@{33}: commit: feat: enhance album editing functionality with Spotify integration
+[33me0a5efa8[m HEAD@{34}: commit: feat: update layout for Google AdSense integration and script optimization
+[33m42568681[m HEAD@{35}: commit: feat: update layout for new ad network integration and script optimization
+[33m64782f55[m HEAD@{36}: commit: feat: restructure layout for improved Google Ads integration and readability
+[33mf6959af3[m HEAD@{37}: commit: feat: update layout title and optimize Google Ads script integration
+[33m3382a398[m HEAD@{38}: commit: feat: enhance layout and profile pages with improved data handling and Google Ads integration
+[33m11f594cf[m HEAD@{39}: commit: feat: integrate Google AdSense account into layout for monetization
+[33m19fb72e8[m HEAD@{40}: commit: feat: enhance song and artist data handling with improved references and links
+[33m7a6ca395[m HEAD@{41}: commit: feat(artist): enhance artist page with Spotify profile integration and improved slug handling
+[33m6e1a02ad[m HEAD@{42}: commit: refactor: remove coverImageUrl from song data structure and update related logic
+[33me4840b70[m HEAD@{43}: commit: fix(song): remove unnecessary section for entry dates and arrival weeks
+[33m1a219bc2[m HEAD@{44}: commit: feat: implement account deletion functionality with user data cleanup
+[33m5593283a[m HEAD@{45}: commit: feat: add legal pages for contact, privacy policy, about, and terms of use
+[33m6a1a33ef[m HEAD@{46}: commit: feat: add page for managing duplicate songs by artist with merge functionality
+[33m78c520f2[m HEAD@{47}: commit: feat: enhance MissingInfoBackfillClient to handle manual items and update backfill logic
+[33mc75a2954[m HEAD@{48}: commit: feat: update batch processing limits and add delays for Spotify metadata backfill
+[33m771a4f4a[m HEAD@{49}: commit: feat: add MissingInfoBackfillClient component and admin page for managing incomplete metadata
+[33m67d864f4[m HEAD@{50}: commit: feat: enhance Spotify metadata handling in chart entries and improve image URL assignment
+[33md2ff0099[m HEAD@{51}: commit: feat: add computed entry stats for chart entries
+[33m827d79de[m HEAD@{52}: commit: fix: update import path in next-env.d.ts and add error handling for missing Spotify metadata in fix-dejavu-ss501-spotify script
+[33m0b5e4bc4[m HEAD@{53}: commit: feat: add scripts to update Spotify metadata for SS501's "Dejavu" and sync chart entries
+[33mb8523012[m HEAD@{54}: commit: fix(song): remove seção Suas datas de entrada e uso de arrivalWeeksSorted
+[33m9744db81[m HEAD@{55}: commit: Update route type definitions for development environment
+[33me8dea4ff[m HEAD@{56}: commit: Refactor sync script for BANG20 Doushite with year-based handling
+[33m02f0558d[m HEAD@{57}: commit: Enhance song page with chart presence and arrival data
+[33m1cff377c[m HEAD@{58}: commit: Refactor song page and edit components for improved song ID resolution
+[33mf08ed448[m HEAD@{59}: commit: Enhance album and song editing components with typeahead functionality
+[33m09b0698b[m HEAD@{60}: commit: Enhance AdminMusicPage to include album information in song listings
+[33m53452cd2[m HEAD@{61}: commit: Add Spotify artist albums retrieval function and update artist names in JSON files
+[33mc325254e[m HEAD@{62}: commit: Enhance chart detail and profile pages with new statistics and features
+[33m0db8ab92[m HEAD@{63}: commit: Refactor import script and improve error handling
+[33m888501ae[m HEAD@{64}: commit: Update pagination settings and enhance import script functionality
+[33mc1836b68[m HEAD@{65}: commit: Enhance album and song editing features with artist integration
+[33m463758ef[m HEAD@{66}: commit: Enhance Sidebar component with new link and styling adjustments
+[33m231f2ae4[m HEAD@{67}: commit: Update TypeScript environment configuration for development
+[33m979432f2[m HEAD@{68}: commit: Add initial VSCode settings configuration
+[33mb373cedd[m HEAD@{69}: commit: Update import path for route types in TypeScript environment file
+[33m6cbe9f22[m HEAD@{70}: commit: Enhance image URL handling across components
+[33m93024d07[m HEAD@{71}: commit: Refactor image URL handling and enhance user feedback in edit pages
+[33mf19f5829[m HEAD@{72}: commit: Refactor caching logic in Last.fm import route
+[33m1600527a[m HEAD@{73}: commit: Refactor user role management and enhance album/song editing features
+[33mb894c3e5[m HEAD@{74}: commit: Enhance API response handling and caching strategies
+[33m5f0c7288[m HEAD@{75}: commit: Reset entries on Last.fm import initiation and update fetch request caching strategy
+[33mc8fef219[m HEAD@{76}: commit: Enhance chart API and Last.fm import functionality
+[33mf14f94e7[m HEAD@{77}: commit: Refactor Last.fm scoring logic and enhance documentation
+[33mbad8d26d[m HEAD@{78}: commit: Update Last.fm scoring multipliers and enhance API documentation
+[33mafabf10a[m HEAD@{79}: commit: Refactor Last.fm scoring logic to remove daily decay
+[33mf0592048[m HEAD@{80}: commit: Refactor Last.fm track scoring and import logic
+[33me26b1c6a[m HEAD@{81}: commit: Refactor chart entry limit handling in API routes
+[33me2574447[m HEAD@{82}: commit: Enhance Last.fm integration in chart management
+[33m2959c2b5[m HEAD@{83}: commit: Update CreatePage to remove title from Shell component and modify SettingsPage to change label from "Handle" to "User". Enhance applySpotifyMetadataToSong function to include coverImageUrl in song selection and update album handling logic.
+[33mb6af2193[m HEAD@{84}: commit: Refactor CreatePage and EditChartPage to remove numbered labels from music source sections for improved clarity and consistency. Update route type import in next-env.d.ts to the correct directory. Remove obsolete script verify-fix-me-beija-seu-direito.ts.
+[33me1557942[m HEAD@{85}: commit: Adiciona campo lastfmUser ao perfil e botão de editar perfil
+[33mff172b0f[m HEAD@{86}: commit: Refactor CreatePage and EditChartPage to improve state management and enhance user experience with conditional rendering for debug elements.
+[33mada1a4a2[m HEAD@{87}: commit: Add conditional rendering for debug elements in CreatePage and EditChartPage
+[33m4bc06c5d[m HEAD@{88}: commit: Refactor song cover image retrieval logic across multiple components to prioritize fallback options, enhance data consistency, and introduce song canonical overrides in import_bang20.py for official title and album handling.
+[33mfff5931e[m HEAD@{89}: commit: Update route type import in next-env.d.ts to the correct directory and refine song cover retrieval logic in hydrateSongCovers function for improved type safety and clarity.
+[33ma1fc8f8b[m HEAD@{90}: commit: Enhance song cover retrieval in GlobalPage and aggregateGlobalSongs function. Introduce hydrateSongCovers utility to fetch and assign cover images for songs, improving data consistency across the application.
+[33ma7cc323a[m HEAD@{91}: commit: Update song title handling across API routes to prioritize exhibition names over titles. Modify data structures in charts, profiles, and search functionalities for improved consistency and clarity. Enable Spotify search functionality in CreatePage and EditChartPage.
+[33m265f4319[m HEAD@{92}: commit: Refactor status handling across various components to include "return" as a valid status. Update type definitions and logic in charts, profiles, and discover pages for improved data representation and consistency.
+[33me81e0f98[m HEAD@{93}: commit: Update route type import in next-env.d.ts and enhance GlobalTeaser component layout in page.tsx. Modify ArtistPage to include albumId in userAlbumsMapRaw for improved data handling.
+[33mbb8a5948[m HEAD@{94}: commit: Enhance data retrieval and handling in various components. Update API routes to include album cover URLs, improve song and artist data fetching logic, and implement better error handling in search functionalities. Refactor CreatePage and EditChartPage for improved state management and user experience.
+[33m46324c40[m HEAD@{95}: commit: Refactor search API and CreatePage logic for improved query handling and performance. Update search term processing to enhance accuracy, implement better error handling for API responses, and optimize loading states for Spotify track fetching.
+[33ma664f7ae[m HEAD@{96}: commit: Update route type import in next-env.d.ts to point to the development directory for improved type definitions.
+[33m4173eb51[m HEAD@{97}: commit: Refactor search API to improve query handling. Replace single query string with multiple term filters for songs, artists, and users, enhancing search accuracy and performance. Update database queries to utilize AND conditions for better matching.
+[33mcde462cf[m HEAD@{98}: commit: Enhance song and album data handling in CreatePage and API routes. Introduce album field in search results, improve local catalog display logic, and implement Last.fm import functionality. Update Spotify track search to utilize caching and retry logic for improved performance and reliability.
+[33m6f8b520b[m HEAD@{99}: commit: Update route type import in next-env.d.ts to reflect new directory structure.
+[33m59d044b8[m HEAD@{100}: commit: Refactor Shell and TopBar components for improved mobile experience. Introduce BottomNav for mobile navigation and update TopBar to enhance layout and functionality, including a new notification bell and search toggle. Streamline styles for better responsiveness and user interaction.
+[33mc6ed7960[m HEAD@{101}: commit: Enhance LandingPage with new mobile features and social proof section. Introduce a mobile-friendly user preview card and a press strip showcasing featured media outlets. Update styles for improved visual presentation and user engagement.
+[33me6340b53[m HEAD@{102}: commit: Add delete functionality for charts in ChartDetailPage and update profile page to remove old delete logic. Introduce confirmation dialog for deletion and manage loading state during the process.
+[33m1c3f90f4[m HEAD@{103}: commit: Update ArtistPage to reflect changes in header labels and remove multiplication sign from appearances display. Change "Vezes" to "Semanas" for clarity and improve data presentation.
+[33m3e7888b0[m HEAD@{104}: commit: Update tab labels in ArtistPage for clarity and consistency. Change "Músicas" to "Músicas Global 100", "Álbuns" to "Albuns overall", "Músicas na parada" to "Músicas na sua parada", and "Álbuns por pontuação" to "Albuns na sua parada".
+[33m19024a0a[m HEAD@{105}: commit: Refactor ArtistPage to enhance song and album data handling. Introduce pagination for artist songs, update song retrieval logic to include Spotify ID, and improve type definitions for song and album rows. Add session management for user-specific data and streamline cover image handling for songs.
+[33mddc76158[m HEAD@{106}: commit: Implement pagination for artist songs in ArtistPage and add album path building functions. Enhance song retrieval logic to support pagination and display total song count. Introduce new functions for building and parsing album paths, improving navigation and data handling for albums.
+[33mdfe6d33d[m HEAD@{107}: commit: Enhance Spotify track search and metadata handling by introducing logic to group tracks by normalized title and primary artist, selecting the best version based on release date and edition tags. Update backfill script to utilize new metadata application function, improving data integrity and accuracy in song updates.
+[33m53500698[m HEAD@{108}: commit: Refactor song retrieval and upsert logic in API routes to improve handling of existing records with Spotify IDs. Enhance data integrity by ensuring Spotify ID is only added when absent, and streamline checks for manually created songs to prevent duplicates.
+[33m64d0a464[m HEAD@{109}: commit: Refactor song retrieval logic in API routes to include Spotify ID in existing song checks. Update upsert functionality to conditionally add Spotify ID only when it is not already present, enhancing data integrity and preventing unnecessary updates.
+[33mbfcee5db[m HEAD@{110}: commit: Refactor song upsert logic in API routes to handle existing records without a Spotify ID. Introduce checks for songs created manually with the same title and artist, promoting them instead of creating duplicates. Enhance metadata handling during updates and creations for improved data integrity.
+[33me5000e3f[m HEAD@{111}: commit: Refactor Spotify search functions to improve artist retrieval and track matching. Introduce market parameter for search functions, enhance error handling, and implement top track fetching for artists. Update backfill script to support additional search options and improve matching accuracy for K-pop/J-pop genres.
