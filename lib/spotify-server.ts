@@ -304,7 +304,7 @@ export async function listSpotifyAlbumTracks(
     if (!res?.ok) break;
     const json = (await res.json()) as SpotifyAlbumTracksPageJson;
     for (const it of json.items ?? []) {
-      if (it?.id && it?.name) out.push({ spotifyId: it.id, title: it.name });
+      if (it?.id && it?.name && !/instrumental/i.test(it.name)) out.push({ spotifyId: it.id, title: it.name });
     }
     url = json.next ?? null;
   }
