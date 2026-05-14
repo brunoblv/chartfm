@@ -421,7 +421,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
   const topAlbums = useMemo(
     () =>
       albums
-        .filter((a) => a.reviewCount > 0)
+        .filter((a) => a.reviewCount > 1)
         .sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount)
         .slice(0, 5),
     [albums],
