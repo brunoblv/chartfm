@@ -20,10 +20,23 @@ function GoogleLogo({ size = 16 }: { size?: number }) {
 }
 
 
+function formatCount(n: number): string {
+  if (n >= 1000) return `+${(n / 1000).toFixed(0)} mil`;
+  return `+${n}`;
+}
+
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [curatorCount, setCuratorCount] = useState<string>("+12 mil");
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    fetch("/api/stats/weekly-curators")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.count === "number" && d.count > 0) setCuratorCount(formatCount(d.count)); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     getProviders().then((p) => setGoogleReady(Boolean(p?.google)));
@@ -82,7 +95,7 @@ export default function LoginPage() {
             ))}
           </div>
           <div style={{ fontSize: 13, opacity: 0.85 }}>
-            <b style={{ fontWeight: 700 }}>+12 mil</b> curadores ativos esta semana
+            <b style={{ fontWeight: 700 }}>{curatorCount}</b> curadores ativos esta semana
           </div>
         </div>
       </div>

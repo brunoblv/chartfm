@@ -64,9 +64,9 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.prismaUserId && token.handle) {
+      if (session.user && token.prismaUserId) {
         session.user.id = token.prismaUserId;
-        session.user.handle = token.handle;
+        session.user.handle = token.handle ?? undefined;
         session.user.name = (token.name as string) ?? session.user.name;
         session.user.image = (token.picture as string | undefined) ?? session.user.image;
         session.user.streak = typeof token.streak === "number" ? token.streak : 0;
