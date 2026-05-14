@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ songId
 
   const song = await prisma.song.findUnique({
     where: { id },
-    select: { id: true, title: true, artist: true, _count: { select: { entries: true } } },
+    select: { id: true, title: true, artist: true, spotifyId: true, _count: { select: { entries: true } } },
   });
   if (!song) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
@@ -73,7 +73,35 @@ export async function POST(req: NextRequest, context: { params: Promise<{ songId
   if (!result.ok) {
     if (result.reason.startsWith("spotify_id_conflict:")) {
       const conflictId = result.reason.split(":")[1];
-      return NextResponse.json({ error: "spotify_id_conflict", conflictSongId: conflictId }, { status: 409 });
+
+      // Merge wrong song into correct song: migrate all chart entries then delete wrong song
+      await prisma.$transaction(async (tx) => {
+        await tx.chartEntry.updateMany({
+          where: { songId: id },
+          data: { songId: conflictId, songSpotifyId: meta.spotifyId, albumSpotifyId: meta.album.spotifyId ?? null },
+        });
+        // Clear any remaining songSpotifyId references to the old spotify ID
+        if (song.spotifyId) {
+          await tx.chartEntry.updateMany({
+            where: { songSpotifyId: song.spotifyId },
+            data: { songSpotifyId: meta.spotifyId },
+          });
+        }
+        await tx.song.delete({ where: { id } });
+      });
+
+      return NextResponse.json({
+        ok: true,
+        merged: true,
+        updated: {
+          songId: conflictId,
+          spotifyId: meta.spotifyId,
+          title: meta.title,
+          artist: meta.artistDisplay,
+          album: meta.album.title,
+          entriesUpdated: song._count.entries,
+        },
+      });
     }
     return NextResponse.json({ error: result.reason }, { status: 400 });
   }
