@@ -32,6 +32,7 @@ model User {
   paradaNome           String?
   genres               String[]          @default([])
   role                 UserRole          @default(USER)
+  needsHandle          Boolean           @default(false) @map("needs_handle")
   lastfmUser           String?
   twitterUser          String?
   instagramUser        String?

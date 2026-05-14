@@ -43,7 +43,7 @@ export async function ensureGoogleUser(params: {
   });
 
   if (existing) {
-    return prisma.user.update({
+    await prisma.user.update({
       where: { id: existing.id },
       data: {
         name: displayName,
@@ -52,6 +52,7 @@ export async function ensureGoogleUser(params: {
         email,
       },
     });
+    return { isNew: false };
   }
 
   const base = slugifyHandle(email.split("@")[0] ?? "user");
@@ -59,7 +60,7 @@ export async function ensureGoogleUser(params: {
   const hash = [...email].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
   const avatarColor = ACCENTS[Math.abs(hash) % ACCENTS.length];
 
-  return prisma.user.create({
+  await prisma.user.create({
     data: {
       handle,
       name: displayName,
@@ -67,6 +68,8 @@ export async function ensureGoogleUser(params: {
       image: image ?? null,
       googleId,
       avatarColor,
+      needsHandle: true,
     },
   });
+  return { isNew: true };
 }

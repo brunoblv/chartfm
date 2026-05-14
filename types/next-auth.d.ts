@@ -7,6 +7,7 @@ declare module "next-auth" {
       handle?: string;
       streak?: number;
       role?: "USER" | "ADMIN" | "DEV";
+      needsHandle?: boolean;
     };
   }
 }
@@ -17,5 +18,6 @@ declare module "next-auth/jwt" {
     prismaUserId?: string;
     streak?: number;
     role?: "USER" | "ADMIN" | "DEV";
+    needsHandle?: boolean;
   }
 }

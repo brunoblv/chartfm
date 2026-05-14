@@ -223,8 +223,16 @@ export default async function HomePage() {
   if (!session || !session.user?.id) {
     const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
     const rankingWeek = getRankingWeekReference(nowBRT);
-    const globalChart = await getGlobalTopSongs(rankingWeek.weekIndex, 8);
-    return <LandingPage globalChart={globalChart} />;
+    const [globalChart, userCount, recentUsers] = await Promise.all([
+      getGlobalTopSongs(rankingWeek.weekIndex, 8),
+      prisma.user.count(),
+      prisma.user.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: { id: true, name: true, avatarColor: true, image: true },
+      }),
+    ]);
+    return <LandingPage globalChart={globalChart} userCount={userCount} recentUsers={recentUsers} />;
   }
 
   let userStreak = 0;

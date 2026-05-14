@@ -40,7 +40,17 @@ function CheckIcon() {
   );
 }
 
-export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }) {
+type RecentUser = { id: string; name: string; avatarColor: string; image: string | null };
+
+export function LandingPage({
+  globalChart,
+  userCount = 0,
+  recentUsers = [],
+}: {
+  globalChart: GlobalChartEntry[];
+  userCount?: number;
+  recentUsers?: RecentUser[];
+}) {
   const isMobile = useIsMobile();
   const [signingIn, setSigningIn] = useState(false);
 
@@ -236,9 +246,9 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
             {/* Social proof */}
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 32 }}>
               <div style={{ display: "flex" }}>
-                {USERS_DATA.slice(0, 5).map((u, i) => (
+                {recentUsers.map((u, i) => (
                   <div key={u.id} style={{ marginLeft: i === 0 ? 0 : -10, border: "2px solid #FBFBFD", borderRadius: "50%" }}>
-                    <Avatar user={u} size={32} />
+                    <Avatar user={{ name: u.name, avatar: u.avatarColor }} imageUrl={u.image} size={32} />
                   </div>
                 ))}
               </div>
@@ -246,7 +256,12 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
                 <div style={{ display: "flex", gap: 1, color: "#FFB000", marginBottom: 2 }}>
                   {"★★★★★".split("").map((s, i) => <span key={i}>{s}</span>)}
                 </div>
-                <div><b style={{ color: "#1D1D1F", fontWeight: 600 }}>+24 mil</b> curadores ativos esta semana</div>
+                <div>
+                  <b style={{ color: "#1D1D1F", fontWeight: 600 }}>
+                    {userCount >= 1000 ? `+${(Math.floor(userCount / 100) * 100).toLocaleString("pt-BR")}` : `+${userCount}`}
+                  </b>{" "}
+                  curadores no ChartFM
+                </div>
               </div>
             </div>
 
@@ -388,25 +403,6 @@ export function LandingPage({ globalChart }: { globalChart: GlobalChartEntry[] }
         </div>
       </section>
 
-      {/* SOCIAL PROOF / PRESS STRIP */}
-      <section style={{
-        padding: isMobile ? "20px 24px" : "24px 56px",
-        borderTop: "1px solid rgba(0,0,0,0.05)", borderBottom: "1px solid rgba(0,0,0,0.05)",
-        background: "white",
-      }}>
-        <div style={{
-          maxWidth: 1200, margin: "0 auto",
-          display: "flex", alignItems: "center",
-          gap: isMobile ? 20 : 40,
-          justifyContent: "space-between",
-          flexWrap: "wrap" as const,
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#86868B", letterSpacing: "0.05em", textTransform: "uppercase" as const, flexShrink: 0 }}>Visto em</div>
-          {(isMobile ? ["PITCHFORK", "ROLLING STONE", "NPR Music"] : ["PITCHFORK", "ROLLING STONE", "NPR Music", "THE FADER", "CRACK MAGAZINE"]).map((b) => (
-            <div key={b} style={{ fontSize: 14, fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em", fontFamily: "serif", opacity: 0.7 }}>{b}</div>
-          ))}
-        </div>
-      </section>
 
 {/* COMO FUNCIONA — 3 steps */}
       <section id="como-funciona" style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>

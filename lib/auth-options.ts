@@ -25,13 +25,13 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
       try {
-        await ensureGoogleUser({
+        const { isNew } = await ensureGoogleUser({
           email: user.email,
           name: user.name,
           image: user.image,
           googleId: account.providerAccountId,
         });
-        return true;
+        return isNew ? "/onboarding" : true;
       } catch (e) {
         console.error("[auth] ensureGoogleUser", e);
         return false;
@@ -48,6 +48,7 @@ export const authOptions: NextAuthOptions = {
           token.picture = db.image ?? user.image ?? undefined;
           token.streak = db.streak;
           token.role = db.role;
+          token.needsHandle = db.needsHandle;
         }
       } else if (token.prismaUserId) {
         const db = await prisma.user.findUnique({ where: { id: token.prismaUserId } });
@@ -57,6 +58,7 @@ export const authOptions: NextAuthOptions = {
           token.picture = db.image ?? undefined;
           token.streak = db.streak;
           token.role = db.role;
+          token.needsHandle = db.needsHandle;
         }
       }
       return token;
@@ -69,6 +71,7 @@ export const authOptions: NextAuthOptions = {
         session.user.image = (token.picture as string | undefined) ?? session.user.image;
         session.user.streak = typeof token.streak === "number" ? token.streak : 0;
         session.user.role = (token.role as "USER" | "ADMIN" | "DEV" | undefined) ?? "USER";
+        session.user.needsHandle = token.needsHandle === true;
       }
       return session;
     },
