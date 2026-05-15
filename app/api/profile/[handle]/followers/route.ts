@@ -43,9 +43,9 @@ export async function GET(
     verified: true,
     followers: true,
     bio: true,
-  };
+  } as const;
 
-  const [rows, total] = await Promise.all([
+  const [users, total] = await Promise.all([
     type === "followers"
       ? prisma.userFollow.findMany({
           where: { followingId: targetUser.id },
@@ -53,29 +53,25 @@ export async function GET(
           skip: (page - 1) * perPage,
           take: perPage,
           select: { follower: { select: userSelect } },
-        })
+        }).then((rows) => rows.map((r) => r.follower))
       : prisma.userFollow.findMany({
           where: { followerId: targetUser.id },
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * perPage,
           take: perPage,
           select: { following: { select: userSelect } },
-        }),
+        }).then((rows) => rows.map((r) => r.following)),
     type === "followers"
       ? prisma.userFollow.count({ where: { followingId: targetUser.id } })
       : prisma.userFollow.count({ where: { followerId: targetUser.id } }),
   ]);
-
-  const users = type === "followers"
-    ? rows.map((r) => (r as { follower: typeof userSelect }).follower)
-    : rows.map((r) => (r as { following: typeof userSelect }).following);
 
   let followingSet = new Set<string>();
   if (session?.user?.id) {
     const myFollowing = await prisma.userFollow.findMany({
       where: {
         followerId: session.user.id,
-        followingId: { in: (users as Array<{ id: string }>).map((u) => u.id) },
+        followingId: { in: users.map((u) => u.id) },
       },
       select: { followingId: true },
     });
@@ -83,7 +79,7 @@ export async function GET(
   }
 
   return NextResponse.json({
-    users: (users as Array<{ id: string; handle: string; name: string; avatarColor: string; image: string | null; verified: boolean; followers: number; bio: string | null }>).map((u) => ({
+    users: users.map((u) => ({
       ...u,
       isFollowing: followingSet.has(u.id),
     })),
