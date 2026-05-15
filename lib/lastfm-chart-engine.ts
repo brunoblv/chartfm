@@ -2,18 +2,14 @@ import type { TrackPlays } from "./lastfm";
 
 /**
  * Peso por idade do play em relação a `referenceDay` (diffDays = dias corridos UTC):
- * 0–6: ×5 | 7–13: ×3 | 14–20: ×2 | 21–27: ×1 (fora da janela 28 dias → 0).
+ * 0–6: ×1.2 | 7–27: ×1 (fora da janela 28 dias → 0).
  */
 function playBlockWeight(diffDays: number): number {
   if (diffDays < 0 || diffDays > 27) return 0;
-  if (diffDays <= 6) return 5;
-  if (diffDays <= 13) return 3;
-  if (diffDays <= 20) return 2;
+  if (diffDays <= 6) return 1.2;
   return 1;
 }
 
-// Equivalente a 3 plays nos últimos 7 dias (3 × 5)
-const MIN_SCORE = 3 * playBlockWeight(0);
 
 export type ChartEntryStatus = "new" | "up" | "down" | "steady" | "re-entry";
 
@@ -71,7 +67,7 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): num
 
 export function scoreLastfmTracks(
   trackPlays: TrackPlays[],
-  /** Fim do período em UTC (import 28d: `new Date()`; import por semana: domingo fim da parada). Blocos ×5 / ×3 / ×2 / ×1. */
+  /** Fim do período em UTC (import 28d: `new Date()`; import por semana: domingo fim da parada). Blocos ×1.2 (0–6d) / ×1 (7–27d). */
   referenceDay: Date = new Date(),
   limit = 200,
   minScore = 0,
@@ -108,7 +104,7 @@ export function computeLastfmChart(
 
   const top10 = trackPlays
     .map((tp) => ({ ...tp, score: computeScore(tp.dayPlays, today) }))
-    .filter((s) => s.score >= MIN_SCORE)
+    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
