@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { NextResponse, type NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 
 const HANDLE_RE = /^[a-z0-9][a-z0-9_]{2,27}$/;
@@ -17,9 +16,9 @@ export async function GET(req: Request) {
   return NextResponse.json({ available: !taken });
 }
 
-export async function PATCH(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+export async function PATCH(req: NextRequest) {
+  const token = await getToken({ req });
+  if (!token?.prismaUserId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,14 +30,14 @@ export async function PATCH(req: Request) {
   }
 
   const taken = await prisma.user.findFirst({
-    where: { handle, NOT: { id: session.user.id } },
+    where: { handle, NOT: { id: token.prismaUserId as string } },
   });
   if (taken) {
     return NextResponse.json({ error: "Já em uso" }, { status: 409 });
   }
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: token.prismaUserId as string },
     data: { handle, needsHandle: false },
   });
 

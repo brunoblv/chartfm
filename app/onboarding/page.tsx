@@ -305,30 +305,6 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 10, marginTop: 32 }}>
-              <button
-                onClick={handleSaveHandle}
-                disabled={!canContinueHandle}
-                style={{
-                  padding: "12px 28px",
-                  background: "#FA243C",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 100,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: canContinueHandle ? "pointer" : "not-allowed",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  boxShadow: "0 2px 12px rgba(250,36,60,0.25)",
-                  opacity: canContinueHandle ? 1 : 0.55,
-                }}
-              >
-                {savingHandle ? "Salvando…" : "Continuar"}
-                {!savingHandle && <ChevronRight />}
-              </button>
-            </div>
           </div>
 
           {/* Right: handle input */}
@@ -422,6 +398,31 @@ export default function OnboardingPage() {
                 Letras minúsculas, números e _ · Mínimo 3 caracteres · Máximo 28
               </div>
             </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+              <button
+                onClick={handleSaveHandle}
+                disabled={!canContinueHandle}
+                style={{
+                  padding: "12px 28px",
+                  background: "#FA243C",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 100,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: canContinueHandle ? "pointer" : "not-allowed",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  boxShadow: "0 2px 12px rgba(250,36,60,0.25)",
+                  opacity: canContinueHandle ? 1 : 0.55,
+                }}
+              >
+                {savingHandle ? "Salvando…" : "Continuar"}
+                {!savingHandle && <ChevronRight />}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -463,30 +464,6 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            <div style={{ display: "flex", gap: 10, marginTop: 32 }}>
-              <button
-                onClick={handleSaveGenres}
-                disabled={selected.length < 1 || savingGenres}
-                style={{
-                  padding: "12px 28px",
-                  background: "#FA243C",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 100,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: selected.length < 1 || savingGenres ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  boxShadow: "0 2px 12px rgba(250,36,60,0.25)",
-                  opacity: savingGenres ? 0.7 : 1,
-                }}
-              >
-                {savingGenres ? "Salvando…" : "Continuar"}
-                {!savingGenres && <ChevronRight />}
-              </button>
-            </div>
           </div>
 
           {/* Right: genre picker */}
@@ -536,6 +513,31 @@ export default function OnboardingPage() {
               <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>
                 Vamos te apresentar 12 curadores com gosto parecido com o seu pra você seguir e ver as paradas deles.
               </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+              <button
+                onClick={handleSaveGenres}
+                disabled={selected.length < 1 || savingGenres}
+                style={{
+                  padding: "12px 28px",
+                  background: "#FA243C",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 100,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: selected.length < 1 || savingGenres ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  boxShadow: "0 2px 12px rgba(250,36,60,0.25)",
+                  opacity: savingGenres ? 0.7 : 1,
+                }}
+              >
+                {savingGenres ? "Salvando…" : "Continuar"}
+                {!savingGenres && <ChevronRight />}
+              </button>
             </div>
           </div>
         </div>

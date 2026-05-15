@@ -22,7 +22,9 @@
       "Bash(Select-Object FullName)",
       "Bash(npx next *)",
       "Read(//c/Users/blvbr/.claude/projects/c--Users-blvbr-Downloads-Charts-chartify/memory/**)",
-      "Bash(Copy-Item \"C:\\\\Users\\\\blvbr\\\\Downloads\\\\bang20.png\" \"C:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\public\\\\uploads\\\\parada-logos\\\\cmohmps4q0000z57ztg26b6c7.png\" -Force)"
+      "Bash(Copy-Item \"C:\\\\Users\\\\blvbr\\\\Downloads\\\\bang20.png\" \"C:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\public\\\\uploads\\\\parada-logos\\\\cmohmps4q0000z57ztg26b6c7.png\" -Force)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

@@ -627,8 +627,12 @@ export default function ProfilePage() {
               </div>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "#86868B", flexWrap: "wrap" }}>
-              <span><b style={{ color: "#1D1D1F" }}>{user.followers.toLocaleString("pt-BR")}</b> seguidores</span>
-              <span><b style={{ color: "#1D1D1F" }}>{user.following}</b> seguindo</span>
+              <Link href={`/profile/${handle}/followers?type=followers`} style={{ color: "#86868B", textDecoration: "none" }}>
+                <b style={{ color: "#1D1D1F" }}>{user.followers.toLocaleString("pt-BR")}</b> seguidores
+              </Link>
+              <Link href={`/profile/${handle}/followers?type=following`} style={{ color: "#86868B", textDecoration: "none" }}>
+                <b style={{ color: "#1D1D1F" }}>{user.following}</b> seguindo
+              </Link>
               {user.streak > 0 && (
                 <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#FA243C", fontWeight: 600 }}>
                   <Flame size={14} fill="#FA243C" />
