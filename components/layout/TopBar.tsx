@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Bell, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Bell, X, Globe, Award } from "lucide-react";
 import { SearchBar } from "./SearchBar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 
@@ -16,6 +17,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
   const { status } = useSession();
   const authed = status === "authenticated";
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const pathname = usePathname();
 
   if (isMobile) {
     return (
@@ -34,9 +36,27 @@ export function TopBar({ isMobile = false }: TopBarProps) {
           {/* Logo */}
           <ChartFMLogo size={30} />
 
-          <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F", flex: 1 }}>
+          <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>
             ChartFM
           </span>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Global 100 */}
+          <Link
+            href="/global"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", color: pathname === "/global" || pathname.startsWith("/global/") ? "#FA243C" : "#86868B", textDecoration: "none", padding: 4 }}
+          >
+            <Globe size={20} strokeWidth={pathname === "/global" || pathname.startsWith("/global/") ? 2.2 : 1.8} />
+          </Link>
+
+          {/* CriticsFM */}
+          <Link
+            href="/criticsfm"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", color: pathname === "/criticsfm" || pathname.startsWith("/criticsfm/") ? "#FA243C" : "#86868B", textDecoration: "none", padding: 4 }}
+          >
+            <Award size={20} strokeWidth={pathname === "/criticsfm" || pathname.startsWith("/criticsfm/") ? 2.2 : 1.8} />
+          </Link>
 
           {/* Search toggle */}
           <button
