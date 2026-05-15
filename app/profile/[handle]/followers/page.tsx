@@ -229,8 +229,7 @@ function UserRow({
     >
       <Link href={`/profile/${user.handle}`} style={{ flexShrink: 0 }}>
         <Avatar
-          name={user.name}
-          color={user.avatarColor}
+          user={{ name: user.name, avatar: user.avatarColor }}
           imageUrl={user.image ?? undefined}
           size={44}
         />
