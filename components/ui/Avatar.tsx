@@ -31,6 +31,7 @@ export function Avatar({ user, imageUrl, size = 40, ring = false, className }: A
     .join("");
 
   if (imageUrl && !imgError) {
+    const isLocalUpload = imageUrl.startsWith("/uploads/");
     return (
       <div
         className={className}
@@ -51,6 +52,7 @@ export function Avatar({ user, imageUrl, size = 40, ring = false, className }: A
           sizes={`${size * 2}px`}
           style={{ objectFit: "cover" }}
           onError={() => setImgError(true)}
+          unoptimized={isLocalUpload}
         />
       </div>
     );
