@@ -31,7 +31,7 @@ export function Avatar({ user, imageUrl, size = 40, ring = false, className }: A
     .join("");
 
   if (imageUrl && !imgError) {
-    const isLocalUpload = imageUrl.startsWith("/uploads/");
+    const isLocalUpload = !imageUrl.startsWith("http");
     return (
       <div
         className={className}

@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "avatars");
+const UPLOAD_DIR = join(process.cwd(), "uploads", "avatars");
 
 function ensureDir() {
   if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const bytes = await file.arrayBuffer();
   await writeFile(join(UPLOAD_DIR, filename), Buffer.from(bytes));
 
-  const url = `/uploads/avatars/${filename}?v=${Date.now()}`;
+  const url = `/api/uploads/avatars/${filename}?v=${Date.now()}`;
   await prisma.user.update({ where: { id: session.user.id }, data: { image: url } });
 
   return NextResponse.json({ url });
