@@ -7,6 +7,11 @@ import { usePathname } from "next/navigation";
 import { Bell, X, Globe, Award } from "lucide-react";
 import { SearchBar } from "./SearchBar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
+import { useTheme, type Theme } from "@/components/ThemeProvider";
+
+const THEME_CYCLE: Theme[] = ["light", "auto", "dark"];
+const THEME_ICON: Record<Theme, string> = { light: "☀", auto: "⬤", dark: "☾" };
+const THEME_LABEL: Record<Theme, string> = { light: "Claro", auto: "Auto", dark: "Escuro" };
 
 interface TopBarProps {
   isMobile?: boolean;
@@ -18,6 +23,12 @@ export function TopBar({ isMobile = false }: TopBarProps) {
   const authed = status === "authenticated";
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
+
+  function cycleTheme() {
+    const idx = THEME_CYCLE.indexOf(theme);
+    setTheme(THEME_CYCLE[(idx + 1) % THEME_CYCLE.length]);
+  }
 
   if (isMobile) {
     return (
@@ -57,6 +68,15 @@ export function TopBar({ isMobile = false }: TopBarProps) {
           >
             <Award size={20} strokeWidth={pathname === "/criticsfm" || pathname.startsWith("/criticsfm/") ? 2.2 : 1.8} />
           </Link>
+
+          {/* Theme toggle */}
+          <button
+            onClick={cycleTheme}
+            title={THEME_LABEL[theme]}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "var(--text)", fontSize: 18, lineHeight: 1 }}
+          >
+            {THEME_ICON[theme]}
+          </button>
 
           {/* Search toggle */}
           <button

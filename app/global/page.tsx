@@ -5,8 +5,8 @@ import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { getSpotifyArtistById, searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
 import { computeGlobalSnapshotData, getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
-import Link from "next/link";
 import { BookOpen, BarChart2, Users, TrendingUp, Music } from "lucide-react";
+import { GlobalHero } from "@/components/global/GlobalHero";
 
 export const metadata: Metadata = {
   title: "Global 100 | As músicas mais populares da comunidade ChartFM",
@@ -253,66 +253,14 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
       </section>
 
       {/* ===== HERO COM STATS ===== */}
-      <div style={{
-        background: "linear-gradient(135deg, #1D1D1F 0%, #2C2C2E 100%)",
-        borderRadius: 20,
-        padding: "48px 48px",
-        marginBottom: 48,
-        display: "flex",
-        gap: 40,
-        alignItems: "center",
-        color: "white",
-      }}>
-        <div style={{
-          width: 140, height: 140, borderRadius: 20, flexShrink: 0,
-          background: "radial-gradient(circle at 30% 30%, #FA243C, #FF5858)",
-          boxShadow: "0 16px 40px rgba(250,36,60,0.3)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 8 }}>{weekNow}</div>
-          {/* div, não h1 — o Shell já renderiza o H1 da página */}
-          <div style={{ fontSize: 64, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 12 }}>Global 100</div>
-          <p style={{ fontSize: 15, opacity: 0.8, maxWidth: 480, lineHeight: 1.6, marginBottom: 16 }}>
-            Cada música ganha <strong>101 − posição</strong> pontos por parada em que aparece. A soma decide o ranking semanal global.
-          </p>
-          <div style={{ display: "flex", gap: 20, fontSize: 14, opacity: 0.7 }}>
-            <span>{uniqueParadas} paradas consideradas</span>
-            <span>·</span>
-            <span>{globalSongs.length} músicas</span>
-            <span>·</span>
-            <span>{weekRangeNow}</span>
-          </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-            {olderWeek ? (
-              <Link
-                href={`/global?week=${olderWeek}`}
-                style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: 13, fontWeight: 600 }}
-              >
-                ← Semana anterior
-              </Link>
-            ) : (
-              <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
-                ← Semana anterior
-              </span>
-            )}
-            {newerWeek ? (
-              <Link
-                href={`/global?week=${newerWeek}`}
-                style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: 13, fontWeight: 600 }}
-              >
-                Próxima semana →
-              </Link>
-            ) : (
-              <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: "8px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
-                Próxima semana →
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      <GlobalHero
+        weekNow={weekNow}
+        weekRangeNow={weekRangeNow}
+        uniqueParadas={uniqueParadas}
+        songsCount={globalSongs.length}
+        olderWeek={olderWeek}
+        newerWeek={newerWeek}
+      />
 
       {/* ===== RANKINGS (TABS INTERATIVAS) ===== */}
       <section style={{ marginBottom: 52 }}>

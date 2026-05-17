@@ -6,6 +6,7 @@ import { MovementBadge } from "@/components/ui/MovementBadge";
 import { COVER_PALETTES } from "@/lib/data";
 import { formatSongArtist } from "@/lib/song-artist";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverData } from "@/lib/types";
 import Link from "next/link";
 
@@ -46,6 +47,15 @@ type ArtistEntry = {
   growthPct: number | null;
   imageUrl?: string | null;
 };
+
+function StatPill({ label, value, accent }: { label: string; value: number | string; accent?: string }) {
+  return (
+    <div style={{ textAlign: "right" }}>
+      <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: accent ?? "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{value}</div>
+    </div>
+  );
+}
 
 const segmentContainer: React.CSSProperties = {
   display: "flex",
@@ -101,40 +111,107 @@ export function GlobalTabs({
   const [tab, setTab] = useState<"songs" | "artists">("songs");
   const [viewSize, setViewSize] = useState<"small" | "large">("small");
   const [period, setPeriod] = useState<"weekly" | "overall">("weekly");
+  const isMobile = useIsMobile();
   const songs = period === "weekly" ? weeklySongs : overallSongs;
   const artists = period === "weekly" ? weeklyArtists : overallArtists;
 
   return (
     <div>
       {/* Tab bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
-        <div style={segmentContainer}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 10, marginBottom: 20 }}>
+        {/* Main tab: Músicas / Artistas */}
+        <div style={{ ...segmentContainer, width: isMobile ? "100%" : "fit-content" }}>
           {(["songs", "artists"] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} style={segmentBtn(tab === t)}>
-              {t === "songs" ? "Top 100 Músicas" : "Top 100 Artistas"}
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{ ...segmentBtn(tab === t), flex: isMobile ? 1 : undefined, padding: isMobile ? "10px 0" : "8px 20px" }}
+            >
+              {isMobile
+                ? (t === "songs" ? "Músicas" : "Artistas")
+                : (t === "songs" ? "Top 100 Músicas" : "Top 100 Artistas")}
             </button>
           ))}
         </div>
-        <div style={{ ...segmentContainer, width: "auto" }}>
-          <button onClick={() => setPeriod("weekly")} style={segmentBtnSm(period === "weekly")}>Semanal</button>
-          <button onClick={() => setPeriod("overall")} style={segmentBtnSm(period === "overall")}>Overall</button>
-        </div>
-        <div style={{ ...segmentContainer, width: "auto" }}>
-          <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>Menor</button>
-          <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>Maior</button>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {/* Period: Semanal / Overall */}
+          <div style={{ ...segmentContainer, flex: isMobile ? 1 : undefined }}>
+            <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>Semanal</button>
+            <button onClick={() => setPeriod("overall")} style={{ ...segmentBtnSm(period === "overall"), flex: isMobile ? 1 : undefined }}>Overall</button>
+          </div>
+
+          {/* Size toggle: hidden on mobile */}
+          {!isMobile && (
+            <div style={segmentContainer}>
+              <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>Menor</button>
+              <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>Maior</button>
+            </div>
+          )}
         </div>
       </div>
 
       {tab === "songs" ? (
-        <SongsTable songs={songs} viewSize={viewSize} />
+        <SongsTable songs={songs} viewSize={viewSize} isMobile={isMobile} />
       ) : (
-        <ArtistsTable artists={artists} viewSize={viewSize} />
+        <ArtistsTable artists={artists} viewSize={viewSize} isMobile={isMobile} />
       )}
     </div>
   );
 }
 
-function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small" | "large" }) {
+function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSize: "small" | "large"; isMobile: boolean }) {
+  if (isMobile) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+        {songs.map((e) => (
+          <div
+            key={e.position}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "10px 16px",
+              borderBottom: "1px solid var(--divider-soft)",
+              gap: 12,
+            }}
+          >
+            {/* Position + badge */}
+            <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: e.position <= 3 ? 22 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                {e.position}
+              </div>
+              <div style={{ marginTop: 2 }}>
+                <MovementBadge status={e.status} delta={e.delta} compact />
+              </div>
+            </div>
+
+            {/* Cover */}
+            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+              <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={50} rounded={8} />
+            </Link>
+
+            {/* Title + Artist */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                {e.song.title}
+              </Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                {formatSongArtist(e.song)}
+              </Link>
+            </div>
+
+            {/* ANT · PICO · SEM */}
+            <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+              <StatPill label="ANT" value={e.prevPos ?? "—"} />
+              <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+              <StatPill label="SEM" value={e.weeks} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const isLarge = viewSize === "large";
   const gridTemplateColumns = isLarge
     ? "80px 112px 120px minmax(0,1fr) 96px 96px 80px 120px"
@@ -174,15 +251,7 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
             gap: 0,
           }}
         >
-          <div style={{
-            fontSize: posSize,
-            fontWeight: 700,
-            color: "var(--text)",
-            fontVariantNumeric: "tabular-nums",
-            textAlign: "right" as const,
-            paddingRight: 12,
-            letterSpacing: "-0.02em",
-          }}>
+          <div style={{ fontSize: posSize, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right" as const, paddingRight: 12, letterSpacing: "-0.02em" }}>
             {e.position}
           </div>
           <Link href={buildSongPath(e.song)} style={{ padding: "6px 8px", lineHeight: 0 }}>
@@ -212,10 +281,7 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
             {e.points}
           </div>
           <div style={{
-            fontSize: growthSize,
-            fontWeight: 700,
-            fontVariantNumeric: "tabular-nums",
-            padding: "0 8px",
+            fontSize: growthSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px",
             color: (e.growthPct ?? null) !== null && (e.growthPct ?? 0) >= 0 ? "var(--up-fg)" : "var(--down-fg)",
           }}>
             {(e.growthPct ?? null) === null ? "—" : `${(e.growthPct ?? 0) >= 0 ? "+" : ""}${(e.growthPct ?? 0).toFixed(1)}%`}
@@ -226,7 +292,82 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
   );
 }
 
-function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize: "small" | "large" }) {
+function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[]; viewSize: "small" | "large"; isMobile: boolean }) {
+  if (artists.length === 0) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" as const, color: "var(--text-muted)", fontSize: 14 }}>
+        Nenhuma parada publicada esta semana ainda.
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+        {artists.map((a) => {
+          const palette = COVER_PALETTES[(a.position - 1) % COVER_PALETTES.length];
+          return (
+            <Link
+              key={a.name}
+              href={buildArtistPath(a.name, a.spotifyId)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "10px 16px",
+                borderBottom: "1px solid var(--divider-soft)",
+                gap: 12,
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              {/* Position + badge */}
+              <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
+                <div style={{ fontSize: a.position <= 3 ? 22 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  {a.position}
+                </div>
+                <div style={{ marginTop: 2 }}>
+                  <MovementBadge status={a.status} delta={a.delta} compact />
+                </div>
+              </div>
+
+              {/* Avatar */}
+              <div style={{ flexShrink: 0 }}>
+                {a.imageUrl ? (
+                  <img
+                    src={a.imageUrl}
+                    alt={a.name}
+                    width={50}
+                    height={50}
+                    style={{ width: 50, height: 50, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }}
+                  />
+                ) : (
+                  <div style={{ width: 50, height: 50, borderRadius: "50%", background: `linear-gradient(135deg, ${palette[0]}, ${palette[1]})`, boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }} />
+                )}
+              </div>
+
+              {/* Name */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)" }}>
+                  {a.name}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>
+                  {a.chartCount} parada{a.chartCount !== 1 ? "s" : ""}
+                </div>
+              </div>
+
+              {/* ANT · PICO · SEM */}
+              <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+                <StatPill label="ANT" value={a.prevPos ?? "—"} />
+                <StatPill label="PICO" value={a.peak} accent={a.peak === 1 ? "var(--accent)" : undefined} />
+                <StatPill label="SEM" value={a.weeks} />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
+
   const isLarge = viewSize === "large";
   const gridTemplateColumns = isLarge
     ? "80px 104px 120px minmax(0,1fr) 96px 96px 80px 130px"
@@ -239,14 +380,6 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
   const pointsSize = isLarge ? 19 : 15;
   const growthSize = isLarge ? 15 : 13;
   const gridTemplateColumnsWithGrowth = `${gridTemplateColumns} 90px`;
-
-  if (artists.length === 0) {
-    return (
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" as const, color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma parada publicada esta semana ainda.
-      </div>
-    );
-  }
 
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -277,34 +410,14 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
               color: "inherit",
             }}
           >
-            <div style={{
-              fontSize: posSize,
-              fontWeight: 700,
-              color: "var(--text)",
-              fontVariantNumeric: "tabular-nums",
-              textAlign: "right" as const,
-              paddingRight: 12,
-              letterSpacing: "-0.02em",
-            }}>
+            <div style={{ fontSize: posSize, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right" as const, paddingRight: 12, letterSpacing: "-0.02em" }}>
               {a.position}
             </div>
             <div style={{ padding: "6px 8px" }}>
               {a.imageUrl ? (
-                <img
-                  src={a.imageUrl}
-                  alt={a.name}
-                  width={avatarSize}
-                  height={avatarSize}
-                  style={{ width: avatarSize, height: avatarSize, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }}
-                />
+                <img src={a.imageUrl} alt={a.name} width={avatarSize} height={avatarSize} style={{ width: avatarSize, height: avatarSize, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }} />
               ) : (
-                <div style={{
-                  width: avatarSize,
-                  height: avatarSize,
-                  borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${palette[0]}, ${palette[1]})`,
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.14)",
-                }} />
+                <div style={{ width: avatarSize, height: avatarSize, borderRadius: "50%", background: `linear-gradient(135deg, ${palette[0]}, ${palette[1]})`, boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }} />
               )}
             </div>
             <div style={{ padding: "0 8px" }}>
@@ -327,13 +440,7 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
             <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
               {a.totalPoints}
             </div>
-            <div style={{
-              fontSize: growthSize,
-              fontWeight: 700,
-              fontVariantNumeric: "tabular-nums",
-              padding: "0 8px",
-              color: a.growthPct !== null && a.growthPct >= 0 ? "var(--up-fg)" : "var(--down-fg)",
-            }}>
+            <div style={{ fontSize: growthSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: a.growthPct !== null && a.growthPct >= 0 ? "var(--up-fg)" : "var(--down-fg)" }}>
               {a.growthPct === null ? "—" : `${a.growthPct >= 0 ? "+" : ""}${a.growthPct.toFixed(1)}%`}
             </div>
           </Link>

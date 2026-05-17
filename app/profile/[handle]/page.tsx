@@ -15,6 +15,7 @@ import { USERS_DATA, COVER_PALETTES } from "@/lib/data";
 import type { Chart, Song, UserWithCharts } from "@/lib/types";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 type Tab = "charts" | "artists_overall" | "artists_year" | "songs_overall" | "songs_year" | "evolution";
 
@@ -334,6 +335,7 @@ export default function ProfilePage() {
   const [statsPage, setStatsPage] = useState(1);
   const CHARTS_PER_PAGE = 8;
   const STATS_PER_PAGE = 100;
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!handle) {
@@ -495,7 +497,7 @@ export default function ProfilePage() {
       <div
         style={{
           background: `linear-gradient(180deg, ${user.avatar}22 0%, transparent 100%)`,
-          padding: "48px 40px 32px 40px",
+          padding: isMobile ? "20px 16px 20px 16px" : "48px 40px 32px 40px",
         }}
       >
         <Link
@@ -508,22 +510,22 @@ export default function ProfilePage() {
             fontSize: 14,
             fontWeight: 500,
             textDecoration: "none",
-            marginBottom: 20,
+            marginBottom: isMobile ? 14 : 20,
           }}
         >
           <ChevronLeft size={16} />
           Início
         </Link>
-        <div style={{ display: "flex", gap: 28, alignItems: "flex-end", flexWrap: "wrap" }}>
-          <Avatar user={user} imageUrl={imageUrl ?? undefined} size={140} />
+        <div style={{ display: "flex", gap: isMobile ? 14 : 28, alignItems: isMobile ? "center" : "flex-end", flexWrap: "wrap" }}>
+          <Avatar user={user} imageUrl={imageUrl ?? undefined} size={isMobile ? 72 : 140} />
 
-          <div style={{ flex: 1, minWidth: 240, paddingBottom: 8 }}>
+          <div style={{ flex: 1, minWidth: 0, paddingBottom: isMobile ? 0 : 8 }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Perfil</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-              <h1 style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}>{user.name}</h1>
-              {user.verified && <BadgeCheck size={28} color="#0A84FF" fill="#0A84FF" />}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>
+              <h1 style={{ fontSize: isMobile ? 26 : 48, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.1, margin: 0 }}>{user.name}</h1>
+              {user.verified && <BadgeCheck size={isMobile ? 20 : 28} color="#0A84FF" fill="#0A84FF" />}
             </div>
-            <div style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 10 }}>@{user.handle}</div>
+            <div style={{ fontSize: isMobile ? 13 : 15, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>@{user.handle}</div>
             {paradaNome && source === "db" && (
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Parada: {paradaNome}</div>
             )}
@@ -626,7 +628,7 @@ export default function ProfilePage() {
                 )}
               </div>
             )}
-            <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "var(--text-muted)", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 12 : 20, fontSize: 13, color: "var(--text-muted)", flexWrap: "wrap" }}>
               <Link href={`/profile/${handle}/followers?type=followers`} style={{ color: "var(--text-muted)", textDecoration: "none" }}>
                 <b style={{ color: "var(--text)" }}>{user.followers.toLocaleString("pt-BR")}</b> seguidores
               </Link>
@@ -642,7 +644,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 8, paddingBottom: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, paddingBottom: isMobile ? 0 : 8, flexWrap: "wrap", marginTop: isMobile ? 4 : 0, width: isMobile ? "100%" : "auto" }}>
             {isOwn ? (
               <>
                 <Link
@@ -727,42 +729,54 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div style={{ padding: "0 40px 80px 40px" }}>
+      <div style={{ padding: isMobile ? "0 16px 80px 16px" : "0 40px 80px 40px" }}>
         <div
           style={{
             background: "var(--surface)",
             borderRadius: 18,
             border: "1px solid var(--divider)",
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            marginTop: 28,
-            marginBottom: 28,
+            gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+            marginTop: 20,
+            marginBottom: 20,
+            overflow: "hidden",
           }}
         >
-            {[
-            { label: "Paradas publicadas", value: totalCharts, icon: null },
-            { label: "#1 pessoais", value: numberOnes, icon: <Trophy size={16} color="#FFD700" fill="#FFD700" /> },
-            { label: "Músicas rankeadas", value: totalRankedSlots, icon: null },
-            { label: "Artistas (última parada)", value: topArtists.length, icon: null },
-          ].map(({ label, value, icon }, i) => (
-            <div key={label} style={{ padding: "20px 24px", borderRight: i < 3 ? "1px solid var(--divider)" : "none" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>{label}</div>
+          {[
+            { label: "Paradas", value: totalCharts, icon: null },
+            { label: "#1 pessoais", value: numberOnes, icon: <Trophy size={14} color="#FFD700" fill="#FFD700" /> },
+            { label: "Músicas", value: totalRankedSlots, icon: null },
+            { label: "Artistas", value: topArtists.length, icon: null },
+          ].map(({ label, value, icon }, i) => {
+            const isLastCol = isMobile ? i % 2 === 1 : i === 3;
+            const isLastRow = isMobile ? i >= 2 : true;
+            return (
               <div
+                key={label}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 32,
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                  fontVariantNumeric: "tabular-nums",
+                  padding: isMobile ? "16px 16px" : "20px 24px",
+                  borderRight: isLastCol ? "none" : "1px solid var(--divider)",
+                  borderBottom: isMobile && !isLastRow ? "1px solid var(--divider)" : "none",
                 }}
               >
-                {icon}
-                {value}
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{label}</div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    fontSize: isMobile ? 26 : 32,
+                    fontWeight: 700,
+                    letterSpacing: "-0.03em",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {icon}
+                  {value}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div style={{ marginBottom: 28 }}>
@@ -773,7 +787,7 @@ export default function ProfilePage() {
               Ver todas
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }}>
             {achievements.map((a) => (
               <div key={a.name} style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--divider)", padding: "16px 12px", textAlign: "center" }}>
                 <div style={{ fontSize: 36, marginBottom: 6 }}>{a.emoji}</div>
@@ -784,37 +798,39 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 24, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 24, flexWrap: isMobile ? "wrap" : "nowrap", overflowX: isMobile ? "visible" : "auto" }}>
           {(
             [
-              ["charts", "Paradas"],
-              ["evolution", "Evolução"],
-              ["artists_overall", "Artistas overall"],
-              ["artists_year", "Artistas anual"],
-              ["songs_overall", "Músicas overall"],
-              ["songs_year", "Músicas anual"],
-            ] as [Tab, string][]
-          ).map(([t, label]) => (
+              ["charts", "Paradas", "Paradas"],
+              ["evolution", "Evolução", "Evolução"],
+              ["artists_overall", "Artistas overall", "Artistas"],
+              ["artists_year", "Artistas anual", "Art. anual"],
+              ["songs_overall", "Músicas overall", "Músicas"],
+              ["songs_year", "Músicas anual", "Mús. anual"],
+            ] as [Tab, string, string][]
+          ).map(([t, label, mobileLabel]) => (
             <button
               key={t}
               type="button"
               disabled={!hasCharts && t !== "charts"}
               onClick={() => { setTab(t); setChartPage(1); setStatsPage(1); }}
               style={{
-                padding: "12px 4px",
-                marginRight: 18,
+                padding: isMobile ? "10px 8px" : "12px 4px",
+                marginRight: isMobile ? 6 : 18,
                 background: "none",
                 border: "none",
-                fontSize: 14,
+                fontSize: isMobile ? 13 : 14,
                 fontWeight: tab === t ? 600 : 500,
                 color: tab === t ? "var(--text)" : "var(--text-muted)",
                 borderBottom: `2px solid ${tab === t ? "#FA243C" : "transparent"}`,
                 marginBottom: -1,
                 cursor: !hasCharts && t !== "charts" ? "not-allowed" : "pointer",
                 opacity: !hasCharts && t !== "charts" ? 0.45 : 1,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
-              {label}
+              {isMobile ? mobileLabel : label}
             </button>
           ))}
         </div>
@@ -877,7 +893,7 @@ export default function ProfilePage() {
                 </select>
               </div>
             )}
-            <ArtistStatsTable rows={(tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} artistImages={artistImages} />
+            <ArtistStatsTable rows={(tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} artistImages={artistImages} isMobile={isMobile} />
             <StatsPagination page={statsPage} total={(tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows).length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
@@ -895,7 +911,7 @@ export default function ProfilePage() {
                 </select>
               </div>
             )}
-            <SongStatsTable rows={(tab === "songs_overall" ? overallSongsRows : yearlySongsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} />
+            <SongStatsTable rows={(tab === "songs_overall" ? overallSongsRows : yearlySongsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} isMobile={isMobile} />
             <StatsPagination page={statsPage} total={(tab === "songs_overall" ? overallSongsRows : yearlySongsRows).length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
@@ -1008,33 +1024,36 @@ function PaginationBar({
   );
 }
 
-function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; artistImages: Record<string, string | null> }) {
+function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableRow[]; artistImages: Record<string, string | null>; isMobile?: boolean }) {
+  const cols = isMobile ? "36px 48px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 80px 70px 110px";
+  const headers = isMobile ? ["Pos", "", "Artista", "Pts"] : ["Pos", "", "Artista", "Sem.", "Pico", "Músicas", "Pontos"];
+  const imgSize = isMobile ? 36 : 44;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
-        {["Pos", "", "Artista", "Sem.", "Pico", "Músicas", "Pontos"].map((h, i) => (
+      <div style={{ display: "grid", gridTemplateColumns: cols, padding: isMobile ? "8px 12px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+        {headers.map((h, i) => (
           <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
       {rows.map((r) => {
         const artistHref = buildArtistPath(r.name, r.artistSpotifyId, r.artistRefId);
         return (
-          <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
-            <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-            <Link href={artistHref} prefetch={false} style={{ padding: "4px 8px", lineHeight: 0 }}>
+          <div key={r.name} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", padding: isMobile ? "6px 12px" : "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
+            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, textAlign: "right", paddingRight: isMobile ? 8 : 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+            <Link href={artistHref} prefetch={false} style={{ padding: isMobile ? "4px 6px" : "4px 8px", lineHeight: 0 }}>
               {artistImages[r.name] ? (
                 <img
                   src={artistImages[r.name] as string}
                   alt={r.name}
-                  width={44}
-                  height={44}
-                  style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
+                  width={imgSize}
+                  height={imgSize}
+                  style={{ width: imgSize, height: imgSize, borderRadius: "50%", objectFit: "cover", display: "block", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
                 />
               ) : (
                 <div
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: imgSize,
+                    height: imgSize,
                     borderRadius: "50%",
                     background: `linear-gradient(135deg, ${colorForArtist(r.name)[0]}, ${colorForArtist(r.name)[1]})`,
                     boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
@@ -1045,14 +1064,14 @@ function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; arti
             <Link
               href={artistHref}
               prefetch={false}
-              style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}
+              style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}
             >
               {r.name}
             </Link>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
-            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
-            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
+            {!isMobile && <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>}
+            {!isMobile && <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>}
+            {!isMobile && <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>}
+            <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
           </div>
         );
       })}
@@ -1060,11 +1079,14 @@ function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; arti
   );
 }
 
-function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
+function SongStatsTable({ rows, isMobile }: { rows: SongTableRow[]; isMobile?: boolean }) {
+  const cols = isMobile ? "36px 44px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 70px 110px";
+  const headers = isMobile ? ["Pos", "", "Música", "Pts"] : ["Pos", "", "Música", "Sem.", "Pico", "Pontos"];
+  const coverSize = isMobile ? 36 : 48;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
-        {["Pos", "", "Música", "Sem.", "Pico", "Pontos"].map((h, i) => (
+      <div style={{ display: "grid", gridTemplateColumns: cols, padding: isMobile ? "8px 12px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+        {headers.map((h, i) => (
           <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
@@ -1079,16 +1101,16 @@ function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
         });
         const artistHref = buildArtistPath(r.artist, r.artistSpotifyId, r.artistRefId);
         return (
-          <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
-            <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-            <Link href={songHref} prefetch={false} style={{ padding: "4px 8px", lineHeight: 0 }}>
-              <Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={48} rounded={8} />
+          <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", padding: isMobile ? "6px 12px" : "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
+            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, textAlign: "right", paddingRight: isMobile ? 8 : 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+            <Link href={songHref} prefetch={false} style={{ padding: isMobile ? "4px 4px" : "4px 8px", lineHeight: 0 }}>
+              <Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={coverSize} rounded={isMobile ? 6 : 8} />
             </Link>
             <div style={{ minWidth: 0 }}>
               <Link
                 href={songHref}
                 prefetch={false}
-                style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}
+                style={{ display: "block", fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}
               >
                 {r.title}
               </Link>
@@ -1100,9 +1122,9 @@ function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
                 {formatSongArtist({ artist: r.artist })}
               </Link>
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
-            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
+            {!isMobile && <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>}
+            {!isMobile && <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>}
+            <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
           </div>
         );
       })}

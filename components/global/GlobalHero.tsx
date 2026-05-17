@@ -1,0 +1,101 @@
+"use client";
+
+import Link from "next/link";
+import { useIsMobile } from "@/hooks/useIsMobile";
+
+interface GlobalHeroProps {
+  weekNow: string;
+  weekRangeNow: string;
+  uniqueParadas: number;
+  songsCount: number;
+  olderWeek: number | null;
+  newerWeek: number | null;
+}
+
+export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, olderWeek, newerWeek }: GlobalHeroProps) {
+  const isMobile = useIsMobile();
+
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, #1D1D1F 0%, #2C2C2E 100%)",
+      borderRadius: isMobile ? 16 : 20,
+      padding: isMobile ? "24px 20px" : "48px 48px",
+      marginBottom: 48,
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      gap: isMobile ? 20 : 40,
+      alignItems: isMobile ? "flex-start" : "center",
+      color: "white",
+    }}>
+      <div style={{
+        width: isMobile ? 72 : 140,
+        height: isMobile ? 72 : 140,
+        borderRadius: isMobile ? 16 : 20,
+        flexShrink: 0,
+        background: "radial-gradient(circle at 30% 30%, #FA243C, #FF5858)",
+        boxShadow: "0 16px 40px rgba(250,36,60,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <svg
+          width={isMobile ? 32 : 64}
+          height={isMobile ? 32 : 64}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="1.8"
+        >
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
+          {weekNow}
+        </div>
+        <div style={{ fontSize: isMobile ? 40 : 64, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
+          Global 100
+        </div>
+        <p style={{ fontSize: isMobile ? 13 : 15, opacity: 0.8, maxWidth: 480, lineHeight: 1.6, marginBottom: 14 }}>
+          Cada música ganha <strong>101 − posição</strong> pontos por parada em que aparece.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 6 : 20, fontSize: isMobile ? 12 : 14, opacity: 0.7, marginBottom: 14 }}>
+          <span>{uniqueParadas} paradas</span>
+          <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
+          <span>{songsCount} músicas</span>
+          <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
+          <span>{weekRangeNow}</span>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {olderWeek ? (
+            <Link
+              href={`/global?week=${olderWeek}`}
+              style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
+            >
+              ← Semana anterior
+            </Link>
+          ) : (
+            <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, fontSize: isMobile ? 12 : 13, fontWeight: 600 }}>
+              ← Semana anterior
+            </span>
+          )}
+          {newerWeek ? (
+            <Link
+              href={`/global?week=${newerWeek}`}
+              style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
+            >
+              Próxima semana →
+            </Link>
+          ) : (
+            <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, fontSize: isMobile ? 12 : 13, fontWeight: 600 }}>
+              Próxima semana →
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
