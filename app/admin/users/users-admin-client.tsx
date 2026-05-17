@@ -35,7 +35,7 @@ export function UsersAdminClient({ users }: { users: UserRow[] }) {
         <thead>
           <tr style={{ background: "rgba(0,0,0,0.03)" }}>
             <th style={thStyle}>Nome</th>
-            <th style={thStyle}>Handle</th>
+            <th style={thStyle}>Nome de Usuário</th>
             <th style={thStyle}>Role</th>
           </tr>
         </thead>

@@ -22,15 +22,15 @@ export function LegalPage({
       <article
         style={{
           maxWidth: 860,
-          background: "white",
-          border: "1px solid rgba(0,0,0,0.06)",
+          background: "var(--surface)",
+          border: "1px solid var(--divider)",
           borderRadius: 14,
           padding: "28px 26px",
           boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
         }}
       >
         {updatedAt && (
-          <p style={{ fontSize: 13, color: "#86868B", margin: "0 0 22px 0" }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 22px 0" }}>
             Última atualização: {updatedAt}
           </p>
         )}
@@ -41,7 +41,7 @@ export function LegalPage({
                 {section.title}
               </h2>
               {section.body.map((paragraph) => (
-                <p key={paragraph} style={{ fontSize: 15, lineHeight: 1.65, color: "#4A4A4F", margin: "0 0 10px 0" }}>
+                <p key={paragraph} style={{ fontSize: 15, lineHeight: 1.65, color: "var(--text-subtle)", margin: "0 0 10px 0" }}>
                   {paragraph}
                 </p>
               ))}
@@ -52,7 +52,7 @@ export function LegalPage({
           style={{
             marginTop: 28,
             paddingTop: 18,
-            borderTop: "1px solid rgba(0,0,0,0.06)",
+            borderTop: "1px solid var(--divider)",
             display: "flex",
             gap: 14,
             flexWrap: "wrap",

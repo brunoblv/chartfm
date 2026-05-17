@@ -284,7 +284,7 @@ export default function OnboardingPage() {
               Bem-vindo ao ChartFM
             </div>
             <h1 style={{ fontSize: isMobile ? 32 : 46, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05 }}>
-              Escolha seu<br />@handle.
+              Escolha seu<br />nome de usuário.
             </h1>
             <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
               É com esse nome que os outros curadores vão te encontrar e seguir. Você pode mudar depois nas configurações.
@@ -310,7 +310,7 @@ export default function OnboardingPage() {
           {/* Right: handle input */}
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", marginBottom: 4 }}>
-              SEU HANDLE
+              SEU NOME DE USUÁRIO
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 18 }}>
               Como quer ser chamado?
@@ -325,7 +325,7 @@ export default function OnboardingPage() {
               <input
                 value={handle}
                 onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                placeholder="seuhandle"
+                placeholder="seunome"
                 maxLength={28}
                 autoFocus
                 style={{

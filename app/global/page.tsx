@@ -185,7 +185,18 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
   }));
 
   return (
-    <Shell title="Parada Global" subtitle="A parada agregada de toda a plataforma">
+    <Shell title="Parada Global">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+        <p style={{ fontSize: 15, color: "var(--text-muted)", letterSpacing: "-0.01em", margin: 0 }}>
+          A Parada Global é o reflexo do que a comunidade do ChartFM está ouvindo em conjunto. Todas as paradas pessoais dos usuários são combinadas para formar um ranking coletivo que destaca as músicas, artistas e álbuns mais populares da plataforma a cada semana.
+        </p>
+        <p style={{ fontSize: 15, color: "var(--text-muted)", letterSpacing: "-0.01em", margin: 0 }}>
+          Inspirada nas grandes charts musicais, a Parada Global transforma gostos individuais em uma visão ampla do que está movimentando a comunidade naquele momento. Cada posição é construída a partir das escolhas reais dos usuários, criando uma experiência dinâmica onde novos lançamentos, hits virais, clássicos revisitados e descobertas inesperadas podem disputar espaço lado a lado.
+        </p>
+        <p style={{ fontSize: 15, color: "var(--text-muted)", letterSpacing: "-0.01em", margin: 0 }}>
+          Acompanhe a evolução das músicas ao longo das semanas, veja quais artistas estão dominando o ranking e descubra tendências que surgem organicamente dentro da comunidade. A Parada Global é o ponto de encontro entre fãs de música, charts e cultura pop.
+        </p>
+      </div>
       {/* Hero */}
       <div style={{
         background: "linear-gradient(135deg, #1D1D1F 0%, #2C2C2E 100%)",

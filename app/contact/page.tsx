@@ -16,14 +16,14 @@ export default function ContactPage() {
           title: "Suporte geral",
           body: [
             "Para dúvidas gerais sobre a plataforma, problemas de conta, relato de bugs ou sugestões de funcionalidades, entre em contato pelo e-mail contato@chartfm.app. Lemos todas as mensagens e respondemos o mais rápido possível, geralmente em até alguns dias úteis.",
-            "Ao escrever sobre um problema de conta específico, inclua seu handle e o e-mail associado à sua conta para que possamos localizar seu perfil sem demora. Quanto mais detalhes você fornecer, mais rápido conseguimos ajudar.",
+            "Ao escrever sobre um problema de conta específico, inclua seu nome de usuário e o e-mail associado à sua conta para que possamos localizar seu perfil sem demora. Quanto mais detalhes você fornecer, mais rápido conseguimos ajudar.",
           ],
         },
         {
           title: "Privacidade e pedidos de dados (LGPD)",
           body: [
             "O ChartFM respeita seus direitos previstos na Lei Geral de Proteção de Dados (LGPD). Você pode solicitar confirmação de tratamento, acesso aos seus dados pessoais, correção de informações incorretas, exclusão ou anonimização, portabilidade, informações sobre compartilhamento e revisão ou retirada de consentimentos.",
-            "Para exercer qualquer desses direitos, envie uma mensagem para contato@chartfm.app com o assunto 'Pedido de Privacidade — LGPD'. Inclua seu handle, o e-mail da sua conta e uma descrição objetiva do pedido. Podemos solicitar confirmação de identidade antes de processar pedidos que envolvam dados sensíveis.",
+            "Para exercer qualquer desses direitos, envie uma mensagem para contato@chartfm.app com o assunto 'Pedido de Privacidade — LGPD'. Inclua seu nome de usuário, o e-mail da sua conta e uma descrição objetiva do pedido. Podemos solicitar confirmação de identidade antes de processar pedidos que envolvam dados sensíveis.",
             "Respondemos a pedidos de privacidade dentro dos prazos exigidos por lei. A complexidade do pedido pode influenciar o tempo de resposta: confirmações simples costumam ser resolvidas rapidamente, enquanto pedidos de exclusão ou portabilidade podem levar mais tempo.",
           ],
         },

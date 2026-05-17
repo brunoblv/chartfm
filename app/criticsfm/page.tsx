@@ -63,7 +63,7 @@ export default async function CriticsFMPage() {
   });
 
   return (
-    <Shell title="CriticsFM" subtitle="Reviews coletivas da comunidade ChartFM">
+    <Shell title="CriticsFM" subtitle="CriticsFM reúne as avaliações da comunidade ChartFM em um único lugar. Descubra os álbuns mais bem avaliados da semana, leia reviews de outros usuários e compartilhe sua própria opinião sobre os lançamentos que estão movimentando o cenário musical. Cada nota contribui para o ranking coletivo da plataforma, criando uma visão da comunidade sobre os discos mais aclamados do momento.">
       <CriticsFMClient albums={rows} />
     </Shell>
   );
