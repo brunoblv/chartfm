@@ -39,9 +39,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   if (!parsed) {
     return (
       <Shell title="Álbum" subtitle="Não encontrado">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>URL de álbum inválida.</p>
-          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+          <Link href="/discover" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
             ← Voltar para descobrir
           </Link>
         </div>
@@ -116,9 +116,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   if (albumEntries.length === 0) {
     return (
       <Shell title="Álbum" subtitle="Não encontrado">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para este álbum.</p>
-          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+          <Link href="/discover" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
             ← Voltar para descobrir
           </Link>
         </div>
@@ -256,7 +256,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   };
 
   const stats = [
-    { label: "Pontos totais", value: totalPoints, color: "#FA243C" },
+    { label: "Pontos totais", value: totalPoints, color: "var(--accent)" },
     { label: "Ouvintes únicos", value: listenersSet.size, color: "#8338EC" },
     { label: "Faixas rankeadas", value: songsMap.size, color: "#3A86FF" },
     { label: "Número 1s", value: number1sAlbum, color: "#FFD700" },
@@ -275,21 +275,21 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 40 }}>
         {stats.map((s) => (
-          <div key={s.label} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
+          <div key={s.label} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{s.label}</div>
             <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: s.color }}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: 40 }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden", marginBottom: 40 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)" }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Faixas</h2>
         </div>
         <div style={{ padding: "0 8px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
             {["#", "", "Música", "Pontos", "Semanas", "Pico", "#1s"].map((h, i) => (
-              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
+              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "8px 6px" }}>{h}</div>
             ))}
           </div>
           {songs.map((s, i) => (
@@ -304,7 +304,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                 gap: 0,
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{i + 1}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{i + 1}</div>
               <div style={{ padding: "6px 6px" }}>
                 <Cover cover={s.cover} song={{ title: s.title, artist: canonicalArtist, album: canonicalAlbum, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
               </div>
@@ -317,12 +317,12 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                 </Link>
               </div>
               <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.points}</div>
-              <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
+              <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
               <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
-                {s.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
+                {s.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
                 {s.peak > 0 ? `#${s.peak}` : "—"}
               </div>
-              <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
+              <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
             </div>
           ))}
         </div>
@@ -334,11 +334,11 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             {topFans.map(({ user, points }) => (
               <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
-                <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, textAlign: "center" }}>
+                <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20, textAlign: "center" }}>
                   <Avatar user={user} imageUrl={user.image} size={56} />
-                  <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "#1D1D1F" }}>{user.name}</div>
-                  <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>Pontos no álbum</div>
+                  <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{user.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>@{user.handle}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>Pontos no álbum</div>
                   <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
                 </div>
               </Link>
@@ -352,8 +352,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   // — Tracklist section —
   const tracklistSection = (
     <div style={{ maxWidth: 800 }}>
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "50px minmax(0,1fr) 90px 90px 90px", padding: "12px 24px", fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "50px minmax(0,1fr) 90px 90px 90px", padding: "12px 24px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid var(--divider)" }}>
           <div>#</div>
           <div>Música</div>
           <div style={{ textAlign: "right" }}>Pontos</div>
@@ -368,10 +368,10 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               gridTemplateColumns: "50px minmax(0,1fr) 90px 90px 90px",
               alignItems: "center",
               padding: "14px 24px",
-              borderBottom: i < songs.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none",
+              borderBottom: i < songs.length - 1 ? "1px solid var(--divider-soft)" : "none",
             }}
           >
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Cover cover={s.cover} song={{ title: s.title, artist: canonicalArtist, album: canonicalAlbum }} size={36} rounded={6} />
               <Link
@@ -382,9 +382,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               </Link>
             </div>
             <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{s.points}</div>
-            <div style={{ textAlign: "right", fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{s.weeks}</div>
+            <div style={{ textAlign: "right", fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{s.weeks}</div>
             <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
-              {s.peak === 1 && <Star size={11} color="#FA243C" fill="#FA243C" />}
+              {s.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={11} color="currentColor" fill="currentColor" /></span>}
               {s.peak > 0 ? `#${s.peak}` : "—"}
             </div>
           </div>
@@ -396,8 +396,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   return (
     <Shell title="" noPadding>
       {/* Hero */}
+      <div style={{ background: "var(--bg)" }}>
       <div style={{
-        background: `linear-gradient(180deg, ${palette[0]} 0%, ${palette[1]} 50%, #FBFBFD 100%)`,
+        background: `linear-gradient(180deg, ${palette[0]} 0%, ${palette[1]} 50%, transparent 100%)`,
         padding: "48px 40px 40px 40px",
       }}>
         <Link
@@ -474,6 +475,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           </div>
 
         </div>
+      </div>
       </div>
 
       {/* Tabbed content */}

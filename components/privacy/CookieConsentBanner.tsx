@@ -42,7 +42,7 @@ export function CookieConsentBanner() {
             <p className="cookie-banner-text">
               O ChartFM usa cookies essenciais para login e segurança. Com sua permissão, também podemos usar cookies de
               medição e anúncios, inclusive de parceiros como Google AdSense. Veja a{" "}
-              <Link href="/politica-de-privacidade" className="cookie-banner-link">
+              <Link href="/privacy-policy" className="cookie-banner-link">
                 Política de Privacidade
               </Link>
               .

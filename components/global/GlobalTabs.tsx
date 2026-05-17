@@ -47,6 +47,46 @@ type ArtistEntry = {
   imageUrl?: string | null;
 };
 
+const segmentContainer: React.CSSProperties = {
+  display: "flex",
+  gap: 4,
+  background: "var(--fill-subtle)",
+  borderRadius: 12,
+  padding: 4,
+  width: "fit-content",
+};
+
+function segmentBtn(active: boolean): React.CSSProperties {
+  return {
+    padding: "8px 20px",
+    borderRadius: 9,
+    border: "none",
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    letterSpacing: "-0.01em",
+    transition: "all 0.15s",
+    background: active ? "var(--surface-elevated)" : "transparent",
+    color: active ? "var(--text)" : "var(--text-muted)",
+    boxShadow: active ? "0 1px 4px rgba(0,0,0,0.14)" : "none",
+  };
+}
+
+function segmentBtnSm(active: boolean): React.CSSProperties {
+  return {
+    padding: "7px 14px",
+    borderRadius: 9,
+    border: "none",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+    letterSpacing: "-0.01em",
+    background: active ? "var(--surface-elevated)" : "transparent",
+    color: active ? "var(--text)" : "var(--text-muted)",
+    boxShadow: active ? "0 1px 4px rgba(0,0,0,0.14)" : "none",
+  };
+}
+
 export function GlobalTabs({
   weeklySongs,
   weeklyArtists,
@@ -68,107 +108,20 @@ export function GlobalTabs({
     <div>
       {/* Tab bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
-        <div style={{
-          display: "flex",
-          gap: 4,
-          background: "rgba(0,0,0,0.04)",
-          borderRadius: 12,
-          padding: 4,
-          width: "fit-content",
-        }}>
+        <div style={segmentContainer}>
           {(["songs", "artists"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                padding: "8px 20px",
-                borderRadius: 9,
-                border: "none",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                letterSpacing: "-0.01em",
-                transition: "all 0.15s",
-                background: tab === t ? "white" : "transparent",
-                color: tab === t ? "#1D1D1F" : "#86868B",
-                boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-              }}
-            >
+            <button key={t} onClick={() => setTab(t)} style={segmentBtn(tab === t)}>
               {t === "songs" ? "Top 100 Músicas" : "Top 100 Artistas"}
             </button>
           ))}
         </div>
-        <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.04)", borderRadius: 12, padding: 4 }}>
-          <button
-            onClick={() => setPeriod("weekly")}
-            style={{
-              padding: "7px 14px",
-              borderRadius: 9,
-              border: "none",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              letterSpacing: "-0.01em",
-              background: period === "weekly" ? "white" : "transparent",
-              color: period === "weekly" ? "#1D1D1F" : "#86868B",
-              boxShadow: period === "weekly" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-            }}
-          >
-            Semanal
-          </button>
-          <button
-            onClick={() => setPeriod("overall")}
-            style={{
-              padding: "7px 14px",
-              borderRadius: 9,
-              border: "none",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              letterSpacing: "-0.01em",
-              background: period === "overall" ? "white" : "transparent",
-              color: period === "overall" ? "#1D1D1F" : "#86868B",
-              boxShadow: period === "overall" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-            }}
-          >
-            Overall
-          </button>
+        <div style={{ ...segmentContainer, width: "auto" }}>
+          <button onClick={() => setPeriod("weekly")} style={segmentBtnSm(period === "weekly")}>Semanal</button>
+          <button onClick={() => setPeriod("overall")} style={segmentBtnSm(period === "overall")}>Overall</button>
         </div>
-        <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.04)", borderRadius: 12, padding: 4 }}>
-          <button
-            onClick={() => setViewSize("small")}
-            style={{
-              padding: "7px 14px",
-              borderRadius: 9,
-              border: "none",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              letterSpacing: "-0.01em",
-              background: viewSize === "small" ? "white" : "transparent",
-              color: viewSize === "small" ? "#1D1D1F" : "#86868B",
-              boxShadow: viewSize === "small" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-            }}
-          >
-            Menor
-          </button>
-          <button
-            onClick={() => setViewSize("large")}
-            style={{
-              padding: "7px 14px",
-              borderRadius: 9,
-              border: "none",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              letterSpacing: "-0.01em",
-              background: viewSize === "large" ? "white" : "transparent",
-              color: viewSize === "large" ? "#1D1D1F" : "#86868B",
-              boxShadow: viewSize === "large" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-            }}
-          >
-            Maior
-          </button>
+        <div style={{ ...segmentContainer, width: "auto" }}>
+          <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>Menor</button>
+          <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>Maior</button>
         </div>
       </div>
 
@@ -195,11 +148,18 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
   const pointsSize = isLarge ? 19 : 15;
   const growthSize = isLarge ? 15 : 13;
   const gridTemplateColumnsWithGrowth = `${gridTemplateColumns} 90px`;
+
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: gridTemplateColumnsWithGrowth, padding: isLarge ? "12px 24px" : "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: gridTemplateColumnsWithGrowth,
+        padding: isLarge ? "12px 24px" : "10px 20px",
+        background: "var(--fill-inset)",
+        borderBottom: "1px solid var(--divider)",
+      }}>
         {["Pos", "", "Mudança", "Música", "Semana ant.", "Sem.", "Pico", "Pontos", "Cresc."].map((h, i) => (
-          <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "#86868B", padding: "6px 8px" }}>{h}</div>
+          <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
       {songs.map((e) => (
@@ -210,16 +170,17 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
             gridTemplateColumns: gridTemplateColumnsWithGrowth,
             alignItems: "center",
             padding: rowPadding,
-            borderBottom: "1px solid rgba(0,0,0,0.04)",
+            borderBottom: "1px solid var(--divider-soft)",
             gap: 0,
           }}
         >
           <div style={{
             fontSize: posSize,
             fontWeight: 700,
-            color: "#000000",
+            color: "var(--text)",
             fontVariantNumeric: "tabular-nums",
-            textAlign: "right" as const, paddingRight: 12,
+            textAlign: "right" as const,
+            paddingRight: 12,
             letterSpacing: "-0.02em",
           }}>
             {e.position}
@@ -234,21 +195,29 @@ function SongsTable({ songs, viewSize }: { songs: SongEntry[]; viewSize: "small"
             <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: titleSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "inherit", textDecoration: "none" }}>
               {e.song.title}
             </Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: artistSize, color: "#86868B", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: artistSize, color: "var(--text-muted)", textDecoration: "none" }}>
+              {formatSongArtist(e.song)}
+            </Link>
           </div>
-          <div style={{ fontSize: valueSize, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+          <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.prevPos ?? "—"}
           </div>
-          <div style={{ fontSize: valueSize, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+          <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.weeks}
           </div>
-          <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+          <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)" }}>
             {e.peak}
           </div>
-          <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "#FA243C", padding: "0 8px" }}>
+          <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
             {e.points}
           </div>
-          <div style={{ fontSize: growthSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: (e.growthPct ?? null) !== null && (e.growthPct ?? 0) >= 0 ? "#16A34A" : "#DC2626" }}>
+          <div style={{
+            fontSize: growthSize,
+            fontWeight: 700,
+            fontVariantNumeric: "tabular-nums",
+            padding: "0 8px",
+            color: (e.growthPct ?? null) !== null && (e.growthPct ?? 0) >= 0 ? "var(--up-fg)" : "var(--down-fg)",
+          }}>
             {(e.growthPct ?? null) === null ? "—" : `${(e.growthPct ?? 0) >= 0 ? "+" : ""}${(e.growthPct ?? 0).toFixed(1)}%`}
           </div>
         </div>
@@ -270,19 +239,26 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
   const pointsSize = isLarge ? 19 : 15;
   const growthSize = isLarge ? 15 : 13;
   const gridTemplateColumnsWithGrowth = `${gridTemplateColumns} 90px`;
+
   if (artists.length === 0) {
     return (
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 40, textAlign: "center" as const, color: "#86868B", fontSize: 14 }}>
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" as const, color: "var(--text-muted)", fontSize: 14 }}>
         Nenhuma parada publicada esta semana ainda.
       </div>
     );
   }
 
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: gridTemplateColumnsWithGrowth, padding: isLarge ? "12px 24px" : "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: gridTemplateColumnsWithGrowth,
+        padding: isLarge ? "12px 24px" : "10px 20px",
+        background: "var(--fill-inset)",
+        borderBottom: "1px solid var(--divider)",
+      }}>
         {["Pos", "", "Mudança", "Artista", "Semana ant.", "Sem.", "Pico", "Pontos", "Cresc."].map((h, i) => (
-          <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "#86868B", padding: "6px 8px" }}>{h}</div>
+          <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
       {artists.map((a) => {
@@ -296,7 +272,7 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
               gridTemplateColumns: gridTemplateColumnsWithGrowth,
               alignItems: "center",
               padding: rowPadding,
-              borderBottom: "1px solid rgba(0,0,0,0.04)",
+              borderBottom: "1px solid var(--divider-soft)",
               textDecoration: "none",
               color: "inherit",
             }}
@@ -304,9 +280,10 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
             <div style={{
               fontSize: posSize,
               fontWeight: 700,
-              color: "#000000",
+              color: "var(--text)",
               fontVariantNumeric: "tabular-nums",
-              textAlign: "right" as const, paddingRight: 12,
+              textAlign: "right" as const,
+              paddingRight: 12,
               letterSpacing: "-0.02em",
             }}>
               {a.position}
@@ -322,7 +299,9 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
                 />
               ) : (
                 <div style={{
-                  width: avatarSize, height: avatarSize, borderRadius: "50%",
+                  width: avatarSize,
+                  height: avatarSize,
+                  borderRadius: "50%",
                   background: `linear-gradient(135deg, ${palette[0]}, ${palette[1]})`,
                   boxShadow: "0 2px 6px rgba(0,0,0,0.14)",
                 }} />
@@ -332,21 +311,29 @@ function ArtistsTable({ artists, viewSize }: { artists: ArtistEntry[]; viewSize:
               <MovementBadge status={a.status} delta={a.delta} />
             </div>
             <div style={{ padding: "0 12px", minWidth: 0 }}>
-              <div style={{ fontSize: nameSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{a.name}</div>
+              <div style={{ fontSize: nameSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                {a.name}
+              </div>
             </div>
-            <div style={{ fontSize: valueSize, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {a.prevPos ?? "—"}
             </div>
-            <div style={{ fontSize: valueSize, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {a.weeks}
             </div>
-            <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)" }}>
               {a.peak}
             </div>
-            <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "#FA243C", padding: "0 8px" }}>
+            <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
               {a.totalPoints}
             </div>
-            <div style={{ fontSize: growthSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: a.growthPct !== null && a.growthPct >= 0 ? "#16A34A" : "#DC2626" }}>
+            <div style={{
+              fontSize: growthSize,
+              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              padding: "0 8px",
+              color: a.growthPct !== null && a.growthPct >= 0 ? "var(--up-fg)" : "var(--down-fg)",
+            }}>
               {a.growthPct === null ? "—" : `${a.growthPct >= 0 ? "+" : ""}${a.growthPct.toFixed(1)}%`}
             </div>
           </Link>

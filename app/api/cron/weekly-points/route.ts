@@ -28,11 +28,42 @@ export async function GET(req: NextRequest) {
   `;
   const snapshot = await getOrCreateRankingWeekSnapshot(new Date());
 
+  let notificationsSent = 0;
+  if (snapshot.created) {
+    const targetUrl = `/global`;
+    const existingCount = await prisma.notification.count({
+      where: {
+        type: "global_chart",
+        targetUrl,
+        createdAt: {
+          gte: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        },
+      },
+    });
+
+    if (existingCount === 0) {
+      const allUsers = await prisma.user.findMany({ select: { id: true } });
+      await prisma.notification.createMany({
+        data: allUsers.map((u) => ({
+          recipientId: u.id,
+          actorId: null,
+          type: "global_chart",
+          text: `A Parada Global (${snapshot.weekLabel}) foi publicada! Confira os resultados.`,
+          targetUrl,
+          read: false,
+        })),
+        skipDuplicates: false,
+      });
+      notificationsSent = allUsers.length;
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     weekIndex: rankingWeek.weekIndex,
     weekLabel: rankingWeek.weekLabel,
     updatedRows,
     snapshotCreated: snapshot.created,
+    notificationsSent,
   });
 }

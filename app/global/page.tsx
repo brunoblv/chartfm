@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
@@ -5,6 +6,11 @@ import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { getSpotifyArtistById, searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
 import { computeGlobalSnapshotData, getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Parada Global | ChartFM",
+  description: "A parada global semanal do ChartFM. Veja quais músicas e artistas são mais chartados pelos curadores da plataforma essa semana.",
+};
 
 type ArtistImageKey = { name: string; spotifyId: string | null };
 type GlobalSongLike = Awaited<ReturnType<typeof computeGlobalSnapshotData>>["weeklySongs"][number];

@@ -143,12 +143,12 @@ export default function CreatePage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/user/parada")
+    fetch("/api/user/chart-name")
       .then((r) => r.json())
       .then((data: { paradaNome?: string | null }) => {
         const nome = typeof data.paradaNome === "string" && data.paradaNome.trim() ? data.paradaNome.trim() : null;
         setParadaNome(nome);
-        if (!nome) router.replace("/parada/setup");
+        if (!nome) router.replace("/chart/setup");
       })
       .catch(() => {});
   }, [router]);
@@ -515,7 +515,7 @@ export default function CreatePage() {
         <Cover cover={cover} song={song} size={40} rounded={6} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-          <div style={{ fontSize: 11, color: "#86868B", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span>{song.artist}</span>
             {song.spotifyId ? (
               <a
@@ -578,10 +578,10 @@ export default function CreatePage() {
 
   const searchPanel = (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Buscar música</div>
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
             Catálogo
           </div>
           <input
@@ -590,19 +590,20 @@ export default function CreatePage() {
             placeholder="Pesquisar no catálogo local"
             style={{
               width: "100%",
-              border: "1px solid rgba(0,0,0,0.1)",
+              border: "1px solid var(--divider-strong)",
               borderRadius: 10,
               padding: "10px 14px",
               fontSize: 14,
               outline: "none",
-              color: "#1D1D1F",
+              color: "var(--text)",
+              background: "var(--fill-subtle)",
               marginBottom: 10,
               boxSizing: "border-box",
             }}
           />
           {dbQuery.trim().length >= 2 ? (
             <>
-              {dbLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+              {dbLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
               {!dbLoading &&
                 (dbSongs.length > 0 ? (
                   dbSongs.map((song) => {
@@ -610,12 +611,12 @@ export default function CreatePage() {
                     return renderSongRow(song, added);
                   })
                 ) : (
-                  <div style={{ fontSize: 12, color: "#86868B" }}>Nenhuma música no catálogo.</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhuma música no catálogo.</div>
                 ))}
             </>
           ) : (
             <>
-              <div style={{ fontSize: 12, color: "#86868B", marginBottom: 10, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.45 }}>
                 Digite ao menos 2 caracteres para buscar no catálogo completo.{globalTopSongs.length > 0 ? " Top 5 da última parada global:" : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -631,7 +632,7 @@ export default function CreatePage() {
         {false && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
               Last.fm
             </div>
           </div>
@@ -641,28 +642,29 @@ export default function CreatePage() {
             placeholder="Pesquisar no Last.fm"
             style={{
               width: "100%",
-              border: "1px solid rgba(0,0,0,0.1)",
+              border: "1px solid var(--divider-strong)",
               borderRadius: 10,
               padding: "10px 14px",
               fontSize: 14,
               outline: "none",
-              color: "#1D1D1F",
+              color: "var(--text)",
+              background: "var(--fill-subtle)",
               marginBottom: 10,
               boxSizing: "border-box",
             }}
           />
           {lastfmQuery.trim().length < 1 ? (
-            <div style={{ fontSize: 12, color: "#86868B" }}>Digite para pesquisar no Last.fm.</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Last.fm.</div>
           ) : (
             <>
-              {lastfmLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+              {lastfmLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
               {!lastfmLoading && !lastfmConfigured && (
-                <div style={{ fontSize: 12, color: "#86868B", lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
                   Configure <code style={{ fontSize: 11 }}>API_KEY</code> (Last.fm) no arquivo <code style={{ fontSize: 11 }}>.env</code>.
                 </div>
               )}
               {!lastfmLoading && lastfmConfigured && lastfmTracks.length === 0 && (
-                <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Last.fm.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Last.fm.</div>
               )}
               {!lastfmLoading &&
                 lastfmConfigured &&
@@ -676,7 +678,7 @@ export default function CreatePage() {
         )}
 
         <div style={{ marginBottom: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
             Spotify
           </div>
           <input
@@ -686,35 +688,36 @@ export default function CreatePage() {
             disabled={SPOTIFY_SEARCH_DISABLED}
             style={{
               width: "100%",
-              border: "1px solid rgba(0,0,0,0.1)",
+              border: "1px solid var(--divider-strong)",
               borderRadius: 10,
               padding: "10px 14px",
               fontSize: 14,
               outline: "none",
-              color: SPOTIFY_SEARCH_DISABLED ? "#86868B" : "#1D1D1F",
-              background: SPOTIFY_SEARCH_DISABLED ? "#F5F5F7" : "white",
+              color: "var(--text)",
+              background: "var(--fill-subtle)",
+              opacity: SPOTIFY_SEARCH_DISABLED ? 0.5 : 1,
               marginBottom: 10,
               boxSizing: "border-box",
             }}
           />
           {SPOTIFY_SEARCH_DISABLED ? (
-            <div style={{ fontSize: 12, color: "#86868B" }}>Busca no Spotify está desativada no momento.</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Busca no Spotify está desativada no momento.</div>
           ) : spotifyQuery.trim().length < 1 ? (
-            <div style={{ fontSize: 12, color: "#86868B" }}>Digite para pesquisar no Spotify.</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Spotify.</div>
           ) : (
             <>
-              {spotifyLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+              {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
               {!spotifyLoading && !spotifyConfigured && (
-                <div style={{ fontSize: 12, color: "#86868B", lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
                   Configure <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> e <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> no arquivo{" "}
                   <code style={{ fontSize: 11 }}>.env</code>.
                 </div>
               )}
               {!spotifyLoading && spotifyConfigured && spotifyUnavailable && (
-                <div style={{ fontSize: 12, color: "#86868B" }}>Spotify indisponível no momento. Tente novamente.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Spotify indisponível no momento. Tente novamente.</div>
               )}
               {!spotifyLoading && spotifyConfigured && !spotifyUnavailable && spotifyTracks.length === 0 && (
-                <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Spotify.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Spotify.</div>
               )}
               {!spotifyLoading &&
                 spotifyTracks.map((song) => {
@@ -746,11 +749,11 @@ export default function CreatePage() {
   );
 
   const chartList = (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", gap: 16 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{tituloParadaSemanaAno}</div>
-          <div style={{ fontSize: 13, color: "#86868B", marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             {entries.length === 0 ? "Nenhuma música ainda" : `${entries.length} música${entries.length === 1 ? "" : "s"}`}
           </div>
         </div>
@@ -782,9 +785,9 @@ export default function CreatePage() {
           disabled={importingLast}
           title="Copia a parada que você publicou na semana ISO imediatamente anterior à do campo Data"
           style={{
-            border: "1px solid rgba(0,0,0,0.12)",
-            background: "white",
-            color: "#1D1D1F",
+            border: "1px solid var(--divider-strong)",
+            background: "var(--surface)",
+            color: "var(--text)",
             borderRadius: 10,
             padding: "8px 12px",
             fontSize: 12,
@@ -823,17 +826,17 @@ export default function CreatePage() {
                   gridTemplateColumns: isMobile ? "32px 36px 52px 1fr 32px" : "40px 44px 64px 1fr 40px 40px",
                   alignItems: "center",
                   padding: isMobile ? "10px 12px" : "10px 20px",
-                  borderBottom: "1px solid rgba(0,0,0,0.04)",
-                  background: dragOver === i ? "rgba(250,36,60,0.04)" : isBeyondCut ? "rgba(0,0,0,0.02)" : "white",
+                  borderBottom: "1px solid var(--divider-soft)",
+                  background: dragOver === i ? "var(--accent-tint)" : isBeyondCut ? "var(--fill-inset)" : "var(--surface)",
                   cursor: "grab",
                   gap: 0,
                   opacity: isBeyondCut ? 0.45 : 1,
                 }}
               >
-                <div style={{ color: "#C7C7CC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ color: "var(--text-disabled)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <GripVertical size={16} />
                 </div>
-                <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 8 }}>
+                <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 8 }}>
                   {i + 1}
                 </div>
                 <div style={{ padding: "0 8px" }}>
@@ -841,10 +844,10 @@ export default function CreatePage() {
                 </div>
                 <div style={{ minWidth: 0, padding: "0 8px" }}>
                   <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-                  <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
                 </div>
                 {!isMobile && <div />}
-                <button onClick={() => removeSong(i)} style={{ background: "none", border: "none", color: "#C7C7CC", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button onClick={() => removeSong(i)} style={{ background: "none", border: "none", color: "var(--text-disabled)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <X size={18} />
                 </button>
               </div>
@@ -859,7 +862,7 @@ export default function CreatePage() {
           </div>
         )}
         {entries.length === 0 && (
-          <div style={{ padding: "40px 24px", textAlign: "center", color: "#86868B", fontSize: 14 }}>
+          <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
             {isMobile ? "Use a busca de músicas re adicione à parada" : "Adicione músicas da busca ao lado →"}
           </div>
         )}
@@ -873,14 +876,14 @@ export default function CreatePage() {
 
         {/* Cabeçalho */}
         <div style={{ marginBottom: 24 }}>
-          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#86868B", fontSize: 14, textDecoration: "none", marginBottom: 12 }}>
+          <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, textDecoration: "none", marginBottom: 12 }}>
             <ChevronLeft size={16} />
             Voltar
           </Link>
           <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 0 }}>
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: isMobile ? 28 : 48, fontWeight: 800, letterSpacing: "-0.04em", margin: 0 }}>{tituloParada}</h1>
-              <p style={{ fontSize: 14, color: "#86868B", marginTop: 6, marginBottom: 0 }}>{subtituloSemana}</p>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6, marginBottom: 0 }}>{subtituloSemana}</p>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <WeekCalendar value={weekDate} onChange={setWeekDate} />
@@ -888,8 +891,8 @@ export default function CreatePage() {
                 onClick={publishChart}
                 disabled={publishing || entries.length === 0}
                 style={{
-                  background: entries.length === 0 ? "#E5E7EB" : "#FA243C",
-                  color: entries.length === 0 ? "#9CA3AF" : "white",
+                  background: entries.length === 0 ? "var(--fill-subtle)" : "var(--accent)",
+                  color: entries.length === 0 ? "var(--text-disabled)" : "white",
                   border: "none",
                   padding: "10px 22px",
                   borderRadius: 100,
@@ -973,7 +976,7 @@ export default function CreatePage() {
                 </div>
                 <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Last.fm</span>
               </div>
-              <p style={{ margin: 0, fontSize: 13, color: "#86868B", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
                 Seus scrobbles do Last.fm para a semana selecionada serão analisados. As músicas mais ouvidas serão ranqueadas e importadas para a sua parada.
               </p>
             </div>
@@ -986,7 +989,7 @@ export default function CreatePage() {
                     <span style={{ fontSize: 14, color: "white", fontWeight: 800 }}>♪</span>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: "#86868B", fontWeight: 600 }}>Conta Last.fm</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Conta Last.fm</div>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>@{userLastfmUser}</div>
                   </div>
                 </>
@@ -997,7 +1000,7 @@ export default function CreatePage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#B91C1C" }}>Usuário Last.fm não configurado</div>
-                    <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                       Configure nas{" "}
                       <a href="/settings" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
                         configurações de perfil
@@ -1039,7 +1042,7 @@ export default function CreatePage() {
                   {lastfmImportCount}
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: "#86868B" }}>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 Máximo de 200 músicas. O algoritmo prioriza as mais tocadas na semana selecionada.
               </div>
             </div>
@@ -1061,7 +1064,7 @@ export default function CreatePage() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
                       Sua parada tem {userChartSize} posições
                     </div>
-                    <div style={{ fontSize: 12, color: "#86868B", marginTop: 3, lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
                       Ao publicar, músicas além da {userChartSize}ª posição serão automaticamente descartadas. Importe mais músicas para ter opções e reordene a lista antes de publicar.
                     </div>
                   </>
@@ -1070,7 +1073,7 @@ export default function CreatePage() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
                       Tamanho da parada não definido
                     </div>
-                    <div style={{ fontSize: 12, color: "#86868B", marginTop: 3, lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
                       Defina o tamanho da sua parada nas{" "}
                       <a href="/settings" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>configurações</a>
                       {" "}para que o corte seja aplicado automaticamente ao publicar.
@@ -1104,8 +1107,8 @@ export default function CreatePage() {
                   padding: "10px 20px",
                   borderRadius: 100,
                   border: "none",
-                  background: userLastfmUser ? "#FA243C" : "#E5E7EB",
-                  color: userLastfmUser ? "white" : "#9CA3AF",
+                  background: userLastfmUser ? "var(--accent)" : "var(--fill-subtle)",
+                  color: userLastfmUser ? "white" : "var(--text-disabled)",
                   fontSize: 14,
                   fontWeight: 700,
                   cursor: userLastfmUser ? "pointer" : "not-allowed",

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { getServerSession } from "next-auth";
@@ -5,6 +6,11 @@ import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Comunidades Musicais | ChartFM",
+  description: "Participe de comunidades musicais no ChartFM. Publique sua parada junto com fãs que compartilham seu gosto. Explore rankings coletivos e encontre sua tribo.",
+};
 
 type CommunityCard = {
   id: string;
@@ -158,15 +164,25 @@ export default async function CommunitiesPage({
 
   return (
     <Shell title="Comunidades" subtitle="Encontre sua tribo musical">
+      {/* Intro estático para SEO */}
+      <section style={{ marginBottom: 32, maxWidth: 780 }}>
+        <p style={{ fontSize: 15, lineHeight: 1.75, color: "var(--text-muted)", margin: "0 0 12px 0" }}>
+          Comunidades no ChartFM reúnem pessoas com gostos musicais parecidos. Cada comunidade tem sua própria parada semanal agregada, construída a partir dos charts dos membros. Se você curte um gênero específico, é fã de um artista, ou quer chartar junto com outras pessoas, as comunidades são o lugar certo.
+        </p>
+        <p style={{ fontSize: 15, lineHeight: 1.75, color: "var(--text-muted)", margin: 0 }}>
+          Qualquer usuário pode criar uma comunidade. Defina um nome, ícone, descrição e convide membros. A parada coletiva da comunidade é atualizada toda semana junto com o ranking global, refletindo o que o grupo está ouvindo e defendendo naquele momento.
+        </p>
+      </section>
+
       {/* Header actions */}
       <div style={{ display: "flex", gap: 12, marginBottom: 32, alignItems: "center" }}>
         <form action="/communities" style={{
           flex: 1, display: "flex", alignItems: "center", gap: 8,
-          background: "white", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10,
+          background: "var(--surface)", border: "1px solid var(--divider-strong)", borderRadius: 10,
           padding: "10px 14px",
         }}>
-          <Search size={16} color="#86868B" />
-          <input name="q" defaultValue={query} placeholder="Buscar comunidades..." style={{ border: "none", outline: "none", fontSize: 14, color: "#1D1D1F", flex: 1, background: "transparent" }} />
+          <Search size={16} color="var(--text-muted)" />
+          <input name="q" defaultValue={query} placeholder="Buscar comunidades..." style={{ border: "none", outline: "none", fontSize: 14, color: "var(--text)", flex: 1, background: "transparent" }} />
         </form>
         <Link href="/community/create" style={{
           background: "#FA243C", color: "white", textDecoration: "none",
@@ -186,7 +202,7 @@ export default async function CommunitiesPage({
           {myComms.map((c) => (
             <Link key={c.id} href={`/community/${c.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
               <div style={{
-                background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)",
+                background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)",
                 padding: "16px 18px", display: "flex", alignItems: "center", gap: 14,
               }}>
                 <div style={{
@@ -204,7 +220,7 @@ export default async function CommunitiesPage({
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-                  <div style={{ fontSize: 12, color: "#86868B" }}>{c.members.toLocaleString("pt-BR")} membros</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{c.members.toLocaleString("pt-BR")} membros</div>
                   <div style={{ fontSize: 12, color: "#FA243C", fontWeight: 600, marginTop: 2 }}>
                     {c.newPosts === 1 ? "1 post novo" : `${c.newPosts} posts novos`}
                   </div>
@@ -214,7 +230,7 @@ export default async function CommunitiesPage({
           ))}
         </div>
         ) : (
-          <div style={{ background: "white", borderRadius: 12, border: "1px solid rgba(0,0,0,0.06)", padding: 18, color: "#86868B", fontSize: 14 }}>
+          <div style={{ background: "var(--surface)", borderRadius: 12, border: "1px solid var(--divider)", padding: 18, color: "var(--text-muted)", fontSize: 14 }}>
             Você ainda não participa de nenhuma comunidade.
           </div>
         )}
@@ -227,7 +243,7 @@ export default async function CommunitiesPage({
         {exploreComms.length > 0 ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
           {exploreComms.map((c) => (
-            <div key={c.id} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <div key={c.id} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
               {/* Banner */}
               <div style={{
                 height: 120,
@@ -252,22 +268,22 @@ export default async function CommunitiesPage({
               {/* Body */}
               <div style={{ padding: "16px 18px 18px" }}>
                 <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>{c.name}</div>
-                <div style={{ fontSize: 13, color: "#86868B", marginBottom: 14, overflow: "hidden", display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2 }}>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14, overflow: "hidden", display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2 }}>
                   {c.tagline}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {/* Avatar stack */}
                   <div style={{ display: "flex" }}>
                     {(c.memberSample ?? []).slice(0, 3).map((u, i) => (
-                      <div key={u.id} style={{ marginLeft: i === 0 ? 0 : -8, border: "2px solid white", borderRadius: "50%" }}>
+                      <div key={u.id} style={{ marginLeft: i === 0 ? 0 : -8, border: "2px solid var(--surface)", borderRadius: "50%" }}>
                         <Avatar user={u} imageUrl={u.imageUrl} size={24} />
                       </div>
                     ))}
                   </div>
-                  <span style={{ fontSize: 12, color: "#86868B" }}>{c.posts} posts</span>
+                  <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{c.posts} posts</span>
                   <div style={{ flex: 1 }} />
                   <Link href={`/community/${c.slug}`} style={{
-                    background: "#1D1D1F", color: "white", textDecoration: "none",
+                    background: "var(--btn-dark-bg)", color: "var(--btn-dark-fg)", textDecoration: "none",
                     padding: "7px 16px", borderRadius: 20, fontSize: 12, fontWeight: 700,
                   }}>
                     {myCommunityIds.has(c.id) ? "Abrir" : "Participar"}
@@ -278,7 +294,7 @@ export default async function CommunitiesPage({
           ))}
         </div>
         ) : (
-          <div style={{ background: "white", borderRadius: 12, border: "1px solid rgba(0,0,0,0.06)", padding: 18, color: "#86868B", fontSize: 14 }}>
+          <div style={{ background: "var(--surface)", borderRadius: 12, border: "1px solid var(--divider)", padding: 18, color: "var(--text-muted)", fontSize: 14 }}>
             {query ? "Nenhuma comunidade encontrada para essa busca." : "Nenhuma comunidade pública foi criada ainda."}
           </div>
         )}

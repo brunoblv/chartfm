@@ -91,7 +91,7 @@ async function getTimelineFeed(
       isPublished: true,
     },
     orderBy: { publishedAt: "desc" },
-    take: 30,
+    take: 60,
     select: {
       id: true,
       weekLabel: true,
@@ -147,21 +147,46 @@ async function getTimelineFeed(
     },
   });
 
-  rows.sort((a, b) => {
-    const aF = followingIds.has(a.user.id) ? 1 : 0;
-    const bF = followingIds.has(b.user.id) ? 1 : 0;
-    if (aF !== bF) return bF - aF;
-    return b.publishedAt.getTime() - a.publishedAt.getTime();
-  });
+  const friendsRows = rows.filter((r) => followingIds.has(r.user.id)).slice(0, 15);
+  const allRows = rows.filter((r) => !followingIds.has(r.user.id)).slice(0, 15);
+  const combined = [...friendsRows, ...allRows];
 
-  const sliced = rows.slice(0, 15);
   const likedRows = await prisma.chartLike.findMany({
-    where: { userId, chartId: { in: sliced.map((c) => c.id) } },
+    where: { userId, chartId: { in: combined.map((c) => c.id) } },
     select: { chartId: true },
   });
   const likedSet = new Set(likedRows.map((r) => r.chartId));
 
-  return sliced.map((c) => ({
+  return {
+    friendsFeed: friendsRows.map((c) => mapChartRow(c, followingIds, likedSet)),
+    allFeed: allRows.map((c) => mapChartRow(c, followingIds, likedSet)),
+  };
+}
+
+function mapChartRow(
+  c: {
+    id: string; weekLabel: string; dateRange: string; weekIndex: number;
+    publishedAt: Date; likes: number; comments: number; reposts: number;
+    user: {
+      id: string; handle: string; name: string; avatarColor: string; image: string | null;
+      followers: number; verified: boolean; streak: number; bio: string | null;
+      following: number; paradaNome: string | null; paradaLogo: string | null;
+    };
+    entries: {
+      position: number; status: string; delta: number | null; prevPos: number | null;
+      peak: number; weeks: number; coverPaletteA: string; coverPaletteB: string; coverSeed: number;
+      song: {
+        id: string; title: string; artist: string; album: string | null;
+        albumRef: { id: number; coverUrl: string | null } | null;
+        spotifyId: string | null; artistSpotifyId: string | null;
+        artistRef: { id: number; name: string } | null;
+      };
+    }[];
+  },
+  followingIds: Set<string>,
+  likedSet: Set<string>,
+) {
+  return {
     user: {
       id: c.user.id,
       handle: c.user.handle,
@@ -214,7 +239,7 @@ async function getTimelineFeed(
     postedAgo: formatRelativeTime(c.publishedAt),
     isFollowing: followingIds.has(c.user.id),
     isLiked: likedSet.has(c.id),
-  }));
+  };
 }
 
 export default async function HomePage() {
@@ -243,7 +268,7 @@ export default async function HomePage() {
 
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const currentWeekIdx = buildWeekIndexFromDate(nowBRT);
-  const rankingWeek = getRankingWeekReference(nowBRT);
+  const rankingWeek = getRankingWeekReference();
 
   if (session?.user?.id) {
     const [user, thisWeekChart, followRows] = await Promise.all([
@@ -270,7 +295,7 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeed, publishedToday, reviewsFeed] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeeds, publishedToday, reviewsFeed] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
@@ -280,6 +305,7 @@ export default async function HomePage() {
       getPublishedThisWeek(session.user.id, followingIds),
       getReviewsFeed(session.user.id),
     ]);
+  const { friendsFeed, allFeed } = timelineFeeds;
 
   const feed = (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -287,7 +313,7 @@ export default async function HomePage() {
 
       {publishedToday.length > 0 && <FriendsRow publishers={publishedToday} />}
 
-      <TimelineTabs timelineFeed={timelineFeed} reviewsFeed={reviewsFeed} />
+      <TimelineTabs friendsFeed={friendsFeed} allFeed={allFeed} reviewsFeed={reviewsFeed} />
     </div>
   );
 
@@ -322,14 +348,14 @@ function YourWeekCard({
   const label = paradaNome ? paradaNome.toUpperCase() : "SUA PARADA";
   return (
     <div style={{
-      background: "linear-gradient(135deg, #FA243C 0%, #FF5858 100%)",
+      background: "var(--gradient-hero)",
       borderRadius: 18,
       padding: 24,
       color: "white",
       display: "flex",
       alignItems: "center",
       gap: 20,
-      boxShadow: "0 4px 16px rgba(250,36,60,0.25)",
+      boxShadow: "var(--shadow-hero)",
       flexWrap: "wrap",
     }}>
       <div style={{
@@ -362,7 +388,7 @@ function YourWeekCard({
         </div>
       </div>
       <Link href={hasSubmitted ? `/chart/${thisWeekChartId}` : "/create"} style={{
-        background: "white", color: "#FA243C", textDecoration: "none",
+        background: "white", color: "var(--accent)", textDecoration: "none",
         padding: "12px 22px", borderRadius: 100, fontSize: 14, fontWeight: 700,
         letterSpacing: "-0.01em", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
         whiteSpace: "nowrap", flexShrink: 0,
@@ -375,11 +401,11 @@ function YourWeekCard({
 
 function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: "18px 20px" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
         <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Últimas paradas</div>
         <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 12, color: "#86868B" }}>{publishers.length} pessoas</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{publishers.length} pessoas</div>
       </div>
       <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingTop: 4, paddingBottom: 4, paddingLeft: 4 }}>
         {publishers.map((p) => (
@@ -397,10 +423,10 @@ function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
               />
               <div style={{
                 position: "absolute", bottom: -2, right: -2,
-                background: "#FA243C", color: "white",
+                background: "var(--accent)", color: "white",
                 fontSize: 10, fontWeight: 700,
                 padding: "2px 6px", borderRadius: 8,
-                border: "2px solid white",
+                border: "2px solid var(--surface)",
               }}>
                 {p.entryCount}
               </div>
@@ -428,14 +454,14 @@ function GlobalTeaser({
 }) {
   const top3 = topSongs.slice(0, 3);
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <div style={{ width: 24, height: 24, borderRadius: 6, background: "#000", color: "white", display: "grid", placeItems: "center" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <div style={{ width: 24, height: 24, borderRadius: 6, background: "var(--btn-dark-bg)", color: "var(--btn-dark-fg)", display: "grid", placeItems: "center" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         </div>
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Parada Global</div>
         <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: "#86868B" }}>{weekLabel}</div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{weekLabel}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {top3.map((e) => (
@@ -446,12 +472,12 @@ function GlobalTeaser({
             </Link>
             <div style={{ minWidth: 0, flex: 1 }}>
               <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 11, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
             </div>
           </div>
         ))}
       </div>
-      <Link href="/global" style={{ marginTop: 14, fontSize: 12, color: "#FA243C", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
+      <Link href="/global" style={{ marginTop: 14, fontSize: 12, color: "var(--accent)", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
         Ver parada completa →
       </Link>
     </div>
@@ -470,7 +496,7 @@ type SuggestedUserRow = {
 
 function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
       <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 14 }}>Quem seguir</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {users.map((u) => (
@@ -481,7 +507,7 @@ function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
             <div style={{ minWidth: 0, flex: 1 }}>
               <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</div>
-                <div style={{ fontSize: 11, color: "#86868B" }}>@{u.handle} · {u.followers.toLocaleString("pt-BR")} seguidores</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>@{u.handle} · {u.followers.toLocaleString("pt-BR")} seguidores</div>
               </Link>
             </div>
             <FollowButton targetId={u.id} initialFollowing={u.isFollowing} variant="dark" />
@@ -697,16 +723,16 @@ function TrendingArtists({
 }) {
   if (artists.length === 0) return null;
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Artistas em alta</div>
         <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: "#86868B" }}>{weekLabel}</div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{weekLabel}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {artists.map((a, i) => (
           <Link key={a.name} href={buildArtistPath(a.name)} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#86868B", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
             <div style={{
               width: 40, height: 40, borderRadius: "50%",
               background: a.imageUrl
@@ -717,12 +743,12 @@ function TrendingArtists({
             }} />
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
-              <div style={{ fontSize: 11, color: "#86868B" }}>{a.chartCount} paradas · {a.totalPoints}pts</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{a.chartCount} paradas · {a.totalPoints}pts</div>
             </div>
           </Link>
         ))}
       </div>
-      <Link href="/global" style={{ display: "inline-block", marginTop: 14, fontSize: 12, color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+      <Link href="/global" style={{ display: "inline-block", marginTop: 14, fontSize: 12, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
         Ver parada completa →
       </Link>
     </div>

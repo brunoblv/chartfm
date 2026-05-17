@@ -24,7 +24,7 @@ export function BottomNav() {
     gap: 3,
     padding: "10px 0",
     textDecoration: "none",
-    color: active ? "#FA243C" : "#86868B",
+    color: active ? "var(--accent)" : "var(--text-muted)",
     minHeight: 56,
   });
 
@@ -49,17 +49,16 @@ export function BottomNav() {
         left: 0,
         right: 0,
         zIndex: 100,
-        background: "rgba(255,255,255,0.92)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        borderTop: "0.5px solid rgba(0,0,0,0.08)",
+        background: "var(--bg-topbar)",
+        backdropFilter: "blur(20px) saturate(160%)",
+        WebkitBackdropFilter: "blur(20px) saturate(160%)",
+        borderTop: "0.5px solid var(--divider)",
         display: "grid",
         gridTemplateColumns: "repeat(5, 1fr)",
         alignItems: "center",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
-      {/* Home */}
       {tabs.slice(0, 2).map(({ href, label, Icon, exact }) => {
         const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
         return (
@@ -79,7 +78,7 @@ export function BottomNav() {
           width: 44,
           height: 44,
           borderRadius: 14,
-          background: "#FA243C",
+          background: "var(--accent)",
           display: "grid",
           placeItems: "center",
           boxShadow: "0 4px 12px rgba(250,36,60,0.4)",
@@ -91,7 +90,6 @@ export function BottomNav() {
         </div>
       </Link>
 
-      {/* Comunidades */}
       {tabs.slice(2).map(({ href, label, Icon, exact }) => {
         const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
         return (

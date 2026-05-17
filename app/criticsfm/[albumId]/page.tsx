@@ -61,8 +61,8 @@ export default async function CriticsFMAlbumPage({
       {/* Header */}
       <div
         style={{
-          background: "white",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          background: "var(--surface)",
+          borderBottom: "1px solid var(--divider)",
           padding: "24px 40px",
         }}
       >
@@ -72,7 +72,7 @@ export default async function CriticsFMAlbumPage({
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
-            color: "#86868B",
+            color: "var(--text-muted)",
             fontSize: 13,
             fontWeight: 600,
             textDecoration: "none",
@@ -104,13 +104,13 @@ export default async function CriticsFMAlbumPage({
                 width: 96,
                 height: 96,
                 borderRadius: 12,
-                background: "rgba(0,0,0,0.06)",
+                background: "var(--fill-inset)",
                 flexShrink: 0,
                 display: "grid",
                 placeItems: "center",
                 fontSize: 32,
                 fontWeight: 800,
-                color: "#AEAEB2",
+                color: "var(--text-disabled)",
               }}
             >
               {albumTitle[0]?.toUpperCase()}
@@ -126,7 +126,7 @@ export default async function CriticsFMAlbumPage({
                     fontSize: 28,
                     fontWeight: 800,
                     letterSpacing: "-0.03em",
-                    color: "#1D1D1F",
+                    color: "var(--text)",
                     lineHeight: 1.1,
                     marginBottom: 6,
                   }}
@@ -135,24 +135,24 @@ export default async function CriticsFMAlbumPage({
                 </div>
                 <Link
                   href={`/artist/${album.artist.id}`}
-                  style={{ fontSize: 16, fontWeight: 600, color: "#86868B", textDecoration: "none" }}
+                  style={{ fontSize: 16, fontWeight: 600, color: "var(--text-muted)", textDecoration: "none" }}
                 >
                   {artistName}
                 </Link>
                 <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
                   {album.releaseDate && (
-                    <span style={{ fontSize: 13, color: "#AEAEB2" }}>
+                    <span style={{ fontSize: 13, color: "var(--text-disabled)" }}>
                       {album.releaseDate.getFullYear()}
                     </span>
                   )}
                   {album.albumType && (
-                    <span style={{ fontSize: 13, color: "#AEAEB2" }}>
+                    <span style={{ fontSize: 13, color: "var(--text-disabled)" }}>
                       {album.albumType === "ALBUM" ? "LP" : album.albumType}
                     </span>
                   )}
                   <Link
                     href={albumHref}
-                    style={{ fontSize: 12, color: "#FA243C", fontWeight: 600, textDecoration: "none" }}
+                    style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}
                   >
                     Ver nas paradas →
                   </Link>
@@ -184,7 +184,7 @@ export default async function CriticsFMAlbumPage({
                       {scoreLabel(avgScore)}
                     </div>
                   )}
-                  <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                     {reviewCount > 0
                       ? `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"}`
                       : "Sem avaliações"}
@@ -195,7 +195,7 @@ export default async function CriticsFMAlbumPage({
                       fontWeight: 700,
                       letterSpacing: "0.05em",
                       textTransform: "uppercase",
-                      color: "#FA243C",
+                      color: "var(--accent)",
                       marginTop: 4,
                     }}
                   >

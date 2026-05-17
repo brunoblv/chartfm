@@ -191,8 +191,8 @@ export default function LoginPage() {
 
           <div style={{ marginTop: 32, fontSize: 11, color: "#86868B", textAlign: "center", lineHeight: 1.5 }}>
             Ao continuar, você concorda com os{" "}
-            <Link href="/termos-de-uso" style={{ color: "inherit", textDecoration: "underline" }}>Termos</Link> e a{" "}
-            <Link href="/politica-de-privacidade" style={{ color: "inherit", textDecoration: "underline" }}>Política de Privacidade</Link>.
+            <Link href="/terms-of-use" style={{ color: "inherit", textDecoration: "underline" }}>Termos</Link> e a{" "}
+            <Link href="/privacy-policy" style={{ color: "inherit", textDecoration: "underline" }}>Política de Privacidade</Link>.
           </div>
         </div>
       </div>

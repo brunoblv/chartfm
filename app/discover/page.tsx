@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
@@ -7,6 +8,11 @@ import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { HotTabs } from "./HotTabs";
 import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
+
+export const metadata: Metadata = {
+  title: "Descobrir Músicas, Artistas e Curadores | ChartFM",
+  description: "Explore músicas, artistas e curadores em destaque no ChartFM. Navegue por gênero e siga curadores cujo gosto combina com o seu.",
+};
 
 function weeklyScore(likes: number, comments: number, reposts: number): number {
   return likes * 1 + comments * 2 + reposts * 3;
@@ -224,34 +230,44 @@ async function loadPageData(
 
   return (
     <Shell title="Descobrir" subtitle="Explore músicas, artistas e curadores">
+      {/* Intro estático para SEO */}
+      <section style={{ marginBottom: 40, maxWidth: 780 }}>
+        <p style={{ fontSize: 15, lineHeight: 1.75, color: "var(--text-muted)", margin: "0 0 12px 0" }}>
+          O ChartFM agrega as paradas semanais de centenas de curadores para revelar quais músicas e artistas estão dominando o gosto musical da semana. Diferente dos rankings de streaming, que medem apenas reproduções, o ChartFM reflete escolhas intencionais: cada posição em uma parada é uma declaração deliberada sobre aquela música.
+        </p>
+        <p style={{ fontSize: 15, lineHeight: 1.75, color: "var(--text-muted)", margin: 0 }}>
+          Explore os curadores em destaque desta semana, navegue por gênero para encontrar músicas dentro do seu estilo, e acompanhe os rankings de artistas e faixas mais chartadas. Siga curadores cujo gosto combina com o seu e descubra música nova por meio de pessoas reais.
+        </p>
+      </section>
+
       {/* Curadores em destaque */}
       <section style={{ marginBottom: 48 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20 }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>Curadores em destaque</h2>
-          <Link href="/discover/curators" style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+          <Link href="/discover/curators" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
             Ver top 20 →
           </Link>
         </div>
-        <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>Curadoria semanal em destaque ({weekLabel})</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>Curadoria semanal em destaque ({weekLabel})</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
           {rankedCurators.map((row) => (
-            <div key={row.user.id} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <div key={row.user.id} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
               <div style={{ position: "relative" }}>
                 <Avatar user={{ name: row.user.name, avatar: row.user.avatarColor }} imageUrl={row.user.image} size={72} />
                 <div style={{
                   position: "absolute", bottom: -4, right: -4,
-                  background: "#FA243C", color: "white", fontSize: 11, fontWeight: 700,
-                  padding: "2px 6px", borderRadius: 8, border: "2px solid white",
+                  background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700,
+                  padding: "2px 6px", borderRadius: 8, border: "2px solid var(--surface)",
                   display: "flex", alignItems: "center", gap: 2,
                 }}>
                   Destaque
                 </div>
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{row.user.name}</div>
-                <div style={{ fontSize: 13, color: "#86868B" }}>@{row.user.handle}</div>
-                <div style={{ fontSize: 13, color: "#6B6B70", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.user.bio ?? "Curador em destaque da semana."}</div>
-                <Link href={`/chart/${row.id}`} style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{row.user.name}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>@{row.user.handle}</div>
+                <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.user.bio ?? "Curador em destaque da semana."}</div>
+                <Link href={`/chart/${row.id}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
                   Ver parada
                 </Link>
               </div>
@@ -296,7 +312,7 @@ async function loadPageData(
         </div>
       </section>
 
-      <div style={{ fontSize: 12, color: "#86868B", marginBottom: 12 }}>
+      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
         Ranking semanal atualizado na consolidação de segunda, 01:00 (BRT).
       </div>
       <HotTabs artists={trendingArtists} songs={trendingSongs} />

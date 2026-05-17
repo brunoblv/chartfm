@@ -28,7 +28,7 @@ export function AlbumDetailClient({
       <div
         style={{
           padding: "0 40px",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          borderBottom: "1px solid var(--divider)",
           display: "flex",
           gap: 4,
         }}
@@ -45,8 +45,8 @@ export function AlbumDetailClient({
               fontSize: 14,
               fontWeight: 600,
               letterSpacing: "-0.01em",
-              color: activeTab === tab.id ? "#1D1D1F" : "#86868B",
-              borderBottom: activeTab === tab.id ? "2px solid #FA243C" : "2px solid transparent",
+              color: activeTab === tab.id ? "var(--text)" : "var(--text-muted)",
+              borderBottom: activeTab === tab.id ? "2px solid var(--accent)" : "2px solid transparent",
               cursor: "pointer",
               marginBottom: -1,
             }}

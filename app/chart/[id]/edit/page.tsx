@@ -417,7 +417,7 @@ export default function EditChartPage() {
         <Cover cover={cover} song={song} size={40} rounded={6} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-          <div style={{ fontSize: 11, color: "#86868B", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span>{song.artist}</span>
             {song.spotifyId ? (
               <a
@@ -453,8 +453,8 @@ export default function EditChartPage() {
             width: 28,
             height: 28,
             borderRadius: "50%",
-            background: added ? "#E8F8EE" : "#FA243C",
-            color: added ? "#1B873F" : "white",
+            background: added ? "var(--up-bg)" : "var(--accent)",
+            color: added ? "var(--up-fg)" : "white",
             border: "none",
             display: "flex",
             alignItems: "center",
@@ -470,10 +470,10 @@ export default function EditChartPage() {
   };
 
   const searchPanel = (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
       <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Buscar música</div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
           Catálogo
         </div>
         <input
@@ -482,19 +482,20 @@ export default function EditChartPage() {
           placeholder="Pesquisar no catálogo local"
           style={{
             width: "100%",
-            border: "1px solid rgba(0,0,0,0.1)",
+            border: "1px solid var(--divider-strong)",
             borderRadius: 10,
             padding: "10px 14px",
             fontSize: 14,
             outline: "none",
-            color: "#1D1D1F",
+            color: "var(--text)",
+            background: "var(--fill-subtle)",
             marginBottom: 10,
             boxSizing: "border-box",
           }}
         />
         {dbQuery.trim().length >= 2 ? (
           <>
-            {dbLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+            {dbLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
             {!dbLoading &&
               (dbSongs.length > 0 ? (
                 dbSongs.map((song) => {
@@ -502,12 +503,12 @@ export default function EditChartPage() {
                   return renderSongRow(song, added);
                 })
               ) : (
-                <div style={{ fontSize: 12, color: "#86868B" }}>Nenhuma música no catálogo.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhuma música no catálogo.</div>
               ))}
           </>
         ) : (
           <>
-            <div style={{ fontSize: 12, color: "#86868B", marginBottom: 10, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.45 }}>
               Digite ao menos 2 caracteres para buscar no catálogo completo. 
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -523,7 +524,7 @@ export default function EditChartPage() {
       {false && (
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
             Last.fm
           </div>
         </div>
@@ -544,17 +545,17 @@ export default function EditChartPage() {
           }}
         />
         {lastfmQuery.trim().length < 1 ? (
-          <div style={{ fontSize: 12, color: "#86868B" }}>Digite para pesquisar no Last.fm.</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Last.fm.</div>
         ) : (
           <>
-            {lastfmLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+            {lastfmLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
             {!lastfmLoading && !lastfmConfigured && (
-              <div style={{ fontSize: 12, color: "#86868B", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
                 Configure <code style={{ fontSize: 11 }}>API_KEY</code> (Last.fm) no arquivo <code style={{ fontSize: 11 }}>.env</code>.
               </div>
             )}
             {!lastfmLoading && lastfmConfigured && lastfmTracks.length === 0 && (
-              <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Last.fm.</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Last.fm.</div>
             )}
             {!lastfmLoading &&
               lastfmConfigured &&
@@ -568,7 +569,7 @@ export default function EditChartPage() {
       )}
 
       <div style={{ marginBottom: 0 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
           Spotify
         </div>
         <input
@@ -578,35 +579,36 @@ export default function EditChartPage() {
           disabled={SPOTIFY_SEARCH_DISABLED}
           style={{
             width: "100%",
-            border: "1px solid rgba(0,0,0,0.1)",
+            border: "1px solid var(--divider-strong)",
             borderRadius: 10,
             padding: "10px 14px",
             fontSize: 14,
             outline: "none",
-            color: SPOTIFY_SEARCH_DISABLED ? "#86868B" : "#1D1D1F",
-            background: SPOTIFY_SEARCH_DISABLED ? "#F5F5F7" : "white",
+            color: "var(--text)",
+            background: "var(--fill-subtle)",
+            opacity: SPOTIFY_SEARCH_DISABLED ? 0.5 : 1,
             marginBottom: 10,
             boxSizing: "border-box",
           }}
         />
         {SPOTIFY_SEARCH_DISABLED ? (
-          <div style={{ fontSize: 12, color: "#86868B" }}>Busca no Spotify está desativada no momento.</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Busca no Spotify está desativada no momento.</div>
         ) : spotifyQuery.trim().length < 1 ? (
-          <div style={{ fontSize: 12, color: "#86868B" }}>Digite para pesquisar no Spotify.</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Spotify.</div>
         ) : (
           <>
-            {spotifyLoading && <div style={{ fontSize: 13, color: "#86868B" }}>Buscando…</div>}
+            {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
             {!spotifyLoading && !spotifyConfigured && (
-              <div style={{ fontSize: 12, color: "#86868B", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
                 Configure <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> e <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> no arquivo{" "}
                 <code style={{ fontSize: 11 }}>.env</code>.
               </div>
             )}
             {!spotifyLoading && spotifyConfigured && spotifyUnavailable && (
-              <div style={{ fontSize: 12, color: "#86868B" }}>Spotify indisponível no momento. Tente novamente.</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Spotify indisponível no momento. Tente novamente.</div>
             )}
             {!spotifyLoading && spotifyConfigured && !spotifyUnavailable && spotifyTracks.length === 0 && (
-              <div style={{ fontSize: 12, color: "#86868B" }}>Nenhum resultado no Spotify.</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Spotify.</div>
             )}
             {!spotifyLoading &&
               spotifyTracks.map((song) => {
@@ -620,11 +622,11 @@ export default function EditChartPage() {
   );
 
   const chartList = (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
       <div
         style={{
           padding: "18px 20px",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          borderBottom: "1px solid var(--divider)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -664,8 +666,8 @@ export default function EditChartPage() {
             onClick={saveChart}
             disabled={saving || entries.length === 0}
             style={{
-              background: entries.length === 0 ? "#E5E7EB" : "#FA243C",
-              color: entries.length === 0 ? "#9CA3AF" : "white",
+              background: entries.length === 0 ? "var(--fill-subtle)" : "var(--accent)",
+              color: entries.length === 0 ? "var(--text-disabled)" : "white",
               border: "none",
               padding: "9px 18px",
               borderRadius: 100,
@@ -695,12 +697,12 @@ export default function EditChartPage() {
               gridTemplateColumns: isMobile ? "32px 36px 52px 1fr 32px" : "38px 44px 56px 1fr 36px",
               alignItems: "center",
               padding: isMobile ? "10px 12px" : "10px 16px",
-              borderBottom: "1px solid rgba(0,0,0,0.04)",
-              background: dragOver === i ? "rgba(250,36,60,0.04)" : "white",
+              borderBottom: "1px solid var(--divider-soft)",
+              background: dragOver === i ? "var(--accent-tint)" : "var(--surface)",
               cursor: "grab",
             }}
           >
-            <div style={{ color: "#C7C7CC", display: "flex", justifyContent: "center" }}>
+            <div style={{ color: "var(--text-disabled)", display: "flex", justifyContent: "center" }}>
               <GripVertical size={16} />
             </div>
             <div style={{ fontSize: isMobile ? 16 : 19, fontWeight: 700, textAlign: "right" }}>{i + 1}</div>
@@ -709,11 +711,11 @@ export default function EditChartPage() {
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
             </div>
             <button
               onClick={() => removeSong(i)}
-              style={{ background: "none", border: "none", color: "#C7C7CC", cursor: "pointer", display: "flex", justifyContent: "center" }}
+              style={{ background: "none", border: "none", color: "var(--text-disabled)", cursor: "pointer", display: "flex", justifyContent: "center" }}
             >
               <X size={18} />
             </button>
@@ -721,7 +723,7 @@ export default function EditChartPage() {
         );
       })}
       {entries.length === 0 && !loading && (
-        <div style={{ padding: "40px 24px", textAlign: "center", color: "#86868B", fontSize: 14 }}>
+        <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
           {isMobile ? "Use a busca abaixo e adicione à parada" : "Adicione músicas na busca ao lado →"}
         </div>
       )}
@@ -733,13 +735,13 @@ export default function EditChartPage() {
       <div style={{ maxWidth: 1100 }}>
         <Link
           href={`/chart/${chartId}`}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#86868B", fontSize: 14, textDecoration: "none", marginBottom: 12 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, textDecoration: "none", marginBottom: 12 }}
         >
           <ChevronLeft size={16} />
           Voltar para a parada
         </Link>
         <h1 style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-0.04em", margin: 0 }}>Editar parada</h1>
-        <p style={{ fontSize: 14, color: "#86868B", marginTop: 6 }}>{weekLabel}</p>
+        <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6 }}>{weekLabel}</p>
 
         {error && (
           <div
@@ -759,7 +761,7 @@ export default function EditChartPage() {
         )}
 
         {loading ? (
-          <div style={{ marginTop: 24, color: "#86868B" }}>Carregando parada...</div>
+          <div style={{ marginTop: 24, color: "var(--text-muted)" }}>Carregando parada...</div>
         ) : isMobile ? (
           <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
             {searchPanel}

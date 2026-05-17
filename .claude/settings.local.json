@@ -27,7 +27,13 @@
       "Bash(Sort-Object)",
       "Bash(git show *)",
       "Bash(npm install *)",
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\" -Exclude node_modules,.next -Recurse -Include \"*nav*.tsx\", \"*nav*.ts\", \"*nav*.jsx\", \"*nav*.js\")"
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\" -Exclude node_modules,.next -Recurse -Include \"*nav*.tsx\", \"*nav*.ts\", \"*nav*.jsx\", \"*nav*.js\")",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\blvbr\\\\AppData\\\\Local\\\\Temp\\\\design_decompressed.html\" -Raw; $idx = $content.IndexOf\\(\"Plano Modo Noturno.html\"\\); Write-Host \"Found at index: $idx\"; if \\($idx -gt 0\\) { Write-Host $content.Substring\\($idx, 200\\) })",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\blvbr\\\\AppData\\\\Local\\\\Temp\\\\design_decompressed.html\" -Raw; $lines = $content -split \"`n\"; $lineNum = 0; foreach \\($line in $lines\\) { $lineNum++; if \\($line -match \"charts/project/Plano\"\\) { Write-Host \"Line $lineNum`: $line\" } })",
+      "PowerShell(Out-File *)",
+      "Bash(Get-ChildItem -Path . -Filter \"tailwind.config.*\" -Force)",
+      "Bash(Select-Object -First 20)",
+      "Bash(Format-List FullName)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

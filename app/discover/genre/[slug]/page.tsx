@@ -117,14 +117,14 @@ export default async function DiscoverGenrePage({
           <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>
             Lista de músicas de {selectedGenre.name}
           </h2>
-          <Link href="/discover" style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+          <Link href="/discover" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
             ← Voltar para descobrir
           </Link>
         </div>
       </section>
 
       {songs.length === 0 ? (
-        <div style={{ fontSize: 14, color: "#86868B" }}>
+        <div style={{ fontSize: 14, color: "var(--text-muted)" }}>
           Ainda não há músicas desse gênero nas paradas da semana.
         </div>
       ) : (
@@ -137,29 +137,29 @@ export default async function DiscoverGenrePage({
                 gridTemplateColumns: "40px 1fr auto auto",
                 alignItems: "center",
                 gap: 10,
-                background: "white",
-                border: "1px solid rgba(0,0,0,0.06)",
+                background: "var(--surface)",
+                border: "1px solid var(--divider)",
                 borderRadius: 12,
                 padding: "12px 14px",
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#86868B" }}>#{idx + 1}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>#{idx + 1}</div>
               <div style={{ minWidth: 0 }}>
                 <Link
                   href={buildSongPath({ title: song.title, artist: song.artist, slugArtist: song.slugArtist, spotifyId: song.spotifyId })}
-                  style={{ display: "block", fontSize: 14, fontWeight: 700, color: "#1D1D1F", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                  style={{ display: "block", fontSize: 14, fontWeight: 700, color: "var(--text)", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                 >
                   {song.title}
                 </Link>
                 <Link
                   href={buildArtistPath(song.artist, song.artistSpotifyId, song.artistRefId)}
-                  style={{ display: "block", fontSize: 12, color: "#86868B", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}
+                  style={{ display: "block", fontSize: 12, color: "var(--text-muted)", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}
                 >
                   {song.artist}
                 </Link>
               </div>
-              <div style={{ fontSize: 12, color: "#86868B", fontWeight: 600 }}>{song.users.size} usuários</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#FA243C" }}>{song.points} pts</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>{song.users.size} usuários</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{song.points} pts</div>
             </div>
           ))}
         </div>

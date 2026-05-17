@@ -81,11 +81,11 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
     >
       <div
         style={{
-          background: "white",
+          background: "var(--surface)",
           borderRadius: 20,
           width: "100%",
           maxWidth: 560,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
           overflow: "hidden",
         }}
       >
@@ -94,10 +94,10 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DB954">
             <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
           </svg>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#1D1D1F" }}>Buscar no Spotify</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Buscar no Spotify</span>
           <button
             onClick={onClose}
-            style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#86868B", fontSize: 20, lineHeight: 1, padding: 4 }}
+            style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 20, lineHeight: 1, padding: 4 }}
           >
             ×
           </button>
@@ -115,11 +115,12 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
               width: "100%",
               padding: "10px 16px",
               borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.1)",
+              border: "1px solid var(--divider-strong)",
               fontSize: 14,
               fontFamily: "inherit",
               outline: "none",
-              background: "#F5F5F7",
+              background: "var(--fill-inset)",
+              color: "var(--text)",
               boxSizing: "border-box",
             }}
           />
@@ -128,12 +129,12 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
         {/* Results */}
         <div style={{ maxHeight: 400, overflowY: "auto", padding: "0 12px 16px" }}>
           {loading && (
-            <div style={{ textAlign: "center", padding: "24px 0", color: "#86868B", fontSize: 13 }}>
+            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>
               Buscando…
             </div>
           )}
           {!loading && q.trim() && results.length === 0 && (
-            <div style={{ textAlign: "center", padding: "24px 0", color: "#86868B", fontSize: 13 }}>
+            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>
               Nenhum resultado encontrado.
             </div>
           )}
@@ -146,22 +147,22 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
                 gap: 12,
                 padding: "10px 8px",
                 borderRadius: 12,
-                borderBottom: "1px solid rgba(0,0,0,0.05)",
+                borderBottom: "1px solid var(--divider-soft)",
               }}
             >
               {hit.coverUrl ? (
                 <img src={hit.coverUrl} alt={hit.title} style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 48, height: 48, borderRadius: 8, background: "#E5E5EA", flexShrink: 0, display: "grid", placeItems: "center", color: "#86868B", fontSize: 18, fontWeight: 700 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 8, background: "var(--fill-subtle)", flexShrink: 0, display: "grid", placeItems: "center", color: "var(--text-muted)", fontSize: 18, fontWeight: 700 }}>
                   {hit.title[0]?.toUpperCase()}
                 </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {hit.title}
                 </div>
-                <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>{hit.artist}</div>
-                <div style={{ fontSize: 11, color: "#AEAEB2", marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{hit.artist}</div>
+                <div style={{ fontSize: 11, color: "var(--text-disabled)", marginTop: 2 }}>
                   {hit.releaseDate?.slice(0, 4)}
                   {hit.albumType && <span> · {hit.albumType === "ALBUM" ? "LP" : hit.albumType}</span>}
                 </div>
@@ -173,8 +174,8 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
                   padding: "7px 16px",
                   borderRadius: 100,
                   border: "none",
-                  background: hit.inDb ? "rgba(0,0,0,0.06)" : "#1D1D1F",
-                  color: hit.inDb ? "#1D1D1F" : "white",
+                  background: hit.inDb ? "var(--fill-subtle)" : "var(--btn-dark-bg)",
+                  color: hit.inDb ? "var(--text)" : "var(--btn-dark-fg)",
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: adding === hit.spotifyId ? "default" : "pointer",
@@ -268,9 +269,9 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
     <Link
       href={`/criticsfm/${album.id}`}
       style={{
-        background: "white",
+        background: "var(--surface)",
         borderRadius: 16,
-        border: "1px solid rgba(0,0,0,0.06)",
+        border: "1px solid var(--divider)",
         overflow: "hidden",
         cursor: "pointer",
         boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
@@ -349,6 +350,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            color: "var(--text)",
           }}
         >
           {album.title}
@@ -356,7 +358,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
         <div
           style={{
             fontSize: 12,
-            color: "#86868B",
+            color: "var(--text-muted)",
             marginTop: 2,
             whiteSpace: "nowrap",
             overflow: "hidden",
@@ -366,7 +368,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
           {album.artist}
         </div>
         {album.releaseDate && (
-          <div style={{ fontSize: 11, color: "#AEAEB2", marginTop: 6 }}>
+          <div style={{ fontSize: 11, color: "var(--text-disabled)", marginTop: 6 }}>
             {album.releaseDate.slice(0, 4)}
             {album.albumType && (
               <span> · {album.albumType === "ALBUM" ? "LP" : album.albumType}</span>
@@ -447,7 +449,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
               fontWeight: 700,
               letterSpacing: "0.07em",
               textTransform: "uppercase",
-              color: "#86868B",
+              color: "var(--text-muted)",
               marginBottom: 16,
             }}
           >
@@ -462,9 +464,9 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
               >
                 <div
                   style={{
-                    background: "white",
+                    background: "var(--surface)",
                     borderRadius: 14,
-                    border: "1px solid rgba(0,0,0,0.06)",
+                    border: "1px solid var(--divider)",
                     padding: "12px 14px",
                     display: "flex",
                     gap: 12,
@@ -507,13 +509,13 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
-                        color: "#1D1D1F",
+                        color: "var(--text)",
                       }}
                     >
                       {a.title}
                     </div>
-                    <div style={{ fontSize: 11, color: "#86868B", marginTop: 2 }}>{a.artist}</div>
-                    <div style={{ fontSize: 10, color: "#AEAEB2", marginTop: 3 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{a.artist}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-disabled)", marginTop: 3 }}>
                       {a.reviewCount} {a.reviewCount === 1 ? "review" : "reviews"}
                     </div>
                   </div>
@@ -533,7 +535,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
           flexWrap: "wrap",
           marginBottom: 20,
           paddingBottom: 20,
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
+          borderBottom: "1px solid var(--divider)",
         }}
       >
         <input
@@ -544,11 +546,12 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
           style={{
             padding: "9px 16px",
             borderRadius: 100,
-            border: "1px solid rgba(0,0,0,0.1)",
+            border: "1px solid var(--divider-strong)",
             fontSize: 13,
             fontFamily: "inherit",
             outline: "none",
-            background: "white",
+            background: "var(--surface)",
+            color: "var(--text)",
             width: 220,
           }}
         />
@@ -562,8 +565,8 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
                 padding: "7px 14px",
                 borderRadius: 100,
                 border: "none",
-                background: scoreFilter === f.id ? "#1D1D1F" : "rgba(0,0,0,0.05)",
-                color: scoreFilter === f.id ? "white" : f.color ?? "#1D1D1F",
+                background: scoreFilter === f.id ? "var(--btn-dark-bg)" : "var(--fill-inset)",
+                color: scoreFilter === f.id ? "var(--btn-dark-fg)" : f.color ?? "var(--text)",
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -580,7 +583,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
           style={{
             display: "flex",
             gap: 4,
-            background: "rgba(0,0,0,0.04)",
+            background: "var(--fill-inset)",
             padding: 3,
             borderRadius: 10,
             flexShrink: 0,
@@ -596,8 +599,8 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
                 border: "none",
                 fontSize: 12,
                 fontWeight: 600,
-                background: sortBy === s.id ? "white" : "transparent",
-                color: sortBy === s.id ? "#1D1D1F" : "#86868B",
+                background: sortBy === s.id ? "var(--surface)" : "transparent",
+                color: sortBy === s.id ? "var(--text)" : "var(--text-muted)",
                 cursor: "pointer",
                 boxShadow: sortBy === s.id ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
                 whiteSpace: "nowrap",
@@ -634,7 +637,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
       </div>
 
       {/* Results count */}
-      <div style={{ fontSize: 12, color: "#86868B", marginBottom: 16 }}>
+      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
         {filtered.length} {filtered.length === 1 ? "álbum" : "álbuns"}
       </div>
 
@@ -642,19 +645,19 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
       {filtered.length === 0 ? (
         <div
           style={{
-            background: "white",
+            background: "var(--surface)",
             borderRadius: 18,
-            border: "1px solid rgba(0,0,0,0.06)",
+            border: "1px solid var(--divider)",
             padding: 48,
             textAlign: "center",
-            color: "#86868B",
+            color: "var(--text-muted)",
           }}
         >
           <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Nenhum álbum encontrado</div>
           {search && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 13, color: "#AEAEB2", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, color: "var(--text-disabled)", marginBottom: 12 }}>
                 Quer adicionar este álbum ao catálogo?
               </div>
               <button
@@ -712,9 +715,9 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
                 style={{
                   padding: "8px 20px",
                   borderRadius: 100,
-                  border: "1px solid rgba(0,0,0,0.12)",
-                  background: page === 0 ? "rgba(0,0,0,0.04)" : "white",
-                  color: page === 0 ? "#86868B" : "#1D1D1F",
+                  border: "1px solid var(--divider-strong)",
+                  background: page === 0 ? "var(--fill-inset)" : "var(--surface)",
+                  color: page === 0 ? "var(--text-muted)" : "var(--text)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: page === 0 ? "default" : "pointer",
@@ -723,7 +726,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
               >
                 Anterior
               </button>
-              <span style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>
+              <span style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
                 {page + 1} / {totalPages}
               </span>
               <button
@@ -732,9 +735,9 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
                 style={{
                   padding: "8px 20px",
                   borderRadius: 100,
-                  border: "1px solid rgba(0,0,0,0.12)",
-                  background: page === totalPages - 1 ? "rgba(0,0,0,0.04)" : "white",
-                  color: page === totalPages - 1 ? "#86868B" : "#1D1D1F",
+                  border: "1px solid var(--divider-strong)",
+                  background: page === totalPages - 1 ? "var(--fill-inset)" : "var(--surface)",
+                  color: page === totalPages - 1 ? "var(--text-muted)" : "var(--text)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: page === totalPages - 1 ? "default" : "pointer",

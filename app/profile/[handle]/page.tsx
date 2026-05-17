@@ -468,7 +468,7 @@ export default function ProfilePage() {
   if (phase === "loading") {
     return (
       <Shell title="" noPadding>
-        <div style={{ padding: "48px 40px", color: "#86868B", fontSize: 15 }}>Carregando perfil…</div>
+        <div style={{ padding: "48px 40px", color: "var(--text-muted)", fontSize: 15 }}>Carregando perfil…</div>
       </Shell>
     );
   }
@@ -476,7 +476,7 @@ export default function ProfilePage() {
   if (phase === "missing" || !user) {
     return (
       <Shell title="Perfil" subtitle="Usuário não encontrado">
-        <div style={{ maxWidth: 480, textAlign: "center", margin: "48px auto", color: "#86868B" }}>
+        <div style={{ maxWidth: 480, textAlign: "center", margin: "48px auto", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos ninguém com o handle @{handle}.</p>
           <Link href="/" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
             ← Voltar ao início
@@ -504,7 +504,7 @@ export default function ProfilePage() {
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
-            color: "#86868B",
+            color: "var(--text-muted)",
             fontSize: 14,
             fontWeight: 500,
             textDecoration: "none",
@@ -518,14 +518,14 @@ export default function ProfilePage() {
           <Avatar user={user} imageUrl={imageUrl ?? undefined} size={140} />
 
           <div style={{ flex: 1, minWidth: 240, paddingBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#86868B", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Perfil</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Perfil</div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <h1 style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}>{user.name}</h1>
               {user.verified && <BadgeCheck size={28} color="#0A84FF" fill="#0A84FF" />}
             </div>
-            <div style={{ fontSize: 15, color: "#86868B", marginBottom: 10 }}>@{user.handle}</div>
+            <div style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 10 }}>@{user.handle}</div>
             {paradaNome && source === "db" && (
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Parada: {paradaNome}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Parada: {paradaNome}</div>
             )}
             {genres.length > 0 && source === "db" && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
@@ -537,8 +537,8 @@ export default function ProfilePage() {
                       fontWeight: 600,
                       padding: "4px 10px",
                       borderRadius: 100,
-                      background: "rgba(0,0,0,0.06)",
-                      color: "#1D1D1F",
+                      background: "var(--fill-subtle)",
+                      color: "var(--text)",
                     }}
                   >
                     {g}
@@ -547,9 +547,9 @@ export default function ProfilePage() {
               </div>
             )}
             {user.bio ? (
-              <p style={{ fontSize: 15, color: "#1D1D1F", marginBottom: 12, maxWidth: 560, lineHeight: 1.5 }}>{user.bio}</p>
+              <p style={{ fontSize: 15, color: "var(--text)", marginBottom: 12, maxWidth: 560, lineHeight: 1.5 }}>{user.bio}</p>
             ) : isOwn && source === "db" ? (
-              <p style={{ fontSize: 15, color: "#86868B", marginBottom: 12, maxWidth: 560, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 12, maxWidth: 560, lineHeight: 1.5 }}>
                 Ainda sem bio. As informações vêm da sua conta Google; em breve poderá editar aqui.
               </p>
             ) : null}
@@ -626,12 +626,12 @@ export default function ProfilePage() {
                 )}
               </div>
             )}
-            <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "#86868B", flexWrap: "wrap" }}>
-              <Link href={`/profile/${handle}/followers?type=followers`} style={{ color: "#86868B", textDecoration: "none" }}>
-                <b style={{ color: "#1D1D1F" }}>{user.followers.toLocaleString("pt-BR")}</b> seguidores
+            <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 13, color: "var(--text-muted)", flexWrap: "wrap" }}>
+              <Link href={`/profile/${handle}/followers?type=followers`} style={{ color: "var(--text-muted)", textDecoration: "none" }}>
+                <b style={{ color: "var(--text)" }}>{user.followers.toLocaleString("pt-BR")}</b> seguidores
               </Link>
-              <Link href={`/profile/${handle}/followers?type=following`} style={{ color: "#86868B", textDecoration: "none" }}>
-                <b style={{ color: "#1D1D1F" }}>{user.following}</b> seguindo
+              <Link href={`/profile/${handle}/followers?type=following`} style={{ color: "var(--text-muted)", textDecoration: "none" }}>
+                <b style={{ color: "var(--text)" }}>{user.following}</b> seguindo
               </Link>
               {user.streak > 0 && (
                 <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#FA243C", fontWeight: 600 }}>
@@ -666,13 +666,13 @@ export default function ProfilePage() {
                 <Link
                   href="/settings"
                   style={{
-                    background: "rgba(0,0,0,0.06)",
+                    background: "var(--fill-subtle)",
                     border: "none",
                     padding: "10px 22px",
                     borderRadius: 100,
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#1D1D1F",
+                    color: "var(--text)",
                     textDecoration: "none",
                     display: "inline-flex",
                     alignItems: "center",
@@ -681,15 +681,15 @@ export default function ProfilePage() {
                   Editar perfil
                 </Link>
                 <Link
-                  href="/parada/setup"
+                  href="/chart/setup"
                   style={{
-                    background: "rgba(0,0,0,0.06)",
+                    background: "var(--fill-subtle)",
                     border: "none",
                     padding: "10px 22px",
                     borderRadius: 100,
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#1D1D1F",
+                    color: "var(--text)",
                     textDecoration: "none",
                     display: "inline-flex",
                     alignItems: "center",
@@ -709,13 +709,13 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   style={{
-                    background: "rgba(0,0,0,0.06)",
+                    background: "var(--fill-subtle)",
                     border: "none",
                     padding: "10px 22px",
                     borderRadius: 100,
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#1D1D1F",
+                    color: "var(--text)",
                     cursor: "pointer",
                   }}
                 >
@@ -730,9 +730,9 @@ export default function ProfilePage() {
       <div style={{ padding: "0 40px 80px 40px" }}>
         <div
           style={{
-            background: "white",
+            background: "var(--surface)",
             borderRadius: 18,
-            border: "1px solid rgba(0,0,0,0.06)",
+            border: "1px solid var(--divider)",
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
             marginTop: 28,
@@ -745,8 +745,8 @@ export default function ProfilePage() {
             { label: "Músicas rankeadas", value: totalRankedSlots, icon: null },
             { label: "Artistas (última parada)", value: topArtists.length, icon: null },
           ].map(({ label, value, icon }, i) => (
-            <div key={label} style={{ padding: "20px 24px", borderRight: i < 3 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 6 }}>{label}</div>
+            <div key={label} style={{ padding: "20px 24px", borderRight: i < 3 ? "1px solid var(--divider)" : "none" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>{label}</div>
               <div
                 style={{
                   display: "flex",
@@ -775,16 +775,16 @@ export default function ProfilePage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
             {achievements.map((a) => (
-              <div key={a.name} style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.06)", padding: "16px 12px", textAlign: "center" }}>
+              <div key={a.name} style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--divider)", padding: "16px 12px", textAlign: "center" }}>
                 <div style={{ fontSize: 36, marginBottom: 6 }}>{a.emoji}</div>
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 4 }}>{a.name}</div>
-                <div style={{ fontSize: 11, color: "#86868B", lineHeight: 1.4 }}>{a.desc}</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>{a.desc}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 24, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 24, flexWrap: "wrap", gap: 8 }}>
           {(
             [
               ["charts", "Paradas"],
@@ -807,7 +807,7 @@ export default function ProfilePage() {
                 border: "none",
                 fontSize: 14,
                 fontWeight: tab === t ? 600 : 500,
-                color: tab === t ? "#1D1D1F" : "#86868B",
+                color: tab === t ? "var(--text)" : "var(--text-muted)",
                 borderBottom: `2px solid ${tab === t ? "#FA243C" : "transparent"}`,
                 marginBottom: -1,
                 cursor: !hasCharts && t !== "charts" ? "not-allowed" : "pointer",
@@ -822,8 +822,8 @@ export default function ProfilePage() {
         {tab === "charts" && (
           <>
             {!hasCharts ? (
-              <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 40, textAlign: "center" }}>
-                <p style={{ fontSize: 15, color: "#86868B", marginBottom: 20 }}>Nenhuma parada publicada ainda.</p>
+              <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" }}>
+                <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 20 }}>Nenhuma parada publicada ainda.</p>
                 {isOwn ? (
                   <Link href="/create" style={{ color: "#FA243C", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
                     Publicar a primeira parada →
@@ -838,7 +838,7 @@ export default function ProfilePage() {
               return (
                 <>
                   {loadingChartPage && (
-                    <div style={{ marginBottom: 12, color: "#86868B", fontSize: 13 }}>Carregando página {chartPage}…</div>
+                    <div style={{ marginBottom: 12, color: "var(--text-muted)", fontSize: 13 }}>Carregando página {chartPage}…</div>
                   )}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
                     {pageCharts.map((chart) => (
@@ -866,11 +866,11 @@ export default function ProfilePage() {
         {(tab === "artists_overall" || tab === "artists_year") && hasCharts && (
           <>
             {source === "db" && !fullPayload && loadingFullStats && (
-              <div style={{ marginBottom: 14, color: "#86868B", fontSize: 14 }}>Carregando estatísticas completas…</div>
+              <div style={{ marginBottom: 14, color: "var(--text-muted)", fontSize: 14 }}>Carregando estatísticas completas…</div>
             )}
             {tab === "artists_year" && years.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
+                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)" }}>
                   {years.map((y) => (
                     <option key={y} value={y}>{y}</option>
                   ))}
@@ -884,11 +884,11 @@ export default function ProfilePage() {
         {(tab === "songs_overall" || tab === "songs_year") && hasCharts && (
           <>
             {source === "db" && !fullPayload && loadingFullStats && (
-              <div style={{ marginBottom: 14, color: "#86868B", fontSize: 14 }}>Carregando estatísticas completas…</div>
+              <div style={{ marginBottom: 14, color: "var(--text-muted)", fontSize: 14 }}>Carregando estatísticas completas…</div>
             )}
             {tab === "songs_year" && years.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)" }}>
+                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)" }}>
                   {years.map((y) => (
                     <option key={y} value={y}>{y}</option>
                   ))}
@@ -939,8 +939,8 @@ function PaginationBar({
   const buttonStyle = {
     padding: "8px 14px",
     borderRadius: 10,
-    border: "1px solid rgba(0,0,0,0.12)",
-    background: "white",
+    border: "1px solid var(--divider-strong)",
+    background: "var(--surface)",
     fontSize: 13,
     fontWeight: 600,
   } as const;
@@ -964,7 +964,7 @@ function PaginationBar({
       </button>
       {items.map((item, idx) =>
         item === "..." ? (
-          <span key={`ellipsis-${idx}`} style={{ fontSize: 13, color: "#86868B", padding: "0 2px" }}>
+          <span key={`ellipsis-${idx}`} style={{ fontSize: 13, color: "var(--text-muted)", padding: "0 2px" }}>
             ...
           </span>
         ) : (
@@ -977,9 +977,9 @@ function PaginationBar({
               ...buttonStyle,
               minWidth: 36,
               padding: "8px 10px",
-              borderColor: item === page ? "#FA243C" : "rgba(0,0,0,0.12)",
-              color: item === page ? "#FA243C" : "#1D1D1F",
-              background: item === page ? "rgba(250,36,60,0.06)" : "white",
+              borderColor: item === page ? "#FA243C" : "var(--divider-strong)",
+              color: item === page ? "#FA243C" : "var(--text)",
+              background: item === page ? "var(--accent-tint)" : "var(--surface)",
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
@@ -987,7 +987,7 @@ function PaginationBar({
           </button>
         )
       )}
-      <span style={{ fontSize: 13, color: "#86868B", padding: "0 8px" }}>{page} / {totalPages}</span>
+      <span style={{ fontSize: 13, color: "var(--text-muted)", padding: "0 8px" }}>{page} / {totalPages}</span>
       <button
         type="button"
         disabled={page === totalPages || loading}
@@ -1010,16 +1010,16 @@ function PaginationBar({
 
 function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; artistImages: Record<string, string | null> }) {
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
         {["Pos", "", "Artista", "Sem.", "Pico", "Músicas", "Pontos"].map((h, i) => (
-          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
       {rows.map((r) => {
         const artistHref = buildArtistPath(r.name, r.artistSpotifyId, r.artistRefId);
         return (
-          <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+          <div key={r.name} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
             <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
             <Link href={artistHref} prefetch={false} style={{ padding: "4px 8px", lineHeight: 0 }}>
               {artistImages[r.name] ? (
@@ -1045,11 +1045,11 @@ function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; arti
             <Link
               href={artistHref}
               prefetch={false}
-              style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#1D1D1F", textDecoration: "none" }}
+              style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}
             >
               {r.name}
             </Link>
-            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
             <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
             <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
@@ -1062,10 +1062,10 @@ function ArtistStatsTable({ rows, artistImages }: { rows: ArtistTableRow[]; arti
 
 function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
         {["Pos", "", "Música", "Sem.", "Pico", "Pontos"].map((h, i) => (
-          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
       {rows.map((r) => {
@@ -1079,7 +1079,7 @@ function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
         });
         const artistHref = buildArtistPath(r.artist, r.artistSpotifyId, r.artistRefId);
         return (
-          <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+          <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px minmax(0,1fr) 80px 70px 110px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
             <div style={{ fontSize: 20, fontWeight: 700, textAlign: "right", paddingRight: 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
             <Link href={songHref} prefetch={false} style={{ padding: "4px 8px", lineHeight: 0 }}>
               <Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={48} rounded={8} />
@@ -1088,19 +1088,19 @@ function SongStatsTable({ rows }: { rows: SongTableRow[] }) {
               <Link
                 href={songHref}
                 prefetch={false}
-                style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#1D1D1F", textDecoration: "none" }}
+                style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}
               >
                 {r.title}
               </Link>
               <Link
                 href={artistHref}
                 prefetch={false}
-                style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}
+                style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}
               >
                 {formatSongArtist({ artist: r.artist })}
               </Link>
             </div>
-            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>
             <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
           </div>
@@ -1125,7 +1125,7 @@ function EvolutionChart({ user }: { user: UserWithCharts }) {
   const latest = user.charts[0];
   if (!latest || weekCount < 2) {
     return (
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 28, color: "#86868B", fontSize: 15 }}>
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 28, color: "var(--text-muted)", fontSize: 15 }}>
         Publique pelo menos duas paradas em semanas diferentes para ver a evolução das músicas no gráfico.
       </div>
     );
@@ -1140,21 +1140,21 @@ function EvolutionChart({ user }: { user: UserWithCharts }) {
   const gridLines = [1, 5, 10, 15, 20];
 
   return (
-    <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 24 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24 }}>
       <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4 }}>Trajetória das top 5 da parada mais recente</div>
-      <div style={{ fontSize: 13, color: "#86868B", marginBottom: 20 }}>Quanto mais alto, melhor a posição. Linhas tracejadas = música fora da parada.</div>
+      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>Quanto mais alto, melhor a posição. Linhas tracejadas = música fora da parada.</div>
       <div style={{ overflowX: "auto" }}>
         <svg width={width} height={height} style={{ display: "block" }}>
           {gridLines.map((pos) => (
             <g key={pos}>
               <line x1={pad.left} x2={width - pad.right} y1={yFor(pos)} y2={yFor(pos)} stroke="rgba(0,0,0,0.06)" strokeWidth={1} />
-              <text x={pad.left - 8} y={yFor(pos) + 4} fontSize={10} textAnchor="end" fill="#86868B">
+              <text x={pad.left - 8} y={yFor(pos) + 4} fontSize={10} textAnchor="end" fill="var(--text-muted)">
                 #{pos}
               </text>
             </g>
           ))}
           {weeks.map((w, i) => (
-            <text key={w.id} x={xFor(i)} y={height - 8} fontSize={10} textAnchor="middle" fill="#86868B">
+            <text key={w.id} x={xFor(i)} y={height - 8} fontSize={10} textAnchor="middle" fill="var(--text-muted)">
               {i === weeks.length - 1 ? "Agora" : `${weeks.length - 1 - i}sem`}
             </text>
           ))}
@@ -1195,10 +1195,10 @@ function EvolutionChart({ user }: { user: UserWithCharts }) {
         {top5.map((song, si) => (
           <div key={si} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <div style={{ width: 12, height: 12, borderRadius: 3, background: colors[si], flexShrink: 0 }} />
-            <Link href={buildSongPath(song)} style={{ fontSize: 13, fontWeight: 500, color: "#1D1D1F", textDecoration: "none" }}>
+            <Link href={buildSongPath(song)} style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", textDecoration: "none" }}>
               {song.title}
             </Link>
-            <Link href={buildArtistPath(song.artist, song.artistSpotifyId, song.artistRefId)} style={{ fontSize: 12, color: "#86868B", textDecoration: "none" }}>
+            <Link href={buildArtistPath(song.artist, song.artistSpotifyId, song.artistRefId)} style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none" }}>
               · {formatSongArtist(song)}
             </Link>
           </div>

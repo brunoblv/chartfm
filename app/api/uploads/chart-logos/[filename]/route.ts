@@ -4,7 +4,7 @@ import { join, extname } from "path";
 
 export const runtime = "nodejs";
 
-const UPLOAD_DIR = join(process.cwd(), "uploads", "parada-logos");
+const UPLOAD_DIR = join(process.cwd(), "uploads", "chart-logos");
 
 const MIME: Record<string, string> = {
   ".png": "image/png",

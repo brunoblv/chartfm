@@ -81,8 +81,8 @@ export function LandingPage({
     {
       title: "Empresa",
       items: [
-        { label: "Sobre", href: "/sobre" },
-        { label: "Contato", href: "/contato" },
+        { label: "Sobre", href: "/about" },
+        { label: "Contato", href: "/contact" },
       ],
     },
     {
@@ -95,9 +95,9 @@ export function LandingPage({
     {
       title: "Legal",
       items: [
-        { label: "Termos de Uso", href: "/termos-de-uso" },
-        { label: "Privacidade", href: "/politica-de-privacidade" },
-        { label: "Contato LGPD", href: "/contato" },
+        { label: "Termos de Uso", href: "/terms-of-use" },
+        { label: "Privacidade", href: "/privacy-policy" },
+        { label: "Contato LGPD", href: "/contact" },
       ],
     },
   ];
@@ -122,7 +122,7 @@ export function LandingPage({
             <Link href="#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>Como funciona</Link>
             <Link href="#comunidades" style={{ color: "inherit", textDecoration: "none" }}>Comunidades</Link>
             <Link href="#parada-global" style={{ color: "inherit", textDecoration: "none" }}>Parada Global</Link>
-            <Link href="/sobre" style={{ color: "inherit", textDecoration: "none" }}>Sobre</Link>
+            <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>Sobre</Link>
           </div>
         )}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

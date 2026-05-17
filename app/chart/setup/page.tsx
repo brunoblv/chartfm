@@ -26,7 +26,7 @@ export default function ParadaSetupPage() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch("/api/user/parada", {
+      const res = await fetch("/api/user/chart-name", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paradaNome: trimmed }),

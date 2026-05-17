@@ -10,7 +10,10 @@ import { authOptions } from "@/lib/auth-options";
 export const metadata: Metadata = {
   title: "ChartFM",
   description: "Compartilhe sua parada musical semanal com o mundo.",
+  metadataBase: new URL("https://chartfm.com.br"),
 };
+
+const themeScript = `(function(){try{var t=localStorage.getItem('chartfm.theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else if(t==='light'){document.documentElement.setAttribute('data-theme','light');}else if(!t||t==='auto'){if(window.matchMedia('(prefers-color-scheme:dark)').matches){document.documentElement.setAttribute('data-theme','dark');}}}catch(e){}})();`;
 
 export default async function RootLayout({
   children,
@@ -22,6 +25,42 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        {/* Anti-flash: apply theme before React mounts to avoid light-mode flicker */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "ChartFM",
+              url: "https://chartfm.com.br",
+              description: "Rede social de paradas musicais semanais. Publique seu ranking, acompanhe artistas e descubra curadores.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://chartfm.com.br/communities?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "ChartFM",
+              url: "https://chartfm.com.br",
+              logo: "https://chartfm.com.br/logo.png",
+              contactPoint: {
+                "@type": "ContactPoint",
+                email: "contato@chartfm.app",
+                contactType: "customer support",
+              },
+            }),
+          }}
+        />
         <meta
           name="google-adsense-account"
           content="ca-pub-4600084865044867"
@@ -35,7 +74,6 @@ export default async function RootLayout({
       </head>
 
       <body>
-
         <Providers session={session}>
           {children}
         </Providers>

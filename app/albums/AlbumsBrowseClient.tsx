@@ -85,11 +85,12 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
             flex: "0 0 220px",
             padding: "9px 14px",
             borderRadius: 100,
-            border: "1px solid rgba(0,0,0,0.1)",
+            border: "1px solid var(--divider-strong)",
             fontSize: 13,
             fontFamily: "inherit",
             outline: "none",
-            background: "white",
+            background: "var(--surface)",
+            color: "var(--text)",
           }}
         />
         <div style={{ display: "flex", gap: 6, flex: 1, overflowX: "auto" }}>
@@ -101,8 +102,8 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
                 padding: "7px 16px",
                 borderRadius: 100,
                 border: "none",
-                background: activeGenre === g ? "#1D1D1F" : "rgba(0,0,0,0.05)",
-                color: activeGenre === g ? "white" : "#1D1D1F",
+                background: activeGenre === g ? "var(--btn-dark-bg)" : "var(--fill-subtle)",
+                color: activeGenre === g ? "var(--btn-dark-fg)" : "var(--text)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -118,7 +119,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
           style={{
             display: "flex",
             gap: 4,
-            background: "rgba(0,0,0,0.04)",
+            background: "var(--fill-subtle)",
             padding: 3,
             borderRadius: 10,
             flexShrink: 0,
@@ -134,8 +135,8 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
                 border: "none",
                 fontSize: 11,
                 fontWeight: 600,
-                background: sortBy === id ? "white" : "transparent",
-                color: sortBy === id ? "#1D1D1F" : "#86868B",
+                background: sortBy === id ? "var(--surface)" : "transparent",
+                color: sortBy === id ? "var(--text)" : "var(--text-muted)",
                 cursor: "pointer",
                 boxShadow: sortBy === id ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
               }}
@@ -155,7 +156,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>
             Melhores avaliados
           </div>
-          <div style={{ fontSize: 13, color: "#86868B", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
             Álbuns com score ≥ 75
           </div>
           <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8 }}>
@@ -179,11 +180,11 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em" }}>
             Todos os álbuns
           </div>
-          <div style={{ fontSize: 13, color: "#86868B" }}>{filtered.length} álbuns</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{filtered.length} álbuns</div>
         </div>
 
         {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: "#86868B", fontSize: 15 }}>
+          <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)", fontSize: 15 }}>
             Nenhum álbum encontrado.
           </div>
         ) : (
@@ -216,9 +217,9 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
                   style={{
                     padding: "8px 20px",
                     borderRadius: 100,
-                    border: "1px solid rgba(0,0,0,0.12)",
-                    background: page === 0 ? "rgba(0,0,0,0.04)" : "white",
-                    color: page === 0 ? "#86868B" : "#1D1D1F",
+                    border: "1px solid var(--divider-strong)",
+                    background: page === 0 ? "var(--fill-subtle)" : "var(--surface)",
+                    color: page === 0 ? "var(--text-muted)" : "var(--text)",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: page === 0 ? "default" : "pointer",
@@ -227,7 +228,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
                 >
                   Anterior
                 </button>
-                <span style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
                   {page + 1} / {totalPages}
                 </span>
                 <button
@@ -236,9 +237,9 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
                   style={{
                     padding: "8px 20px",
                     borderRadius: 100,
-                    border: "1px solid rgba(0,0,0,0.12)",
-                    background: page === totalPages - 1 ? "rgba(0,0,0,0.04)" : "white",
-                    color: page === totalPages - 1 ? "#86868B" : "#1D1D1F",
+                    border: "1px solid var(--divider-strong)",
+                    background: page === totalPages - 1 ? "var(--fill-subtle)" : "var(--surface)",
+                    color: page === totalPages - 1 ? "var(--text-muted)" : "var(--text)",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: page === totalPages - 1 ? "default" : "pointer",
@@ -301,8 +302,8 @@ function ScoreBadge({ score, size = "sm" }: { score: number; size?: "sm" | "md" 
           width: dim,
           height: dim,
           borderRadius: br,
-          background: "rgba(0,0,0,0.06)",
-          color: "#86868B",
+          background: "var(--fill-subtle)",
+          color: "var(--text-muted)",
           display: "grid",
           placeItems: "center",
           fontSize: fs,
@@ -335,8 +336,6 @@ function ScoreBadge({ score, size = "sm" }: { score: number; size?: "sm" | "md" 
 }
 
 function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumPath: BuildAlbumPath }) {
-  const seed = album.id;
-  const hue = (seed * 47) % 360;
   const genres = getGenres(album);
 
   return (
@@ -348,8 +347,8 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
         alignItems: "center",
         padding: 28,
         borderRadius: 20,
-        background: `hsl(${hue},30%,96%)`,
-        border: "1px solid rgba(0,0,0,0.06)",
+        background: "var(--surface)",
+        border: "1px solid var(--divider)",
         cursor: "pointer",
         textDecoration: "none",
         color: "inherit",
@@ -363,11 +362,11 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
             alignItems: "center",
             gap: 6,
             padding: "4px 12px",
-            background: "rgba(250,36,60,0.08)",
+            background: "var(--accent-tint)",
             borderRadius: 100,
             fontSize: 11,
             fontWeight: 700,
-            color: "#FA243C",
+            color: "var(--accent)",
             marginBottom: 12,
             letterSpacing: "0.02em",
           }}
@@ -379,10 +378,10 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
         >
           {album.title}
         </div>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 4 }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
           {album.artist}
         </div>
-        <div style={{ fontSize: 13, color: "#86868B", marginBottom: 18 }}>
+        <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18 }}>
           {genres.slice(0, 2).join(" · ")}
           {album.releaseDate ? ` · ${album.releaseDate.slice(0, 4)}` : ""}
           {album.totalTracks ? ` · ${album.totalTracks} faixas` : ""}
@@ -397,10 +396,10 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
               >
                 {scoreLabel(album.score)}
               </div>
-              <div style={{ fontSize: 11, color: "#86868B" }}>{album.ratingCount} avaliações</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{album.ratingCount} avaliações</div>
             </div>
           ) : (
-            <div style={{ fontSize: 13, color: "#86868B" }}>Seja o primeiro a avaliar</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Seja o primeiro a avaliar</div>
           )}
         </div>
       </div>
@@ -415,9 +414,9 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
     <a
       href={albumHref(album, buildAlbumPath)}
       style={{
-        background: "white",
+        background: "var(--surface)",
         borderRadius: 16,
-        border: "1px solid rgba(0,0,0,0.06)",
+        border: "1px solid var(--divider)",
         overflow: "hidden",
         cursor: "pointer",
         boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
@@ -475,6 +474,7 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            color: "var(--text)",
           }}
         >
           {album.title}
@@ -482,7 +482,7 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
         <div
           style={{
             fontSize: 13,
-            color: "#86868B",
+            color: "var(--text-muted)",
             marginTop: 2,
             whiteSpace: "nowrap",
             overflow: "hidden",
@@ -492,11 +492,11 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
           {album.artist}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-          <span style={{ fontSize: 11, color: "#86868B", fontWeight: 500 }}>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>
             {genres[0] ?? "Música"}
           </span>
           <span style={{ opacity: 0.3 }}>·</span>
-          <span style={{ fontSize: 11, color: "#86868B", fontWeight: 500 }}>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>
             {album.releaseDate?.slice(0, 4) ?? "—"}
           </span>
         </div>
@@ -510,9 +510,9 @@ function AlbumCompactCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlb
     <a
       href={albumHref(album, buildAlbumPath)}
       style={{
-        background: "white",
+        background: "var(--surface)",
         borderRadius: 14,
-        border: "1px solid rgba(0,0,0,0.06)",
+        border: "1px solid var(--divider)",
         padding: 14,
         display: "flex",
         gap: 12,
@@ -534,12 +534,13 @@ function AlbumCompactCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlb
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            color: "var(--text)",
           }}
         >
           {album.title}
         </div>
-        <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>{album.artist}</div>
-        <div style={{ fontSize: 11, color: "#86868B", marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{album.artist}</div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
           {album.reviewCount > 0 ? `${album.reviewCount} reviews` : "Sem reviews ainda"}
         </div>
       </div>

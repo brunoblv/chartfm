@@ -48,14 +48,14 @@ const SECTION_LABEL: React.CSSProperties = {
   padding: "10px 16px 4px",
   fontSize: 11,
   fontWeight: 700,
-  color: "#86868B",
+  color: "var(--text-muted)",
   letterSpacing: "0.06em",
   textTransform: "uppercase",
 };
 
 const DIVIDER: React.CSSProperties = {
   height: 1,
-  background: "rgba(0,0,0,0.06)",
+  background: "var(--divider)",
   margin: "4px 0",
 };
 
@@ -137,12 +137,12 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
           display: "flex",
           alignItems: "center",
           gap: 8,
-          background: "rgba(120,120,128,0.1)",
+          background: "var(--fill-subtle)",
           borderRadius: 8,
           padding: "8px 12px",
         }}
       >
-        <Search size={14} color={loading ? "#FA243C" : "#86868B"} />
+        <Search size={14} color={loading ? "var(--accent)" : "var(--text-muted)"} />
         <input
           ref={inputRef}
           type="text"
@@ -160,7 +160,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
             background: "transparent",
             outline: "none",
             fontSize: 14,
-            color: "#1D1D1F",
+            color: "var(--text)",
             width: "100%",
           }}
         />
@@ -173,7 +173,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
               cursor: "pointer",
               padding: 0,
               display: "flex",
-              color: "#86868B",
+              color: "var(--text-muted)",
               flexShrink: 0,
             }}
           >
@@ -189,10 +189,10 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
             top: "calc(100% + 6px)",
             left: 0,
             right: 0,
-            background: "white",
+            background: "var(--surface-elevated)",
             borderRadius: 12,
-            boxShadow: "0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
-            border: "1px solid rgba(0,0,0,0.06)",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)",
+            border: "1px solid var(--divider)",
             overflow: "hidden",
             zIndex: 200,
           }}
@@ -202,7 +202,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
               style={{
                 padding: "20px 16px",
                 textAlign: "center",
-                color: "#86868B",
+                color: "var(--text-muted)",
                 fontSize: 14,
               }}
             >
@@ -227,7 +227,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                         color: "inherit",
                         transition: "background 0.1s",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#F5F5F7")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--fill-subtle)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       {artist.imageUrl ? (
@@ -248,13 +248,13 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                             width: 36,
                             height: 36,
                             borderRadius: "50%",
-                            background: "#E5E5EA",
+                            background: "var(--fill-subtle)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             fontSize: 14,
                             fontWeight: 700,
-                            color: "#86868B",
+                            color: "var(--text-muted)",
                             flexShrink: 0,
                           }}
                         >
@@ -265,7 +265,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                         style={{
                           fontSize: 14,
                           fontWeight: 600,
-                          color: "#1D1D1F",
+                          color: "var(--text)",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -330,7 +330,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                           <div
                             style={{
                               fontSize: 12,
-                              color: "#86868B",
+                              color: "var(--text-muted)",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -364,7 +364,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                         textDecoration: "none",
                         color: "inherit",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#F5F5F7")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--fill-subtle)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <Avatar
@@ -385,7 +385,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                         >
                           {user.name}
                         </div>
-                        <div style={{ fontSize: 12, color: "#86868B" }}>@{user.handle}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>@{user.handle}</div>
                       </div>
                     </Link>
                   ))}

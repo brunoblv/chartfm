@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
-const UPLOAD_DIR = join(process.cwd(), "uploads", "parada-logos");
+const UPLOAD_DIR = join(process.cwd(), "uploads", "chart-logos");
 
 function ensureDir() {
   if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -63,16 +63,16 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     await writeFile(join(UPLOAD_DIR, filename), Buffer.from(bytes));
   } catch (e) {
-    console.error("[parada-logo] Erro ao salvar arquivo:", e);
+    console.error("[chart-logo] Erro ao salvar arquivo:", e);
     return NextResponse.json({ error: "Erro ao salvar o arquivo no servidor." }, { status: 500 });
   }
 
-  const url = `/api/uploads/parada-logos/${filename}?v=${Date.now()}`;
+  const url = `/api/uploads/chart-logos/${filename}?v=${Date.now()}`;
 
   try {
     await prisma.user.update({ where: { id: session.user.id }, data: { paradaLogo: url } });
   } catch (e) {
-    console.error("[parada-logo] Erro ao atualizar banco:", e);
+    console.error("[chart-logo] Erro ao atualizar banco:", e);
     return NextResponse.json({ error: "Erro ao atualizar perfil." }, { status: 500 });
   }
 

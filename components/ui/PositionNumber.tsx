@@ -10,7 +10,7 @@ export function PositionNumber({ n, size = 22 }: PositionNumberProps) {
         fontSize: size,
         fontWeight: 700,
         letterSpacing: "-0.04em",
-        color: "#000000",
+        color: "var(--text)",
         fontVariantNumeric: "tabular-nums",
         minWidth: size * 1.6,
         textAlign: "right",

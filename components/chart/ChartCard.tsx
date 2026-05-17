@@ -64,9 +64,10 @@ export function ChartCard({
 
   return (
     <article style={{
-      background: "white",
+      background: "var(--surface)",
+      color: "var(--text)",
       borderRadius: 18,
-      border: "1px solid rgba(0,0,0,0.06)",
+      border: "1px solid var(--divider)",
       boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
       overflow: "hidden",
       transition: "box-shadow 150ms",
@@ -87,14 +88,14 @@ export function ChartCard({
           </Link>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: "-0.015em", display: "flex", alignItems: "center", gap: 4 }}>
-              <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none", color: "#1D1D1F" }}>
+              <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none", color: "var(--text)" }}>
                 {user.name}
               </Link>
               {user.verified && (
                 <BadgeCheck size={16} color="#0A84FF" fill="#0A84FF" />
               )}
             </div>
-            <div style={{ fontSize: 13, color: "#86868B" }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
               @{user.handle}{postedAgo ? ` · ${postedAgo}` : ""}
             </div>
           </div>
@@ -109,7 +110,7 @@ export function ChartCard({
         <div style={{ padding: "8px 24px 0 24px", fontSize: 26, fontWeight: 700, letterSpacing: "-0.03em" }}>
           {user.paradaNome || `Top ${chart.entries.length}`}
         </div>
-        <div style={{ padding: "4px 24px 16px 24px", fontSize: 13, color: "#86868B", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ padding: "4px 24px 16px 24px", fontSize: 13, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span>{formattedPeriod}</span>
         </div>
       </Link>
@@ -163,7 +164,7 @@ export function ChartCard({
                 style={{
                   display: "block",
                   fontSize: 12,
-                  color: "#86868B",
+                  color: "var(--text-muted)",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -179,7 +180,7 @@ export function ChartCard({
         {remaining > 0 && (
           <Link
             href={`/chart/${chart.id}`}
-            style={{ padding: "10px 4px 2px 4px", fontSize: 13, color: "#FA243C", fontWeight: 600, letterSpacing: "-0.01em", textDecoration: "none" }}
+            style={{ padding: "10px 4px 2px 4px", fontSize: 13, color: "var(--accent)", fontWeight: 600, letterSpacing: "-0.01em", textDecoration: "none" }}
           >
             Ver completa
           </Link>
@@ -192,7 +193,7 @@ export function ChartCard({
         alignItems: "center",
         gap: 4,
         padding: "8px 14px 14px 14px",
-        borderTop: "1px solid rgba(0,0,0,0.05)",
+        borderTop: "1px solid var(--divider-soft)",
       }}>
         <button
           onClick={toggleLike}
@@ -205,7 +206,7 @@ export function ChartCard({
             borderRadius: 8,
             background: "transparent",
             border: "none",
-            color: liked ? "#C5291C" : "#6B6B70",
+            color: liked ? "var(--accent)" : "var(--text-subtle)",
             fontSize: 13,
             fontWeight: 500,
             cursor: liking ? "default" : "pointer",
@@ -218,7 +219,7 @@ export function ChartCard({
         <button style={{
           display: "flex", alignItems: "center", gap: 6,
           padding: "8px 12px", borderRadius: 8, background: "transparent",
-          border: "none", color: "#6B6B70", fontSize: 13, fontWeight: 500,
+          border: "none", color: "var(--text-subtle)", fontSize: 13, fontWeight: 500,
         }}>
           <MessageCircle size={18} />
           <span>{chart.comments > 0 ? chart.comments : ""}</span>
@@ -226,13 +227,13 @@ export function ChartCard({
         <button style={{
           display: "flex", alignItems: "center", gap: 6,
           padding: "8px 12px", borderRadius: 8, background: "transparent",
-          border: "none", color: "#6B6B70", fontSize: 13, fontWeight: 500,
+          border: "none", color: "var(--text-subtle)", fontSize: 13, fontWeight: 500,
         }}>
           <Repeat2 size={18} />
           <span>{chart.reposts > 0 ? chart.reposts : ""}</span>
         </button>
         <div style={{ flex: 1 }} />
-        <button style={{ display: "flex", alignItems: "center", padding: "8px 12px", borderRadius: 8, background: "transparent", border: "none", color: "#6B6B70" }}>
+        <button style={{ display: "flex", alignItems: "center", padding: "8px 12px", borderRadius: 8, background: "transparent", border: "none", color: "var(--text-subtle)" }}>
           <Share size={18} />
         </button>
       </div>

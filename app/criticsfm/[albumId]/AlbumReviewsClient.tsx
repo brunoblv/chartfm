@@ -97,7 +97,7 @@ export function AlbumReviewsClient({
       {/* Main column */}
       <div>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em" }}>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
             Reviews{reviewCount > 0 ? ` (${reviewCount})` : ""}
           </div>
           <div style={{ flex: 1 }} />
@@ -106,7 +106,7 @@ export function AlbumReviewsClient({
               style={{
                 display: "flex",
                 gap: 4,
-                background: "rgba(0,0,0,0.04)",
+                background: "var(--fill-inset)",
                 padding: 3,
                 borderRadius: 10,
               }}
@@ -121,8 +121,8 @@ export function AlbumReviewsClient({
                     border: "none",
                     fontSize: 12,
                     fontWeight: 600,
-                    background: sort === id ? "white" : "transparent",
-                    color: sort === id ? "#1D1D1F" : "#86868B",
+                    background: sort === id ? "var(--surface)" : "transparent",
+                    color: sort === id ? "var(--text)" : "var(--text-muted)",
                     cursor: "pointer",
                     boxShadow: sort === id ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
                   }}
@@ -137,18 +137,18 @@ export function AlbumReviewsClient({
         <InlineReviewForm albumDbId={albumDbId} albumTitle={albumTitle} onSubmitted={onReviewSubmitted} />
 
         {!loaded ? (
-          <div style={{ textAlign: "center", padding: 40, color: "#86868B", fontSize: 14 }}>
+          <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)", fontSize: 14 }}>
             Carregando reviews…
           </div>
         ) : sorted.length === 0 ? (
           <div
             style={{
-              background: "white",
+              background: "var(--surface)",
               borderRadius: 18,
-              border: "1px solid rgba(0,0,0,0.06)",
+              border: "1px solid var(--divider)",
               padding: 48,
               textAlign: "center",
-              color: "#86868B",
+              color: "var(--text-muted)",
             }}
           >
             <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
@@ -160,9 +160,9 @@ export function AlbumReviewsClient({
         ) : (
           <div
             style={{
-              background: "white",
+              background: "var(--surface)",
               borderRadius: 18,
-              border: "1px solid rgba(0,0,0,0.06)",
+              border: "1px solid var(--divider)",
               padding: "4px 24px",
             }}
           >
@@ -186,13 +186,13 @@ export function AlbumReviewsClient({
         {/* Score summary */}
         <div
           style={{
-            background: "white",
+            background: "var(--surface)",
             borderRadius: 18,
-            border: "1px solid rgba(0,0,0,0.06)",
+            border: "1px solid var(--divider)",
             padding: 20,
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#86868B", marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>
             Score CriticsFM
           </div>
           {reviewCount > 0 ? (
@@ -219,7 +219,7 @@ export function AlbumReviewsClient({
                   <div style={{ fontSize: 14, fontWeight: 700, color: scoreColor(avgScore), letterSpacing: "-0.01em" }}>
                     {scoreLabel(avgScore)}
                   </div>
-                  <div style={{ fontSize: 12, color: "#86868B", marginTop: 3 }}>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
                     {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
                   </div>
                 </div>
@@ -238,7 +238,7 @@ export function AlbumReviewsClient({
                         style={{
                           fontSize: 9,
                           fontWeight: 600,
-                          color: "#86868B",
+                          color: "var(--text-muted)",
                           width: 32,
                           textAlign: "right",
                           fontVariantNumeric: "tabular-nums",
@@ -250,7 +250,7 @@ export function AlbumReviewsClient({
                         style={{
                           flex: 1,
                           height: 10,
-                          background: "rgba(0,0,0,0.04)",
+                          background: "var(--fill-inset)",
                           borderRadius: 5,
                           overflow: "hidden",
                         }}
@@ -266,7 +266,7 @@ export function AlbumReviewsClient({
                           }}
                         />
                       </div>
-                      <div style={{ fontSize: 9, color: "#86868B", width: 20, fontVariantNumeric: "tabular-nums" }}>
+                      <div style={{ fontSize: 9, color: "var(--text-muted)", width: 20, fontVariantNumeric: "tabular-nums" }}>
                         {count}
                       </div>
                     </div>
@@ -290,8 +290,8 @@ export function AlbumReviewsClient({
                       flexShrink: 0,
                     }}
                   />
-                  <div style={{ flex: 1, fontSize: 11, color: "#1D1D1F" }}>{label as string}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                  <div style={{ flex: 1, fontSize: 11, color: "var(--text)" }}>{label as string}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--text)" }}>
                     {count as number}
                   </div>
                 </div>
@@ -304,18 +304,18 @@ export function AlbumReviewsClient({
                   width: 64,
                   height: 64,
                   borderRadius: 16,
-                  background: "rgba(0,0,0,0.04)",
+                  background: "var(--fill-inset)",
                   display: "grid",
                   placeItems: "center",
                   fontSize: 26,
                   fontWeight: 800,
-                  color: "#AEAEB2",
+                  color: "var(--text-disabled)",
                   flexShrink: 0,
                 }}
               >
                 —
               </div>
-              <div style={{ fontSize: 13, color: "#86868B" }}>Sem avaliações ainda</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Sem avaliações ainda</div>
             </div>
           )}
         </div>
@@ -359,9 +359,9 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
   return (
     <div
       style={{
-        background: "white",
+        background: "var(--surface)",
         borderRadius: 18,
-        border: "1px solid rgba(0,0,0,0.06)",
+        border: "1px solid var(--divider)",
         padding: 20,
       }}
     >
@@ -371,7 +371,7 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
           fontWeight: 700,
           letterSpacing: "0.06em",
           textTransform: "uppercase",
-          color: "#86868B",
+          color: "var(--text-muted)",
           marginBottom: 14,
         }}
       >
@@ -379,7 +379,7 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
       </div>
 
       {rows.length === 0 ? (
-        <div style={{ fontSize: 13, color: "#AEAEB2" }}>Sem informações disponíveis</div>
+        <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>Sem informações disponíveis</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {rows.map(({ value, key }) => (
@@ -390,11 +390,11 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
                 alignItems: "baseline",
                 gap: 6,
                 padding: "7px 0",
-                borderBottom: "1px solid rgba(0,0,0,0.04)",
+                borderBottom: "1px solid var(--divider-soft)",
               }}
             >
-              <span style={{ fontSize: 11, color: "#86868B", flex: 1 }}>{key}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F", flexShrink: 0 }}>{value}</span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", flex: 1 }}>{key}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", flexShrink: 0 }}>{value}</span>
             </div>
           ))}
         </div>
@@ -481,7 +481,7 @@ function ReviewCard({
   const isLong = (review.body?.length ?? 0) > 200;
 
   return (
-    <div style={{ padding: "16px 0", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+    <div style={{ padding: "16px 0", borderBottom: "1px solid var(--divider)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div
           style={{
@@ -508,8 +508,8 @@ function ReviewCard({
               imageUrl={review.user.image}
               size={16}
             />
-            <span style={{ fontSize: 12, fontWeight: 600 }}>{review.user.name}</span>
-            <span style={{ fontSize: 11, color: "#86868B" }}>· {timeAgo}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{review.user.name}</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>· {timeAgo}</span>
           </div>
         </div>
         {isOwner && (
@@ -521,7 +521,7 @@ function ReviewCard({
               background: "none",
               border: "none",
               padding: 4,
-              color: "#86868B",
+              color: "var(--text-muted)",
               cursor: deleting ? "not-allowed" : "pointer",
               fontSize: 14,
               lineHeight: 1,
@@ -538,7 +538,7 @@ function ReviewCard({
         <div style={{ marginTop: 10, marginLeft: 52 }}>
           {isLong && !expanded ? (
             <>
-              <div style={{ fontSize: 14, color: "#1D1D1F", lineHeight: 1.55 }}>
+              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.55 }}>
                 {review.body.slice(0, 200)}…
               </div>
               <button
@@ -547,7 +547,7 @@ function ReviewCard({
                   background: "none",
                   border: "none",
                   padding: 0,
-                  color: "#FA243C",
+                  color: "var(--accent)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -558,7 +558,7 @@ function ReviewCard({
               </button>
             </>
           ) : (
-            <div style={{ fontSize: 14, color: "#1D1D1F", lineHeight: 1.55 }}>{review.body}</div>
+            <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.55 }}>{review.body}</div>
           )}
         </div>
       )}
@@ -570,7 +570,7 @@ function ReviewCard({
             background: "none",
             border: "none",
             padding: 0,
-            color: voted ? "#FA243C" : "#86868B",
+            color: voted ? "var(--accent)" : "var(--text-muted)",
             fontSize: 12,
             fontWeight: 500,
             display: "flex",
@@ -606,18 +606,18 @@ function InlineReviewForm({
     return (
       <div
         style={{
-          background: "white",
+          background: "var(--surface)",
           borderRadius: 16,
-          border: "1px solid rgba(0,0,0,0.08)",
+          border: "1px solid var(--divider)",
           padding: "20px 24px",
           marginBottom: 20,
           textAlign: "center",
-          color: "#86868B",
+          color: "var(--text-muted)",
           fontSize: 14,
         }}
       >
         <span>
-          <a href="/login" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+          <a href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
             Entre
           </a>{" "}
           para escrever uma review
@@ -678,9 +678,9 @@ function InlineReviewForm({
   return (
     <div
       style={{
-        background: "white",
+        background: "var(--surface)",
         borderRadius: 16,
-        border: "1px solid rgba(0,0,0,0.08)",
+        border: "1px solid var(--divider)",
         padding: "16px 20px",
         marginBottom: 20,
       }}
@@ -692,7 +692,7 @@ function InlineReviewForm({
           size={36}
         />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F", marginBottom: 6 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
             {user?.name ?? "Você"}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -739,20 +739,20 @@ function InlineReviewForm({
           width: "100%",
           padding: "12px 14px",
           borderRadius: 10,
-          border: "1px solid rgba(0,0,0,0.08)",
+          border: "1px solid var(--divider)",
           fontSize: 14,
           fontFamily: "inherit",
           outline: "none",
           resize: "vertical",
           lineHeight: 1.55,
           boxSizing: "border-box",
-          background: "#F5F5F7",
-          color: "#1D1D1F",
+          background: "var(--fill-inset)",
+          color: "var(--text)",
         }}
       />
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
-        <div style={{ fontSize: 11, color: "#86868B" }}>
+        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
           {body.trim().length > 0
             ? `${body.length}/2000 · mínimo 50 caracteres`
             : "Review opcional"}
@@ -761,7 +761,7 @@ function InlineReviewForm({
           onClick={submit}
           disabled={submitting || (body.trim().length > 0 && body.trim().length < 50)}
           style={{
-            background: "#FA243C",
+            background: "var(--accent)",
             color: "white",
             border: "none",
             padding: "8px 20px",
@@ -781,8 +781,8 @@ function InlineReviewForm({
         <div
           style={{
             fontSize: 13,
-            color: "#C5291C",
-            background: "#FDECEC",
+            color: "var(--down-fg)",
+            background: "var(--down-bg)",
             padding: "8px 12px",
             borderRadius: 8,
             marginTop: 10,

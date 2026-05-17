@@ -16,7 +16,7 @@ export function Shell({ children, title, subtitle, noPadding }: ShellProps) {
   const isMobile = useIsMobile();
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#FBFBFD" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
       {!isMobile && <Sidebar />}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <TopBar isMobile={isMobile} />
@@ -34,7 +34,7 @@ export function Shell({ children, title, subtitle, noPadding }: ShellProps) {
                   {title}
                 </h1>
                 {subtitle && (
-                  <p style={{ fontSize: 15, color: "#86868B", marginTop: 6, letterSpacing: "-0.01em", margin: "6px 0 0 0" }}>
+                  <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 6, letterSpacing: "-0.01em", margin: "6px 0 0 0" }}>
                     {subtitle}
                   </p>
                 )}

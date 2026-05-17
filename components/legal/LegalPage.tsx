@@ -60,10 +60,10 @@ export function LegalPage({
             fontWeight: 700,
           }}
         >
-          <Link href="/sobre" style={{ color: "#FA243C", textDecoration: "none" }}>Sobre</Link>
-          <Link href="/contato" style={{ color: "#FA243C", textDecoration: "none" }}>Contato</Link>
-          <Link href="/termos-de-uso" style={{ color: "#FA243C", textDecoration: "none" }}>Termos de Uso</Link>
-          <Link href="/politica-de-privacidade" style={{ color: "#FA243C", textDecoration: "none" }}>Privacidade</Link>
+          <Link href="/about" style={{ color: "#FA243C", textDecoration: "none" }}>Sobre</Link>
+          <Link href="/contact" style={{ color: "#FA243C", textDecoration: "none" }}>Contato</Link>
+          <Link href="/terms-of-use" style={{ color: "#FA243C", textDecoration: "none" }}>Termos de Uso</Link>
+          <Link href="/privacy-policy" style={{ color: "#FA243C", textDecoration: "none" }}>Privacidade</Link>
         </div>
       </article>
     </Shell>

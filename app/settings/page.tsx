@@ -178,7 +178,7 @@ export default function SettingsPage() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/user/parada-logo", { method: "POST", body: fd });
+      const res = await fetch("/api/user/chart-logo", { method: "POST", body: fd });
       if (!res.ok) {
         let message = "Erro ao enviar logo.";
         try {
@@ -201,7 +201,7 @@ export default function SettingsPage() {
     setUploadingLogo(true);
     setLogoError(null);
     try {
-      const res = await fetch("/api/user/parada-logo", { method: "DELETE" });
+      const res = await fetch("/api/user/chart-logo", { method: "DELETE" });
       if (!res.ok) {
         setLogoError("Erro ao remover logo.");
         return;
@@ -250,7 +250,7 @@ export default function SettingsPage() {
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
-            color: "#86868B",
+            color: "var(--text-muted)",
             fontSize: 14,
             textDecoration: "none",
             marginBottom: 14,
@@ -265,7 +265,7 @@ export default function SettingsPage() {
           style={{
             display: "flex",
             gap: 2,
-            background: "rgba(0,0,0,0.05)",
+            background: "var(--fill-subtle)",
             borderRadius: 12,
             padding: 4,
             marginBottom: 18,
@@ -284,9 +284,9 @@ export default function SettingsPage() {
                 fontWeight: 600,
                 cursor: "pointer",
                 transition: "all 120ms",
-                background: tab === t.id ? "white" : "transparent",
-                color: tab === t.id ? "#1D1D1F" : "#86868B",
-                boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                background: tab === t.id ? "var(--surface-elevated)" : "transparent",
+                color: tab === t.id ? "var(--text)" : "var(--text-muted)",
+                boxShadow: tab === t.id ? "0 1px 4px rgba(0,0,0,0.14)" : "none",
               }}
             >
               {t.label}
@@ -295,16 +295,16 @@ export default function SettingsPage() {
         </div>
 
         {loading ? (
-          <div style={{ color: "#86868B", fontSize: 14 }}>Carregando...</div>
+          <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Carregando...</div>
         ) : (
           <>
             {/* Aba Perfil */}
             {tab === "perfil" && (
               <div
                 style={{
-                  background: "white",
+                  background: "var(--surface)",
                   borderRadius: 18,
-                  border: "1px solid rgba(0,0,0,0.06)",
+                  border: "1px solid var(--divider)",
                   padding: 22,
                   display: "flex",
                   flexDirection: "column",
@@ -313,7 +313,7 @@ export default function SettingsPage() {
               >
                 {/* Avatar upload */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Foto de perfil</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Foto de perfil</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{ position: "relative", flexShrink: 0 }}>
                       <Avatar user={avatarUser} imageUrl={form.image} size={72} />
@@ -328,8 +328,8 @@ export default function SettingsPage() {
                           width: 26,
                           height: 26,
                           borderRadius: "50%",
-                          background: "#1D1D1F",
-                          border: "2px solid white",
+                          background: "var(--btn-dark-bg)",
+                          border: "2px solid var(--surface)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -346,14 +346,14 @@ export default function SettingsPage() {
                         onClick={() => avatarInputRef.current?.click()}
                         disabled={uploadingAvatar}
                         style={{
-                          background: "white",
-                          border: "1px solid rgba(0,0,0,0.15)",
+                          background: "var(--surface)",
+                          border: "1px solid var(--divider-strong)",
                           borderRadius: 100,
                           padding: "8px 16px",
                           fontSize: 13,
                           fontWeight: 600,
                           cursor: uploadingAvatar ? "not-allowed" : "pointer",
-                          color: "#1D1D1F",
+                          color: "var(--text)",
                           opacity: uploadingAvatar ? 0.6 : 1,
                         }}
                       >
@@ -386,7 +386,7 @@ export default function SettingsPage() {
                   {avatarError && (
                     <span style={{ fontSize: 12, color: "#B91C1C" }}>{avatarError}</span>
                   )}
-                  <span style={{ fontSize: 11, color: "#86868B" }}>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                     JPG, PNG ou WebP · máx. 5 MB
                   </span>
                   <input
@@ -402,43 +402,43 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div style={{ height: 1, background: "rgba(0,0,0,0.06)" }} />
+                <div style={{ height: 1, background: "var(--divider)" }} />
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Nome</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Nome</span>
                   <input
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
+                    style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                   />
                 </label>
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>User</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>User</span>
                   <input
                     value={form.handle}
                     onChange={(e) => setForm((f) => ({ ...f, handle: e.target.value }))}
-                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
+                    style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                   />
                 </label>
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Bio</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Bio</span>
                   <textarea
                     value={form.bio ?? ""}
                     onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
                     rows={4}
-                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14, resize: "vertical" }}
+                    style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, resize: "vertical", background: "var(--fill-subtle)", color: "var(--text)" }}
                   />
                 </label>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>Redes sociais</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Redes sociais</span>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>X (Twitter)</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>X (Twitter)</span>
                     <div style={{ position: "relative" }}>
-                      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#86868B", fontSize: 14, pointerEvents: "none" }}>@</span>
+                      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontSize: 14, pointerEvents: "none" }}>@</span>
                       <input
                         value={form.twitterUser ?? ""}
                         onChange={(e) => {
@@ -447,15 +447,15 @@ export default function SettingsPage() {
                           setForm((f) => ({ ...f, twitterUser: match ? match[1] : e.target.value.replace(/^@/, "") }));
                         }}
                         placeholder="seu_usuario"
-                        style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box" }}
+                        style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
                       />
                     </div>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Instagram</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Instagram</span>
                     <div style={{ position: "relative" }}>
-                      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#86868B", fontSize: 14, pointerEvents: "none" }}>@</span>
+                      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontSize: 14, pointerEvents: "none" }}>@</span>
                       <input
                         value={form.instagramUser ?? ""}
                         onChange={(e) => {
@@ -464,13 +464,13 @@ export default function SettingsPage() {
                           setForm((f) => ({ ...f, instagramUser: match ? match[1] : e.target.value.replace(/^@/, "") }));
                         }}
                         placeholder="seu_usuario"
-                        style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box" }}
+                        style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
                       />
                     </div>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Last.fm</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Last.fm</span>
                     <input
                       value={form.lastfmUser ?? ""}
                       onChange={(e) => {
@@ -479,16 +479,16 @@ export default function SettingsPage() {
                         setForm((f) => ({ ...f, lastfmUser: match ? match[1] : e.target.value }));
                       }}
                       placeholder="seu-usuario-lastfm"
-                      style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
+                      style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                     />
-                    <span style={{ fontSize: 11, color: "#86868B" }}>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                       Cole o link do perfil ou só o nome de usuário — o usuário é extraído automaticamente.
                     </span>
                   </div>
                 </div>
 
                 {error && <div style={{ fontSize: 13, color: "#B91C1C" }}>{error}</div>}
-                {success && <div style={{ fontSize: 13, color: "#166534" }}>{success}</div>}
+                {success && <div style={{ fontSize: 13, color: "var(--up-fg)" }}>{success}</div>}
 
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
@@ -516,9 +516,9 @@ export default function SettingsPage() {
             {tab === "parada" && (
               <div
                 style={{
-                  background: "white",
+                  background: "var(--surface)",
                   borderRadius: 18,
-                  border: "1px solid rgba(0,0,0,0.06)",
+                  border: "1px solid var(--divider)",
                   padding: 22,
                   display: "flex",
                   flexDirection: "column",
@@ -528,10 +528,10 @@ export default function SettingsPage() {
                 {/* Logo da parada */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#1D1D1F", marginBottom: 4 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
                       Logo da parada
                     </div>
-                    <div style={{ fontSize: 13, color: "#86868B", lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
                       Aparece no lugar das 4 capas na página de detalhes da sua parada. Se não tiver um logo, as capas das músicas são exibidas automaticamente.
                     </div>
                   </div>
@@ -545,8 +545,8 @@ export default function SettingsPage() {
                         borderRadius: 16,
                         overflow: "hidden",
                         flexShrink: 0,
-                        border: "1px solid rgba(0,0,0,0.10)",
-                        background: "rgba(0,0,0,0.04)",
+                        border: "1px solid var(--divider-strong)",
+                        background: "var(--fill-inset)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -560,7 +560,7 @@ export default function SettingsPage() {
                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                         />
                       ) : (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "#86868B" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "var(--text-muted)" }}>
                           <ImagePlus size={28} strokeWidth={1.5} />
                           <span style={{ fontSize: 11, fontWeight: 500 }}>Sem logo</span>
                         </div>
@@ -574,8 +574,8 @@ export default function SettingsPage() {
                         onClick={() => logoInputRef.current?.click()}
                         disabled={uploadingLogo}
                         style={{
-                          background: "#1D1D1F",
-                          color: "white",
+                          background: "var(--btn-dark-bg)",
+                          color: "var(--btn-dark-fg)",
                           border: "none",
                           borderRadius: 100,
                           padding: "10px 20px",
@@ -638,20 +638,20 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div style={{ height: 1, background: "rgba(0,0,0,0.06)" }} />
+                <div style={{ height: 1, background: "var(--divider)" }} />
 
                 {/* Nome da parada e tamanho — também aqui para conveniência */}
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Nome da parada</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Nome da parada</span>
                   <input
                     value={form.paradaNome ?? ""}
                     onChange={(e) => setForm((f) => ({ ...f, paradaNome: e.target.value }))}
-                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14 }}
+                    style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                   />
                 </label>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Tamanho da parada</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Tamanho da parada</span>
                   <input
                     type="number"
                     min={1}
@@ -662,15 +662,15 @@ export default function SettingsPage() {
                       setForm((f) => ({ ...f, chartSize: isNaN(v) ? null : Math.min(100, Math.max(1, v)) }));
                     }}
                     placeholder="Ex: 20"
-                    style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 14, width: "100%", boxSizing: "border-box" }}
+                    style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
                   />
-                  <span style={{ fontSize: 11, color: "#86868B" }}>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                     Quantas músicas tem a sua parada (máx. 100). Ao publicar, só as primeiras N músicas são salvas.
                   </span>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Gêneros</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Gêneros</span>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {ALL_GENRES.map((genre) => {
                       const active = form.genres.includes(genre);
@@ -681,9 +681,9 @@ export default function SettingsPage() {
                           onClick={() => toggleGenre(genre)}
                           style={{
                             padding: "10px 16px",
-                            background: active ? "#1D1D1F" : "white",
-                            color: active ? "white" : "#1D1D1F",
-                            border: active ? "1px solid #1D1D1F" : "1px solid rgba(0,0,0,0.12)",
+                            background: active ? "var(--btn-dark-bg)" : "var(--surface)",
+                            color: active ? "var(--btn-dark-fg)" : "var(--text)",
+                            border: active ? "1px solid var(--btn-dark-bg)" : "1px solid var(--divider-strong)",
                             borderRadius: 100,
                             fontSize: 13,
                             fontWeight: 600,
@@ -699,7 +699,7 @@ export default function SettingsPage() {
                 </div>
 
                 {error && <div style={{ fontSize: 13, color: "#B91C1C" }}>{error}</div>}
-                {success && <div style={{ fontSize: 13, color: "#166534" }}>{success}</div>}
+                {success && <div style={{ fontSize: 13, color: "var(--up-fg)" }}>{success}</div>}
 
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
@@ -727,9 +727,9 @@ export default function SettingsPage() {
             {tab === "conta" && (
               <div
                 style={{
-                  background: "white",
+                  background: "var(--surface)",
                   borderRadius: 18,
-                  border: "1px solid rgba(0,0,0,0.06)",
+                  border: "1px solid var(--divider)",
                   padding: 22,
                   display: "flex",
                   flexDirection: "column",
@@ -751,7 +751,7 @@ export default function SettingsPage() {
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#B91C1C", marginBottom: 4 }}>
                       Excluir conta
                     </div>
-                    <div style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.55 }}>
+                    <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>
                       Ao excluir sua conta, todas as suas paradas, curtidas, comentários e demais dados serão
                       permanentemente removidos. Essa ação não pode ser desfeita.
                     </div>
@@ -760,7 +760,7 @@ export default function SettingsPage() {
                     <button
                       onClick={() => setShowDeleteModal(true)}
                       style={{
-                        background: "white",
+                        background: "var(--surface)",
                         color: "#B91C1C",
                         border: "1.5px solid rgba(185,28,28,0.35)",
                         borderRadius: 100,
@@ -798,7 +798,7 @@ export default function SettingsPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "white",
+              background: "var(--surface-elevated)",
               borderRadius: 20,
               padding: 28,
               maxWidth: 420,
@@ -808,11 +808,11 @@ export default function SettingsPage() {
               gap: 16,
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#1D1D1F" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
               Excluir conta?
             </div>
-            <div style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>
-              Essa ação é <strong style={{ color: "#1D1D1F" }}>permanente e irreversível</strong>. Todos os seus dados —
+            <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}>
+              Essa ação é <strong style={{ color: "var(--text)" }}>permanente e irreversível</strong>. Todos os seus dados —
               paradas, curtidas, comentários, seguidores e configurações — serão excluídos para sempre.
             </div>
             {deleteError && (
@@ -824,8 +824,8 @@ export default function SettingsPage() {
                 disabled={deleting}
                 style={{
                   background: "transparent",
-                  color: "#1D1D1F",
-                  border: "1px solid rgba(0,0,0,0.15)",
+                  color: "var(--text)",
+                  border: "1px solid var(--divider-strong)",
                   borderRadius: 100,
                   padding: "10px 20px",
                   fontSize: 14,

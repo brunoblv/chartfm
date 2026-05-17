@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chartfm.com.br/sitemap.xml

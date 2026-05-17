@@ -70,9 +70,9 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
         </div>
       )}
 
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
         {items.length === 0 && (
-          <div style={{ padding: "40px 20px", textAlign: "center", color: "#86868B", fontSize: 14 }}>
+          <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
             Nenhuma notificação por aqui ainda.
           </div>
         )}
@@ -90,11 +90,27 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
                 alignItems: "flex-start",
                 gap: 14,
                 padding: "16px 20px",
-                borderBottom: i < items.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none",
+                borderBottom: i < items.length - 1 ? "1px solid var(--divider-soft)" : "none",
                 background: !n.read ? "rgba(250,36,60,0.02)" : "transparent",
               }}
             >
-              {n.type === "milestone" || !actor ? (
+              {n.type === "global_chart" ? (
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: "linear-gradient(135deg, #1D1D1F, #3A3A3C)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                  }}
+                >
+                  🌐
+                </div>
+              ) : n.type === "milestone" || !actor ? (
                 <div
                   style={{
                     width: 44,
@@ -117,7 +133,7 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
               )}
 
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, lineHeight: 1.5, color: "#1D1D1F" }}>
+                <div style={{ fontSize: 14, lineHeight: 1.5, color: "var(--text)" }}>
                   {actor && (
                     <Link
                       href={`/profile/${actor.handle}`}
@@ -134,7 +150,7 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
                     n.text
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: "#86868B", marginTop: 4 }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
                   {timeAgo(n.createdAt)}
                 </div>
                 {n.type === "follow" && actor && !followedBack.has(n.id) && (
@@ -142,8 +158,8 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
                     onClick={() => followBack(actor.id, n.id)}
                     style={{
                       marginTop: 10,
-                      background: "#1D1D1F",
-                      color: "white",
+                      background: "var(--btn-dark-bg)",
+                      color: "var(--btn-dark-fg)",
                       border: "none",
                       padding: "6px 16px",
                       borderRadius: 20,
@@ -156,7 +172,7 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
                   </button>
                 )}
                 {n.type === "follow" && actor && followedBack.has(n.id) && (
-                  <span style={{ display: "inline-block", marginTop: 10, fontSize: 12, color: "#86868B" }}>
+                  <span style={{ display: "inline-block", marginTop: 10, fontSize: 12, color: "var(--text-muted)" }}>
                     Seguindo
                   </span>
                 )}

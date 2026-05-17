@@ -40,7 +40,7 @@ export function HotTabs({
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>Em alta</h2>
-        <div style={{ display: "flex", gap: 4, background: "rgba(0,0,0,0.04)", borderRadius: 10, padding: 4 }}>
+        <div style={{ display: "flex", gap: 4, background: "var(--fill-inset)", borderRadius: 10, padding: 4 }}>
           <button
             onClick={() => setTab("artists")}
             style={{
@@ -49,8 +49,8 @@ export function HotTabs({
               border: "none",
               fontSize: 12,
               fontWeight: 700,
-              background: tab === "artists" ? "white" : "transparent",
-              color: tab === "artists" ? "#1D1D1F" : "#86868B",
+              background: tab === "artists" ? "var(--surface)" : "transparent",
+              color: tab === "artists" ? "var(--text)" : "var(--text-muted)",
               boxShadow: tab === "artists" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
               cursor: "pointer",
             }}
@@ -65,8 +65,8 @@ export function HotTabs({
               border: "none",
               fontSize: 12,
               fontWeight: 700,
-              background: tab === "songs" ? "white" : "transparent",
-              color: tab === "songs" ? "#1D1D1F" : "#86868B",
+              background: tab === "songs" ? "var(--surface)" : "transparent",
+              color: tab === "songs" ? "var(--text)" : "var(--text-muted)",
               boxShadow: tab === "songs" ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
               cursor: "pointer",
             }}
@@ -77,49 +77,49 @@ export function HotTabs({
       </div>
 
       {tab === "artists" ? (
-        <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: gridArtists, padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: gridArtists, padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
             {["Pos", "Mudança", "", "Artista", "Entradas", "Usuários"].map((h, i) => (
-              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
+              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
             ))}
           </div>
           {artists.map((a, i) => (
             <Link key={a.name} href={buildArtistPath(a.name, a.spotifyId)} style={{ textDecoration: "none", color: "inherit" }}>
-              <div style={{ display: "grid", gridTemplateColumns: gridArtists, alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12, letterSpacing: "-0.02em" }}>{i + 1}</div>
+              <div style={{ display: "grid", gridTemplateColumns: gridArtists, alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12, letterSpacing: "-0.02em" }}>{i + 1}</div>
                 <div style={{ padding: "0 8px" }}>
                   <MovementBadge status={a.status} delta={a.delta} />
                 </div>
                 <div style={{ padding: "6px 8px" }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${COVER_PALETTES[i % COVER_PALETTES.length][0]}, ${COVER_PALETTES[i % COVER_PALETTES.length][1]})` }} />
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 600, padding: "0 12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
-                <div style={{ fontSize: 13, color: "#86868B", padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{a.listeners}</div>
-                <div style={{ fontSize: 13, color: "#86868B", padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{a.users}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, padding: "0 12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)" }}>{a.name}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{a.listeners}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{a.users}</div>
               </div>
             </Link>
           ))}
         </div>
       ) : (
-        <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: gridSongs, padding: "10px 20px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: gridSongs, padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
             {["Pos", "Mudança", "Música", "Artista", "Usuários"].map((h, i) => (
-              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "6px 8px" }}>{h}</div>
+              <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
             ))}
           </div>
           {songs.map((s, i) => (
-            <div key={`${s.title}-${s.artist}`} style={{ display: "grid", gridTemplateColumns: gridSongs, alignItems: "center", padding: "8px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "#000000", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12, letterSpacing: "-0.02em" }}>{i + 1}</div>
+            <div key={`${s.title}-${s.artist}`} style={{ display: "grid", gridTemplateColumns: gridSongs, alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12, letterSpacing: "-0.02em" }}>{i + 1}</div>
               <div style={{ padding: "0 8px" }}>
                 <MovementBadge status={s.status} delta={s.delta} />
               </div>
-              <Link href={buildSongPath(s)} style={{ fontSize: 14, fontWeight: 600, padding: "0 12px", color: "#1D1D1F", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <Link href={buildSongPath(s)} style={{ fontSize: 14, fontWeight: 600, padding: "0 12px", color: "var(--text)", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {s.title}
               </Link>
-              <Link href={buildArtistPath(s.artist, s.artistSpotifyId)} style={{ fontSize: 12, color: "#86868B", padding: "0 8px", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <Link href={buildArtistPath(s.artist, s.artistSpotifyId)} style={{ fontSize: 12, color: "var(--text-muted)", padding: "0 8px", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {s.artist}
               </Link>
-              <div style={{ fontSize: 13, color: "#86868B", padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{s.users}</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{s.users}</div>
             </div>
           ))}
         </div>
