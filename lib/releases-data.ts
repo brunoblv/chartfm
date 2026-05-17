@@ -14,6 +14,18 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    date: "2026-05-17",
+    label: "17 de maio de 2026",
+    entries: [
+      {
+        title: "Modo Noturno",
+        tag: "novo",
+        description:
+          "O ChartFM agora tem suporte a tema claro e escuro. O botão de alternância fica na barra lateral e o site respeita automaticamente a preferência do seu sistema operacional. A escolha é salva localmente e aplicada sem piscar ao carregar a página.",
+      },
+    ],
+  },
+  {
     date: "2026-05-15",
     label: "15 de maio de 2026",
     entries: [
