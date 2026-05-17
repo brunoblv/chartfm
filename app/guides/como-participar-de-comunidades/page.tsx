@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Como participar de comunidades | Guias ChartFM",
   description:
     "Guia completo sobre comunidades no ChartFM: como entrar, o que são as paradas coletivas, como interagir com outros membros e como criar sua própria comunidade musical.",
+  alternates: { canonical: "/guides/como-participar-de-comunidades" },
 };
 
 export default function GuideComunidades() {

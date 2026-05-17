@@ -4,6 +4,7 @@ import { LegalPage } from "@/components/legal/LegalPage";
 export const metadata: Metadata = {
   title: "Contato | ChartFM",
   description: "Fale com o ChartFM sobre suporte, pedidos de privacidade, remoção de conteúdo, parcerias ou imprensa.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

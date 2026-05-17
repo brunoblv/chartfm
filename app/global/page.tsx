@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "Global 100 | As músicas mais populares da comunidade ChartFM",
   description:
     "Acompanhe o Global 100 do ChartFM, a parada musical coletiva criada a partir das charts pessoais e avaliações da comunidade. Rankings semanais de músicas e artistas atualizados toda segunda-feira.",
+  alternates: { canonical: "/global" },
 };
 
 type ArtistImageKey = { name: string; spotifyId: string | null };

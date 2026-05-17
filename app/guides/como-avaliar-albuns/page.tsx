@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Como avaliar álbuns no CriticsFM | Guias ChartFM",
   description:
     "Aprenda a avaliar álbuns, escrever reviews e explorar críticas da comunidade no CriticsFM. Guia completo sobre o módulo de reviews musicais do ChartFM.",
+  alternates: { canonical: "/guides/como-avaliar-albuns" },
 };
 
 export default function GuideAvaliarAlbuns() {

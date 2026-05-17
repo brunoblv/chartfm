@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Como descobrir músicas no ChartFM | Guias ChartFM",
   description:
     "Use o Discover do ChartFM para encontrar novos artistas, seguir curadores com gosto parecido e explorar charts por gênero. Guia completo para descoberta musical.",
+  alternates: { canonical: "/guides/como-descobrir-musicas" },
 };
 
 export default function GuideDescobrir() {

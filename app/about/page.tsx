@@ -4,6 +4,7 @@ import { LegalPage } from "@/components/legal/LegalPage";
 export const metadata: Metadata = {
   title: "Sobre | ChartFM",
   description: "Conheça o ChartFM, a rede social de paradas musicais semanais feita por fãs, para fãs. Saiba como funciona, o que você pode fazer e nossa história.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

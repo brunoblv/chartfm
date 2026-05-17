@@ -9,7 +9,7 @@ import { authOptions } from "@/lib/auth-options";
 
 export const metadata: Metadata = {
   title: "ChartFM",
-  description: "Compartilhe sua parada musical semanal com o mundo.",
+  description: "Crie sua parada musical semanal, descubra novos artistas e participe de comunidades no ChartFM. Rankings, reviews e curadoria musical feitos por fãs.",
   metadataBase: new URL("https://chartfm.com.br"),
 };
 

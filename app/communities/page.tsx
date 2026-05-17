@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Comunidades Musicais | ChartFM",
   description:
     "Descubra e participe de comunidades musicais no ChartFM. Discuta lançamentos, acompanhe charts coletivos, conheça fãs de pop, rock, indie, eletrônico e muito mais. Encontre sua tribo musical.",
+  alternates: { canonical: "/communities" },
 };
 
 type CommunityCard = {

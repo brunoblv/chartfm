@@ -4,6 +4,7 @@ import { LegalPage } from "@/components/legal/LegalPage";
 export const metadata: Metadata = {
   title: "Termos de Uso | ChartFM",
   description: "Leia os Termos de Uso do ChartFM. Regras para contas, conteúdo, comunidades, rankings, publicidade e conduta na plataforma.",
+  alternates: { canonical: "/terms-of-use" },
 };
 
 export default function TermsPage() {

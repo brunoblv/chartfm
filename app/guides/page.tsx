@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Guias e Tutoriais | ChartFM",
   description:
     "Aprenda como usar o ChartFM: crie sua parada musical semanal, entenda o Global 100, participe de comunidades, avalie álbuns e descubra novas músicas. Guias completos para novos e antigos usuários.",
+  alternates: { canonical: "/guides" },
 };
 
 const GUIDES_PRIMEIROS_PASSOS = [

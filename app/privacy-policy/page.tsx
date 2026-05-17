@@ -4,6 +4,7 @@ import { LegalPage } from "@/components/legal/LegalPage";
 export const metadata: Metadata = {
   title: "Política de Privacidade | ChartFM",
   description: "Saiba como o ChartFM coleta, usa e protege seus dados pessoais. Inclui cookies, direitos pela LGPD, compartilhamento e retenção de dados.",
+  alternates: { canonical: "/privacy-policy" },
 };
 
 export default function PrivacyPolicyPage() {

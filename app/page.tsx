@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Flame } from "lucide-react";
@@ -18,6 +19,12 @@ import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } f
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs, type ReviewItem } from "@/components/home/TimelineTabs";
 import type { UserWithCharts } from "@/lib/types";
+
+export const metadata: Metadata = {
+  title: "ChartFM — Sua parada musical semanal",
+  description: "Crie sua parada musical semanal, descubra novos artistas e participe de comunidades no ChartFM. Rankings, reviews e curadoria musical feitos por fãs.",
+  alternates: { canonical: "/" },
+};
 
 function daysUntilSundayBRT(): number {
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);

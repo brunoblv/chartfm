@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Como criar sua parada semanal | Guias ChartFM",
   description:
     "Aprenda passo a passo como criar sua parada musical semanal no ChartFM. Da busca por músicas à publicação da chart, guia completo para iniciantes e usuários experientes.",
+  alternates: { canonical: "/guides/como-criar-sua-parada" },
 };
 
 export default function GuideCrearParada() {

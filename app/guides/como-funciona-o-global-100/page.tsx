@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Como funciona o Global 100 | Guias ChartFM",
   description:
     "Entenda como o ranking Global 100 do ChartFM é calculado, como os pontos são atribuídos, por que músicas sobem e caem e como sua parada pessoal influencia o ranking coletivo.",
+  alternates: { canonical: "/guides/como-funciona-o-global-100" },
 };
 
 export default function GuideGlobal100() {

@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: "Descobrir Músicas, Artistas e Curadores | ChartFM",
   description:
     "Descubra novas músicas, artistas em ascensão e curadores em destaque no ChartFM. Explore charts semanais da comunidade, rankings por gênero e tendências musicais atualizadas toda semana.",
+  alternates: { canonical: "/discover" },
 };
 
 function weeklyScore(likes: number, comments: number, reposts: number): number {
