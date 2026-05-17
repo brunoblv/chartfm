@@ -6,10 +6,12 @@ import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { getSpotifyArtistById, searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
 import { computeGlobalSnapshotData, getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import Link from "next/link";
+import { BookOpen, BarChart2, Users, TrendingUp, Music } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Parada Global | ChartFM",
-  description: "A parada global semanal do ChartFM. Veja quais músicas e artistas são mais chartados pelos curadores da plataforma essa semana.",
+  title: "Global 100 | As músicas mais populares da comunidade ChartFM",
+  description:
+    "Acompanhe o Global 100 do ChartFM, a parada musical coletiva criada a partir das charts pessoais e avaliações da comunidade. Rankings semanais de músicas e artistas atualizados toda segunda-feira.",
 };
 
 type ArtistImageKey = { name: string; spotifyId: string | null };
@@ -184,25 +186,77 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
     imageUrl: imageMap.get(a.name) ?? null,
   }));
 
+  const FAQ_GLOBAL = [
+    {
+      q: "Como o Global 100 é calculado?",
+      a: `Cada música recebe pontos conforme a posição em que aparece nas paradas pessoais dos usuários. Quanto mais alta a posição e mais usuários incluem a música, mais pontos ela acumula. A soma desses pontos determina a classificação final no ranking semanal global.`,
+    },
+    {
+      q: "Com que frequência a parada é atualizada?",
+      a: "O Global 100 é consolidado toda segunda-feira às 01h00 (horário de Brasília), refletindo as charts publicadas pelos usuários durante a semana anterior. O histórico de semanas anteriores também está disponível para consulta.",
+    },
+    {
+      q: "Como participar da parada global?",
+      a: "Basta criar uma conta no ChartFM e publicar sua parada pessoal semanal. Assim que você submete sua chart, as músicas escolhidas entram automaticamente no cálculo do ranking global daquela semana.",
+    },
+    {
+      q: "As charts pessoais influenciam o ranking?",
+      a: "Sim, diretamente. Cada parada publicada por um usuário contribui para o Global 100. Quanto mais curadores incluem uma música em suas charts, maior o impacto dela no ranking coletivo. É a democracia musical em ação.",
+    },
+    {
+      q: "A parada global é igual às charts de streaming?",
+      a: "Não. O Global 100 do ChartFM não mede reproduções automáticas nem algoritmos de plataformas. Cada entrada representa uma escolha deliberada e intencional de um usuário real. Isso torna o ranking mais representativo do gosto musical genuíno da comunidade.",
+    },
+  ];
+
   return (
-    <Shell title="Parada Global">
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
-        <p style={{ fontSize: 15, color: "var(--text-muted)", letterSpacing: "-0.01em", margin: 0 }}>
-          A Parada Global é o reflexo do que a comunidade do ChartFM está ouvindo em conjunto. Todas as paradas pessoais dos usuários são combinadas para formar um ranking coletivo que destaca as músicas, artistas e álbuns mais populares da plataforma a cada semana.
+    <Shell title="Global 100">
+
+      {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
+      <section style={{ marginBottom: 48, maxWidth: 820 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 16 }}>
+          A parada musical coletiva do ChartFM
+        </h2>
+
+        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
+          O Global 100 do ChartFM reúne as músicas mais populares da comunidade com base nas paradas pessoais publicadas pelos usuários semanalmente. A lista representa uma visão coletiva do que está sendo mais ouvido, compartilhado e comentado dentro da plataforma.
         </p>
-        <p style={{ fontSize: 15, color: "var(--text-muted)", letterSpacing: "-0.01em", margin: 0 }}>
-          Inspirada nas grandes charts musicais, a Parada Global transforma gostos individuais em uma visão ampla do que está movimentando a comunidade naquele momento. Cada posição é construída a partir das escolhas reais dos usuários, criando uma experiência dinâmica onde novos lançamentos, hits virais, clássicos revisitados e descobertas inesperadas podem disputar espaço lado a lado.
+
+        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>
+          Inspirada nas grandes charts musicais internacionais, a parada global combina diferentes gostos, estilos e tendências em um único ranking atualizado toda semana. Cada posição é calculada a partir da atividade da comunidade: charts semanais publicadas, posições escolhidas por cada curador e o engajamento gerado pelas músicas dentro da plataforma. O resultado é uma parada dinâmica onde hits populares convivem com artistas emergentes, descobertas independentes e músicas que crescem organicamente entre fãs.
         </p>
-        <p style={{ fontSize: 15, color: "var(--text-muted)", letterSpacing: "-0.01em", margin: 0 }}>
-          Acompanhe a evolução das músicas ao longo das semanas, veja quais artistas estão dominando o ranking e descubra tendências que surgem organicamente dentro da comunidade. A Parada Global é o ponto de encontro entre fãs de música, charts e cultura pop.
+      </section>
+
+      {/* ===== COMO FUNCIONA ===== */}
+      <section style={{ marginBottom: 48 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
+          Como funciona a Parada Global
+        </h2>
+        <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6, maxWidth: 700 }}>
+          O ranking utiliza dados das charts pessoais enviadas pelos usuários do ChartFM. Conforme músicas aparecem nas listas semanais da comunidade, elas acumulam pontos que determinam suas posições na parada coletiva. As atualizações refletem mudanças reais no comportamento dos usuários, permitindo que novos lançamentos, músicas virais e clássicos revisitados disputem espaço lado a lado.
         </p>
-      </div>
-      {/* Hero */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
+          {[
+            { icon: <Music size={20} />, title: "Cada posição vale pontos", desc: "A música na 1ª posição de uma parada vale mais pontos que a 10ª. Isso premia as músicas que os usuários mais valorizam, não apenas as mais listadas." },
+            { icon: <Users size={20} />, title: "Mais curadores = mais força", desc: "Quanto mais usuários independentes incluem uma música em suas paradas, maior o impacto no ranking global. Um hit genuíno sobe naturalmente." },
+            { icon: <BarChart2 size={20} />, title: "Atualizado toda semana", desc: "A consolidação ocorre toda segunda-feira. Novas entradas, subidas e quedas refletem o gosto da comunidade naquele período específico." },
+            { icon: <TrendingUp size={20} />, title: "Histórico preservado", desc: "Cada semana gera um snapshot permanente. É possível acompanhar como o ranking evoluiu ao longo do tempo e descobrir como artistas ascenderam." },
+          ].map((item) => (
+            <div key={item.title} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14, padding: "18px 20px" }}>
+              <div style={{ color: "#FA243C", marginBottom: 10 }}>{item.icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{item.title}</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>{item.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== HERO COM STATS ===== */}
       <div style={{
         background: "linear-gradient(135deg, #1D1D1F 0%, #2C2C2E 100%)",
         borderRadius: 20,
         padding: "48px 48px",
-        marginBottom: 40,
+        marginBottom: 48,
         display: "flex",
         gap: 40,
         alignItems: "center",
@@ -218,7 +272,8 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
         </div>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 8 }}>{weekNow}</div>
-          <h1 style={{ fontSize: 64, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 12 }}>Parada Global</h1>
+          {/* div, não h1 — o Shell já renderiza o H1 da página */}
+          <div style={{ fontSize: 64, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 12 }}>Global 100</div>
           <p style={{ fontSize: 15, opacity: 0.8, maxWidth: 480, lineHeight: 1.6, marginBottom: 16 }}>
             Cada música ganha <strong>101 − posição</strong> pontos por parada em que aparece. A soma decide o ranking semanal global.
           </p>
@@ -233,15 +288,7 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
             {olderWeek ? (
               <Link
                 href={`/global?week=${olderWeek}`}
-                style={{
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  color: "white",
-                  padding: "8px 14px",
-                  borderRadius: 10,
-                  textDecoration: "none",
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
+                style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: 13, fontWeight: 600 }}
               >
                 ← Semana anterior
               </Link>
@@ -253,15 +300,7 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
             {newerWeek ? (
               <Link
                 href={`/global?week=${newerWeek}`}
-                style={{
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  color: "white",
-                  padding: "8px 14px",
-                  borderRadius: 10,
-                  textDecoration: "none",
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
+                style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: 13, fontWeight: 600 }}
               >
                 Próxima semana →
               </Link>
@@ -274,12 +313,50 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
         </div>
       </div>
 
-      <GlobalTabs
-        weeklySongs={globalSongs}
-        weeklyArtists={topArtistsWithImages}
-        overallSongs={overallSongs}
-        overallArtists={topArtistsOverallWithImages}
-      />
+      {/* ===== RANKINGS (TABS INTERATIVAS) ===== */}
+      <section style={{ marginBottom: 52 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
+          Rankings da semana {weekNow}
+        </h2>
+        <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
+          Abaixo estão os rankings consolidados de músicas e artistas com base nas paradas publicadas na semana {weekRangeNow}. Cada entrada representa a agregação de {uniqueParadas} paradas pessoais distintas publicadas pela comunidade do ChartFM.
+        </p>
+        <GlobalTabs
+          weeklySongs={globalSongs}
+          weeklyArtists={topArtistsWithImages}
+          overallSongs={overallSongs}
+          overallArtists={topArtistsOverallWithImages}
+        />
+      </section>
+
+      {/* ===== FAQ ===== */}
+      <section
+        style={{
+          borderTop: "1px solid var(--divider)",
+          paddingTop: 40,
+          maxWidth: 820,
+        }}
+      >
+        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 24, display: "flex", alignItems: "center", gap: 8 }}>
+          <BookOpen size={18} color="#FA243C" />
+          Perguntas frequentes sobre o Global 100
+        </h2>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {FAQ_GLOBAL.map((item, i) => (
+            <div
+              key={item.q}
+              style={{
+                borderTop: i === 0 ? "1px solid var(--divider)" : "none",
+                borderBottom: "1px solid var(--divider)",
+                padding: "20px 0",
+              }}
+            >
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{item.q}</div>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </Shell>
   );
 }

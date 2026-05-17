@@ -398,6 +398,7 @@ function SidebarContent({
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "6px 10px 10px" }}>
         {[
+          { href: "/guides", label: "Guias" },
           { href: "/about", label: "Sobre" },
           { href: "/contact", label: "Contato" },
           { href: "/terms-of-use", label: "Termos" },

@@ -9,6 +9,7 @@ import { buildSongPath, buildArtistPath } from "@/lib/music-routes";
 type ArtistRow = {
   name: string;
   spotifyId?: string | null;
+  imageUrl?: string | null;
   listeners: number;
   users: number;
   status: "new" | "return" | "up" | "down" | "same";
@@ -91,7 +92,21 @@ export function HotTabs({
                   <MovementBadge status={a.status} delta={a.delta} />
                 </div>
                 <div style={{ padding: "6px 8px" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${COVER_PALETTES[i % COVER_PALETTES.length][0]}, ${COVER_PALETTES[i % COVER_PALETTES.length][1]})` }} />
+                  <div style={{
+                    width: 44, height: 44, borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${COVER_PALETTES[i % COVER_PALETTES.length][0]}, ${COVER_PALETTES[i % COVER_PALETTES.length][1]})`,
+                    overflow: "hidden", flexShrink: 0,
+                  }}>
+                    {a.imageUrl && (
+                      <img
+                        src={a.imageUrl}
+                        alt={a.name}
+                        width={44}
+                        height={44}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    )}
+                  </div>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 600, padding: "0 12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)" }}>{a.name}</div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>{a.listeners}</div>

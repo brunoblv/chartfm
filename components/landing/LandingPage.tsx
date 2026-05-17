@@ -88,6 +88,7 @@ export function LandingPage({
     {
       title: "Recursos",
       items: [
+        { label: "Guias", href: "/guides" },
         { label: "Importar Spotify", href: "/login" },
         { label: "Comunidades", href: "/communities" },
       ],

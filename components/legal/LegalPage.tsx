@@ -60,6 +60,7 @@ export function LegalPage({
             fontWeight: 700,
           }}
         >
+          <Link href="/guides" style={{ color: "#FA243C", textDecoration: "none" }}>Guias</Link>
           <Link href="/about" style={{ color: "#FA243C", textDecoration: "none" }}>Sobre</Link>
           <Link href="/contact" style={{ color: "#FA243C", textDecoration: "none" }}>Contato</Link>
           <Link href="/terms-of-use" style={{ color: "#FA243C", textDecoration: "none" }}>Termos de Uso</Link>
