@@ -30,7 +30,7 @@ export async function GET() {
   try {
     const today = new Date();
     const [trackPlays, history] = await Promise.all([
-      fetchRecentTracks(28),
+      fetchRecentTracks(30),
       Promise.resolve(readHistory()),
     ]);
     const entries = computeLastfmChart(trackPlays, history, today);
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
   try {
     const today = new Date();
-    const trackPlays = await fetchRecentTracks(28);
+    const trackPlays = await fetchRecentTracks(30);
     const history = readHistory();
     const entries = computeLastfmChart(trackPlays, history, today);
     const sundayKey = getSundayKey(today);

@@ -152,7 +152,7 @@ export async function fetchTracksBetweenUnix(from: number, toExclusive: number, 
   return Array.from(grouped.values());
 }
 
-export async function fetchRecentTracks(days = 28, usernameOverride?: string): Promise<TrackPlays[]> {
+export async function fetchRecentTracks(days = 30, usernameOverride?: string): Promise<TrackPlays[]> {
   const now = Math.floor(Date.now() / 1000);
   return fetchTracksBetweenUnix(now - days * 86400, now + 1, usernameOverride);
 }

@@ -166,7 +166,7 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
 // POST /api/lastfm/import
 // Body: { weekDate?: "YYYY-MM-DD", limit?: number } — semana (seg–dom) dessa data; sem weekDate = últimos 28 dias.
 // Usa o lastfmUser do perfil do usuário autenticado para buscar os scrobbles.
-// As duas rotas usam scoreLastfmTracks: (últimos 7d ×1.2)+(8–28d ×1) em relação à âncora.
+// As duas rotas usam scoreLastfmTracks: (últimos 7d ×5)+(8–15d ×3)+(16–30d ×2) em relação à âncora.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
       const scoreAnchor = new Date(Date.UTC(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate()));
       topTracks = scoreLastfmTracks(weekPlays, scoreAnchor, limit);
     } else {
-      const days = typeof body.recentDays === "number" && body.recentDays > 0 && body.recentDays <= 90 ? body.recentDays : 28;
+      const days = typeof body.recentDays === "number" && body.recentDays > 0 && body.recentDays <= 90 ? body.recentDays : 30;
       const recentPlays = await fetchRecentTracks(days, lastfmUsername);
       topTracks = scoreLastfmTracks(recentPlays, new Date(), limit);
     }

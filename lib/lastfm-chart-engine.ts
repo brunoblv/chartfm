@@ -2,12 +2,13 @@ import type { TrackPlays } from "./lastfm";
 
 /**
  * Peso por idade do play em relação a `referenceDay` (diffDays = dias corridos UTC):
- * 0–6: ×1.2 | 7–27: ×1 (fora da janela 28 dias → 0).
+ * 0–6: ×5 | 7–14: ×3 | 15–29: ×2 (fora da janela 30 dias → 0).
  */
 function playBlockWeight(diffDays: number): number {
-  if (diffDays < 0 || diffDays > 27) return 0;
-  if (diffDays <= 6) return 1.2;
-  return 1;
+  if (diffDays < 0 || diffDays >= 30) return 0;
+  if (diffDays < 7) return 5;
+  if (diffDays < 15) return 3;
+  return 2;
 }
 
 
@@ -67,7 +68,7 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): num
 
 export function scoreLastfmTracks(
   trackPlays: TrackPlays[],
-  /** Fim do período em UTC (import 28d: `new Date()`; import por semana: domingo fim da parada). Blocos ×1.2 (0–6d) / ×1 (7–27d). */
+  /** Fim do período em UTC (import 30d: `new Date()`; import por semana: domingo fim da parada). Blocos ×5 (0–6d) / ×3 (7–14d) / ×2 (15–29d). */
   referenceDay: Date = new Date(),
   limit = 200,
   minScore = 0,

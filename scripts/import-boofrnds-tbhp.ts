@@ -9,6 +9,7 @@
  * Uso (na raiz do projeto):
  *   npx tsx scripts/import-boofrnds-tbhp.ts --dry-run
  *   npx tsx scripts/import-boofrnds-tbhp.ts
+ *   npx tsx scripts/import-boofrnds-tbhp.ts --years=2017,2018,2026
  *   npx tsx scripts/import-boofrnds-tbhp.ts --file="public/boofrnds/TBHP2026.txt"
  *   npx tsx scripts/import-boofrnds-tbhp.ts --delay-ms=500 --market=US
  *   npx tsx scripts/import-boofrnds-tbhp.ts --skip-weeks=5
@@ -17,7 +18,7 @@
  * Requer .env: DATABASE_URL, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { prisma } from "../lib/prisma";
 import {
@@ -35,7 +36,8 @@ import {
 } from "../lib/spotify-server";
 
 const USER_HANDLE = "boofrnds";
-const DEFAULT_FILE = path.join(process.cwd(), "public", "boofrnds", "TBHP2026.txt");
+const DEFAULT_DIR = path.join(process.cwd(), "public", "boofrnds");
+const DEFAULT_YEARS = Array.from({ length: 10 }, (_, i) => 2017 + i); // 2017-2026
 
 const PALETTES: [string, string][] = [
   ["#FF6B6B", "#FFE66D"],
@@ -236,12 +238,69 @@ async function ensureSong(
   return created;
 }
 
+/**
+ * Localiza e carrega arquivos TBHP para os anos especificados.
+ * Retorna um array de { year, filePath, blocks } ou null se não encontrado.
+ */
+function loadTbhpFiles(dir: string, years: number[]): Array<{ year: number; filePath: string; blocks: WeekBlock[] }> {
+  const results: Array<{ year: number; filePath: string; blocks: WeekBlock[] }> = [];
+
+  // Se --file foi passado, usar um arquivo específico
+  const fileArg = process.argv.find((a) => a.startsWith("--file="));
+  if (fileArg) {
+    const rawPath = fileArg.slice("--file=".length).trim();
+    const absPath = path.isAbsolute(rawPath) ? rawPath : path.join(process.cwd(), rawPath);
+    if (!existsSync(absPath)) {
+      console.error("Arquivo não encontrado:", absPath);
+      process.exit(1);
+    }
+    const raw = readFileSync(absPath, "utf8");
+    const blocks = parseFile(raw);
+    const year = parseInt(path.basename(absPath).match(/\d{4}/)?.[0] ?? "2026", 10);
+    results.push({ year, filePath: absPath, blocks });
+    return results;
+  }
+
+  // Caso contrário, procurar por arquivos TBHPYYYY.txt no diretório
+  if (!existsSync(dir)) {
+    console.warn(`Diretório não encontrado: ${dir}`);
+    return results;
+  }
+
+  const files = readdirSync(dir);
+  const yearsSet = new Set(years);
+
+  for (const file of files) {
+    const yearMatch = file.match(/TBHP(\d{4})\.txt$/i);
+    if (!yearMatch) continue;
+
+    const year = parseInt(yearMatch[1], 10);
+    if (!yearsSet.has(year)) continue;
+
+    const filePath = path.join(dir, file);
+    try {
+      const raw = readFileSync(filePath, "utf8");
+      const blocks = parseFile(raw);
+      if (blocks.length > 0) {
+        results.push({ year, filePath, blocks });
+      }
+    } catch (e) {
+      console.warn(`Erro ao ler ${file}: ${e}`);
+    }
+  }
+
+  // Ordenar por year
+  results.sort((a, b) => a.year - b.year);
+
+  return results;
+}
+
 async function main() {
   loadEnvFile();
 
   const argv = process.argv.slice(2);
   const dryRun = argv.includes("--dry-run");
-  const fileArg = argv.find((a) => a.startsWith("--file="));
+  const yearsArg = argv.find((a) => a.startsWith("--years="));
   const delayArg = argv.find((a) => a.startsWith("--delay-ms="));
   const marketArg = argv.find((a) => a.startsWith("--market="));
   const skipArg = argv.find((a) => a.startsWith("--skip-weeks="));
@@ -250,27 +309,31 @@ async function main() {
   const market = (marketArg?.split("=")[1] ?? "US").trim() || "US";
   const skipWeeks = skipArg ? Math.max(0, parseInt(skipArg.split("=")[1] ?? "0", 10)) : 0;
 
+  const years = yearsArg
+    ? yearsArg
+        .slice("--years=".length)
+        .split(",")
+        .map((y) => parseInt(y.trim(), 10))
+        .filter((y) => Number.isFinite(y))
+    : DEFAULT_YEARS;
+
   if (!spotifyConfigured()) {
     console.error("ERRO: Defina SPOTIFY_CLIENT_ID e SPOTIFY_CLIENT_SECRET no .env");
     process.exit(1);
   }
 
-  const rawPath = fileArg ? fileArg.slice("--file=".length).trim() : DEFAULT_FILE;
-  const absPath = path.isAbsolute(rawPath) ? rawPath : path.join(process.cwd(), rawPath);
-  if (!existsSync(absPath)) {
-    console.error("Arquivo não encontrado:", absPath);
+  const tbhpFiles = loadTbhpFiles(DEFAULT_DIR, years);
+
+  if (tbhpFiles.length === 0) {
+    console.error("Nenhum arquivo TBHP encontrado para os anos especificados");
     process.exit(1);
   }
 
-  const raw = readFileSync(absPath, "utf8");
-  const blocks = parseFile(raw);
-  console.log(`Semanas no arquivo: ${blocks.length}`);
-  if (blocks.length > 0) {
-    console.log(`  Primeira: ${blocks[0].date.toISOString().slice(0, 10)}`);
-    console.log(`  Última:   ${blocks[blocks.length - 1].date.toISOString().slice(0, 10)}`);
+  console.log(`Arquivos encontrados: ${tbhpFiles.length}`);
+  for (const { year, filePath, blocks } of tbhpFiles) {
+    console.log(`  [${year}] ${path.basename(filePath)} — ${blocks.length} semanas`);
   }
-  if (skipWeeks > 0) console.log(`Pulando primeiras ${skipWeeks} semanas`);
-  console.log(`Modo: ${dryRun ? "DRY RUN" : "PRODUÇÃO"} | delay=${delayMs}ms | market=${market}\n`);
+  console.log(`\nModo: ${dryRun ? "DRY RUN" : "PRODUÇÃO"} | delay=${delayMs}ms | market=${market}\n`);
 
   const user = await prisma.user.findFirst({
     where: { handle: { equals: USER_HANDLE, mode: "insensitive" } },
@@ -293,124 +356,132 @@ async function main() {
   let chartCreated = 0;
   let chartSkipped = 0;
   let totalSongsFailed = 0;
+  let totalFilesProcessed = 0;
 
-  const toProcess = blocks.slice(skipWeeks);
+  for (const { year, blocks } of tbhpFiles) {
+    console.log(`\n========== PROCESSANDO ANO ${year} ==========\n`);
 
-  for (let wi = 0; wi < toProcess.length; wi++) {
-    const block = toProcess[wi];
-    const weekIndex = buildWeekIndexFromDate(block.date);
-    const weekLabel = buildWeekLabelFromDate(block.date);
-    const dateRange = buildDateRangeFromDate(block.date);
-    const { end: weekEnd } = getChartWeekRange(block.date);
-    const globalIdx = wi + 1 + skipWeeks;
+    const toProcess = blocks.slice(skipWeeks);
 
-    if (existingIndexes.has(weekIndex)) {
-      chartSkipped++;
-      console.log(`SKIP [${globalIdx}/${blocks.length}] ${weekIndex} já existe`);
-      continue;
-    }
+    for (let wi = 0; wi < toProcess.length; wi++) {
+      const block = toProcess[wi];
+      const weekIndex = buildWeekIndexFromDate(block.date);
+      const weekLabel = buildWeekLabelFromDate(block.date);
+      const dateRange = buildDateRangeFromDate(block.date);
+      const { end: weekEnd } = getChartWeekRange(block.date);
+      const globalIdx = wi + 1 + skipWeeks;
 
-    console.log(`\n[${globalIdx}/${blocks.length}] ${weekIndex} | ${block.date.toISOString().slice(0, 10)} | ${block.entries.length} músicas`);
-
-    if (dryRun) {
-      for (const e of block.entries) {
-        const inDb = await findSongInDb(e.artist, e.title);
-        console.log(`  DRY #${String(e.position).padStart(3)} "${e.title}" — ${e.artist} | base: ${inDb ? "sim" + (inDb.spotifyId ? " (Spotify)" : "") : "não"}`);
-      }
-      chartCreated++;
-      continue;
-    }
-
-    // Load previous week's chart for peak/weeks calculation
-    const prevIdx = prevChartWeekIndex(weekIndex);
-    const prevChart = await prisma.chart.findFirst({
-      where: { userId: user.id, weekIndex: prevIdx },
-      select: { entries: { select: { songId: true, position: true, peak: true, weeks: true } } },
-    });
-    const prevBySongId = new Map(prevChart?.entries.map((e) => [e.songId, e]) ?? []);
-
-    // Create chart
-    const chart = await prisma.chart.create({
-      data: {
-        userId: user.id,
-        weekIndex,
-        weekLabel,
-        dateRange,
-        publishedAt: weekEnd,
-        weekStartDate: block.date,
-        isPublished: true,
-        maxItems: block.entries.length,
-      },
-      select: { id: true },
-    });
-    existingIndexes.add(weekIndex);
-
-    let okCount = 0;
-    let failCount = 0;
-
-    for (const e of block.entries) {
-      const { palette, seed } = paletteFor(e.artist, e.title);
-
-      let songRow: { id: string; spotifyId: string | null; albumSpotifyId: string | null };
-      try {
-        songRow = await ensureSong(e.artist, e.title, market, delayMs);
-      } catch (err) {
-        console.error(`  SONG_ERR pos ${e.position} "${e.title}" — ${e.artist}: ${err}`);
-        failCount++;
-        totalSongsFailed++;
+      if (existingIndexes.has(weekIndex)) {
+        chartSkipped++;
+        console.log(`SKIP [${year}/${globalIdx}/${blocks.length}] ${weekIndex} já existe`);
         continue;
       }
 
-      const prevEntry = prevBySongId.get(songRow.id);
-      let status: string;
-      let delta: number | null;
-      let prevPos: number | null;
-      let peak: number;
-      let weeks: number;
+      console.log(`\n[${year}/${globalIdx}/${blocks.length}] ${weekIndex} | ${block.date.toISOString().slice(0, 10)} | ${block.entries.length} músicas`);
 
-      if (prevEntry) {
-        delta = prevEntry.position - e.position;
-        prevPos = prevEntry.position;
-        status = delta > 0 ? "up" : delta < 0 ? "down" : "same";
-        peak = Math.min(e.position, prevEntry.peak);
-        weeks = prevEntry.weeks + 1;
-      } else {
-        status = "new";
-        delta = null;
-        prevPos = null;
-        peak = e.position;
-        weeks = 1;
+      if (dryRun) {
+        for (const e of block.entries) {
+          const inDb = await findSongInDb(e.artist, e.title);
+          console.log(`  DRY #${String(e.position).padStart(3)} "${e.title}" — ${e.artist} | base: ${inDb ? "sim" + (inDb.spotifyId ? " (Spotify)" : "") : "não"}`);
+        }
+        chartCreated++;
+        continue;
       }
 
-      await prisma.chartEntry.create({
-        data: {
-          chartId: chart.id,
-          songId: songRow.id,
-          position: e.position,
-          points: 101 - e.position,
-          songSpotifyId: songRow.spotifyId,
-          albumSpotifyId: songRow.albumSpotifyId,
-          status,
-          delta,
-          prevPos,
-          peak,
-          weeks,
-          coverPaletteA: palette[0],
-          coverPaletteB: palette[1],
-          coverSeed: seed,
-        },
+      // Load previous week's chart for peak/weeks calculation
+      const prevIdx = prevChartWeekIndex(weekIndex);
+      const prevChart = await prisma.chart.findFirst({
+        where: { userId: user.id, weekIndex: prevIdx },
+        select: { entries: { select: { songId: true, position: true, peak: true, weeks: true } } },
       });
-      okCount++;
-      console.log(`  OK #${String(e.position).padStart(3)} "${e.title}" — ${e.artist}`);
+      const prevBySongId = new Map(prevChart?.entries.map((e) => [e.songId, e]) ?? []);
+
+      // Create chart
+      const chart = await prisma.chart.create({
+        data: {
+          userId: user.id,
+          weekIndex,
+          weekLabel,
+          dateRange,
+          publishedAt: weekEnd,
+          weekStartDate: block.date,
+          isPublished: true,
+          maxItems: block.entries.length,
+        },
+        select: { id: true },
+      });
+      existingIndexes.add(weekIndex);
+
+      let okCount = 0;
+      let failCount = 0;
+
+      for (const e of block.entries) {
+        const { palette, seed } = paletteFor(e.artist, e.title);
+
+        let songRow: { id: string; spotifyId: string | null; albumSpotifyId: string | null };
+        try {
+          songRow = await ensureSong(e.artist, e.title, market, delayMs);
+        } catch (err) {
+          console.error(`  SONG_ERR pos ${e.position} "${e.title}" — ${e.artist}: ${err}`);
+          failCount++;
+          totalSongsFailed++;
+          continue;
+        }
+
+        const prevEntry = prevBySongId.get(songRow.id);
+        let status: string;
+        let delta: number | null;
+        let prevPos: number | null;
+        let peak: number;
+        let weeks: number;
+
+        if (prevEntry) {
+          delta = prevEntry.position - e.position;
+          prevPos = prevEntry.position;
+          status = delta > 0 ? "up" : delta < 0 ? "down" : "same";
+          peak = Math.min(e.position, prevEntry.peak);
+          weeks = prevEntry.weeks + 1;
+        } else {
+          status = "new";
+          delta = null;
+          prevPos = null;
+          peak = e.position;
+          weeks = 1;
+        }
+
+        await prisma.chartEntry.create({
+          data: {
+            chartId: chart.id,
+            songId: songRow.id,
+            position: e.position,
+            points: 101 - e.position,
+            songSpotifyId: songRow.spotifyId,
+            albumSpotifyId: songRow.albumSpotifyId,
+            status,
+            delta,
+            prevPos,
+            peak,
+            weeks,
+            coverPaletteA: palette[0],
+            coverPaletteB: palette[1],
+            coverSeed: seed,
+          },
+        });
+        okCount++;
+        console.log(`  OK #${String(e.position).padStart(3)} "${e.title}" — ${e.artist}`);
+      }
+
+      chartCreated++;
+      if (failCount > 0) {
+        console.log(`  → chart ${chart.id}: ok=${okCount}, FAIL=${failCount}`);
+      }
     }
 
-    chartCreated++;
-    if (failCount > 0) {
-      console.log(`  → chart ${chart.id}: ok=${okCount}, FAIL=${failCount}`);
-    }
+    totalFilesProcessed++;
   }
 
   console.log(`\n=== FIM ===`);
+  console.log(`arquivos_processados=${totalFilesProcessed}`);
   console.log(`charts_criados=${chartCreated}`);
   console.log(`charts_pulados=${chartSkipped}`);
   console.log(`songs_failed_total=${totalSongsFailed}`);
