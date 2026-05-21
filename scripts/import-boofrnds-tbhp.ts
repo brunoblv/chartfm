@@ -151,13 +151,17 @@ async function findSongInDb(artist: string, title: string) {
   });
 }
 
+function songCacheKey(artist: string, title: string): string {
+  return `${artist.toLowerCase()}|||${title.toLowerCase()}`;
+}
+
 /** Spotify search query: strip featuring artists for better match rate. */
 function buildSearchQuery(artist: string, title: string): string {
   const mainArtist = artist.split(/\s+f\/\s+/i)[0].trim();
   return `${mainArtist} ${title}`;
 }
 
-async function ensureSong(
+async function ensureSongUncached(
   artist: string,
   title: string,
   market: string,
@@ -236,6 +240,23 @@ async function ensureSong(
   }
 
   return created;
+}
+
+type SongRef = { id: string; spotifyId: string | null; albumSpotifyId: string | null };
+
+async function ensureSong(
+  artist: string,
+  title: string,
+  market: string,
+  delayMs: number,
+  cache: Map<string, SongRef>,
+): Promise<SongRef> {
+  const key = songCacheKey(artist, title);
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const result = await ensureSongUncached(artist, title, market, delayMs);
+  cache.set(key, result);
+  return result;
 }
 
 /**
@@ -345,6 +366,8 @@ async function main() {
   }
   console.log(`Usuário: @${user.handle} (${user.id})\n`);
 
+  const songCache = new Map<string, SongRef>();
+
   // Pre-load existing week indexes for this user
   const existingRaw = await prisma.chart.findMany({
     where: { userId: user.id },
@@ -412,15 +435,36 @@ async function main() {
       });
       existingIndexes.add(weekIndex);
 
+      // Batch pre-fetch songs with Spotify data into cache — 1 DB query instead of N
+      const toFetch = block.entries.filter((e) => !songCache.has(songCacheKey(e.artist, e.title)));
+      if (toFetch.length > 0) {
+        const batchHits = await prisma.song.findMany({
+          where: { OR: toFetch.map((e) => ({ title: { equals: e.title, mode: "insensitive" as const }, artist: { equals: e.artist, mode: "insensitive" as const } })) },
+          select: { id: true, spotifyId: true, albumSpotifyId: true, title: true, artist: true },
+        });
+        for (const s of batchHits) {
+          const key = songCacheKey(s.artist, s.title);
+          if (s.spotifyId && !songCache.has(key)) {
+            songCache.set(key, { id: s.id, spotifyId: s.spotifyId, albumSpotifyId: s.albumSpotifyId });
+          }
+        }
+      }
+
       let okCount = 0;
       let failCount = 0;
+      const entryData: Array<{
+        chartId: string; songId: string; position: number; points: number;
+        songSpotifyId: string | null; albumSpotifyId: string | null;
+        status: string; delta: number | null; prevPos: number | null;
+        peak: number; weeks: number; coverPaletteA: string; coverPaletteB: string; coverSeed: number;
+      }> = [];
 
       for (const e of block.entries) {
         const { palette, seed } = paletteFor(e.artist, e.title);
 
-        let songRow: { id: string; spotifyId: string | null; albumSpotifyId: string | null };
+        let songRow: SongRef;
         try {
-          songRow = await ensureSong(e.artist, e.title, market, delayMs);
+          songRow = await ensureSong(e.artist, e.title, market, delayMs, songCache);
         } catch (err) {
           console.error(`  SONG_ERR pos ${e.position} "${e.title}" — ${e.artist}: ${err}`);
           failCount++;
@@ -449,23 +493,21 @@ async function main() {
           weeks = 1;
         }
 
-        await prisma.chartEntry.create({
-          data: {
-            chartId: chart.id,
-            songId: songRow.id,
-            position: e.position,
-            points: 101 - e.position,
-            songSpotifyId: songRow.spotifyId,
-            albumSpotifyId: songRow.albumSpotifyId,
-            status,
-            delta,
-            prevPos,
-            peak,
-            weeks,
-            coverPaletteA: palette[0],
-            coverPaletteB: palette[1],
-            coverSeed: seed,
-          },
+        entryData.push({
+          chartId: chart.id,
+          songId: songRow.id,
+          position: e.position,
+          points: 101 - e.position,
+          songSpotifyId: songRow.spotifyId,
+          albumSpotifyId: songRow.albumSpotifyId,
+          status,
+          delta,
+          prevPos,
+          peak,
+          weeks,
+          coverPaletteA: palette[0],
+          coverPaletteB: palette[1],
+          coverSeed: seed,
         });
         okCount++;
         console.log(`  OK #${String(e.position).padStart(3)} "${e.title}" — ${e.artist}`);
