@@ -34,7 +34,7 @@ import {
 } from "../lib/spotify-server";
 
 const USER_HANDLE = "briry";
-const DEFAULT_FILE = path.join(process.cwd(), "public", "brian", "Historic - GLC.txt");
+const DEFAULT_FILE = path.join(process.cwd(), "public", "Brian", "Historic - GLC.txt");
 
 const MONTH_MAP: Record<string, number> = {
   jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
