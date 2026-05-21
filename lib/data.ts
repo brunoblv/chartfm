@@ -118,6 +118,7 @@ const USERS: User[] = [
   { id: "u6", handle: "thiagofarias", name: "Thiago Farias", avatar: "#3A86FF", bio: "R&B, neo-soul, funk carioca", followers: 768, following: 298, streak: 23 },
   { id: "u7", handle: "camilaoliveira", name: "Camila Oliveira", avatar: "#EF476F", bio: "Só ouço música ruim ✨", followers: 2134, following: 567, streak: 54, verified: true },
   { id: "u8", handle: "lucaspereira", name: "Lucas Pereira", avatar: "#FFD166", bio: "Curador musical amador", followers: 412, following: 612, streak: 8 },
+  { id: "u9", handle: "briry", name: "Brian", avatar: "#22C55E", bio: "Music lover.", followers: 0, following: 0, streak: 0 },
 ];
 
 function generateChart(userSeed: number, weekOffset: number, size = 20): Omit<ChartEntry, "status" | "delta" | "prevPos" | "peak" | "weeks">[] {

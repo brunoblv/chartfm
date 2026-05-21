@@ -100,6 +100,14 @@ const USERS = [
     bio: "Lo-fi, ambient e música para estudar.",
     genres: ["lo-fi", "ambient", "chillout"],
   },
+  {
+    handle: "briry",
+    name: "Brian",
+    email: "brian@example.com",
+    avatarColor: "#22C55E",
+    bio: "Music lover.",
+    genres: ["pop", "indie", "alternative"],
+  },
 ];
 
 async function main() {
