@@ -662,6 +662,28 @@ export default function EditChartPage() {
               {importingLastfm ? "Last.fm…" : "↺ Last.fm"}
             </button>
           )}
+          {entries.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setEntries([])}
+              disabled={saving}
+              title="Limpar todas as músicas da lista"
+              style={{
+                border: "1px solid var(--divider-strong)",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
+                borderRadius: 100,
+                padding: "9px 16px",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: saving ? "not-allowed" : "pointer",
+                opacity: saving ? 0.55 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              Limpar lista
+            </button>
+          )}
           <button
             onClick={saveChart}
             disabled={saving || entries.length === 0}

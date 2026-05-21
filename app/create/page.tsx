@@ -799,6 +799,28 @@ export default function CreatePage() {
         >
           {importingLast ? "Importando..." : "Importar anterior"}
         </button>
+        {entries.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setEntries([])}
+            disabled={importingLastfm || importingLast}
+            title="Limpar todas as músicas da lista"
+            style={{
+              border: "1px solid var(--divider-strong)",
+              background: "var(--surface)",
+              color: "var(--text-muted)",
+              borderRadius: 10,
+              padding: "8px 12px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: importingLastfm || importingLast ? "not-allowed" : "pointer",
+              opacity: importingLastfm || importingLast ? 0.65 : 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Limpar lista
+          </button>
+        )}
       </div>
 
       <div>
