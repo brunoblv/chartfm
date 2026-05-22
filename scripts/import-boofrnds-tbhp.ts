@@ -121,7 +121,8 @@ function parseFile(raw: string): WeekBlock[] {
     if (blocks.length === 0) continue;
 
     // Fall offs marker — ignore everything until the next date header
-    if (/^\(\(\s*FALL\s*OFFS\s*\)\)/i.test(line)) {
+    // Supports both formats: "(( FALL OFFS ))" (2018+) and "@ FALL OFFS @" (2017)
+    if (/^\(\(\s*FALL\s*OFFS\s*\)\)/i.test(line) || /^@\s*FALL\s*OFFS\s*@/i.test(line)) {
       inFallOffs = true;
       continue;
     }
@@ -374,7 +375,38 @@ async function main() {
     select: { weekIndex: true },
   });
   const existingIndexes = new Set(existingRaw.map((c) => c.weekIndex));
-  console.log(`Charts já no banco: ${existingIndexes.size}\n`);
+  console.log(`Charts já no banco: ${existingIndexes.size}`);
+
+  // Bulk pre-populate song cache — single batch query for all unique songs across all files
+  {
+    const allPairs: { artist: string; title: string }[] = [];
+    const seen = new Set<string>();
+    for (const { blocks } of tbhpFiles) {
+      for (const block of blocks) {
+        for (const e of block.entries) {
+          const key = songCacheKey(e.artist, e.title);
+          if (!seen.has(key)) { seen.add(key); allPairs.push({ artist: e.artist, title: e.title }); }
+        }
+      }
+    }
+    const CHUNK = 500;
+    let found = 0;
+    for (let i = 0; i < allPairs.length; i += CHUNK) {
+      const chunk = allPairs.slice(i, i + CHUNK);
+      const hits = await prisma.song.findMany({
+        where: { OR: chunk.map((p) => ({ title: { equals: p.title, mode: "insensitive" as const }, artist: { equals: p.artist, mode: "insensitive" as const } })) },
+        select: { id: true, spotifyId: true, albumSpotifyId: true, title: true, artist: true },
+      });
+      for (const s of hits) {
+        const key = songCacheKey(s.artist, s.title);
+        if (!songCache.has(key)) {
+          songCache.set(key, { id: s.id, spotifyId: s.spotifyId, albumSpotifyId: s.albumSpotifyId });
+          found++;
+        }
+      }
+    }
+    console.log(`Cache inicial: ${allPairs.length} músicas únicas, ${found} encontradas no banco\n`);
+  }
 
   let chartCreated = 0;
   let chartSkipped = 0;
@@ -434,21 +466,6 @@ async function main() {
         select: { id: true },
       });
       existingIndexes.add(weekIndex);
-
-      // Batch pre-fetch songs with Spotify data into cache — 1 DB query instead of N
-      const toFetch = block.entries.filter((e) => !songCache.has(songCacheKey(e.artist, e.title)));
-      if (toFetch.length > 0) {
-        const batchHits = await prisma.song.findMany({
-          where: { OR: toFetch.map((e) => ({ title: { equals: e.title, mode: "insensitive" as const }, artist: { equals: e.artist, mode: "insensitive" as const } })) },
-          select: { id: true, spotifyId: true, albumSpotifyId: true, title: true, artist: true },
-        });
-        for (const s of batchHits) {
-          const key = songCacheKey(s.artist, s.title);
-          if (s.spotifyId && !songCache.has(key)) {
-            songCache.set(key, { id: s.id, spotifyId: s.spotifyId, albumSpotifyId: s.albumSpotifyId });
-          }
-        }
-      }
 
       let okCount = 0;
       let failCount = 0;
@@ -511,6 +528,10 @@ async function main() {
         });
         okCount++;
         console.log(`  OK #${String(e.position).padStart(3)} "${e.title}" — ${e.artist}`);
+      }
+
+      if (entryData.length > 0) {
+        await prisma.chartEntry.createMany({ data: entryData });
       }
 
       chartCreated++;

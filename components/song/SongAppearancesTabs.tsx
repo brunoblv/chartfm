@@ -93,7 +93,7 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
       {showCards && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
           {cards.map((s) => (
-            <div key={s.label} style={{ background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 16 }}>
+            <div key={s.label} style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: 16 }}>
               <div style={{ fontSize: 11, color: "#86868B", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.label}</div>
               <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{s.value}</div>
             </div>
@@ -103,7 +103,7 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
 
       {activeTab === "global" && (
         <>
-          <div style={{ marginTop: 14, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", padding: 16 }}>
+          <div style={{ marginTop: 14, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: 16 }}>
             <div style={{ fontSize: 12, color: "#86868B", marginBottom: 6 }}>Pico no Global Top 100</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 28, fontWeight: 800 }}>
               {globalStats.peak === 1 && <Star size={18} color="#FA243C" fill="#FA243C" />}
@@ -116,7 +116,7 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
                 {topUsers.map((row) => (
                   <Link key={row.user.id} href={`/profile/${row.user.handle}`} style={{ textDecoration: "none" }}>
-                    <div style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.06)", padding: 14, textAlign: "center" }}>
+                    <div style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--divider)", padding: 14, textAlign: "center" }}>
                       <div style={{ display: "flex", justifyContent: "center" }}>
                         <Avatar
                           user={{ name: row.user.name, avatar: row.user.avatarColor }}
@@ -124,7 +124,7 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
                           size={52}
                         />
                       </div>
-                      <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: "#1D1D1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {row.user.name}
                       </div>
                       <div style={{ fontSize: 12, color: "#86868B" }}>@{row.user.handle}</div>
@@ -141,20 +141,20 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
       {activeTab === "mine" && (
         <div style={{ marginTop: 14 }}>
           {!isLoggedIn ? (
-            <div style={{ padding: 16, background: "white", borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
-              <span style={{ color: "#1D1D1F", fontWeight: 600 }}>Suas paradas com esta música</span>
+            <div style={{ padding: 16, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>
+              <span style={{ color: "var(--text)", fontWeight: 600 }}>Suas paradas com esta música</span>
               {" — "}
               entre na sua conta para ver posição, datas e ano em cada semana em que você publicou esta faixa.
             </div>
           ) : myAppearances.length > 0 ? (
-            <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "60px minmax(0,1fr) 110px 70px 110px",
                   padding: "0 20px",
-                  background: "rgba(0,0,0,0.02)",
-                  borderBottom: "1px solid rgba(0,0,0,0.06)",
+                  background: "var(--fill-inset)",
+                  borderBottom: "1px solid var(--divider)",
                 }}
               >
                 {(["Pos", "Semana", "Semana do ano", "Ano", ""] as const).map((h, i) => (
@@ -182,7 +182,7 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
                         fontSize: 18,
                         fontWeight: 700,
                         letterSpacing: "-0.04em",
-                        color: "#000",
+                        color: "var(--text)",
                         fontVariantNumeric: "tabular-nums",
                         textAlign: "right",
                         paddingRight: 12,
@@ -190,7 +190,7 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
                     >
                       {row.position}
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#1D1D1F", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {row.dateRange}
                     </div>
                     <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>

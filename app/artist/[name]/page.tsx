@@ -641,7 +641,7 @@ export default async function ArtistPage({
     <Shell title="" noPadding>
       {/* Hero */}
       <div style={{
-        background: `linear-gradient(180deg, ${palette[0]} 0%, ${palette[1]} 50%, #FBFBFD 100%)`,
+        background: `linear-gradient(180deg, ${palette[0]} 0%, ${palette[1]} 50%, var(--bg) 100%)`,
         padding: "48px 40px 40px 40px",
       }}>
         <Link href="/discover" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 500, textDecoration: "none", marginBottom: 32 }}>
@@ -719,7 +719,7 @@ export default async function ArtistPage({
         {/* Stats cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 28, marginBottom: 28 }}>
           {activeStats.map((s) => (
-            <div key={s.label} style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20 }}>
+            <div key={s.label} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.color + "18", display: "grid", placeItems: "center", marginBottom: 12, fontSize: 22 }}>{s.icon}</div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
               <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
@@ -753,11 +753,11 @@ export default async function ArtistPage({
 
         {/* Tab: Músicas / Músicas na parada */}
         {(tab === "songs" || tab === "user-songs") && (
-          <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: 40 }}>
+          <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden", marginBottom: 40 }}>
             {tab === "user-songs" && !currentUserId ? (
               <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "#1D1D1F" }}>Faça login para ver suas músicas</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>Faça login para ver suas músicas</div>
                 <div style={{ fontSize: 14, marginBottom: 20 }}>Veja quais músicas deste artista aparecem nas suas paradas pessoais.</div>
                 <Link href="/login" style={{ display: "inline-block", background: palette[0], color: "white", textDecoration: "none", padding: "10px 24px", borderRadius: 100, fontSize: 14, fontWeight: 700 }}>
                   Entrar
@@ -766,18 +766,18 @@ export default async function ArtistPage({
             ) : tab === "user-songs" && userSongs.length === 0 ? (
               <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhuma música nas suas paradas</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhuma música nas suas paradas</div>
                 <div style={{ fontSize: 14 }}>Você ainda não adicionou músicas deste artista às suas paradas.</div>
               </div>
             ) : tab === "songs" && songs.length === 0 ? (
               <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhuma música cadastrada</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhuma música cadastrada</div>
                 <div style={{ fontSize: 14 }}>Ainda não há faixas deste artista no banco de dados.</div>
               </div>
             ) : (
               <>
-                <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>
                     {tab === "user-songs" ? "Nas suas paradas" : "Músicas"}
                   </h2>
@@ -859,13 +859,13 @@ export default async function ArtistPage({
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div style={{ padding: "16px 24px", borderTop: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ padding: "16px 24px", borderTop: "1px solid var(--divider)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontSize: 13, color: "#86868B" }}>
                       {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, activeSongs.length)} de {activeSongs.length}
                     </span>
                     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       {safePage > 1 ? (
-                        <Link href={`?tab=${tab}&page=${safePage - 1}`} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "#1D1D1F" }}>←</Link>
+                        <Link href={`?tab=${tab}&page=${safePage - 1}`} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--divider-strong)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "var(--text)" }}>←</Link>
                       ) : (
                         <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, color: "#C7C7CC" }}>←</span>
                       )}
@@ -873,13 +873,13 @@ export default async function ArtistPage({
                         p === "..." ? (
                           <span key={`e-${idx}`} style={{ padding: "6px 4px", fontSize: 13, color: "#86868B" }}>…</span>
                         ) : (
-                          <Link key={p} href={`?tab=${tab}&page=${p}`} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", background: p === safePage ? palette[0] : "transparent", color: p === safePage ? "white" : "#1D1D1F", border: p === safePage ? "none" : "1px solid rgba(0,0,0,0.12)" }}>
+                          <Link key={p} href={`?tab=${tab}&page=${p}`} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", background: p === safePage ? palette[0] : "transparent", color: p === safePage ? "white" : "var(--text)", border: p === safePage ? "none" : "1px solid var(--divider-strong)" }}>
                             {p}
                           </Link>
                         )
                       )}
                       {safePage < totalPages ? (
-                        <Link href={`?tab=${tab}&page=${safePage + 1}`} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.12)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "#1D1D1F" }}>→</Link>
+                        <Link href={`?tab=${tab}&page=${safePage + 1}`} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--divider-strong)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "var(--text)" }}>→</Link>
                       ) : (
                         <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, color: "#C7C7CC" }}>→</span>
                       )}
@@ -895,24 +895,24 @@ export default async function ArtistPage({
         {(tab === "albums" || tab === "user-albums") && (
           <div style={{ marginBottom: 40 }}>
             {tab === "user-albums" && !currentUserId ? (
-              <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 48, textAlign: "center", color: "#86868B" }}>
+              <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "#1D1D1F" }}>Faça login para ver seus álbuns</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>Faça login para ver seus álbuns</div>
                 <div style={{ fontSize: 14, marginBottom: 20 }}>Veja quais álbuns deste artista você mais pontuou nas suas paradas.</div>
                 <Link href="/login" style={{ display: "inline-block", background: palette[0], color: "white", textDecoration: "none", padding: "10px 24px", borderRadius: 100, fontSize: 14, fontWeight: 700 }}>
                   Entrar
                 </Link>
               </div>
             ) : tab === "user-albums" && userAlbums.length === 0 ? (
-              <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 48, textAlign: "center", color: "#86868B" }}>
+              <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>💿</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhum álbum nas suas paradas</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhum álbum nas suas paradas</div>
                 <div style={{ fontSize: 14 }}>Você ainda não adicionou músicas deste artista às suas paradas.</div>
               </div>
             ) : tab === "albums" && allAlbums.length === 0 ? (
-              <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 48, textAlign: "center", color: "#86868B" }}>
+              <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>💿</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#1D1D1F", marginBottom: 8 }}>Nenhum álbum cadastrado</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhum álbum cadastrado</div>
                 <div style={{ fontSize: 14 }}>Ainda não há álbuns deste artista vinculados no banco ou nas paradas.</div>
               </div>
             ) : (
@@ -928,9 +928,9 @@ export default async function ArtistPage({
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
                   {(tab === "albums" ? allAlbums : userAlbums).map((album) => (
                     <Link key={album.name} href={buildAlbumPath(album.name, canonicalName, { artistId: artistRef?.id, albumId: album.albumId })} style={{ textDecoration: "none" }}>
-                      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 16 }}>
+                      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 16 }}>
                         <Cover cover={album.cover} song={{ title: album.name, artist: canonicalName, album: album.name }} size={128} rounded={10} />
-                        <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "#1D1D1F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.name}</div>
+                        <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.name}</div>
                         <div style={{ fontSize: 12, color: "#86868B" }}>{album.songs} {album.songs === 1 ? "faixa" : "faixas"}</div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: palette[0], marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{album.points} pts</div>
                       </div>
@@ -949,9 +949,9 @@ export default async function ArtistPage({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
               {bigFans.map(({ user, points }) => (
                 <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
-                  <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, textAlign: "center" }}>
+                  <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20, textAlign: "center" }}>
                     <Avatar user={user} imageUrl={user.image} size={56} />
-                    <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "#1D1D1F" }}>{user.name}</div>
+                    <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{user.name}</div>
                     <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
                     <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>Pontos no artista</div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>

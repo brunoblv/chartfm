@@ -261,7 +261,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           <div style={{ minWidth: 280 }}>
             <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.05 }}>{title}</div>
             <div style={{ marginTop: 10, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
-              <Link href={buildArtistPath(artist, artistSpotifyId, artistDbId)} style={{ display: "block", fontSize: 16, fontWeight: 600, color: "#1D1D1F", textDecoration: "none", lineHeight: 1.35 }}>
+              <Link href={buildArtistPath(artist, artistSpotifyId, artistDbId)} style={{ display: "block", fontSize: 16, fontWeight: 600, color: "var(--text)", textDecoration: "none", lineHeight: 1.35 }}>
                 {artist}
               </Link>
               {album.trim() ? (
@@ -292,7 +292,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         />
 
         {!hasChartPresence && (
-          <div style={{ marginTop: 20, padding: 14, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B" }}>
+          <div style={{ marginTop: 20, padding: 14, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)" }}>
             Esta faixa ainda não aparece em nenhuma parada publicada. Os números abaixo ficam zerados até alguém votar com ela.
           </div>
         )}
