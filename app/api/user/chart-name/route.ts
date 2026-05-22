@@ -14,7 +14,9 @@ export async function GET() {
     select: { paradaNome: true },
   });
 
-  return NextResponse.json({ paradaNome: user?.paradaNome ?? null });
+  return NextResponse.json({ paradaNome: user?.paradaNome ?? null }, {
+    headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+  });
 }
 
 export async function PATCH(req: Request) {

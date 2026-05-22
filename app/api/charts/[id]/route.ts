@@ -6,6 +6,7 @@ import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById } from "@/lib/spotify-server";
+import type { PersonalDropoutEntry } from "@/lib/types";
 
 export const runtime = "nodejs";
 const NO_CACHE_HEADERS = {
@@ -113,11 +114,24 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   const songIdToKey = new Map(
     row.entries.map((e) => [e.songId, `${e.song.exhibitionName?.trim() || e.song.title}\0${e.song.artist}`]),
   );
-  const [previousChart, nextChart] = await Promise.all([
+  const [previousChartFull, nextChart] = await Promise.all([
     prisma.chart.findFirst({
       where: { userId: row.userId, weekIndex: { lt: row.weekIndex } },
       orderBy: { weekIndex: "desc" },
-      select: { id: true, weekLabel: true },
+      include: {
+        entries: {
+          orderBy: { position: "asc" },
+          include: {
+            song: {
+              include: {
+                albumRef: { select: { id: true, coverUrl: true } },
+                artistRef: { select: { id: true, name: true } },
+                feats: { include: { artist: { select: { name: true } } } },
+              },
+            },
+          },
+        },
+      },
     }),
     prisma.chart.findFirst({
       where: { userId: row.userId, weekIndex: { gt: row.weekIndex } },
@@ -125,6 +139,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       select: { id: true, weekLabel: true },
     }),
   ]);
+  const previousChart = previousChartFull
+    ? { id: previousChartFull.id, weekLabel: previousChartFull.weekLabel }
+    : null;
 
   const [historyAgg, personalOnesAgg, globalOnesAgg, prevPositionsRaw] = await Promise.all([
     prisma.chartEntry.groupBy({
@@ -206,6 +223,38 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     };
   });
 
+  const currentSongIdSet = new Set(currentSongIds);
+  const dropouts: PersonalDropoutEntry[] = (previousChartFull?.entries ?? [])
+    .filter((e) => !currentSongIdSet.has(e.songId))
+    .sort((a, b) => a.position - b.position)
+    .map((e) => {
+      const img = e.song.albumRef?.coverUrl?.trim() || null;
+      return {
+        lastPos: e.position,
+        song: {
+          id: e.song.id,
+          title: e.song.exhibitionName?.trim() || e.song.title,
+          artist: e.song.artistRef?.name?.trim() || e.song.artist,
+          slugArtist: e.song.artist,
+          featArtists: (e.song.feats ?? []).map((f) => f.artist.name),
+          album: e.song.album ?? "",
+          spotifyId: e.song.spotifyId ?? null,
+          artistSpotifyId: e.song.artistSpotifyId ?? null,
+          artistRefId: e.song.artistRef?.id ?? null,
+          albumRefId: e.song.albumRef?.id ?? null,
+          imageUrl: img,
+        },
+        cover: {
+          palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
+          seed: e.coverSeed,
+          imageUrl: img,
+        },
+        peak: e.peak,
+        weeks: e.weeks,
+        points: e.points,
+      };
+    });
+
   let liked = false;
   let reposted = false;
   if (session?.user?.id) {
@@ -236,6 +285,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       globalNumberOnes,
       liked,
       reposted,
+      dropouts,
     },
     { headers: NO_CACHE_HEADERS },
   );

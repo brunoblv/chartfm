@@ -17,10 +17,10 @@ import { timeAgo } from "@/lib/time-ago";
 import { buildAlbumPath, buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { TIMELINE } from "@/lib/data";
-import type { ChartEntry, TimelineItem, User } from "@/lib/types";
+import type { ChartEntry, PersonalDropoutEntry, TimelineItem, User } from "@/lib/types";
 
 type Variant = "list" | "grid" | "podium";
-type Tab = "chart" | "comments" | "overlap";
+type Tab = "chart" | "comments" | "overlap" | "saidas";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -46,6 +46,21 @@ export type CommentRow = {
   text: string;
   likes: number;
   reactions: string[];
+  replyCount: number;
+  createdAt: string;
+  user: {
+    id: string;
+    handle: string;
+    name: string;
+    avatarColor: string;
+    image: string | null;
+  };
+};
+
+type CommentReplyRow = {
+  id: string;
+  text: string;
+  likes: number;
   createdAt: string;
   user: {
     id: string;
@@ -143,6 +158,7 @@ export default function ChartDetailPage() {
   const ownerParadaLogo = dbPayload?.paradaLogo ?? null;
   const personalNumberOnes = dbPayload?.personalNumberOnes ?? {};
   const globalNumberOnes = dbPayload?.globalNumberOnes ?? {};
+  const dropouts: PersonalDropoutEntry[] = dbPayload?.dropouts ?? [];
   const isDbChart = !!dbPayload;
 
   useEffect(() => {
@@ -433,7 +449,7 @@ export default function ChartDetailPage() {
 <div style={{ padding: isMobile ? "0 0 80px 0" : "0 40px 80px 40px" }}>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--divider)", marginBottom: 24, overflowX: "auto", padding: isMobile ? "0 16px" : 0 }}>
-        {([["chart", "Parada"], ["comments", "Comentários"], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
+        {([["chart", "Parada"], ["saidas", `Saídas${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`], ["comments", "Comentários"], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -462,6 +478,7 @@ export default function ChartDetailPage() {
           {variant === "podium" && <PodiumVariant entries={chart.entries} />}
         </>
       )}
+      {tab === "saidas" && <PersonalDropoutsTab dropouts={dropouts} isDbChart={isDbChart} />}
       {tab === "comments" && (
         <CommentsTab
           chartId={chart.id}
@@ -683,6 +700,249 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
   );
 }
 
+function PersonalExitBadge() {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 700, letterSpacing: "-0.01em", padding: "2px 7px", borderRadius: 6, background: "#1C1C1E", color: "#fff", whiteSpace: "nowrap", flexShrink: 0 }}>
+      SAIU
+    </span>
+  );
+}
+
+function PersonalDropoutsTab({ dropouts, isDbChart }: { dropouts: PersonalDropoutEntry[]; isDbChart: boolean }) {
+  const isMobile = useIsMobile();
+
+  if (!isDbChart) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, color: "var(--text-muted)", fontSize: 14 }}>
+        Recurso disponível apenas para paradas salvas no banco.
+      </div>
+    );
+  }
+
+  if (dropouts.length === 0) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+        Nenhuma saída nesta semana — primeira parada ou todas as músicas permaneceram.
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+        {dropouts.map((e) => (
+          <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "flex", alignItems: "center", padding: "10px 16px", borderBottom: "1px solid var(--divider-soft)", gap: 12 }}>
+            <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: e.lastPos <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                {e.lastPos}
+              </div>
+              <div style={{ marginTop: 2 }}><PersonalExitBadge /></div>
+            </div>
+            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+              <Cover cover={e.cover} song={e.song} size={52} rounded={8} />
+            </Link>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                {e.song.title}
+              </Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                {formatSongArtist(e.song)}
+              </Link>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+              <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+              <StatPill label="SEM" value={e.weeks} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 60px", gap: 0, padding: "0 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+        {["Últ.", "", "", "Música", "Pico", "Sem."].map((h, i) => (
+          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
+        ))}
+      </div>
+      {dropouts.map((e) => (
+        <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 60px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)", gap: 0 }}>
+          <div style={{ fontSize: e.lastPos <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12 }}>
+            {e.lastPos}
+          </div>
+          <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
+            <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
+          </Link>
+          <div style={{ padding: "0 8px" }}><PersonalExitBadge /></div>
+          <div style={{ minWidth: 0, padding: "0 12px" }}>
+            <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+            {e.song.album?.trim() ? (
+              <Link href={buildAlbumPath(e.song.album.trim(), e.song.artist, { artistId: e.song.artistRefId, albumId: e.song.albumRefId })} style={{ display: "block", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                {e.song.album}
+              </Link>
+            ) : null}
+          </div>
+          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3 }}>
+            {e.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
+            {e.peak}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{e.weeks}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: string }) {
+  const { data: session } = useSession();
+  const [repliesOpen, setRepliesOpen] = useState(false);
+  const [replies, setReplies] = useState<CommentReplyRow[]>([]);
+  const [repliesLoaded, setRepliesLoaded] = useState(false);
+  const [loadingReplies, setLoadingReplies] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
+  const [replyCount, setReplyCount] = useState(comment.replyCount);
+
+  async function loadReplies() {
+    setLoadingReplies(true);
+    try {
+      const res = await fetch(`/api/charts/${chartId}/comment/${comment.id}/replies`);
+      if (res.ok) {
+        const data = (await res.json()) as CommentReplyRow[];
+        setReplies(data);
+      }
+    } finally {
+      setRepliesLoaded(true);
+      setLoadingReplies(false);
+    }
+  }
+
+  function toggleReplies() {
+    if (!repliesOpen) {
+      setRepliesOpen(true);
+      if (!repliesLoaded) loadReplies();
+    } else {
+      setRepliesOpen(false);
+    }
+  }
+
+  async function submitReply() {
+    const text = replyText.trim();
+    if (!text || submittingReply) return;
+    setSubmittingReply(true);
+    try {
+      const res = await fetch(`/api/charts/${chartId}/comment/${comment.id}/replies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        const newReply = (await res.json()) as CommentReplyRow;
+        setReplies((prev) => [...prev, newReply]);
+        setReplyCount((n) => n + 1);
+        setReplyText("");
+        if (!repliesLoaded) setRepliesLoaded(true);
+        if (!repliesOpen) setRepliesOpen(true);
+      }
+    } finally {
+      setSubmittingReply(false);
+    }
+  }
+
+  return (
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
+      <div style={{ display: "flex", gap: 12 }}>
+        <Avatar user={{ name: comment.user.name, avatar: comment.user.avatarColor }} imageUrl={comment.user.image} size={36} />
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+            <Link href={`/profile/${comment.user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>{comment.user.name}</Link>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>@{comment.user.handle}</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>{timeAgo(comment.createdAt)}</span>
+          </div>
+          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--text)", marginBottom: 10 }}>{comment.text}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "var(--text-muted)", fontSize: 13, cursor: "pointer" }}>
+              <Heart size={14} />
+              {comment.likes > 0 && <span>{comment.likes}</span>}
+            </button>
+            <button
+              onClick={toggleReplies}
+              style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: repliesOpen ? "var(--accent)" : "var(--text-muted)", fontSize: 13, fontWeight: repliesOpen ? 600 : 400, cursor: "pointer" }}
+            >
+              <MessageCircle size={14} />
+              {replyCount > 0 ? `${replyCount} resposta${replyCount !== 1 ? "s" : ""}` : "Responder"}
+            </button>
+            {comment.reactions.length > 0 && (
+              <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
+                {comment.reactions.map((r, i) => (
+                  <span key={i} style={{ background: "rgba(0,0,0,0.04)", borderRadius: 12, padding: "2px 8px", fontSize: 12 }}>{r}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {repliesOpen && (
+        <div style={{ marginTop: 16, marginLeft: 48, borderLeft: "2px solid var(--divider)", paddingLeft: 16 }}>
+          {session?.user && (
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 12 }}>
+              <Avatar user={{ name: session.user.name ?? "", avatar: "#FA243C" }} imageUrl={session.user.image ?? null} size={28} />
+              <div style={{ flex: 1 }}>
+                <input
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitReply(); } }}
+                  placeholder="Escreva uma resposta..."
+                  style={{ width: "100%", border: "none", outline: "none", fontSize: 13, color: "var(--text)", padding: "6px 0", background: "transparent", borderBottom: "1px solid var(--divider)" }}
+                />
+                {replyText.trim() && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+                    <button onClick={() => setReplyText("")} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={submitReply}
+                      disabled={submittingReply}
+                      style={{ background: "var(--accent)", color: "white", border: "none", padding: "5px 14px", borderRadius: 100, fontSize: 12, fontWeight: 700, cursor: submittingReply ? "default" : "pointer", opacity: submittingReply ? 0.6 : 1 }}
+                    >
+                      {submittingReply ? "Enviando…" : "Responder"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {loadingReplies && (
+            <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "8px 0" }}>Carregando respostas…</div>
+          )}
+
+          {repliesLoaded && replies.length === 0 && !loadingReplies && (
+            <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "4px 0" }}>Sem respostas ainda.</div>
+          )}
+
+          {replies.map((r) => (
+            <div key={r.id} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+              <Avatar user={{ name: r.user.name, avatar: r.user.avatarColor }} imageUrl={r.user.image} size={28} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
+                  <Link href={`/profile/${r.user.handle}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>{r.user.name}</Link>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>@{r.user.handle}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: "auto" }}>{timeAgo(r.createdAt)}</span>
+                </div>
+                <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text)", margin: 0 }}>{r.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CommentsTab({
   chartId,
   isDbChart,
@@ -770,7 +1030,6 @@ function CommentsTab({
         </div>
       </div>
 
-      {/* Comments list */}
       {loading && (
         <div style={{ color: "var(--text-muted)", fontSize: 14, padding: "12px 0" }}>Carregando comentários…</div>
       )}
@@ -778,32 +1037,7 @@ function CommentsTab({
         <div style={{ color: "var(--text-muted)", fontSize: 14, padding: "12px 0" }}>Nenhum comentário ainda. Seja o primeiro!</div>
       )}
       {comments.map((c) => (
-        <div key={c.id} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-          <div style={{ display: "flex", gap: 12 }}>
-            <Avatar user={{ name: c.user.name, avatar: c.user.avatarColor }} imageUrl={c.user.image} size={36} />
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-                <Link href={`/profile/${c.user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>{c.user.name}</Link>
-                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>@{c.user.handle}</span>
-                <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>{timeAgo(c.createdAt)}</span>
-              </div>
-              <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--text)", marginBottom: 10 }}>{c.text}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <button style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "var(--text-muted)", fontSize: 13, cursor: "pointer" }}>
-                  <Heart size={14} />
-                </button>
-                <button style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 13, cursor: "pointer" }}>Responder</button>
-                {c.reactions.length > 0 && (
-                  <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
-                    {c.reactions.map((r, i) => (
-                      <span key={i} style={{ background: "rgba(0,0,0,0.04)", borderRadius: 12, padding: "2px 8px", fontSize: 12 }}>{r}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <CommentItem key={c.id} comment={c} chartId={chartId} />
       ))}
     </div>
   );

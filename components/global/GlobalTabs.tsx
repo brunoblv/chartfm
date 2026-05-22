@@ -102,13 +102,15 @@ export function GlobalTabs({
   weeklyArtists,
   overallSongs,
   overallArtists,
+  weeklyDropouts = [],
 }: {
   weeklySongs: SongEntry[];
   weeklyArtists: ArtistEntry[];
   overallSongs: SongEntry[];
   overallArtists: ArtistEntry[];
+  weeklyDropouts?: SongEntry[];
 }) {
-  const [tab, setTab] = useState<"songs" | "artists">("songs");
+  const [tab, setTab] = useState<"songs" | "artists" | "saidas">("songs");
   const [viewSize, setViewSize] = useState<"small" | "large">("small");
   const [period, setPeriod] = useState<"weekly" | "overall">("weekly");
   const isMobile = useIsMobile();
@@ -119,39 +121,43 @@ export function GlobalTabs({
     <div>
       {/* Tab bar */}
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 10, marginBottom: 20 }}>
-        {/* Main tab: Músicas / Artistas */}
+        {/* Main tab: Músicas / Artistas / Saídas */}
         <div style={{ ...segmentContainer, width: isMobile ? "100%" : "fit-content" }}>
-          {(["songs", "artists"] as const).map((t) => (
+          {(["songs", "artists", "saidas"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               style={{ ...segmentBtn(tab === t), flex: isMobile ? 1 : undefined, padding: isMobile ? "10px 0" : "8px 20px" }}
             >
               {isMobile
-                ? (t === "songs" ? "Músicas" : "Artistas")
-                : (t === "songs" ? "Top 100 Músicas" : "Top 100 Artistas")}
+                ? (t === "songs" ? "Músicas" : t === "artists" ? "Artistas" : "Saídas")
+                : (t === "songs" ? "Top 100 Músicas" : t === "artists" ? "Top 100 Artistas" : `Saídas${weeklyDropouts.length > 0 ? ` (${weeklyDropouts.length})` : ""}`)}
             </button>
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {/* Period: Semanal / Overall */}
-          <div style={{ ...segmentContainer, flex: isMobile ? 1 : undefined }}>
-            <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>Semanal</button>
-            <button onClick={() => setPeriod("overall")} style={{ ...segmentBtnSm(period === "overall"), flex: isMobile ? 1 : undefined }}>Overall</button>
-          </div>
-
-          {/* Size toggle: hidden on mobile */}
-          {!isMobile && (
-            <div style={segmentContainer}>
-              <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>Menor</button>
-              <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>Maior</button>
+        {tab !== "saidas" && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Period: Semanal / Overall */}
+            <div style={{ ...segmentContainer, flex: isMobile ? 1 : undefined }}>
+              <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>Semanal</button>
+              <button onClick={() => setPeriod("overall")} style={{ ...segmentBtnSm(period === "overall"), flex: isMobile ? 1 : undefined }}>Overall</button>
             </div>
-          )}
-        </div>
+
+            {/* Size toggle: hidden on mobile */}
+            {!isMobile && (
+              <div style={segmentContainer}>
+                <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>Menor</button>
+                <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>Maior</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {tab === "songs" ? (
+      {tab === "saidas" ? (
+        <DropoutsGlobalTable songs={weeklyDropouts} viewSize={viewSize} isMobile={isMobile} />
+      ) : tab === "songs" ? (
         <SongsTable songs={songs} viewSize={viewSize} isMobile={isMobile} />
       ) : (
         <ArtistsTable artists={artists} viewSize={viewSize} isMobile={isMobile} />
@@ -285,6 +291,110 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
             color: (e.growthPct ?? null) !== null && (e.growthPct ?? 0) >= 0 ? "var(--up-fg)" : "var(--down-fg)",
           }}>
             {(e.growthPct ?? null) === null ? "—" : `${(e.growthPct ?? 0) >= 0 ? "+" : ""}${(e.growthPct ?? 0).toFixed(1)}%`}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExitBadge() {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 700, letterSpacing: "-0.01em", padding: "2px 7px", borderRadius: 6, background: "#1C1C1E", color: "#fff", whiteSpace: "nowrap", flexShrink: 0 }}>
+      SAIU
+    </span>
+  );
+}
+
+function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSize: "small" | "large"; isMobile: boolean }) {
+
+  if (songs.length === 0) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" as const, color: "var(--text-muted)", fontSize: 14 }}>
+        Nenhuma saída esta semana.
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+        {songs.map((e) => (
+          <div key={e.position} style={{ display: "flex", alignItems: "center", padding: "10px 16px", borderBottom: "1px solid var(--divider-soft)", gap: 12 }}>
+            <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: e.position <= 3 ? 22 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                {e.position}
+              </div>
+              <div style={{ marginTop: 2 }}><ExitBadge /></div>
+            </div>
+            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+              <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={50} rounded={8} />
+            </Link>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                {e.song.title}
+              </Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                {formatSongArtist(e.song)}
+              </Link>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+              <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+              <StatPill label="SEM" value={e.weeks} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const isLarge = viewSize === "large";
+  const gridCols = isLarge
+    ? "80px 112px 120px minmax(0,1fr) 96px 96px 80px 120px"
+    : "60px 76px 90px minmax(0,1fr) 80px 80px 70px 100px";
+  const rowPadding = isLarge ? "14px 24px" : "8px 20px";
+  const coverSize = isLarge ? 92 : 60;
+  const posSize = isLarge ? 28 : 20;
+  const titleSize = isLarge ? 17 : 14;
+  const artistSize = isLarge ? 14 : 12;
+  const valueSize = isLarge ? 16 : 13;
+  const pointsSize = isLarge ? 19 : 15;
+
+  return (
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: gridCols, padding: isLarge ? "12px 24px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+        {["Últ.", "", "", "Música", "Semana ant.", "Sem.", "Pico", "Pontos"].map((h, i) => (
+          <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
+        ))}
+      </div>
+      {songs.map((e) => (
+        <div key={e.position} style={{ display: "grid", gridTemplateColumns: gridCols, alignItems: "center", padding: rowPadding, borderBottom: "1px solid var(--divider-soft)", gap: 0 }}>
+          <div style={{ fontSize: posSize, fontWeight: 700, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", textAlign: "right" as const, paddingRight: 12, letterSpacing: "-0.02em" }}>
+            {e.position}
+          </div>
+          <Link href={buildSongPath(e.song)} style={{ padding: "6px 8px", lineHeight: 0 }}>
+            <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={coverSize} rounded={isLarge ? 14 : 10} />
+          </Link>
+          <div style={{ padding: "0 8px" }}><ExitBadge /></div>
+          <div style={{ padding: "0 12px", minWidth: 0 }}>
+            <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: titleSize, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "inherit", textDecoration: "none" }}>
+              {e.song.title}
+            </Link>
+            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: artistSize, color: "var(--text-muted)", textDecoration: "none" }}>
+              {formatSongArtist(e.song)}
+            </Link>
+          </div>
+          <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            {e.prevPos ?? "—"}
+          </div>
+          <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            {e.weeks}
+          </div>
+          <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)" }}>
+            {e.peak}
+          </div>
+          <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
+            {e.points}
           </div>
         </div>
       ))}

@@ -56,6 +56,15 @@ export interface ChartEntry {
   weeks: number;
 }
 
+export interface PersonalDropoutEntry {
+  lastPos: number;
+  song: Song;
+  cover: Cover;
+  peak: number;
+  weeks: number;
+  points: number;
+}
+
 export interface Chart {
   id: string;
   week: number;

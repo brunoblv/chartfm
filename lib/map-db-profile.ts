@@ -1,4 +1,4 @@
-import type { Chart, ChartEntry, User, UserWithCharts } from "@/lib/types";
+import type { Chart, ChartEntry, PersonalDropoutEntry, User, UserWithCharts } from "@/lib/types";
 
 type PrismaProfileUser = {
   id: string;
@@ -201,6 +201,7 @@ export type ChartDetailPayload = {
   nextChart?: { id: string; weekLabel: string } | null;
   personalNumberOnes?: Record<string, number>;
   globalNumberOnes?: Record<string, number>;
+  dropouts?: PersonalDropoutEntry[];
 };
 
 /** Uma parada com autor (para página de detalhe). */

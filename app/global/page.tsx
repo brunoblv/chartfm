@@ -142,6 +142,21 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
     currentIndexInList >= 0 && currentIndexInList < availableWeekIndexes.length - 1
       ? availableWeekIndexes[currentIndexInList + 1]
       : null;
+  const prevSnapshotRow = olderWeek
+    ? await prisma.globalSnapshot.findUnique({ where: { weekIndex: olderWeek } })
+    : null;
+  const prevWeeklySongs = prevSnapshotRow
+    ? (prevSnapshotRow.weeklySongs as unknown as typeof globalSongs)
+    : [];
+
+  function songKey(song: { spotifyId?: string | null; title: string; artist: string }): string {
+    if (song.spotifyId) return `spotify:${song.spotifyId}`;
+    return `local:${song.title.trim().toLowerCase()}|${song.artist.trim().toLowerCase()}`;
+  }
+  const currentKeySet = new Set(globalSongs.map((s) => songKey(s.song)));
+  const weeklyDropoutsRaw = prevWeeklySongs.filter((s) => !currentKeySet.has(songKey(s.song)));
+  const weeklyDropouts = await hydrateSongCovers(weeklyDropoutsRaw);
+
   const imageMap = await resolveArtistImages(
     [...topArtists, ...topArtistsOverall].map((a) => ({ name: a.name, spotifyId: a.spotifyId }))
   );
@@ -242,6 +257,7 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
           weeklyArtists={topArtistsWithImages}
           overallSongs={overallSongs}
           overallArtists={topArtistsOverallWithImages}
+          weeklyDropouts={weeklyDropouts}
         />
       </section>
 

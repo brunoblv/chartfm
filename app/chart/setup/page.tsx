@@ -45,10 +45,10 @@ export default function ParadaSetupPage() {
   };
 
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#FBFBFD", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
+    <div style={{ width: "100%", minHeight: "100svh", background: "#FBFBFD", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
 
       {/* Top bar */}
-      <div style={{ padding: "24px 48px", display: "flex", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
+      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FA243C", display: "grid", placeItems: "center" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" stroke="white" strokeWidth="2.4" fill="none" strokeLinecap="round">
@@ -62,15 +62,15 @@ export default function ParadaSetupPage() {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: "100%", maxWidth: 480, padding: "0 24px" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 0 32px" }}>
+        <div style={{ width: "100%", maxWidth: 480, padding: "0 20px" }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
             Primeira vez aqui
           </div>
-          <h1 style={{ fontSize: 42, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 12px 0", lineHeight: 1.05 }}>
+          <h1 style={{ fontSize: "clamp(28px, 8vw, 42px)", fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 12px 0", lineHeight: 1.05 }}>
             Como vai se chamar<br />a sua parada?
           </h1>
-          <p style={{ fontSize: 15, color: "#6B6B70", lineHeight: 1.55, marginBottom: 32, maxWidth: 400 }}>
+          <p style={{ fontSize: 15, color: "#6B6B70", lineHeight: 1.55, marginBottom: 28, maxWidth: 400 }}>
             Esse é o nome que aparece nas suas publicações semanais. Pode ser algo pessoal, criativo — o que quiser.
           </p>
 
@@ -80,7 +80,6 @@ export default function ParadaSetupPage() {
             onKeyDown={(e) => e.key === "Enter" && handleContinue()}
             placeholder="Ex: Parada do João, Top da Semana…"
             maxLength={60}
-            autoFocus
             style={{
               width: "100%",
               padding: "14px 16px",

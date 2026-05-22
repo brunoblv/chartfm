@@ -143,7 +143,7 @@ export default function CreatePage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/user/chart-name")
+    fetch("/api/user/chart-name", { cache: "no-store" })
       .then((r) => r.json())
       .then((data: { paradaNome?: string | null }) => {
         const nome = typeof data.paradaNome === "string" && data.paradaNome.trim() ? data.paradaNome.trim() : null;
@@ -151,7 +151,8 @@ export default function CreatePage() {
         if (!nome) router.replace("/chart/setup");
       })
       .catch(() => {});
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetch("/api/user/profile")

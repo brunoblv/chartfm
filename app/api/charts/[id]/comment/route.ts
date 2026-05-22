@@ -31,6 +31,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     text: c.text,
     likes: c.likes,
     reactions: safeParseReactions(c.reactions),
+    replyCount: c.replyCount,
     createdAt: c.createdAt.toISOString(),
     user: {
       id: c.user.id,
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
     text: comment.text,
     likes: comment.likes,
     reactions: [],
+    replyCount: 0,
     createdAt: comment.createdAt.toISOString(),
     user: {
       id: comment.user.id,

@@ -42,6 +42,7 @@ model User {
   likes                ChartLike[]
   reposts              ChartRepost[]
   comments             Comment[]
+  commentReplies       CommentReply[]
   communityMemberships CommunityMember[]
   actorNotifs          Notification[]    @relation("NotificationActor")
   notifications        Notification[]    @relation("NotificationRecipient")
@@ -235,15 +236,30 @@ model ChartRepost {
 }
 
 model Comment {
+  id         String         @id @default(cuid())
+  chartId    String
+  userId     String
+  text       String
+  likes      Int            @default(0)
+  reactions  String         @default("[]")
+  replyCount Int            @default(0)
+  createdAt  DateTime       @default(now())
+  chart      Chart          @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [id])
+  replies    CommentReply[]
+}
+
+model CommentReply {
   id        String   @id @default(cuid())
-  chartId   String
+  commentId String
   userId    String
   text      String
   likes     Int      @default(0)
-  reactions String   @default("[]")
   createdAt DateTime @default(now())
-  chart     Chart    @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
+
+  @@index([commentId])
 }
 
 model Community {
