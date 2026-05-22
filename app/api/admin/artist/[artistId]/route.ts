@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { getSpotifyArtistById, searchSpotifyArtist } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 
@@ -72,4 +73,36 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ artis
   });
 
   return NextResponse.json({ artist });
+}
+
+export async function POST(req: NextRequest, context: { params: Promise<{ artistId: string }> }) {
+  const guard = await ensurePrivilegedUser();
+  if (!guard.ok) return NextResponse.json({ error: guard.status === 401 ? "unauthorized" : "forbidden" }, { status: guard.status });
+
+  const { artistId } = await context.params;
+  const id = Number(artistId);
+  if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "invalid_artist_id" }, { status: 400 });
+
+  const body = (await req.json().catch(() => ({}))) as { action?: unknown };
+  if (body.action !== "refresh-image") return NextResponse.json({ error: "unknown_action" }, { status: 400 });
+
+  const artist = await prisma.artist.findUnique({
+    where: { id },
+    select: { spotifyId: true, name: true },
+  });
+  if (!artist) return NextResponse.json({ error: "not_found" }, { status: 404 });
+
+  const result = artist.spotifyId
+    ? (await getSpotifyArtistById(artist.spotifyId)) ?? (await searchSpotifyArtist(artist.name))
+    : await searchSpotifyArtist(artist.name);
+
+  if (!result?.imageUrl) return NextResponse.json({ error: "image_not_found" }, { status: 404 });
+
+  const updated = await prisma.artist.update({
+    where: { id },
+    data: { imageUrl: result.imageUrl },
+    select: { id: true, imageUrl: true },
+  });
+
+  return NextResponse.json({ imageUrl: updated.imageUrl });
 }

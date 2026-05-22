@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
-import { getSpotifyArtistById, searchSpotifyArtist, spotifyConfigured } from "@/lib/spotify-server";
 import { computeGlobalSnapshotData, getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { BookOpen, BarChart2, Users, TrendingUp, Music } from "lucide-react";
 import { GlobalHero } from "@/components/global/GlobalHero";
@@ -58,38 +57,6 @@ async function resolveArtistImages(artists: ArtistImageKey[]): Promise<Map<strin
     if (!imageMap.has(a.name)) imageMap.set(a.name, null);
   }
 
-  if (!spotifyConfigured()) return imageMap;
-
-  const missing = artists.filter((a) => isMissingImageUrl(imageMap.get(a.name)));
-  const CHUNK = 10;
-  for (let i = 0; i < missing.length; i += CHUNK) {
-    await Promise.all(
-      missing.slice(i, i + CHUNK).map(async (a) => {
-        const fromId = a.spotifyId ? await getSpotifyArtistById(a.spotifyId) : null;
-        const result = fromId ?? (await searchSpotifyArtist(a.name));
-        const url = result?.imageUrl ?? null;
-        imageMap.set(a.name, url);
-        if (result) {
-          await prisma.artist.upsert({
-            where: { spotifyId: result.spotifyId },
-            create: {
-              spotifyId: result.spotifyId,
-              name: result.name,
-              genres: result.genres ?? [],
-              imageUrl: result.imageUrl,
-              spotifyUrl: result.spotifyUrl,
-            },
-            update: {
-              name: result.name,
-              genres: result.genres ?? [],
-              spotifyUrl: result.spotifyUrl ?? undefined,
-              ...(result.imageUrl ? { imageUrl: result.imageUrl } : {}),
-            },
-          });
-        }
-      })
-    );
-  }
   return imageMap;
 }
 

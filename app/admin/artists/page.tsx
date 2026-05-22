@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { ArtistCreatePanel } from "./ArtistCreatePanel";
+import { ArtistRefreshImageButton } from "./ArtistRefreshImageButton";
 
 export default async function AdminArtistsPage({
   searchParams,
@@ -88,7 +89,7 @@ export default async function AdminArtistsPage({
                   <td style={{ ...tdStyle, color: "#86868B", fontSize: 12 }}>{a.id}</td>
                   <td style={tdStyle}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {a.imageUrl && (
+                      {a.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={a.imageUrl}
@@ -96,6 +97,16 @@ export default async function AdminArtistsPage({
                           width={28}
                           height={28}
                           style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: "1.5px dashed #C7C7CC",
+                            flexShrink: 0,
+                          }}
                         />
                       )}
                       {a.name}
@@ -112,6 +123,7 @@ export default async function AdminArtistsPage({
                     >
                       Editar
                     </Link>
+                    <ArtistRefreshImageButton artistId={a.id} />
                   </td>
                 </tr>
               ))}

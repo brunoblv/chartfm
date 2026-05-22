@@ -8,7 +8,7 @@ import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
 import { getSpotifyAlbumDetails } from "@/lib/spotify-server";
 import { AlbumReviewsClient } from "./AlbumReviewsClient";
 
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function CriticsFMAlbumPage({
   params,
