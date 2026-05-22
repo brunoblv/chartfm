@@ -62,15 +62,12 @@ export default async function CriticsFMAlbumPage({
   const albumTitle = album.exhibitionName || album.title;
   const artistName = album.artist.exhibitionName || album.artist.name;
 
-  // label: always from DB. If null (album imported before this field existed),
-  // backfill from Spotify once and save — subsequent loads will use the DB value.
-  let label = album.label ?? null;
+  const label = album.label ?? null;
   if (label === null && album.spotifyId) {
-    const spotifyDetails = await getSpotifyAlbumDetails(album.spotifyId);
-    label = spotifyDetails?.label ?? null;
-    if (label) {
-      prisma.album.update({ where: { id: albumId }, data: { label } }).catch(() => {});
-    }
+    const spotifyId = album.spotifyId;
+    getSpotifyAlbumDetails(spotifyId)
+      .then((d) => d?.label ? prisma.album.update({ where: { id: albumId }, data: { label: d.label } }) : null)
+      .catch(() => {});
   }
 
   const avgScore = reviewStats._avg.rating ? Math.round(reviewStats._avg.rating) : 0;
