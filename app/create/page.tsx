@@ -617,7 +617,7 @@ export default function CreatePage() {
           ) : (
             <>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.45 }}>
-                Digite ao menos 2 caracteres para buscar no catálogo completo.{globalTopSongs.length > 0 ? " Top 5 da última parada global:" : ""}
+                Digite ao menos 2 caracteres para buscar no catálogo completo.{globalTopSongs.length > 0 ? " Mais tocadas dos últimos 30 dias:" : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {(globalTopSongs.length > 0 ? globalTopSongs : SONG_POOL.slice(0, 5)).map((song) => {

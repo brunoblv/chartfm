@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getRankingWeekReference } from "@/lib/chart-week";
 
 export const runtime = "nodejs";
 export const revalidate = 3600;
 
 export async function GET() {
-  const { weekIndex } = getRankingWeekReference(new Date());
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
 
   const entries = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex }, position: { lte: 100 } },
+    where: { chart: { publishedAt: { gte: since } } },
     select: {
-      position: true,
-      points: true,
       song: {
         select: {
           id: true,
@@ -26,24 +24,21 @@ export async function GET() {
     },
   });
 
-  // Agrega pontos por música (mesmo critério da parada global)
-  const map = new Map<string, { pts: number; song: (typeof entries)[number]["song"]; position: number }>();
+  const map = new Map<string, { count: number; song: (typeof entries)[number]["song"] }>();
   for (const e of entries) {
     const key = e.song.spotifyId
       ? `spotify:${e.song.spotifyId}`
       : `local:${e.song.title.trim().toLowerCase()}|${e.song.artist.trim().toLowerCase()}`;
-    const pts = e.points > 0 ? e.points : 101 - e.position;
     const cur = map.get(key);
     if (!cur) {
-      map.set(key, { pts, song: e.song, position: e.position });
+      map.set(key, { count: 1, song: e.song });
     } else {
-      cur.pts += pts;
-      if (e.position < cur.position) cur.position = e.position;
+      cur.count += 1;
     }
   }
 
   const top5 = [...map.values()]
-    .sort((a, b) => b.pts - a.pts)
+    .sort((a, b) => b.count - a.count)
     .slice(0, 5)
     .map((row) => ({
       id: row.song.id,
@@ -52,8 +47,8 @@ export async function GET() {
       album: row.song.album ?? "",
       spotifyId: row.song.spotifyId ?? null,
       coverUrl: row.song.albumRef?.coverUrl ?? null,
-      points: row.pts,
+      count: row.count,
     }));
 
-  return NextResponse.json({ songs: top5, weekIndex });
+  return NextResponse.json({ songs: top5 });
 }
