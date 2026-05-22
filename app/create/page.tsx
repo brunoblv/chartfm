@@ -401,12 +401,12 @@ export default function CreatePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entries: publishEntries, weekDate, fastPublish: true }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null) as { id?: string; error?: string } | null;
       if (!res.ok) {
-        setPublishError(data.error ?? "Erro ao publicar parada.");
+        setPublishError(data?.error ?? "Erro ao publicar parada.");
         return;
       }
-      router.push(`/chart/${data.id}`);
+      router.push(`/chart/${data?.id}`);
     } catch {
       setPublishError("Erro de conexão. Tente novamente.");
     } finally {

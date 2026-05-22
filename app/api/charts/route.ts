@@ -94,6 +94,7 @@ function isoWeekYear(date: Date): number {
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -435,4 +436,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ id: chart.id }, { status: 201 });
+  } catch (err) {
+    console.error("[POST /api/charts]", err);
+    return NextResponse.json({ error: "Erro interno ao publicar a parada." }, { status: 500 });
+  }
 }
