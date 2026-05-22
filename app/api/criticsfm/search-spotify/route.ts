@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
       coverUrl: details.coverUrl ?? null,
       spotifyUrl: details.spotifyUrl ?? null,
       totalTracks: details.totalTracks ?? null,
+      label: details.label ?? null,
     },
     select: { id: true },
   });

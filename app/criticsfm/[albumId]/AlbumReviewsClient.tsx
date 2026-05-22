@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Avatar } from "@/components/ui/Avatar";
 import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution } from "@/lib/album-score";
@@ -31,6 +31,7 @@ type Props = {
   albumArtist: string;
   initialAvgScore: number;
   initialReviewCount: number;
+  initialReviews: Review[];
   albumDetails: AlbumDetails;
 };
 
@@ -40,33 +41,19 @@ export function AlbumReviewsClient({
   albumArtist,
   initialAvgScore,
   initialReviewCount,
+  initialReviews,
   albumDetails,
 }: Props) {
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [sort, setSort] = useState<"helpful" | "recent">("helpful");
   const [avgScore, setAvgScore] = useState(initialAvgScore);
   const [reviewCount, setReviewCount] = useState(initialReviewCount);
-  const [scoreDistribution, setScoreDistribution] = useState<number[]>(new Array(10).fill(0));
+  const [scoreDistribution, setScoreDistribution] = useState<number[]>(
+    initialReviews.length > 0
+      ? buildScoreDistribution(initialReviews.map((r) => r.rating))
+      : new Array(10).fill(0),
+  );
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`/api/albums/${albumDbId}/reviews`);
-        if (!res.ok) return;
-        const data: Review[] = await res.json();
-        setReviews(data);
-        setLoaded(true);
-        if (data.length > 0) {
-          setAvgScore(Math.round(data.reduce((s, r) => s + r.rating, 0) / data.length));
-          setReviewCount(data.length);
-          setScoreDistribution(buildScoreDistribution(data.map((r) => r.rating)));
-        }
-      } catch {
-        setLoaded(true);
-      }
-    })();
-  }, [albumDbId]);
 
   const sorted =
     sort === "helpful"
@@ -87,7 +74,6 @@ export function AlbumReviewsClient({
       const alreadyExists = reviews.some((r) => r.user.id === newReview.user.id);
       return alreadyExists ? c : c + 1;
     });
-    setLoaded(true);
   };
 
   const maxDist = Math.max(...scoreDistribution, 1);
@@ -136,11 +122,7 @@ export function AlbumReviewsClient({
 
         <InlineReviewForm albumDbId={albumDbId} albumTitle={albumTitle} onSubmitted={onReviewSubmitted} />
 
-        {!loaded ? (
-          <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)", fontSize: 14 }}>
-            Carregando reviews…
-          </div>
-        ) : sorted.length === 0 ? (
+        {sorted.length === 0 ? (
           <div
             style={{
               background: "var(--surface)",

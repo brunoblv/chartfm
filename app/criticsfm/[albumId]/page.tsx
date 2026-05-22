@@ -19,7 +19,7 @@ export default async function CriticsFMAlbumPage({
   const albumId = parseInt(rawId, 10);
   if (isNaN(albumId)) notFound();
 
-  const [album, reviewStats] = await Promise.all([
+  const [album, reviewStats, initialReviews] = await Promise.all([
     prisma.album.findUnique({
       where: { id: albumId },
       select: {
@@ -32,6 +32,7 @@ export default async function CriticsFMAlbumPage({
         totalTracks: true,
         spotifyId: true,
         spotifyUrl: true,
+        label: true,
         artist: {
           select: { id: true, name: true, exhibitionName: true, genres: true },
         },
@@ -42,13 +43,36 @@ export default async function CriticsFMAlbumPage({
       _avg: { rating: true },
       _count: { id: true },
     }),
+    prisma.albumReview.findMany({
+      where: { albumId },
+      orderBy: [{ helpful: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        rating: true,
+        body: true,
+        helpful: true,
+        createdAt: true,
+        user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+      },
+    }),
   ]);
 
   if (!album) notFound();
 
   const albumTitle = album.exhibitionName || album.title;
   const artistName = album.artist.exhibitionName || album.artist.name;
-  const spotifyDetails = album.spotifyId ? await getSpotifyAlbumDetails(album.spotifyId) : null;
+
+  // label: always from DB. If null (album imported before this field existed),
+  // backfill from Spotify once and save — subsequent loads will use the DB value.
+  let label = album.label ?? null;
+  if (label === null && album.spotifyId) {
+    const spotifyDetails = await getSpotifyAlbumDetails(album.spotifyId);
+    label = spotifyDetails?.label ?? null;
+    if (label) {
+      prisma.album.update({ where: { id: albumId }, data: { label } }).catch(() => {});
+    }
+  }
+
   const avgScore = reviewStats._avg.rating ? Math.round(reviewStats._avg.rating) : 0;
   const reviewCount = reviewStats._count.id;
   const albumHref = buildAlbumPath(albumTitle, artistName, {
@@ -216,13 +240,17 @@ export default async function CriticsFMAlbumPage({
           albumArtist={artistName}
           initialAvgScore={avgScore}
           initialReviewCount={reviewCount}
+          initialReviews={initialReviews.map((r) => ({
+            ...r,
+            createdAt: r.createdAt.toISOString(),
+          }))}
           albumDetails={{
             releaseDate: album.releaseDate?.toISOString().slice(0, 10) ?? null,
             albumType: album.albumType ?? null,
             totalTracks: album.totalTracks ?? null,
             genres: album.artist.genres,
-            spotifyUrl: album.spotifyUrl ?? spotifyDetails?.spotifyUrl ?? null,
-            label: spotifyDetails?.label ?? null,
+            spotifyUrl: album.spotifyUrl ?? null,
+            label,
           }}
         />
       </div>
