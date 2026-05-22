@@ -37,18 +37,24 @@ export async function GET() {
     }
   }
 
-  const top5 = [...map.values()]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-    .map((row) => ({
-      id: row.song.id,
-      title: row.song.title,
-      artist: row.song.artist,
-      album: row.song.album ?? "",
-      spotifyId: row.song.spotifyId ?? null,
-      coverUrl: row.song.albumRef?.coverUrl ?? null,
-      count: row.count,
-    }));
+  const sorted = [...map.values()].sort((a, b) => b.count - a.count);
+
+  console.log("[global/top] entries brutas:", entries.length);
+  console.log("[global/top] músicas únicas:", map.size);
+  console.log("[global/top] ranking completo:");
+  sorted.forEach((row, i) => {
+    console.log(`  ${i + 1}. ${row.song.artist} — ${row.song.title} | plays: ${row.count}`);
+  });
+
+  const top5 = sorted.slice(0, 5).map((row) => ({
+    id: row.song.id,
+    title: row.song.title,
+    artist: row.song.artist,
+    album: row.song.album ?? "",
+    spotifyId: row.song.spotifyId ?? null,
+    coverUrl: row.song.albumRef?.coverUrl ?? null,
+    count: row.count,
+  }));
 
   return NextResponse.json({ songs: top5 });
 }
