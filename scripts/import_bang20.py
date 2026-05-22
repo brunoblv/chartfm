@@ -268,6 +268,7 @@ def main():
     created_songs = 0
 
     try:
+        # --- fase 1: carregar utilizador e semanas existentes ---
         with conn.cursor() as cur:
             cur.execute("SET statement_timeout = 0")
             cur.execute('SELECT id FROM "User" WHERE handle = %s', (args.handle,))
@@ -278,11 +279,17 @@ def main():
 
             cur.execute('SELECT "weekIndex" FROM "Chart" WHERE "userId" = %s', (user_id,))
             existing_indexes = {r[0] for r in cur.fetchall()}
-            weeks_to_create = [w for w in all_weeks if w["week_index"] not in existing_indexes]
-            skipped_existing = len(all_weeks) - len(weeks_to_create)
+        conn.commit()
 
+        weeks_to_create = [w for w in all_weeks if w["week_index"] not in existing_indexes]
+        skipped_existing = len(all_weeks) - len(weeks_to_create)
+        print(f"[info] {len(weeks_to_create)} semanas a importar, {skipped_existing} já existentes")
+
+        # --- fase 2: criar músicas novas (um único commit) ---
+        with conn.cursor() as cur:
             cur.execute('SELECT id, title, artist, "spotify_id", "album_spotify_id" FROM "Song"')
             song_map = {(r[1], r[2]): (r[0], r[3], r[4]) for r in cur.fetchall()}
+            print(f"[info] {len(song_map)} músicas carregadas")
 
             new_song_keys: set[tuple[str, str]] = set()
             for wk in weeks_to_create:
@@ -306,10 +313,15 @@ def main():
                     page_size=200,
                 )
                 created_songs = len(new_song_rows)
+                print(f"[info] {created_songs} músicas novas inseridas")
                 cur.execute('SELECT id, title, artist, "spotify_id", "album_spotify_id" FROM "Song"')
                 song_map = {(r[1], r[2]): (r[0], r[3], r[4]) for r in cur.fetchall()}
+        conn.commit()
 
-            for wk in weeks_to_create:
+        # --- fase 3: importar semana a semana (commit por semana) ---
+        total = len(weeks_to_create)
+        for i, wk in enumerate(weeks_to_create):
+            with conn.cursor() as cur:
                 end = week_sunday(wk["date"])
                 start = end - timedelta(days=6)
                 date_range = f"de {format_pt_day_month(start)} a {format_pt_day_month(end)}"
@@ -351,11 +363,15 @@ def main():
                     entry_rows,
                     page_size=200,
                 )
-                created_charts += 1
+            conn.commit()
+            created_charts += 1
+            print(f"[{i+1}/{total}] Semana {wk['week_index']} ({wk['date']}) — {len(entry_rows)} entradas")
 
+        # --- fase 4: atualizar streak ---
+        with conn.cursor() as cur:
             streak = recompute_streak(cur, user_id)
-
         conn.commit()
+
         print("IMPORT_OK")
         print(f"sheets={sheet_names}")
         print(f"weeks_total={len(all_weeks)}")
