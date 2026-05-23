@@ -41,7 +41,13 @@
       "Bash(Select-Object Name, FullName)",
       "Bash(Read \"C:\\\\Users\\\\blvbr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-blvbr-Downloads-Charts-chartify\\\\307331f5-beb6-4101-9c41-e1aeddec6ad3\\\\tasks\\\\b80f1eajq.output\")",
       "Bash(find c:\\\\\\\\Users\\\\\\\\blvbr\\\\\\\\Downloads\\\\\\\\Charts\\\\\\\\chartify -type f -name \"*.ts\" -o -name \"*.tsx\" -o -name \"*.js\" -o -name \"*.jsx\")",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "PowerShell(Start-Process -NoNewWindow -FilePath \"npm\" -ArgumentList \"run\", \"dev\" -WorkingDirectory \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\")",
+      "Bash(npm run *)",
+      "Bash(npx playwright *)",
+      "Bash(find /c/Users/blvbr -path \"*/playwright/index.js\" -maxdepth 12 2>/dev/null | head -5)",
+      "Read(//c/Users/blvbr/**)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

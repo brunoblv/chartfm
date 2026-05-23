@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CriticsFMAlbum } from "./page";
 import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 type SpotifySearchHit = {
   spotifyId: string;
@@ -74,7 +75,7 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "center",
-        paddingTop: 80,
+        padding: "48px 12px 0",
         backdropFilter: "blur(4px)",
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -381,6 +382,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
 }
 
 export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
+  const isMobile = useIsMobile();
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [sortBy, setSortBy] = useState<SortId>("recent");
   const [search, setSearch] = useState("");
@@ -455,7 +457,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
           >
             Melhores avaliados
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
             {topAlbums.map((a) => (
               <Link
                 key={a.id}
@@ -530,14 +532,14 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
       <div
         style={{
           display: "flex",
-          gap: 12,
-          alignItems: "center",
-          flexWrap: "wrap",
+          flexDirection: "column",
+          gap: 10,
           marginBottom: 20,
           paddingBottom: 20,
           borderBottom: "1px solid var(--divider)",
         }}
       >
+        {/* Search row */}
         <input
           type="text"
           placeholder="Buscar álbum ou artista…"
@@ -552,11 +554,19 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
             outline: "none",
             background: "var(--surface)",
             color: "var(--text)",
-            width: 220,
+            width: isMobile ? "100%" : 220,
+            boxSizing: "border-box",
           }}
         />
 
-        <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
+        {/* Score filter chips */}
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            flexWrap: "wrap",
+          }}
+        >
           {SCORE_FILTERS.map((f) => (
             <button
               key={f.id}
@@ -579,61 +589,64 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
           ))}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            background: "var(--fill-inset)",
-            padding: 3,
-            borderRadius: 10,
-            flexShrink: 0,
-          }}
-        >
-          {SORT_OPTIONS.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setSortBy(s.id)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 8,
-                border: "none",
-                fontSize: 12,
-                fontWeight: 600,
-                background: sortBy === s.id ? "var(--surface)" : "transparent",
-                color: sortBy === s.id ? "var(--text)" : "var(--text-muted)",
-                cursor: "pointer",
-                boxShadow: sortBy === s.id ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        {/* Sort + Spotify row */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+              background: "var(--fill-inset)",
+              padding: 3,
+              borderRadius: 10,
+              flexShrink: 0,
+            }}
+          >
+            {SORT_OPTIONS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSortBy(s.id)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  border: "none",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: sortBy === s.id ? "var(--surface)" : "transparent",
+                  color: sortBy === s.id ? "var(--text)" : "var(--text-muted)",
+                  cursor: "pointer",
+                  boxShadow: sortBy === s.id ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
 
-        <button
-          onClick={() => setSpotifyPanelQuery("")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "7px 14px",
-            borderRadius: 100,
-            border: "none",
-            background: "#1DB954",
-            color: "white",
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-            flexShrink: 0,
-            fontFamily: "inherit",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
-          </svg>
-          Adicionar álbum
-        </button>
+          <button
+            onClick={() => setSpotifyPanelQuery("")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 14px",
+              borderRadius: 100,
+              border: "none",
+              background: "#1DB954",
+              color: "white",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              flexShrink: 0,
+              fontFamily: "inherit",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </svg>
+            {isMobile ? "Adicionar" : "Adicionar álbum"}
+          </button>
+        </div>
       </div>
 
       {/* Results count */}
@@ -690,8 +703,8 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(6, 1fr)",
-              gap: 16,
+              gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(6, 1fr)",
+              gap: isMobile ? 10 : 16,
             }}
           >
             {paginated.map((a) => (
