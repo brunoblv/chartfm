@@ -220,9 +220,43 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const myVideoClip = currentUserId
     ? await prisma.userSongVideoClipChoice.findUnique({
         where: { userId_songId: { userId: currentUserId, songId } },
-        select: { clip: { select: { imageUrl: true } } },
+        select: { clipId: true, clip: { select: { imageUrl: true } } },
       })
     : null;
+
+  const [allClips, myVotes] = await Promise.all([
+    prisma.songVideoClip.findMany({
+      where: { songId },
+      orderBy: { votes: "desc" },
+      select: {
+        id: true,
+        imageUrl: true,
+        votes: true,
+        uploadedBy: true,
+        uploader: { select: { name: true, handle: true } },
+      },
+    }),
+    currentUserId
+      ? prisma.songVideoClipVote.findMany({
+          where: { userId: currentUserId, clip: { songId } },
+          select: { clipId: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const votedIds = new Set(myVotes.map((v) => v.clipId));
+
+  const initialClips = allClips.map((c) => ({
+    id: c.id,
+    imageUrl: c.imageUrl,
+    votes: c.votes,
+    uploadedBy: c.uploadedBy,
+    uploaderName: c.uploader.name,
+    uploaderHandle: c.uploader.handle,
+    hasVoted: votedIds.has(c.id),
+    isMyChoice: myVideoClip?.clipId === c.id,
+    isMyUpload: c.uploadedBy === currentUserId,
+  }));
 
   const myAppearancesSorted = [...myEntries]
     .sort((a, b) => a.chart.weekIndex - b.chart.weekIndex)
@@ -298,6 +332,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           globalStats={{ totalPoints, uniqueUsers: users, weeksTop100, number1s, peak }}
           topUsers={topUsers}
           initialVideoClipUrl={myVideoClip?.clip?.imageUrl ?? null}
+          initialClips={initialClips}
         />
 
         {!hasChartPresence && (

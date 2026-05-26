@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { Star, Upload, Trash2 } from "lucide-react";
+import { Star, Upload, Trash2, ThumbsUp, Check } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { VideoClipCover } from "@/components/ui/VideoClipCover";
 
 type Appearance = {
   chartId: string;
@@ -34,6 +33,18 @@ type TopUser = {
   points: number;
 };
 
+type VideoClip = {
+  id: string;
+  imageUrl: string;
+  votes: number;
+  uploadedBy: string;
+  uploaderName: string;
+  uploaderHandle: string;
+  hasVoted: boolean;
+  isMyChoice: boolean;
+  isMyUpload: boolean;
+};
+
 type Props = {
   currentUserId: string | null;
   songId: string;
@@ -42,15 +53,19 @@ type Props = {
   globalStats: GlobalStats;
   topUsers: TopUser[];
   initialVideoClipUrl: string | null;
+  initialClips: VideoClip[];
 };
 
-export function SongAppearancesTabs({ currentUserId, songId, myAppearances, myStats, globalStats, topUsers, initialVideoClipUrl }: Props) {
+export function SongAppearancesTabs({ currentUserId, songId, myAppearances, myStats, globalStats, topUsers, initialVideoClipUrl, initialClips }: Props) {
   const isLoggedIn = !!currentUserId;
   const [activeTab, setActiveTab] = useState<"mine" | "global" | "video_clip">(isLoggedIn ? "mine" : "global");
   const [videoClipUrl, setVideoClipUrl] = useState<string | null>(initialVideoClipUrl);
   const [uploading, setUploading] = useState(false);
   const [clipError, setClipError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [clips, setClips] = useState<VideoClip[]>(initialClips);
+  const [votingId, setVotingId] = useState<string | null>(null);
+  const [choosingId, setChoosingId] = useState<string | null>(null);
 
   const userCards: { label: string; value: string | number }[] = [
     { label: "Semanas na parada", value: myStats.appearances },
@@ -81,12 +96,29 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
         method: "POST",
         body: form,
       });
-      const data = (await res.json()) as { url?: string; error?: string };
+      const data = (await res.json()) as { url?: string; id?: string; error?: string };
       if (!res.ok) {
         setClipError(data.error ?? "Erro ao enviar a imagem.");
         return;
       }
       setVideoClipUrl(data.url ?? null);
+      if (data.url && data.id) {
+        setClips((prev) => {
+          const without = prev.filter((c) => !c.isMyUpload);
+          const newClip: VideoClip = {
+            id: data.id!,
+            imageUrl: data.url!,
+            votes: 0,
+            uploadedBy: currentUserId!,
+            uploaderName: "",
+            uploaderHandle: "",
+            hasVoted: false,
+            isMyChoice: true,
+            isMyUpload: true,
+          };
+          return [newClip, ...without.map((c) => ({ ...c, isMyChoice: false }))];
+        });
+      }
     } catch {
       setClipError("Erro de conexão. Tente novamente.");
     } finally {
@@ -99,6 +131,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
     setUploading(true);
     setClipError(null);
     try {
+      const myClip = clips.find((c) => c.isMyUpload);
       const res = await fetch(`/api/user/song-video-clip?songId=${encodeURIComponent(songId)}`, {
         method: "DELETE",
       });
@@ -108,6 +141,9 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
         return;
       }
       setVideoClipUrl(null);
+      if (myClip) {
+        setClips((prev) => prev.filter((c) => c.id !== myClip.id));
+      }
     } catch {
       setClipError("Erro de conexão. Tente novamente.");
     } finally {
@@ -115,10 +151,45 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
     }
   }
 
+  const handleVote = useCallback(async (clipId: string) => {
+    if (!isLoggedIn || votingId) return;
+    setVotingId(clipId);
+    try {
+      const res = await fetch(`/api/songs/${songId}/video-clips/${clipId}/vote`, { method: "POST" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { votes: number; hasVoted: boolean };
+      setClips((prev) =>
+        [...prev]
+          .map((c) => c.id === clipId ? { ...c, votes: data.votes, hasVoted: data.hasVoted } : c)
+          .sort((a, b) => b.votes - a.votes)
+      );
+    } finally {
+      setVotingId(null);
+    }
+  }, [isLoggedIn, songId, votingId]);
+
+  const handleChoose = useCallback(async (clipId: string) => {
+    if (!isLoggedIn || choosingId) return;
+    setChoosingId(clipId);
+    try {
+      const res = await fetch(
+        `/api/user/song-video-clip?songId=${encodeURIComponent(songId)}&clipId=${encodeURIComponent(clipId)}`,
+        { method: "PUT" }
+      );
+      if (!res.ok) return;
+      setClips((prev) => prev.map((c) => ({ ...c, isMyChoice: c.id === clipId })));
+      // also update the clip url shown in header
+      const chosen = clips.find((c) => c.id === clipId);
+      if (chosen) setVideoClipUrl(chosen.imageUrl);
+    } finally {
+      setChoosingId(null);
+    }
+  }, [isLoggedIn, songId, choosingId, clips]);
+
   const tabs: { id: "mine" | "global" | "video_clip"; label: string; onlyLoggedIn?: boolean }[] = [
     { id: "mine", label: "Nas suas paradas", onlyLoggedIn: true },
     { id: "global", label: "Global" },
-    { id: "video_clip", label: "Vídeo Clipe", onlyLoggedIn: true },
+    { id: "video_clip", label: "Vídeo Clipe" },
   ];
 
   return (
@@ -274,7 +345,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
         </div>
       )}
 
-      {activeTab === "video_clip" && isLoggedIn && (
+      {activeTab === "video_clip" && (
         <div style={{ marginTop: 14 }}>
           <input
             ref={fileInputRef}
@@ -283,19 +354,10 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
             style={{ display: "none" }}
             onChange={handleFileChange}
           />
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 400 }}>
-            <VideoClipCover
-              imageUrl={videoClipUrl}
-              width={320}
-              style={{ borderRadius: 12 }}
-            />
-            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-              Esta imagem será exibida na sua parada quando alguém visualizá-la em modo <strong>Vídeo Clipe</strong>. Formato ideal: 16:9 (ex.: 1280×720).
-            </div>
-            {clipError && (
-              <div style={{ fontSize: 13, color: "#FA243C", fontWeight: 600 }}>{clipError}</div>
-            )}
-            <div style={{ display: "flex", gap: 10 }}>
+
+          {/* Upload / manage my own clip */}
+          {isLoggedIn && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
@@ -307,9 +369,9 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
                 }}
               >
                 <Upload size={15} />
-                {uploading ? "Enviando…" : videoClipUrl ? "Trocar captura" : "Enviar captura"}
+                {uploading ? "Enviando…" : clips.some((c) => c.isMyUpload) ? "Trocar minha captura" : "Enviar minha captura"}
               </button>
-              {videoClipUrl && !uploading && (
+              {clips.some((c) => c.isMyUpload) && !uploading && (
                 <button
                   onClick={handleDelete}
                   style={{
@@ -320,11 +382,132 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
                   }}
                 >
                   <Trash2 size={15} />
-                  Remover
+                  Remover minha captura
                 </button>
               )}
+              {clipError && (
+                <span style={{ fontSize: 13, color: "#FA243C", fontWeight: 600 }}>{clipError}</span>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* Gallery */}
+          {clips.length === 0 ? (
+            <div style={{ padding: 20, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
+              Nenhuma captura enviada ainda.{" "}
+              {isLoggedIn
+                ? "Seja o primeiro a adicionar uma imagem para esta música!"
+                : "Entre na sua conta para enviar uma captura de vídeo clipe."}
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.5 }}>
+                Vote na captura que melhor representa o vídeo clipe desta música. A mais votada será usada como padrão para quem ainda não escolheu a sua.
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+                {clips.map((clip, idx) => {
+                  const isDefault = idx === 0;
+                  const isVoting = votingId === clip.id;
+                  const isChoosing = choosingId === clip.id;
+                  return (
+                    <div
+                      key={clip.id}
+                      style={{
+                        background: "var(--surface)",
+                        borderRadius: 16,
+                        border: `1.5px solid ${clip.isMyChoice ? "#FA243C" : "var(--divider)"}`,
+                        overflow: "hidden",
+                        position: "relative",
+                      }}
+                    >
+                      {/* Badges */}
+                      <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, zIndex: 2 }}>
+                        {isDefault && (
+                          <span style={{ background: "#FA243C", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, letterSpacing: "0.03em" }}>
+                            Padrão
+                          </span>
+                        )}
+                        {clip.isMyUpload && (
+                          <span style={{ background: "rgba(0,0,0,0.55)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6 }}>
+                            Minha
+                          </span>
+                        )}
+                        {clip.isMyChoice && (
+                          <span style={{ background: "#34C759", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6 }}>
+                            Em uso
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Thumbnail */}
+                      <div style={{ width: "100%", aspectRatio: "16/9", overflow: "hidden", background: "var(--fill-inset)" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={clip.imageUrl}
+                          alt="Captura do clipe"
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        />
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          @{clip.uploaderHandle}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          {/* Choose button */}
+                          {isLoggedIn && !clip.isMyChoice && (
+                            <button
+                              onClick={() => handleChoose(clip.id)}
+                              disabled={!!isChoosing}
+                              title="Usar esta captura nas minhas paradas"
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 5,
+                                fontSize: 12, fontWeight: 700,
+                                color: "#FA243C", background: "transparent",
+                                border: "1px solid #FA243C", borderRadius: 7,
+                                padding: "5px 10px", cursor: isChoosing ? "not-allowed" : "pointer",
+                                opacity: isChoosing ? 0.6 : 1,
+                              }}
+                            >
+                              Usar esta
+                            </button>
+                          )}
+                          {isLoggedIn && clip.isMyChoice && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: "#34C759" }}>
+                              <Check size={13} />
+                              Em uso
+                            </span>
+                          )}
+
+                          {/* Thumbs up */}
+                          <button
+                            onClick={() => handleVote(clip.id)}
+                            disabled={!isLoggedIn || isVoting}
+                            title={isLoggedIn ? (clip.hasVoted ? "Remover voto" : "Votar nesta captura") : "Entre para votar"}
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: 5,
+                              background: clip.hasVoted ? "#FA243C" : "transparent",
+                              color: clip.hasVoted ? "white" : "var(--text-muted)",
+                              border: `1px solid ${clip.hasVoted ? "#FA243C" : "var(--divider)"}`,
+                              borderRadius: 7, padding: "5px 10px",
+                              fontSize: 13, fontWeight: 700,
+                              cursor: isLoggedIn && !isVoting ? "pointer" : "default",
+                              opacity: isVoting ? 0.6 : 1,
+                              transition: "background 0.15s, color 0.15s",
+                            }}
+                          >
+                            <ThumbsUp size={13} />
+                            {clip.votes}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

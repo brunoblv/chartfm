@@ -82,7 +82,38 @@ export async function POST(req: NextRequest) {
     if (oldFilename) await unlink(join(UPLOAD_DIR, oldFilename)).catch(() => null);
   }
 
-  return NextResponse.json({ url: imageUrl });
+  return NextResponse.json({ url: imageUrl, id: newClip.id });
+}
+
+// PUT — escolher um clip existente (de outro usuário) como sua capa
+export async function PUT(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const songId = searchParams.get("songId");
+  const clipId = searchParams.get("clipId");
+  if (!songId || !clipId) {
+    return NextResponse.json({ error: "songId e clipId obrigatórios" }, { status: 400 });
+  }
+
+  const clip = await prisma.songVideoClip.findUnique({
+    where: { id: clipId },
+    select: { id: true, songId: true },
+  });
+  if (!clip || clip.songId !== songId) {
+    return NextResponse.json({ error: "Clip não encontrado" }, { status: 404 });
+  }
+
+  await prisma.userSongVideoClipChoice.upsert({
+    where: { userId_songId: { userId: session.user.id, songId } },
+    create: { userId: session.user.id, songId, clipId },
+    update: { clipId },
+  });
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(req: NextRequest) {

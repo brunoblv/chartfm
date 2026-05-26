@@ -27,14 +27,35 @@ export async function GET(
     return NextResponse.json({});
   }
 
-  const clips = await prisma.userSongVideoClip.findMany({
+  // Clips escolhidos pelo dono da parada
+  const choices = await prisma.userSongVideoClipChoice.findMany({
     where: { userId: chart.userId, songId: { in: songIds } },
-    select: { songId: true, imageUrl: true },
+    select: { songId: true, clip: { select: { imageUrl: true } } },
   });
 
   const map: Record<string, string> = {};
-  for (const clip of clips) {
-    map[clip.songId] = clip.imageUrl;
+  const chosenSongIds = new Set<string>();
+
+  for (const choice of choices) {
+    map[choice.songId] = choice.clip.imageUrl;
+    chosenSongIds.add(choice.songId);
+  }
+
+  // Para músicas sem escolha do dono, usar o clip mais votado como padrão
+  const unchosenIds = songIds.filter((id) => !chosenSongIds.has(id));
+  if (unchosenIds.length > 0) {
+    const topClips = await prisma.songVideoClip.findMany({
+      where: { songId: { in: unchosenIds } },
+      orderBy: { votes: "desc" },
+      select: { songId: true, imageUrl: true },
+    });
+
+    // Keep only the first (most voted) clip per song
+    for (const clip of topClips) {
+      if (!map[clip.songId]) {
+        map[clip.songId] = clip.imageUrl;
+      }
+    }
   }
 
   return NextResponse.json(map);
