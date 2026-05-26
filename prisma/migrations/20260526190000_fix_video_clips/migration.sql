@@ -1,3 +1,29 @@
+-- CreateTable (idempotent)
+CREATE TABLE IF NOT EXISTS "song_video_clips" (
+    "id" TEXT NOT NULL,
+    "song_id" TEXT NOT NULL,
+    "uploaded_by" TEXT NOT NULL,
+    "image_url" TEXT NOT NULL,
+    "votes" INTEGER NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "song_video_clips_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "song_video_clip_votes" (
+    "id" TEXT NOT NULL,
+    "clip_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "song_video_clip_votes_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "user_song_video_clip_choices" (
+    "user_id" TEXT NOT NULL,
+    "song_id" TEXT NOT NULL,
+    "clip_id" TEXT NOT NULL,
+    CONSTRAINT "user_song_video_clip_choices_pkey" PRIMARY KEY ("user_id", "song_id")
+);
+
 -- Drop old table if it still exists (FKs may have already been removed)
 DO $$ BEGIN
   ALTER TABLE IF EXISTS "user_song_video_clips" DROP CONSTRAINT IF EXISTS "user_song_video_clips_user_id_fkey";

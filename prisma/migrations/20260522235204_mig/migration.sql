@@ -5,7 +5,10 @@
 
 */
 -- CreateEnum
-CREATE TYPE "ChartType" AS ENUM ('SONGS', 'ALBUMS', 'MIXED');
+DO $$ BEGIN
+  CREATE TYPE "ChartType" AS ENUM ('SONGS', 'ALBUMS', 'MIXED');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
 
 -- AlterTable
 ALTER TABLE "Chart" ADD COLUMN     "chart_type" "ChartType" NOT NULL DEFAULT 'SONGS',
