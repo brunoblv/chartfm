@@ -9,7 +9,7 @@ import { existsSync, mkdirSync } from "fs";
 export const runtime = "nodejs";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 700 * 1024;
 const UPLOAD_DIR = join(process.cwd(), "uploads", "song-video-clips");
 
 function ensureDir() {
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Formato inválido. Use JPG, PNG ou WebP." }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Arquivo muito grande (máx. 5 MB)" }, { status: 400 });
+    return NextResponse.json({ error: "Arquivo muito grande (máx. 700 KB)" }, { status: 400 });
   }
 
   const song = await prisma.song.findUnique({ where: { id: songId }, select: { id: true } });

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Star, Upload, Trash2, ThumbsUp, Check } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
-async function compressImage(file: File, maxBytes = 4 * 1024 * 1024): Promise<File> {
+async function compressImage(file: File, maxBytes = 700 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
   return new Promise((resolve) => {
     const img = new Image();
@@ -20,11 +20,24 @@ async function compressImage(file: File, maxBytes = 4 * 1024 * 1024): Promise<Fi
       canvas.width = width;
       canvas.height = height;
       canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file),
-        "image/jpeg",
-        0.85,
-      );
+
+      let quality = 0.85;
+      const tryCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return; }
+            if (blob.size <= maxBytes || quality <= 0.3) {
+              resolve(new File([blob], file.name, { type: "image/jpeg" }));
+            } else {
+              quality -= 0.1;
+              tryCompress();
+            }
+          },
+          "image/jpeg",
+          quality,
+        );
+      };
+      tryCompress();
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
