@@ -8,6 +8,32 @@ import { ChevronLeft, Camera, ImagePlus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 
+async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
+  if (file.size <= maxBytes) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+      const scale = Math.min(1, Math.sqrt(maxBytes / file.size));
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file),
+        "image/jpeg",
+        0.85,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 const ALL_GENRES = [
   "Pop", "Indie", "Rock", "R&B", "Hip Hop",
   "Eletrônica", "Sertanejo", "Funk BR", "MPB", "Jazz",
@@ -313,8 +339,9 @@ export default function SettingsPage() {
     setLogoUploadParadaId(paradaId);
     setLogoErrorByParada((e) => ({ ...e, [paradaId]: null }));
     try {
+      const compressed = await compressImage(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", compressed);
       const res = await fetch(`/api/user/chart-logo?paradaId=${encodeURIComponent(paradaId)}`, {
         method: "POST",
         body: fd,
