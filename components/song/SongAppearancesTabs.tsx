@@ -5,6 +5,32 @@ import Link from "next/link";
 import { Star, Upload, Trash2, ThumbsUp, Check } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 
+async function compressImage(file: File, maxBytes = 4 * 1024 * 1024): Promise<File> {
+  if (file.size <= maxBytes) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+      const scale = Math.min(1, Math.sqrt(maxBytes / file.size));
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: "image/jpeg" }) : file),
+        "image/jpeg",
+        0.85,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
 type Appearance = {
   chartId: string;
   position: number;
@@ -90,8 +116,9 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
     setUploading(true);
     setClipError(null);
     try {
+      const compressed = await compressImage(file);
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", compressed);
       const res = await fetch(`/api/user/song-video-clip?songId=${encodeURIComponent(songId)}`, {
         method: "POST",
         body: form,
