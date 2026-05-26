@@ -16,14 +16,28 @@ import type { Chart, Song, UserWithCharts } from "@/lib/types";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { pointsForChartPosition, type ParadaScoringTier } from "@/lib/parada-points";
 
-type Tab = "charts" | "artists_overall" | "artists_year" | "songs_overall" | "songs_year" | "evolution";
+type ParadaTab = "charts" | "evolution" | "artists" | "songs";
+type StatsScope = "overall" | "year";
+
+type ParadaInfo = {
+  id: string;
+  name: string;
+  logo: string | null;
+  genres: string[];
+  isPrimary: boolean;
+  sortOrder: number;
+};
 
 type ApiProfile = {
   user: UserWithCharts;
   imageUrl: string | null;
   paradaNome: string | null;
   genres: string[];
+  paradas?: ParadaInfo[];
+  activeParadaId?: string | null;
+  scoringTier?: ParadaScoringTier;
   isFollowing: boolean;
   lastfmUser?: string | null;
   twitterUser?: string | null;
@@ -121,8 +135,8 @@ type SongTableRow = {
   cover: Chart["entries"][number]["cover"];
 };
 
-function pointsForPosition(position: number) {
-  return 101 - position;
+function pointsForPosition(position: number, tier: ParadaScoringTier, chartSize: number) {
+  return pointsForChartPosition(position, tier, chartSize);
 }
 
 function colorForArtist(name: string): [string, string] {
@@ -143,12 +157,13 @@ function mergeArtistRouteMeta(
   if (sid && !cur.artistSpotifyId) cur.artistSpotifyId = sid;
 }
 
-function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTableRow[] {
+function aggregateArtists(charts: Chart[], previousCharts: Chart[], tier: ParadaScoringTier = "primary"): ArtistTableRow[] {
   const map = new Map<
     string,
     { points: number; songs: Set<string>; weeks: Set<number>; peak: number; artistSpotifyId?: string | null; artistRefId?: number | null }
   >();
   charts.forEach((c) => {
+    const chartSize = c.entries.length;
     c.entries.forEach((e) => {
       const artists = [e.song.artist, ...(e.song.featArtists ?? [])]
         .map((a) => a.trim())
@@ -161,7 +176,7 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTable
           weeks: new Set<number>(),
           peak: e.position,
         };
-        cur.points += pointsForPosition(e.position);
+        cur.points += pointsForPosition(e.position, tier, chartSize);
         cur.songs.add(e.song.title);
         cur.weeks.add(c.week);
         cur.peak = Math.min(cur.peak, e.position);
@@ -171,17 +186,18 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[]): ArtistTable
     });
   });
   const prevMap = new Map<string, number>();
-  previousCharts.forEach((c) =>
+  previousCharts.forEach((c) => {
+    const chartSize = c.entries.length;
     c.entries.forEach((e) => {
       const artists = [e.song.artist, ...(e.song.featArtists ?? [])]
         .map((a) => a.trim())
         .filter(Boolean);
       const unique = [...new Set(artists)];
       unique.forEach((artist) => {
-        prevMap.set(artist, (prevMap.get(artist) ?? 0) + pointsForPosition(e.position));
+        prevMap.set(artist, (prevMap.get(artist) ?? 0) + pointsForPosition(e.position, tier, chartSize));
       });
-    })
-  );
+    });
+  });
   const sorted = [...map.entries()].sort((a, b) => b[1].points - a[1].points);
   const prevRank = [...prevMap.entries()].sort((a, b) => b[1] - a[1]).reduce((acc, [k], i) => acc.set(k, i + 1), new Map<string, number>());
   return sorted.map(([name, v], i) => {
@@ -229,7 +245,7 @@ function mergeSongRouteMeta(
   if (slugA && !cur.slugArtist) cur.slugArtist = slugA;
 }
 
-function aggregateSongs(charts: Chart[], previousCharts: Chart[]): SongTableRow[] {
+function aggregateSongs(charts: Chart[], previousCharts: Chart[], tier: ParadaScoringTier = "primary"): SongTableRow[] {
   const map = new Map<
     string,
     {
@@ -247,6 +263,7 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[]): SongTableRow[
     }
   >();
   charts.forEach((c) => {
+    const chartSize = c.entries.length;
     c.entries.forEach((e) => {
       const key = `${e.song.title}\0${e.song.artist}`;
       const cur = map.get(key) ?? {
@@ -257,7 +274,7 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[]): SongTableRow[
         peak: e.position,
         cover: e.cover,
       };
-      cur.points += pointsForPosition(e.position);
+      cur.points += pointsForPosition(e.position, tier, chartSize);
       cur.weeks.add(c.week);
       const prevPeak = cur.peak;
       cur.peak = Math.min(cur.peak, e.position);
@@ -267,12 +284,13 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[]): SongTableRow[
     });
   });
   const prevMap = new Map<string, number>();
-  previousCharts.forEach((c) =>
+  previousCharts.forEach((c) => {
+    const chartSize = c.entries.length;
     c.entries.forEach((e) => {
       const key = `${e.song.title}\0${e.song.artist}`;
-      prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForPosition(e.position));
-    })
-  );
+      prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForPosition(e.position, tier, chartSize));
+    });
+  });
   const sorted = [...map.entries()].sort((a, b) => b[1].points - a[1].points);
   const prevRank = [...prevMap.entries()].sort((a, b) => b[1] - a[1]).reduce((acc, [k], i) => acc.set(k, i + 1), new Map<string, number>());
   return sorted.map(([key, v], i) => {
@@ -322,7 +340,9 @@ export default function ProfilePage() {
   const handle = decodeURIComponent(typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "");
 
   const { data: session, status } = useSession();
-  const [tab, setTab] = useState<Tab>("charts");
+  const [activeParadaId, setActiveParadaId] = useState<string | null>(null);
+  const [paradaTab, setParadaTab] = useState<ParadaTab>("charts");
+  const [statsScope, setStatsScope] = useState<StatsScope>("overall");
   const [phase, setPhase] = useState<"loading" | "ready" | "missing">("loading");
   const [source, setSource] = useState<"db" | "mock" | null>(null);
   const [payload, setPayload] = useState<ApiProfile | null>(null);
@@ -337,6 +357,12 @@ export default function ProfilePage() {
   const STATS_PER_PAGE = 100;
   const isMobile = useIsMobile();
 
+  const profileQuery = (mode: "summary" | "full", page = 1) => {
+    const q = new URLSearchParams({ mode, page: String(page), perPage: String(CHARTS_PER_PAGE) });
+    if (activeParadaId) q.set("paradaId", activeParadaId);
+    return `/api/profile/${encodeURIComponent(handle)}?${q}`;
+  };
+
   useEffect(() => {
     if (!handle) {
       setPhase("missing");
@@ -345,14 +371,19 @@ export default function ProfilePage() {
     let cancelled = false;
     setPhase("loading");
     setChartPage(1);
+    setFullPayload(null);
     (async () => {
       try {
-        const res = await fetch(`/api/profile/${encodeURIComponent(handle)}?mode=summary&page=1&perPage=${CHARTS_PER_PAGE}`);
+        const res = await fetch(profileQuery("summary", 1));
         if (cancelled) return;
         if (res.ok) {
           const data = (await res.json()) as ApiProfile;
           setPayload(data);
-          setFullPayload(null);
+          if (data.activeParadaId && !activeParadaId) {
+            setActiveParadaId(data.activeParadaId);
+          } else if (!activeParadaId && data.paradas?.[0]?.id) {
+            setActiveParadaId(data.paradas[0].id);
+          }
           setMockUser(null);
           setSource("db");
           setPhase("ready");
@@ -374,18 +405,17 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [handle, CHARTS_PER_PAGE]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handle, CHARTS_PER_PAGE, activeParadaId]);
 
   useEffect(() => {
     if (!handle || source !== "db") return;
-    if (payload?.page === chartPage) return;
+    if (payload?.page === chartPage && payload.activeParadaId === activeParadaId) return;
     let cancelled = false;
     setLoadingChartPage(true);
     (async () => {
       try {
-        const res = await fetch(
-          `/api/profile/${encodeURIComponent(handle)}?mode=summary&page=${chartPage}&perPage=${CHARTS_PER_PAGE}`
-        );
+        const res = await fetch(profileQuery("summary", chartPage));
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as ApiProfile;
         if (cancelled) return;
@@ -399,17 +429,18 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [chartPage, handle, source, CHARTS_PER_PAGE, payload?.page]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartPage, handle, source, CHARTS_PER_PAGE, payload?.page, activeParadaId]);
 
   useEffect(() => {
     if (!handle || source !== "db") return;
-    if (tab === "charts") return;
-    if (fullPayload) return;
+    if (paradaTab === "charts") return;
+    if (fullPayload && fullPayload.activeParadaId === activeParadaId) return;
     let cancelled = false;
     setLoadingFullStats(true);
     (async () => {
       try {
-        const res = await fetch(`/api/profile/${encodeURIComponent(handle)}?mode=full`);
+        const res = await fetch(profileQuery("full"));
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as ApiProfile;
         if (cancelled) return;
@@ -421,13 +452,18 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [tab, handle, source, fullPayload]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paradaTab, handle, source, fullPayload, activeParadaId]);
 
   const user = payload?.user ?? mockUser;
   const statsUser = source === "db" ? (fullPayload?.user ?? null) : user;
   const imageUrl = payload?.imageUrl ?? null;
-  const paradaNome = payload?.paradaNome ?? null;
-  const genres = payload?.genres ?? [];
+  const paradas = payload?.paradas ?? [];
+  const activeParada = paradas.find((p) => p.id === activeParadaId) ?? paradas[0] ?? null;
+  const paradaNome = activeParada?.name ?? payload?.paradaNome ?? null;
+  const genres = activeParada?.genres ?? payload?.genres ?? [];
+  const scoringTier: ParadaScoringTier =
+    fullPayload?.scoringTier ?? payload?.scoringTier ?? (activeParada?.isPrimary === false ? "secondary" : "primary");
   const artistImages = (fullPayload?.artistImages ?? payload?.artistImages) ?? {};
   const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
@@ -445,27 +481,30 @@ export default function ProfilePage() {
   const overallArtistsRows = useMemo(() => {
     if (!latestWeek) return [];
     const previous = chartsSortedAsc.filter((c) => c.week < latestWeek);
-    return aggregateArtists(chartsSortedAsc, previous);
-  }, [chartsSortedAsc, latestWeek]);
+    return aggregateArtists(chartsSortedAsc, previous, scoringTier);
+  }, [chartsSortedAsc, latestWeek, scoringTier]);
   const overallSongsRows = useMemo(() => {
     if (!latestWeek) return [];
     const previous = chartsSortedAsc.filter((c) => c.week < latestWeek);
-    return aggregateSongs(chartsSortedAsc, previous);
-  }, [chartsSortedAsc, latestWeek]);
+    return aggregateSongs(chartsSortedAsc, previous, scoringTier);
+  }, [chartsSortedAsc, latestWeek, scoringTier]);
   const yearlyArtistsRows = useMemo(() => {
     if (!activeYear) return [];
     const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
     const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
     const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
-    return aggregateArtists(yearCharts, previous);
-  }, [chartsSortedAsc, activeYear]);
+    return aggregateArtists(yearCharts, previous, scoringTier);
+  }, [chartsSortedAsc, activeYear, scoringTier]);
   const yearlySongsRows = useMemo(() => {
     if (!activeYear) return [];
     const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
     const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
     const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
-    return aggregateSongs(yearCharts, previous);
-  }, [chartsSortedAsc, activeYear]);
+    return aggregateSongs(yearCharts, previous, scoringTier);
+  }, [chartsSortedAsc, activeYear, scoringTier]);
+
+  const artistRowsForTab = statsScope === "overall" ? overallArtistsRows : yearlyArtistsRows;
+  const songRowsForTab = statsScope === "overall" ? overallSongsRows : yearlySongsRows;
 
   if (phase === "loading") {
     return (
@@ -527,7 +566,19 @@ export default function ProfilePage() {
             </div>
             <div style={{ fontSize: isMobile ? 13 : 15, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>@{user.handle}</div>
             {paradaNome && source === "db" && (
-              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Parada: {paradaNome}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span>{paradaNome}</span>
+                {activeParada?.isPrimary && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "var(--accent-tint)", color: "#FA243C" }}>
+                    Principal · 100→1 pt
+                  </span>
+                )}
+                {activeParada && !activeParada.isPrimary && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "var(--fill-subtle)", color: "var(--text-muted)" }}>
+                    Secundária · 20→1 pt
+                  </span>
+                )}
+              </div>
             )}
             {genres.length > 0 && source === "db" && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
@@ -648,7 +699,7 @@ export default function ProfilePage() {
             {isOwn ? (
               <>
                 <Link
-                  href="/create"
+                  href={activeParadaId ? `/create?paradaId=${activeParadaId}` : "/create"}
                   style={{
                     background: "#FA243C",
                     color: "white",
@@ -697,8 +748,27 @@ export default function ProfilePage() {
                     alignItems: "center",
                   }}
                 >
-                  Nome da parada
+                  Paradas
                 </Link>
+                {paradas.length < 2 && (
+                  <Link
+                    href="/chart/setup?slot=2"
+                    style={{
+                      background: "var(--fill-subtle)",
+                      border: "none",
+                      padding: "10px 22px",
+                      borderRadius: 100,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "var(--text)",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    2ª parada
+                  </Link>
+                )}
               </>
             ) : (
               <>
@@ -743,7 +813,7 @@ export default function ProfilePage() {
           }}
         >
           {[
-            { label: "Paradas", value: totalCharts, icon: null },
+            { label: paradaNome ? `Semanas · ${paradaNome}` : "Semanas", value: totalCharts, icon: null },
             { label: "#1 pessoais", value: numberOnes, icon: <Trophy size={14} color="#FFD700" fill="#FFD700" /> },
             { label: "Músicas", value: totalRankedSlots, icon: null },
             { label: "Artistas", value: topArtists.length, icon: null },
@@ -798,31 +868,65 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 24, flexWrap: isMobile ? "wrap" : "nowrap", overflowX: isMobile ? "visible" : "auto" }}>
+        {(source === "db" ? paradas : [{ id: "mock", name: paradaNome ?? "Parada", isPrimary: true }]).length > 0 && (
+          <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 16, flexWrap: "wrap", gap: 4 }}>
+            {(source === "db"
+              ? paradas
+              : [{ id: "mock", name: paradaNome ?? "Parada", isPrimary: true, sortOrder: 0, logo: null, genres: [] }]
+            ).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  setActiveParadaId(p.id);
+                  setParadaTab("charts");
+                  setChartPage(1);
+                  setStatsPage(1);
+                  setFullPayload(null);
+                }}
+                style={{
+                  padding: isMobile ? "10px 12px" : "12px 16px",
+                  background: "none",
+                  border: "none",
+                  fontSize: isMobile ? 14 : 15,
+                  fontWeight: activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0) ? 700 : 500,
+                  color: activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0) ? "var(--text)" : "var(--text-muted)",
+                  borderBottom: `2px solid ${activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0) ? "#FA243C" : "transparent"}`,
+                  marginBottom: -1,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {p.name}
+                {"isPrimary" in p && p.isPrimary ? " ★" : ""}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 24, flexWrap: isMobile ? "wrap" : "nowrap", overflowX: isMobile ? "auto" : "visible" }}>
           {(
             [
-              ["charts", "Paradas", "Paradas"],
-              ["evolution", "Evolução", "Evolução"],
-              ["artists_overall", "Artistas overall", "Artistas"],
-              ["artists_year", "Artistas anual", "Art. anual"],
-              ["songs_overall", "Músicas overall", "Músicas"],
-              ["songs_year", "Músicas anual", "Mús. anual"],
-            ] as [Tab, string, string][]
+              ["charts", "Publicações", "Publ."],
+              ["evolution", "Evolução", "Evol."],
+              ["artists", "Artistas", "Artistas"],
+              ["songs", "Músicas", "Músicas"],
+            ] as [ParadaTab, string, string][]
           ).map(([t, label, mobileLabel]) => (
             <button
               key={t}
               type="button"
               disabled={!hasCharts && t !== "charts"}
-              onClick={() => { setTab(t); setChartPage(1); setStatsPage(1); }}
+              onClick={() => { setParadaTab(t); setChartPage(1); setStatsPage(1); }}
               style={{
                 padding: isMobile ? "10px 8px" : "12px 4px",
                 marginRight: isMobile ? 6 : 18,
                 background: "none",
                 border: "none",
                 fontSize: isMobile ? 13 : 14,
-                fontWeight: tab === t ? 600 : 500,
-                color: tab === t ? "var(--text)" : "var(--text-muted)",
-                borderBottom: `2px solid ${tab === t ? "#FA243C" : "transparent"}`,
+                fontWeight: paradaTab === t ? 600 : 500,
+                color: paradaTab === t ? "var(--text)" : "var(--text-muted)",
+                borderBottom: `2px solid ${paradaTab === t ? "#FA243C" : "transparent"}`,
                 marginBottom: -1,
                 cursor: !hasCharts && t !== "charts" ? "not-allowed" : "pointer",
                 opacity: !hasCharts && t !== "charts" ? 0.45 : 1,
@@ -835,7 +939,45 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {tab === "charts" && (
+        {(paradaTab === "artists" || paradaTab === "songs") && hasCharts && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+            <div style={{ display: "inline-flex", background: "var(--fill-subtle)", borderRadius: 100, padding: 3 }}>
+              {(["overall", "year"] as StatsScope[]).map((scope) => (
+                <button
+                  key={scope}
+                  type="button"
+                  onClick={() => { setStatsScope(scope); setStatsPage(1); setSelectedYear(null); }}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 100,
+                    border: "none",
+                    fontSize: 13,
+                    fontWeight: statsScope === scope ? 700 : 500,
+                    background: statsScope === scope ? "var(--surface)" : "transparent",
+                    color: statsScope === scope ? "var(--text)" : "var(--text-muted)",
+                    cursor: "pointer",
+                    boxShadow: statsScope === scope ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                  }}
+                >
+                  {scope === "overall" ? "Overall" : "Anual"}
+                </button>
+              ))}
+            </div>
+            {statsScope === "year" && years.length > 0 && (
+              <select
+                value={activeYear ?? ""}
+                onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }}
+                style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)" }}
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        {paradaTab === "charts" && (
           <>
             {!hasCharts ? (
               <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" }}>
@@ -875,44 +1017,26 @@ export default function ProfilePage() {
           </>
         )}
 
-        {tab === "evolution" && (
+        {paradaTab === "evolution" && (
           <EvolutionChart user={statsUser ?? user} />
         )}
 
-        {(tab === "artists_overall" || tab === "artists_year") && hasCharts && (
+        {paradaTab === "artists" && hasCharts && (
           <>
             {source === "db" && !fullPayload && loadingFullStats && (
               <div style={{ marginBottom: 14, color: "var(--text-muted)", fontSize: 14 }}>Carregando estatísticas completas…</div>
             )}
-            {tab === "artists_year" && years.length > 0 && (
-              <div style={{ marginBottom: 14 }}>
-                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)" }}>
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <ArtistStatsTable rows={(tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} artistImages={artistImages} isMobile={isMobile} />
-            <StatsPagination page={statsPage} total={(tab === "artists_overall" ? overallArtistsRows : yearlyArtistsRows).length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
+            <ArtistStatsTable rows={artistRowsForTab.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} artistImages={artistImages} isMobile={isMobile} />
+            <StatsPagination page={statsPage} total={artistRowsForTab.length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
-        {(tab === "songs_overall" || tab === "songs_year") && hasCharts && (
+        {paradaTab === "songs" && hasCharts && (
           <>
             {source === "db" && !fullPayload && loadingFullStats && (
               <div style={{ marginBottom: 14, color: "var(--text-muted)", fontSize: 14 }}>Carregando estatísticas completas…</div>
             )}
-            {tab === "songs_year" && years.length > 0 && (
-              <div style={{ marginBottom: 14 }}>
-                <select value={activeYear ?? ""} onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)" }}>
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <SongStatsTable rows={(tab === "songs_overall" ? overallSongsRows : yearlySongsRows).slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} isMobile={isMobile} />
-            <StatsPagination page={statsPage} total={(tab === "songs_overall" ? overallSongsRows : yearlySongsRows).length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
+            <SongStatsTable rows={songRowsForTab.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} isMobile={isMobile} />
+            <StatsPagination page={statsPage} total={songRowsForTab.length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
       </div>

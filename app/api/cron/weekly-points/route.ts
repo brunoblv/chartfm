@@ -20,11 +20,29 @@ export async function GET(req: NextRequest) {
 
   const updatedRows = await prisma.$executeRaw`
     UPDATE "ChartEntry" ce
-    SET "points" = 101 - ce."position"
+    SET "points" = CASE
+      WHEN p."is_primary" THEN 101 - ce."position"
+      WHEN cnt.n <= 1 THEN 20
+      ELSE GREATEST(1, ROUND(
+        20.0 - (ce."position" - 1.0) * 19.0 / (cnt.n - 1.0)
+      ))
+    END
     FROM "Chart" c
+    INNER JOIN "paradas" p ON p."id" = c."parada_id"
+    INNER JOIN LATERAL (
+      SELECT COUNT(*)::int AS n FROM "ChartEntry" ce2 WHERE ce2."chartId" = c."id"
+    ) cnt ON true
     WHERE ce."chartId" = c."id"
       AND c."weekIndex" = ${rankingWeek.weekIndex}
-      AND ce."points" IS DISTINCT FROM (101 - ce."position")
+      AND ce."points" IS DISTINCT FROM (
+        CASE
+          WHEN p."is_primary" THEN 101 - ce."position"
+          WHEN cnt.n <= 1 THEN 20
+          ELSE GREATEST(1, ROUND(
+            20.0 - (ce."position" - 1.0) * 19.0 / (cnt.n - 1.0)
+          ))
+        END
+      )
   `;
   const snapshot = await getOrCreateRankingWeekSnapshot(new Date());
 

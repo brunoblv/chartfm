@@ -74,6 +74,7 @@ type SongRow = {
   peak: number;
   number1s: number;
   currentWeekPos: number;
+  isFeat?: boolean;
 };
 
 type UserSongRow = {
@@ -152,6 +153,13 @@ export default async function ArtistPage({
   for (const n of nameCandidates) {
     if (n) entryOrFilters.push({ song: { artist: { equals: n, mode: "insensitive" } } });
   }
+  // Músicas onde o artista aparece como feat
+  if (artistRef?.id != null) {
+    entryOrFilters.push({ song: { feats: { some: { artist: { id: artistRef.id } } } } });
+  }
+  for (const sid of spotifyIdsForSong) {
+    entryOrFilters.push({ song: { feats: { some: { artistSpotifyId: sid } } } });
+  }
 
   if (entryOrFilters.length === 0) {
     return (
@@ -210,6 +218,7 @@ export default async function ArtistPage({
           artist: true,
           album: true,
           spotifyId: true,
+          artistSpotifyId: true,
           albumRef: { select: { id: true, coverUrl: true } },
         },
       },
@@ -236,6 +245,13 @@ export default async function ArtistPage({
     const t = n?.trim();
     if (t) songCatalogOr.push({ artist: { equals: t, mode: "insensitive" } });
   }
+  // Músicas onde o artista aparece como feat
+  if (artistRef?.id != null) {
+    songCatalogOr.push({ feats: { some: { artist: { id: artistRef.id } } } });
+  }
+  for (const sid of spotifyIdsForSong) {
+    songCatalogOr.push({ feats: { some: { artistSpotifyId: sid } } });
+  }
 
   const allRegisteredSongs =
     songCatalogOr.length > 0
@@ -247,6 +263,7 @@ export default async function ArtistPage({
             artist: true,
             album: true,
             spotifyId: true,
+            artistSpotifyId: true,
             albumRef: { select: { id: true, coverUrl: true } },
           },
           orderBy: [{ title: "asc" }],
@@ -265,6 +282,9 @@ export default async function ArtistPage({
     if (e.position === 1) number1s += 1;
     const key = songKey(e.song.title, e.song.artist);
     const manual = e.song.albumRef?.coverUrl?.trim() || null;
+    const isPrimary =
+      (e.song.artistSpotifyId != null && spotifyIdsForSong.has(e.song.artistSpotifyId)) ||
+      [...nameCandidates].some((n) => n.toLowerCase() === e.song.artist.trim().toLowerCase());
     const cur = songsMap.get(key) ?? {
       key,
       songId: e.song.id,
@@ -278,6 +298,7 @@ export default async function ArtistPage({
       peak: 9999,
       number1s: 0,
       currentWeekPos: 9999,
+      isFeat: !isPrimary,
       cover: {
         palette: [e.coverPaletteA, e.coverPaletteB] as [string, string],
         seed: e.coverSeed,
@@ -368,6 +389,10 @@ export default async function ArtistPage({
           album: db.album ?? "",
           albumRefId: db.albumRef?.id ?? null,
           points: 0,
+          isFeat: !(
+            (db.artistSpotifyId != null && spotifyIdsForSong.has(db.artistSpotifyId)) ||
+            [...nameCandidates].some((n) => n.toLowerCase() === db.artist.trim().toLowerCase())
+          ),
           cover: catalogSongCover(db.id, manual),
           weeks: gs.weeks,
           peak: gs.peak === 9999 ? 0 : gs.peak,
@@ -808,10 +833,19 @@ export default async function ArtistPage({
                             <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
                           </div>
                           <div style={{ padding: "0 12px", minWidth: 0 }}>
-                            <Link href={buildSongPath({ title: s.title, artist: canonicalName, id: s.songId, artistId: artistRef?.id, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
-                              {s.title}
-                            </Link>
-                            {s.album.trim() ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                              <Link href={buildSongPath({ title: s.title, artist: s.dbArtist, id: s.songId, artistId: s.isFeat ? undefined : artistRef?.id, slugArtist: s.dbArtist, spotifyId: s.spotifyId })} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>
+                                {s.title}
+                              </Link>
+                              {s.isFeat && (
+                                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", background: "#8338EC18", color: "#8338EC", padding: "2px 6px", borderRadius: 4, flexShrink: 0 }}>feat.</span>
+                              )}
+                            </div>
+                            {s.isFeat ? (
+                              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {s.dbArtist}
+                              </div>
+                            ) : s.album.trim() ? (
                               <Link href={buildAlbumPath(s.album.trim(), canonicalName, { artistId: artistRef?.id, albumId: s.albumRefId })} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
                                 {s.album}
                               </Link>

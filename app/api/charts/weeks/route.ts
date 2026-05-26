@@ -5,14 +5,20 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
+  const url = new URL(req.url);
+  const paradaId = url.searchParams.get("paradaId")?.trim() || undefined;
+
   const charts = await prisma.chart.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      ...(paradaId ? { paradaId } : {}),
+    },
     select: { weekIndex: true },
     orderBy: { weekIndex: "asc" },
   });

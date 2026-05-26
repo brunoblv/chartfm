@@ -38,6 +38,7 @@ model User {
   instagramUser        String?
   chartSize            Int?              @map("chart_size")
   paradaLogo           String?           @map("parada_logo")
+  paradas              Parada[]
   charts               Chart[]
   likes                ChartLike[]
   reposts              ChartRepost[]
@@ -54,6 +55,9 @@ model User {
   ownedCommunities     Community[]        @relation("CommunityOwner")
   followerLinks        UserFollow[]       @relation("UserFollows")
   followingLinks       UserFollow[]       @relation("UserFollowing")
+  uploadedVideoClips   SongVideoClip[]
+  videoClipVotes       SongVideoClipVote[]
+  videoClipChoices     UserSongVideoClipChoice[]
 }
 
 model Artist {
@@ -125,6 +129,8 @@ model Song {
   albumRef        Album?       @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])
   feats           SongFeat[]
   chartEntriesBySpotify ChartEntry[] @relation("ChartEntrySongSpotify")
+  videoClips            SongVideoClip[]
+  videoClipChoices      UserSongVideoClipChoice[]
 
   @@unique([title, artist])
   @@index([spotifyId], map: "idx_songs_spotify_id")
@@ -150,11 +156,32 @@ enum ChartType {
   SONGS
   ALBUMS
   MIXED
+  VIDEO_CLIP
+}
+
+model Parada {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  name      String
+  logo      String?  @map("logo")
+  genres    String[] @default([])
+  isPrimary Boolean  @default(true) @map("is_primary")
+  sortOrder Int      @default(0) @map("sort_order")
+  chartSize Int?     @map("chart_size")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  charts    Chart[]
+
+  @@unique([userId, sortOrder])
+  @@index([userId], map: "idx_paradas_user_id")
+  @@map("paradas")
 }
 
 model Chart {
   id            String        @id @default(cuid())
   userId        String
+  paradaId      String        @map("parada_id")
   weekIndex     Int
   weekLabel     String
   dateRange     String
@@ -163,6 +190,7 @@ model Chart {
   comments      Int           @default(0)
   reposts       Int           @default(0)
   user          User          @relation(fields: [userId], references: [id])
+  parada        Parada        @relation(fields: [paradaId], references: [id], onDelete: Cascade)
   entries       ChartEntry[]
   chartLikes    ChartLike[]
   chartReposts  ChartRepost[]
@@ -177,8 +205,9 @@ model Chart {
   communityId   String?       @map("community_id")
   community     Community?    @relation(fields: [communityId], references: [id])
 
-  @@unique([userId, weekIndex])
+  @@unique([paradaId, weekIndex])
   @@index([userId, weekStartDate], map: "idx_charts_user_week")
+  @@index([paradaId], map: "idx_charts_parada_id")
   @@index([communityId], map: "charts_communityId_fkey")
   @@index([slug], map: "idx_charts_slug")
 }
@@ -421,4 +450,45 @@ model AlbumReviewHelpful {
 
   @@unique([reviewId, userId])
   @@map("album_review_helpful")
+}
+
+model SongVideoClip {
+  id          String   @id @default(cuid())
+  songId      String   @map("song_id")
+  uploadedBy  String   @map("uploaded_by")
+  imageUrl    String   @map("image_url")
+  votes       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  song        Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  uploader    User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  voteRecords SongVideoClipVote[]
+  choices     UserSongVideoClipChoice[]
+
+  @@index([songId], map: "idx_song_video_clips_song_id")
+  @@index([uploadedBy], map: "idx_song_video_clips_uploaded_by")
+  @@map("song_video_clips")
+}
+
+model SongVideoClipVote {
+  id        String        @id @default(cuid())
+  clipId    String        @map("clip_id")
+  userId    String        @map("user_id")
+  createdAt DateTime      @default(now()) @map("created_at")
+  clip      SongVideoClip @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clipId, userId])
+  @@map("song_video_clip_votes")
+}
+
+model UserSongVideoClipChoice {
+  userId    String        @map("user_id")
+  songId    String        @map("song_id")
+  clipId    String        @map("clip_id")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song      Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  clip      SongVideoClip @relation(fields: [clipId], references: [id], onDelete: Cascade)
+
+  @@id([userId, songId])
+  @@map("user_song_video_clip_choices")
 }

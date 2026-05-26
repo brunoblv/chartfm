@@ -283,10 +283,17 @@ export default async function HomePage() {
         where: { id: session.user.id },
         select: { streak: true, paradaNome: true, genres: true },
       }),
-      prisma.chart.findUnique({
-        where: { userId_weekIndex: { userId: session.user.id, weekIndex: currentWeekIdx } },
-        select: { id: true },
-      }),
+      (async () => {
+        const primary = await prisma.parada.findFirst({
+          where: { userId: session.user.id, isPrimary: true },
+          select: { id: true },
+        });
+        if (!primary) return null;
+        return prisma.chart.findUnique({
+          where: { paradaId_weekIndex: { paradaId: primary.id, weekIndex: currentWeekIdx } },
+          select: { id: true },
+        });
+      })(),
       prisma.userFollow.findMany({
         where: { followerId: session.user.id },
         select: { followingId: true },

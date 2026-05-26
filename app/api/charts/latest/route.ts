@@ -9,6 +9,7 @@ import {
   prevChartWeekIndex,
 } from "@/lib/chart-week";
 import { prisma } from "@/lib/prisma";
+import { resolveParadaForPublish } from "@/lib/paradas";
 
 export const runtime = "nodejs";
 
@@ -36,8 +37,11 @@ export async function GET(req: NextRequest) {
   const previousDateRange = buildDateRangeFromDate(previousDate);
   const legacyPreviousWeekOnly = previousWeekIndex % 100;
 
+  const paradaIdParam = req.nextUrl.searchParams.get("paradaId");
+  const parada = await resolveParadaForPublish(prisma, session.user.id, paradaIdParam);
+
   let chart = await prisma.chart.findUnique({
-    where: { userId_weekIndex: { userId: session.user.id, weekIndex: previousWeekIndex } },
+    where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex: previousWeekIndex } },
     include: {
       entries: {
         orderBy: { position: "asc" },
@@ -52,6 +56,7 @@ export async function GET(req: NextRequest) {
     chart = await prisma.chart.findFirst({
       where: {
         userId: session.user.id,
+        paradaId: parada.id,
         OR: [
           { weekIndex: legacyPreviousWeekOnly },
           { weekLabel: previousWeekLabel },

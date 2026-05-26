@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
+import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
+import { resolveParadaForPublish } from "@/lib/paradas";
 
 export const runtime = "nodejs";
 
@@ -124,10 +126,15 @@ export async function POST(req: NextRequest) {
   const weekLabel = buildWeekLabelFromDate(selectedDate);
   const dateRange = buildDateRangeFromDate(selectedDate);
 
-  const existing = await prisma.chart.findUnique({ where: { userId_weekIndex: { userId, weekIndex } } });
+  const parada = await resolveParadaForPublish(prisma, userId, body.paradaId ?? null);
+  const scoringTier = scoringTierFromPrimary(parada.isPrimary);
+
+  const existing = await prisma.chart.findUnique({
+    where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex } },
+  });
   if (existing) {
     return NextResponse.json(
-      { error: "Você já publicou uma parada esta semana" },
+      { error: "Você já publicou esta parada nesta semana" },
       { status: 409 }
     );
   }
@@ -348,13 +355,13 @@ export async function POST(req: NextRequest) {
   // Previous chart for delta calculations
   const previousWeekIdx = prevWeekIndex(weekIndex);
   const previousChart = await prisma.chart.findFirst({
-    where: { userId, weekIndex: previousWeekIdx },
+    where: { paradaId: parada.id, weekIndex: previousWeekIdx },
     include: { entries: true },
   });
   const historicalRows = await prisma.chartEntry.findMany({
     where: {
       songId: { in: [...new Set(songs.map((s) => s.id))] },
-      chart: { userId, weekIndex: { lt: weekIndex } },
+      chart: { paradaId: parada.id, weekIndex: { lt: weekIndex } },
     },
     select: { songId: true },
     distinct: ["songId"],
@@ -364,7 +371,8 @@ export async function POST(req: NextRequest) {
   const entryData = entries.map((e, i) => {
     const song = songs[i];
     const pos = i + 1;
-    const points = 101 - pos;
+    const chartSize = entries.length;
+    const points = pointsForChartPosition(pos, scoringTier, chartSize);
     const prev = previousChart?.entries.find((pe) => pe.songId === song.id);
     const { palette, seed } = paletteFor(e.artist, e.title);
 
@@ -407,6 +415,7 @@ export async function POST(req: NextRequest) {
   const chart = await prisma.chart.create({
     data: {
       userId,
+      paradaId: parada.id,
       weekIndex,
       weekLabel,
       dateRange,

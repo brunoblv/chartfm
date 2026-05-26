@@ -59,6 +59,9 @@ export const authOptions: NextAuthOptions = {
           token.streak = db.streak;
           token.role = db.role;
           token.needsHandle = db.needsHandle;
+        } else {
+          // User was deleted or DB was reset — invalidate session
+          token.prismaUserId = undefined;
         }
       }
       return token;

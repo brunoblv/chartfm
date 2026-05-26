@@ -23,9 +23,12 @@ function asPayload(snapshot: {
   };
 }
 
+/** Apenas paradas principais entram no ranking global (pontuação 100→1). */
+const globalChartFilter = { parada: { isPrimary: true } } as const;
+
 async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntryRow[]> {
   return prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: weekIdx }, position: { lte: 100 } },
+    where: { chart: { weekIndex: weekIdx, ...globalChartFilter }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,
@@ -52,7 +55,7 @@ async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntr
 
 async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
   const rows = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: { lte: upToWeekIdx } }, position: { lte: 100 } },
+    where: { chart: { weekIndex: { lte: upToWeekIdx }, ...globalChartFilter }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,
@@ -95,7 +98,7 @@ async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string,
 
 async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
   const rows = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: { lte: upToWeekIdx } }, position: { lte: 100 } },
+    where: { chart: { weekIndex: { lte: upToWeekIdx }, ...globalChartFilter }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,
@@ -173,7 +176,7 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
   ]);
   const [overallEntries, prevOverallEntries] = await Promise.all([
     prisma.chartEntry.findMany({
-      where: { chart: { weekIndex: { lte: weekIdx } }, position: { lte: 100 } },
+      where: { chart: { weekIndex: { lte: weekIdx }, ...globalChartFilter }, position: { lte: 100 } },
       select: {
         position: true,
         points: true,
@@ -197,7 +200,7 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
       },
     }),
     prisma.chartEntry.findMany({
-      where: { chart: { weekIndex: { lte: prevWeekIdx } }, position: { lte: 100 } },
+      where: { chart: { weekIndex: { lte: prevWeekIdx }, ...globalChartFilter }, position: { lte: 100 } },
       select: {
         position: true,
         points: true,

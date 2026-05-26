@@ -47,7 +47,12 @@
       "Bash(npm run *)",
       "Bash(npx playwright *)",
       "Bash(find /c/Users/blvbr -path \"*/playwright/index.js\" -maxdepth 12 2>/dev/null | head -5)",
-      "Read(//c/Users/blvbr/**)"
+      "Read(//c/Users/blvbr/**)",
+      "Bash(xargs -I{} sh -c 'git show --stat {} 2>/dev/null | grep -l \"second\\\\|duas\\\\|parada.*2\\\\|chart.*2\\\\|multiple.*chart\" 2>/dev/null && echo {}')",
+      "Bash(git log *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\app\\\\api\" -Recurse -Filter \"*artist*\" -File)",
+      "Bash(psql \"postgresql://postgres:postgres@localhost:5432/chartfm\" -c \"SELECT conname, contype, conrelid::regclass AS table_name FROM pg_constraint WHERE conrelid::regclass::text IN \\('song_video_clips', 'song_video_clip_votes', 'user_song_video_clip_choices'\\) ORDER BY table_name, conname;\")",
+      "PowerShell(psql \"postgresql://postgres:postgres@localhost:5432/chartfm\" -c \"SELECT conname, contype, conrelid::regclass AS table_name FROM pg_constraint WHERE conrelid::regclass::text IN \\('song_video_clips', 'song_video_clip_votes', 'user_song_video_clip_choices'\\) ORDER BY table_name, conname;\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

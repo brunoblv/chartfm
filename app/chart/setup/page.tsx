@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function ChevronRight() {
   return (
@@ -13,6 +13,8 @@ function ChevronRight() {
 
 export default function ParadaSetupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isSecondSlot = searchParams.get("slot") === "2";
   const [nome, setNome] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,22 @@ export default function ParadaSetupPage() {
     setSaving(true);
     setError(null);
     try {
+      if (isSecondSlot) {
+        const res = await fetch("/api/user/paradas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: trimmed }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "Erro ao criar segunda parada.");
+          return;
+        }
+        const data = (await res.json()) as { parada?: { id: string } };
+        router.push(data.parada?.id ? `/create?paradaId=${data.parada.id}` : "/create");
+        return;
+      }
+
       const res = await fetch("/api/user/chart-name", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -47,7 +65,6 @@ export default function ParadaSetupPage() {
   return (
     <div style={{ width: "100%", minHeight: "100svh", background: "#FBFBFD", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
 
-      {/* Top bar */}
       <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FA243C", display: "grid", placeItems: "center" }}>
@@ -61,24 +78,29 @@ export default function ParadaSetupPage() {
         </div>
       </div>
 
-      {/* Body */}
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 0 32px" }}>
         <div style={{ width: "100%", maxWidth: 480, padding: "0 20px" }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
-            Primeira vez aqui
+            {isSecondSlot ? "Segunda parada" : "Primeira vez aqui"}
           </div>
           <h1 style={{ fontSize: "clamp(28px, 8vw, 42px)", fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 12px 0", lineHeight: 1.05 }}>
-            Como vai se chamar<br />a sua parada?
+            {isSecondSlot ? (
+              <>Nome da sua<br />2ª parada</>
+            ) : (
+              <>Como vai se chamar<br />a sua parada?</>
+            )}
           </h1>
           <p style={{ fontSize: 15, color: "#6B6B70", lineHeight: 1.55, marginBottom: 28, maxWidth: 400 }}>
-            Esse é o nome que aparece nas suas publicações semanais. Pode ser algo pessoal, criativo — o que quiser.
+            {isSecondSlot
+              ? "Use um tema ou gênero diferente da parada principal. Pontuação de 20→1 pt conforme o tamanho da parada; não entra no ranking global."
+              : "Esse é o nome que aparece nas suas publicações semanais. Pode ser algo pessoal, criativo — o que quiser."}
           </p>
 
           <input
             value={nome}
             onChange={(e) => { setNome(e.target.value); setError(null); }}
             onKeyDown={(e) => e.key === "Enter" && handleContinue()}
-            placeholder="Ex: Parada do João, Top da Semana…"
+            placeholder={isSecondSlot ? "Ex: Parada K-Pop, Top Rock…" : "Ex: Parada do João, Top da Semana…"}
             maxLength={60}
             style={{
               width: "100%",
@@ -126,7 +148,7 @@ export default function ParadaSetupPage() {
                 opacity: nome.trim().length < 2 || saving ? 0.5 : 1,
               }}
             >
-              {saving ? "Salvando…" : "Criar parada"}
+              {saving ? "Salvando…" : isSecondSlot ? "Criar 2ª parada" : "Criar parada"}
               {!saving && <ChevronRight />}
             </button>
           </div>

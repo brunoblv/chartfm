@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Plus, X, GripVertical, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -92,6 +92,8 @@ const SPOTIFY_SEARCH_DISABLED = false;
 
 export default function CreatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paradaIdFromUrl = searchParams.get("paradaId");
   const isMobile = useIsMobile();
   const { data: session } = useSession();
   const [entries, setEntries] = useState<Song[]>([]);
@@ -115,10 +117,12 @@ export default function CreatePage() {
   const [importingLast, setImportingLast] = useState(false);
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [paradaNome, setParadaNome] = useState<string | null>(null);
+  const [activeParadaId, setActiveParadaId] = useState<string | null>(paradaIdFromUrl);
   const [showLastfmModal, setShowLastfmModal] = useState(false);
   const [lastfmImportCount, setLastfmImportCount] = useState(200);
   const [userLastfmUser, setUserLastfmUser] = useState<string | null>(null);
   const [userChartSize, setUserChartSize] = useState<number | null>(null);
+  const [paradas, setParadas] = useState<Array<{ id: string; name: string; isPrimary: boolean; chartSize: number | null }>>([]);
   const [globalTopSongs, setGlobalTopSongs] = useState<Song[]>([]);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
@@ -145,10 +149,24 @@ export default function CreatePage() {
   useEffect(() => {
     fetch("/api/user/chart-name", { cache: "no-store" })
       .then((r) => r.json())
-      .then((data: { paradaNome?: string | null }) => {
-        const nome = typeof data.paradaNome === "string" && data.paradaNome.trim() ? data.paradaNome.trim() : null;
+      .then((data: { paradaNome?: string | null; paradaId?: string | null; paradas?: Array<{ id: string; name: string; chartSize?: number | null }> }) => {
+        const allParadas = (data.paradas ?? []).map((p) => ({
+          ...p,
+          isPrimary: false,
+          chartSize: p.chartSize ?? null,
+        }));
+        setParadas(allParadas);
+        const targetId = paradaIdFromUrl ?? data.paradaId ?? null;
+        const match = allParadas.find((p) => p.id === targetId);
+        const nome =
+          match?.name ??
+          (typeof data.paradaNome === "string" && data.paradaNome.trim() ? data.paradaNome.trim() : null);
         setParadaNome(nome);
-        if (!nome) router.replace("/chart/setup");
+        setActiveParadaId(targetId);
+        const size = match?.chartSize ?? null;
+        setUserChartSize(size);
+        if (size) setLastfmImportCount(Math.min(200, size));
+        if (!nome) router.replace(paradaIdFromUrl ? "/chart/setup?slot=2" : "/chart/setup");
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,11 +175,9 @@ export default function CreatePage() {
   useEffect(() => {
     fetch("/api/user/profile")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { lastfmUser?: string | null; chartSize?: number | null } | null) => {
+      .then((data: { lastfmUser?: string | null } | null) => {
         if (!data) return;
         setUserLastfmUser(data.lastfmUser ?? null);
-        setUserChartSize(data.chartSize ?? null);
-        if (data.chartSize) setLastfmImportCount(Math.min(200, data.chartSize));
       })
       .catch(() => {});
   }, []);
@@ -400,7 +416,12 @@ export default function CreatePage() {
       const res = await fetch("/api/charts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entries: publishEntries, weekDate, fastPublish: true }),
+        body: JSON.stringify({
+          entries: publishEntries,
+          weekDate,
+          fastPublish: true,
+          ...(activeParadaId ? { paradaId: activeParadaId } : {}),
+        }),
       });
       const data = await res.json().catch(() => null) as { id?: string; error?: string } | null;
       if (!res.ok) {
@@ -424,7 +445,9 @@ export default function CreatePage() {
     setImportingLast(true);
     setPublishError(null);
     try {
-      const res = await fetch(`/api/charts/latest?weekDate=${encodeURIComponent(wd)}`, { cache: "no-store" });
+      const latestQ = new URLSearchParams({ weekDate: wd });
+      if (activeParadaId) latestQ.set("paradaId", activeParadaId);
+      const res = await fetch(`/api/charts/latest?${latestQ}`, { cache: "no-store" });
       const data = (await res.json()) as LatestChartResponse & { error?: string };
       if (!res.ok) {
         if (res.status === 404) {
@@ -504,6 +527,18 @@ export default function CreatePage() {
     } finally {
       if (runId === lastfmImportRunRef.current) setImportingLastfm(false);
     }
+  };
+
+  const handleParadaChange = (paradaId: string) => {
+    const parada = paradas.find((p) => p.id === paradaId);
+    if (!parada) return;
+    setActiveParadaId(paradaId);
+    setParadaNome(parada.name);
+    const size = parada.chartSize ?? null;
+    setUserChartSize(size);
+    if (size) setLastfmImportCount(Math.min(200, size));
+    setEntries([]);
+    setPublishError(null);
   };
 
   const renderSongRow = (song: Song, added: boolean) => {
@@ -907,9 +942,33 @@ export default function CreatePage() {
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: isMobile ? 28 : 48, fontWeight: 800, letterSpacing: "-0.04em", margin: 0 }}>{tituloParada}</h1>
               <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6, marginBottom: 0 }}>{subtituloSemana}</p>
+              {paradas.length > 1 && (
+                <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+                  {paradas.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleParadaChange(p.id)}
+                      style={{
+                        padding: "4px 14px",
+                        borderRadius: 100,
+                        border: activeParadaId === p.id ? "none" : "1px solid var(--divider-strong)",
+                        background: activeParadaId === p.id ? "var(--accent)" : "var(--surface)",
+                        color: activeParadaId === p.id ? "white" : "var(--text)",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <WeekCalendar value={weekDate} onChange={setWeekDate} />
+              <WeekCalendar value={weekDate} onChange={setWeekDate} paradaId={activeParadaId} />
               <button
                 onClick={publishChart}
                 disabled={publishing || entries.length === 0}

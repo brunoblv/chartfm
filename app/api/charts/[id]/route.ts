@@ -7,6 +7,7 @@ import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById } from "@/lib/spotify-server";
 import type { PersonalDropoutEntry } from "@/lib/types";
+import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 
 export const runtime = "nodejs";
 const NO_CACHE_HEADERS = {
@@ -65,7 +66,16 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
   const row = await prisma.chart.findUnique({
     where: { id: chartId },
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      paradaId: true,
+      weekIndex: true,
+      weekLabel: true,
+      dateRange: true,
+      likes: true,
+      comments: true,
+      reposts: true,
       user: {
         select: {
           id: true,
@@ -116,7 +126,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   );
   const [previousChartFull, nextChart] = await Promise.all([
     prisma.chart.findFirst({
-      where: { userId: row.userId, weekIndex: { lt: row.weekIndex } },
+      where: { paradaId: row.paradaId, weekIndex: { lt: row.weekIndex } },
       orderBy: { weekIndex: "desc" },
       include: {
         entries: {
@@ -134,7 +144,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       },
     }),
     prisma.chart.findFirst({
-      where: { userId: row.userId, weekIndex: { gt: row.weekIndex } },
+      where: { paradaId: row.paradaId, weekIndex: { gt: row.weekIndex } },
       orderBy: { weekIndex: "asc" },
       select: { id: true, weekLabel: true },
     }),
@@ -148,7 +158,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       by: ["songId"],
       where: {
         songId: { in: currentSongIds },
-        chart: { userId: row.userId, weekIndex: { lte: row.weekIndex } },
+        chart: { paradaId: row.paradaId, weekIndex: { lte: row.weekIndex } },
       },
       _count: { _all: true },
       _min: { position: true },
@@ -158,7 +168,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       where: {
         songId: { in: currentSongIds },
         position: 1,
-        chart: { userId: row.userId, weekIndex: { lte: row.weekIndex } },
+        chart: { paradaId: row.paradaId, weekIndex: { lte: row.weekIndex } },
       },
       _count: { _all: true },
     }),
@@ -170,7 +180,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     prisma.chartEntry.findMany({
       where: {
         songId: { in: currentSongIds },
-        chart: { userId: row.userId, weekIndex: { lt: row.weekIndex } },
+        chart: { paradaId: row.paradaId, weekIndex: { lt: row.weekIndex } },
       },
       select: { songId: true, position: true, chart: { select: { weekIndex: true } } },
       orderBy: [{ chart: { weekIndex: "desc" } }],
@@ -319,12 +329,20 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
   const chart = await prisma.chart.findUnique({
     where: { id: chartId },
-    select: { id: true, userId: true, weekIndex: true },
+    select: {
+      id: true,
+      userId: true,
+      paradaId: true,
+      weekIndex: true,
+      parada: { select: { isPrimary: true } },
+    },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (chart.userId !== session.user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+  const scoringTier = scoringTierFromPrimary(chart.parada.isPrimary);
+  const chartSize = entries.length;
 
   const songs: { id: string; spotifyId: string | null; albumSpotifyId: string | null }[] = [];
   const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
@@ -511,13 +529,13 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   }
 
   const previousChart = await prisma.chart.findFirst({
-    where: { userId: chart.userId, weekIndex: prevWeekIndex(chart.weekIndex) },
+    where: { paradaId: chart.paradaId, weekIndex: prevWeekIndex(chart.weekIndex) },
     include: { entries: true },
   });
   const historicalRows = await prisma.chartEntry.findMany({
     where: {
       songId: { in: [...new Set(songs.map((s) => s.id))] },
-      chart: { userId: chart.userId, weekIndex: { lt: chart.weekIndex } },
+      chart: { paradaId: chart.paradaId, weekIndex: { lt: chart.weekIndex } },
     },
     select: { songId: true },
     distinct: ["songId"],
@@ -527,7 +545,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const entryData = entries.map((e, i) => {
     const song = songs[i];
     const pos = i + 1;
-    const points = 101 - pos;
+    const points = pointsForChartPosition(pos, scoringTier, chartSize);
     const prev = previousChart?.entries.find((pe) => pe.songId === song.id);
     const { palette, seed } = paletteFor(e.artist, e.title);
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { GoogleAnalytics } from '@next/third-parties/google'
+import Script from "next/script";
 
 import "./globals.css";
 
@@ -25,7 +26,12 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        {/* Anti-flash: apply theme before React mounts to avoid light-mode flicker */}
+        <meta
+          name="google-adsense-account"
+          content="ca-pub-4600084865044867"
+        />
+        {/* Anti-flash: runs before React hydration to set theme from localStorage */}
+        {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script
           type="application/ld+json"
@@ -61,16 +67,6 @@ export default async function RootLayout({
             }),
           }}
         />
-        <meta
-          name="google-adsense-account"
-          content="ca-pub-4600084865044867"
-        />
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4600084865044867"
-          crossOrigin="anonymous"
-        />
       </head>
 
       <body>
@@ -78,7 +74,13 @@ export default async function RootLayout({
           {children}
         </Providers>
       </body>
+
       <GoogleAnalytics gaId="G-VKENNK522F" />
+      <Script
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4600084865044867"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
     </html>
   );
 }

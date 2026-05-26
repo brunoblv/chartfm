@@ -10,6 +10,7 @@ import {
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
+import { VideoClipCover } from "@/components/ui/VideoClipCover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
@@ -19,7 +20,7 @@ import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, PersonalDropoutEntry, TimelineItem, User } from "@/lib/types";
 
-type Variant = "list" | "grid" | "podium";
+type Variant = "list" | "grid" | "podium" | "video_clip";
 type Tab = "chart" | "comments" | "overlap" | "saidas";
 
 function useIsMobile() {
@@ -100,6 +101,8 @@ export default function ChartDetailPage() {
 
   const [variant, setVariant] = useState<Variant>("list");
   const [tab, setTab] = useState<Tab>("chart");
+  const [videoClips, setVideoClips] = useState<Record<string, string>>({});
+  const [loadingClips, setLoadingClips] = useState(false);
 
   const [liked, setLiked] = useState(false);
   const [reposted, setReposted] = useState(false);
@@ -180,6 +183,25 @@ export default function ChartDetailPage() {
       cancelled = true;
     };
   }, [user?.handle]);
+
+  useEffect(() => {
+    if (variant !== "video_clip" || !id || !isDbChart) return;
+    let cancelled = false;
+    setLoadingClips(true);
+    (async () => {
+      try {
+        const res = await fetch(`/api/charts/${encodeURIComponent(id)}/video-clips`);
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as Record<string, string>;
+        if (!cancelled) setVideoClips(data);
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoadingClips(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [variant, id, isDbChart]);
 
   const composeUser = useMemo((): Pick<User, "name" | "avatar"> => {
     if (session?.user?.name) {
@@ -353,9 +375,9 @@ export default function ChartDetailPage() {
 
             {/* Variant toggle full-width */}
             <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 8, padding: 3, gap: 2 }}>
-              {(["list", "grid", "podium"] as Variant[]).map((v) => (
+              {(["list", "grid", "podium", "video_clip"] as Variant[]).map((v) => (
                 <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, padding: "8px 0", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, background: variant === v ? "var(--surface)" : "transparent", color: variant === v ? "var(--text)" : "var(--text-muted)", boxShadow: variant === v ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition: "background 120ms" }}>
-                  {v === "list" ? "Lista" : v === "grid" ? "Grade" : "Pódio"}
+                  {v === "list" ? "Lista" : v === "grid" ? "Grade" : v === "podium" ? "Pódio" : "Clipe"}
                 </button>
               ))}
             </div>
@@ -434,9 +456,9 @@ export default function ChartDetailPage() {
                   </button>
                 </div>
                 <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 8, padding: 3, gap: 2, alignSelf: "flex-start" }}>
-                  {(["list", "grid", "podium"] as Variant[]).map((v) => (
+                  {(["list", "grid", "podium", "video_clip"] as Variant[]).map((v) => (
                     <button key={v} onClick={() => setVariant(v)} style={{ padding: "6px 12px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, background: variant === v ? "var(--surface)" : "transparent", color: variant === v ? "var(--text)" : "var(--text-muted)", boxShadow: variant === v ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition: "background 120ms" }}>
-                      {v === "list" ? "Lista" : v === "grid" ? "Grade" : "Pódio"}
+                      {v === "list" ? "Lista" : v === "grid" ? "Grade" : v === "podium" ? "Pódio" : "Vídeo Clipe"}
                     </button>
                   ))}
                 </div>
@@ -476,6 +498,11 @@ export default function ChartDetailPage() {
           {variant === "list" && <ClassicList entries={chart.entries} personalNumberOnes={personalNumberOnes} globalNumberOnes={globalNumberOnes} />}
           {variant === "grid" && <GridVariant entries={chart.entries} />}
           {variant === "podium" && <PodiumVariant entries={chart.entries} />}
+          {variant === "video_clip" && (
+            loadingClips
+              ? <div style={{ padding: 40, color: "var(--text-muted)", fontSize: 15 }}>Carregando capturas…</div>
+              : <VideoClipVariant entries={chart.entries} videoClips={videoClips} />
+          )}
         </>
       )}
       {tab === "saidas" && <PersonalDropoutsTab dropouts={dropouts} isDbChart={isDbChart} />}
@@ -697,6 +724,75 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
       </div>
       <ClassicList entries={rest} />
     </>
+  );
+}
+
+function VideoClipVariant({ entries, videoClips }: { entries: ChartEntry[]; videoClips: Record<string, string> }) {
+  const isMobile = useIsMobile();
+  const clipW = isMobile ? 160 : 320;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {entries.map((e) => {
+        const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
+        return (
+          <div
+            key={e.position}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: isMobile ? 12 : 18,
+              padding: isMobile ? "10px 14px" : "12px 20px",
+              borderBottom: "1px solid var(--divider-soft)",
+              background: "var(--surface)",
+            }}
+          >
+            <div style={{ width: isMobile ? 32 : 40, textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: e.position <= 3 ? (isMobile ? 26 : 32) : (isMobile ? 20 : 26), fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                {e.position}
+              </div>
+              <div style={{ marginTop: 3 }}>
+                <MovementBadge status={e.status} delta={e.delta} compact />
+              </div>
+            </div>
+            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+              <VideoClipCover
+                imageUrl={clipUrl}
+                paletteA={e.cover.palette[0]}
+                paletteB={e.cover.palette[1]}
+                seed={e.cover.seed}
+                width={clipW}
+              />
+            </Link>
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
+              <div>
+                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: isMobile ? 15 : 18, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)", letterSpacing: "-0.02em" }}>
+                  {e.song.title}
+                </Link>
+                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: isMobile ? 13 : 15, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                  {formatSongArtist(e.song)}
+                </Link>
+                {e.song.album && (
+                  <div style={{ fontSize: isMobile ? 11 : 12, color: "var(--text-muted)", opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+                    {e.song.album}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: isMobile ? 10 : 14, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <span style={{ fontSize: isMobile ? 9 : 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", opacity: 0.7 }}>Pico</span>
+                  <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>#{e.peak}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <span style={{ fontSize: isMobile ? 9 : 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", opacity: 0.7 }}>Semanas</span>
+                  <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{e.weeks}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

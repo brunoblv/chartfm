@@ -14,6 +14,16 @@ const ALL_GENRES = [
   "Clássica", "Latina", "K-Pop", "Country", "Metal", "Reggae",
 ];
 
+type ParadaDraft = {
+  id: string;
+  name: string;
+  logo: string | null;
+  isPrimary: boolean;
+  genres: string[];
+  sortOrder: number;
+  chartSize: number | null;
+};
+
 type ProfileData = {
   handle: string;
   name: string;
@@ -57,11 +67,35 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState<string | null>(null);
+  const [paradaDrafts, setParadaDrafts] = useState<ParadaDraft[]>([]);
+  const [canCreateParada, setCanCreateParada] = useState(true);
+  const [logoUploadParadaId, setLogoUploadParadaId] = useState<string | null>(null);
+  const [logoErrorByParada, setLogoErrorByParada] = useState<Record<string, string | null>>({});
+  const [newParadaName, setNewParadaName] = useState("");
+  const [creatingParada, setCreatingParada] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [activeLogoParadaId, setActiveLogoParadaId] = useState<string | null>(null);
+
+  async function loadParadas() {
+    const res = await fetch("/api/user/paradas", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      paradas?: ParadaDraft[];
+      canCreate?: boolean;
+    };
+    if (data.paradas?.length) {
+      setParadaDrafts(
+        [...data.paradas].sort((a, b) => a.sortOrder - b.sortOrder),
+      );
+    }
+    setCanCreateParada(data.canCreate !== false);
+  }
+
+  useEffect(() => {
+    loadParadas().catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/user/profile")
@@ -93,45 +127,148 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  function toggleGenre(genre: string) {
-    setForm((prev) => ({
-      ...prev,
-      genres: prev.genres.includes(genre)
-        ? prev.genres.filter((g) => g !== genre)
-        : [...prev.genres, genre],
-    }));
+  function updateParadaDraft(paradaId: string, patch: Partial<Pick<ParadaDraft, "name" | "genres" | "chartSize">>) {
+    setParadaDrafts((prev) =>
+      prev.map((p) => (p.id === paradaId ? { ...p, ...patch } : p)),
+    );
   }
 
-  async function save() {
+  function toggleParadaGenre(paradaId: string, genre: string) {
+    setParadaDrafts((prev) =>
+      prev.map((p) => {
+        if (p.id !== paradaId) return p;
+        const genres = p.genres.includes(genre)
+          ? p.genres.filter((g) => g !== genre)
+          : [...p.genres, genre];
+        return { ...p, genres };
+      }),
+    );
+  }
+
+  async function saveProfile() {
     setSaving(true);
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch("/api/user/profile", {
+      const profileRes = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
           handle: form.handle,
           bio: form.bio,
-          paradaNome: form.paradaNome,
-          genres: form.genres,
           lastfmUser: form.lastfmUser,
           twitterUser: form.twitterUser,
           instagramUser: form.instagramUser,
-          chartSize: form.chartSize,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
+      const data = await profileRes.json();
+      if (!profileRes.ok) {
         setError(data.error ?? "Erro ao salvar.");
         return;
       }
-      setSuccess("Dados atualizados com sucesso.");
+      setSuccess("Perfil atualizado com sucesso.");
     } catch {
       setError("Erro de conexão.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveParadas() {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      for (const p of paradaDrafts) {
+        const trimmed = p.name.trim();
+        if (trimmed.length < 2) {
+          setError(`O nome da parada "${trimmed || "sem nome"}" precisa ter pelo menos 2 caracteres.`);
+          return;
+        }
+      }
+
+      const results = await Promise.all(
+        paradaDrafts.map((p) =>
+          fetch("/api/user/paradas", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              paradaId: p.id,
+              name: p.name.trim(),
+              genres: p.genres,
+              chartSize: p.chartSize,
+            }),
+          }),
+        ),
+      );
+
+      for (const res of results) {
+        if (!res.ok) {
+          const pd = await res.json();
+          setError(pd.error ?? "Erro ao salvar uma das paradas.");
+          return;
+        }
+      }
+
+      await loadParadas();
+      setSuccess("Paradas atualizadas com sucesso.");
+    } catch {
+      setError("Erro de conexão.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function setAsPrimary(paradaId: string) {
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch("/api/user/paradas", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paradaId, setPrimary: true }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Erro ao definir parada principal.");
+        return;
+      }
+      setParadaDrafts((prev) =>
+        prev.map((p) => ({ ...p, isPrimary: p.id === paradaId })),
+      );
+      setSuccess("Parada principal atualizada.");
+    } catch {
+      setError("Erro de conexão.");
+    }
+  }
+
+  async function createSecondParada() {
+    const trimmed = newParadaName.trim();
+    if (trimmed.length < 2) {
+      setError("Informe um nome com pelo menos 2 caracteres para a segunda parada.");
+      return;
+    }
+    setCreatingParada(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/user/paradas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao criar segunda parada.");
+        return;
+      }
+      setNewParadaName("");
+      await loadParadas();
+      setSuccess("Segunda parada criada.");
+    } catch {
+      setError("Erro de conexão.");
+    } finally {
+      setCreatingParada(false);
     }
   }
 
@@ -172,45 +309,56 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleLogoFile(file: File) {
-    setUploadingLogo(true);
-    setLogoError(null);
+  async function handleLogoFile(paradaId: string, file: File) {
+    setLogoUploadParadaId(paradaId);
+    setLogoErrorByParada((e) => ({ ...e, [paradaId]: null }));
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/user/chart-logo", { method: "POST", body: fd });
+      const res = await fetch(`/api/user/chart-logo?paradaId=${encodeURIComponent(paradaId)}`, {
+        method: "POST",
+        body: fd,
+      });
       if (!res.ok) {
         let message = "Erro ao enviar logo.";
         try {
           const data = await res.json();
           message = data.error ?? message;
         } catch {}
-        setLogoError(message);
+        setLogoErrorByParada((e) => ({ ...e, [paradaId]: message }));
         return;
       }
-      const data = await res.json();
-      setForm((f) => ({ ...f, paradaLogo: data.url }));
+      const data = (await res.json()) as { url?: string };
+      if (data.url) {
+        setParadaDrafts((prev) =>
+          prev.map((p) => (p.id === paradaId ? { ...p, logo: data.url! } : p)),
+        );
+      }
     } catch {
-      setLogoError("Erro de conexão. Tente novamente.");
+      setLogoErrorByParada((e) => ({ ...e, [paradaId]: "Erro de conexão." }));
     } finally {
-      setUploadingLogo(false);
+      setLogoUploadParadaId(null);
     }
   }
 
-  async function removeLogo() {
-    setUploadingLogo(true);
-    setLogoError(null);
+  async function removeLogo(paradaId: string) {
+    setLogoUploadParadaId(paradaId);
+    setLogoErrorByParada((e) => ({ ...e, [paradaId]: null }));
     try {
-      const res = await fetch("/api/user/chart-logo", { method: "DELETE" });
+      const res = await fetch(`/api/user/chart-logo?paradaId=${encodeURIComponent(paradaId)}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
-        setLogoError("Erro ao remover logo.");
+        setLogoErrorByParada((e) => ({ ...e, [paradaId]: "Erro ao remover logo." }));
         return;
       }
-      setForm((f) => ({ ...f, paradaLogo: null }));
+      setParadaDrafts((prev) =>
+        prev.map((p) => (p.id === paradaId ? { ...p, logo: null } : p)),
+      );
     } catch {
-      setLogoError("Erro de conexão.");
+      setLogoErrorByParada((e) => ({ ...e, [paradaId]: "Erro de conexão." }));
     } finally {
-      setUploadingLogo(false);
+      setLogoUploadParadaId(null);
     }
   }
 
@@ -235,7 +383,7 @@ export default function SettingsPage() {
 
   const TABS: { id: Tab; label: string }[] = [
     { id: "perfil", label: "Perfil" },
-    { id: "parada", label: "Parada" },
+    { id: "parada", label: "Paradas" },
     { id: "conta", label: "Conta" },
   ];
 
@@ -492,7 +640,7 @@ export default function SettingsPage() {
 
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
-                    onClick={save}
+                    onClick={saveProfile}
                     disabled={saving}
                     style={{
                       background: "#FA243C",
@@ -514,196 +662,277 @@ export default function SettingsPage() {
 
             {/* Aba Parada */}
             {tab === "parada" && (
-              <div
-                style={{
-                  background: "var(--surface)",
-                  borderRadius: 18,
-                  border: "1px solid var(--divider)",
-                  padding: 22,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 20,
-                }}
-              >
-                {/* Logo da parada */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                      Logo da parada
-                    </div>
-                    <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                      Aparece no lugar das 4 capas na página de detalhes da sua parada. Se não tiver um logo, as capas das músicas são exibidas automaticamente.
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
-                    {/* Preview quadrado */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {paradaDrafts.map((p) => {
+                  const isUploading = logoUploadParadaId === p.id;
+                  const logoErr = logoErrorByParada[p.id] ?? null;
+                  return (
                     <div
+                      key={p.id}
                       style={{
-                        width: 120,
-                        height: 120,
-                        borderRadius: 16,
-                        overflow: "hidden",
-                        flexShrink: 0,
-                        border: "1px solid var(--divider-strong)",
-                        background: "var(--fill-inset)",
+                        background: "var(--surface)",
+                        borderRadius: 18,
+                        border: "1px solid var(--divider)",
+                        padding: 22,
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                        flexDirection: "column",
+                        gap: 16,
                       }}
                     >
-                      {form.paradaLogo ? (
-                        <img
-                          src={form.paradaLogo}
-                          alt="Logo da parada"
-                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                        />
-                      ) : (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, color: "var(--text-muted)" }}>
-                          <ImagePlus size={28} strokeWidth={1.5} />
-                          <span style={{ fontSize: 11, fontWeight: 500 }}>Sem logo</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Ações */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => logoInputRef.current?.click()}
-                        disabled={uploadingLogo}
-                        style={{
-                          background: "var(--btn-dark-bg)",
-                          color: "var(--btn-dark-fg)",
-                          border: "none",
-                          borderRadius: 100,
-                          padding: "10px 20px",
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: uploadingLogo ? "not-allowed" : "pointer",
-                          opacity: uploadingLogo ? 0.6 : 1,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <ImagePlus size={14} />
-                        {uploadingLogo ? "Enviando..." : form.paradaLogo ? "Trocar logo" : "Enviar logo"}
-                      </button>
-                      {form.paradaLogo && (
-                        <button
-                          type="button"
-                          onClick={removeLogo}
-                          disabled={uploadingLogo}
+                      {/* Header */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span
                           style={{
-                            background: "transparent",
-                            border: "1px solid rgba(185,28,28,0.3)",
-                            borderRadius: 100,
-                            padding: "8px 16px",
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "#B91C1C",
-                            cursor: uploadingLogo ? "not-allowed" : "pointer",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: p.isPrimary ? "#FA243C" : "var(--text-muted)",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.6,
+                          }}
+                        >
+                          {p.isPrimary ? "Parada principal" : "Parada secundária"}
+                        </span>
+                        {!p.isPrimary && (
+                          <button
+                            type="button"
+                            onClick={() => setAsPrimary(p.id)}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              padding: "6px 14px",
+                              borderRadius: 100,
+                              border: "1px solid var(--divider-strong)",
+                              background: "var(--surface)",
+                              cursor: "pointer",
+                              color: "var(--text)",
+                            }}
+                          >
+                            Tornar principal
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Logo */}
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                        <div
+                          style={{
+                            width: 88,
+                            height: 88,
+                            borderRadius: 14,
+                            overflow: "hidden",
+                            flexShrink: 0,
+                            border: "1px solid var(--divider-strong)",
+                            background: "var(--fill-inset)",
                             display: "flex",
                             alignItems: "center",
-                            gap: 6,
-                            opacity: uploadingLogo ? 0.5 : 1,
+                            justifyContent: "center",
                           }}
                         >
-                          <Trash2 size={13} />
-                          Remover logo
-                        </button>
-                      )}
-                      <span style={{ fontSize: 11, color: "#86868B", maxWidth: 220, lineHeight: 1.5 }}>
-                        Use uma imagem quadrada para melhor resultado. JPG, PNG ou WebP · máx. 5 MB.
-                      </span>
+                          {p.logo ? (
+                            <img
+                              src={p.logo}
+                              alt="Logo"
+                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                            />
+                          ) : (
+                            <ImagePlus size={24} strokeWidth={1.5} color="var(--text-muted)" />
+                          )}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => { setActiveLogoParadaId(p.id); logoInputRef.current?.click(); }}
+                            disabled={isUploading}
+                            style={{
+                              background: "var(--btn-dark-bg)",
+                              color: "var(--btn-dark-fg)",
+                              border: "none",
+                              borderRadius: 100,
+                              padding: "8px 16px",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              cursor: isUploading ? "not-allowed" : "pointer",
+                              opacity: isUploading ? 0.6 : 1,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <ImagePlus size={13} />
+                            {isUploading ? "Enviando..." : p.logo ? "Trocar logo" : "Enviar logo"}
+                          </button>
+                          {p.logo && (
+                            <button
+                              type="button"
+                              onClick={() => removeLogo(p.id)}
+                              disabled={isUploading}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                padding: "4px 0",
+                                fontSize: 12,
+                                color: "#B91C1C",
+                                cursor: isUploading ? "not-allowed" : "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                opacity: isUploading ? 0.5 : 1,
+                              }}
+                            >
+                              <Trash2 size={12} />
+                              Remover logo
+                            </button>
+                          )}
+                          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                            JPG, PNG ou WebP · máx. 5 MB
+                          </span>
+                        </div>
+                      </div>
+                      {logoErr && <div style={{ fontSize: 12, color: "#B91C1C" }}>{logoErr}</div>}
+
+                      {/* Nome */}
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Nome da parada</span>
+                        <input
+                          value={p.name}
+                          onChange={(e) => updateParadaDraft(p.id, { name: e.target.value })}
+                          style={{
+                            border: "1px solid var(--divider-strong)",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            fontSize: 14,
+                            background: "var(--fill-subtle)",
+                            color: "var(--text)",
+                          }}
+                        />
+                      </label>
+
+                      {/* Gêneros */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Gêneros</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {ALL_GENRES.map((genre) => {
+                            const active = p.genres.includes(genre);
+                            return (
+                              <button
+                                key={genre}
+                                type="button"
+                                onClick={() => toggleParadaGenre(p.id, genre)}
+                                style={{
+                                  padding: "8px 14px",
+                                  background: active ? "var(--btn-dark-bg)" : "var(--surface)",
+                                  color: active ? "var(--btn-dark-fg)" : "var(--text)",
+                                  border: active ? "1px solid var(--btn-dark-bg)" : "1px solid var(--divider-strong)",
+                                  borderRadius: 100,
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  transition: "all 120ms",
+                                }}
+                              >
+                                {genre}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Tamanho */}
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Tamanho da parada</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={p.chartSize ?? ""}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            updateParadaDraft(p.id, { chartSize: isNaN(v) ? null : Math.min(100, Math.max(1, v)) });
+                          }}
+                          placeholder="Ex: 20"
+                          style={{
+                            border: "1px solid var(--divider-strong)",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            fontSize: 14,
+                            width: "100%",
+                            boxSizing: "border-box",
+                            background: "var(--fill-subtle)",
+                            color: "var(--text)",
+                          }}
+                        />
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                          Quantas músicas tem esta parada (máx. 100). Ao publicar, só as primeiras N músicas são salvas.
+                        </span>
+                      </label>
+                    </div>
+                  );
+                })}
+
+                {/* Criar segunda parada */}
+                {canCreateParada && paradaDrafts.length < 2 && (
+                  <div
+                    style={{
+                      background: "var(--surface)",
+                      borderRadius: 18,
+                      border: "1px dashed var(--divider-strong)",
+                      padding: 22,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+                        Criar segunda parada
+                      </div>
+                      <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                        Você pode ter até 2 paradas. A secundária conta menos pontos e não entra no ranking global.
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        value={newParadaName}
+                        onChange={(e) => setNewParadaName(e.target.value)}
+                        placeholder="Nome da segunda parada"
+                        style={{
+                          flex: 1,
+                          border: "1px solid var(--divider-strong)",
+                          borderRadius: 10,
+                          padding: "10px 12px",
+                          fontSize: 14,
+                          background: "var(--fill-subtle)",
+                          color: "var(--text)",
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={createSecondParada}
+                        disabled={creatingParada}
+                        style={{
+                          background: "#FA243C",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 10,
+                          padding: "10px 18px",
+                          fontSize: 14,
+                          fontWeight: 700,
+                          cursor: creatingParada ? "not-allowed" : "pointer",
+                          opacity: creatingParada ? 0.7 : 1,
+                        }}
+                      >
+                        {creatingParada ? "Criando..." : "Criar"}
+                      </button>
                     </div>
                   </div>
-
-                  {logoError && (
-                    <div style={{ fontSize: 13, color: "#B91C1C" }}>{logoError}</div>
-                  )}
-
-                  <input
-                    ref={logoInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleLogoFile(file);
-                      e.target.value = "";
-                    }}
-                  />
-                </div>
-
-                <div style={{ height: 1, background: "var(--divider)" }} />
-
-                {/* Nome da parada e tamanho — também aqui para conveniência */}
-                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Nome da parada</span>
-                  <input
-                    value={form.paradaNome ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, paradaNome: e.target.value }))}
-                    style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
-                  />
-                </label>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Tamanho da parada</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={form.chartSize ?? ""}
-                    onChange={(e) => {
-                      const v = parseInt(e.target.value, 10);
-                      setForm((f) => ({ ...f, chartSize: isNaN(v) ? null : Math.min(100, Math.max(1, v)) }));
-                    }}
-                    placeholder="Ex: 20"
-                    style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
-                  />
-                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                    Quantas músicas tem a sua parada (máx. 100). Ao publicar, só as primeiras N músicas são salvas.
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Gêneros</span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {ALL_GENRES.map((genre) => {
-                      const active = form.genres.includes(genre);
-                      return (
-                        <button
-                          key={genre}
-                          type="button"
-                          onClick={() => toggleGenre(genre)}
-                          style={{
-                            padding: "10px 16px",
-                            background: active ? "var(--btn-dark-bg)" : "var(--surface)",
-                            color: active ? "var(--btn-dark-fg)" : "var(--text)",
-                            border: active ? "1px solid var(--btn-dark-bg)" : "1px solid var(--divider-strong)",
-                            borderRadius: 100,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            transition: "all 120ms",
-                          }}
-                        >
-                          {genre}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                )}
 
                 {error && <div style={{ fontSize: 13, color: "#B91C1C" }}>{error}</div>}
                 {success && <div style={{ fontSize: 13, color: "var(--up-fg)" }}>{success}</div>}
 
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
-                    onClick={save}
+                    onClick={saveParadas}
                     disabled={saving}
                     style={{
                       background: "#FA243C",
@@ -720,6 +949,19 @@ export default function SettingsPage() {
                     {saving ? "Salvando..." : "Salvar alterações"}
                   </button>
                 </div>
+
+                {/* Input de logo compartilhado entre paradas */}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && activeLogoParadaId) handleLogoFile(activeLogoParadaId, file);
+                    e.target.value = "";
+                  }}
+                />
               </div>
             )}
 

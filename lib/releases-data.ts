@@ -14,6 +14,60 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    date: "2026-05-26",
+    label: "26 de maio de 2026",
+    entries: [
+      {
+        title: "Segunda parada",
+        tag: "novo",
+        description:
+          "Agora é possível ter até 2 paradas no ChartFM. A segunda parada pode ser criada nas configurações, na aba Parada. Ela funciona de forma independente — com nome, tamanho e gêneros próprios — mas conta menos pontos e não entra no ranking da Parada Global.",
+      },
+      {
+        title: "Aba Saídas na Parada Global",
+        tag: "novo",
+        description:
+          "A Parada Global ganhou uma terceira aba: Saídas. Ela lista todas as músicas que estavam no top 100 na semana passada e não aparecem mais esta semana, com a posição que ocupavam e um badge de destaque.",
+      },
+      {
+        title: "Aba Saídas na parada pessoal",
+        tag: "novo",
+        description:
+          "A página de cada parada pessoal também ganhou a aba Saídas, mostrando as músicas que caíram da lista desde a última publicação — com quantas semanas ficaram e a posição de pico que alcançaram.",
+      },
+      {
+        title: "Respostas nos comentários",
+        tag: "novo",
+        description:
+          "Agora é possível responder diretamente a um comentário na página da parada. Cada comentário exibe o número de respostas e um botão para expandir ou escrever uma reply, mantendo a conversa organizada por tópico.",
+      },
+    ],
+  },
+  {
+    date: "2026-05-22",
+    label: "22 de maio de 2026",
+    entries: [
+      {
+        title: "CriticsFM adaptado para celular",
+        tag: "design",
+        description:
+          "A página do CriticsFM agora funciona melhor em telas pequenas: busca e filtros ficam empilhados verticalmente, o campo de busca ocupa toda a largura, o botão de adicionar álbum fica ao lado do seletor de ordenação e a grade de álbuns passa a duas colunas no mobile. O painel de busca no Spotify também ganhou espaçamento correto em telas pequenas.",
+      },
+      {
+        title: "Parada Global sempre atualizada",
+        tag: "fix",
+        description:
+          "Corrigido um problema em que a Parada Global podia exibir dados em cache por até 1 hora. Agora os dados são sempre buscados em tempo real, garantindo que você veja as músicas mais recentes.",
+      },
+      {
+        title: "Botão Limpar lista na criação e edição de paradas",
+        tag: "novo",
+        description:
+          "Na página de criar e editar parada, um novo botão Limpar lista permite apagar todas as entradas de uma vez. O botão só aparece quando há pelo menos uma música na lista.",
+      },
+    ],
+  },
+  {
     date: "2026-05-17",
     label: "17 de maio de 2026",
     entries: [
@@ -70,6 +124,12 @@ export const RELEASES: Release[] = [
         tag: "melhoria",
         description:
           'Os cards de parada no feed agora exibem o logo personalizado (quando definido) e o nome da parada em vez do genérico "Top X". O logo também aparece no cabeçalho do card ao lado do avatar do usuário.',
+      },
+      {
+        title: "Redes sociais no perfil",
+        tag: "novo",
+        description:
+          "Agora você pode vincular suas contas do X (Twitter) e Instagram ao seu perfil. Os links aparecem na página pública do perfil ao lado do Last.fm. Para adicionar, vá em Configurações → Perfil.",
       },
     ],
   },

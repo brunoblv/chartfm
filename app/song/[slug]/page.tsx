@@ -217,6 +217,13 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const currentUserId = session?.user?.id ?? null;
   const myEntries = currentUserId ? entries.filter((e) => e.chart.userId === currentUserId) : [];
 
+  const myVideoClip = currentUserId
+    ? await prisma.userSongVideoClipChoice.findUnique({
+        where: { userId_songId: { userId: currentUserId, songId } },
+        select: { clip: { select: { imageUrl: true } } },
+      })
+    : null;
+
   const myAppearancesSorted = [...myEntries]
     .sort((a, b) => a.chart.weekIndex - b.chart.weekIndex)
     .map((e) => ({
@@ -285,10 +292,12 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
 
         <SongAppearancesTabs
           currentUserId={currentUserId}
+          songId={songId}
           myAppearances={myAppearancesSorted}
           myStats={myStats}
           globalStats={{ totalPoints, uniqueUsers: users, weeksTop100, number1s, peak }}
           topUsers={topUsers}
+          initialVideoClipUrl={myVideoClip?.clip?.imageUrl ?? null}
         />
 
         {!hasChartPresence && (

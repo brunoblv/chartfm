@@ -79,9 +79,10 @@ type Props = {
   value: string; // YYYY-MM-DD
   onChange: (date: string) => void;
   label?: string;
+  paradaId?: string | null;
 };
 
-export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
+export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Props) {
   const [open, setOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<false | "months" | "years">(false);
   const [yearInput, setYearInput] = useState("");
@@ -109,13 +110,16 @@ export function WeekCalendar({ value, onChange, label = "Semana" }: Props) {
   }, []);
 
   useEffect(() => {
-    fetch("/api/charts/weeks")
+    const url = paradaId
+      ? `/api/charts/weeks?paradaId=${encodeURIComponent(paradaId)}`
+      : "/api/charts/weeks";
+    fetch(url)
       .then((r) => r.json())
       .then((data: { weekIndexes?: number[] }) => {
         setPublishedIndexes(new Set(data.weekIndexes ?? []));
       })
       .catch(() => {});
-  }, []);
+  }, [paradaId]);
 
   useEffect(() => {
     if (!open) { setPickerMode(false); setYearRangeStart(Math.floor(viewYear / 12) * 12); return; }

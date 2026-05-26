@@ -54,6 +54,7 @@ export interface ChartEntry {
   prevPos: number | null;
   peak: number;
   weeks: number;
+  videoClipImageUrl?: string | null;
 }
 
 export interface PersonalDropoutEntry {

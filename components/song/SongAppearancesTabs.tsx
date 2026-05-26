@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, Upload, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { VideoClipCover } from "@/components/ui/VideoClipCover";
 
 type Appearance = {
   chartId: string;
@@ -35,15 +36,21 @@ type TopUser = {
 
 type Props = {
   currentUserId: string | null;
+  songId: string;
   myAppearances: Appearance[];
   myStats: UserStats;
   globalStats: GlobalStats;
   topUsers: TopUser[];
+  initialVideoClipUrl: string | null;
 };
 
-export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, globalStats, topUsers }: Props) {
+export function SongAppearancesTabs({ currentUserId, songId, myAppearances, myStats, globalStats, topUsers, initialVideoClipUrl }: Props) {
   const isLoggedIn = !!currentUserId;
-  const [activeTab, setActiveTab] = useState<"mine" | "global">(isLoggedIn ? "mine" : "global");
+  const [activeTab, setActiveTab] = useState<"mine" | "global" | "video_clip">(isLoggedIn ? "mine" : "global");
+  const [videoClipUrl, setVideoClipUrl] = useState<string | null>(initialVideoClipUrl);
+  const [uploading, setUploading] = useState(false);
+  const [clipError, setClipError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const userCards: { label: string; value: string | number }[] = [
     { label: "Semanas na parada", value: myStats.appearances },
@@ -60,18 +67,69 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
   ];
 
   const cards = activeTab === "mine" && isLoggedIn ? userCards : globalCards;
-  const showCards = activeTab === "global" || isLoggedIn;
+  const showCards = activeTab !== "video_clip" && (activeTab === "global" || isLoggedIn);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setClipError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/user/song-video-clip?songId=${encodeURIComponent(songId)}`, {
+        method: "POST",
+        body: form,
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) {
+        setClipError(data.error ?? "Erro ao enviar a imagem.");
+        return;
+      }
+      setVideoClipUrl(data.url ?? null);
+    } catch {
+      setClipError("Erro de conexão. Tente novamente.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDelete() {
+    setUploading(true);
+    setClipError(null);
+    try {
+      const res = await fetch(`/api/user/song-video-clip?songId=${encodeURIComponent(songId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setClipError(data.error ?? "Erro ao remover.");
+        return;
+      }
+      setVideoClipUrl(null);
+    } catch {
+      setClipError("Erro de conexão. Tente novamente.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const tabs: { id: "mine" | "global" | "video_clip"; label: string; onlyLoggedIn?: boolean }[] = [
+    { id: "mine", label: "Nas suas paradas", onlyLoggedIn: true },
+    { id: "global", label: "Global" },
+    { id: "video_clip", label: "Vídeo Clipe", onlyLoggedIn: true },
+  ];
 
   return (
     <div style={{ marginTop: 30 }}>
       <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-        {(["mine", "global"] as const).map((tab) => {
-          const label = tab === "mine" ? "Nas suas paradas" : "Global";
-          const isActive = activeTab === tab;
+        {tabs.filter((t) => !t.onlyLoggedIn || isLoggedIn).map((t) => {
+          const isActive = activeTab === t.id;
           return (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
               style={{
                 background: "none",
                 border: "none",
@@ -84,7 +142,7 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
                 marginBottom: -1,
               }}
             >
-              {label}
+              {t.label}
             </button>
           );
         })}
@@ -213,6 +271,60 @@ export function SongAppearancesTabs({ currentUserId, myAppearances, myStats, glo
               Esta música ainda não aparece em nenhuma das suas paradas publicadas. Quando você votar com ela, aparecerá aqui a posição, a data e o ano de cada semana.
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "video_clip" && isLoggedIn && (
+        <div style={{ marginTop: 14 }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 400 }}>
+            <VideoClipCover
+              imageUrl={videoClipUrl}
+              width={320}
+              style={{ borderRadius: 12 }}
+            />
+            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
+              Esta imagem será exibida na sua parada quando alguém visualizá-la em modo <strong>Vídeo Clipe</strong>. Formato ideal: 16:9 (ex.: 1280×720).
+            </div>
+            {clipError && (
+              <div style={{ fontSize: 13, color: "#FA243C", fontWeight: 600 }}>{clipError}</div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "#FA243C", color: "white", border: "none",
+                  padding: "10px 18px", borderRadius: 10, fontSize: 14, fontWeight: 700,
+                  cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1,
+                }}
+              >
+                <Upload size={15} />
+                {uploading ? "Enviando…" : videoClipUrl ? "Trocar captura" : "Enviar captura"}
+              </button>
+              {videoClipUrl && !uploading && (
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    background: "transparent", color: "#86868B",
+                    border: "1px solid var(--divider)", padding: "10px 14px",
+                    borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  <Trash2 size={15} />
+                  Remover
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

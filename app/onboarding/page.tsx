@@ -98,9 +98,15 @@ function Spinner() {
 type HandleStatus = "idle" | "checking" | "available" | "taken" | "invalid";
 
 export default function OnboardingPage() {
-  const { data: session, update } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (status === "unauthenticated" || (status === "authenticated" && !session?.user?.id)) {
+      router.replace("/login");
+    }
+  }, [status, session?.user?.id, router]);
 
   const isNewUser = session?.user?.needsHandle !== false;
   const [step, setStep] = useState<1 | 2>(isNewUser ? 1 : 2);

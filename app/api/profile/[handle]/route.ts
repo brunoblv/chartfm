@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { buildPublicProfilePayload } from "@/lib/map-db-profile";
 import { applyComputedEntryStatsToCharts } from "@/lib/chart-entry-stats";
+import { ensureUserParadas } from "@/lib/paradas";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     return NextResponse.json({ error: "invalid_handle" }, { status: 400 });
   }
   const mode = url.searchParams.get("mode") === "full" ? "full" : "summary";
+  const paradaIdParam = url.searchParams.get("paradaId")?.trim() || null;
   const pageRaw = Number(url.searchParams.get("page") ?? "1");
   const perPageRaw = Number(url.searchParams.get("perPage") ?? "8");
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
@@ -48,10 +50,20 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
   if (!dbUserBase) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
+
+  const paradas = await ensureUserParadas(prisma, dbUserBase.id);
+  const activeParada =
+    (paradaIdParam ? paradas.find((p) => p.id === paradaIdParam) : null) ??
+    paradas.find((p) => p.isPrimary) ??
+    paradas[0] ??
+    null;
+
+  const chartWhere = activeParada ? { paradaId: activeParada.id } : { userId: dbUserBase.id };
+
   const [totalCharts, charts, chartStatsHistory] = await Promise.all([
-    prisma.chart.count({ where: { userId: dbUserBase.id } }),
+    prisma.chart.count({ where: chartWhere }),
     prisma.chart.findMany({
-      where: { userId: dbUserBase.id },
+      where: chartWhere,
       orderBy: { weekIndex: "desc" },
       ...(mode === "summary" ? { skip: (page - 1) * perPage, take: perPage } : {}),
       select: {
@@ -103,7 +115,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
       },
     }),
     prisma.chart.findMany({
-      where: { userId: dbUserBase.id },
+      where: chartWhere,
       orderBy: { weekIndex: "asc" },
       select: {
         weekIndex: true,
@@ -180,8 +192,23 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     }
   }
 
+  const paradaNome = activeParada?.name ?? dbUserBase.paradaNome;
+  const genres = activeParada?.genres ?? dbUserBase.genres ?? [];
+
   return NextResponse.json({
     ...buildPublicProfilePayload(dbUser, isFollowing),
+    paradaNome,
+    genres,
+    paradas: paradas.map((p) => ({
+      id: p.id,
+      name: p.name,
+      logo: p.logo,
+      genres: p.genres,
+      isPrimary: p.isPrimary,
+      sortOrder: p.sortOrder,
+    })),
+    activeParadaId: activeParada?.id ?? null,
+    scoringTier: activeParada?.isPrimary === false ? "secondary" : "primary",
     mode,
     page,
     perPage,
