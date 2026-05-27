@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const filename = `${session.user.id}_${songId}.${ext}`;
+  const filename = `${session.user.id}_${songId}_${Date.now()}.${ext}`;
   const imageUrl = `/api/uploads/song-video-clips/${filename}`;
 
   ensureDir();
