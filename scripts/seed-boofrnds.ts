@@ -6,6 +6,7 @@
  *   npx tsx scripts/seed-boofrnds.ts --skip-spotify        # no Spotify lookup
  *   npx tsx scripts/seed-boofrnds.ts --delay=500          # ms between Spotify calls
  *   npx tsx scripts/seed-boofrnds.ts --dry-run            # parse only, no DB writes
+ *   npx tsx scripts/seed-boofrnds.ts --patch-songs        # re-enrich songs missing Spotify data
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -30,8 +31,16 @@ const HANDLE = "boofrnds";
 const TXT_DIR = join(process.cwd(), "public", "boofrnds");
 const SKIP_SPOTIFY = process.argv.includes("--skip-spotify");
 const DRY_RUN = process.argv.includes("--dry-run");
+const PATCH_SONGS = process.argv.includes("--patch-songs");
 const DELAY_ARG = process.argv.find((a) => a.startsWith("--delay="));
 const SPOTIFY_DELAY_MS = DELAY_ARG ? Math.max(100, parseInt(DELAY_ARG.split("=")[1], 10)) : 200;
+
+// ── Manual Spotify overrides ──────────────────────────────────────────────────
+// Songs that Spotify search can't find (special chars, ambiguous names, etc.)
+// Key: "artist_lowercase|title_lowercase"  Value: Spotify track ID
+const MANUAL_SPOTIFY_OVERRIDES: Record<string, string> = {
+  "panic! at the disco|high hopes": "1rqqCSm0Qe4I9rUvWncaom",
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type ParsedEntry = {
@@ -84,7 +93,7 @@ function parseFile(filePath: string): ParsedWeek[] {
     if (!line) continue;
 
     // Date range: [ DD/MM/YYYY - DD/MM/YYYY ]
-    const dateM = line.match(/^\[\s*(\d{2}\/\d{2}\/\d{4})\s*-\s*(\d{2}\/\d{2}\/\d{4})\s*\]\s*$/);
+    const dateM = line.match(/^\[\s*(\d{2}\/\d{2}\/\d{4})\s*-\s*(\d{2}\/\d{2}\/\d{4})\s*\]/);
     if (dateM) {
       if (current && current.entries.length > 0) weeks.push(current);
       current = {
@@ -224,75 +233,12 @@ function parseReleaseDate(raw: string | undefined): Date | null {
   return null;
 }
 
-async function searchSpotifyTrack(artist: string, title: string): Promise<SpotifyHit | null> {
-  const cacheKey = `${artist.toLowerCase()}|${title.toLowerCase()}`;
-  if (spotifyState.cache.has(cacheKey)) return spotifyState.cache.get(cacheKey)!;
-
-  // Respectful delay before every real request
-  await sleep(SPOTIFY_DELAY_MS);
-
-  const token = await getSpotifyToken();
-  if (!token) {
-    spotifyState.cache.set(cacheKey, null);
-    return null;
-  }
-
-  // Strip featured artists for cleaner query: "Ariana Grande f/ Nicki Minaj" → "Ariana Grande"
-  const mainArtist = artist.split(/\s+f\/\s+/i)[0].trim();
-  const q = `track:"${title.replace(/"/g, "")}" artist:"${mainArtist.replace(/"/g, "")}"`;
-
-  const url = new URL("https://api.spotify.com/v1/search");
-  url.searchParams.set("q", q);
-  url.searchParams.set("type", "track");
-  url.searchParams.set("limit", "3");
-  url.searchParams.set("market", "BR");
-
-  let res: Response | null = null;
-  for (let attempt = 1; attempt <= 4; attempt++) {
-    try {
-      res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
-
-      if (res.status === 429) {
-        const retryAfterSec = parseInt(res.headers.get("retry-after") ?? "10", 10);
-        const wait = Math.max(5000, retryAfterSec * 1000);
-        console.log(`\n  [Spotify 429] Retry-After: ${retryAfterSec}s — waiting ${wait / 1000}s...`);
-        await sleep(wait);
-        continue;
-      }
-
-      if (res.status === 401) {
-        // Token expired mid-run, clear and retry
-        spotifyState.token = null;
-        const freshToken = await getSpotifyToken();
-        if (!freshToken) break;
-        res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${freshToken}` } });
-      }
-
-      break;
-    } catch {
-      if (attempt >= 4) break;
-      await sleep(1000 * attempt);
-    }
-  }
-
-  if (!res?.ok) {
-    spotifyState.cache.set(cacheKey, null);
-    return null;
-  }
-
-  const json = await res.json() as { tracks?: { items: any[] } };
-  const track = json.tracks?.items?.[0];
-  if (!track) {
-    spotifyState.cache.set(cacheKey, null);
-    return null;
-  }
-
+function mapTrackToHit(track: any): SpotifyHit {
   const feats = (track.artists as any[]).slice(1).map((a: any) => ({
     spotifyId: a.id as string,
     name: a.name as string,
   }));
-
-  const hit: SpotifyHit = {
+  return {
     spotifyId: track.id,
     title: track.name,
     primaryArtistId: track.artists[0]?.id ?? null,
@@ -310,13 +256,102 @@ async function searchSpotifyTrack(artist: string, title: string): Promise<Spotif
     spotifyUrl: track.external_urls?.spotify ?? null,
     featuredArtists: feats,
   };
+}
 
+async function spotifyGet(path: string, token: string): Promise<any | null> {
+  let res: Response | null = null;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      res = await fetch(`https://api.spotify.com/v1${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 429) {
+        const wait = Math.max(5000, parseInt(res.headers.get("retry-after") ?? "10", 10) * 1000);
+        console.log(`\n  [Spotify 429] waiting ${wait / 1000}s...`);
+        await sleep(wait);
+        continue;
+      }
+      if (res.status === 401) {
+        spotifyState.token = null;
+        const fresh = await getSpotifyToken();
+        if (!fresh) return null;
+        res = await fetch(`https://api.spotify.com/v1${path}`, {
+          headers: { Authorization: `Bearer ${fresh}` },
+        });
+      }
+      break;
+    } catch {
+      if (attempt >= 4) return null;
+      await sleep(1000 * attempt);
+    }
+  }
+  if (!res?.ok) return null;
+  return res.json();
+}
+
+async function fetchTrackById(trackId: string): Promise<SpotifyHit | null> {
+  await sleep(SPOTIFY_DELAY_MS);
+  const token = await getSpotifyToken();
+  if (!token) return null;
+  const json = await spotifyGet(`/tracks/${encodeURIComponent(trackId)}?market=BR`, token);
+  if (!json?.id) return null;
+  return mapTrackToHit(json);
+}
+
+// Strip characters that confuse Spotify's Lucene parser (!, $, etc.)
+function sanitizeForSearch(s: string): string {
+  return s.replace(/[!$@#%^&*()+\[\]{}|\\<>?]/g, "").replace(/\s+/g, " ").trim();
+}
+
+async function searchSpotifyTrack(artist: string, title: string): Promise<SpotifyHit | null> {
+  const cacheKey = `${artist.toLowerCase()}|${title.toLowerCase()}`;
+  if (spotifyState.cache.has(cacheKey)) return spotifyState.cache.get(cacheKey)!;
+
+  // 1. Check manual overrides — fetch by track ID directly (most reliable)
+  const overrideId = MANUAL_SPOTIFY_OVERRIDES[cacheKey];
+  if (overrideId) {
+    const hit = await fetchTrackById(overrideId);
+    spotifyState.cache.set(cacheKey, hit);
+    return hit;
+  }
+
+  await sleep(SPOTIFY_DELAY_MS);
+  const token = await getSpotifyToken();
+  if (!token) { spotifyState.cache.set(cacheKey, null); return null; }
+
+  // Strip featured artists for cleaner query
+  const mainArtist = artist.split(/\s+f\/\s+/i)[0].trim();
+
+  // Try up to two queries: exact quoted, then sanitized (strips !, $ etc.)
+  const queries = [
+    `track:"${title.replace(/"/g, "")}" artist:"${mainArtist.replace(/"/g, "")}"`,
+    `track:"${sanitizeForSearch(title)}" artist:"${sanitizeForSearch(mainArtist)}"`,
+  ];
+  // Deduplicate if both queries are identical
+  const uniqueQueries = [...new Set(queries)];
+
+  let track: any = null;
+  for (const q of uniqueQueries) {
+    const url = new URL("https://api.spotify.com/v1/search");
+    url.searchParams.set("q", q);
+    url.searchParams.set("type", "track");
+    url.searchParams.set("limit", "3");
+    url.searchParams.set("market", "BR");
+    const json = await spotifyGet(`/search?${url.searchParams.toString()}`, token);
+    track = json?.tracks?.items?.[0] ?? null;
+    if (track) break;
+    if (uniqueQueries.length > 1) await sleep(SPOTIFY_DELAY_MS); // extra delay for fallback
+  }
+
+  if (!track) { spotifyState.cache.set(cacheKey, null); return null; }
+
+  const hit = mapTrackToHit(track);
   spotifyState.cache.set(cacheKey, hit);
   return hit;
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-async function main() {
+// ── Seed charts ───────────────────────────────────────────────────────────────
+async function seedCharts() {
   console.log("\n=== Seed @boofrnds charts ===");
   console.log(`  Skip Spotify : ${SKIP_SPOTIFY}`);
   console.log(`  Spotify delay: ${SPOTIFY_DELAY_MS}ms`);
@@ -603,6 +638,145 @@ async function main() {
   console.log(`  Skipped  : ${skipped} (already existed)`);
   console.log(`  Errors   : ${errors}`);
   console.log(`  ${spotifyHits}`);
+}
+
+// ── Patch: re-enrich songs missing Spotify data ───────────────────────────────
+async function patchMissingSongs() {
+  console.log("\n=== Patch: re-enrich songs missing Spotify data ===\n");
+
+  const user = await prisma.user.findUnique({
+    where: { handle: HANDLE },
+    select: { id: true },
+  });
+  if (!user) { console.error(`User @${HANDLE} not found.`); process.exit(1); }
+
+  // Find songs in @boofrnds' charts that have no spotifyId
+  const chartIds = (await prisma.chart.findMany({
+    where: { userId: user.id },
+    select: { id: true },
+  })).map((c) => c.id);
+
+  const songs = await prisma.song.findMany({
+    where: {
+      spotifyId: null,
+      entries: { some: { chartId: { in: chartIds } } },
+    },
+    select: { id: true, title: true, artist: true },
+    orderBy: { title: "asc" },
+  });
+
+  console.log(`Found ${songs.length} songs without Spotify data in @${HANDLE}'s charts\n`);
+  if (songs.length === 0) { console.log("Nothing to patch."); return; }
+
+  let fixed = 0, skipped = 0;
+
+  for (const song of songs) {
+    process.stdout.write(`  ${song.artist} — "${song.title}" ... `);
+    const hit = await searchSpotifyTrack(song.artist, song.title);
+
+    if (!hit) {
+      console.log("not found");
+      skipped++;
+      continue;
+    }
+
+    // Upsert primary artist
+    if (hit.primaryArtistId) {
+      await prisma.artist.upsert({
+        where: { spotifyId: hit.primaryArtistId },
+        update: { name: hit.primaryArtistName! },
+        create: { spotifyId: hit.primaryArtistId, name: hit.primaryArtistName! },
+      });
+    }
+
+    // Upsert album
+    if (hit.albumSpotifyId && hit.primaryArtistId) {
+      await prisma.album.upsert({
+        where: { spotifyId: hit.albumSpotifyId },
+        update: {
+          title: hit.albumTitle ?? "Unknown",
+          artistSpotifyId: hit.primaryArtistId,
+          ...(hit.albumCoverUrl != null ? { coverUrl: hit.albumCoverUrl } : {}),
+          ...(hit.albumReleaseDate != null ? { releaseDate: hit.albumReleaseDate } : {}),
+          ...(hit.albumTotalTracks != null ? { totalTracks: hit.albumTotalTracks } : {}),
+          ...(hit.albumType != null ? { albumType: hit.albumType } : {}),
+          ...(hit.albumSpotifyUrl != null ? { spotifyUrl: hit.albumSpotifyUrl } : {}),
+        },
+        create: {
+          spotifyId: hit.albumSpotifyId,
+          title: hit.albumTitle ?? "Unknown",
+          artistSpotifyId: hit.primaryArtistId,
+          coverUrl: hit.albumCoverUrl ?? null,
+          releaseDate: hit.albumReleaseDate ?? null,
+          totalTracks: hit.albumTotalTracks ?? null,
+          albumType: hit.albumType ?? null,
+          spotifyUrl: hit.albumSpotifyUrl ?? null,
+        },
+      });
+    }
+
+    // Upsert featured artists
+    for (const feat of hit.featuredArtists) {
+      await prisma.artist.upsert({
+        where: { spotifyId: feat.spotifyId },
+        update: { name: feat.name },
+        create: { spotifyId: feat.spotifyId, name: feat.name },
+      });
+    }
+
+    // Update song with Spotify data
+    await prisma.song.update({
+      where: { id: song.id },
+      data: {
+        spotifyId: hit.spotifyId,
+        album: hit.albumTitle ?? undefined,
+        artistSpotifyId: hit.primaryArtistId ?? undefined,
+        albumSpotifyId: hit.albumSpotifyId ?? undefined,
+        durationMs: hit.durationMs ?? undefined,
+        previewUrl: hit.previewUrl ?? undefined,
+        spotifyUrl: hit.spotifyUrl ?? undefined,
+        trackNumber: hit.trackNumber ?? undefined,
+      },
+    });
+
+    // Propagate spotifyId to ChartEntries that reference this song
+    await prisma.chartEntry.updateMany({
+      where: { songId: song.id, songSpotifyId: null },
+      data: {
+        songSpotifyId: hit.spotifyId,
+        ...(hit.albumSpotifyId ? { albumSpotifyId: hit.albumSpotifyId } : {}),
+      },
+    });
+
+    // Upsert song feats
+    if (hit.spotifyId) {
+      for (const feat of hit.featuredArtists) {
+        await prisma.songFeat.upsert({
+          where: {
+            songSpotifyId_artistSpotifyId: {
+              songSpotifyId: hit.spotifyId,
+              artistSpotifyId: feat.spotifyId,
+            },
+          },
+          update: {},
+          create: { songSpotifyId: hit.spotifyId, artistSpotifyId: feat.spotifyId },
+        });
+      }
+    }
+
+    fixed++;
+    console.log(`→ ${hit.spotifyId}`);
+  }
+
+  console.log(`\nPatched ${fixed} | Not found: ${skipped}`);
+}
+
+async function main() {
+  if (PATCH_SONGS) {
+    await patchMissingSongs();
+    return;
+  }
+  await seedCharts();
 }
 
 main()
