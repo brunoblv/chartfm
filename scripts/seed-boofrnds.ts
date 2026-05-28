@@ -469,34 +469,53 @@ async function main() {
         let song: { id: string; spotifyId: string | null; albumSpotifyId: string | null };
 
         if (hit?.spotifyId) {
-          // Upsert by Spotify ID (canonical)
-          song = await prisma.song.upsert({
-            where: { spotifyId: hit.spotifyId },
-            update: {
-              title: hit.title,
-              artist: hit.primaryArtistName ?? entry.artist,
-              ...(hit.albumTitle != null ? { album: hit.albumTitle } : {}),
-              ...(hit.primaryArtistId != null ? { artistSpotifyId: hit.primaryArtistId } : {}),
-              ...(hit.albumSpotifyId != null ? { albumSpotifyId: hit.albumSpotifyId } : {}),
-              ...(hit.durationMs != null ? { durationMs: hit.durationMs } : {}),
-              ...(hit.previewUrl != null ? { previewUrl: hit.previewUrl } : {}),
-              ...(hit.spotifyUrl != null ? { spotifyUrl: hit.spotifyUrl } : {}),
-              ...(hit.trackNumber != null ? { trackNumber: hit.trackNumber } : {}),
-            },
-            create: {
-              title: hit.title,
-              artist: hit.primaryArtistName ?? entry.artist,
-              album: hit.albumTitle ?? null,
-              spotifyId: hit.spotifyId,
-              artistSpotifyId: hit.primaryArtistId ?? null,
-              albumSpotifyId: hit.albumSpotifyId ?? null,
-              durationMs: hit.durationMs ?? null,
-              previewUrl: hit.previewUrl ?? null,
-              spotifyUrl: hit.spotifyUrl ?? null,
-              trackNumber: hit.trackNumber ?? null,
-            },
+          const canonicalArtist = hit.primaryArtistName ?? entry.artist;
+          const spotifyData = {
+            album: hit.albumTitle ?? undefined,
+            artistSpotifyId: hit.primaryArtistId ?? undefined,
+            albumSpotifyId: hit.albumSpotifyId ?? undefined,
+            durationMs: hit.durationMs ?? undefined,
+            previewUrl: hit.previewUrl ?? undefined,
+            spotifyUrl: hit.spotifyUrl ?? undefined,
+            trackNumber: hit.trackNumber ?? undefined,
+          };
+
+          // Check by (title, artist) first — a previous partial run may have created
+          // this song without a Spotify ID, and a plain upsert-by-spotifyId would then
+          // try to INSERT a duplicate and hit the (title, artist) unique constraint.
+          const existingByName = await prisma.song.findFirst({
+            where: { title: hit.title, artist: canonicalArtist },
             select: { id: true, spotifyId: true, albumSpotifyId: true },
           });
+
+          if (existingByName) {
+            song = await prisma.song.update({
+              where: { id: existingByName.id },
+              data: {
+                ...(existingByName.spotifyId == null ? { spotifyId: hit.spotifyId } : {}),
+                ...spotifyData,
+              },
+              select: { id: true, spotifyId: true, albumSpotifyId: true },
+            });
+          } else {
+            song = await prisma.song.upsert({
+              where: { spotifyId: hit.spotifyId },
+              update: { title: hit.title, artist: canonicalArtist, ...spotifyData },
+              create: {
+                title: hit.title,
+                artist: canonicalArtist,
+                album: hit.albumTitle ?? null,
+                spotifyId: hit.spotifyId,
+                artistSpotifyId: hit.primaryArtistId ?? null,
+                albumSpotifyId: hit.albumSpotifyId ?? null,
+                durationMs: hit.durationMs ?? null,
+                previewUrl: hit.previewUrl ?? null,
+                spotifyUrl: hit.spotifyUrl ?? null,
+                trackNumber: hit.trackNumber ?? null,
+              },
+              select: { id: true, spotifyId: true, albumSpotifyId: true },
+            });
+          }
 
           // Upsert song_feats (featured artists relationship)
           if (song.spotifyId) {
