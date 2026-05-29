@@ -5,8 +5,10 @@ interface VideoClipCoverProps {
   paletteA?: string;
   paletteB?: string;
   seed?: number;
-  /** width in px (default 320, height = width * 9/16) */
+  /** width in px (default 320, height = width * 9/16 unless height is set) */
   width?: number;
+  /** height in px; width is derived as height * 16/9 */
+  height?: number;
   /** when true, height follows the parent and width is derived from 16:9 */
   matchSiblingHeight?: boolean;
   className?: string;
@@ -18,20 +20,22 @@ export function VideoClipCover({
   paletteA = "#FA243C",
   paletteB = "#FFE66D",
   seed = 0,
-  width = 320,
+  width: widthProp = 320,
+  height: heightProp,
   matchSiblingHeight = false,
   className,
   style: extraStyle,
 }: VideoClipCoverProps) {
-  const fixedHeight = Math.round(width * (9 / 16));
+  const fixedWidth = heightProp != null ? Math.round(heightProp * (16 / 9)) : widthProp;
+  const fixedHeight = heightProp ?? Math.round(widthProp * (9 / 16));
   const angle = seed % 360;
-  const iconSize = matchSiblingHeight ? 24 : width * 0.18;
+  const iconSize = matchSiblingHeight ? 24 : fixedWidth * 0.18;
 
   return (
     <div
       className={className}
       style={{
-        width: matchSiblingHeight ? "auto" : width,
+        width: matchSiblingHeight ? "auto" : fixedWidth,
         height: matchSiblingHeight ? "100%" : fixedHeight,
         aspectRatio: matchSiblingHeight ? "16 / 9" : undefined,
         borderRadius: 8,

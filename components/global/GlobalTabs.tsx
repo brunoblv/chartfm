@@ -48,6 +48,9 @@ type ArtistEntry = {
   imageUrl?: string | null;
 };
 
+const LIST_COVER_SIZE = 75;
+const LARGE_COVER_SIZE = 125;
+
 function StatPill({ label, value, accent }: { label: string; value: number | string; accent?: string }) {
   return (
     <div style={{ textAlign: "right" }}>
@@ -193,7 +196,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
 
             {/* Cover */}
             <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-              <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={50} rounded={8} />
+              <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={LIST_COVER_SIZE} rounded={8} />
             </Link>
 
             {/* Title + Artist */}
@@ -219,11 +222,12 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
   }
 
   const isLarge = viewSize === "large";
+  const coverCol = isLarge ? LARGE_COVER_SIZE + 20 : LIST_COVER_SIZE + 16;
   const gridTemplateColumns = isLarge
-    ? "80px 112px 120px minmax(0,1fr) 96px 96px 80px 120px"
-    : "60px 76px 90px minmax(0,1fr) 80px 80px 70px 100px";
+    ? `80px ${coverCol}px 120px minmax(0,1fr) 96px 96px 80px 120px`
+    : `60px ${coverCol}px 90px minmax(0,1fr) 80px 80px 70px 100px`;
   const rowPadding = isLarge ? "14px 24px" : "8px 20px";
-  const coverSize = isLarge ? 92 : 60;
+  const coverSize = isLarge ? LARGE_COVER_SIZE : LIST_COVER_SIZE;
   const posSize = isLarge ? 28 : 20;
   const titleSize = isLarge ? 17 : 14;
   const artistSize = isLarge ? 14 : 12;
@@ -328,7 +332,7 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
               <div style={{ marginTop: 2 }}><ExitBadge /></div>
             </div>
             <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-              <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={50} rounded={8} />
+              <Cover cover={e.cover} song={{ ...e.song, album: e.song.album ?? "" }} size={LIST_COVER_SIZE} rounded={8} />
             </Link>
             <div style={{ flex: 1, minWidth: 0 }}>
               <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
@@ -349,11 +353,12 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
   }
 
   const isLarge = viewSize === "large";
+  const coverCol = isLarge ? LARGE_COVER_SIZE + 20 : LIST_COVER_SIZE + 16;
   const gridCols = isLarge
-    ? "80px 112px 120px minmax(0,1fr) 96px 96px 80px 120px"
-    : "60px 76px 90px minmax(0,1fr) 80px 80px 70px 100px";
+    ? `80px ${coverCol}px 120px minmax(0,1fr) 96px 96px 80px 120px`
+    : `60px ${coverCol}px 90px minmax(0,1fr) 80px 80px 70px 100px`;
   const rowPadding = isLarge ? "14px 24px" : "8px 20px";
-  const coverSize = isLarge ? 92 : 60;
+  const coverSize = isLarge ? LARGE_COVER_SIZE : LIST_COVER_SIZE;
   const posSize = isLarge ? 28 : 20;
   const titleSize = isLarge ? 17 : 14;
   const artistSize = isLarge ? 14 : 12;
@@ -479,12 +484,13 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
   }
 
   const isLarge = viewSize === "large";
+  const avatarCol = isLarge ? LARGE_COVER_SIZE + 20 : 76;
   const gridTemplateColumns = isLarge
-    ? "80px 104px 120px minmax(0,1fr) 96px 96px 80px 130px"
+    ? `80px ${avatarCol}px 120px minmax(0,1fr) 96px 96px 80px 130px`
     : "60px 76px 90px minmax(0,1fr) 80px 80px 70px 100px";
   const rowPadding = isLarge ? "14px 24px" : "8px 20px";
   const posSize = isLarge ? 28 : 20;
-  const avatarSize = isLarge ? 88 : 60;
+  const avatarSize = isLarge ? LARGE_COVER_SIZE : 60;
   const nameSize = isLarge ? 17 : 14;
   const valueSize = isLarge ? 16 : 13;
   const pointsSize = isLarge ? 19 : 15;

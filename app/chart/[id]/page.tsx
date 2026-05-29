@@ -533,7 +533,7 @@ function StatPill({ label, value, accent }: { label: string; value: number | str
 
 function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entries: ChartEntry[]; personalNumberOnes?: Record<string, number>; globalNumberOnes?: Record<string, number> }) {
   const isMobile = useIsMobile();
-  const coverSize = isMobile ? 65 : 60;
+  const coverSize = 75;
   const gridColumns = `60px ${coverSize + 16}px 90px minmax(0,1fr) 80px 80px 60px 90px`;
   if (isMobile) {
     return (
@@ -739,14 +739,11 @@ function VideoClipVariant({
   personalNumberOnes?: Record<string, number>;
 }) {
   const isMobile = useIsMobile();
-  const clipWidth = isMobile ? 96 : 192;
+  const clipHeight = 75;
+  const clipWidth = Math.round(clipHeight * (16 / 9));
   const gridColumns = `60px ${clipWidth + 16}px 90px minmax(0,1fr) 80px 80px 60px 90px`;
 
   if (isMobile) {
-    const posCol = 28;
-    const rowGap = 12;
-    const statsIndent = posCol + rowGap + clipWidth + rowGap;
-
     return (
       <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
         {entries.map((e) => {
@@ -756,31 +753,32 @@ function VideoClipVariant({
               key={e.position}
               style={{
                 display: "flex",
-                flexDirection: "column",
-                gap: 8,
+                alignItems: "center",
                 padding: "10px 16px",
                 borderBottom: "1px solid var(--divider-soft)",
+                gap: 12,
+                minWidth: 0,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: rowGap, minWidth: 0 }}>
-                <div style={{ width: posCol, textAlign: "center", flexShrink: 0 }}>
-                  <div style={{ fontSize: e.position <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                    {e.position}
-                  </div>
-                  <div style={{ marginTop: 2 }}>
-                    <MovementBadge status={e.status} delta={e.delta} compact />
-                  </div>
+              <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
+                <div style={{ fontSize: e.position <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  {e.position}
                 </div>
-                <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-                  <VideoClipCover
-                    imageUrl={clipUrl}
-                    paletteA={e.cover.palette[0]}
-                    paletteB={e.cover.palette[1]}
-                    seed={e.cover.seed}
-                    width={clipWidth}
-                  />
-                </Link>
-                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <div style={{ marginTop: 2 }}>
+                  <MovementBadge status={e.status} delta={e.delta} compact />
+                </div>
+              </div>
+              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+                <VideoClipCover
+                  imageUrl={clipUrl}
+                  paletteA={e.cover.palette[0]}
+                  paletteB={e.cover.palette[1]}
+                  seed={e.cover.seed}
+                  height={clipHeight}
+                />
+              </Link>
+              <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
                     {e.song.title}
                   </Link>
@@ -788,11 +786,11 @@ function VideoClipVariant({
                     {formatSongArtist(e.song)}
                   </Link>
                 </div>
-              </div>
-              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingLeft: statsIndent }}>
-                <StatPill label="ANT" value={e.prevPos ?? "—"} />
-                <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-                <StatPill label="SEM" value={e.weeks} />
+                <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+                  <StatPill label="ANT" value={e.prevPos ?? "—"} />
+                  <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+                  <StatPill label="SEM" value={e.weeks} />
+                </div>
               </div>
             </div>
           );
@@ -840,7 +838,7 @@ function VideoClipVariant({
                 paletteA={e.cover.palette[0]}
                 paletteB={e.cover.palette[1]}
                 seed={e.cover.seed}
-                width={clipWidth}
+                height={clipHeight}
               />
             </Link>
             <div style={{ padding: "0 8px", alignSelf: "center" }}>
