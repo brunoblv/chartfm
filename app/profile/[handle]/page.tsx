@@ -46,6 +46,8 @@ type ApiProfile = {
   page?: number;
   perPage?: number;
   totalCharts?: number;
+  chartYears?: number[];
+  filterYear?: number | null;
   artistImages?: Record<string, string | null>;
   globalNumberOnes?: Record<string, number>;
 };
@@ -350,6 +352,7 @@ export default function ProfilePage() {
   const [loadingFullStats, setLoadingFullStats] = useState(false);
   const [mockUser, setMockUser] = useState<UserWithCharts | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [chartsYearFilter, setChartsYearFilter] = useState<number | null>(null);
   const [chartPage, setChartPage] = useState(1);
   const [loadingChartPage, setLoadingChartPage] = useState(false);
   const [statsPage, setStatsPage] = useState(1);
@@ -360,6 +363,7 @@ export default function ProfilePage() {
   const profileQuery = (mode: "summary" | "full", page = 1) => {
     const q = new URLSearchParams({ mode, page: String(page), perPage: String(CHARTS_PER_PAGE) });
     if (activeParadaId) q.set("paradaId", activeParadaId);
+    if (chartsYearFilter != null) q.set("year", String(chartsYearFilter));
     return `/api/profile/${encodeURIComponent(handle)}?${q}`;
   };
 
@@ -371,6 +375,7 @@ export default function ProfilePage() {
     let cancelled = false;
     setPhase("loading");
     setChartPage(1);
+    setChartsYearFilter(null);
     setFullPayload(null);
     (async () => {
       try {
@@ -406,7 +411,7 @@ export default function ProfilePage() {
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handle, CHARTS_PER_PAGE, activeParadaId]);
+  }, [handle, CHARTS_PER_PAGE, activeParadaId, chartsYearFilter]);
 
   useEffect(() => {
     if (!handle || source !== "db") return;
@@ -430,7 +435,7 @@ export default function ProfilePage() {
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartPage, handle, source, CHARTS_PER_PAGE, payload?.page, activeParadaId]);
+  }, [chartPage, handle, source, CHARTS_PER_PAGE, payload?.page, activeParadaId, chartsYearFilter]);
 
   useEffect(() => {
     if (!handle || source !== "db") return;
@@ -475,6 +480,11 @@ export default function ProfilePage() {
   const numberOnes = useMemo(() => (statsUser ? countDistinctNumberOnes(statsUser.charts) : 0), [statsUser]);
   const achievements = useMemo(() => (statsUser ? buildAchievements(statsUser, numberOnes) : []), [statsUser, numberOnes]);
   const years = useMemo(() => statsUser ? [...new Set(statsUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a) : [], [statsUser]);
+  const publicationYears = useMemo(() => {
+    if (payload?.chartYears?.length) return payload.chartYears;
+    if (mockUser) return [...new Set(mockUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a);
+    return [];
+  }, [payload?.chartYears, mockUser]);
   const activeYear = selectedYear ?? years[0] ?? null;
   const chartsSortedAsc = useMemo(() => statsUser ? [...statsUser.charts].sort((a, b) => a.week - b.week) : [], [statsUser]);
   const latestWeek = chartsSortedAsc[chartsSortedAsc.length - 1]?.week ?? null;
@@ -882,6 +892,7 @@ export default function ProfilePage() {
                   setParadaTab("charts");
                   setChartPage(1);
                   setStatsPage(1);
+                  setChartsYearFilter(null);
                   setFullPayload(null);
                 }}
                 style={{
@@ -964,15 +975,12 @@ export default function ProfilePage() {
               ))}
             </div>
             {statsScope === "year" && years.length > 0 && (
-              <select
-                value={activeYear ?? ""}
-                onChange={(e) => { setSelectedYear(Number(e.target.value)); setStatsPage(1); }}
-                style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)" }}
-              >
-                {years.map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
+              <YearChips
+                years={years}
+                value={activeYear}
+                onChange={(y) => { setSelectedYear(y); setStatsPage(1); }}
+                showAll={false}
+              />
             )}
           </div>
         )}
@@ -989,17 +997,48 @@ export default function ProfilePage() {
                 ) : null}
               </div>
             ) : (() => {
-              const totalPages = Math.ceil(totalCharts / CHARTS_PER_PAGE);
-              const pageCharts = user.charts;
+              const totalPages = Math.max(1, Math.ceil(totalCharts / CHARTS_PER_PAGE));
+              const pageCharts =
+                source === "mock" && chartsYearFilter != null
+                  ? user.charts.filter((c) => Math.floor(c.week / 100) === chartsYearFilter)
+                  : user.charts;
+              const mockTotal = source === "mock" ? pageCharts.length : totalCharts;
+              const mockTotalPages = Math.max(1, Math.ceil(mockTotal / CHARTS_PER_PAGE));
+              const effectiveTotalPages = source === "mock" ? mockTotalPages : totalPages;
+              const effectiveTotal = source === "mock" ? mockTotal : totalCharts;
+              const mockPageCharts =
+                source === "mock"
+                  ? pageCharts.slice((chartPage - 1) * CHARTS_PER_PAGE, chartPage * CHARTS_PER_PAGE)
+                  : pageCharts;
+              const displayCharts = source === "mock" ? mockPageCharts : pageCharts;
               const currentChartPage = payload?.page ?? chartPage;
-              const globalOffset = (currentChartPage - 1) * CHARTS_PER_PAGE;
               return (
                 <>
+                  {publicationYears.length > 1 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 8, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                        Filtrar por ano
+                      </div>
+                      <YearChips
+                        years={publicationYears}
+                        value={chartsYearFilter}
+                        onChange={(y) => {
+                          setChartsYearFilter(y);
+                          setChartPage(1);
+                        }}
+                      />
+                    </div>
+                  )}
                   {loadingChartPage && (
                     <div style={{ marginBottom: 12, color: "var(--text-muted)", fontSize: 13 }}>Carregando página {chartPage}…</div>
                   )}
+                  {chartsYearFilter != null && (
+                    <div style={{ marginBottom: 12, fontSize: 13, color: "var(--text-muted)" }}>
+                      {effectiveTotal} publicação{effectiveTotal === 1 ? "" : "ões"} em {chartsYearFilter}
+                    </div>
+                  )}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-                    {pageCharts.map((chart) => (
+                    {displayCharts.map((chart) => (
                       <div key={chart.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <ChartCard
                           user={user}
@@ -1010,7 +1049,7 @@ export default function ProfilePage() {
                       </div>
                     ))}
                   </div>
-                  <PaginationBar page={currentChartPage} totalPages={totalPages} onChange={setChartPage} loading={loadingChartPage} />
+                  <PaginationBar page={currentChartPage} totalPages={effectiveTotalPages} onChange={setChartPage} loading={loadingChartPage} />
                 </>
               );
             })()}
@@ -1041,6 +1080,64 @@ export default function ProfilePage() {
         )}
       </div>
     </Shell>
+  );
+}
+
+function YearChips({
+  years,
+  value,
+  onChange,
+  showAll = true,
+  allLabel = "Todos",
+}: {
+  years: number[];
+  value: number | null;
+  onChange: (year: number | null) => void;
+  showAll?: boolean;
+  allLabel?: string;
+}) {
+  if (years.length === 0) return null;
+
+  const chip = (label: string, year: number | null, active: boolean) => (
+    <button
+      key={label}
+      type="button"
+      onClick={() => onChange(year)}
+      style={{
+        padding: "7px 14px",
+        borderRadius: 100,
+        border: "none",
+        fontSize: 13,
+        fontWeight: active ? 700 : 500,
+        background: active ? "var(--surface)" : "transparent",
+        color: active ? "var(--text)" : "var(--text-muted)",
+        cursor: "pointer",
+        boxShadow: active ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+        flexShrink: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 4,
+        flexWrap: "nowrap",
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+        background: "var(--fill-subtle)",
+        borderRadius: 100,
+        padding: 3,
+        maxWidth: "100%",
+      }}
+    >
+      {showAll && chip(allLabel, null, value === null)}
+      {years.map((y) => chip(String(y), y, value === y))}
+    </div>
   );
 }
 

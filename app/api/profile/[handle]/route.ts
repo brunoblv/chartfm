@@ -17,6 +17,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
   }
   const mode = url.searchParams.get("mode") === "full" ? "full" : "summary";
   const paradaIdParam = url.searchParams.get("paradaId")?.trim() || null;
+  const yearParam = url.searchParams.get("year")?.trim() ?? "";
+  const yearFilter = /^\d{4}$/.test(yearParam) ? Number(yearParam) : null;
   const pageRaw = Number(url.searchParams.get("page") ?? "1");
   const perPageRaw = Number(url.searchParams.get("perPage") ?? "8");
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
@@ -58,9 +60,16 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     paradas[0] ??
     null;
 
-  const chartWhere = activeParada ? { paradaId: activeParada.id } : { userId: dbUserBase.id };
+  const chartWhereBase = activeParada ? { paradaId: activeParada.id } : { userId: dbUserBase.id };
+  const chartWhere =
+    yearFilter != null
+      ? {
+          ...chartWhereBase,
+          weekIndex: { gte: yearFilter * 100, lt: (yearFilter + 1) * 100 },
+        }
+      : chartWhereBase;
 
-  const [totalCharts, charts, chartStatsHistory] = await Promise.all([
+  const [totalCharts, charts, chartStatsHistory, weekIndexes] = await Promise.all([
     prisma.chart.count({ where: chartWhere }),
     prisma.chart.findMany({
       where: chartWhere,
@@ -125,7 +134,12 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         },
       },
     }),
+    prisma.chart.findMany({
+      where: chartWhereBase,
+      select: { weekIndex: true },
+    }),
   ]);
+  const chartYears = [...new Set(weekIndexes.map((c) => Math.floor(c.weekIndex / 100)))].sort((a, b) => b - a);
   const statsByEntryId = new Map(
     applyComputedEntryStatsToCharts(chartStatsHistory).flatMap((chart) =>
       chart.entries.map((entry) => [entry.id, entry] as const),
@@ -213,6 +227,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     page,
     perPage,
     totalCharts,
+    chartYears,
+    filterYear: yearFilter,
     artistImages,
     globalNumberOnes,
   });

@@ -5,8 +5,10 @@ interface VideoClipCoverProps {
   paletteA?: string;
   paletteB?: string;
   seed?: number;
-  /** desktop width in px (default 320, height = width * 9/16) */
+  /** width in px (default 320, height = width * 9/16) */
   width?: number;
+  /** when true, height follows the parent and width is derived from 16:9 */
+  matchSiblingHeight?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -17,18 +19,21 @@ export function VideoClipCover({
   paletteB = "#FFE66D",
   seed = 0,
   width = 320,
+  matchSiblingHeight = false,
   className,
   style: extraStyle,
 }: VideoClipCoverProps) {
-  const height = Math.round(width * (9 / 16));
+  const fixedHeight = Math.round(width * (9 / 16));
   const angle = seed % 360;
+  const iconSize = matchSiblingHeight ? 24 : width * 0.18;
 
   return (
     <div
       className={className}
       style={{
-        width,
-        height,
+        width: matchSiblingHeight ? "auto" : width,
+        height: matchSiblingHeight ? "100%" : fixedHeight,
+        aspectRatio: matchSiblingHeight ? "16 / 9" : undefined,
         borderRadius: 8,
         position: "relative",
         overflow: "hidden",
@@ -63,8 +68,8 @@ export function VideoClipCover({
           }}
         >
           <svg
-            width={width * 0.18}
-            height={width * 0.18}
+            width={iconSize}
+            height={iconSize}
             viewBox="0 0 24 24"
             fill="none"
             stroke="rgba(255,255,255,0.6)"

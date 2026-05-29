@@ -729,7 +729,6 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
 
 function VideoClipVariant({ entries, videoClips }: { entries: ChartEntry[]; videoClips: Record<string, string> }) {
   const isMobile = useIsMobile();
-  const clipW = isMobile ? 160 : 320;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -740,14 +739,14 @@ function VideoClipVariant({ entries, videoClips }: { entries: ChartEntry[]; vide
             key={e.position}
             style={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "stretch",
               gap: isMobile ? 12 : 18,
               padding: isMobile ? "10px 14px" : "12px 20px",
               borderBottom: "1px solid var(--divider-soft)",
               background: "var(--surface)",
             }}
           >
-            <div style={{ width: isMobile ? 32 : 40, textAlign: "right", flexShrink: 0 }}>
+            <div style={{ width: isMobile ? 32 : 40, textAlign: "right", flexShrink: 0, alignSelf: "center" }}>
               <div style={{ fontSize: e.position <= 3 ? (isMobile ? 26 : 32) : (isMobile ? 20 : 26), fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                 {e.position}
               </div>
@@ -755,16 +754,17 @@ function VideoClipVariant({ entries, videoClips }: { entries: ChartEntry[]; vide
                 <MovementBadge status={e.status} delta={e.delta} compact />
               </div>
             </div>
-            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+            <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "stretch", gap: isMobile ? 12 : 18 }}>
+            <Link href={buildSongPath(e.song)} style={{ flexShrink: 0, display: "flex", alignSelf: "stretch" }}>
               <VideoClipCover
                 imageUrl={clipUrl}
                 paletteA={e.cover.palette[0]}
                 paletteB={e.cover.palette[1]}
                 seed={e.cover.seed}
-                width={clipW}
+                matchSiblingHeight
               />
             </Link>
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8, justifyContent: "center" }}>
               <div>
                 <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: isMobile ? 15 : 18, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)", letterSpacing: "-0.02em" }}>
                   {e.song.title}
@@ -788,6 +788,7 @@ function VideoClipVariant({ entries, videoClips }: { entries: ChartEntry[]; vide
                   <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{e.weeks}</span>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         );
