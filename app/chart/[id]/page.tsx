@@ -739,7 +739,7 @@ function VideoClipVariant({
   personalNumberOnes?: Record<string, number>;
 }) {
   const isMobile = useIsMobile();
-  const clipHeight = 75;
+  const clipHeight = isMobile ? 75 : 150;
   const clipWidth = Math.round(clipHeight * (16 / 9));
   const gridColumns = `60px ${clipWidth + 16}px 90px minmax(0,1fr) 80px 80px 60px 90px`;
 
