@@ -501,7 +501,7 @@ export default function ChartDetailPage() {
           {variant === "video_clip" && (
             loadingClips
               ? <div style={{ padding: 40, color: "var(--text-muted)", fontSize: 15 }}>Carregando capturas…</div>
-              : <VideoClipVariant entries={chart.entries} videoClips={videoClips} />
+              : <VideoClipVariant entries={chart.entries} videoClips={videoClips} personalNumberOnes={personalNumberOnes} />
           )}
         </>
       )}
@@ -727,35 +727,105 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
   );
 }
 
-function VideoClipVariant({ entries, videoClips }: { entries: ChartEntry[]; videoClips: Record<string, string> }) {
+function VideoClipVariant({
+  entries,
+  videoClips,
+  personalNumberOnes,
+}: {
+  entries: ChartEntry[];
+  videoClips: Record<string, string>;
+  personalNumberOnes?: Record<string, number>;
+}) {
   const isMobile = useIsMobile();
+  const gridColumns = "60px 100px 90px minmax(0,1fr) 80px 80px 60px 90px";
+
+  if (isMobile) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+        {entries.map((e) => {
+          const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
+          return (
+            <div
+              key={e.position}
+              style={{
+                display: "flex",
+                alignItems: "stretch",
+                padding: "10px 16px",
+                borderBottom: "1px solid var(--divider-soft)",
+                gap: 12,
+              }}
+            >
+              <div style={{ width: 28, textAlign: "center", flexShrink: 0, alignSelf: "center" }}>
+                <div style={{ fontSize: e.position <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  {e.position}
+                </div>
+                <div style={{ marginTop: 2 }}>
+                  <MovementBadge status={e.status} delta={e.delta} compact />
+                </div>
+              </div>
+              <Link href={buildSongPath(e.song)} style={{ flexShrink: 0, display: "flex", alignSelf: "stretch" }}>
+                <VideoClipCover
+                  imageUrl={clipUrl}
+                  paletteA={e.cover.palette[0]}
+                  paletteB={e.cover.palette[1]}
+                  seed={e.cover.seed}
+                  matchSiblingHeight
+                />
+              </Link>
+              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                  {e.song.title}
+                </Link>
+                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                  {formatSongArtist(e.song)}
+                </Link>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexShrink: 0, alignSelf: "center" }}>
+                <StatPill label="ANT" value={e.prevPos ?? "—"} />
+                <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+                <StatPill label="SEM" value={e.weeks} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: gridColumns,
+        gap: 0,
+        padding: "0 20px",
+        background: "var(--fill-inset)",
+        borderBottom: "1px solid var(--divider)",
+      }}>
+        {["Pos", "", "Mudança", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
+          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
+        ))}
+      </div>
       {entries.map((e) => {
         const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
+        const key = `${e.song.title}\0${e.song.artist}`;
+        const personal = personalNumberOnes?.[key] ?? 0;
         return (
           <div
             key={e.position}
             style={{
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns: gridColumns,
               alignItems: "stretch",
-              gap: isMobile ? 12 : 18,
-              padding: isMobile ? "10px 14px" : "12px 20px",
+              padding: "8px 20px",
               borderBottom: "1px solid var(--divider-soft)",
-              background: "var(--surface)",
+              gap: 0,
             }}
           >
-            <div style={{ width: isMobile ? 32 : 40, textAlign: "right", flexShrink: 0, alignSelf: "center" }}>
-              <div style={{ fontSize: e.position <= 3 ? (isMobile ? 26 : 32) : (isMobile ? 20 : 26), fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                {e.position}
-              </div>
-              <div style={{ marginTop: 3 }}>
-                <MovementBadge status={e.status} delta={e.delta} compact />
-              </div>
+            <div style={{ fontSize: e.position <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12, alignSelf: "center" }}>
+              {e.position}
             </div>
-            <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "stretch", gap: isMobile ? 12 : 18 }}>
-            <Link href={buildSongPath(e.song)} style={{ flexShrink: 0, display: "flex", alignSelf: "stretch" }}>
+            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", display: "flex", alignSelf: "stretch" }}>
               <VideoClipCover
                 imageUrl={clipUrl}
                 paletteA={e.cover.palette[0]}
@@ -764,31 +834,32 @@ function VideoClipVariant({ entries, videoClips }: { entries: ChartEntry[]; vide
                 matchSiblingHeight
               />
             </Link>
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8, justifyContent: "center" }}>
-              <div>
-                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: isMobile ? 15 : 18, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)", letterSpacing: "-0.02em" }}>
-                  {e.song.title}
-                </Link>
-                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: isMobile ? 13 : 15, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
-                  {formatSongArtist(e.song)}
-                </Link>
-                {e.song.album && (
-                  <div style={{ fontSize: isMobile ? 11 : 12, color: "var(--text-muted)", opacity: 0.7, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
-                    {e.song.album}
-                  </div>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: isMobile ? 10 : 14, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <span style={{ fontSize: isMobile ? 9 : 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", opacity: 0.7 }}>Pico</span>
-                  <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>#{e.peak}</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  <span style={{ fontSize: isMobile ? 9 : 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", opacity: 0.7 }}>Semanas</span>
-                  <span style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{e.weeks}</span>
-                </div>
-              </div>
+            <div style={{ padding: "0 8px", alignSelf: "center" }}>
+              <MovementBadge status={e.status} delta={e.delta} />
             </div>
+            <div style={{ minWidth: 0, padding: "0 12px", alignSelf: "center" }}>
+              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
+              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+              {e.song.album?.trim() ? (
+                <Link href={buildAlbumPath(e.song.album.trim(), e.song.artist, { artistId: e.song.artistRefId, albumId: e.song.albumRefId })} style={{ display: "block", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                  {e.song.album}
+                </Link>
+              ) : null}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px", alignSelf: "center" }}>
+              {e.prevPos ?? "—"}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px", alignSelf: "center" }}>{e.weeks}</div>
+            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3, alignSelf: "center" }}>
+              {e.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
+              {e.peak}
+            </div>
+            <div style={{ padding: "0 8px", alignSelf: "center" }}>
+              {personal > 0 ? (
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{personal}x</div>
+              ) : (
+                <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>—</div>
+              )}
             </div>
           </div>
         );

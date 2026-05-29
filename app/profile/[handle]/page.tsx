@@ -411,11 +411,17 @@ export default function ProfilePage() {
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handle, CHARTS_PER_PAGE, activeParadaId, chartsYearFilter]);
+  }, [handle, CHARTS_PER_PAGE, activeParadaId]);
 
   useEffect(() => {
     if (!handle || source !== "db") return;
-    if (payload?.page === chartPage && payload.activeParadaId === activeParadaId) return;
+    if (
+      payload?.page === chartPage &&
+      payload.activeParadaId === activeParadaId &&
+      (payload.filterYear ?? null) === chartsYearFilter
+    ) {
+      return;
+    }
     let cancelled = false;
     setLoadingChartPage(true);
     (async () => {
