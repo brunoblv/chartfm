@@ -533,6 +533,8 @@ function StatPill({ label, value, accent }: { label: string; value: number | str
 
 function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entries: ChartEntry[]; personalNumberOnes?: Record<string, number>; globalNumberOnes?: Record<string, number> }) {
   const isMobile = useIsMobile();
+  const coverSize = isMobile ? 65 : 60;
+  const gridColumns = `60px ${coverSize + 16}px 90px minmax(0,1fr) 80px 80px 60px 90px`;
   if (isMobile) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -559,7 +561,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
 
             {/* Cover */}
             <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-              <Cover cover={e.cover} song={e.song} size={52} rounded={8} />
+              <Cover cover={e.cover} song={e.song} size={coverSize} rounded={8} />
             </Link>
 
             {/* Title + Artist */}
@@ -588,7 +590,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
       <div style={{
         display: "grid",
-        gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 80px 60px 90px",
+        gridTemplateColumns: gridColumns,
         gap: 0,
         padding: "0 20px",
         background: "var(--fill-inset)",
@@ -606,7 +608,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
             key={e.position}
             style={{
               display: "grid",
-              gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 80px 60px 90px",
+              gridTemplateColumns: gridColumns,
               alignItems: "center",
               padding: "8px 20px",
               borderBottom: "1px solid var(--divider-soft)",
@@ -617,7 +619,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
               {e.position}
             </div>
             <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
-              <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
+              <Cover cover={e.cover} song={e.song} size={coverSize} rounded={8} />
             </Link>
             <div style={{ padding: "0 8px" }}><MovementBadge status={e.status} delta={e.delta} /></div>
             <div style={{ minWidth: 0, padding: "0 12px" }}>
@@ -737,9 +739,14 @@ function VideoClipVariant({
   personalNumberOnes?: Record<string, number>;
 }) {
   const isMobile = useIsMobile();
-  const gridColumns = "60px 100px 90px minmax(0,1fr) 80px 80px 60px 90px";
+  const clipWidth = isMobile ? 96 : 192;
+  const gridColumns = `60px ${clipWidth + 16}px 90px minmax(0,1fr) 80px 80px 60px 90px`;
 
   if (isMobile) {
+    const posCol = 28;
+    const rowGap = 12;
+    const statsIndent = posCol + rowGap + clipWidth + rowGap;
+
     return (
       <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
         {entries.map((e) => {
@@ -749,38 +756,40 @@ function VideoClipVariant({
               key={e.position}
               style={{
                 display: "flex",
-                alignItems: "stretch",
+                flexDirection: "column",
+                gap: 8,
                 padding: "10px 16px",
                 borderBottom: "1px solid var(--divider-soft)",
-                gap: 12,
               }}
             >
-              <div style={{ width: 28, textAlign: "center", flexShrink: 0, alignSelf: "center" }}>
-                <div style={{ fontSize: e.position <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                  {e.position}
+              <div style={{ display: "flex", alignItems: "center", gap: rowGap, minWidth: 0 }}>
+                <div style={{ width: posCol, textAlign: "center", flexShrink: 0 }}>
+                  <div style={{ fontSize: e.position <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                    {e.position}
+                  </div>
+                  <div style={{ marginTop: 2 }}>
+                    <MovementBadge status={e.status} delta={e.delta} compact />
+                  </div>
                 </div>
-                <div style={{ marginTop: 2 }}>
-                  <MovementBadge status={e.status} delta={e.delta} compact />
+                <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+                  <VideoClipCover
+                    imageUrl={clipUrl}
+                    paletteA={e.cover.palette[0]}
+                    paletteB={e.cover.palette[1]}
+                    seed={e.cover.seed}
+                    width={clipWidth}
+                  />
+                </Link>
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                    {e.song.title}
+                  </Link>
+                  <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                    {formatSongArtist(e.song)}
+                  </Link>
                 </div>
               </div>
-              <Link href={buildSongPath(e.song)} style={{ flexShrink: 0, display: "flex", alignSelf: "stretch" }}>
-                <VideoClipCover
-                  imageUrl={clipUrl}
-                  paletteA={e.cover.palette[0]}
-                  paletteB={e.cover.palette[1]}
-                  seed={e.cover.seed}
-                  matchSiblingHeight
-                />
-              </Link>
-              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
-                  {e.song.title}
-                </Link>
-                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
-                  {formatSongArtist(e.song)}
-                </Link>
-              </div>
-              <div style={{ display: "flex", gap: 10, flexShrink: 0, alignSelf: "center" }}>
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingLeft: statsIndent }}>
                 <StatPill label="ANT" value={e.prevPos ?? "—"} />
                 <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
                 <StatPill label="SEM" value={e.weeks} />
@@ -825,13 +834,13 @@ function VideoClipVariant({
             <div style={{ fontSize: e.position <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12, alignSelf: "center" }}>
               {e.position}
             </div>
-            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", display: "flex", alignSelf: "stretch" }}>
+            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0, alignSelf: "center" }}>
               <VideoClipCover
                 imageUrl={clipUrl}
                 paletteA={e.cover.palette[0]}
                 paletteB={e.cover.palette[1]}
                 seed={e.cover.seed}
-                matchSiblingHeight
+                width={clipWidth}
               />
             </Link>
             <div style={{ padding: "0 8px", alignSelf: "center" }}>
