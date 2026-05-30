@@ -49,6 +49,7 @@ const ALBUMS: { artist: string; title: string; search?: string; spotifyId?: stri
   { artist: "Kelly Key", title: "Por Que Não?", search: "Kelly Key Por Que Não" },
   { artist: "Arctic Monkeys", title: "Whatever People Say I Am, That's What I'm Not", search: "Arctic Monkeys Whatever People Say" },
   { artist: "O Terno", title: "Melhor do Que Parece", spotifyId: "7nf6cMzbnj1BqhY5VBwT16" },
+  { artist: "Rihanna", title: "ANTI", spotifyId: "48i37aZTC1prDr4EcpQeEa" },
   { artist: "Sandy e Junior", title: "Sandy & Junior", search: "Sandy e Junior Sandy & Junior" },
   { artist: "Biffy Clyro", title: "Ellipsis", search: "Biffy Clyro Ellipsis" },
   { artist: "Lily Allen", title: "Alright, Still", search: "Lily Allen Alright Still" },
