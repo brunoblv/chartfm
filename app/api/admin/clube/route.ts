@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
-import { createClubeRound, getClubeAdminData } from "@/lib/clube-album";
+import { createClubeRound, getClubeAdminData, type ClubeRoundSchedulePatch } from "@/lib/clube-album";
 import { buildScheduleFromWednesday, parseDateInput, schedulePreview } from "@/lib/clube-schedule";
 
 export async function GET() {
@@ -15,7 +15,12 @@ export async function POST(req: NextRequest) {
   const auth = await requirePrivilegedSession();
   if (!auth) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
-  const body = (await req.json()) as { theme?: string; wednesdayDate?: string; preview?: boolean };
+  const body = (await req.json()) as {
+    theme?: string;
+    wednesdayDate?: string;
+    schedule?: ClubeRoundSchedulePatch;
+    preview?: boolean;
+  };
 
   if (body.preview && body.wednesdayDate) {
     const wednesday = parseDateInput(body.wednesdayDate);
@@ -33,7 +38,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const result = await createClubeRound(body.theme ?? "", body.wednesdayDate ?? "");
+  const result = await createClubeRound(body.theme ?? "", {
+    wednesdayDate: body.wednesdayDate,
+    schedule: body.schedule,
+  });
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
   return NextResponse.json({ ok: true, id: result.id });
 }

@@ -1,6 +1,6 @@
 import { AlbumClubPhase, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { buildScheduleFromWednesday, parseDateInput, isWednesday } from "@/lib/clube-schedule";
+import { buildScheduleFromWednesday, parseDateInput, isWednesday, parseDateTimeLocal, buildDateRangeLabel } from "@/lib/clube-schedule";
 
 export type UiPhase = "0" | "1" | "2" | "3" | "4";
 
@@ -81,9 +81,28 @@ export type ClubeAdminRound = {
   nominationsOpenAt: string;
   nominationsCloseAt: string;
   pollCloseAt: string;
+  resultCloseAt: string | null;
   listeningCloseAt: string | null;
   nominationCount: number;
   voteCount: number;
+};
+
+export type ClubeRoundSchedulePatch = {
+  nominationsOpenAt?: string;
+  nominationsCloseAt?: string;
+  pollCloseAt?: string;
+  resultCloseAt?: string;
+  listeningCloseAt?: string;
+};
+
+export type UpdateClubeRoundInput = {
+  theme?: string;
+  /** Recalcula todas as datas a partir de uma quarta-feira */
+  wednesdayDate?: string;
+  applyWednesdayTemplate?: boolean;
+  schedule?: ClubeRoundSchedulePatch;
+  /** Força a fase; omitir ou "AUTO" para derivar das datas após salvar */
+  phase?: AlbumClubPhase | "AUTO";
 };
 
 const nominationInclude = {
@@ -499,6 +518,7 @@ export async function getClubeAdminData(): Promise<{ active: ClubeAdminRound | n
     nominationsOpenAt: r.nominationsOpenAt.toISOString(),
     nominationsCloseAt: r.nominationsCloseAt.toISOString(),
     pollCloseAt: r.pollCloseAt.toISOString(),
+    resultCloseAt: r.resultCloseAt?.toISOString() ?? null,
     listeningCloseAt: r.listeningCloseAt?.toISOString() ?? null,
     nominationCount: r._count.nominations,
     voteCount: r._count.pollVotes,
@@ -515,51 +535,145 @@ export async function getClubeAdminData(): Promise<{ active: ClubeAdminRound | n
   };
 }
 
+function validateRoundSchedule(dates: {
+  nominationsOpenAt: Date;
+  nominationsCloseAt: Date;
+  pollCloseAt: Date;
+  resultCloseAt: Date;
+  listeningCloseAt: Date;
+}): string | null {
+  if (dates.nominationsOpenAt >= dates.nominationsCloseAt) {
+    return "Inscrições: abertura deve ser antes do fechamento";
+  }
+  if (dates.nominationsCloseAt > dates.pollCloseAt) {
+    return "A enquete deve fechar após o fim das inscrições";
+  }
+  if (dates.pollCloseAt > dates.resultCloseAt) {
+    return "O resultado deve ser após o fechamento da enquete";
+  }
+  if (dates.resultCloseAt > dates.listeningCloseAt) {
+    return "A escuta deve encerrar após o resultado";
+  }
+  return null;
+}
+
+function parseSchedulePatch(
+  patch: ClubeRoundSchedulePatch,
+  current: {
+    nominationsOpenAt: Date;
+    nominationsCloseAt: Date;
+    pollCloseAt: Date;
+    resultCloseAt: Date | null;
+    listeningCloseAt: Date | null;
+  },
+): { ok: true; dates: typeof current & { resultCloseAt: Date; listeningCloseAt: Date } } | { ok: false; error: string } {
+  const parse = (key: keyof ClubeRoundSchedulePatch, fallback: Date) => {
+    const raw = patch[key];
+    if (raw === undefined) return fallback;
+    const d = parseDateTimeLocal(raw);
+    if (!d) return null;
+    return d;
+  };
+
+  const nominationsOpenAt = parse("nominationsOpenAt", current.nominationsOpenAt);
+  const nominationsCloseAt = parse("nominationsCloseAt", current.nominationsCloseAt);
+  const pollCloseAt = parse("pollCloseAt", current.pollCloseAt);
+  const resultCloseAt = parse("resultCloseAt", current.resultCloseAt ?? current.pollCloseAt);
+  const listeningCloseAt = parse("listeningCloseAt", current.listeningCloseAt ?? current.pollCloseAt);
+
+  if (!nominationsOpenAt || !nominationsCloseAt || !pollCloseAt || !resultCloseAt || !listeningCloseAt) {
+    return { ok: false, error: "Data/hora inválida" };
+  }
+
+  const err = validateRoundSchedule({
+    nominationsOpenAt,
+    nominationsCloseAt,
+    pollCloseAt,
+    resultCloseAt,
+    listeningCloseAt,
+  });
+  if (err) return { ok: false, error: err };
+
+  return {
+    ok: true,
+    dates: { nominationsOpenAt, nominationsCloseAt, pollCloseAt, resultCloseAt, listeningCloseAt },
+  };
+}
+
 export async function createClubeRound(
   theme: string,
-  wednesdayDate: string,
+  opts: { wednesdayDate?: string; schedule?: ClubeRoundSchedulePatch } = {},
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const trimmed = theme.trim();
   if (!trimmed) return { ok: false, error: "Informe o tema da semana" };
-
-  const wednesday = parseDateInput(wednesdayDate);
-  if (!wednesday) return { ok: false, error: "Data inválida" };
-  if (!isWednesday(wednesday)) return { ok: false, error: "A data de início deve ser uma quarta-feira" };
 
   const active = await prisma.albumClubRound.findFirst({
     where: { phase: { not: AlbumClubPhase.COMPLETED } },
   });
   if (active) return { ok: false, error: "Já existe uma rodada ativa. Aguarde ela terminar ou encerre manualmente." };
 
-  const schedule = buildScheduleFromWednesday(wednesday);
+  let nominationsOpenAt: Date;
+  let nominationsCloseAt: Date;
+  let pollCloseAt: Date;
+  let resultCloseAt: Date;
+  let listeningCloseAt: Date;
+  let dateRange: string;
+
+  if (opts.schedule) {
+    const now = new Date();
+    const base = {
+      nominationsOpenAt: now,
+      nominationsCloseAt: now,
+      pollCloseAt: now,
+      resultCloseAt: now,
+      listeningCloseAt: now,
+    };
+    const parsed = parseSchedulePatch(opts.schedule, base);
+    if (!parsed.ok) return parsed;
+    ({ nominationsOpenAt, nominationsCloseAt, pollCloseAt, resultCloseAt, listeningCloseAt } = parsed.dates);
+    dateRange = buildDateRangeLabel(nominationsOpenAt, listeningCloseAt);
+  } else {
+    const wednesdayDate = opts.wednesdayDate ?? "";
+    const wednesday = parseDateInput(wednesdayDate);
+    if (!wednesday) return { ok: false, error: "Data inválida" };
+    if (!isWednesday(wednesday)) return { ok: false, error: "A data de início deve ser uma quarta-feira" };
+
+    const schedule = buildScheduleFromWednesday(wednesday);
+    nominationsOpenAt = schedule.nominationsOpenAt;
+    nominationsCloseAt = schedule.nominationsCloseAt;
+    pollCloseAt = schedule.pollCloseAt;
+    resultCloseAt = schedule.resultCloseAt;
+    listeningCloseAt = schedule.listeningCloseAt;
+    dateRange = schedule.dateRange;
+  }
   const last = await prisma.albumClubRound.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
   const number = (last?.number ?? 0) + 1;
 
   const now = new Date();
   let initialPhase: AlbumClubPhase = AlbumClubPhase.NOMINATIONS;
-  if (now >= schedule.listeningCloseAt) initialPhase = AlbumClubPhase.COMPLETED;
-  else if (now >= schedule.pollCloseAt) initialPhase = AlbumClubPhase.LISTENING;
-  else if (now >= schedule.nominationsCloseAt) initialPhase = AlbumClubPhase.POLL;
-  else if (now >= schedule.nominationsOpenAt) initialPhase = AlbumClubPhase.NOMINATIONS;
+  if (now >= listeningCloseAt) initialPhase = AlbumClubPhase.COMPLETED;
+  else if (now >= pollCloseAt) initialPhase = AlbumClubPhase.LISTENING;
+  else if (now >= nominationsCloseAt) initialPhase = AlbumClubPhase.POLL;
+  else if (now >= nominationsOpenAt) initialPhase = AlbumClubPhase.NOMINATIONS;
 
   const round = await prisma.albumClubRound.create({
     data: {
       number,
       theme: trimmed,
-      dateRange: schedule.dateRange,
+      dateRange,
       phase: initialPhase,
-      nominationsOpenAt: schedule.nominationsOpenAt,
-      nominationsCloseAt: schedule.nominationsCloseAt,
-      pollCloseAt: schedule.pollCloseAt,
-      resultCloseAt: schedule.resultCloseAt,
-      listeningCloseAt: schedule.listeningCloseAt,
+      nominationsOpenAt,
+      nominationsCloseAt,
+      pollCloseAt,
+      resultCloseAt,
+      listeningCloseAt,
     },
     select: { id: true },
   });
 
   if (initialPhase !== AlbumClubPhase.COMPLETED) {
     await syncRoundPhase(round.id);
-  } else if (now >= schedule.pollCloseAt) {
+  } else if (now >= pollCloseAt) {
     await computeWinners(round.id);
   }
 
@@ -568,7 +682,7 @@ export async function createClubeRound(
 
 export async function updateClubeRound(
   roundId: string,
-  data: { theme?: string; wednesdayDate?: string },
+  data: UpdateClubeRoundInput,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const round = await prisma.albumClubRound.findUnique({ where: { id: roundId } });
   if (!round) return { ok: false, error: "Rodada não encontrada" };
@@ -582,10 +696,7 @@ export async function updateClubeRound(
     update.theme = trimmed;
   }
 
-  if (data.wednesdayDate) {
-    const nomCount = await prisma.albumClubNomination.count({ where: { roundId } });
-    if (nomCount > 0) return { ok: false, error: "Não é possível alterar datas após indicações registradas" };
-
+  if (data.applyWednesdayTemplate && data.wednesdayDate) {
     const wednesday = parseDateInput(data.wednesdayDate);
     if (!wednesday) return { ok: false, error: "Data inválida" };
     if (!isWednesday(wednesday)) return { ok: false, error: "A data de início deve ser uma quarta-feira" };
@@ -597,12 +708,64 @@ export async function updateClubeRound(
     update.pollCloseAt = schedule.pollCloseAt;
     update.resultCloseAt = schedule.resultCloseAt;
     update.listeningCloseAt = schedule.listeningCloseAt;
+  } else if (data.schedule && Object.keys(data.schedule).length > 0) {
+    const parsed = parseSchedulePatch(data.schedule, {
+      nominationsOpenAt: round.nominationsOpenAt,
+      nominationsCloseAt: round.nominationsCloseAt,
+      pollCloseAt: round.pollCloseAt,
+      resultCloseAt: round.resultCloseAt,
+      listeningCloseAt: round.listeningCloseAt,
+    });
+    if (!parsed.ok) return parsed;
+
+    const { dates } = parsed;
+    update.nominationsOpenAt = dates.nominationsOpenAt;
+    update.nominationsCloseAt = dates.nominationsCloseAt;
+    update.pollCloseAt = dates.pollCloseAt;
+    update.resultCloseAt = dates.resultCloseAt;
+    update.listeningCloseAt = dates.listeningCloseAt;
+    update.dateRange = buildDateRangeLabel(dates.nominationsOpenAt, dates.listeningCloseAt);
+  }
+
+  if (data.phase && data.phase !== "AUTO") {
+    update.phase = data.phase;
   }
 
   if (Object.keys(update).length === 0) return { ok: false, error: "Nada para atualizar" };
 
   await prisma.albumClubRound.update({ where: { id: roundId }, data: update });
-  await syncRoundPhase(roundId);
+
+  if (!data.phase || data.phase === "AUTO") {
+    await syncRoundPhase(roundId);
+  }
+
+  return { ok: true };
+}
+
+export async function openClubePollNow(
+  roundId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const round = await prisma.albumClubRound.findUnique({ where: { id: roundId } });
+  if (!round) return { ok: false, error: "Rodada não encontrada" };
+  if (round.phase === AlbumClubPhase.COMPLETED) return { ok: false, error: "Rodada já concluída" };
+
+  const now = new Date();
+  let pollCloseAt = round.pollCloseAt;
+  if (pollCloseAt <= now) {
+    pollCloseAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  }
+
+  await prisma.albumClubRound.update({
+    where: { id: roundId },
+    data: {
+      nominationsCloseAt: now,
+      pollCloseAt,
+      resultCloseAt: round.resultCloseAt && round.resultCloseAt > pollCloseAt ? round.resultCloseAt : pollCloseAt,
+      phase: AlbumClubPhase.POLL,
+      dateRange: buildDateRangeLabel(round.nominationsOpenAt, round.listeningCloseAt ?? pollCloseAt),
+    },
+  });
+
   return { ok: true };
 }
 
