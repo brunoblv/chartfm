@@ -87,6 +87,37 @@ export type ClubeAdminRound = {
   voteCount: number;
 };
 
+export type ClubeAdminPollEntry = {
+  nominationId: string;
+  title: string;
+  artist: string;
+  year: string;
+  coverUrl: string | null;
+  nominatedBy: string;
+  votes: number;
+  rank: number;
+};
+
+export type ClubeAdminPollPreview = {
+  voterCount: number;
+  totalVotes: number;
+  entries: ClubeAdminPollEntry[];
+  voters: ClubeAdminPollVoter[];
+};
+
+export type ClubeAdminPollSelection = {
+  nominationId: string;
+  title: string;
+  artist: string;
+};
+
+export type ClubeAdminPollVoter = {
+  userId: string;
+  handle: string;
+  selections: ClubeAdminPollSelection[];
+  votedAt: string;
+};
+
 export type ClubeRoundSchedulePatch = {
   nominationsOpenAt?: string;
   nominationsCloseAt?: string;
@@ -511,7 +542,97 @@ export async function getClubeHistoricoStats() {
   };
 }
 
-export async function getClubeAdminData(): Promise<{ active: ClubeAdminRound | null; upcoming: ClubeAdminRound[]; completed: ClubeAdminRound[] }> {
+export async function getClubeAdminPollPreview(roundId: string): Promise<ClubeAdminPollPreview | null> {
+  const round = await prisma.albumClubRound.findUnique({
+    where: { id: roundId },
+    include: {
+      nominations: { include: nominationInclude },
+    },
+  });
+  if (!round) return null;
+
+  const [voteCounts, pollVotes] = await Promise.all([
+    prisma.albumClubPollVote.groupBy({
+      by: ["nominationId"],
+      where: { roundId },
+      _count: { id: true },
+    }),
+    prisma.albumClubPollVote.findMany({
+      where: { roundId },
+      include: {
+        user: { select: { handle: true } },
+        nomination: { include: nominationInclude },
+      },
+      orderBy: [{ userId: "asc" }, { createdAt: "asc" }],
+    }),
+  ]);
+
+  const voteMap = new Map(voteCounts.map((v) => [v.nominationId, v._count.id]));
+
+  const voterMap = new Map<string, ClubeAdminPollVoter>();
+  for (const vote of pollVotes) {
+    const mapped = mapNomination(vote.nomination);
+    const existing = voterMap.get(vote.userId);
+    const selection: ClubeAdminPollSelection = {
+      nominationId: vote.nominationId,
+      title: mapped.title,
+      artist: mapped.artist,
+    };
+    if (existing) {
+      existing.selections.push(selection);
+    } else {
+      voterMap.set(vote.userId, {
+        userId: vote.userId,
+        handle: vote.user.handle,
+        selections: [selection],
+        votedAt: vote.createdAt.toISOString(),
+      });
+    }
+  }
+
+  const voters = [...voterMap.values()].sort((a, b) =>
+    a.handle.localeCompare(b.handle, "pt-BR", { sensitivity: "base" }),
+  );
+
+  const entries = round.nominations
+    .map((n) => {
+      const mapped = mapNomination(n);
+      return {
+        nominationId: n.id,
+        title: mapped.title,
+        artist: mapped.artist,
+        year: mapped.year,
+        coverUrl: mapped.coverUrl,
+        nominatedBy: mapped._handle,
+        votes: voteMap.get(n.id) ?? 0,
+        rank: 0,
+      };
+    })
+    .sort((a, b) => {
+      if (b.votes !== a.votes) return b.votes - a.votes;
+      const byArtist = a.artist.localeCompare(b.artist, "pt-BR", { sensitivity: "base" });
+      if (byArtist !== 0) return byArtist;
+      return a.title.localeCompare(b.title, "pt-BR", { sensitivity: "base" });
+    });
+
+  entries.forEach((entry, index) => {
+    entry.rank = index + 1;
+  });
+
+  return {
+    voterCount: voters.length,
+    totalVotes: voteCounts.reduce((sum, v) => sum + v._count.id, 0),
+    entries,
+    voters,
+  };
+}
+
+export async function getClubeAdminData(): Promise<{
+  active: ClubeAdminRound | null;
+  pollPreview: ClubeAdminPollPreview | null;
+  upcoming: ClubeAdminRound[];
+  completed: ClubeAdminRound[];
+}> {
   const rounds = await prisma.albumClubRound.findMany({
     orderBy: { number: "desc" },
     include: {
@@ -538,8 +659,12 @@ export async function getClubeAdminData(): Promise<{ active: ClubeAdminRound | n
   const completed = rounds.filter((r) => r.phase === AlbumClubPhase.COMPLETED).map(mapRound);
   const upcoming: ClubeAdminRound[] = [];
 
+  const pollPreview =
+    active && active._count.nominations > 0 ? await getClubeAdminPollPreview(active.id) : null;
+
   return {
     active: active ? mapRound(active) : null,
+    pollPreview,
     upcoming,
     completed,
   };

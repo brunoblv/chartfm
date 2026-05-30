@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AlbumClubPhase } from "@prisma/client";
-import type { ClubeAdminRound } from "@/lib/clube-album";
+import type { ClubeAdminPollPreview, ClubeAdminRound } from "@/lib/clube-album";
 import {
   CLUBE_SCHEDULE_RULES,
   buildScheduleFromWednesday,
@@ -88,16 +88,192 @@ function ScheduleFields({
   );
 }
 
+function PollPreviewSection({
+  phase,
+  preview,
+}: {
+  phase: AlbumClubPhase;
+  preview: ClubeAdminPollPreview;
+}) {
+  const [showVoters, setShowVoters] = useState(true);
+  const maxVotes = Math.max(1, ...preview.entries.map((e) => e.votes));
+  const pollOpen = phase === "POLL" || phase === "RESULT" || phase === "LISTENING";
+  const topTwo = preview.entries.filter((e) => e.rank <= 2 && e.votes > 0);
+
+  return (
+    <div style={{ background: "var(--surface)", borderRadius: 12, padding: "16px", border: "1px solid var(--divider)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Prévia da votação</div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+          {preview.voterCount} votante{preview.voterCount !== 1 ? "s" : ""} · {preview.totalVotes} voto{preview.totalVotes !== 1 ? "s" : ""}
+        </div>
+      </div>
+
+      {!pollOpen && preview.totalVotes === 0 && (
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
+          A enquete ainda não abriu. Os votos aparecerão aqui assim que a fase 2 começar.
+        </div>
+      )}
+
+      {pollOpen && topTwo.length > 0 && (
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
+          Top 2 projetado{topTwo.length > 1 ? "s" : ""}:{" "}
+          {topTwo.map((e, i) => (
+            <span key={e.nominationId}>
+              {i > 0 && " · "}
+              <strong style={{ color: "var(--text)" }}>{e.title}</strong> ({e.votes})
+            </span>
+          ))}
+        </div>
+      )}
+
+      {preview.entries.length === 0 ? (
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhuma indicação ainda.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 420, overflowY: "auto" }}>
+          {preview.entries.map((entry) => {
+            const isTop = entry.rank <= 2 && entry.votes > 0 && pollOpen;
+            return (
+              <div
+                key={entry.nominationId}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: isTop ? "1px solid rgba(250,36,60,0.25)" : "1px solid var(--divider)",
+                  background: isTop ? "var(--accent-tint)" : "var(--fill-inset)",
+                }}
+              >
+                <span style={{ width: 22, flexShrink: 0, fontSize: 11, fontWeight: 800, color: isTop ? "var(--accent)" : "var(--text-muted)", textAlign: "center" }}>
+                  {entry.rank}
+                </span>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    flexShrink: 0,
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    background: "var(--divider)",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    color: "white",
+                  }}
+                >
+                  {entry.coverUrl ? (
+                    <img src={entry.coverUrl} alt={entry.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    entry.title[0]?.toUpperCase()
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {entry.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
+                    {entry.artist} · @{entry.nominatedBy}
+                  </div>
+                  <div style={{ marginTop: 6, height: 4, borderRadius: 100, background: "var(--divider)", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${(entry.votes / maxVotes) * 100}%`,
+                        background: isTop ? "var(--accent)" : "var(--text-subtle)",
+                        borderRadius: 100,
+                        transition: "width 0.2s",
+                      }}
+                    />
+                  </div>
+                </div>
+                <span style={{ flexShrink: 0, fontSize: 13, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 28, textAlign: "right" }}>
+                  {entry.votes}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {preview.voters.length > 0 && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--divider)" }}>
+          <button
+            type="button"
+            onClick={() => setShowVoters((v) => !v)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+              padding: 0,
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              marginBottom: showVoters ? 12 : 0,
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+              Votantes ({preview.voters.length})
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>
+              {showVoters ? "Ocultar" : "Mostrar"}
+            </span>
+          </button>
+
+          {showVoters && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 480, overflowY: "auto" }}>
+              {preview.voters.map((voter) => (
+                <div
+                  key={voter.userId}
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: "1px solid var(--divider)",
+                    background: "var(--fill-inset)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>@{voter.handle}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      {voter.selections.length} álbum{voter.selections.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <ul style={{ margin: 0, padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+                    {voter.selections.map((sel) => (
+                      <li key={sel.nominationId} style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>
+                        <strong style={{ color: "var(--text)", fontWeight: 600 }}>{sel.title}</strong>
+                        {" · "}
+                        {sel.artist}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ClubeAdminClient({
   initialActive,
   initialCompleted,
+  initialPollPreview,
 }: {
   initialActive: ClubeAdminRound | null;
   initialCompleted: ClubeAdminRound[];
+  initialPollPreview: ClubeAdminPollPreview | null;
 }) {
   const router = useRouter();
   const [active, setActive] = useState(initialActive);
   const [completed, setCompleted] = useState(initialCompleted);
+  const [pollPreview, setPollPreview] = useState(initialPollPreview);
   const [theme, setTheme] = useState(initialActive?.theme ?? "");
   const [wednesdayDate, setWednesdayDate] = useState(
     initialActive
@@ -243,13 +419,14 @@ export function ClubeAdminClient({
   useEffect(() => {
     setActive(initialActive);
     setCompleted(initialCompleted);
+    setPollPreview(initialPollPreview);
     if (initialActive) {
       setTheme(initialActive.theme);
       setWednesdayDate(toDateInputValue(new Date(initialActive.nominationsOpenAt)));
       setSchedule(scheduleFromRound(initialActive));
       setPhaseOverride("AUTO");
     }
-  }, [initialActive, initialCompleted]);
+  }, [initialActive, initialCompleted, initialPollPreview]);
 
   useEffect(() => {
     if (!useCustomSchedule && !active) {
@@ -303,7 +480,9 @@ export function ClubeAdminClient({
             </button>
           </div>
 
-          <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {pollPreview && <PollPreviewSection phase={active.phase} preview={pollPreview} />}
+
+          <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 20 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
               Tema da semana
               <input type="text" value={theme} onChange={(e) => setTheme(e.target.value)} placeholder="Ex.: Rap Clássico dos Anos 90" style={inputStyle} />

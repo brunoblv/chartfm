@@ -13,11 +13,11 @@ export default async function AdminClubePage() {
     );
   }
 
-  const { active, completed } = await getClubeAdminData();
+  const { active, completed, pollPreview } = await getClubeAdminData();
 
   return (
     <Shell title="Clube do Álbum" subtitle="Configure tema e cronograma da rodada">
-      <ClubeAdminClient initialActive={active} initialCompleted={completed} />
+      <ClubeAdminClient initialActive={active} initialCompleted={completed} initialPollPreview={pollPreview} />
     </Shell>
   );
 }
