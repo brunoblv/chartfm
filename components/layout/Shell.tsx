@@ -9,10 +9,11 @@ interface ShellProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
+  headerRight?: React.ReactNode;
   noPadding?: boolean;
 }
 
-export function Shell({ children, title, subtitle, noPadding }: ShellProps) {
+export function Shell({ children, title, subtitle, headerRight, noPadding }: ShellProps) {
   const isMobile = useIsMobile();
 
   return (
@@ -39,6 +40,7 @@ export function Shell({ children, title, subtitle, noPadding }: ShellProps) {
                   </p>
                 )}
               </div>
+              {headerRight}
             </header>
           )}
           {children}

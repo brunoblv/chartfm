@@ -58,6 +58,8 @@ model User {
   uploadedVideoClips   SongVideoClip[]
   videoClipVotes       SongVideoClipVote[]
   videoClipChoices     UserSongVideoClipChoice[]
+  albumClubNominations AlbumClubNomination[]
+  albumClubPollVotes   AlbumClubPollVote[]
 }
 
 model Artist {
@@ -105,6 +107,7 @@ model Album {
   songs           Song[]      @relation("AlbumSongs")
   chartEntries    ChartEntry[] @relation("ChartEntryAlbumSpotify")
   reviews         AlbumReview[]
+  clubNominations AlbumClubNomination[]
 
   @@index([spotifyId], map: "idx_albums_spotify_id")
   @@index([artistSpotifyId], map: "idx_albums_artist_spotify_id")
@@ -497,4 +500,82 @@ model UserSongVideoClipChoice {
 
   @@id([userId, songId])
   @@map("user_song_video_clip_choices")
+}
+
+enum AlbumClubPhase {
+  NOMINATIONS
+  POLL
+  RESULT
+  LISTENING
+  COMPLETED
+
+  @@map("album_club_phase")
+}
+
+model AlbumClubRound {
+  id                 String              @id @default(cuid())
+  number             Int                 @unique
+  theme              String
+  dateRange          String              @map("date_range")
+  phase              AlbumClubPhase      @default(NOMINATIONS)
+  nominationsOpenAt  DateTime            @map("nominations_open_at")
+  nominationsCloseAt DateTime            @map("nominations_close_at")
+  pollCloseAt        DateTime            @map("poll_close_at")
+  resultCloseAt      DateTime?           @map("result_close_at")
+  listeningCloseAt   DateTime?           @map("listening_close_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  nominations        AlbumClubNomination[]
+  pollVotes          AlbumClubPollVote[]
+  winners            AlbumClubWinner[]
+
+  @@map("album_club_rounds")
+}
+
+model AlbumClubNomination {
+  id        String              @id @default(cuid())
+  roundId   String              @map("round_id")
+  userId    String              @map("user_id")
+  albumId   Int                 @map("album_id")
+  slot      Int
+  createdAt DateTime            @default(now()) @map("created_at")
+  round     AlbumClubRound      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album     Album               @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  pollVotes AlbumClubPollVote[]
+  winner    AlbumClubWinner?
+
+  @@unique([roundId, userId, slot])
+  @@unique([roundId, userId, albumId])
+  @@index([roundId], map: "idx_album_club_nominations_round_id")
+  @@map("album_club_nominations")
+}
+
+model AlbumClubPollVote {
+  id           String              @id @default(cuid())
+  roundId      String              @map("round_id")
+  userId       String              @map("user_id")
+  nominationId String              @map("nomination_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  round        AlbumClubRound      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nomination   AlbumClubNomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, userId, nominationId])
+  @@index([roundId], map: "idx_album_club_poll_votes_round_id")
+  @@index([nominationId], map: "idx_album_club_poll_votes_nomination_id")
+  @@map("album_club_poll_votes")
+}
+
+model AlbumClubWinner {
+  id           String              @id @default(cuid())
+  roundId      String              @map("round_id")
+  nominationId String              @unique @map("nomination_id")
+  rank         Int
+  voteCount    Int                 @map("vote_count")
+  round        AlbumClubRound      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  nomination   AlbumClubNomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, rank])
+  @@map("album_club_winners")
 }

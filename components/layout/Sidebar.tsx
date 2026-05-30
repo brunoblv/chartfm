@@ -333,6 +333,10 @@ function SidebarContent({
                       <UserCog size={14} />
                       <span>Editar usuários</span>
                     </Link>
+                    <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
+                      <Award size={14} />
+                      <span>Clube do Álbum</span>
+                    </Link>
                   </div>
                 )}
               </div>

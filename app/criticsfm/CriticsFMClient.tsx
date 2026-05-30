@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { CriticsFMAlbum } from "./page";
+import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
 import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
@@ -381,7 +381,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
   );
 }
 
-export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
+export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: CriticsFMAlbum[]; showBreadcrumb?: boolean }) {
   const isMobile = useIsMobile();
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [sortBy, setSortBy] = useState<SortId>("recent");
@@ -425,7 +425,7 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
   const topAlbums = useMemo(
     () =>
       albums
-        .filter((a) => a.reviewCount > 1)
+        .filter((a) => a.reviewCount >= 2)
         .sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount)
         .slice(0, 5),
     [albums],
@@ -440,6 +440,40 @@ export function CriticsFMClient({ albums }: { albums: CriticsFMAlbum[] }) {
           onClose={() => setSpotifyPanelQuery(null)}
           initialQuery={spotifyPanelQuery}
         />
+      )}
+
+      {showBreadcrumb && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, fontSize: 13, color: "var(--text-muted)" }}>
+          <Link
+            href="/criticsfm"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              textDecoration: "none",
+              color: "var(--text-muted)",
+              fontWeight: 500,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            CriticsFM
+          </Link>
+          <span>/</span>
+          <span style={{ color: "var(--text)", fontWeight: 600 }}>Reviews</span>
+        </div>
+      )}
+
+      {showBreadcrumb && (
+        <header style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.05, color: "var(--text)" }}>
+            CriticsFM
+          </h1>
+          <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 6, letterSpacing: "-0.01em" }}>
+            Reúne as avaliações da comunidade ChartFM em um único lugar.
+          </p>
+        </header>
       )}
 
       {/* Top Albums Showcase */}
