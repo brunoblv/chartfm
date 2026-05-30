@@ -48,6 +48,7 @@ type ParadaDraft = {
   genres: string[];
   sortOrder: number;
   chartSize: number | null;
+  cadence: "weekly" | "daily";
 };
 
 type ProfileData = {
@@ -100,6 +101,7 @@ export default function SettingsPage() {
   const [logoUploadParadaId, setLogoUploadParadaId] = useState<string | null>(null);
   const [logoErrorByParada, setLogoErrorByParada] = useState<Record<string, string | null>>({});
   const [newParadaName, setNewParadaName] = useState("");
+  const [newParadaCadence, setNewParadaCadence] = useState<"weekly" | "daily">("weekly");
   const [creatingParada, setCreatingParada] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [activeLogoParadaId, setActiveLogoParadaId] = useState<string | null>(null);
@@ -113,7 +115,9 @@ export default function SettingsPage() {
     };
     if (data.paradas?.length) {
       setParadaDrafts(
-        [...data.paradas].sort((a, b) => a.sortOrder - b.sortOrder),
+        [...data.paradas]
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+          .map((p) => ({ ...p, cadence: p.cadence ?? "weekly" })),
       );
     }
     setCanCreateParada(data.canCreate !== false);
@@ -153,7 +157,10 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  function updateParadaDraft(paradaId: string, patch: Partial<Pick<ParadaDraft, "name" | "genres" | "chartSize">>) {
+  function updateParadaDraft(
+    paradaId: string,
+    patch: Partial<Pick<ParadaDraft, "name" | "genres" | "chartSize" | "cadence">>,
+  ) {
     setParadaDrafts((prev) =>
       prev.map((p) => (p.id === paradaId ? { ...p, ...patch } : p)),
     );
@@ -224,6 +231,7 @@ export default function SettingsPage() {
               name: p.name.trim(),
               genres: p.genres,
               chartSize: p.chartSize,
+              cadence: p.cadence,
             }),
           }),
         ),
@@ -261,7 +269,11 @@ export default function SettingsPage() {
         return;
       }
       setParadaDrafts((prev) =>
-        prev.map((p) => ({ ...p, isPrimary: p.id === paradaId })),
+        prev.map((p) => ({
+          ...p,
+          isPrimary: p.id === paradaId,
+          cadence: p.id === paradaId ? "weekly" : p.cadence,
+        })),
       );
       setSuccess("Parada principal atualizada.");
     } catch {
@@ -281,7 +293,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/user/paradas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
+        body: JSON.stringify({ name: trimmed, cadence: newParadaCadence }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -289,6 +301,7 @@ export default function SettingsPage() {
         return;
       }
       setNewParadaName("");
+      setNewParadaCadence("weekly");
       await loadParadas();
       setSuccess("Segunda parada criada.");
     } catch {
@@ -864,6 +877,44 @@ export default function SettingsPage() {
                         </div>
                       </div>
 
+                      {!p.isPrimary && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>
+                            Frequência da parada
+                          </span>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            {([
+                              { id: "weekly" as const, label: "Semanal" },
+                              { id: "daily" as const, label: "Diária" },
+                            ]).map(({ id, label }) => {
+                              const active = (p.cadence ?? "weekly") === id;
+                              return (
+                                <button
+                                  key={id}
+                                  type="button"
+                                  onClick={() => updateParadaDraft(p.id, { cadence: id })}
+                                  style={{
+                                    padding: "8px 16px",
+                                    borderRadius: 100,
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    background: active ? "var(--btn-dark-bg)" : "var(--surface)",
+                                    color: active ? "var(--btn-dark-fg)" : "var(--text)",
+                                    border: active ? "1px solid var(--btn-dark-bg)" : "1px solid var(--divider-strong)",
+                                  }}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                            Paradas diárias publicam uma lista por dia. Continuam fora do ranking global.
+                          </span>
+                        </div>
+                      )}
+
                       {/* Tamanho */}
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Tamanho da parada</span>
@@ -914,8 +965,35 @@ export default function SettingsPage() {
                         Criar segunda parada
                       </div>
                       <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                        Você pode ter até 2 paradas. A secundária conta menos pontos e não entra no ranking global.
+                        Você pode ter até 2 paradas. A secundária conta menos pontos e não entra no ranking global. Escolha se ela será semanal ou diária.
                       </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {([
+                        { id: "weekly" as const, label: "Semanal" },
+                        { id: "daily" as const, label: "Diária" },
+                      ]).map(({ id, label }) => {
+                        const active = newParadaCadence === id;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setNewParadaCadence(id)}
+                            style={{
+                              padding: "6px 14px",
+                              borderRadius: 100,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              background: active ? "rgba(250,36,60,0.1)" : "var(--fill-subtle)",
+                              color: active ? "#FA243C" : "var(--text-muted)",
+                              border: active ? "1px solid rgba(250,36,60,0.35)" : "1px solid var(--divider-strong)",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input

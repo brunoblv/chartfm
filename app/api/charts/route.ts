@@ -3,53 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
+import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@/lib/chart-cadence";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
 
 export const runtime = "nodejs";
-
-function isoWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
-
-function isoWeeksInYear(year: number): number {
-  // Semana ISO da data 28/12 sempre cai na última semana ISO do ano.
-  return isoWeek(new Date(Date.UTC(year, 11, 28)));
-}
-
-function prevWeekIndex(index: number): number {
-  const year = Math.floor(index / 100);
-  const week = index % 100;
-  if (week > 1) return year * 100 + (week - 1);
-  const prevYear = year - 1;
-  return prevYear * 100 + isoWeeksInYear(prevYear);
-}
-
-function computeCurrentStreak(weekIndexes: number[]): number {
-  if (weekIndexes.length === 0) return 0;
-  const sortedUnique = [...new Set(weekIndexes)].sort((a, b) => b - a);
-  let streak = 1;
-  let cursor = sortedUnique[0];
-  for (let i = 1; i < sortedUnique.length; i++) {
-    const expected = prevWeekIndex(cursor);
-    if (sortedUnique[i] !== expected) break;
-    streak += 1;
-    cursor = sortedUnique[i];
-  }
-  return streak;
-}
-
-function weekSunday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  d.setDate(d.getDate() + (day === 0 ? 0 : 7 - day));
-  return d;
-}
 
 const PALETTES: [string, string][] = [
   ["#FF6B6B", "#FFE66D"],
@@ -89,12 +48,6 @@ function parseWeekDate(input: unknown): Date | null {
   return date;
 }
 
-function isoWeekYear(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  return d.getUTCFullYear();
-}
-
 export async function POST(req: NextRequest) {
   try {
   const session = await getServerSession(authOptions);
@@ -115,26 +68,36 @@ export async function POST(req: NextRequest) {
   const userId = session.user.id;
   const today = new Date();
   const selectedDate = parseWeekDate(body.weekDate) ?? today;
-  if (selectedDate.getTime() > today.getTime()) {
-    return NextResponse.json({ error: "Não é possível publicar parada em semana futura" }, { status: 400 });
-  }
-  const isoYear = isoWeekYear(selectedDate);
-  const week = isoWeek(selectedDate);
-  // Codifica ano+semana no campo existente para permitir histórico multi-ano.
-  const weekIndex = isoYear * 100 + week;
-  const sunday = weekSunday(selectedDate);
-  const weekLabel = buildWeekLabelFromDate(selectedDate);
-  const dateRange = buildDateRangeFromDate(selectedDate);
-
   const parada = await resolveParadaForPublish(prisma, userId, body.paradaId ?? null);
+  if (selectedDate.getTime() > today.getTime()) {
+    return NextResponse.json(
+      {
+        error:
+          parada.cadence === "DAILY"
+            ? "Não é possível publicar parada em dia futuro"
+            : "Não é possível publicar parada em semana futura",
+      },
+      { status: 400 },
+    );
+  }
   const scoringTier = scoringTierFromPrimary(parada.isPrimary);
+  const period = buildPeriodFromDate(selectedDate, parada.cadence);
+  const weekIndex = period.periodIndex;
+  const weekLabel = period.periodLabel;
+  const dateRange = period.dateRange;
+  const publishedAt = period.publishedAt;
 
   const existing = await prisma.chart.findUnique({
     where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex } },
   });
   if (existing) {
     return NextResponse.json(
-      { error: "Você já publicou esta parada nesta semana" },
+      {
+        error:
+          parada.cadence === "DAILY"
+            ? "Você já publicou esta parada neste dia"
+            : "Você já publicou esta parada nesta semana",
+      },
       { status: 409 }
     );
   }
@@ -353,7 +316,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Previous chart for delta calculations
-  const previousWeekIdx = prevWeekIndex(weekIndex);
+  const previousWeekIdx = prevPeriodIndex(weekIndex, parada.cadence);
   const previousChart = await prisma.chart.findFirst({
     where: { paradaId: parada.id, weekIndex: previousWeekIdx },
     include: { entries: true },
@@ -419,28 +382,30 @@ export async function POST(req: NextRequest) {
       weekIndex,
       weekLabel,
       dateRange,
-      publishedAt: sunday,
+      publishedAt,
       entries: { create: entryData },
     },
   });
 
-  const allWeeks = await prisma.chart.findMany({
-    where: { userId },
-    select: { weekIndex: true },
-    orderBy: { weekIndex: "desc" },
-  });
-  const streak = computeCurrentStreak(allWeeks.map((w) => w.weekIndex));
-  await prisma.user.update({ where: { id: userId }, data: { streak } });
-
-  const MILESTONE_STREAKS = new Set([4, 8, 12, 16, 20, 26, 30, 36, 42, 52, 78, 104]);
-  if (MILESTONE_STREAKS.has(streak)) {
-    const milestoneText = `🎉 Streak de ${streak} semanas! Você publicou paradas por ${streak} semanas seguidas.`;
-    const existing = await prisma.notification.findFirst({
-      where: { recipientId: userId, type: "milestone", text: milestoneText },
-      select: { id: true },
+  if (parada.isPrimary) {
+    const primaryWeeks = await prisma.chart.findMany({
+      where: { userId, paradaId: parada.id },
+      select: { weekIndex: true },
+      orderBy: { weekIndex: "desc" },
     });
-    if (!existing) {
-      await createNotification({ recipientId: userId, type: "milestone", text: milestoneText });
+    const streak = computeStreakForCadence(primaryWeeks.map((w) => w.weekIndex), "WEEKLY");
+    await prisma.user.update({ where: { id: userId }, data: { streak } });
+
+    const MILESTONE_STREAKS = new Set([4, 8, 12, 16, 20, 26, 30, 36, 42, 52, 78, 104]);
+    if (MILESTONE_STREAKS.has(streak)) {
+      const milestoneText = `🎉 Streak de ${streak} semanas! Você publicou paradas por ${streak} semanas seguidas.`;
+      const existing = await prisma.notification.findFirst({
+        where: { recipientId: userId, type: "milestone", text: milestoneText },
+        select: { id: true },
+      });
+      if (!existing) {
+        await createNotification({ recipientId: userId, type: "milestone", text: milestoneText });
+      }
     }
   }
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { buildDayIndexFromDate, formatDayPickerLabel } from "@/lib/chart-cadence";
 
 function isoWeekNumber(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -80,9 +81,10 @@ type Props = {
   onChange: (date: string) => void;
   label?: string;
   paradaId?: string | null;
+  mode?: "weekly" | "daily";
 };
 
-export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Props) {
+export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode = "weekly" }: Props) {
   const [open, setOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState<false | "months" | "years">(false);
   const [yearInput, setYearInput] = useState("");
@@ -151,14 +153,18 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Pr
 
   const handleSelectWeek = (day: Date) => {
     if (day > today) return;
-    const monday = mondayOf(day);
-    onChange(toInputDate(monday));
+    if (mode === "daily") {
+      onChange(toInputDate(day));
+    } else {
+      onChange(toInputDate(mondayOf(day)));
+    }
     setOpen(false);
   };
 
   const isoWk = isoWeekNumber(selectedDate);
   const isoYr = isoWeekYear(selectedDate);
-  const triggerLabel = `${label} ${isoWk} · ${isoYr}`;
+  const triggerLabel =
+    mode === "daily" ? formatDayPickerLabel(selectedDate) : `${label} ${isoWk} · ${isoYr}`;
 
   const popoverStyle: React.CSSProperties = isMobile
     ? {
@@ -227,7 +233,9 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Pr
           {isMobile && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 12 }}>
               <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(0,0,0,0.15)", marginBottom: 8 }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>Selecionar semana</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>
+                {mode === "daily" ? "Selecionar dia" : "Selecionar semana"}
+              </span>
             </div>
           )}
           {/* Navigation header */}
@@ -399,32 +407,31 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Pr
           {!pickerMode && weeks.map((week, wi) => {
             const monday = week[0];
             const wIdx = weekIndex(monday);
-            const isSelected = wIdx === selectedWi;
-            const hasParada = publishedIndexes.has(wIdx);
+            const isSelectedWeek = wIdx === selectedWi;
             const isFutureWeek = monday > today;
 
             return (
               <div
                 key={wi}
-                onClick={() => !isFutureWeek && handleSelectWeek(monday)}
+                onClick={mode === "weekly" && !isFutureWeek ? () => handleSelectWeek(monday) : undefined}
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(7, 1fr) 12px",
                   alignItems: "center",
                   borderRadius: 8,
                   marginBottom: 2,
-                  cursor: isFutureWeek ? "default" : "pointer",
-                  background: isSelected ? "rgba(250,36,60,0.08)" : "transparent",
-                  outline: isSelected ? "1.5px solid rgba(250,36,60,0.3)" : "none",
+                  cursor: mode === "weekly" && !isFutureWeek ? "pointer" : "default",
+                  background: mode === "weekly" && isSelectedWeek ? "rgba(250,36,60,0.08)" : "transparent",
+                  outline: mode === "weekly" && isSelectedWeek ? "1.5px solid rgba(250,36,60,0.3)" : "none",
                   transition: "background 0.1s",
                 }}
                 onMouseEnter={(e) => {
-                  if (!isFutureWeek && !isSelected) {
+                  if (mode === "weekly" && !isFutureWeek && !isSelectedWeek) {
                     (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!isSelected) {
+                  if (!(mode === "weekly" && isSelectedWeek)) {
                     (e.currentTarget as HTMLElement).style.background = "transparent";
                   }
                 }}
@@ -433,21 +440,56 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Pr
                   const isToday = sameDay(day, today);
                   const inMonth = day.getMonth() === viewMonth;
                   const isFuture = day > today;
+                  const isSelectedDay = mode === "daily" && sameDay(day, selectedDate);
+                  const dayIdx = buildDayIndexFromDate(day);
+                  const hasParada = mode === "daily"
+                    ? publishedIndexes.has(dayIdx)
+                    : publishedIndexes.has(wIdx);
                   return (
                     <div
                       key={di}
+                      onClick={
+                        mode === "daily" && !isFuture
+                          ? (e) => {
+                              e.stopPropagation();
+                              handleSelectWeek(day);
+                            }
+                          : undefined
+                      }
                       style={{
                         textAlign: "center",
                         fontSize: 12,
-                        fontWeight: isToday ? 800 : 500,
-                        color: isFuture ? "#C7C7CC" : !inMonth ? "#C7C7CC" : isSelected ? "#FA243C" : "#1D1D1F",
+                        fontWeight: isToday || isSelectedDay ? 800 : 500,
+                        color: isFuture
+                          ? "#C7C7CC"
+                          : !inMonth
+                            ? "#C7C7CC"
+                            : isSelectedDay || (mode === "weekly" && isSelectedWeek)
+                              ? "#FA243C"
+                              : "#1D1D1F",
                         padding: isMobile ? "9px 2px" : "5px 2px",
                         borderRadius: 6,
                         position: "relative",
+                        cursor: mode === "daily" && !isFuture ? "pointer" : "default",
+                        background: isSelectedDay ? "rgba(250,36,60,0.12)" : "transparent",
                       }}
                     >
                       {day.getDate()}
-                      {isToday && (
+                      {mode === "daily" && !isFuture && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            bottom: 2,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 5,
+                            height: 5,
+                            borderRadius: "50%",
+                            background: hasParada ? "#1B873F" : "#E5E5EA",
+                          }}
+                        />
+                      )}
+                      {isToday && mode !== "daily" && (
                         <span
                           style={{
                             position: "absolute",
@@ -457,7 +499,8 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Pr
                             width: 4,
                             height: 4,
                             borderRadius: "50%",
-                            background: isSelected ? "#FA243C" : "#86868B",
+                            background:
+                              isSelectedDay || (mode === "weekly" && isSelectedWeek) ? "#FA243C" : "#86868B",
                           }}
                         />
                       )}
@@ -466,18 +509,21 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId }: Pr
                 })}
                 {/* Status dot */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {!isFutureWeek && (
+                  {mode === "weekly" && !isFutureWeek && (
                     <span
                       style={{
                         display: "inline-block",
                         width: 7,
                         height: 7,
                         borderRadius: "50%",
-                        background: hasParada ? "#1B873F" : "#E5E5EA",
+                        background: publishedIndexes.has(wIdx) ? "#1B873F" : "#E5E5EA",
                         flexShrink: 0,
                       }}
-                      title={hasParada ? "Parada publicada" : "Sem parada"}
+                      title={publishedIndexes.has(wIdx) ? "Parada publicada" : "Sem parada"}
                     />
+                  )}
+                  {mode === "daily" && (
+                    <span style={{ width: 7, height: 7, flexShrink: 0 }} />
                   )}
                 </div>
               </div>

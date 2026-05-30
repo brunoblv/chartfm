@@ -11,6 +11,7 @@ import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverModel, Song } from "@/lib/types";
+import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
@@ -122,7 +123,7 @@ export default function CreatePage() {
   const [lastfmImportCount, setLastfmImportCount] = useState(200);
   const [userLastfmUser, setUserLastfmUser] = useState<string | null>(null);
   const [userChartSize, setUserChartSize] = useState<number | null>(null);
-  const [paradas, setParadas] = useState<Array<{ id: string; name: string; isPrimary: boolean; chartSize: number | null }>>([]);
+  const [paradas, setParadas] = useState<Array<{ id: string; name: string; isPrimary: boolean; chartSize: number | null; cadence?: "weekly" | "daily" }>>([]);
   const [globalTopSongs, setGlobalTopSongs] = useState<Song[]>([]);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
@@ -149,11 +150,12 @@ export default function CreatePage() {
   useEffect(() => {
     fetch("/api/user/chart-name", { cache: "no-store" })
       .then((r) => r.json())
-      .then((data: { paradaNome?: string | null; paradaId?: string | null; paradas?: Array<{ id: string; name: string; chartSize?: number | null }> }) => {
+      .then((data: { paradaNome?: string | null; paradaId?: string | null; paradas?: Array<{ id: string; name: string; chartSize?: number | null; cadence?: "weekly" | "daily" }> }) => {
         const allParadas = (data.paradas ?? []).map((p) => ({
           ...p,
           isPrimary: false,
           chartSize: p.chartSize ?? null,
+          cadence: p.cadence ?? "weekly",
         }));
         setParadas(allParadas);
         const targetId = paradaIdFromUrl ?? data.paradaId ?? null;
@@ -451,7 +453,11 @@ export default function CreatePage() {
       const data = (await res.json()) as LatestChartResponse & { error?: string };
       if (!res.ok) {
         if (res.status === 404) {
-          setPublishError("Não há parada publicada na semana anterior à do campo Data.");
+          setPublishError(
+            activeParadaCadence === "daily"
+              ? "Não há parada publicada no dia anterior ao selecionado."
+              : "Não há parada publicada na semana anterior à do campo Data.",
+          );
           return;
         }
         if (res.status === 400) {
@@ -495,7 +501,7 @@ export default function CreatePage() {
           "Cache-Control": "no-store, no-cache, max-age=0",
           Pragma: "no-cache",
         },
-        body: JSON.stringify({ weekDate, nonce: requestNonce, limit }),
+        body: JSON.stringify({ nonce: requestNonce, limit }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -605,12 +611,20 @@ export default function CreatePage() {
 
   const tituloParada = paradaNome ?? "Monte sua parada";
   const nomeParadaCard = paradaNome ?? "Sua parada";
+  const activeParada = paradas.find((p) => p.id === activeParadaId);
+  const activeParadaCadence = activeParada?.cadence ?? "weekly";
   const weekDateObj = fromInputDate(weekDate) ?? new Date();
   const semanaAtual = isoWeekNumber(weekDateObj);
   const anoSemanaIso = isoWeekYear(weekDateObj);
-  const tituloParadaSemanaAno = `${nomeParadaCard} - Semana ${semanaAtual} - ${anoSemanaIso}`;
+  const tituloParadaPeriodo =
+    activeParadaCadence === "daily"
+      ? `${nomeParadaCard} - ${buildDayLabelFromDate(weekDateObj)}`
+      : `${nomeParadaCard} - Semana ${semanaAtual} - ${anoSemanaIso}`;
   const { start: inicioSemana, end: fimSemana } = getChartWeekRange(weekDateObj);
-  const subtituloSemana = `Semana ${semanaAtual} - de ${formatPtDayMonth(inicioSemana)} a ${formatPtDayMonth(fimSemana)}`;
+  const subtituloPeriodo =
+    activeParadaCadence === "daily"
+      ? buildDayLabelFromDate(weekDateObj)
+      : `Semana ${semanaAtual} - de ${formatPtDayMonth(inicioSemana)} a ${formatPtDayMonth(fimSemana)}`;
 
   const searchPanel = (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -788,7 +802,7 @@ export default function CreatePage() {
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
       <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{tituloParadaSemanaAno}</div>
+          <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{tituloParadaPeriodo}</div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             {entries.length === 0 ? "Nenhuma música ainda" : `${entries.length} música${entries.length === 1 ? "" : "s"}`}
           </div>
@@ -798,7 +812,7 @@ export default function CreatePage() {
             type="button"
             onClick={() => !importingLastfm && setShowLastfmModal(true)}
             disabled={importingLastfm}
-            title="Importar suas músicas mais ouvidas do Last.fm para esta semana"
+            title="Importar suas músicas mais ouvidas no Last.fm nos últimos 30 dias"
             style={{
               border: "1px solid rgba(250,36,60,0.3)",
               background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -941,7 +955,7 @@ export default function CreatePage() {
           <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 0 }}>
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: isMobile ? 28 : 48, fontWeight: 800, letterSpacing: "-0.04em", margin: 0 }}>{tituloParada}</h1>
-              <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6, marginBottom: 0 }}>{subtituloSemana}</p>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6, marginBottom: 0 }}>{subtituloPeriodo}</p>
               {paradas.length > 1 && (
                 <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
                   {paradas.map((p) => (
@@ -968,7 +982,13 @@ export default function CreatePage() {
               )}
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <WeekCalendar value={weekDate} onChange={setWeekDate} paradaId={activeParadaId} />
+              <WeekCalendar
+                value={weekDate}
+                onChange={setWeekDate}
+                paradaId={activeParadaId}
+                mode={activeParadaCadence}
+                label={activeParadaCadence === "daily" ? "Dia" : "Semana"}
+              />
               <button
                 onClick={publishChart}
                 disabled={publishing || entries.length === 0}
@@ -1059,7 +1079,7 @@ export default function CreatePage() {
                 <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Last.fm</span>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Seus scrobbles do Last.fm para a semana selecionada serão analisados. As músicas mais ouvidas serão ranqueadas e importadas para a sua parada.
+                Suas músicas mais ouvidas no Last.fm nos últimos 30 dias serão importadas, ordenadas pela quantidade total de plays.
               </p>
             </div>
 
@@ -1125,7 +1145,7 @@ export default function CreatePage() {
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                Máximo de 200 músicas. O algoritmo prioriza as mais tocadas na semana selecionada.
+                Máximo de 200 músicas. Ordenadas pela soma de plays nos últimos 30 dias.
               </div>
             </div>
 

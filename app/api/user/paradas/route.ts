@@ -9,6 +9,7 @@ import {
   syncUserPrimaryParadaFields,
 } from "@/lib/paradas";
 import { MAX_PARADAS_PER_USER } from "@/lib/parada-points";
+import { parseCadenceInput, toApiCadence } from "@/lib/chart-cadence";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,7 @@ export async function GET() {
       isPrimary: p.isPrimary,
       sortOrder: p.sortOrder,
       chartSize: p.chartSize,
+      cadence: toApiCadence(p.cadence),
     })),
     canCreate,
     maxParadas: MAX_PARADAS_PER_USER,
@@ -50,7 +52,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await req.json()) as { name?: string; genres?: string[]; chartSize?: number | null };
+  const body = (await req.json()) as {
+    name?: string;
+    genres?: string[];
+    chartSize?: number | null;
+    cadence?: unknown;
+  };
   const name = typeof body.name === "string" ? body.name.trim() : "";
   if (name.length < 2) {
     return NextResponse.json({ error: "Nome muito curto" }, { status: 400 });
@@ -72,6 +79,8 @@ export async function POST(req: Request) {
     );
   }
 
+  const cadence = parseCadenceInput(body.cadence) ?? "WEEKLY";
+
   const sortOrder = await prisma.parada.count({ where: { userId: session.user.id } });
   const parada = await prisma.parada.create({
     data: {
@@ -81,6 +90,7 @@ export async function POST(req: Request) {
       isPrimary: false,
       sortOrder,
       chartSize,
+      cadence,
     },
   });
 
@@ -93,6 +103,7 @@ export async function POST(req: Request) {
       isPrimary: parada.isPrimary,
       sortOrder: parada.sortOrder,
       chartSize: parada.chartSize,
+      cadence: toApiCadence(parada.cadence),
     },
   });
 }
@@ -110,6 +121,7 @@ export async function PATCH(req: Request) {
     logo?: string | null;
     setPrimary?: boolean;
     chartSize?: number | null;
+    cadence?: unknown;
   };
 
   const paradaId = typeof body.paradaId === "string" ? body.paradaId.trim() : "";
@@ -142,6 +154,11 @@ export async function PATCH(req: Request) {
         ? null
         : undefined;
 
+  const patchCadence = parseCadenceInput(body.cadence);
+  if (patchCadence === "DAILY" && owned.isPrimary) {
+    return NextResponse.json({ error: "A parada principal só pode ser semanal" }, { status: 400 });
+  }
+
   if (body.setPrimary === true) {
     await setPrimaryParada(prisma, session.user.id, paradaId);
   }
@@ -153,6 +170,7 @@ export async function PATCH(req: Request) {
       ...(genres !== undefined ? { genres } : {}),
       ...(logo !== undefined ? { logo } : {}),
       ...(patchChartSize !== undefined ? { chartSize: patchChartSize } : {}),
+      ...(patchCadence !== null ? { cadence: patchCadence } : {}),
     },
   });
 
@@ -169,6 +187,7 @@ export async function PATCH(req: Request) {
       isPrimary: updated.isPrimary,
       sortOrder: updated.sortOrder,
       chartSize: updated.chartSize,
+      cadence: toApiCadence(updated.cadence),
     },
   });
 }

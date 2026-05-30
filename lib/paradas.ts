@@ -3,6 +3,8 @@ import { MAX_PARADAS_PER_USER } from "@/lib/parada-points";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
+import type { ParadaCadence } from "@/lib/chart-cadence";
+
 export type ParadaRow = {
   id: string;
   userId: string;
@@ -12,6 +14,7 @@ export type ParadaRow = {
   isPrimary: boolean;
   sortOrder: number;
   chartSize: number | null;
+  cadence: ParadaCadence;
 };
 
 /** Garante parada principal (migra `User.paradaNome` / `genres` / `paradaLogo` se necessário). */
@@ -44,6 +47,7 @@ export async function ensureUserParadas(db: Db, userId: string): Promise<ParadaR
         isPrimary: true,
         sortOrder: 0,
         chartSize: user.chartSize ?? null,
+        cadence: "WEEKLY",
       },
     });
     return [created];
@@ -113,7 +117,7 @@ export async function setPrimaryParada(db: Db, userId: string, paradaId: string)
   });
   await db.parada.update({
     where: { id: paradaId },
-    data: { isPrimary: true },
+    data: { isPrimary: true, cadence: "WEEKLY" },
   });
   await syncUserPrimaryParadaFields(db, userId);
 }

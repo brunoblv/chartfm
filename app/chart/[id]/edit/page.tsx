@@ -15,7 +15,6 @@ import type { Song, Cover as CoverModel, Chart } from "@/lib/types";
 type ChartDetailResponse = {
   user: { id: string; handle: string; name: string };
   chart: Pick<Chart, "id" | "weekLabel" | "dateRange" | "entries">;
-  lastfmImportWeekDate?: string | null;
 };
 
 type SpotifyApiTrack = {
@@ -63,7 +62,6 @@ export default function EditChartPage() {
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weekLabel, setWeekLabel] = useState("");
-  const [lastfmImportWeekDate, setLastfmImportWeekDate] = useState<string | null>(null);
   const [entries, setEntries] = useState<Song[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
@@ -93,7 +91,6 @@ export default function EditChartPage() {
         }
         const data = (await res.json()) as ChartDetailResponse;
         setWeekLabel(data.chart.weekLabel);
-        setLastfmImportWeekDate(typeof data.lastfmImportWeekDate === "string" && data.lastfmImportWeekDate ? data.lastfmImportWeekDate : null);
         setEntries(
           data.chart.entries.map((e) => ({
             id: e.song.id,
@@ -319,10 +316,6 @@ export default function EditChartPage() {
   };
 
   const importFromLastfm = async () => {
-    if (!lastfmImportWeekDate) {
-      setError("Não foi possível determinar a semana desta parada para importar do Last.fm.");
-      return;
-    }
     lastfmImportAbortRef.current?.abort();
     const runId = ++lastfmImportRunRef.current;
     const ac = new AbortController();
@@ -339,7 +332,7 @@ export default function EditChartPage() {
           "Cache-Control": "no-store, no-cache, max-age=0",
           Pragma: "no-cache",
         },
-        body: JSON.stringify({ weekDate: lastfmImportWeekDate, nonce: requestNonce }),
+        body: JSON.stringify({ nonce: requestNonce }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -640,12 +633,8 @@ export default function EditChartPage() {
             <button
               type="button"
               onClick={importFromLastfm}
-              disabled={importingLastfm || !lastfmImportWeekDate}
-              title={
-                lastfmImportWeekDate
-                  ? "Substitui a lista pelos scrobbles do Last.fm na semana desta parada (ranqueados por plays)"
-                  : "Período da parada não permite import automático do Last.fm"
-              }
+              disabled={importingLastfm}
+              title="Substitui a lista pelas músicas mais ouvidas no Last.fm nos últimos 30 dias (ordenadas por plays)"
               style={{
                 border: "1px solid rgba(250,36,60,0.3)",
                 background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -654,8 +643,8 @@ export default function EditChartPage() {
                 padding: "9px 16px",
                 fontSize: 13,
                 fontWeight: 700,
-                cursor: importingLastfm || !lastfmImportWeekDate ? "not-allowed" : "pointer",
-                opacity: importingLastfm || !lastfmImportWeekDate ? 0.55 : 1,
+                cursor: importingLastfm ? "not-allowed" : "pointer",
+                opacity: importingLastfm ? 0.55 : 1,
                 whiteSpace: "nowrap",
               }}
             >

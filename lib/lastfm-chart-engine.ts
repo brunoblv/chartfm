@@ -66,16 +66,19 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): num
   return score;
 }
 
+function computePlaySum(dayPlays: TrackPlays["dayPlays"]): number {
+  return dayPlays.reduce((sum, { plays }) => sum + plays, 0);
+}
+
+/** Ranqueia faixas pela soma de plays no período já agregado em `dayPlays`. */
 export function scoreLastfmTracks(
   trackPlays: TrackPlays[],
-  /** Fim do período em UTC (import 30d: `new Date()`; import por semana: domingo fim da parada). Blocos ×5 (0–6d) / ×3 (7–14d) / ×2 (15–29d). */
-  referenceDay: Date = new Date(),
   limit = 200,
-  minScore = 0,
+  minPlays = 1,
 ): Array<{ track: string; artist: string; album: string; score: number }> {
   return trackPlays
-    .map((tp) => ({ track: tp.track, artist: tp.artist, album: tp.album, score: computeScore(tp.dayPlays, referenceDay) }))
-    .filter((s) => s.score > minScore)
+    .map((tp) => ({ track: tp.track, artist: tp.artist, album: tp.album, score: computePlaySum(tp.dayPlays) }))
+    .filter((s) => s.score >= minPlays)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }

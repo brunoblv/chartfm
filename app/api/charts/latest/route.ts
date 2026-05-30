@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import {
-  buildDateRangeFromDate,
-  buildWeekIndexFromDate,
-  buildWeekLabelFromDate,
-  parseChartWeekPickerDate,
-  prevChartWeekIndex,
-} from "@/lib/chart-week";
+import { buildPeriodFromDate, prevPeriodIndex } from "@/lib/chart-cadence";
+import { parseChartWeekPickerDate } from "@/lib/chart-week";
 import { prisma } from "@/lib/prisma";
 import { resolveParadaForPublish } from "@/lib/paradas";
 
@@ -15,7 +10,7 @@ export const runtime = "nodejs";
 
 /**
  * GET /api/charts/latest?weekDate=AAAA-MM-DD
- * Parada publicada na semana ISO **anterior** à da data informada (mesmo critério do campo Data ao publicar).
+ * Parada publicada no período anterior (dia ou semana) à data informada.
  */
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -29,19 +24,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Informe weekDate=AAAA-MM-DD (data no campo da parada)." }, { status: 400 });
   }
 
-  const currentWeekIndex = buildWeekIndexFromDate(anchor);
-  const previousWeekIndex = prevChartWeekIndex(currentWeekIndex);
-  const previousDate = new Date(anchor);
-  previousDate.setDate(previousDate.getDate() - 7);
-  const previousWeekLabel = buildWeekLabelFromDate(previousDate);
-  const previousDateRange = buildDateRangeFromDate(previousDate);
-  const legacyPreviousWeekOnly = previousWeekIndex % 100;
-
   const paradaIdParam = req.nextUrl.searchParams.get("paradaId");
   const parada = await resolveParadaForPublish(prisma, session.user.id, paradaIdParam);
 
+  const currentPeriod = buildPeriodFromDate(anchor, parada.cadence);
+  const previousPeriodIndex = prevPeriodIndex(currentPeriod.periodIndex, parada.cadence);
+
+  const previousDate = new Date(anchor);
+  previousDate.setDate(previousDate.getDate() - (parada.cadence === "DAILY" ? 1 : 7));
+  const previousPeriod = buildPeriodFromDate(previousDate, parada.cadence);
+  const legacyPreviousWeekOnly = previousPeriodIndex % 100;
+
   let chart = await prisma.chart.findUnique({
-    where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex: previousWeekIndex } },
+    where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex: previousPeriodIndex } },
     include: {
       entries: {
         orderBy: { position: "asc" },
@@ -50,17 +45,15 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Compatibilidade com dados legados: algumas paradas antigas podem ter `weekIndex`
-  // salvo só com o número da semana (ex.: 17), sem o ano codificado.
-  if (!chart) {
+  if (!chart && parada.cadence === "WEEKLY") {
     chart = await prisma.chart.findFirst({
       where: {
         userId: session.user.id,
         paradaId: parada.id,
         OR: [
           { weekIndex: legacyPreviousWeekOnly },
-          { weekLabel: previousWeekLabel },
-          { dateRange: previousDateRange },
+          { weekLabel: previousPeriod.periodLabel },
+          { dateRange: previousPeriod.dateRange },
         ],
       },
       orderBy: { publishedAt: "desc" },
@@ -74,7 +67,13 @@ export async function GET(req: NextRequest) {
   }
 
   if (!chart) {
-    return NextResponse.json({ error: "no_chart_for_previous_week" }, { status: 404 });
+    return NextResponse.json(
+      {
+        error:
+          parada.cadence === "DAILY" ? "no_chart_for_previous_day" : "no_chart_for_previous_week",
+      },
+      { status: 404 },
+    );
   }
 
   return NextResponse.json({

@@ -16,6 +16,18 @@ import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
 import { buildAlbumPath, buildArtistPath, buildSongPath } from "@/lib/music-routes";
+import {
+  DESKTOP_COVER_SIZE,
+  MOBILE_ARTIST_SIZE,
+  MOBILE_COVER_SIZE,
+  MOBILE_POS_WIDTH,
+  MOBILE_ROW_GAP,
+  MOBILE_STATS_INDENT,
+  MOBILE_TITLE_SIZE,
+  desktopCoverGridColumn,
+  desktopListGrid,
+} from "@/lib/chart-list-layout";
+import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, PersonalDropoutEntry, TimelineItem, User } from "@/lib/types";
@@ -522,19 +534,19 @@ export default function ChartDetailPage() {
 }
 
 
-function StatPill({ label, value, accent }: { label: string; value: number | string; accent?: string }) {
+function StatPill({ label, value, accent, compact }: { label: string; value: number | string; accent?: string; compact?: boolean }) {
   return (
     <div style={{ textAlign: "right" }}>
-      <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: accent ?? "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{value}</div>
+      <div style={{ fontSize: compact ? 8 : 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>{label}</div>
+      <div style={{ fontSize: compact ? 12 : 14, fontWeight: 700, color: accent ?? "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{value}</div>
     </div>
   );
 }
 
 function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entries: ChartEntry[]; personalNumberOnes?: Record<string, number>; globalNumberOnes?: Record<string, number> }) {
   const isMobile = useIsMobile();
-  const coverSize = 75;
-  const gridColumns = `60px ${coverSize + 16}px 90px minmax(0,1fr) 80px 80px 60px 90px`;
+  const coverSize = DESKTOP_COVER_SIZE;
+  const gridColumns = desktopListGrid(desktopCoverGridColumn(coverSize), "80px 80px 60px 90px");
   if (isMobile) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -543,42 +555,37 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
             key={e.position}
             style={{
               display: "flex",
-              alignItems: "center",
-              padding: "10px 16px",
+              flexDirection: "column",
+              gap: 6,
+              padding: "10px 12px",
               borderBottom: "1px solid var(--divider-soft)",
-              gap: 12,
             }}
           >
-            {/* Position */}
-            <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: e.position <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                {e.position}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: MOBILE_ROW_GAP, minWidth: 0 }}>
+              <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
+                <div style={{ fontSize: e.position <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  {e.position}
+                </div>
+                <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                  <MovementBadge status={e.status} delta={e.delta} compact />
+                </div>
               </div>
-              <div style={{ marginTop: 2 }}>
-                <MovementBadge status={e.status} delta={e.delta} compact />
+              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+                <Cover cover={e.cover} song={e.song} size={MOBILE_COVER_SIZE} rounded={6} />
+              </Link>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: MOBILE_TITLE_SIZE, fontWeight: 700, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                  {e.song.title}
+                </Link>
+                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: MOBILE_ARTIST_SIZE, lineHeight: 1.25, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                  {formatSongArtist(e.song)}
+                </Link>
               </div>
             </div>
-
-            {/* Cover */}
-            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-              <Cover cover={e.cover} song={e.song} size={coverSize} rounded={8} />
-            </Link>
-
-            {/* Title + Artist */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
-                {e.song.title}
-              </Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
-                {formatSongArtist(e.song)}
-              </Link>
-            </div>
-
-            {/* Stats: LW / PEAK / WEEKS */}
-            <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-              <StatPill label="ANT" value={e.prevPos ?? "—"} />
-              <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill label="SEM" value={e.weeks} />
+            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
+              <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
+              <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+              <StatPill compact label="SEM" value={e.weeks} />
             </div>
           </div>
         ))}
@@ -596,7 +603,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {["Pos", "", "Mudança", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
+        {["Pos", "", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
         ))}
       </div>
@@ -615,13 +622,12 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
               gap: 0,
             }}
           >
-            <div style={{ fontSize: e.position <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12 }}>
-              {e.position}
-            </div>
+            <DesktopPosCell position={e.position}>
+              <MovementBadge status={e.status} delta={e.delta} compact />
+            </DesktopPosCell>
             <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
               <Cover cover={e.cover} song={e.song} size={coverSize} rounded={8} />
             </Link>
-            <div style={{ padding: "0 8px" }}><MovementBadge status={e.status} delta={e.delta} /></div>
             <div style={{ minWidth: 0, padding: "0 12px" }}>
               <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
               <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
@@ -739,9 +745,11 @@ function VideoClipVariant({
   personalNumberOnes?: Record<string, number>;
 }) {
   const isMobile = useIsMobile();
-  const clipHeight = isMobile ? 75 : 125;
+  const clipHeight = isMobile ? MOBILE_COVER_SIZE : 125;
   const clipWidth = Math.round(clipHeight * (16 / 9));
-  const gridColumns = `60px ${clipWidth + 16}px 90px minmax(0,1fr) 80px 80px 60px 90px`;
+  const mobileClipIndent =
+    MOBILE_POS_WIDTH + MOBILE_ROW_GAP + clipWidth + MOBILE_ROW_GAP;
+  const gridColumns = desktopListGrid(`${clipWidth + 16}px`, "80px 80px 60px 90px");
 
   if (isMobile) {
     return (
@@ -753,44 +761,43 @@ function VideoClipVariant({
               key={e.position}
               style={{
                 display: "flex",
-                alignItems: "center",
-                padding: "10px 16px",
+                flexDirection: "column",
+                gap: 6,
+                padding: "10px 12px",
                 borderBottom: "1px solid var(--divider-soft)",
-                gap: 12,
-                minWidth: 0,
               }}
             >
-              <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
-                <div style={{ fontSize: e.position <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                  {e.position}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: MOBILE_ROW_GAP, minWidth: 0 }}>
+                <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
+                  <div style={{ fontSize: e.position <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                    {e.position}
+                  </div>
+                  <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                    <MovementBadge status={e.status} delta={e.delta} compact />
+                  </div>
                 </div>
-                <div style={{ marginTop: 2 }}>
-                  <MovementBadge status={e.status} delta={e.delta} compact />
-                </div>
-              </div>
-              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-                <VideoClipCover
-                  imageUrl={clipUrl}
-                  paletteA={e.cover.palette[0]}
-                  paletteB={e.cover.palette[1]}
-                  seed={e.cover.seed}
-                  height={clipHeight}
-                />
-              </Link>
-              <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+                  <VideoClipCover
+                    imageUrl={clipUrl}
+                    paletteA={e.cover.palette[0]}
+                    paletteB={e.cover.palette[1]}
+                    seed={e.cover.seed}
+                    height={clipHeight}
+                  />
+                </Link>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                  <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: MOBILE_TITLE_SIZE, fontWeight: 700, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
                     {e.song.title}
                   </Link>
-                  <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                  <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: MOBILE_ARTIST_SIZE, lineHeight: 1.25, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
                     {formatSongArtist(e.song)}
                   </Link>
                 </div>
-                <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-                  <StatPill label="ANT" value={e.prevPos ?? "—"} />
-                  <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-                  <StatPill label="SEM" value={e.weeks} />
-                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, paddingLeft: mobileClipIndent }}>
+                <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
+                <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+                <StatPill compact label="SEM" value={e.weeks} />
               </div>
             </div>
           );
@@ -809,7 +816,7 @@ function VideoClipVariant({
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {["Pos", "", "Mudança", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
+        {["Pos", "", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
         ))}
       </div>
@@ -829,9 +836,9 @@ function VideoClipVariant({
               gap: 0,
             }}
           >
-            <div style={{ fontSize: e.position <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12, alignSelf: "center" }}>
-              {e.position}
-            </div>
+            <DesktopPosCell position={e.position} alignSelf="center">
+              <MovementBadge status={e.status} delta={e.delta} compact />
+            </DesktopPosCell>
             <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0, alignSelf: "center" }}>
               <VideoClipCover
                 imageUrl={clipUrl}
@@ -841,9 +848,6 @@ function VideoClipVariant({
                 height={clipHeight}
               />
             </Link>
-            <div style={{ padding: "0 8px", alignSelf: "center" }}>
-              <MovementBadge status={e.status} delta={e.delta} />
-            </div>
             <div style={{ minWidth: 0, padding: "0 12px", alignSelf: "center" }}>
               <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
               <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
@@ -906,27 +910,31 @@ function PersonalDropoutsTab({ dropouts, isDbChart }: { dropouts: PersonalDropou
     return (
       <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
         {dropouts.map((e) => (
-          <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "flex", alignItems: "center", padding: "10px 16px", borderBottom: "1px solid var(--divider-soft)", gap: 12 }}>
-            <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: e.lastPos <= 3 ? 24 : 18, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                {e.lastPos}
+          <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", borderBottom: "1px solid var(--divider-soft)" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: MOBILE_ROW_GAP, minWidth: 0 }}>
+              <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
+                <div style={{ fontSize: e.lastPos <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  {e.lastPos}
+                </div>
+                <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                  <PersonalExitBadge />
+                </div>
               </div>
-              <div style={{ marginTop: 2 }}><PersonalExitBadge /></div>
-            </div>
-            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-              <Cover cover={e.cover} song={e.song} size={52} rounded={8} />
-            </Link>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
-                {e.song.title}
+              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+                <Cover cover={e.cover} song={e.song} size={MOBILE_COVER_SIZE} rounded={6} />
               </Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
-                {formatSongArtist(e.song)}
-              </Link>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: MOBILE_TITLE_SIZE, fontWeight: 700, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                  {e.song.title}
+                </Link>
+                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: MOBILE_ARTIST_SIZE, lineHeight: 1.25, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                  {formatSongArtist(e.song)}
+                </Link>
+              </div>
             </div>
-            <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-              <StatPill label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill label="SEM" value={e.weeks} />
+            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
+              <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+              <StatPill compact label="SEM" value={e.weeks} />
             </div>
           </div>
         ))}
@@ -934,22 +942,23 @@ function PersonalDropoutsTab({ dropouts, isDbChart }: { dropouts: PersonalDropou
     );
   }
 
+  const dropoutGrid = desktopListGrid(desktopCoverGridColumn(DESKTOP_COVER_SIZE), "80px 60px");
+
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 60px", gap: 0, padding: "0 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
-        {["Últ.", "", "", "Música", "Pico", "Sem."].map((h, i) => (
+      <div style={{ display: "grid", gridTemplateColumns: dropoutGrid, gap: 0, padding: "0 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+        {["Últ.", "", "Música", "Pico", "Sem."].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
         ))}
       </div>
       {dropouts.map((e) => (
-        <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "grid", gridTemplateColumns: "60px 64px 90px minmax(0,1fr) 80px 60px", alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)", gap: 0 }}>
-          <div style={{ fontSize: e.lastPos <= 3 ? 28 : 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 12 }}>
-            {e.lastPos}
-          </div>
+        <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "grid", gridTemplateColumns: dropoutGrid, alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)", gap: 0 }}>
+          <DesktopPosCell position={e.lastPos} muted>
+            <PersonalExitBadge />
+          </DesktopPosCell>
           <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
-            <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
+            <Cover cover={e.cover} song={e.song} size={DESKTOP_COVER_SIZE} rounded={8} />
           </Link>
-          <div style={{ padding: "0 8px" }}><PersonalExitBadge /></div>
           <div style={{ minWidth: 0, padding: "0 12px" }}>
             <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
             <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>

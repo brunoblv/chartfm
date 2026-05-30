@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { chartWeekUnixRangeFromAnchor, getChartWeekRange, parseChartWeekPickerDate } from "@/lib/chart-week";
-import { fetchRecentTracks, fetchTracksBetweenUnix } from "@/lib/lastfm";
+import { fetchRecentTracks } from "@/lib/lastfm";
 import { scoreLastfmTracks } from "@/lib/lastfm-chart-engine";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 import { prisma } from "@/lib/prisma";
@@ -164,9 +163,8 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
 }
 
 // POST /api/lastfm/import
-// Body: { weekDate?: "YYYY-MM-DD", limit?: number } — semana (seg–dom) dessa data; sem weekDate = últimos 28 dias.
-// Usa o lastfmUser do perfil do usuário autenticado para buscar os scrobbles.
-// As duas rotas usam scoreLastfmTracks: (últimos 7d ×5)+(8–15d ×3)+(16–30d ×2) em relação à âncora.
+// Body: { limit?: number } — busca scrobbles dos últimos 30 dias e ranqueia pela soma de plays.
+// Usa o lastfmUser do perfil do usuário autenticado.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -189,38 +187,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Spotify não configurado" }, { status: 503, headers: NO_CACHE_HEADERS });
   }
 
-  let body: { weekDate?: unknown; recentDays?: unknown; limit?: unknown } = {};
+  let body: { limit?: unknown } = {};
   try {
     body = (await req.json()) as typeof body;
   } catch {
     body = {};
   }
-  const weekDateStr = typeof body.weekDate === "string" ? body.weekDate.trim() : "";
-  const useWeek = /^\d{4}-\d{2}-\d{2}$/.test(weekDateStr);
   const limit = typeof body.limit === "number" && body.limit > 0 && body.limit <= 200 ? Math.round(body.limit) : 200;
   const lastfmUsername = userRecord.lastfmUser;
 
   try {
-    let topTracks: Array<{ track: string; artist: string; album: string; score: number }>;
-
-    if (useWeek) {
-      const anchor = parseChartWeekPickerDate(weekDateStr);
-      if (!anchor) {
-        return NextResponse.json({ error: "Data da semana inválida" }, { status: 400, headers: NO_CACHE_HEADERS });
-      }
-      if (anchor.getTime() > Date.now()) {
-        return NextResponse.json({ error: "Não é possível importar semana futura" }, { status: 400, headers: NO_CACHE_HEADERS });
-      }
-      const { from, toExclusive } = chartWeekUnixRangeFromAnchor(anchor);
-      const weekPlays = await fetchTracksBetweenUnix(from, toExclusive, lastfmUsername);
-      const { end: weekEnd } = getChartWeekRange(anchor);
-      const scoreAnchor = new Date(Date.UTC(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate()));
-      topTracks = scoreLastfmTracks(weekPlays, scoreAnchor, limit);
-    } else {
-      const days = typeof body.recentDays === "number" && body.recentDays > 0 && body.recentDays <= 90 ? body.recentDays : 30;
-      const recentPlays = await fetchRecentTracks(days, lastfmUsername);
-      topTracks = scoreLastfmTracks(recentPlays, new Date(), limit);
-    }
+    const recentPlays = await fetchRecentTracks(30, lastfmUsername);
+    const topTracks = scoreLastfmTracks(recentPlays, limit);
 
     const BATCH = 8;
     const enriched: EnrichedSong[] = [];

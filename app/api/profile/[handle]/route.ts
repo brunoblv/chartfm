@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { toApiCadence } from "@/lib/chart-cadence";
 import { buildPublicProfilePayload } from "@/lib/map-db-profile";
 import { applyComputedEntryStatsToCharts } from "@/lib/chart-entry-stats";
 import { ensureUserParadas } from "@/lib/paradas";
@@ -220,6 +221,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
       genres: p.genres,
       isPrimary: p.isPrimary,
       sortOrder: p.sortOrder,
+      cadence: toApiCadence(p.cadence),
     })),
     activeParadaId: activeParada?.id ?? null,
     scoringTier: activeParada?.isPrimary === false ? "secondary" : "primary",

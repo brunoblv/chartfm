@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { prevPeriodIndex } from "@/lib/chart-cadence";
 import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
@@ -73,6 +74,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       weekIndex: true,
       weekLabel: true,
       dateRange: true,
+      parada: { select: { cadence: true } },
       likes: true,
       comments: true,
       reposts: true,
@@ -209,7 +211,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     const hist = historyBySong.get(entry.songId);
     const weeks = hist?.weeks ?? 1;
     const peak = hist?.peak ?? entry.position;
-    const expectedPrevWeek = prevWeekIndex(row.weekIndex);
+    const expectedPrevWeek = prevPeriodIndex(row.weekIndex, row.parada.cadence);
     const prevPos =
       prevPositionsRaw.find((h) => h.songId === entry.songId && h.chart.weekIndex === expectedPrevWeek)?.position ?? null;
     const delta = prevPos === null ? null : prevPos - entry.position;
@@ -334,7 +336,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       userId: true,
       paradaId: true,
       weekIndex: true,
-      parada: { select: { isPrimary: true } },
+      parada: { select: { isPrimary: true, cadence: true } },
     },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -529,7 +531,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   }
 
   const previousChart = await prisma.chart.findFirst({
-    where: { paradaId: chart.paradaId, weekIndex: prevWeekIndex(chart.weekIndex) },
+    where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(chart.weekIndex, chart.parada.cadence) },
     include: { entries: true },
   });
   const historicalRows = await prisma.chartEntry.findMany({

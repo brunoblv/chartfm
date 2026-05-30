@@ -28,6 +28,7 @@ type ParadaInfo = {
   genres: string[];
   isPrimary: boolean;
   sortOrder: number;
+  cadence?: "weekly" | "daily";
 };
 
 type ApiProfile = {
@@ -591,7 +592,7 @@ export default function ProfilePage() {
                 )}
                 {activeParada && !activeParada.isPrimary && (
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "var(--fill-subtle)", color: "var(--text-muted)" }}>
-                    Secundária · 20→1 pt
+                    Secundária · {activeParada.cadence === "daily" ? "Diária" : "Semanal"} · 20→1 pt
                   </span>
                 )}
               </div>
@@ -829,7 +830,7 @@ export default function ProfilePage() {
           }}
         >
           {[
-            { label: paradaNome ? `Semanas · ${paradaNome}` : "Semanas", value: totalCharts, icon: null },
+            { label: paradaNome ? `${activeParada?.cadence === "daily" ? "Dias" : "Semanas"} · ${paradaNome}` : activeParada?.cadence === "daily" ? "Dias" : "Semanas", value: totalCharts, icon: null },
             { label: "#1 pessoais", value: numberOnes, icon: <Trophy size={14} color="#FFD700" fill="#FFD700" /> },
             { label: "Músicas", value: totalRankedSlots, icon: null },
             { label: "Artistas", value: topArtists.length, icon: null },
