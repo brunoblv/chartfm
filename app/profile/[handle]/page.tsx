@@ -346,7 +346,7 @@ export default function ProfilePage() {
   const [activeParadaId, setActiveParadaId] = useState<string | null>(null);
   const [paradaTab, setParadaTab] = useState<ParadaTab>("charts");
   const [statsScope, setStatsScope] = useState<StatsScope>("overall");
-  const [phase, setPhase] = useState<"loading" | "ready" | "missing">("loading");
+  const [phase, setPhase] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [source, setSource] = useState<"db" | "mock" | null>(null);
   const [payload, setPayload] = useState<ApiProfile | null>(null);
   const [fullPayload, setFullPayload] = useState<ApiProfile | null>(null);
@@ -403,9 +403,9 @@ export default function ProfilePage() {
           setPhase(mock ? "ready" : "missing");
           return;
         }
-        setPhase("missing");
+        setPhase("error");
       } catch {
-        if (!cancelled) setPhase("missing");
+        if (!cancelled) setPhase("error");
       }
     })();
     return () => {
@@ -527,6 +527,21 @@ export default function ProfilePage() {
     return (
       <Shell title="" noPadding>
         <div style={{ padding: "48px 40px", color: "var(--text-muted)", fontSize: 15 }}>Carregando perfil…</div>
+      </Shell>
+    );
+  }
+
+  if (phase === "error") {
+    return (
+      <Shell title="Perfil" subtitle="Erro ao carregar">
+        <div style={{ maxWidth: 480, textAlign: "center", margin: "48px auto", color: "var(--text-muted)" }}>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>
+            Não foi possível carregar o perfil de @{handle} agora. Tente recarregar a página em instantes.
+          </p>
+          <Link href="/" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+            ← Voltar ao início
+          </Link>
+        </div>
       </Shell>
     );
   }

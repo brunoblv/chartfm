@@ -109,7 +109,7 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
         title: e.song.exhibitionName?.trim() || e.song.title,
         artist: e.song.artistRef?.name?.trim() || e.song.artist,
         slugArtist: e.song.artist,
-        featArtists: (e.song.feats ?? []).map((f) => f.artist.name),
+        featArtists: (e.song.feats ?? []).map((f) => f.artist?.name).filter((name): name is string => Boolean(name)),
         album: e.song.album ?? "",
         spotifyId: e.song.spotifyId ?? null,
         artistSpotifyId: e.song.artistSpotifyId ?? null,

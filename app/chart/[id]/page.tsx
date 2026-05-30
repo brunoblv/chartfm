@@ -106,7 +106,7 @@ export default function ChartDetailPage() {
   const id = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
 
   const { data: session } = useSession();
-  const [phase, setPhase] = useState<"loading" | "ready" | "missing">("loading");
+  const [phase, setPhase] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [dbPayload, setDbPayload] = useState<ChartDetailExtended | null>(null);
   const [mockItem, setMockItem] = useState<TimelineItem | null>(null);
   const [ownerParadaNome, setOwnerParadaNome] = useState<string | null>(null);
@@ -139,6 +139,12 @@ export default function ChartDetailPage() {
         if (cancelled) return;
         if (res.ok) {
           const data = (await res.json()) as ChartDetailExtended;
+          if (!data?.chart?.id || !data?.user?.id) {
+            setDbPayload(null);
+            setMockItem(null);
+            setPhase("missing");
+            return;
+          }
           setDbPayload(data);
           setLiked(data.liked ?? false);
           setReposted(data.reposted ?? false);
@@ -147,6 +153,12 @@ export default function ChartDetailPage() {
           setCommentCount(data.chart.comments);
           setMockItem(null);
           setPhase("ready");
+          return;
+        }
+        if (res.status >= 500) {
+          setDbPayload(null);
+          setMockItem(null);
+          setPhase("error");
           return;
         }
         const item = TIMELINE.find((t) => t.chart.id === id) ?? null;
@@ -159,7 +171,7 @@ export default function ChartDetailPage() {
         }
         setPhase(item ? "ready" : "missing");
       } catch {
-        if (!cancelled) setPhase("missing");
+        if (!cancelled) setPhase("error");
       }
     })();
     return () => {
@@ -274,6 +286,21 @@ export default function ChartDetailPage() {
     return (
       <Shell title="" noPadding>
         <div style={{ padding: 48, color: "var(--text-muted)", fontSize: 15 }}>Carregando parada…</div>
+      </Shell>
+    );
+  }
+
+  if (phase === "error") {
+    return (
+      <Shell title="Parada" subtitle="Erro ao carregar">
+        <div style={{ maxWidth: 480, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>
+            Não foi possível carregar esta parada agora. Tente recarregar a página em instantes.
+          </p>
+          <Link href="/" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+            ← Voltar ao início
+          </Link>
+        </div>
       </Shell>
     );
   }

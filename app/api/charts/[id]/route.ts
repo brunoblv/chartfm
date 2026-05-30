@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { prevPeriodIndex } from "@/lib/chart-cadence";
+import { inferCadenceFromWeekIndex, prevPeriodIndex } from "@/lib/chart-cadence";
 import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
@@ -58,6 +58,7 @@ function paletteFor(artist: string, title: string) {
 }
 
 export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
   const session = await getServerSession(authOptions);
   const { id } = await context.params;
   const chartId = typeof id === "string" ? id.trim() : "";
@@ -74,7 +75,6 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       weekIndex: true,
       weekLabel: true,
       dateRange: true,
-      parada: { select: { cadence: true } },
       likes: true,
       comments: true,
       reposts: true,
@@ -122,9 +122,12 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_CACHE_HEADERS });
   }
 
+  const cadence = inferCadenceFromWeekIndex(row.weekIndex);
   const currentSongIds = [...new Set(row.entries.map((e) => e.songId))];
   const songIdToKey = new Map(
-    row.entries.map((e) => [e.songId, `${e.song.exhibitionName?.trim() || e.song.title}\0${e.song.artist}`]),
+    row.entries
+      .filter((e) => e.song)
+      .map((e) => [e.songId, `${e.song.exhibitionName?.trim() || e.song.title}\0${e.song.artist}`]),
   );
   const [previousChartFull, nextChart] = await Promise.all([
     prisma.chart.findFirst({
@@ -155,39 +158,42 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     ? { id: previousChartFull.id, weekLabel: previousChartFull.weekLabel }
     : null;
 
-  const [historyAgg, personalOnesAgg, globalOnesAgg, prevPositionsRaw] = await Promise.all([
-    prisma.chartEntry.groupBy({
-      by: ["songId"],
-      where: {
-        songId: { in: currentSongIds },
-        chart: { paradaId: row.paradaId, weekIndex: { lte: row.weekIndex } },
-      },
-      _count: { _all: true },
-      _min: { position: true },
-    }),
-    prisma.chartEntry.groupBy({
-      by: ["songId"],
-      where: {
-        songId: { in: currentSongIds },
-        position: 1,
-        chart: { paradaId: row.paradaId, weekIndex: { lte: row.weekIndex } },
-      },
-      _count: { _all: true },
-    }),
-    prisma.chartEntry.groupBy({
-      by: ["songId"],
-      where: { position: 1, songId: { in: currentSongIds } },
-      _count: { _all: true },
-    }),
-    prisma.chartEntry.findMany({
-      where: {
-        songId: { in: currentSongIds },
-        chart: { paradaId: row.paradaId, weekIndex: { lt: row.weekIndex } },
-      },
-      select: { songId: true, position: true, chart: { select: { weekIndex: true } } },
-      orderBy: [{ chart: { weekIndex: "desc" } }],
-    }),
-  ]);
+  const [historyAgg, personalOnesAgg, globalOnesAgg, prevPositionsRaw] =
+    currentSongIds.length === 0
+      ? [[], [], [], []] as const
+      : await Promise.all([
+          prisma.chartEntry.groupBy({
+            by: ["songId"],
+            where: {
+              songId: { in: currentSongIds },
+              chart: { paradaId: row.paradaId, weekIndex: { lte: row.weekIndex } },
+            },
+            _count: { _all: true },
+            _min: { position: true },
+          }),
+          prisma.chartEntry.groupBy({
+            by: ["songId"],
+            where: {
+              songId: { in: currentSongIds },
+              position: 1,
+              chart: { paradaId: row.paradaId, weekIndex: { lte: row.weekIndex } },
+            },
+            _count: { _all: true },
+          }),
+          prisma.chartEntry.groupBy({
+            by: ["songId"],
+            where: { position: 1, songId: { in: currentSongIds } },
+            _count: { _all: true },
+          }),
+          prisma.chartEntry.findMany({
+            where: {
+              songId: { in: currentSongIds },
+              chart: { paradaId: row.paradaId, weekIndex: { lt: row.weekIndex } },
+            },
+            select: { songId: true, position: true, chart: { select: { weekIndex: true } } },
+            orderBy: [{ chart: { weekIndex: "desc" } }],
+          }),
+        ]);
 
   const historyBySong = new Map(
     historyAgg.map((h) => [h.songId, { weeks: h._count._all, peak: h._min.position ?? null }]),
@@ -207,11 +213,11 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     if (key) globalNumberOnes[key] = total;
   }
 
-  const entriesWithComputedStats = row.entries.map((entry) => {
+  const entriesWithComputedStats = row.entries.filter((entry) => entry.song).map((entry) => {
     const hist = historyBySong.get(entry.songId);
     const weeks = hist?.weeks ?? 1;
     const peak = hist?.peak ?? entry.position;
-    const expectedPrevWeek = prevPeriodIndex(row.weekIndex, row.parada.cadence);
+    const expectedPrevWeek = prevPeriodIndex(row.weekIndex, cadence);
     const prevPos =
       prevPositionsRaw.find((h) => h.songId === entry.songId && h.chart.weekIndex === expectedPrevWeek)?.position ?? null;
     const delta = prevPos === null ? null : prevPos - entry.position;
@@ -237,23 +243,24 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
   const currentSongIdSet = new Set(currentSongIds);
   const dropouts: PersonalDropoutEntry[] = (previousChartFull?.entries ?? [])
-    .filter((e) => !currentSongIdSet.has(e.songId))
+    .filter((e) => e.song && !currentSongIdSet.has(e.songId))
     .sort((a, b) => a.position - b.position)
     .map((e) => {
-      const img = e.song.albumRef?.coverUrl?.trim() || null;
+      const song = e.song!;
+      const img = song.albumRef?.coverUrl?.trim() || null;
       return {
         lastPos: e.position,
         song: {
-          id: e.song.id,
-          title: e.song.exhibitionName?.trim() || e.song.title,
-          artist: e.song.artistRef?.name?.trim() || e.song.artist,
-          slugArtist: e.song.artist,
-          featArtists: (e.song.feats ?? []).map((f) => f.artist.name),
-          album: e.song.album ?? "",
-          spotifyId: e.song.spotifyId ?? null,
-          artistSpotifyId: e.song.artistSpotifyId ?? null,
-          artistRefId: e.song.artistRef?.id ?? null,
-          albumRefId: e.song.albumRef?.id ?? null,
+          id: song.id,
+          title: song.exhibitionName?.trim() || song.title,
+          artist: song.artistRef?.name?.trim() || song.artist,
+          slugArtist: song.artist,
+          featArtists: (song.feats ?? []).map((f) => f.artist?.name).filter((name): name is string => Boolean(name)),
+          album: song.album ?? "",
+          spotifyId: song.spotifyId ?? null,
+          artistSpotifyId: song.artistSpotifyId ?? null,
+          artistRefId: song.artistRef?.id ?? null,
+          albumRefId: song.albumRef?.id ?? null,
           imageUrl: img,
         },
         cover: {
@@ -301,6 +308,10 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     },
     { headers: NO_CACHE_HEADERS },
   );
+  } catch (err) {
+    console.error("[GET /api/charts/[id]]", err);
+    return NextResponse.json({ error: "internal_error" }, { status: 500, headers: NO_CACHE_HEADERS });
+  }
 }
 
 type EntryInput = {
@@ -336,13 +347,14 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       userId: true,
       paradaId: true,
       weekIndex: true,
-      parada: { select: { isPrimary: true, cadence: true } },
+      parada: { select: { isPrimary: true } },
     },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (chart.userId !== session.user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+  const cadence = inferCadenceFromWeekIndex(chart.weekIndex);
   const scoringTier = scoringTierFromPrimary(chart.parada.isPrimary);
   const chartSize = entries.length;
 
@@ -531,7 +543,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   }
 
   const previousChart = await prisma.chart.findFirst({
-    where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(chart.weekIndex, chart.parada.cadence) },
+    where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(chart.weekIndex, cadence) },
     include: { entries: true },
   });
   const historicalRows = await prisma.chartEntry.findMany({

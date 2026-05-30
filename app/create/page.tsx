@@ -430,7 +430,11 @@ export default function CreatePage() {
         setPublishError(data?.error ?? "Erro ao publicar parada.");
         return;
       }
-      router.push(`/chart/${data?.id}`);
+      if (!data?.id) {
+        setPublishError("Parada publicada, mas não foi possível abrir o detalhe. Veja no seu perfil.");
+        return;
+      }
+      router.push(`/chart/${data.id}`);
     } catch {
       setPublishError("Erro de conexão. Tente novamente.");
     } finally {

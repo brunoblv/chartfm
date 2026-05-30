@@ -10,6 +10,7 @@ import { ensureUserParadas } from "@/lib/paradas";
 export const runtime = "nodejs";
 
 export async function GET(_req: NextRequest, context: { params: Promise<{ handle: string }> }) {
+  try {
   const url = new URL(_req.url);
   const { handle: raw } = await context.params;
   const handle = decodeURIComponent(raw ?? "").trim();
@@ -234,4 +235,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     artistImages,
     globalNumberOnes,
   });
+  } catch (err) {
+    console.error("[GET /api/profile/[handle]]", err);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }

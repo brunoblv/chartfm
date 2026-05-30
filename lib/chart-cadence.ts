@@ -53,6 +53,11 @@ export function isDailyChartIndex(periodIndex: number): boolean {
   return periodIndex >= 1_000_000;
 }
 
+/** Semanal = YYYYWW (< 1_000_000); diário = YYYYMMDD (>= 1_000_000). */
+export function inferCadenceFromWeekIndex(weekIndex: number): ParadaCadence {
+  return isDailyChartIndex(weekIndex) ? "DAILY" : "WEEKLY";
+}
+
 function weekSunday(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
