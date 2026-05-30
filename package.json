@@ -10,6 +10,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "seed:boofrnds": "tsx scripts/seed-boofrnds.ts",
+    "seed:clube-r3": "tsx scripts/seed-clube-round-3.ts",
     "audit:boofrnds": "tsx scripts/audit-boofrnds.ts",
     "fix:boofrnds": "tsx scripts/fix-boofrnds-charts.ts",
     "db:studio": "prisma studio"

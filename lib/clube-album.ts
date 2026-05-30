@@ -189,6 +189,14 @@ function maskNomination(
   };
 }
 
+function sortNominationsAlphabetically(nominations: ClubeNomination[]): ClubeNomination[] {
+  return [...nominations].sort((a, b) => {
+    const byArtist = a.artist.localeCompare(b.artist, "pt-BR", { sensitivity: "base" });
+    if (byArtist !== 0) return byArtist;
+    return a.title.localeCompare(b.title, "pt-BR", { sensitivity: "base" });
+  });
+}
+
 async function fetchAlbumScores(albumIds: number[]): Promise<Map<number, { score: number; count: number }>> {
   if (albumIds.length === 0) return new Map();
   const groups = await prisma.albumReview.groupBy({
@@ -414,9 +422,11 @@ async function loadRoundPayload(
     nextStart = await getNextRoundStart(roundId);
   }
 
-  const nominations = round.nominations
-    .map(mapNomination)
-    .map((n) => maskNomination(n, viewerHandle, revealed));
+  const nominations = sortNominationsAlphabetically(
+    round.nominations
+      .map(mapNomination)
+      .map((n) => maskNomination(n, viewerHandle, revealed)),
+  );
 
   return {
     id: round.id,
