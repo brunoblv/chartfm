@@ -708,15 +708,30 @@ function Phase1({ round }: { round: ClubeRoundData }) {
 
 function Phase2({ round }: { round: ClubeRoundData }) {
   const router = useRouter();
-  const alreadyVoted = (round.myVoteNominationIds?.length ?? 0) >= MIN_POLL_VOTES;
+  const [savedVotes, setSavedVotes] = useState<string[]>(round.myVoteNominationIds ?? []);
   const [selected, setSelected] = useState<string[]>(round.myVoteNominationIds ?? []);
-  const [submitted, setSubmitted] = useState(alreadyVoted);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const ids = round.myVoteNominationIds ?? [];
+    setSavedVotes(ids);
+    setSelected(ids);
+  }, [round.id, round.myVoteNominationIds?.join(",")]);
+
+  const hasVoted = savedVotes.length >= MIN_POLL_VOTES;
+  const isDirty =
+    [...selected].sort().join(",") !== [...savedVotes].sort().join(",");
+  const canSubmit = selected.length >= MIN_POLL_VOTES && isDirty;
+
   function toggle(id: string) {
-    if (submitted || !round.isLoggedIn) return;
+    if (!round.isLoggedIn) return;
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function resetSelection() {
+    setSelected(savedVotes);
+    setError(null);
   }
 
   async function vote() {
@@ -738,7 +753,7 @@ function Phase2({ round }: { round: ClubeRoundData }) {
         setError(data.error ?? "Erro ao votar");
         return;
       }
-      setSubmitted(true);
+      setSavedVotes([...selected]);
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -761,7 +776,7 @@ function Phase2({ round }: { round: ClubeRoundData }) {
         </div>
       )}
 
-      {!submitted && (
+      {(!hasVoted || isDirty) && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
           <div style={{ flex: 1, height: 5, background: "var(--fill-inset)", borderRadius: 100, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${Math.min(100, (selected.length / MIN_POLL_VOTES) * 100)}%`, background: selected.length >= MIN_POLL_VOTES ? "#1B873F" : "var(--accent)", borderRadius: 100, transition: "width 0.2s, background 0.2s" }} />
@@ -769,6 +784,12 @@ function Phase2({ round }: { round: ClubeRoundData }) {
           <span style={{ fontSize: 12, fontWeight: 700, color: selected.length >= MIN_POLL_VOTES ? "#1B873F" : "var(--text-muted)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
             {selected.length} / {MIN_POLL_VOTES} mín.
           </span>
+        </div>
+      )}
+
+      {hasVoted && !isDirty && (
+        <div style={{ background: "rgba(27,135,63,0.08)", border: "1px solid rgba(27,135,63,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 20, color: "#1B873F", fontSize: 13, fontWeight: 600, lineHeight: 1.5 }}>
+          Voto registrado em {savedVotes.length} álbuns. Toque nos cards para alterar — você pode editar até {round.pollDeadline}.
         </div>
       )}
 
@@ -780,7 +801,7 @@ function Phase2({ round }: { round: ClubeRoundData }) {
             <div
               key={a.id}
               onClick={() => toggle(a.id)}
-              style={{ background: "var(--surface)", border: sel ? "2px solid var(--accent)" : "1px solid var(--divider)", borderRadius: 14, overflow: "hidden", cursor: submitted || !round.isLoggedIn ? "default" : "pointer", boxShadow: sel ? "0 0 0 3px var(--accent-tint)" : "none", position: "relative" }}
+              style={{ background: "var(--surface)", border: sel ? "2px solid var(--accent)" : "1px solid var(--divider)", borderRadius: 14, overflow: "hidden", cursor: round.isLoggedIn ? "pointer" : "default", boxShadow: sel ? "0 0 0 3px var(--accent-tint)" : "none", position: "relative" }}
             >
               <div style={{ width: "100%", aspectRatio: "1/1", background: a.coverUrl ? undefined : `hsl(${hue},45%,55%)`, display: "grid", placeItems: "center", color: "white", fontSize: 40, fontWeight: 800, position: "relative" }}>
                 {a.coverUrl ? <img src={a.coverUrl} alt={a.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : a.title[0]?.toUpperCase()}
@@ -801,19 +822,40 @@ function Phase2({ round }: { round: ClubeRoundData }) {
 
       {error && <div style={{ color: "#C5291C", fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
-      {!submitted ? (
-        <button
-          onClick={vote}
-          disabled={selected.length < MIN_POLL_VOTES || submitting || !round.isLoggedIn}
-          style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: selected.length >= MIN_POLL_VOTES && round.isLoggedIn ? "var(--accent)" : "var(--fill-inset)", color: selected.length >= MIN_POLL_VOTES && round.isLoggedIn ? "white" : "var(--text-disabled)", fontSize: 14, fontWeight: 700, cursor: selected.length >= MIN_POLL_VOTES && round.isLoggedIn ? "pointer" : "default", fontFamily: "inherit" }}
-        >
-          {submitting ? "Registrando…" : selected.length < MIN_POLL_VOTES ? `Selecione mais ${MIN_POLL_VOTES - selected.length} álbum${MIN_POLL_VOTES - selected.length !== 1 ? "s" : ""}` : `Votar em ${selected.length} álbuns →`}
-        </button>
-      ) : (
-        <div style={{ background: "rgba(27,135,63,0.08)", border: "1px solid rgba(27,135,63,0.2)", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, color: "#1B873F", fontSize: 13, fontWeight: 600 }}>
-          Voto registrado! Aguarde o resultado.
+      {canSubmit ? (
+        <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
+          <button
+            onClick={vote}
+            disabled={submitting || !round.isLoggedIn}
+            style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: round.isLoggedIn ? "var(--accent)" : "var(--fill-inset)", color: round.isLoggedIn ? "white" : "var(--text-disabled)", fontSize: 14, fontWeight: 700, cursor: round.isLoggedIn ? "pointer" : "default", fontFamily: "inherit" }}
+          >
+            {submitting
+              ? "Registrando…"
+              : hasVoted
+                ? `Salvar alterações (${selected.length} álbuns)`
+                : `Votar em ${selected.length} álbuns →`}
+          </button>
+          {hasVoted && isDirty && (
+            <button
+              type="button"
+              onClick={resetSelection}
+              disabled={submitting}
+              style={{ width: "100%", padding: "11px", borderRadius: 12, border: "1px solid var(--divider)", background: "transparent", color: "var(--text-muted)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+            >
+              Descartar alterações
+            </button>
+          )}
         </div>
-      )}
+      ) : !hasVoted ? (
+        <button
+          disabled
+          style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: "var(--fill-inset)", color: "var(--text-disabled)", fontSize: 14, fontWeight: 700, fontFamily: "inherit" }}
+        >
+          {selected.length < MIN_POLL_VOTES
+            ? `Selecione mais ${MIN_POLL_VOTES - selected.length} álbum${MIN_POLL_VOTES - selected.length !== 1 ? "s" : ""}`
+            : `Votar em ${selected.length} álbuns →`}
+        </button>
+      ) : null}
     </div>
   );
 }
