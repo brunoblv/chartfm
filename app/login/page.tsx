@@ -7,6 +7,8 @@ import { COVER_PALETTES, USERS_DATA } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useTranslations } from "@/hooks/useTranslations";
 
 function GoogleLogo({ size = 16 }: { size?: number }) {
   return (
@@ -26,6 +28,7 @@ function formatCount(n: number): string {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslations();
   const [loading, setLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
   const [curatorCount, setCuratorCount] = useState<string>("+12 mil");
@@ -75,13 +78,13 @@ export default function LoginPage() {
         {/* Headline */}
         <div style={{ position: "relative", zIndex: 1, maxWidth: 480 }}>
           <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.75, marginBottom: 14 }}>
-            Sua trilha sonora, em rede.
+            {t("login.tagline")}
           </div>
           <h1 style={{ fontSize: 54, fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1.05, margin: "0 0 16px 0" }}>
-            Toda semana,<br />uma nova parada.
+            {t("login.weeklyHeadline1")}<br />{t("login.weeklyHeadline2")}
           </h1>
           <p style={{ fontSize: 16, opacity: 0.8, lineHeight: 1.55, margin: 0 }}>
-            Monte seu top semanal, siga curadores, debata em comunidades e veja sua música subir nas paradas globais.
+            {t("login.weeklySubhead")}
           </p>
         </div>
 
@@ -95,7 +98,7 @@ export default function LoginPage() {
             ))}
           </div>
           <div style={{ fontSize: 13, opacity: 0.85 }}>
-            <b style={{ fontWeight: 700 }}>{curatorCount}</b> curadores ativos esta semana
+            <b style={{ fontWeight: 700 }}>{curatorCount}</b> {t("login.activeCurators")}
           </div>
         </div>
       </div>
@@ -104,14 +107,17 @@ export default function LoginPage() {
       {/* ── Right: form ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "40px 24px" : 48 }}>
         <div style={{ width: "100%", maxWidth: 380 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <LanguageSwitcher />
+          </div>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
-            Bem-vindo
+            {t("login.welcome")}
           </div>
           <h2 style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 8px 0", lineHeight: 1.1 }}>
-            Entre na sua parada
+            {t("login.formHeadline")}
           </h2>
           <p style={{ fontSize: 14, color: "#86868B", margin: "0 0 32px 0", lineHeight: 1.5 }}>
-            Crie uma conta ou faça login pra começar a postar suas paradas semanais.
+            {t("login.formSubhead")}
           </p>
 
           {/* Google button */}
@@ -140,7 +146,7 @@ export default function LoginPage() {
             <span style={{ background: "white", padding: 4, borderRadius: 6, display: "grid", placeItems: "center" }}>
               <GoogleLogo size={16} />
             </span>
-            {loading ? "Redirecionando…" : "Continuar com Google"}
+            {loading ? t("login.redirecting") : t("login.continueGoogle")}
           </button>
 
           {!googleReady && (
@@ -152,19 +158,19 @@ export default function LoginPage() {
           {/* Divider */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "28px 0 22px 0", color: "#86868B", fontSize: 12, fontWeight: 500 }}>
             <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
-            ou com email
+            {t("login.orEmail")}
             <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
           </div>
 
           {/* Email / password — visual only */}
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>Email</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>{t("login.email")}</label>
           <input
             placeholder="voce@email.com"
             disabled
             style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", fontSize: 14, fontFamily: "inherit", outline: "none", marginBottom: 14, background: "rgba(0,0,0,0.02)", cursor: "not-allowed", boxSizing: "border-box" }}
           />
 
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>Senha</label>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>{t("login.password")}</label>
           <div style={{ position: "relative" }}>
             <input
               type="password"
@@ -173,7 +179,7 @@ export default function LoginPage() {
               style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", fontSize: 14, fontFamily: "inherit", outline: "none", background: "rgba(0,0,0,0.02)", cursor: "not-allowed", boxSizing: "border-box" }}
             />
             <button disabled style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", fontSize: 11, color: "#FA243C", fontWeight: 600, cursor: "not-allowed", opacity: 0.4 }}>
-              Esqueci
+              {t("login.forgot")}
             </button>
           </div>
 
@@ -181,18 +187,18 @@ export default function LoginPage() {
             disabled
             style={{ width: "100%", marginTop: 20, padding: "14px 18px", background: "rgba(0,0,0,0.05)", color: "#86868B", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", cursor: "not-allowed" }}
           >
-            Entrar
+            {t("nav.signIn")}
           </button>
 
           <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "#86868B" }}>
-            Não tem conta?{" "}
-            <span style={{ color: "#FA243C", fontWeight: 600, cursor: "pointer" }}>Criar conta</span>
+            {t("login.noAccount")}{" "}
+            <span style={{ color: "#FA243C", fontWeight: 600, cursor: "pointer" }}>{t("login.createAccount")}</span>
           </div>
 
           <div style={{ marginTop: 32, fontSize: 11, color: "#86868B", textAlign: "center", lineHeight: 1.5 }}>
-            Ao continuar, você concorda com os{" "}
-            <Link href="/terms-of-use" style={{ color: "inherit", textDecoration: "underline" }}>Termos</Link> e a{" "}
-            <Link href="/privacy-policy" style={{ color: "inherit", textDecoration: "underline" }}>Política de Privacidade</Link>.
+            {t("login.termsPrefix")}{" "}
+            <Link href="/terms-of-use" style={{ color: "inherit", textDecoration: "underline" }}>{t("login.terms")}</Link> {t("login.and")}{" "}
+            <Link href="/privacy-policy" style={{ color: "inherit", textDecoration: "underline" }}>{t("login.privacy")}</Link>.
           </div>
         </div>
       </div>

@@ -6,8 +6,9 @@ import { BadgeCheck, Sparkles } from "lucide-react";
 import { ChartCard } from "@/components/chart/ChartCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { scoreColor, scoreBg } from "@/lib/album-score";
-import { RELEASES, TAG_META } from "@/lib/releases-data";
+import { getReleases, getReleaseTagMeta } from "@/lib/releases-data-i18n";
 import type { UserWithCharts, Chart } from "@/lib/types";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export type ReviewItem = {
   id: string;
@@ -42,6 +43,7 @@ export type TimelineItem = {
 type Tab = "amigos" | "todos" | "reviews" | "noticias";
 
 function ReviewCard({ review }: { review: ReviewItem }) {
+  const { t } = useTranslations();
   const truncated =
     review.body && review.body.length > 240
       ? review.body.slice(0, 240) + "…"
@@ -106,7 +108,7 @@ function ReviewCard({ review }: { review: ReviewItem }) {
 
       <div style={{ padding: "10px 20px 14px", borderTop: "1px solid var(--divider-soft)" }}>
         <Link href={`/criticsfm/${review.album.id}`} style={{ fontSize: 13, color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-          Ver review completo →
+          {t("timeline.viewFullReview")}
         </Link>
       </div>
     </article>
@@ -114,7 +116,9 @@ function ReviewCard({ review }: { review: ReviewItem }) {
 }
 
 function NewsTab() {
-  const recent = RELEASES.slice(0, 3);
+  const { t, locale } = useTranslations();
+  const recent = getReleases(locale).slice(0, 3);
+  const tagMeta = getReleaseTagMeta(locale);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {recent.map((release) => (
@@ -134,7 +138,7 @@ function NewsTab() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {release.entries.map((entry, i) => {
-              const meta = TAG_META[entry.tag];
+              const meta = tagMeta[entry.tag];
               return (
                 <article key={i} style={{
                   background: "var(--surface)", borderRadius: 14,
@@ -162,7 +166,7 @@ function NewsTab() {
       ))}
       <div style={{ textAlign: "center", paddingTop: 4 }}>
         <Link href="/whats-new" style={{ fontSize: 13, color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-          Ver todas as novidades →
+          {t("timeline.seeAllNews")}
         </Link>
       </div>
     </div>
@@ -192,6 +196,7 @@ export function TimelineTabs({
   reviewsFeed: ReviewItem[];
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("amigos");
+  const { t } = useTranslations();
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: "6px 14px",
@@ -208,10 +213,10 @@ export function TimelineTabs({
   });
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "amigos", label: "Amigos" },
-    { key: "todos", label: "Todos" },
-    { key: "reviews", label: "Reviews" },
-    { key: "noticias", label: "Notícias" },
+    { key: "amigos", label: t("timeline.friends") },
+    { key: "todos", label: t("timeline.all") },
+    { key: "reviews", label: t("timeline.reviews") },
+    { key: "noticias", label: t("timeline.news") },
   ];
 
   return (
@@ -240,10 +245,7 @@ export function TimelineTabs({
                 postedAgo={t.postedAgo} isFollowing={t.isFollowing} initialLiked={t.isLiked} />
             ))
           ) : (
-            <EmptyState
-              message="Nenhuma parada de amigos ainda"
-              sub="Siga pessoas para ver as paradas delas aqui"
-            />
+            <EmptyState message={t("timeline.noFriendsCharts")} sub={t("timeline.followToSee")} />
           )
         ) : activeTab === "todos" ? (
           allFeed.length > 0 ? (
@@ -252,19 +254,13 @@ export function TimelineTabs({
                 postedAgo={t.postedAgo} isFollowing={t.isFollowing} initialLiked={t.isLiked} />
             ))
           ) : (
-            <EmptyState
-              message="Nenhuma parada por aqui ainda"
-              sub="Quando usuários publicarem suas paradas elas aparecerão aqui"
-            />
+            <EmptyState message={t("timeline.noChartsYet")} sub={t("timeline.chartsWillAppear")} />
           )
         ) : activeTab === "reviews" ? (
           reviewsFeed.length > 0 ? (
             reviewsFeed.map((r) => <ReviewCard key={r.id} review={r} />)
           ) : (
-            <EmptyState
-              message="Nenhum review por aqui ainda"
-              sub="Seja o primeiro a avaliar um álbum no CriticsFM"
-            />
+            <EmptyState message={t("timeline.noReviews")} sub={t("timeline.beFirstReview")} />
           )
         ) : (
           <NewsTab />

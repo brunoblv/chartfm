@@ -2,6 +2,7 @@ import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
 import { AlbumType } from "@prisma/client";
 import { AlbumsBrowseClient } from "./AlbumsBrowseClient";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export const revalidate = 60;
 
@@ -22,6 +23,7 @@ export type AlbumRow = {
 };
 
 export default async function AlbumsPage() {
+  const { t } = await getServerTranslations();
   const [albums, reviewGroups] = await Promise.all([
     prisma.album.findMany({
       where: { albumType: { in: [AlbumType.ALBUM, AlbumType.EP] } },
@@ -73,7 +75,7 @@ export default async function AlbumsPage() {
   });
 
   return (
-    <Shell title="Álbuns" subtitle="Avaliações e reviews pela comunidade ChartFM">
+    <Shell title={t("albums.title")} subtitle={t("albums.subtitle")}>
       <AlbumsBrowseClient albums={rows} />
     </Shell>
   );

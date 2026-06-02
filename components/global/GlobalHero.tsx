@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslations } from "@/hooks/useTranslations";
 
 interface GlobalHeroProps {
   weekNow: string;
@@ -14,6 +15,7 @@ interface GlobalHeroProps {
 
 export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, olderWeek, newerWeek }: GlobalHeroProps) {
   const isMobile = useIsMobile();
+  const { t } = useTranslations();
 
   return (
     <div style={{
@@ -60,12 +62,12 @@ export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, o
           Global 100
         </div>
         <p style={{ fontSize: isMobile ? 13 : 15, opacity: 0.8, maxWidth: 480, lineHeight: 1.6, marginBottom: 14 }}>
-          Cada música ganha <strong>101 − posição</strong> pontos por parada em que aparece.
+          {t("global.pointsRule")}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 6 : 20, fontSize: isMobile ? 12 : 14, opacity: 0.7, marginBottom: 14 }}>
-          <span>{uniqueParadas} paradas</span>
+          <span>{t("global.chartsCount", { count: uniqueParadas })}</span>
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
-          <span>{songsCount} músicas</span>
+          <span>{t("global.songsCount", { count: songsCount })}</span>
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
           <span>{weekRangeNow}</span>
         </div>
@@ -75,11 +77,11 @@ export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, o
               href={`/global?week=${olderWeek}`}
               style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
             >
-              ← Semana anterior
+              {t("global.prevWeek")}
             </Link>
           ) : (
             <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, fontSize: isMobile ? 12 : 13, fontWeight: 600 }}>
-              ← Semana anterior
+              {t("global.prevWeek")}
             </span>
           )}
           {newerWeek ? (
@@ -87,11 +89,11 @@ export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, o
               href={`/global?week=${newerWeek}`}
               style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
             >
-              Próxima semana →
+              {t("global.nextWeek")}
             </Link>
           ) : (
             <span style={{ border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, fontSize: isMobile ? 12 : 13, fontWeight: 600 }}>
-              Próxima semana →
+              {t("global.nextWeek")}
             </span>
           )}
         </div>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Home, Search, Users, User, LogOut, UserCircle } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -16,6 +17,7 @@ export function BottomNav() {
   const profileActive =
     authed &&
     (pathname === profilePath || pathname.startsWith(profilePath + "/"));
+  const { t } = useTranslations();
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     flex: 1,
@@ -38,9 +40,9 @@ export function BottomNav() {
   });
 
   const tabs = [
-    { href: "/",            label: "Início",      Icon: Home,   exact: true  },
-    { href: "/discover",    label: "Descobrir",   Icon: Search, exact: false },
-    { href: "/communities", label: "Comunidades", Icon: Users,  exact: false },
+    { href: "/",            label: t("nav.home"),         Icon: Home,   exact: true  },
+    { href: "/discover",    label: t("nav.discover"),     Icon: Search, exact: false },
+    { href: "/communities", label: t("nav.communities"), Icon: Users,  exact: false },
   ];
 
   return (
@@ -142,7 +144,7 @@ export function BottomNav() {
                 }}
               >
                 <UserCircle size={18} />
-                Ver Perfil
+                {t("nav.viewProfile")}
               </Link>
               <button
                 type="button"
@@ -162,7 +164,7 @@ export function BottomNav() {
                 }}
               >
                 <LogOut size={18} />
-                Sair
+                {t("nav.signOut")}
               </button>
             </div>
           )}
@@ -172,13 +174,13 @@ export function BottomNav() {
             style={{ ...tabStyle(profileActive || profileMenuOpen), background: "none", border: "none", cursor: "pointer" }}
           >
             <User size={22} strokeWidth={(profileActive || profileMenuOpen) ? 2.2 : 1.8} />
-            <span style={labelStyle(profileActive || profileMenuOpen)}>Perfil</span>
+            <span style={labelStyle(profileActive || profileMenuOpen)}>{t("nav.profile")}</span>
           </button>
         </>
       ) : (
         <Link href={profilePath} style={tabStyle(false)}>
           <User size={22} strokeWidth={1.8} />
-          <span style={labelStyle(false)}>Perfil</span>
+          <span style={labelStyle(false)}>{t("nav.profile")}</span>
         </Link>
       )}
     </nav>

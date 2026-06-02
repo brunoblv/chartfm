@@ -1,30 +1,30 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Flame } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { HomeGrid } from "@/components/layout/HomeGrid";
-import { Avatar } from "@/components/ui/Avatar";
-import { Cover } from "@/components/ui/Cover";
-import { FollowButton } from "@/components/ui/FollowButton";
-import { PositionNumber } from "@/components/ui/PositionNumber";
-import { COVER_PALETTES } from "@/lib/data";
+import { YourWeekCard } from "@/components/home/YourWeekCard";
+import { FriendsRow, GlobalTeaser, SuggestedUsers, TrendingArtists } from "@/components/home/HomeSidebar";
+import { formatRelativeTime } from "@/lib/i18n/format";
+import { getServerLocale } from "@/lib/i18n/server";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { buildWeekIndexFromDate, buildWeekLabelFromDate, getRankingWeekReference } from "@/lib/chart-week";
-import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { LandingPage } from "@/components/landing/LandingPage";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs, type ReviewItem } from "@/components/home/TimelineTabs";
 import type { UserWithCharts } from "@/lib/types";
 
-export const metadata: Metadata = {
-  title: "ChartFM — Sua parada musical semanal",
-  description: "Crie sua parada musical semanal, descubra novos artistas e participe de comunidades no ChartFM. Rankings, reviews e curadoria musical feitos por fãs.",
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("home.metaTitle"),
+    description: t("home.metaDescription"),
+    alternates: { canonical: "/" },
+  };
+}
 
 function daysUntilSundayBRT(): number {
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
@@ -32,17 +32,6 @@ function daysUntilSundayBRT(): number {
   return day === 0 ? 0 : 7 - day;
 }
 
-function formatRelativeTime(date: Date): string {
-  const diffMs = Date.now() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffMins < 1) return "agora";
-  if (diffMins < 60) return `há ${diffMins}min`;
-  if (diffHours < 24) return `há ${diffHours}h`;
-  if (diffDays === 1) return "há 1d";
-  return `há ${diffDays}d`;
-}
 
 type PublisherRow = {
   userId: string;
@@ -90,6 +79,7 @@ async function getTimelineFeed(
   userId: string,
   weekIdx: number,
   followingIds: Set<string>,
+  locale: Awaited<ReturnType<typeof getServerLocale>>,
 ) {
   const rows = await prisma.chart.findMany({
     where: {
@@ -165,8 +155,8 @@ async function getTimelineFeed(
   const likedSet = new Set(likedRows.map((r) => r.chartId));
 
   return {
-    friendsFeed: friendsRows.map((c) => mapChartRow(c, followingIds, likedSet)),
-    allFeed: allRows.map((c) => mapChartRow(c, followingIds, likedSet)),
+    friendsFeed: friendsRows.map((c) => mapChartRow(c, followingIds, likedSet, locale)),
+    allFeed: allRows.map((c) => mapChartRow(c, followingIds, likedSet, locale)),
   };
 }
 
@@ -192,6 +182,7 @@ function mapChartRow(
   },
   followingIds: Set<string>,
   likedSet: Set<string>,
+  locale: Awaited<ReturnType<typeof getServerLocale>>,
 ) {
   return {
     user: {
@@ -243,7 +234,7 @@ function mapChartRow(
         },
       })),
     },
-    postedAgo: formatRelativeTime(c.publishedAt),
+    postedAgo: formatRelativeTime(locale, c.publishedAt),
     isFollowing: followingIds.has(c.user.id),
     isLiked: likedSet.has(c.id),
   };
@@ -251,6 +242,8 @@ function mapChartRow(
 
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
+  const locale = await getServerLocale();
+  const { t } = await getServerTranslations();
 
   if (!session || !session.user?.id) {
     const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
@@ -315,9 +308,9 @@ export default async function HomePage() {
       getTrendingArtists(rankingWeek.weekIndex),
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
       getSuggestedUsers(session.user.id, userGenres, 3),
-      getTimelineFeed(session.user.id, currentWeekIdx, followingIds),
+      getTimelineFeed(session.user.id, currentWeekIdx, followingIds, locale),
       getPublishedThisWeek(session.user.id, followingIds),
-      getReviewsFeed(session.user.id),
+      getReviewsFeed(session.user.id, locale),
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
 
@@ -340,161 +333,9 @@ export default async function HomePage() {
   );
 
   return (
-    <Shell title="Início" subtitle="As paradas de quem você segue, atualizadas em tempo real">
+    <Shell title={t("home.title")} subtitle={t("home.subtitle")}>
       <HomeGrid feed={feed} sidebar={sidebar} />
     </Shell>
-  );
-}
-
-function YourWeekCard({
-  streak,
-  daysLeft,
-  paradaNome,
-  thisWeekChartId,
-}: {
-  streak: number;
-  daysLeft: number;
-  paradaNome: string | null;
-  thisWeekChartId: string | null;
-}) {
-  const weekNow = buildWeekLabelFromDate(new Date());
-  const hasSubmitted = thisWeekChartId !== null;
-  const label = paradaNome ? paradaNome.toUpperCase() : "SUA PARADA";
-  return (
-    <div style={{
-      background: "var(--gradient-hero)",
-      borderRadius: 18,
-      padding: 24,
-      color: "white",
-      display: "flex",
-      alignItems: "center",
-      gap: 20,
-      boxShadow: "var(--shadow-hero)",
-      flexWrap: "wrap",
-    }}>
-      <div style={{
-        width: 64, height: 64, borderRadius: 16,
-        background: "rgba(255,255,255,0.15)",
-        display: "grid", placeItems: "center",
-        backdropFilter: "blur(10px)",
-        flexShrink: 0,
-      }}>
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round">
-          <path d="M3 12V9M7 12V6M11 12V3M15 12V7M19 12V5" />
-        </svg>
-      </div>
-      <div style={{ flex: 1, minWidth: 200 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
-          {label} · {weekNow}
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginTop: 2, lineHeight: 1.2 }}>
-          {hasSubmitted ? "Você já publicou esta semana!" : "Quais foram suas músicas dessa semana?"}
-        </div>
-        <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-          {hasSubmitted ? (
-            "Clique para ver sua parada"
-          ) : (
-            <>
-              {daysLeft === 0 ? "Último dia" : `${daysLeft} dia${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}`}
-              {streak > 0 && <> · sequência ativa <Flame size={12} fill="white" /></>}
-            </>
-          )}
-        </div>
-      </div>
-      <Link href={hasSubmitted ? `/chart/${thisWeekChartId}` : "/create"} style={{
-        background: "white", color: "var(--accent)", textDecoration: "none",
-        padding: "12px 22px", borderRadius: 100, fontSize: 14, fontWeight: 700,
-        letterSpacing: "-0.01em", boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-        whiteSpace: "nowrap", flexShrink: 0,
-      }}>
-        {hasSubmitted ? "Ver minha parada" : "Criar parada"}
-      </Link>
-    </div>
-  );
-}
-
-function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px" }}>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Últimas paradas</div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{publishers.length} pessoas</div>
-      </div>
-      <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingTop: 4, paddingBottom: 4, paddingLeft: 4 }}>
-        {publishers.map((p) => (
-          <Link
-            key={p.userId}
-            href={`/profile/${p.handle}`}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", color: "inherit", flexShrink: 0 }}
-          >
-            <div style={{ position: "relative" }}>
-              <Avatar
-                user={{ name: p.name, avatar: p.avatarColor }}
-                imageUrl={p.image}
-                size={56}
-                ring
-              />
-              <div style={{
-                position: "absolute", bottom: -2, right: -2,
-                background: "var(--accent)", color: "white",
-                fontSize: 10, fontWeight: 700,
-                padding: "2px 6px", borderRadius: 8,
-                border: "2px solid var(--surface)",
-              }}>
-                {p.entryCount}
-              </div>
-            </div>
-            <div style={{
-              fontSize: 11, fontWeight: 500,
-              maxWidth: 70, overflow: "hidden", textOverflow: "ellipsis",
-              whiteSpace: "nowrap", textAlign: "center",
-            }}>
-              {p.name.split(" ")[0]}
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function GlobalTeaser({
-  topSongs,
-  weekLabel,
-}: {
-  topSongs: Awaited<ReturnType<typeof getGlobalTopSongs>>;
-  weekLabel: string;
-}) {
-  const top3 = topSongs.slice(0, 3);
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <div style={{ width: 24, height: 24, borderRadius: 6, background: "var(--btn-dark-bg)", color: "var(--btn-dark-fg)", display: "grid", placeItems: "center" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </div>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Parada Global</div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{weekLabel}</div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {top3.map((e) => (
-          <div key={e.position} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <PositionNumber n={e.position} size={14} />
-            <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-              <Cover cover={e.cover} song={e.song} size={36} rounded={6} />
-            </Link>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{e.song.artist}</Link>
-            </div>
-          </div>
-        ))}
-      </div>
-      <Link href="/global" style={{ marginTop: 14, fontSize: 12, color: "var(--accent)", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
-        Ver parada completa →
-      </Link>
-    </div>
   );
 }
 
@@ -507,30 +348,6 @@ type SuggestedUserRow = {
   commonGenres: number;
   isFollowing?: boolean;
 };
-
-function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 14 }}>Quem seguir</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {users.map((u) => (
-          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Link href={`/profile/${u.handle}`}>
-              <Avatar user={{ name: u.name, avatar: u.avatarColor }} size={40} />
-            </Link>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>@{u.handle} · {u.followers.toLocaleString("pt-BR")} seguidores</div>
-              </Link>
-            </div>
-            <FollowButton targetId={u.id} initialFollowing={u.isFollowing} variant="dark" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 async function getSuggestedUsers(userId: string, genres: string[], limit = 3): Promise<SuggestedUserRow[]> {
   const where = genres.length
@@ -630,7 +447,7 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
   }));
 }
 
-async function getReviewsFeed(userId: string): Promise<ReviewItem[]> {
+async function getReviewsFeed(userId: string, locale: Awaited<ReturnType<typeof getServerLocale>>): Promise<ReviewItem[]> {
   const rows = await prisma.albumReview.findMany({
     where: { userId: { not: userId } },
     orderBy: { createdAt: "desc" },
@@ -668,7 +485,7 @@ async function getReviewsFeed(userId: string): Promise<ReviewItem[]> {
     id: r.id,
     rating: r.rating,
     body: r.body,
-    postedAgo: formatRelativeTime(r.createdAt),
+    postedAgo: formatRelativeTime(locale, r.createdAt),
     user: {
       id: r.user.id,
       handle: r.user.handle,
@@ -726,45 +543,4 @@ async function getGlobalTopSongs(weekIdx: number, limit = 3) {
     },
   });
   return aggregateGlobalSongs(entries, limit);
-}
-
-function TrendingArtists({
-  artists,
-  weekLabel,
-}: {
-  artists: { name: string; totalPoints: number; chartCount: number; imageUrl: string | null }[];
-  weekLabel: string;
-}) {
-  if (artists.length === 0) return null;
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em" }}>Artistas em alta</div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{weekLabel}</div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {artists.map((a, i) => (
-          <Link key={a.name} href={buildArtistPath(a.name)} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
-            <div style={{
-              width: 40, height: 40, borderRadius: "50%",
-              background: a.imageUrl
-                ? `url(${a.imageUrl}) center/cover no-repeat`
-                : `linear-gradient(135deg, ${COVER_PALETTES[i * 3][0]}, ${COVER_PALETTES[i * 3][1]})`,
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              flexShrink: 0,
-            }} />
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{a.chartCount} paradas · {a.totalPoints}pts</div>
-            </div>
-          </Link>
-        ))}
-      </div>
-      <Link href="/global" style={{ display: "inline-block", marginTop: 14, fontSize: 12, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-        Ver parada completa →
-      </Link>
-    </div>
-  );
 }

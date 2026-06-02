@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { AlbumRow } from "./page";
 import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
 import { buildAlbumPath } from "@/lib/music-routes";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type BuildAlbumPath = (
   album: string,
@@ -11,12 +12,7 @@ type BuildAlbumPath = (
   ids?: { artistId?: number | string | null; albumId?: number | string | null },
 ) => string;
 
-const SORT_OPTIONS = [
-  { id: "recent", label: "Recentes" },
-  { id: "score", label: "Score" },
-  { id: "reviews", label: "Reviews" },
-] as const;
-type SortId = (typeof SORT_OPTIONS)[number]["id"];
+type SortId = "recent" | "score" | "reviews";
 
 const PAGE_SIZE = 12;
 
@@ -31,7 +27,14 @@ function albumHref(a: AlbumRow, bp: BuildAlbumPath): string {
 }
 
 export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
-  const [activeGenre, setActiveGenre] = useState("Todos");
+  const { t } = useTranslations();
+  const allLabel = t("albums.all");
+  const SORT_OPTIONS: { id: SortId; label: string }[] = [
+    { id: "recent", label: t("albums.recent") },
+    { id: "score", label: t("albums.score") },
+    { id: "reviews", label: t("albums.reviews") },
+  ];
+  const [activeGenre, setActiveGenre] = useState(allLabel);
   const [sortBy, setSortBy] = useState<SortId>("recent");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -45,12 +48,12 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
     for (const a of albums) {
       for (const g of getGenres(a)) set.add(g);
     }
-    return ["Todos", ...Array.from(set).sort()];
-  }, [albums]);
+    return [allLabel, ...Array.from(set).sort()];
+  }, [albums, allLabel]);
 
   const filtered = useMemo(() => {
     let list = albums.filter((a) => {
-      if (activeGenre !== "Todos" && !getGenres(a).includes(activeGenre)) return false;
+      if (activeGenre !== allLabel && !getGenres(a).includes(activeGenre)) return false;
       if (search) {
         const q = search.toLowerCase();
         if (!a.title.toLowerCase().includes(q) && !a.artist.toLowerCase().includes(q)) return false;
@@ -78,7 +81,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         <input
           type="text"
-          placeholder="Buscar álbum ou artista…"
+          placeholder={t("albums.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
@@ -154,7 +157,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
       {bestRated.length > 0 && (
         <div style={{ marginTop: 40 }}>
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>
-            Melhores avaliados
+            {t("albums.topRated")}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
             Álbuns com score ≥ 75
@@ -178,14 +181,14 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
           }}
         >
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em" }}>
-            Todos os álbuns
+            {t("albums.allAlbums")}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{filtered.length} álbuns</div>
         </div>
 
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)", fontSize: 15 }}>
-            Nenhum álbum encontrado.
+            {t("albums.notFound")}
           </div>
         ) : (
           <>
@@ -226,7 +229,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
                     fontFamily: "inherit",
                   }}
                 >
-                  Anterior
+                  {t("albums.prev")}
                 </button>
                 <span style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
                   {page + 1} / {totalPages}
@@ -246,7 +249,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
                     fontFamily: "inherit",
                   }}
                 >
-                  Próximo
+                  {t("albums.next")}
                 </button>
               </div>
             )}

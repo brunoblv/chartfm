@@ -8,11 +8,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { GlobalChartEntry } from "@/lib/types";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useTranslations } from "@/hooks/useTranslations";
 
-function StatusBadge({ status, delta }: { status: string; delta?: number | null }) {
+function StatusBadge({ status, delta, newLabel }: { status: string; delta?: number | null; newLabel: string }) {
   if (status === "new") return (
     <span style={{ background: "#1D1D1F", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, letterSpacing: "0.04em", textTransform: "uppercase" as const }}>
-      Nova
+      {newLabel}
     </span>
   );
   if (status === "up") return (
@@ -52,7 +54,9 @@ export function LandingPage({
   recentUsers?: RecentUser[];
 }) {
   const isMobile = useIsMobile();
+  const { t, locale } = useTranslations();
   const [signingIn, setSigningIn] = useState(false);
+  const year = new Date().getFullYear();
 
   const handleSignIn = () => {
     setSigningIn(true);
@@ -71,34 +75,34 @@ export function LandingPage({
   ];
   const footerGroups: { title: string; items: { label: string; href: string }[] }[] = [
     {
-      title: "Produto",
+      title: t("landing.footerProduct"),
       items: [
-        { label: "Como funciona", href: "#como-funciona" },
-        { label: "Comunidades", href: "#comunidades" },
-        { label: "Parada Global", href: "#parada-global" },
+        { label: t("landing.footerHowItWorks"), href: "#como-funciona" },
+        { label: t("landing.communities"), href: "#comunidades" },
+        { label: t("landing.globalChart"), href: "#parada-global" },
       ],
     },
     {
-      title: "Empresa",
+      title: t("landing.footerCompany"),
       items: [
-        { label: "Sobre", href: "/about" },
-        { label: "Contato", href: "/contact" },
+        { label: t("landing.about"), href: "/about" },
+        { label: t("nav.contact"), href: "/contact" },
       ],
     },
     {
-      title: "Recursos",
+      title: t("landing.footerResources"),
       items: [
-        { label: "Guias", href: "/guides" },
-        { label: "Importar Spotify", href: "/login" },
-        { label: "Comunidades", href: "/communities" },
+        { label: t("landing.footerGuides"), href: "/guides" },
+        { label: t("landing.footerImportSpotify"), href: "/login" },
+        { label: t("landing.communities"), href: "/communities" },
       ],
     },
     {
-      title: "Legal",
+      title: t("landing.footerLegal"),
       items: [
-        { label: "Termos de Uso", href: "/terms-of-use" },
-        { label: "Privacidade", href: "/privacy-policy" },
-        { label: "Contato LGPD", href: "/contact" },
+        { label: t("landing.footerTerms"), href: "/terms-of-use" },
+        { label: t("landing.footerPrivacy"), href: "/privacy-policy" },
+        { label: t("landing.footerLgpd"), href: "/contact" },
       ],
     },
   ];
@@ -120,16 +124,17 @@ export function LandingPage({
         </div>
         {!isMobile && (
           <div style={{ display: "flex", gap: 28, fontSize: 14, color: "#1D1D1F", fontWeight: 500 }}>
-            <Link href="#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>Como funciona</Link>
-            <Link href="#comunidades" style={{ color: "inherit", textDecoration: "none" }}>Comunidades</Link>
-            <Link href="#parada-global" style={{ color: "inherit", textDecoration: "none" }}>Parada Global</Link>
-            <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>Sobre</Link>
+            <Link href="#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.howItWorks")}</Link>
+            <Link href="#comunidades" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.communities")}</Link>
+            <Link href="#parada-global" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.globalChart")}</Link>
+            <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.about")}</Link>
           </div>
         )}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LanguageSwitcher />
           {!isMobile && (
             <button onClick={handleSignIn} disabled={signingIn} style={{ background: "none", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#1D1D1F" }}>
-              Entrar
+              {t("landing.signIn")}
             </button>
           )}
           <button
@@ -143,7 +148,7 @@ export function LandingPage({
               opacity: signingIn ? 0.6 : 1,
             }}
           >
-            {signingIn ? "Entrando…" : "Cadastrar"}
+            {signingIn ? t("landing.signingIn") : t("landing.signUp")}
           </button>
         </div>
       </nav>
@@ -180,7 +185,7 @@ export function LandingPage({
             }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#FA243C" }} />
               <span style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.04em", textTransform: "uppercase" as const }}>
-                Nova semana, nova parada · Toda segunda
+                {t("landing.badge")}
               </span>
             </div>
 
@@ -190,13 +195,13 @@ export function LandingPage({
               lineHeight: 1.0, color: "#1D1D1F",
               margin: "0 0 22px 0",
             }}>
-              Sua trilha sonora,<br />
+              {t("landing.heroTitle1")}<br />
               <span style={{
                 background: "linear-gradient(135deg, #FA243C, #FF8C42)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
               }}>
-                em rede.
+                {t("landing.heroTitle2")}
               </span>
             </h1>
 
@@ -205,7 +210,7 @@ export function LandingPage({
               color: "#6B6B70", lineHeight: 1.6,
               margin: "0 0 36px 0", maxWidth: 520,
             }}>
-              Toda semana, monte seu top 1 a 100. Siga curadores, debata em comunidades temáticas e veja sua música favorita subir nas paradas globais — agregadas a partir de milhares de gostos reais.
+              {t("landing.heroBody")}
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" as const }}>
@@ -222,7 +227,7 @@ export function LandingPage({
                   opacity: signingIn ? 0.7 : 1,
                 }}
               >
-                {signingIn ? "Entrando…" : "Criar minha primeira parada"}
+                {signingIn ? t("landing.signingIn") : t("landing.ctaPrimary")}
                 {!signingIn && (
                   <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="9 18 15 12 9 6" />
@@ -240,7 +245,7 @@ export function LandingPage({
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                Ver demo (45s)
+                {t("landing.ctaDemo")}
               </a>
             </div>
 
@@ -259,9 +264,9 @@ export function LandingPage({
                 </div>
                 <div>
                   <b style={{ color: "#1D1D1F", fontWeight: 600 }}>
-                    {userCount >= 1000 ? `+${(Math.floor(userCount / 100) * 100).toLocaleString("pt-BR")}` : `+${userCount}`}
+                    {userCount >= 1000 ? `+${(Math.floor(userCount / 100) * 100).toLocaleString(locale)}` : `+${userCount}`}
                   </b>{" "}
-                  curadores no ChartFM
+                  {t("landing.curatorsOn")}
                 </div>
               </div>
             </div>
@@ -279,7 +284,7 @@ export function LandingPage({
                   <Avatar user={previewUser} size={36} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>{previewUser.name}</div>
-                    <div style={{ fontSize: 11, color: "#86868B" }}>Top 10 · Esta semana · 2026</div>
+                    <div style={{ fontSize: 11, color: "#86868B" }}>{t("landing.top10Week", { week: t("landing.thisWeek"), year })}</div>
                   </div>
                   <div style={{ padding: "4px 10px", background: "rgba(250,36,60,0.08)", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#FA243C" }}>NOVA</div>
                 </div>
@@ -299,7 +304,7 @@ export function LandingPage({
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.title}</div>
                       <div style={{ fontSize: 11, color: "#86868B", marginTop: 1 }}>{entry.artist}</div>
                     </div>
-                    <StatusBadge status={entry.status} delta={entry.delta} />
+                    <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                   </div>
                 ))}
               </div>
@@ -337,7 +342,7 @@ export function LandingPage({
                   <Avatar user={previewUser} size={36} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>{previewUser.name}</div>
-                    <div style={{ fontSize: 11, color: "#86868B" }}>Top 10 · Esta semana · 2026</div>
+                    <div style={{ fontSize: 11, color: "#86868B" }}>{t("landing.top10Week", { week: t("landing.thisWeek"), year })}</div>
                   </div>
                   <div style={{ padding: "4px 10px", background: "rgba(250,36,60,0.08)", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#FA243C" }}>NOVA</div>
                 </div>
@@ -362,7 +367,7 @@ export function LandingPage({
                       </div>
                       <div style={{ fontSize: 11, color: "#86868B", marginTop: 1 }}>{entry.artist}</div>
                     </div>
-                    <StatusBadge status={entry.status} delta={entry.delta} />
+                    <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                   </div>
                 ))}
               </div>
@@ -705,10 +710,10 @@ export function LandingPage({
             <div style={{ width: 140, height: 140, borderRadius: 16, background: `linear-gradient(135deg, ${COVER_PALETTES[7][0]}, ${COVER_PALETTES[7][1]})`, transform: "rotate(15deg)" }} />
           </div>
           <h2 style={{ fontSize: isMobile ? 36 : 54, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05, position: "relative" }}>
-            Sua próxima parada<br />fecha segunda.
+            {t("landing.closingTitle")}
           </h2>
           <p style={{ fontSize: 17, opacity: 0.9, maxWidth: 520, margin: "0 auto 32px auto", lineHeight: 1.5, position: "relative" }}>
-            Crie uma conta grátis em 30 segundos. Sem cartão de crédito. Sem pegadinha.
+            {t("landing.closingBody")}
           </p>
           <button
             onClick={handleSignIn}
@@ -722,7 +727,7 @@ export function LandingPage({
               position: "relative", opacity: signingIn ? 0.7 : 1,
             }}
           >
-            {signingIn ? "Entrando…" : "Começar agora — é grátis"}
+            {signingIn ? t("landing.signingIn") : t("landing.closingCta")}
           </button>
         </div>
       </section>
@@ -745,7 +750,7 @@ export function LandingPage({
               <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>ChartFM</div>
             </div>
             <div style={{ fontSize: 13, color: "#86868B", lineHeight: 1.5, maxWidth: 280 }}>
-              A rede social de paradas musicais semanais. Feita por quem ouve, pra quem ouve.
+              {t("landing.footerTagline")}
             </div>
           </div>
           {footerGroups.map(({ title, items }) => (
@@ -770,12 +775,8 @@ export function LandingPage({
           flexWrap: "wrap" as const, gap: 8,
           fontSize: 12, color: "#86868B",
         }}>
-          <div>© 2026 ChartFM. Todos os direitos reservados.</div>
-          <div style={{ display: "flex", gap: 14 }}>
-            <span>🌐 PT-BR</span>
-            <span>·</span>
-            <span>Feito com ♥ no Brasil</span>
-          </div>
+          <div>{t("landing.rights", { year })}</div>
+          <LanguageSwitcher />
         </div>
       </footer>
 

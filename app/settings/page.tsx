@@ -7,6 +7,8 @@ import Link from "next/link";
 import { ChevronLeft, Camera, ImagePlus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useTranslations } from "@/hooks/useTranslations";
 
 async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
@@ -70,6 +72,7 @@ type Tab = "perfil" | "parada" | "conta";
 export default function SettingsPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { t } = useTranslations();
   const [tab, setTab] = useState<Tab>("perfil");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -422,15 +425,15 @@ export default function SettingsPage() {
   }
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: "perfil", label: "Perfil" },
-    { id: "parada", label: "Paradas" },
-    { id: "conta", label: "Conta" },
+    { id: "perfil", label: t("settings.tabProfile") },
+    { id: "parada", label: t("settings.tabCharts") },
+    { id: "conta", label: t("settings.tabAccount") },
   ];
 
   const avatarUser = { name: form.name || session?.user?.name || "?", avatar: "#FA243C" };
 
   return (
-    <Shell title="Configurações" subtitle="Edite seus dados de perfil">
+    <Shell title={t("settings.title")} subtitle={t("settings.subtitle")}>
       <div style={{ maxWidth: 760 }}>
         <Link
           href="/"
@@ -1083,6 +1086,27 @@ export default function SettingsPage() {
                   gap: 20,
                 }}
               >
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: "1px solid var(--divider)",
+                    padding: "18px 20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+                      {t("language.label")}
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>
+                      {t("language.description")}
+                    </div>
+                  </div>
+                  <LanguageSwitcher variant="settings" />
+                </div>
+
                 <div
                   style={{
                     borderRadius: 14,

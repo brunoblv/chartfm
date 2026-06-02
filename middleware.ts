@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import {
+  LOCALE_COOKIE,
+  LOCALE_COOKIE_MAX_AGE,
+  isLocale,
+  localeFromAcceptLanguage,
+} from "@/lib/i18n/config";
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -9,7 +15,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
-  return NextResponse.next();
+  const existingLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (isLocale(existingLocale)) {
+    return NextResponse.next();
+  }
+
+  const response = NextResponse.next();
+  const detected = localeFromAcceptLanguage(request.headers.get("accept-language"));
+  response.cookies.set(LOCALE_COOKIE, detected, {
+    path: "/",
+    maxAge: LOCALE_COOKIE_MAX_AGE,
+    sameSite: "lax",
+  });
+  return response;
 }
 
 export const config = {

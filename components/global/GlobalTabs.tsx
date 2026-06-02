@@ -21,6 +21,7 @@ import {
 } from "@/lib/chart-list-layout";
 import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslations } from "@/hooks/useTranslations";
 import type { Cover as CoverData } from "@/lib/types";
 import Link from "next/link";
 
@@ -128,6 +129,7 @@ export function GlobalTabs({
   const [viewSize, setViewSize] = useState<"small" | "large">("small");
   const [period, setPeriod] = useState<"weekly" | "overall">("weekly");
   const isMobile = useIsMobile(MOBILE_LIST_BREAKPOINT);
+  const { t } = useTranslations();
   const songs = period === "weekly" ? weeklySongs : overallSongs;
   const artists = period === "weekly" ? weeklyArtists : overallArtists;
 
@@ -137,15 +139,21 @@ export function GlobalTabs({
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "stretch" : "center", gap: 10, marginBottom: 20 }}>
         {/* Main tab: Músicas / Artistas / Saídas */}
         <div style={{ ...segmentContainer, width: isMobile ? "100%" : "fit-content" }}>
-          {(["songs", "artists", "saidas"] as const).map((t) => (
+          {(["songs", "artists", "saidas"] as const).map((tabKey) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{ ...segmentBtn(tab === t), flex: isMobile ? 1 : undefined, padding: isMobile ? "10px 0" : "8px 20px" }}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
+              style={{ ...segmentBtn(tab === tabKey), flex: isMobile ? 1 : undefined, padding: isMobile ? "10px 0" : "8px 20px" }}
             >
               {isMobile
-                ? (t === "songs" ? "Músicas" : t === "artists" ? "Artistas" : "Saídas")
-                : (t === "songs" ? "Top 100 Músicas" : t === "artists" ? "Top 100 Artistas" : `Saídas${weeklyDropouts.length > 0 ? ` (${weeklyDropouts.length})` : ""}`)}
+                ? (tabKey === "songs" ? t("global.songs") : tabKey === "artists" ? t("global.artists") : t("global.dropouts"))
+                : (tabKey === "songs"
+                  ? t("global.top100Songs")
+                  : tabKey === "artists"
+                    ? t("global.top100Artists")
+                    : weeklyDropouts.length > 0
+                      ? t("global.dropoutsCount", { count: weeklyDropouts.length })
+                      : t("global.dropouts"))}
             </button>
           ))}
         </div>
@@ -154,15 +162,15 @@ export function GlobalTabs({
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {/* Period: Semanal / Overall */}
             <div style={{ ...segmentContainer, flex: isMobile ? 1 : undefined }}>
-              <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>Semanal</button>
-              <button onClick={() => setPeriod("overall")} style={{ ...segmentBtnSm(period === "overall"), flex: isMobile ? 1 : undefined }}>Overall</button>
+              <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>{t("global.weekly")}</button>
+              <button onClick={() => setPeriod("overall")} style={{ ...segmentBtnSm(period === "overall"), flex: isMobile ? 1 : undefined }}>{t("global.overall")}</button>
             </div>
 
             {/* Size toggle: hidden on mobile */}
             {!isMobile && (
               <div style={segmentContainer}>
-                <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>Menor</button>
-                <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>Maior</button>
+                <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>{t("global.smaller")}</button>
+                <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>{t("global.larger")}</button>
               </div>
             )}
           </div>
@@ -181,6 +189,7 @@ export function GlobalTabs({
 }
 
 function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSize: "small" | "large"; isMobile: boolean }) {
+  const { t } = useTranslations();
   if (isMobile) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -217,8 +226,8 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
-              <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
-              <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+              <StatPill compact label={t("global.colPrevShort")} value={e.prevPos ?? "—"} />
+              <StatPill compact label={t("global.colPeak")} value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
               <StatPill compact label="SEM" value={e.weeks} />
             </div>
           </div>
@@ -248,7 +257,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {["Pos", "", "Música", "Semana ant.", "Sem.", "Pico", "Pontos", "Cresc."].map((h, i) => (
+        {[t("global.colPos"), "", t("global.colSong"), t("global.colPrevWeek"), t("global.colWeeks"), t("global.colPeak"), t("global.colPoints"), t("global.colGrowth")].map((h, i) => (
           <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
@@ -303,19 +312,21 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
 }
 
 function ExitBadge() {
+  const { t } = useTranslations();
   return (
     <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 700, letterSpacing: "-0.01em", padding: "2px 7px", borderRadius: 6, background: "#1C1C1E", color: "#fff", whiteSpace: "nowrap", flexShrink: 0 }}>
-      SAIU
+      {t("global.exited")}
     </span>
   );
 }
 
 function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSize: "small" | "large"; isMobile: boolean }) {
+  const { t } = useTranslations();
 
   if (songs.length === 0) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" as const, color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma saída esta semana.
+        {t("global.noDropouts")}
       </div>
     );
   }
@@ -408,10 +419,11 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
 }
 
 function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[]; viewSize: "small" | "large"; isMobile: boolean }) {
+  const { t } = useTranslations();
   if (artists.length === 0) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" as const, color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma parada publicada esta semana ainda.
+        {t("global.noChartsWeek")}
       </div>
     );
   }

@@ -2,10 +2,12 @@
 
 import { Shell } from "@/components/layout/Shell";
 import { Sparkles } from "lucide-react";
-import { RELEASES, TAG_META, type ReleaseTag } from "@/lib/releases-data";
+import { getReleases, getReleaseTagMeta } from "@/lib/releases-data-i18n";
+import type { ReleaseTag } from "@/lib/releases-data";
+import { useTranslations } from "@/hooks/useTranslations";
 
-function TagBadge({ tag }: { tag: ReleaseTag }) {
-  const meta = TAG_META[tag];
+function TagBadge({ tag, locale }: { tag: ReleaseTag; locale: "pt-BR" | "en" }) {
+  const meta = getReleaseTagMeta(locale)[tag];
   return (
     <span
       style={{
@@ -27,11 +29,13 @@ function TagBadge({ tag }: { tag: ReleaseTag }) {
 }
 
 export default function NovidadesPage() {
+  const { t, locale } = useTranslations();
+  const releases = getReleases(locale);
   return (
-    <Shell title="O que há de novo" subtitle="Acompanhe as últimas melhorias do ChartFM">
+    <Shell title={t("whatsNew.title")} subtitle={t("whatsNew.subtitle")}>
       <div style={{ maxWidth: 680, display: "flex", flexDirection: "column", gap: 48 }}>
 
-        {RELEASES.map((release) => (
+        {releases.map((release) => (
           <section key={release.date}>
             <div
               style={{
@@ -93,7 +97,7 @@ export default function NovidadesPage() {
                     >
                       {entry.title}
                     </span>
-                    <TagBadge tag={entry.tag} />
+                    <TagBadge tag={entry.tag} locale={locale} />
                   </div>
                   <p
                     style={{

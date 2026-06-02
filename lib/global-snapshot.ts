@@ -284,3 +284,37 @@ export async function getOrCreateRankingWeekSnapshot(now: Date = new Date()) {
     created: true,
   };
 }
+
+export async function refreshRankingWeekSnapshot(now: Date = new Date()) {
+  const rankingWeek = getRankingWeekReference(now);
+  const payload = await computeGlobalSnapshotData(rankingWeek.weekIndex);
+  const saved = await prisma.globalSnapshot.upsert({
+    where: { weekIndex: rankingWeek.weekIndex },
+    update: {
+      weekLabel: rankingWeek.weekLabel,
+      dateRange: rankingWeek.dateRange,
+      weeklySongs: payload.weeklySongs as unknown as object,
+      weeklyArtists: payload.weeklyArtists as unknown as object,
+      overallSongs: payload.overallSongs as unknown as object,
+      overallArtists: payload.overallArtists as unknown as object,
+      frozenAt: new Date(),
+    },
+    create: {
+      weekIndex: rankingWeek.weekIndex,
+      weekLabel: rankingWeek.weekLabel,
+      dateRange: rankingWeek.dateRange,
+      weeklySongs: payload.weeklySongs as unknown as object,
+      weeklyArtists: payload.weeklyArtists as unknown as object,
+      overallSongs: payload.overallSongs as unknown as object,
+      overallArtists: payload.overallArtists as unknown as object,
+      frozenAt: new Date(),
+    },
+  });
+
+  return {
+    weekIndex: rankingWeek.weekIndex,
+    weekLabel: rankingWeek.weekLabel,
+    dateRange: rankingWeek.dateRange,
+    payload: asPayload(saved),
+  };
+}

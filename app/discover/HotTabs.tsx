@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { COVER_PALETTES } from "@/lib/data";
 import { buildSongPath, buildArtistPath } from "@/lib/music-routes";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ArtistRow = {
   name: string;
@@ -33,6 +34,7 @@ export function HotTabs({
   artists: ArtistRow[];
   songs: SongRow[];
 }) {
+  const { t } = useTranslations();
   const [tab, setTab] = useState<"artists" | "songs">("artists");
   const gridArtists = "60px 90px 76px minmax(0,1fr) 100px 100px";
   const gridSongs = "60px 90px minmax(0,1fr) minmax(0,1fr) 100px";
@@ -40,7 +42,7 @@ export function HotTabs({
   return (
     <section>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>Em alta</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>{t("discover.hot")}</h2>
         <div style={{ display: "flex", gap: 4, background: "var(--fill-inset)", borderRadius: 10, padding: 4 }}>
           <button
             onClick={() => setTab("artists")}
@@ -56,7 +58,7 @@ export function HotTabs({
               cursor: "pointer",
             }}
           >
-            Artistas
+            {t("discover.tabArtists")}
           </button>
           <button
             onClick={() => setTab("songs")}
@@ -72,7 +74,7 @@ export function HotTabs({
               cursor: "pointer",
             }}
           >
-            Músicas
+            {t("discover.tabSongs")}
           </button>
         </div>
       </div>
@@ -80,7 +82,7 @@ export function HotTabs({
       {tab === "artists" ? (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: gridArtists, padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
-            {["Pos", "Mudança", "", "Artista", "Entradas", "Usuários"].map((h, i) => (
+            {[t("discover.colPos"), t("discover.colChange"), "", t("discover.colArtist"), t("discover.colEntries"), t("discover.colUsers")].map((h, i) => (
               <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
             ))}
           </div>
@@ -118,7 +120,7 @@ export function HotTabs({
       ) : (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: gridSongs, padding: "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
-            {["Pos", "Mudança", "Música", "Artista", "Usuários"].map((h, i) => (
+            {[t("discover.colPos"), t("discover.colChange"), t("discover.tabSongs"), t("discover.colArtist"), t("discover.colUsers")].map((h, i) => (
               <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
             ))}
           </div>

@@ -4,8 +4,10 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { NotificationsClient, type NotifRow } from "./NotificationsClient";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export default async function NotificationsPage() {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
 
@@ -64,7 +66,7 @@ export default async function NotificationsPage() {
   }));
 
   return (
-    <Shell title="Notificações">
+    <Shell title={t("notifications.title")}>
       <div style={{ maxWidth: 680 }}>
         <NotificationsClient initial={notifications} />
       </div>

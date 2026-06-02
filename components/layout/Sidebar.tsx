@@ -9,17 +9,8 @@ import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Setting
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-
-const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean; badge?: string }[] = [
-  { href: "/", label: "Início", icon: Home },
-  { href: "/discover", label: "Descobrir", icon: Search },
-  { href: "/global", label: "Parada Global", icon: Globe },
-  { href: "/communities", label: "Comunidades", icon: Users },
-  { href: "/albums", label: "Álbuns", icon: Star },
-  { href: "/criticsfm", label: "CriticsFM", icon: Award },
-  { href: "/notifications", label: "Notificações", icon: Bell, requiresAuth: true },
-  { href: "/whats-new", label: "O que há de novo", icon: Sparkles, badge: "Novo" },
-];
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useTranslations } from "@/hooks/useTranslations";
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -39,10 +30,11 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
     !!profileHandle &&
     (pathname === `/profile/${profileHandle}` || pathname.startsWith(`/profile/${profileHandle}/`));
 
-  const displayName = authed ? (session!.user.name ?? "Usuário") : "";
+  const { t } = useTranslations();
+  const displayName = authed ? (session!.user.name ?? t("common.user")) : "";
   const displayStreak = authed ? (session!.user.streak ?? 0) : 0;
   const avatarUser = authed
-    ? { name: session!.user.name ?? "Usuário", avatar: "#FA243C" }
+    ? { name: session!.user.name ?? t("common.user"), avatar: "#FA243C" }
     : { name: "?", avatar: "#86868B" };
 
   const handleNavClick = () => {
@@ -122,6 +114,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
             session={session}
             onNavClick={handleNavClick}
             isAdmin={isAdmin}
+            t={t}
           />
         </aside>
       </>
@@ -161,6 +154,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
         session={session}
         onNavClick={() => {}}
         isAdmin={isAdmin}
+        t={t}
       />
     </aside>
   );
@@ -178,6 +172,7 @@ function SidebarContent({
   session,
   onNavClick,
   isAdmin,
+  t,
 }: {
   pathname: string;
   profilePath: string;
@@ -190,8 +185,28 @@ function SidebarContent({
   session: ReturnType<typeof useSession>["data"];
   onNavClick: () => void;
   isAdmin: boolean;
+  t: (key: string) => string;
 }) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+
+  const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean; badge?: string }[] = [
+    { href: "/", label: t("nav.home"), icon: Home },
+    { href: "/discover", label: t("nav.discover"), icon: Search },
+    { href: "/global", label: t("nav.global"), icon: Globe },
+    { href: "/communities", label: t("nav.communities"), icon: Users },
+    { href: "/albums", label: t("nav.albums"), icon: Star },
+    { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
+    { href: "/notifications", label: t("nav.notifications"), icon: Bell, requiresAuth: true },
+    { href: "/whats-new", label: t("nav.whatsNew"), icon: Sparkles, badge: t("nav.badgeNew") },
+  ];
+
+  const footerLinks = [
+    { href: "/guides", label: t("nav.guides") },
+    { href: "/about", label: t("nav.about") },
+    { href: "/contact", label: t("nav.contact") },
+    { href: "/terms-of-use", label: t("nav.terms") },
+    { href: "/privacy-policy", label: t("nav.privacy") },
+  ];
 
   return (
     <>
@@ -285,7 +300,7 @@ function SidebarContent({
                   }}
                 >
                   <Shield size={20} />
-                  <span style={{ flex: 1 }}>Admin</span>
+                  <span style={{ flex: 1 }}>{t("nav.admin")}</span>
                   <ChevronDown
                     size={18}
                     color="var(--text-muted)"
@@ -307,35 +322,35 @@ function SidebarContent({
                   >
                     <Link href="/admin/music" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music", true)}>
                       <Music2 size={14} />
-                      <span>Editar músicas</span>
+                      <span>{t("nav.adminEditSongs")}</span>
                     </Link>
                     <Link href="/admin/music/no-album" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music/no-album")}>
                       <AlertCircle size={14} />
-                      <span>Músicas sem álbum</span>
+                      <span>{t("nav.adminSongsNoAlbum")}</span>
                     </Link>
                     <Link href="/admin/missing-info" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/missing-info")}>
                       <ListChecks size={14} />
-                      <span>Informações faltando</span>
+                      <span>{t("nav.adminMissingInfo")}</span>
                     </Link>
                     <Link href="/admin/artists" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/artists")}>
                       <Library size={14} />
-                      <span>Editar artistas</span>
+                      <span>{t("nav.adminEditArtists")}</span>
                     </Link>
                     <Link href="/admin/albums" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/albums")}>
                       <Disc3 size={14} />
-                      <span>Editar álbuns</span>
+                      <span>{t("nav.adminEditAlbums")}</span>
                     </Link>
                     <Link href="/admin/albums/no-cover" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/albums/no-cover")}>
                       <ImageOff size={14} />
-                      <span>Álbuns sem capa</span>
+                      <span>{t("nav.adminAlbumsNoCover")}</span>
                     </Link>
                     <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
                       <UserCog size={14} />
-                      <span>Editar usuários</span>
+                      <span>{t("nav.adminEditUsers")}</span>
                     </Link>
                     <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
                       <Award size={14} />
-                      <span>Clube do Álbum</span>
+                      <span>{t("nav.adminClube")}</span>
                     </Link>
                   </div>
                 )}
@@ -349,7 +364,7 @@ function SidebarContent({
 
       <div style={{ padding: "14px 10px 6px 10px" }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>
-          Minhas paradas
+          {t("nav.myCharts")}
         </div>
       </div>
 
@@ -370,7 +385,7 @@ function SidebarContent({
         }}
       >
         <Plus size={20} />
-        Nova parada
+        {t("nav.newChart")}
       </Link>
 
       <Link
@@ -391,23 +406,18 @@ function SidebarContent({
         }}
       >
         <User size={20} />
-        Meu perfil
+        {t("nav.myProfile")}
       </Link>
 
       <div style={{ flex: 1 }} />
 
-      <div style={{ padding: "8px 10px" }}>
+      <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 10 }}>
+        <LanguageSwitcher />
         <ThemeToggle />
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "6px 10px 10px" }}>
-        {[
-          { href: "/guides", label: "Guias" },
-          { href: "/about", label: "Sobre" },
-          { href: "/contact", label: "Contato" },
-          { href: "/terms-of-use", label: "Termos" },
-          { href: "/privacy-policy", label: "Privacidade" },
-        ].map((item) => (
+        {footerLinks.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -435,13 +445,13 @@ function SidebarContent({
               </div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 3 }}>
                 <Flame size={12} color="var(--accent)" fill="var(--accent)" />
-                <span style={{ color: "var(--accent)", fontWeight: 600 }}>ativo</span>
+                <span style={{ color: "var(--accent)", fontWeight: 600 }}>{t("nav.active")}</span>
               </div>
             </div>
             <Link
               href="/settings"
               onClick={onNavClick}
-              title="Editar dados"
+              title={t("nav.editProfile")}
               style={{
                 width: 30,
                 height: 30,
@@ -478,7 +488,7 @@ function SidebarContent({
             }}
           >
             <LogOut size={14} />
-            Sair
+            {t("nav.signOut")}
           </button>
         </div>
       ) : (
@@ -493,10 +503,10 @@ function SidebarContent({
         }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)", lineHeight: 1.3 }}>
-              Crie sua parada semanal
+              {t("nav.ctaTitle")}
             </div>
             <div style={{ fontSize: 12, color: "var(--text-subtle)", marginTop: 5, lineHeight: 1.5 }}>
-              Registre as músicas que você mais ouviu, acompanhe seu streak e descubra o gosto musical dos seus amigos.
+              {t("nav.ctaBody")}
             </div>
           </div>
           <Link
@@ -515,7 +525,7 @@ function SidebarContent({
               boxShadow: "0 2px 8px rgba(250,36,60,0.25)",
             }}
           >
-            Criar conta grátis
+            {t("nav.ctaSignUp")}
           </Link>
           <Link
             href="/login"
@@ -532,7 +542,7 @@ function SidebarContent({
               border: "1px solid var(--divider-strong)",
             }}
           >
-            Já tenho conta — Entrar
+            {t("nav.ctaSignIn")}
           </Link>
         </div>
       )}

@@ -9,13 +9,18 @@ import { FollowButton } from "@/components/ui/FollowButton";
 import { HotTabs } from "./HotTabs";
 import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
 import { TrendingUp, Users, Music, Headphones, Radio, BarChart2, Star, BookOpen } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { formatWeekLabel } from "@/lib/i18n/format";
+import type { Locale } from "@/lib/i18n/config";
 
-export const metadata: Metadata = {
-  title: "Descobrir Músicas, Artistas e Curadores | ChartFM",
-  description:
-    "Descubra novas músicas, artistas em ascensão e curadores em destaque no ChartFM. Explore charts semanais da comunidade, rankings por gênero e tendências musicais atualizadas toda semana.",
-  alternates: { canonical: "/discover" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: `${t("discover.title")} | ChartFM`,
+    description: t("discover.metaDescription"),
+    alternates: { canonical: "/discover" },
+  };
+}
 
 function weeklyScore(likes: number, comments: number, reposts: number): number {
   return likes * 1 + comments * 2 + reposts * 3;
@@ -32,58 +37,32 @@ const GENRES = [
   { slug: "k-pop", name: "K-Pop", color: ["#FB5607", "#FFBE0B"], letter: "K", tags: ["k-pop", "kpop"] },
 ];
 
-const HOW_IT_WORKS = [
-  {
-    icon: <BarChart2 size={20} />,
-    title: "Charts publicadas toda semana",
-    desc: "Usuários publicam suas paradas pessoais semanalmente. O Discover agrega essas escolhas para revelar tendências reais dentro da comunidade.",
-  },
-  {
-    icon: <TrendingUp size={20} />,
-    title: "Rankings construídos pela comunidade",
-    desc: "Artistas e músicas sobem no ranking conforme mais usuários os incluem em suas paradas. Sem algoritmo opaco — só o gosto real das pessoas.",
-  },
-  {
-    icon: <Users size={20} />,
-    title: "Curadoria humana, não automática",
-    desc: "Cada curador é uma pessoa real com um gosto musical definido. Seguir curadores permite descobrir músicas através de quem pensa parecido com você.",
-  },
-  {
-    icon: <Music size={20} />,
-    title: "Exploração por gênero",
-    desc: "Filtre artistas e músicas por gênero para descobrir o que está em alta dentro de um estilo específico, da eletrônica ao sertanejo.",
-  },
-];
+function buildHowItWorks(t: (key: string) => string) {
+  return [
+    { icon: <BarChart2 size={20} />, title: t("discover.stepWeeklyTitle"), desc: t("discover.stepWeeklyDesc") },
+    { icon: <TrendingUp size={20} />, title: t("discover.stepRankingsTitle"), desc: t("discover.stepRankingsDesc") },
+    { icon: <Users size={20} />, title: t("discover.stepCurationTitle"), desc: t("discover.stepCurationDesc") },
+    { icon: <Music size={20} />, title: t("discover.stepGenresTitle"), desc: t("discover.stepGenresDesc") },
+  ];
+}
 
-const FAQ = [
-  {
-    q: "O que é o Discover do ChartFM?",
-    a: "O Discover é a página central de descoberta do ChartFM. Nela você encontra curadores em destaque da semana, rankings de artistas e músicas mais chartadas pela comunidade, e atalhos para explorar por gênero musical. Todo o conteúdo é atualizado semanalmente com base nas paradas publicadas pelos usuários.",
-  },
-  {
-    q: "Como os conteúdos aparecem no Discover?",
-    a: "Os rankings são gerados automaticamente a partir das paradas pessoais publicadas pelos usuários. Quanto mais pessoas incluem um artista ou música em sua parada semanal, maior a posição no ranking. Os curadores em destaque são selecionados com base na atividade e engajamento das charts da semana.",
-  },
-  {
-    q: "Como descobrir novos artistas no ChartFM?",
-    a: "A forma mais eficiente é seguir curadores cujo gosto você já admira. Quando eles publicam novas paradas, você pode explorar artistas e músicas que ainda não conhecia. Também é possível navegar por gênero para encontrar tendências dentro de um estilo específico.",
-  },
-  {
-    q: "O que são curadores no ChartFM?",
-    a: "Curadores são usuários que publicam paradas musicais semanais de forma consistente. Cada chart é uma seleção pessoal e deliberada das músicas que mais marcaram a semana do curador. Seguir um curador é uma forma de acompanhar o gosto musical de alguém de confiança.",
-  },
-  {
-    q: "Com que frequência o Discover é atualizado?",
-    a: "O ranking de artistas e músicas é atualizado toda segunda-feira às 01h00 (horário de Brasília), junto com a consolidação semanal das paradas. Os curadores em destaque refletem a atividade da semana corrente e podem mudar conforme novas charts são publicadas.",
-  },
-];
+function buildFaq(t: (key: string) => string) {
+  return [
+    { q: t("discover.faq1Q"), a: t("discover.faq1A") },
+    { q: t("discover.faq2Q"), a: t("discover.faq2A") },
+    { q: t("discover.faq3Q"), a: t("discover.faq3A") },
+    { q: t("discover.faq4Q"), a: t("discover.faq4A") },
+    { q: t("discover.faq5Q"), a: t("discover.faq5A") },
+  ];
+}
 
 export default async function DiscoverPage() {
+  const { t, locale } = await getServerTranslations();
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const rankingWeek = getRankingWeekReference(nowBRT);
   const prevWeekDate = new Date(getPreviousClosedWeekDate(nowBRT).getTime() - 7 * 24 * 60 * 60 * 1000);
   const prevWeekIndex = buildWeekIndexFromDate(prevWeekDate);
-  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex);
+  return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex, t, locale);
 }
 
 type ArtistWeekRow = {
@@ -114,7 +93,10 @@ async function loadPageData(
   weekIndex: number,
   weekLabel: string,
   prevWeekIndex: number,
+  t: (key: string, params?: Record<string, string | number>) => string,
+  locale: Locale,
 ) {
+  const weekLabelDisplay = formatWeekLabel(locale, weekLabel);
   const session = await getServerSession(authOptions);
   const [curatorCharts, followRows, weeklyEntries, previousEntries] = await Promise.all([
     prisma.chart.findMany({
@@ -281,42 +263,45 @@ async function loadPageData(
     return { title: row.title, artist: row.artist, spotifyId: row.spotifyId, artistSpotifyId: row.artistSpotifyId, users: row.users, status, delta };
   });
 
+  const howItWorks = buildHowItWorks(t);
+  const faq = buildFaq(t);
+
   return (
-    <Shell title="Descobrir" subtitle="Explore músicas, artistas e curadores">
+    <Shell title={t("discover.title")} subtitle={t("discover.subtitle")}>
 
       {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
       <section style={{ marginBottom: 52, maxWidth: 820 }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 16 }}>
-          Descubra novas músicas no ChartFM
+          {t("discover.editorialTitle")}
         </h2>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          O Discover do ChartFM foi criado para ajudar fãs de música a explorar novos artistas, álbuns, charts e tendências dentro da comunidade. Todos os dias, usuários compartilham suas paradas pessoais, avaliações e descobertas musicais, criando um ambiente dinâmico onde diferentes estilos e gêneros convivem em um único lugar. O resultado é um retrato honesto do que a comunidade está ouvindo — não o que um algoritmo decidiu promover.
+          {t("discover.editorialP1")}
         </p>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Diferente de plataformas baseadas apenas em algoritmos automáticos, o Discover do ChartFM é construído a partir da atividade real da comunidade. Cada chart publicada, review escrita e avaliação enviada ajuda a destacar novos lançamentos, artistas emergentes e clássicos revisitados pelos usuários. Isso significa que os rankings que você vê aqui refletem escolhas humanas e intencionais — não contagens de reprodução passiva.
+          {t("discover.editorialP2")}
         </p>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Através da página Discover, é possível acompanhar os artistas mais comentados do momento, encontrar curadores com gosto musical parecido com o seu, explorar charts semanais de outros usuários e descobrir músicas que estão crescendo organicamente dentro da plataforma. Os rankings são atualizados toda semana, então sempre há algo novo para explorar.
+          {t("discover.editorialP3")}
         </p>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>
-          Seja para descobrir novos sons, acompanhar tendências musicais ou explorar o gosto coletivo da comunidade, o Discover funciona como um espaço central para navegar pelo universo musical do ChartFM. Curadores reais, rankings transparentes e exploração por gênero tornam a descoberta de música uma experiência mais rica e menos aleatória.
+          {t("discover.editorialP4")}
         </p>
       </section>
 
       {/* ===== COMO FUNCIONA ===== */}
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>
-          Como funciona o Discover
+          {t("discover.howItWorksTitle")}
         </h2>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          O sistema de descoberta do ChartFM utiliza dados das charts pessoais, avaliações e atividade da comunidade para destacar conteúdos relevantes. Conforme usuários adicionam músicas às suas paradas semanais e interagem com artistas, novas tendências surgem organicamente dentro da plataforma.
+          {t("discover.howItWorksIntro")}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
-          {HOW_IT_WORKS.map((step) => (
+          {howItWorks.map((step) => (
             <div
               key={step.title}
               style={{
@@ -337,13 +322,13 @@ async function loadPageData(
       {/* ===== CURADORES EM DESTAQUE ===== */}
       <section style={{ marginBottom: 52 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>Curadores em destaque</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>{t("discover.featuredCuratorsTitle")}</h2>
           <Link href="/discover/curators" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-            Ver top 20 →
+            {t("discover.viewTop20")}
           </Link>
         </div>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          Curadores são usuários que publicam paradas musicais com regularidade e consistência. Seguir um curador é a forma mais direta de descobrir música nova através de alguém cujo gosto você confia. Os destaques abaixo refletem a atividade e o engajamento da semana {weekLabel}.
+          {t("discover.featuredCuratorsIntro", { weekLabel: weekLabelDisplay })}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
           {rankedCurators.map((row) => (
@@ -356,15 +341,15 @@ async function loadPageData(
                   padding: "2px 6px", borderRadius: 8, border: "2px solid var(--surface)",
                   display: "flex", alignItems: "center", gap: 2,
                 }}>
-                  Destaque
+                  {t("discover.featuredBadge")}
                 </div>
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{row.user.name}</div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)" }}>@{row.user.handle}</div>
-                <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.user.bio ?? "Curador em destaque da semana."}</div>
+                <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.user.bio ?? t("discover.featuredBioFallback")}</div>
                 <Link href={`/chart/${row.id}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
-                  Ver parada
+                  {t("discover.viewChart")}
                 </Link>
               </div>
               <FollowButton targetId={row.user.id} initialFollowing={followingIds.has(row.user.id)} variant="dark" size="sm" />
@@ -375,9 +360,9 @@ async function loadPageData(
 
       {/* ===== GÊNEROS ===== */}
       <section style={{ marginBottom: 52 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>Explorar por gênero</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>{t("discover.exploreGenresTitle")}</h2>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          Cada gênero musical tem seu próprio espaço de exploração no ChartFM. Filtre artistas, músicas e curadores por estilo para encontrar tendências específicas — do funk ao K-Pop, do indie ao eletrônico. Os rankings por gênero são construídos a partir das charts dos usuários que mais ouvem cada estilo.
+          {t("discover.exploreGenresIntro")}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {GENRES.map((g) => (
@@ -414,7 +399,7 @@ async function loadPageData(
       {/* ===== EM ALTA ===== */}
       <section style={{ marginBottom: 52 }}>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
-          Ranking semanal consolidado na segunda-feira às 01h00 (BRT). Artistas e músicas são ranqueados pelo número de usuários que os incluíram em suas paradas pessoais na semana {weekLabel}.
+          {t("discover.hotIntro", { weekLabel: weekLabelDisplay })}
         </p>
         <HotTabs artists={trendingArtists} songs={trendingSongs} />
       </section>
@@ -430,10 +415,10 @@ async function loadPageData(
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 24, display: "flex", alignItems: "center", gap: 8 }}>
           <BookOpen size={18} color="#FA243C" />
-          Perguntas frequentes
+          {t("discover.faqTitle")}
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {FAQ.map((item, i) => (
+          {faq.map((item, i) => (
             <div
               key={item.q}
               style={{

@@ -7,6 +7,7 @@ import { buildSongPath, buildArtistPath } from "@/lib/music-routes";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { COVER_PALETTES } from "@/lib/data";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type SearchSong = {
   id: string;
@@ -65,6 +66,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
+  const { t } = useTranslations();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
@@ -154,7 +156,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
           onKeyDown={(e) => {
             if (e.key === "Escape") clear();
           }}
-          placeholder="Buscar músicas, artistas, usuários"
+          placeholder={t("search.placeholder")}
           style={{
             border: "none",
             background: "transparent",
@@ -206,13 +208,13 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                 fontSize: 14,
               }}
             >
-              Nenhum resultado para &ldquo;{query.trim()}&rdquo;
+              {t("search.noResults", { query: query.trim() })}
             </div>
           ) : (
             <>
               {results.artists.length > 0 && (
                 <div>
-                  <div style={SECTION_LABEL}>Artistas</div>
+                  <div style={SECTION_LABEL}>{t("search.artists")}</div>
                   {results.artists.map((artist) => (
                     <Link
                       key={artist.spotifyId}
@@ -281,7 +283,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
               {results.songs.length > 0 && (
                 <div>
                   {results.artists.length > 0 && <div style={DIVIDER} />}
-                  <div style={SECTION_LABEL}>Músicas</div>
+                  <div style={SECTION_LABEL}>{t("search.songs")}</div>
                   {results.songs.map((song) => {
                     const cover = songCover(song.title, song.artist);
                     return (
@@ -350,7 +352,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                   {(results.artists.length > 0 || results.songs.length > 0) && (
                     <div style={DIVIDER} />
                   )}
-                  <div style={SECTION_LABEL}>Usuários</div>
+                  <div style={SECTION_LABEL}>{t("search.users")}</div>
                   {results.users.map((user) => (
                     <Link
                       key={user.handle}

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { timeAgo } from "@/lib/time-ago";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export type NotifRow = {
   id: string;
@@ -23,6 +24,7 @@ export type NotifRow = {
 };
 
 export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
+  const { t } = useTranslations();
   const [items, setItems] = useState(initial);
   const [isPending, startTransition] = useTransition();
   const [followedBack, setFollowedBack] = useState<Set<string>>(
@@ -65,7 +67,7 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
               opacity: isPending ? 0.5 : 1,
             }}
           >
-            Marcar tudo como lido
+            {t("notifications.markAllRead")}
           </button>
         </div>
       )}
@@ -73,7 +75,7 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
         {items.length === 0 && (
           <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-            Nenhuma notificação por aqui ainda.
+            {t("notifications.empty")}
           </div>
         )}
         {items.map((n, i) => {
@@ -168,12 +170,12 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
                       cursor: "pointer",
                     }}
                   >
-                    Seguir de volta
+                    {t("notifications.followBack")}
                   </button>
                 )}
                 {n.type === "follow" && actor && followedBack.has(n.id) && (
                   <span style={{ display: "inline-block", marginTop: 10, fontSize: 12, color: "var(--text-muted)" }}>
-                    Seguindo
+                    {t("notifications.following")}
                   </span>
                 )}
               </div>

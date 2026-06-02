@@ -8,10 +8,11 @@ import { Bell, X, Globe, Award } from "lucide-react";
 import { SearchBar } from "./SearchBar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const THEME_CYCLE: Theme[] = ["light", "auto", "dark"];
 const THEME_ICON: Record<Theme, string> = { light: "☀", auto: "⬤", dark: "☾" };
-const THEME_LABEL: Record<Theme, string> = { light: "Claro", auto: "Auto", dark: "Escuro" };
 
 interface TopBarProps {
   isMobile?: boolean;
@@ -24,6 +25,12 @@ export function TopBar({ isMobile = false }: TopBarProps) {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslations();
+  const themeLabel: Record<Theme, string> = {
+    light: t("theme.light"),
+    auto: t("theme.auto"),
+    dark: t("theme.dark"),
+  };
 
   function cycleTheme() {
     const idx = THEME_CYCLE.indexOf(theme);
@@ -69,10 +76,12 @@ export function TopBar({ isMobile = false }: TopBarProps) {
             <Award size={20} strokeWidth={pathname === "/criticsfm" || pathname.startsWith("/criticsfm/") ? 2.2 : 1.8} />
           </Link>
 
+          <LanguageSwitcher />
+
           {/* Theme toggle */}
           <button
             onClick={cycleTheme}
-            title={THEME_LABEL[theme]}
+            title={themeLabel[theme]}
             style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "var(--text)", fontSize: 18, lineHeight: 1 }}
           >
             {THEME_ICON[theme]}
@@ -127,6 +136,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
         <SearchBar />
       </div>
       <div style={{ flex: 1 }} />
+      <LanguageSwitcher />
       {!authed && (
         <Link
           href="/login"
@@ -137,7 +147,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
             whiteSpace: "nowrap", border: "1px solid var(--divider-strong)",
           }}
         >
-          Entrar
+          {t("nav.signIn")}
         </Link>
       )}
       <Link
@@ -148,7 +158,7 @@ export function TopBar({ isMobile = false }: TopBarProps) {
           fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap",
         }}
       >
-        Nova parada
+        {t("nav.newChart")}
       </Link>
     </div>
   );

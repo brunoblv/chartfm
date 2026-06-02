@@ -6,13 +6,16 @@ import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { prisma } from "@/lib/prisma";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Comunidades Musicais | ChartFM",
-  description:
-    "Descubra e participe de comunidades musicais no ChartFM. Discuta lançamentos, acompanhe charts coletivos, conheça fãs de pop, rock, indie, eletrônico e muito mais. Encontre sua tribo musical.",
-  alternates: { canonical: "/communities" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: `${t("communities.title")} | ChartFM`,
+    description: t("communities.subtitle"),
+    alternates: { canonical: "/communities" },
+  };
+}
 
 type CommunityCard = {
   id: string;
@@ -122,6 +125,7 @@ export default async function CommunitiesPage({
 }: {
   searchParams?: Promise<{ q?: string | string[] }>;
 }) {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
   const params = await searchParams;
@@ -203,7 +207,7 @@ export default async function CommunitiesPage({
   const myCommunityIds = new Set(myComms.map((community) => community.id));
 
   return (
-    <Shell title="Comunidades" subtitle="Encontre sua tribo musical">
+    <Shell title={t("communities.title")} subtitle={t("communities.subtitle")}>
 
       {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
       <section style={{ marginBottom: 48, maxWidth: 820 }}>

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const STORAGE_KEY = "chartfm_cookie_consent";
 
 type ConsentValue = "accepted" | "essential";
 
 export function CookieConsentBanner() {
+  const { t } = useTranslations();
   const [shouldRender, setShouldRender] = useState(false);
   const [visible, setVisible] = useState(false);
 
@@ -35,25 +37,24 @@ export function CookieConsentBanner() {
 
   return (
     <>
-      <div role="dialog" aria-live="polite" aria-label="Aviso de cookies" className="cookie-banner-wrapper">
+      <div role="dialog" aria-live="polite" aria-label={t("cookies.ariaLabel")} className="cookie-banner-wrapper">
         <div className={`cookie-banner ${visible ? "is-visible" : "is-hidden"}`}>
           <div className="cookie-banner-content">
-            <div className="cookie-banner-title">Usamos cookies</div>
+            <div className="cookie-banner-title">{t("cookies.title")}</div>
             <p className="cookie-banner-text">
-              O ChartFM usa cookies essenciais para login e segurança. Com sua permissão, também podemos usar cookies de
-              medição e anúncios, inclusive de parceiros como Google AdSense. Veja a{" "}
+              {t("cookies.body")}{" "}
               <Link href="/privacy-policy" className="cookie-banner-link">
-                Política de Privacidade
+                {t("cookies.privacyLink")}
               </Link>
               .
             </p>
           </div>
           <div className="cookie-banner-actions">
             <button type="button" onClick={() => saveConsent("essential")} className="cookie-btn cookie-btn-secondary">
-              Apenas essenciais
+              {t("cookies.essentialOnly")}
             </button>
             <button type="button" onClick={() => saveConsent("accepted")} className="cookie-btn cookie-btn-primary">
-              Aceitar cookies
+              {t("cookies.accept")}
             </button>
           </div>
         </div>

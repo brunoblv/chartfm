@@ -12,6 +12,7 @@ import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import type { UserWithCharts, Chart } from "@/lib/types";
+import { useTranslations } from "@/hooks/useTranslations";
 
 interface ChartCardProps {
   user: UserWithCharts;
@@ -34,6 +35,7 @@ export function ChartCard({
   showFollowActions = true,
   showUserHeader = true,
 }: ChartCardProps) {
+  const { t } = useTranslations();
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
   const formattedPeriod = formatChartPeriod(chart);
@@ -182,7 +184,7 @@ export function ChartCard({
             href={`/chart/${chart.id}`}
             style={{ padding: "10px 4px 2px 4px", fontSize: 13, color: "var(--accent)", fontWeight: 600, letterSpacing: "-0.01em", textDecoration: "none" }}
           >
-            Ver completa
+            {t("chart.viewFull")}
           </Link>
         )}
       </div>

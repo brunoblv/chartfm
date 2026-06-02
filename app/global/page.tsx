@@ -3,19 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
-import { computeGlobalSnapshotData, getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import { BookOpen, BarChart2, Users, TrendingUp, Music } from "lucide-react";
 import { GlobalHero } from "@/components/global/GlobalHero";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Global 100 | As músicas mais populares da comunidade ChartFM",
-  description:
-    "Acompanhe o Global 100 do ChartFM, a parada musical coletiva criada a partir das charts pessoais e avaliações da comunidade. Rankings semanais de músicas e artistas atualizados toda segunda-feira.",
-  alternates: { canonical: "/global" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("global.metaTitle"),
+    description: t("global.metaDescription"),
+    alternates: { canonical: "/global" },
+  };
+}
 
 type ArtistImageKey = { name: string; spotifyId: string | null };
-type GlobalSongLike = Awaited<ReturnType<typeof computeGlobalSnapshotData>>["weeklySongs"][number];
+type GlobalSongLike = GlobalSnapshotPayload["weeklySongs"][number];
 
 function isMissingImageUrl(url: string | null | undefined): boolean {
   return url === undefined || url === null || url === "";
@@ -92,43 +95,36 @@ type GlobalPageProps = {
 };
 
 export default async function GlobalPage({ searchParams }: GlobalPageProps) {
+  const { t } = await getServerTranslations();
   const params = searchParams
     ? ("then" in searchParams ? await searchParams : searchParams)
     : {};
   const requestedWeek = Number(params.week ?? "");
   const rankingWeek = getRankingWeekReference(new Date());
-  const availableWeeks = await prisma.chart.findMany({
+  const availableSnapshots = await prisma.globalSnapshot.findMany({
     where: { weekIndex: { lte: rankingWeek.weekIndex } },
     select: { weekIndex: true, weekLabel: true, dateRange: true },
-    distinct: ["weekIndex"],
     orderBy: { weekIndex: "desc" },
   });
-  const availableWeekIndexes = availableWeeks.map((w) => w.weekIndex);
+  const availableWeekIndexes = availableSnapshots.map((w) => w.weekIndex);
   const weekIndex =
     Number.isFinite(requestedWeek) && availableWeekIndexes.includes(requestedWeek)
       ? requestedWeek
       : availableWeekIndexes[0] ?? rankingWeek.weekIndex;
-  const currentMeta = availableWeeks.find((w) => w.weekIndex === weekIndex);
+  const currentMeta = availableSnapshots.find((w) => w.weekIndex === weekIndex) ?? null;
 
   const snapshotRow = await prisma.globalSnapshot.findUnique({ where: { weekIndex } });
-  const snapshot = snapshotRow
-    ? {
-        weekIndex,
-        weekLabel: snapshotRow.weekLabel,
-        dateRange: snapshotRow.dateRange,
-        payload: {
-          weeklySongs: snapshotRow.weeklySongs as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"],
-          weeklyArtists: snapshotRow.weeklyArtists as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklyArtists"],
-          overallSongs: snapshotRow.overallSongs as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallSongs"],
-          overallArtists: snapshotRow.overallArtists as unknown as Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["overallArtists"],
-        },
-      }
-    : {
-        weekIndex,
-        weekLabel: currentMeta?.weekLabel ?? rankingWeek.weekLabel,
-        dateRange: currentMeta?.dateRange ?? rankingWeek.dateRange,
-        payload: await computeGlobalSnapshotData(weekIndex),
-      };
+  const snapshot = {
+    weekIndex,
+    weekLabel: snapshotRow?.weekLabel ?? currentMeta?.weekLabel ?? rankingWeek.weekLabel,
+    dateRange: snapshotRow?.dateRange ?? currentMeta?.dateRange ?? rankingWeek.dateRange,
+    payload: {
+      weeklySongs: (snapshotRow?.weeklySongs as GlobalSnapshotPayload["weeklySongs"] | undefined) ?? [],
+      weeklyArtists: (snapshotRow?.weeklyArtists as GlobalSnapshotPayload["weeklyArtists"] | undefined) ?? [],
+      overallSongs: (snapshotRow?.overallSongs as GlobalSnapshotPayload["overallSongs"] | undefined) ?? [],
+      overallArtists: (snapshotRow?.overallArtists as GlobalSnapshotPayload["overallArtists"] | undefined) ?? [],
+    },
+  };
   const weekNow = snapshot.weekLabel;
   const weekRangeNow = snapshot.dateRange;
   const globalSongs = await hydrateSongCovers(snapshot.payload.weeklySongs);
@@ -193,7 +189,7 @@ export default async function GlobalPage({ searchParams }: GlobalPageProps) {
   ];
 
   return (
-    <Shell title="Global 100">
+    <Shell title="Global 100" subtitle={t("global.subtitle")}>
 
       {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
       <section style={{ marginBottom: 48, maxWidth: 820 }}>

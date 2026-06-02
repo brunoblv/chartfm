@@ -7,6 +7,7 @@ import "./globals.css";
 
 import { Providers } from "./providers";
 import { authOptions } from "@/lib/auth-options";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "ChartFM",
@@ -22,9 +23,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
+  const locale = await getServerLocale();
 
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <meta
           name="google-adsense-account"
@@ -70,7 +72,7 @@ export default async function RootLayout({
       </head>
 
       <body>
-        <Providers session={session}>
+        <Providers session={session} initialLocale={locale}>
           {children}
         </Providers>
       </body>
