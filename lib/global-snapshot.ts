@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { buildWeekIndexFromDate, getPreviousClosedWeekDate, getRankingWeekReference } from "@/lib/chart-week";
+import { getRankingWeekReference } from "@/lib/chart-week";
+import {
+  GLOBAL_RANKING_FIRST_WEEK_INDEX,
+  globalPrevWeekIndex,
+  isGlobalRankingWeek,
+} from "@/lib/global-ranking-config";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 
 export type GlobalSnapshotPayload = {
@@ -55,7 +60,13 @@ async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntr
 
 async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
   const rows = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: { lte: upToWeekIdx }, ...globalChartFilter }, position: { lte: 100 } },
+    where: {
+      chart: {
+        weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: upToWeekIdx },
+        ...globalChartFilter,
+      },
+      position: { lte: 100 },
+    },
     select: {
       position: true,
       points: true,
@@ -98,7 +109,13 @@ async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string,
 
 async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
   const rows = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: { lte: upToWeekIdx }, ...globalChartFilter }, position: { lte: 100 } },
+    where: {
+      chart: {
+        weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: upToWeekIdx },
+        ...globalChartFilter,
+      },
+      position: { lte: 100 },
+    },
     select: {
       position: true,
       points: true,
@@ -163,66 +180,65 @@ async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<strin
   return stats;
 }
 
+const chartEntrySelect = {
+  position: true,
+  points: true,
+  chartId: true,
+  coverPaletteA: true,
+  coverPaletteB: true,
+  coverSeed: true,
+  song: {
+    select: {
+      id: true,
+      title: true,
+      artist: true,
+      album: true,
+      albumRef: { select: { id: true, coverUrl: true } },
+      spotifyId: true,
+      artistSpotifyId: true,
+      artistRef: { select: { id: true, spotifyId: true, name: true } },
+      feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
+    },
+  },
+} as const;
+
 export async function computeGlobalSnapshotData(weekIdx: number): Promise<GlobalSnapshotPayload> {
-  const prevWeekIdx = buildWeekIndexFromDate(
-    new Date(getPreviousClosedWeekDate(new Date()).getTime() - 7 * 24 * 60 * 60 * 1000)
-  );
+  if (!isGlobalRankingWeek(weekIdx)) {
+    throw new Error(
+      `Semana ${weekIdx} está antes do corte do Global 100 (${GLOBAL_RANKING_FIRST_WEEK_INDEX}).`,
+    );
+  }
+  const prevWeekIdx = globalPrevWeekIndex(weekIdx);
 
   const [weeklyEntries, prevWeekEntries, historicalSongStats, historicalArtistStats] = await Promise.all([
     loadWeeklyGlobalEntries(weekIdx),
-    loadWeeklyGlobalEntries(prevWeekIdx),
+    prevWeekIdx ? loadWeeklyGlobalEntries(prevWeekIdx) : Promise.resolve([]),
     loadHistoricalSongStats(weekIdx),
     loadHistoricalArtistStats(weekIdx),
   ]);
   const [overallEntries, prevOverallEntries] = await Promise.all([
     prisma.chartEntry.findMany({
-      where: { chart: { weekIndex: { lte: weekIdx }, ...globalChartFilter }, position: { lte: 100 } },
-      select: {
-        position: true,
-        points: true,
-        chartId: true,
-        coverPaletteA: true,
-        coverPaletteB: true,
-        coverSeed: true,
-        song: {
-          select: {
-            id: true,
-            title: true,
-            artist: true,
-            album: true,
-            albumRef: { select: { id: true, coverUrl: true } },
-            spotifyId: true,
-            artistSpotifyId: true,
-            artistRef: { select: { id: true, spotifyId: true, name: true } },
-            feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
-          },
+      where: {
+        chart: {
+          weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: weekIdx },
+          ...globalChartFilter,
         },
+        position: { lte: 100 },
       },
+      select: chartEntrySelect,
     }),
-    prisma.chartEntry.findMany({
-      where: { chart: { weekIndex: { lte: prevWeekIdx }, ...globalChartFilter }, position: { lte: 100 } },
-      select: {
-        position: true,
-        points: true,
-        chartId: true,
-        coverPaletteA: true,
-        coverPaletteB: true,
-        coverSeed: true,
-        song: {
-          select: {
-            id: true,
-            title: true,
-            artist: true,
-            album: true,
-            albumRef: { select: { id: true, coverUrl: true } },
-            spotifyId: true,
-            artistSpotifyId: true,
-            artistRef: { select: { id: true, spotifyId: true, name: true } },
-            feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
+    prevWeekIdx
+      ? prisma.chartEntry.findMany({
+          where: {
+            chart: {
+              weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: prevWeekIdx },
+              ...globalChartFilter,
+            },
+            position: { lte: 100 },
           },
-        },
-      },
-    }),
+          select: chartEntrySelect,
+        })
+      : Promise.resolve([]),
   ]);
 
   return {
@@ -285,14 +301,45 @@ export async function getOrCreateRankingWeekSnapshot(now: Date = new Date()) {
   };
 }
 
-export async function refreshRankingWeekSnapshot(now: Date = new Date()) {
-  const rankingWeek = getRankingWeekReference(now);
-  const payload = await computeGlobalSnapshotData(rankingWeek.weekIndex);
+async function resolveWeekMeta(weekIndex: number): Promise<{ weekLabel: string; dateRange: string }> {
+  const chart = await prisma.chart.findFirst({
+    where: { weekIndex, parada: { isPrimary: true } },
+    select: { weekLabel: true, dateRange: true },
+    orderBy: { publishedAt: "desc" },
+  });
+  if (chart?.weekLabel && chart?.dateRange) {
+    return { weekLabel: chart.weekLabel, dateRange: chart.dateRange };
+  }
+  const year = Math.floor(weekIndex / 100);
+  const week = weekIndex % 100;
+  return {
+    weekLabel: `Semana ${week} - ${year}`,
+    dateRange: chart?.dateRange ?? "",
+  };
+}
+
+/** Semanas com paradas principais publicadas a partir de jan/2026. */
+export async function listGlobalRankingWeekIndexes(): Promise<number[]> {
+  const rows = await prisma.chart.findMany({
+    where: {
+      weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX },
+      parada: { isPrimary: true },
+    },
+    select: { weekIndex: true },
+    distinct: ["weekIndex"],
+    orderBy: { weekIndex: "asc" },
+  });
+  return rows.map((r) => r.weekIndex);
+}
+
+export async function saveGlobalSnapshotForWeek(weekIndex: number) {
+  const { weekLabel, dateRange } = await resolveWeekMeta(weekIndex);
+  const payload = await computeGlobalSnapshotData(weekIndex);
   const saved = await prisma.globalSnapshot.upsert({
-    where: { weekIndex: rankingWeek.weekIndex },
+    where: { weekIndex },
     update: {
-      weekLabel: rankingWeek.weekLabel,
-      dateRange: rankingWeek.dateRange,
+      weekLabel,
+      dateRange,
       weeklySongs: payload.weeklySongs as unknown as object,
       weeklyArtists: payload.weeklyArtists as unknown as object,
       overallSongs: payload.overallSongs as unknown as object,
@@ -300,9 +347,9 @@ export async function refreshRankingWeekSnapshot(now: Date = new Date()) {
       frozenAt: new Date(),
     },
     create: {
-      weekIndex: rankingWeek.weekIndex,
-      weekLabel: rankingWeek.weekLabel,
-      dateRange: rankingWeek.dateRange,
+      weekIndex,
+      weekLabel,
+      dateRange,
       weeklySongs: payload.weeklySongs as unknown as object,
       weeklyArtists: payload.weeklyArtists as unknown as object,
       overallSongs: payload.overallSongs as unknown as object,
@@ -310,11 +357,35 @@ export async function refreshRankingWeekSnapshot(now: Date = new Date()) {
       frozenAt: new Date(),
     },
   });
+  return { weekIndex, weekLabel, dateRange, payload: asPayload(saved) };
+}
 
+export async function rebuildAllGlobalSnapshotsFrom2026(options?: {
+  onWeek?: (weekIndex: number, index: number, total: number) => void;
+}) {
+  const deleted = await prisma.globalSnapshot.deleteMany();
+  const weekIndexes = await listGlobalRankingWeekIndexes();
+  const total = weekIndexes.length;
+
+  for (let i = 0; i < weekIndexes.length; i++) {
+    const weekIndex = weekIndexes[i];
+    options?.onWeek?.(weekIndex, i + 1, total);
+    await saveGlobalSnapshotForWeek(weekIndex);
+  }
+
+  return { deletedCount: deleted.count, rebuiltWeeks: weekIndexes };
+}
+
+export async function refreshRankingWeekSnapshot(now: Date = new Date()) {
+  const rankingWeek = getRankingWeekReference(now);
+  if (!isGlobalRankingWeek(rankingWeek.weekIndex)) {
+    throw new Error(`Semana ${rankingWeek.weekIndex} está fora da era Global 100 (2026+).`);
+  }
+  const saved = await saveGlobalSnapshotForWeek(rankingWeek.weekIndex);
   return {
-    weekIndex: rankingWeek.weekIndex,
-    weekLabel: rankingWeek.weekLabel,
-    dateRange: rankingWeek.dateRange,
-    payload: asPayload(saved),
+    weekIndex: saved.weekIndex,
+    weekLabel: saved.weekLabel,
+    dateRange: saved.dateRange,
+    payload: saved.payload,
   };
 }

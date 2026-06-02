@@ -173,9 +173,13 @@ export function aggregateTopArtists(
     const position = i + 1;
     const prevPos = prevPosByArtist.get(k) ?? null;
     const delta = prevPos === null ? null : prevPos - position;
-    const status: TopArtistRow["status"] =
-      prevPos === null ? "new" : delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
     const historical = options?.historicalStatsByArtistKey?.get(k);
+    let status: TopArtistRow["status"] = "new";
+    if (prevPos !== null) {
+      status = delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
+    } else if ((historical?.weeks ?? 0) > 1) {
+      status = "return";
+    }
     const prevPoints = comparisonByArtist.get(k) ?? 0;
     const growthPct = prevPoints > 0 ? ((v.points - prevPoints) / prevPoints) * 100 : null;
     return {
@@ -255,13 +259,15 @@ export function aggregateGlobalSongs(
     const position = i + 1;
     const prevPos = prevPosBySong.get(row.key) ?? null;
     const delta = prevPos === null ? null : prevPos - position;
+    const historical = options?.historicalStatsBySongKey?.get(row.key);
     let status: GlobalChartEntry["status"] = "new";
     if (prevPos !== null) {
       if (delta === 0) status = "same";
       else if ((delta ?? 0) > 0) status = "up";
       else status = "down";
+    } else if ((historical?.weeks ?? 0) > 1) {
+      status = "return";
     }
-    const historical = options?.historicalStatsBySongKey?.get(row.key);
     const prevPoints = comparisonBySong.get(row.key) ?? 0;
     const growthPct = prevPoints > 0 ? ((row.pts - prevPoints) / prevPoints) * 100 : null;
     const s = row.best.song;

@@ -13,6 +13,7 @@
     "seed:clube-r3": "tsx scripts/seed-clube-round-3.ts",
     "audit:boofrnds": "tsx scripts/audit-boofrnds.ts",
     "fix:boofrnds": "tsx scripts/fix-boofrnds-charts.ts",
+    "rebuild:global-2026": "tsx scripts/rebuild-global-snapshots-2026.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
