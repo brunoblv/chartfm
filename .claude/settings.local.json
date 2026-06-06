@@ -54,11 +54,20 @@
       "Bash(psql \"postgresql://postgres:postgres@localhost:5432/chartfm\" -c \"SELECT conname, contype, conrelid::regclass AS table_name FROM pg_constraint WHERE conrelid::regclass::text IN \\('song_video_clips', 'song_video_clip_votes', 'user_song_video_clip_choices'\\) ORDER BY table_name, conname;\")",
       "PowerShell(psql \"postgresql://postgres:postgres@localhost:5432/chartfm\" -c \"SELECT conname, contype, conrelid::regclass AS table_name FROM pg_constraint WHERE conrelid::regclass::text IN \\('song_video_clips', 'song_video_clip_votes', 'user_song_video_clip_choices'\\) ORDER BY table_name, conname;\")",
       "Bash(find c:\\\\\\\\Users\\\\\\\\blvbr\\\\\\\\Downloads\\\\\\\\Charts\\\\\\\\chartify -type d -name \"app\" -o -type d -name \"pages\")",
-      "Bash(npx tsx *)"
+      "Bash(npx tsx *)",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\prisma\\\\migrations\\\\20260605120000_weekly_releases\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Output \"ok\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\prisma\\\\migrations\\\\20260605120000_weekly_releases\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\app\\\\admin\\\\lancamentos\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\app\\\\criticsfm\\\\lancamentos\\\\historico\")",
+      "Bash(cat tailwind.config.ts)",
+      "Bash(cat tailwind.config.js)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",
-      "C:\\Users\\blvbr\\Downloads"
+      "C:\\Users\\blvbr\\Downloads",
+      "c:\\Users\\blvbr\\Downloads\\Charts\\chartify\\app\\api\\admin\\lancamentos"
     ]
   }
 }

@@ -3,8 +3,12 @@ import { ChevronLeft, Play, Star } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { buildWeekIndexFromDate, getPreviousClosedWeekDate } from "@/lib/chart-week";
 import { Shell } from "@/components/layout/Shell";
+import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
+import { globalStatsForSongKeys, pointsForPosition, songKey } from "@/lib/chart-page-common";
+import { artistEntityKey } from "@/lib/entity-page-snapshot/keys";
+import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
+import type { ArtistPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
 import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
 import { COVER_PALETTES } from "@/lib/data";
@@ -17,14 +21,6 @@ function artistColor(name: string): [string, string] {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
   return COVER_PALETTES[Math.abs(hash) % COVER_PALETTES.length];
-}
-
-function pointsForPosition(position: number): number {
-  return 101 - position;
-}
-
-function songKey(title: string, artist: string): string {
-  return `${title.trim().toLowerCase()}|${artist.trim().toLowerCase()}`;
 }
 
 const PAGE_SIZE = 10;
@@ -129,9 +125,16 @@ export default async function ArtistPage({
     select: { id: true, spotifyId: true, name: true, exhibitionName: true, imageUrl: true, spotifyUrl: true },
   });
 
+  const cachedSnapshot = await getLatestEntityPageSnapshot<ArtistPageSnapshotPayload>(
+    "ARTIST",
+    artistEntityKey(parsed, artistRef),
+  );
+
   /** Perfil Spotify quando não há linha em `Artist` (evita URL vazia na query e melhora o hero). */
   const spotifyProfile =
-    !artistRef && parsed.type === "spotify" ? await getSpotifyArtistById(parsed.spotifyId) : null;
+    !artistRef && parsed.type === "spotify" && !cachedSnapshot
+      ? await getSpotifyArtistById(parsed.spotifyId)
+      : null;
 
   const slugNameHint =
     parsed.type === "spotify" && parsed.nameSlug?.trim()
@@ -180,7 +183,7 @@ export default async function ArtistPage({
     spotifyProfile?.name?.trim() ||
     slugNameHint ||
     "";
-  const canonicalName =
+  let canonicalName =
     artistRef?.exhibitionName?.trim() ||
     artistRef?.name ||
     spotifyProfile?.name ||
@@ -188,7 +191,11 @@ export default async function ArtistPage({
     slugNameHint ||
     canonicalDbName ||
     "Artista";
-  const palette = artistColor(canonicalName);
+  let palette = artistColor(canonicalName);
+  if (cachedSnapshot) {
+    canonicalName = cachedSnapshot.payload.canonicalName;
+    palette = cachedSnapshot.payload.palette;
+  }
 
   const allEntries = await prisma.chartEntry.findMany({
     where: {
@@ -311,51 +318,32 @@ export default async function ArtistPage({
     songsMap.set(key, cur);
   }
 
-  const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  const currentWeekDate = getPreviousClosedWeekDate(nowBRT);
-  const currentWeekIdx = buildWeekIndexFromDate(currentWeekDate);
+  let songs: SongRow[];
+  let allAlbums: AlbumRow[];
+  let bigFans: { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }[];
+  let listenersCount: number;
+  let number1sTotal: number;
+  let totalPointsCached: number;
 
-  const globalRows = await prisma.chartEntry.findMany({
-    where: { chart: { isPublished: true } },
-    select: {
-      position: true,
-      points: true,
-      chart: { select: { weekIndex: true } },
-      song: { select: { title: true, artist: true } },
-    },
-  });
-
-  const weeklyBuckets = new Map<number, Map<string, number>>();
-  for (const row of globalRows) {
-    const wk = row.chart.weekIndex;
-    const key = songKey(row.song.title, row.song.artist);
-    const pts = row.points > 0 ? row.points : pointsForPosition(row.position);
-    const bySong = weeklyBuckets.get(wk) ?? new Map<string, number>();
-    bySong.set(key, (bySong.get(key) ?? 0) + pts);
-    weeklyBuckets.set(wk, bySong);
-  }
-
+  if (cachedSnapshot) {
+    const p = cachedSnapshot.payload;
+    songs = p.songs as SongRow[];
+    allAlbums = p.allAlbums as AlbumRow[];
+    bigFans = p.bigFans;
+    listenersCount = p.listenersCount;
+    number1sTotal = p.number1s;
+    totalPointsCached = p.totalPoints;
+  } else {
+  const dailyStats = await getDailyChartSongStatsForPages();
   const artistSongKeys = new Set(songsMap.keys());
   for (const s of allRegisteredSongs) {
     artistSongKeys.add(songKey(s.title, s.artist));
   }
-  const globalStatsBySong = new Map<string, { weeks: number; peak: number; number1s: number; currentWeekPos: number }>();
-  for (const key of artistSongKeys) {
-    globalStatsBySong.set(key, { weeks: 0, peak: 9999, number1s: 0, currentWeekPos: 9999 });
-  }
-  for (const [wk, bySong] of weeklyBuckets) {
-    const top100 = [...bySong.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100);
-    top100.forEach(([key], idx) => {
-      if (!artistSongKeys.has(key)) return;
-      const pos = idx + 1;
-      const cur = globalStatsBySong.get(key)!;
-      cur.weeks += 1;
-      cur.peak = Math.min(cur.peak, pos);
-      if (pos === 1) cur.number1s += 1;
-      if (wk === currentWeekIdx) cur.currentWeekPos = pos;
-      globalStatsBySong.set(key, cur);
-    });
-  }
+  const globalStatsBySong = globalStatsForSongKeys(
+    artistSongKeys,
+    dailyStats.weeklyBuckets,
+    dailyStats.currentWeekIdx,
+  );
 
   const mergedSongsById = new Map<string, SongRow>();
   const registeredSongIds = new Set(allRegisteredSongs.map((s) => s.id));
@@ -414,7 +402,7 @@ export default async function ArtistPage({
     });
   }
 
-  const songs = [...mergedSongsById.values()].sort(
+  songs = [...mergedSongsById.values()].sort(
     (a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points || a.title.localeCompare(b.title),
   );
 
@@ -527,7 +515,7 @@ export default async function ArtistPage({
     });
   }
 
-  const allAlbums: AlbumRow[] = (() => {
+  allAlbums = (() => {
     if (fromDbAlbums.length > 0) {
       const byId = new Map<number, AlbumRow>();
       for (const a of fromDbAlbums) {
@@ -546,6 +534,22 @@ export default async function ArtistPage({
       .sort((a, b) => b.points - a.points)
       .map((a) => ({ albumId: a.albumId, name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
   })();
+
+  const fanMap = new Map<string, { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }>();
+  for (const e of allEntries) {
+    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+    const existing = fanMap.get(e.chart.user.id) ?? {
+      user: { id: e.chart.user.id, handle: e.chart.user.handle, name: e.chart.user.name, avatar: e.chart.user.avatarColor, image: e.chart.user.image },
+      points: 0,
+    };
+    existing.points += pts;
+    fanMap.set(e.chart.user.id, existing);
+  }
+  bigFans = [...fanMap.values()].sort((a, b) => b.points - a.points).slice(0, 4);
+  listenersCount = listenersSet.size;
+  number1sTotal = number1s;
+  totalPointsCached = totalPoints;
+  }
 
   // ── User-specific data ────────────────────────────────────────────────────
   const userEntries = currentUserId ? allEntries.filter((e) => e.chart.userId === currentUserId) : [];
@@ -618,26 +622,17 @@ export default async function ArtistPage({
   const safePage = Math.min(currentPage, totalPages || 1);
   const paginatedSongs = activeSongs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  // ── Fans ──────────────────────────────────────────────────────────────────
-  const fanMap = new Map<string, { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }>();
-  for (const e of allEntries) {
-    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
-    const existing = fanMap.get(e.chart.user.id) ?? {
-      user: { id: e.chart.user.id, handle: e.chart.user.handle, name: e.chart.user.name, avatar: e.chart.user.avatarColor, image: e.chart.user.image },
-      points: 0,
-    };
-    existing.points += pts;
-    fanMap.set(e.chart.user.id, existing);
-  }
-  const bigFans = [...fanMap.values()].sort((a, b) => b.points - a.points).slice(0, 4);
-
   const isUserTab = tab === "user-songs" || tab === "user-albums";
 
+  const heroImageUrl =
+    artistRef?.imageUrl ?? spotifyProfile?.imageUrl ?? cachedSnapshot?.payload.heroImageUrl ?? null;
+  const heroSpotifyUrl =
+    artistRef?.spotifyUrl ?? spotifyProfile?.spotifyUrl ?? cachedSnapshot?.payload.heroSpotifyUrl ?? null;
   const globalStats = [
-    { label: "Usuários únicos", value: listenersSet.size, icon: "🎧", color: "#FA243C" },
+    { label: "Usuários únicos", value: listenersCount, icon: "🎧", color: "#FA243C" },
     { label: "Músicas cadastradas", value: songs.length, icon: "🎵", color: "#8338EC" },
-    { label: "Número 1s", value: number1s, icon: "👑", color: "#FFD700" },
-    { label: "Pontos totais", value: totalPoints, icon: "⭐", color: "#FB5607" },
+    { label: "Número 1s", value: number1sTotal, icon: "👑", color: "#FFD700" },
+    { label: "Pontos totais", value: totalPointsCached, icon: "⭐", color: "#FB5607" },
   ];
 
   const userStatsCards = [
@@ -676,8 +671,8 @@ export default async function ArtistPage({
         <div style={{ display: "flex", gap: 40, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div style={{
             width: 200, height: 200, borderRadius: "50%", flexShrink: 0,
-            background: (artistRef?.imageUrl ?? spotifyProfile?.imageUrl)
-              ? `url(${artistRef?.imageUrl ?? spotifyProfile?.imageUrl}) center/cover no-repeat`
+            background: heroImageUrl
+              ? `url(${heroImageUrl}) center/cover no-repeat`
               : `radial-gradient(circle at 30% 30%, ${palette[1]}, ${palette[0]})`,
             boxShadow: "0 16px 40px rgba(0,0,0,0.3)",
           }} />
@@ -685,13 +680,13 @@ export default async function ArtistPage({
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>Artista</div>
             <h1 style={{ fontSize: 72, fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1, marginBottom: 16 }}>{canonicalName}</h1>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 14, opacity: 0.9, marginBottom: 24 }}>
-              <span><strong>{listenersSet.size}</strong> ouvintes</span>
+              <span><strong>{listenersCount}</strong> ouvintes</span>
               <span><strong>{songs.length}</strong> músicas cadastradas</span>
-              <span><strong>{number1s}</strong> #1s</span>
-              <span><strong>{totalPoints}</strong> pontos</span>
+              <span><strong>{number1sTotal}</strong> #1s</span>
+              <span><strong>{totalPointsCached}</strong> pontos</span>
             </div>
             <a
-              href={artistRef?.spotifyUrl ?? spotifyProfile?.spotifyUrl ?? `https://open.spotify.com/search/${encodeURIComponent(canonicalName)}`}
+              href={heroSpotifyUrl ?? `https://open.spotify.com/search/${encodeURIComponent(canonicalName)}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "white", color: palette[0], padding: "12px 24px", borderRadius: 100, fontSize: 14, fontWeight: 700, textDecoration: "none" }}

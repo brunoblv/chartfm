@@ -80,13 +80,7 @@ export default async function CriticsFMAlbumPage({
   return (
     <Shell title="" noPadding>
       {/* Header */}
-      <div
-        style={{
-          background: "var(--surface)",
-          borderBottom: "1px solid var(--divider)",
-          padding: "24px 40px",
-        }}
-      >
+      <div className="cfm-album-header">
         <Link
           href="/criticsfm"
           style={{
@@ -230,7 +224,7 @@ export default async function CriticsFMAlbumPage({
       </div>
 
       {/* Reviews */}
-      <div style={{ padding: "32px 40px 80px" }}>
+      <div className="cfm-album-body">
         <AlbumReviewsClient
           albumDbId={albumId}
           albumTitle={albumTitle}

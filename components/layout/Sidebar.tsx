@@ -352,6 +352,10 @@ function SidebarContent({
                       <Award size={14} />
                       <span>{t("nav.adminClube")}</span>
                     </Link>
+                    <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
+                      <Sparkles size={14} />
+                      <span>Lançamentos</span>
+                    </Link>
                   </div>
                 )}
               </div>

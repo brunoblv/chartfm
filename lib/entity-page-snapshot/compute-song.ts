@@ -1,0 +1,123 @@
+import { prisma } from "@/lib/prisma";
+import {
+  globalStatsForSingleSong,
+  pointsForPosition,
+  songKey,
+} from "@/lib/chart-page-common";
+import type { DailyChartSongStatsData } from "@/lib/daily-chart-song-stats";
+import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
+import { parseSongSlug } from "@/lib/music-routes";
+import type { SongPageSnapshotPayload } from "./types";
+
+export async function computeSongPageSnapshot(
+  slug: string,
+  dailyStats: DailyChartSongStatsData,
+): Promise<SongPageSnapshotPayload | null> {
+  const parsed = parseSongSlug(slug);
+  if (!parsed) return null;
+
+  const songId = await resolveSongIdFromParsed(parsed);
+  if (!songId) return null;
+
+  const entries = await prisma.chartEntry.findMany({
+    where: { chart: { isPublished: true }, songId },
+    select: {
+      position: true,
+      points: true,
+      chart: { select: { userId: true } },
+      coverPaletteA: true,
+      coverPaletteB: true,
+      coverSeed: true,
+      song: {
+        select: {
+          title: true,
+          artist: true,
+          album: true,
+          albumRef: { select: { id: true, coverUrl: true } },
+          spotifyId: true,
+          artistSpotifyId: true,
+          artistRef: { select: { id: true } },
+        },
+      },
+    },
+  });
+
+  const songRow =
+    entries[0]?.song ??
+    (await prisma.song.findUnique({
+      where: { id: songId },
+      select: {
+        title: true,
+        artist: true,
+        album: true,
+        albumRef: { select: { id: true, coverUrl: true } },
+        spotifyId: true,
+        artistSpotifyId: true,
+        artistRef: { select: { id: true } },
+      },
+    }));
+
+  if (!songRow) return null;
+
+  const first = entries[0];
+  const title = songRow.title;
+  const artist = songRow.artist;
+  const targetKey = songKey(title, artist);
+  const gs = globalStatsForSingleSong(targetKey, dailyStats.weeklyBuckets);
+
+  const topUsersMap = new Map<string, { points: number }>();
+  for (const e of entries) {
+    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+    const cur = topUsersMap.get(e.chart.userId) ?? { points: 0 };
+    cur.points += pts;
+    topUsersMap.set(e.chart.userId, cur);
+  }
+  const topUsersIds = [...topUsersMap.keys()];
+  const topUsersRows = topUsersIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: topUsersIds } },
+        select: { id: true, handle: true, name: true, avatarColor: true, image: true },
+      })
+    : [];
+  const topUsersById = new Map(topUsersRows.map((u) => [u.id, u]));
+  const topUsers = [...topUsersMap.entries()]
+    .map(([userId, row]) => {
+      const user = topUsersById.get(userId);
+      if (!user) return null;
+      return { user, points: row.points };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 5);
+
+  const totalPoints = entries.reduce(
+    (sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)),
+    0,
+  );
+
+  return {
+    builtAt: new Date().toISOString(),
+    songId,
+    title,
+    artist,
+    album: songRow.album ?? "",
+    spotifyId: songRow.spotifyId,
+    artistSpotifyId: songRow.artistSpotifyId,
+    artistDbId: songRow.artistRef?.id ?? null,
+    albumDbId: songRow.albumRef?.id ?? null,
+    coverImageUrl: songRow.albumRef?.coverUrl?.trim() || null,
+    paletteA: first?.coverPaletteA ?? "#FA243C",
+    paletteB: first?.coverPaletteB ?? "#FFE66D",
+    coverSeed: first?.coverSeed ?? 0,
+    hasChartPresence: entries.length > 0,
+    chartEntries: entries.length,
+    globalStats: {
+      totalPoints,
+      uniqueUsers: new Set(entries.map((e) => e.chart.userId)).size,
+      weeksTop100: gs.weeks,
+      number1s: gs.number1s,
+      peak: gs.peak,
+    },
+    topUsers,
+  };
+}

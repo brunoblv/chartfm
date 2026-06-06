@@ -24,6 +24,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { Cover as CoverData } from "@/lib/types";
 import Link from "next/link";
+import { Star } from "lucide-react";
 
 type SongEntry = {
   position: number;
@@ -44,6 +45,7 @@ type SongEntry = {
   prevPos?: number | null;
   peak: number;
   weeks: number;
+  numberOnes?: number;
   points: number;
   growthPct?: number | null;
 };
@@ -59,6 +61,7 @@ type ArtistEntry = {
   prevPos: number | null;
   peak: number;
   weeks: number;
+  numberOnes?: number;
   growthPct: number | null;
   imageUrl?: string | null;
 };
@@ -225,10 +228,11 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
                 </Link>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
+            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" as const }}>
               <StatPill compact label={t("global.colPrevShort")} value={e.prevPos ?? "—"} />
               <StatPill compact label={t("global.colPeak")} value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill compact label="SEM" value={e.weeks} />
+              <StatPill compact label={t("global.colWeeks")} value={e.weeks} />
+              <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"} />
             </div>
           </div>
         ))}
@@ -238,7 +242,11 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
 
   const isLarge = viewSize === "large";
   const coverCol = isLarge ? `${LARGE_COVER_SIZE + 20}px` : desktopCoverGridColumn(DESKTOP_COVER_SIZE);
-  const gridTemplateColumns = desktopListGrid(coverCol, isLarge ? "96px 96px 80px 120px" : "80px 80px 60px 100px", isLarge);
+  const gridTemplateColumns = desktopListGrid(
+    coverCol,
+    isLarge ? "96px 96px 80px 50px 120px" : "80px 80px 60px 50px 100px",
+    isLarge,
+  );
   const rowPadding = isLarge ? "14px 24px" : "8px 20px";
   const coverSize = isLarge ? LARGE_COVER_SIZE : DESKTOP_COVER_SIZE;
   const titleSize = isLarge ? 17 : 14;
@@ -257,7 +265,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {[t("global.colPos"), "", t("global.colSong"), t("global.colPrevWeek"), t("global.colWeeks"), t("global.colPeak"), t("global.colPoints"), t("global.colGrowth")].map((h, i) => (
+        {[t("global.colPos"), "", t("global.colSong"), t("global.colPrevWeek"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints"), t("global.colGrowth")].map((h, i) => (
           <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
@@ -293,8 +301,16 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
           <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.weeks}
           </div>
-          <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)" }}>
+          <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)", display: "flex", alignItems: "center", gap: 3 }}>
+            {e.peak === 1 && (
+              <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}>
+                <Star size={12} color="currentColor" fill="currentColor" />
+              </span>
+            )}
             {e.peak}
+          </div>
+          <div style={{ fontSize: valueSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: (e.numberOnes ?? 0) > 0 ? "var(--text)" : "var(--text-disabled)" }}>
+            {(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"}
           </div>
           <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
             {e.points}
@@ -357,9 +373,10 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
                 </Link>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
-              <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill compact label="SEM" value={e.weeks} />
+            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" as const }}>
+              <StatPill compact label={t("global.colPeak")} value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
+              <StatPill compact label={t("global.colWeeks")} value={e.weeks} />
+              <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"} />
             </div>
           </div>
         ))}
@@ -369,7 +386,7 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
 
   const isLarge = viewSize === "large";
   const coverCol = isLarge ? `${LARGE_COVER_SIZE + 20}px` : desktopCoverGridColumn(DESKTOP_COVER_SIZE);
-  const gridCols = desktopListGrid(coverCol, isLarge ? "96px 96px 80px 120px" : "80px 80px 60px 100px", isLarge);
+  const gridCols = desktopListGrid(coverCol, isLarge ? "96px 96px 80px 50px 120px" : "80px 80px 60px 50px 100px", isLarge);
   const rowPadding = isLarge ? "14px 24px" : "8px 20px";
   const coverSize = isLarge ? LARGE_COVER_SIZE : DESKTOP_COVER_SIZE;
   const titleSize = isLarge ? 17 : 14;
@@ -380,7 +397,7 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
       <div style={{ display: "grid", gridTemplateColumns: gridCols, padding: isLarge ? "12px 24px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
-        {["Últ.", "", "Música", "Semana ant.", "Sem.", "Pico", "Pontos"].map((h, i) => (
+        {[t("global.colPos"), "", t("global.colSong"), t("global.colPrevWeek"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints")].map((h, i) => (
           <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
@@ -406,8 +423,16 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
           <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.weeks}
           </div>
-          <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)" }}>
+          <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)", display: "flex", alignItems: "center", gap: 3 }}>
+            {e.peak === 1 && (
+              <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}>
+                <Star size={12} color="currentColor" fill="currentColor" />
+              </span>
+            )}
             {e.peak}
+          </div>
+          <div style={{ fontSize: valueSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: (e.numberOnes ?? 0) > 0 ? "var(--text)" : "var(--text-disabled)" }}>
+            {(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"}
           </div>
           <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
             {e.points}
@@ -478,10 +503,11 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
                   </div>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
-                <StatPill compact label="ANT" value={a.prevPos ?? "—"} />
-                <StatPill compact label="PICO" value={a.peak} accent={a.peak === 1 ? "var(--accent)" : undefined} />
-                <StatPill compact label="SEM" value={a.weeks} />
+              <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" as const }}>
+                <StatPill compact label={t("global.colPrevShort")} value={a.prevPos ?? "—"} />
+                <StatPill compact label={t("global.colPeak")} value={a.peak} accent={a.peak === 1 ? "var(--accent)" : undefined} />
+                <StatPill compact label={t("global.colWeeks")} value={a.weeks} />
+                <StatPill compact label={t("global.colNumberOnes")} value={(a.numberOnes ?? 0) > 0 ? `${a.numberOnes}x` : "—"} />
               </div>
             </Link>
           );
@@ -492,7 +518,11 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
 
   const isLarge = viewSize === "large";
   const avatarCol = isLarge ? `${LARGE_COVER_SIZE + 20}px` : desktopCoverGridColumn(60);
-  const gridTemplateColumns = desktopListGrid(avatarCol, isLarge ? "96px 96px 80px 130px" : "80px 80px 70px 100px", isLarge);
+  const gridTemplateColumns = desktopListGrid(
+    avatarCol,
+    isLarge ? "96px 96px 80px 50px 130px" : "80px 80px 70px 50px 100px",
+    isLarge,
+  );
   const rowPadding = isLarge ? "14px 24px" : "8px 20px";
   const avatarSize = isLarge ? LARGE_COVER_SIZE : 60;
   const nameSize = isLarge ? 17 : 14;
@@ -510,7 +540,7 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {["Pos", "", "Artista", "Semana ant.", "Sem.", "Pico", "Pontos", "Cresc."].map((h, i) => (
+        {[t("global.colPos"), "", t("global.colArtist"), t("global.colPrevWeek"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints"), t("global.colGrowth")].map((h, i) => (
           <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
@@ -551,8 +581,16 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
             <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {a.weeks}
             </div>
-            <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)" }}>
+            <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)", display: "flex", alignItems: "center", gap: 3 }}>
+              {a.peak === 1 && (
+                <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}>
+                  <Star size={12} color="currentColor" fill="currentColor" />
+                </span>
+              )}
               {a.peak}
+            </div>
+            <div style={{ fontSize: valueSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: (a.numberOnes ?? 0) > 0 ? "var(--text)" : "var(--text-disabled)" }}>
+              {(a.numberOnes ?? 0) > 0 ? `${a.numberOnes}x` : "—"}
             </div>
             <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
               {a.totalPoints}

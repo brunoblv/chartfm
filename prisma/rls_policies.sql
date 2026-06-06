@@ -9,6 +9,8 @@ ALTER TABLE albums            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE song_feats        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_follows      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE global_snapshots  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_chart_song_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE entity_page_snapshots ENABLE ROW LEVEL SECURITY;
 
 -- Tabelas com nome PascalCase (sem @@map no Prisma)
 ALTER TABLE "User"            ENABLE ROW LEVEL SECURITY;
@@ -36,6 +38,8 @@ CREATE POLICY "public_read" ON artists           FOR SELECT USING (true);
 CREATE POLICY "public_read" ON albums            FOR SELECT USING (true);
 CREATE POLICY "public_read" ON song_feats        FOR SELECT USING (true);
 CREATE POLICY "public_read" ON global_snapshots  FOR SELECT USING (true);
+CREATE POLICY "public_read" ON daily_chart_song_stats FOR SELECT USING (true);
+CREATE POLICY "public_read" ON entity_page_snapshots FOR SELECT USING (true);
 CREATE POLICY "public_read" ON "Song"            FOR SELECT USING (true);
 
 -- Perfis de usuário (leitura pública)

@@ -10,14 +10,11 @@ import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-rout
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
-
-function pointsForPosition(position: number): number {
-  return 101 - position;
-}
-
-function songKey(title: string, artist: string): string {
-  return `${title.trim().toLowerCase()}|${artist.trim().toLowerCase()}`;
-}
+import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
+import { globalStatsForSingleSong, pointsForPosition, songKey } from "@/lib/chart-page-common";
+import { songEntityKey } from "@/lib/entity-page-snapshot/keys";
+import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
+import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
 
 /** Apenas o intervalo de datas (sem o sufixo "Semana …"). */
 function chartDateRangeOnly(chart: { weekLabel: string; dateRange: string }): string {
@@ -61,6 +58,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
       </Shell>
     );
   }
+
+  const cachedSnapshot = await getLatestEntityPageSnapshot<SongPageSnapshotPayload>(
+    "SONG",
+    songEntityKey(songId),
+  );
 
   const entries = await prisma.chartEntry.findMany({
     where: {
@@ -126,92 +128,79 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   }
 
   const first = entries[0];
-  const title = songRow.title;
-  const artist = songRow.artist;
-  const album = songRow.album ?? "";
-  const spotifyId = songRow.spotifyId;
-  const artistSpotifyId = songRow.artistSpotifyId;
-  const artistDbId = songRow.artistRef?.id ?? null;
-  const albumDbId = songRow.albumRef?.id ?? null;
-  const coverImageUrl = songRow.albumRef?.coverUrl?.trim() || null;
-  const paletteA = first?.coverPaletteA ?? "#FA243C";
-  const paletteB = first?.coverPaletteB ?? "#FFE66D";
-  const coverSeed = first?.coverSeed ?? 0;
-  const totalPoints = entries.reduce((sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)), 0);
-  const hasChartPresence = entries.length > 0;
-  const users = new Set(entries.map((e) => e.chart.userId)).size;
-  const chartEntries = entries.length;
-  const topUsersMap = new Map<
-    string,
-    {
-      user: { id: string; handle: string; name: string; avatarColor: string; image: string | null };
-      points: number;
-    }
-  >();
-  for (const e of entries) {
-    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
-    const current = topUsersMap.get(e.chart.userId) ?? {
-      user: {
-        id: e.chart.userId,
-        handle: "",
-        name: "",
-        avatarColor: "#FA243C",
-        image: null,
-      },
-      points: 0,
-    };
-    current.points += pts;
-    topUsersMap.set(e.chart.userId, current);
-  }
-  const topUsersIds = [...topUsersMap.keys()];
-  const topUsersRows = topUsersIds.length
-    ? await prisma.user.findMany({
-        where: { id: { in: topUsersIds } },
-        select: { id: true, handle: true, name: true, avatarColor: true, image: true },
-      })
-    : [];
-  const topUsersById = new Map(topUsersRows.map((u) => [u.id, u]));
-  const topUsers = [...topUsersMap.entries()]
-    .map(([userId, row]) => {
-      const user = topUsersById.get(userId);
-      if (!user) return null;
-      return { user, points: row.points };
-    })
-    .filter((row): row is { user: NonNullable<typeof topUsersRows[number]>; points: number } => Boolean(row))
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 5);
+  let title = songRow.title;
+  let artist = songRow.artist;
+  let album = songRow.album ?? "";
+  let spotifyId = songRow.spotifyId;
+  let artistSpotifyId = songRow.artistSpotifyId;
+  let artistDbId = songRow.artistRef?.id ?? null;
+  let albumDbId = songRow.albumRef?.id ?? null;
+  let coverImageUrl = songRow.albumRef?.coverUrl?.trim() || null;
+  let paletteA = first?.coverPaletteA ?? "#FA243C";
+  let paletteB = first?.coverPaletteB ?? "#FFE66D";
+  let coverSeed = first?.coverSeed ?? 0;
+  let hasChartPresence = entries.length > 0;
+  let chartEntries = entries.length;
+  let topUsers: SongPageSnapshotPayload["topUsers"] = [];
+  let globalStats: SongPageSnapshotPayload["globalStats"];
 
-  const globalRows = await prisma.chartEntry.findMany({
-    where: { chart: { isPublished: true } },
-    select: {
-      position: true,
-      points: true,
-      chart: { select: { weekIndex: true } },
-      song: { select: { title: true, artist: true } },
-    },
-  });
-  const targetKey = songKey(title, artist);
-  const weeklyBuckets = new Map<number, Map<string, number>>();
-  for (const row of globalRows) {
-    const wk = row.chart.weekIndex;
-    const key = songKey(row.song.title, row.song.artist);
-    const pts = row.points > 0 ? row.points : pointsForPosition(row.position);
-    const bySong = weeklyBuckets.get(wk) ?? new Map<string, number>();
-    bySong.set(key, (bySong.get(key) ?? 0) + pts);
-    weeklyBuckets.set(wk, bySong);
-  }
-  let weeksTop100 = 0;
-  let peak = 9999;
-  let number1s = 0;
-  for (const [, bySong] of weeklyBuckets) {
-    const top100 = [...bySong.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100);
-    const idx = top100.findIndex(([k]) => k === targetKey);
-    if (idx >= 0) {
-      const pos = idx + 1;
-      weeksTop100 += 1;
-      peak = Math.min(peak, pos);
-      if (pos === 1) number1s += 1;
+  if (cachedSnapshot) {
+    const p = cachedSnapshot.payload;
+    title = p.title;
+    artist = p.artist;
+    album = p.album;
+    spotifyId = p.spotifyId;
+    artistSpotifyId = p.artistSpotifyId;
+    artistDbId = p.artistDbId;
+    albumDbId = p.albumDbId;
+    coverImageUrl = p.coverImageUrl;
+    paletteA = p.paletteA;
+    paletteB = p.paletteB;
+    coverSeed = p.coverSeed;
+    hasChartPresence = p.hasChartPresence;
+    chartEntries = p.chartEntries;
+    topUsers = p.topUsers;
+    globalStats = p.globalStats;
+  } else {
+    const totalPoints = entries.reduce(
+      (sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)),
+      0,
+    );
+    const users = new Set(entries.map((e) => e.chart.userId)).size;
+    const topUsersMap = new Map<string, { points: number }>();
+    for (const e of entries) {
+      const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+      const current = topUsersMap.get(e.chart.userId) ?? { points: 0 };
+      current.points += pts;
+      topUsersMap.set(e.chart.userId, current);
     }
+    const topUsersIds = [...topUsersMap.keys()];
+    const topUsersRows = topUsersIds.length
+      ? await prisma.user.findMany({
+          where: { id: { in: topUsersIds } },
+          select: { id: true, handle: true, name: true, avatarColor: true, image: true },
+        })
+      : [];
+    const topUsersById = new Map(topUsersRows.map((u) => [u.id, u]));
+    topUsers = [...topUsersMap.entries()]
+      .map(([userId, row]) => {
+        const user = topUsersById.get(userId);
+        if (!user) return null;
+        return { user, points: row.points };
+      })
+      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+      .sort((a, b) => b.points - a.points)
+      .slice(0, 5);
+
+    const dailyStats = await getDailyChartSongStatsForPages();
+    const gs = globalStatsForSingleSong(songKey(title, artist), dailyStats.weeklyBuckets);
+    globalStats = {
+      totalPoints,
+      uniqueUsers: users,
+      weeksTop100: gs.weeks,
+      number1s: gs.number1s,
+      peak: gs.peak,
+    };
   }
 
   const currentUserId = session?.user?.id ?? null;
@@ -329,7 +318,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           songId={songId}
           myAppearances={myAppearancesSorted}
           myStats={myStats}
-          globalStats={{ totalPoints, uniqueUsers: users, weeksTop100, number1s, peak }}
+          globalStats={globalStats}
           topUsers={topUsers}
           initialVideoClipUrl={myVideoClip?.clip?.imageUrl ?? null}
           initialClips={initialClips}

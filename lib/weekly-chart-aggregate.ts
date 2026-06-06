@@ -84,11 +84,12 @@ export type TopArtistRow = {
   growthPct: number | null;
   peak: number;
   weeks: number;
+  numberOnes: number;
 };
 
 type AggregateArtistOptions = {
   previousWeekEntries?: WeeklyChartEntryRow[];
-  historicalStatsByArtistKey?: Map<string, { peak?: number; weeks?: number }>;
+  historicalStatsByArtistKey?: Map<string, { peak?: number; weeks?: number; numberOnes?: number }>;
   comparisonEntries?: WeeklyChartEntryRow[];
 };
 
@@ -194,6 +195,7 @@ export function aggregateTopArtists(
       growthPct,
       peak: historical?.peak ?? position,
       weeks: historical?.weeks ?? 1,
+      numberOnes: historical?.numberOnes ?? 0,
     };
   });
 }
@@ -205,7 +207,7 @@ type SongAgg = {
   best: WeeklyChartEntryRow;
 };
 
-type GlobalSongStats = { peak?: number; weeks?: number };
+type GlobalSongStats = { peak?: number; weeks?: number; numberOnes?: number };
 
 type AggregateGlobalSongsOptions = {
   previousWeekEntries?: WeeklyChartEntryRow[];
@@ -300,6 +302,7 @@ export function aggregateGlobalSongs(
       growthPct,
       peak: historical?.peak ?? row.best.position,
       weeks: historical?.weeks ?? row.charts.size,
+      numberOnes: historical?.numberOnes ?? 0,
     };
   });
 }

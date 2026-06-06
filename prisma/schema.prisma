@@ -106,8 +106,9 @@ model Album {
   artist          Artist      @relation(fields: [artistSpotifyId], references: [spotifyId])
   songs           Song[]      @relation("AlbumSongs")
   chartEntries    ChartEntry[] @relation("ChartEntryAlbumSpotify")
-  reviews         AlbumReview[]
-  clubNominations AlbumClubNomination[]
+  reviews              AlbumReview[]
+  clubNominations      AlbumClubNomination[]
+  weeklyReleaseAlbums  WeeklyReleaseAlbum[]
 
   @@index([spotifyId], map: "idx_albums_spotify_id")
   @@index([artistSpotifyId], map: "idx_albums_artist_spotify_id")
@@ -431,6 +432,39 @@ model GlobalSnapshot {
   @@map("global_snapshots")
 }
 
+enum EntityPageKind {
+  ARTIST
+  ALBUM
+  SONG
+
+  @@map("entity_page_kind")
+}
+
+/// Agregação diária das paradas (evita varrer todas as entradas em cada página).
+model DailyChartSongStats {
+  id             String   @id @default(cuid())
+  snapshotDay    DateTime @unique @map("snapshot_day") @db.Date
+  currentWeekIdx Int      @map("current_week_idx")
+  weeklyBuckets  Json     @map("weekly_buckets")
+  builtAt        DateTime @default(now()) @map("built_at")
+
+  @@map("daily_chart_song_stats")
+}
+
+/// Cache diário do conteúdo público das páginas de artista, álbum e música.
+model EntityPageSnapshot {
+  id          String         @id @default(cuid())
+  kind        EntityPageKind
+  entityKey   String         @map("entity_key")
+  payload     Json
+  snapshotDay DateTime       @map("snapshot_day") @db.Date
+  builtAt     DateTime       @default(now()) @map("built_at")
+
+  @@unique([kind, entityKey, snapshotDay])
+  @@index([kind, entityKey, snapshotDay(sort: Desc)], map: "idx_entity_page_snapshots_lookup")
+  @@map("entity_page_snapshots")
+}
+
 model AlbumReview {
   id           String               @id @default(cuid())
   albumId      Int                  @map("album_id")
@@ -578,4 +612,28 @@ model AlbumClubWinner {
 
   @@unique([roundId, rank])
   @@map("album_club_winners")
+}
+
+model WeeklyRelease {
+  id        String               @id @default(cuid())
+  weekLabel String               @map("week_label")
+  active    Boolean              @default(false)
+  albums    WeeklyReleaseAlbum[]
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
+
+  @@map("weekly_releases")
+}
+
+model WeeklyReleaseAlbum {
+  id              String        @id @default(cuid())
+  weeklyReleaseId String        @map("weekly_release_id")
+  albumId         Int           @map("album_id")
+  order           Int           @default(0)
+  weeklyRelease   WeeklyRelease @relation(fields: [weeklyReleaseId], references: [id], onDelete: Cascade)
+  album           Album         @relation(fields: [albumId], references: [id])
+
+  @@unique([weeklyReleaseId, albumId])
+  @@index([weeklyReleaseId], map: "idx_weekly_release_albums_release_id")
+  @@map("weekly_release_albums")
 }

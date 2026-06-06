@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
 import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution } from "@/lib/album-score";
 
@@ -53,7 +54,7 @@ export function AlbumReviewsClient({
       ? buildScoreDistribution(initialReviews.map((r) => r.rating))
       : new Array(10).fill(0),
   );
-
+  const isMobile = useIsMobile();
 
   const sorted =
     sort === "helpful"
@@ -79,9 +80,9 @@ export function AlbumReviewsClient({
   const maxDist = Math.max(...scoreDistribution, 1);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 32, alignItems: "flex-start" }}>
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 300px", gap: isMobile ? 16 : 32, alignItems: "flex-start" }}>
       {/* Main column */}
-      <div>
+      <div style={{ order: isMobile ? 2 : undefined }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
             Reviews{reviewCount > 0 ? ` (${reviewCount})` : ""}
@@ -164,7 +165,7 @@ export function AlbumReviewsClient({
       </div>
 
       {/* Sidebar */}
-      <div style={{ position: "sticky", top: 80, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ order: isMobile ? 1 : undefined, position: isMobile ? "static" : "sticky", top: 80, display: "flex", flexDirection: "column", gap: 16 }}>
         {/* Score summary */}
         <div
           style={{

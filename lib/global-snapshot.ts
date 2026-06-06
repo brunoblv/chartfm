@@ -58,7 +58,9 @@ async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntr
   });
 }
 
-async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
+async function loadHistoricalSongStats(
+  upToWeekIdx: number,
+): Promise<Map<string, { peak: number; weeks: number; numberOnes: number }>> {
   const rows = await prisma.chartEntry.findMany({
     where: {
       chart: {
@@ -91,15 +93,16 @@ async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string,
   }
 
   // Para cada semana, ranqueia músicas e conta apenas as top 100
-  const stats = new Map<string, { peak: number; weeks: number }>();
+  const stats = new Map<string, { peak: number; weeks: number; numberOnes: number }>();
   for (const [, songMap] of weekSongPoints) {
     const sorted = [...songMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100);
     for (let i = 0; i < sorted.length; i++) {
       const [key] = sorted[i];
       const globalPos = i + 1;
-      const cur = stats.get(key) ?? { peak: globalPos, weeks: 0 };
+      const cur = stats.get(key) ?? { peak: globalPos, weeks: 0, numberOnes: 0 };
       cur.peak = Math.min(cur.peak, globalPos);
       cur.weeks += 1;
+      if (globalPos === 1) cur.numberOnes += 1;
       stats.set(key, cur);
     }
   }
@@ -107,7 +110,9 @@ async function loadHistoricalSongStats(upToWeekIdx: number): Promise<Map<string,
   return stats;
 }
 
-async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<string, { peak: number; weeks: number }>> {
+async function loadHistoricalArtistStats(
+  upToWeekIdx: number,
+): Promise<Map<string, { peak: number; weeks: number; numberOnes: number }>> {
   const rows = await prisma.chartEntry.findMany({
     where: {
       chart: {
@@ -157,7 +162,7 @@ async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<strin
     }
   }
 
-  const stats = new Map<string, { peak: number; weeks: number }>();
+  const stats = new Map<string, { peak: number; weeks: number; numberOnes: number }>();
   const weeklyRanks = new Map<number, { key: string; pts: number }[]>();
   for (const [artistKey, wkMap] of weekArtistPoints) {
     for (const [wk, pts] of wkMap) {
@@ -170,9 +175,11 @@ async function loadHistoricalArtistStats(upToWeekIdx: number): Promise<Map<strin
     const sorted = arr.sort((a, b) => b.pts - a.pts);
     for (let i = 0; i < Math.min(sorted.length, 100); i++) {
       const a = sorted[i];
-      const cur = stats.get(a.key) ?? { peak: i + 1, weeks: 0 };
-      cur.peak = Math.min(cur.peak, i + 1);
+      const globalPos = i + 1;
+      const cur = stats.get(a.key) ?? { peak: globalPos, weeks: 0, numberOnes: 0 };
+      cur.peak = Math.min(cur.peak, globalPos);
       cur.weeks += 1;
+      if (globalPos === 1) cur.numberOnes += 1;
       stats.set(a.key, cur);
     }
   }

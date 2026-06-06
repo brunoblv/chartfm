@@ -99,6 +99,8 @@ export interface GlobalChartEntry {
   growthPct?: number | null;
   peak: number;
   weeks: number;
+  /** Semanas em #1 no Global 100 (era 2026+). */
+  numberOnes?: number;
 }
 
 export interface ArtistSong {

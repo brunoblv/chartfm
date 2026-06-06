@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ClubeRoundData, ClubeWinner, UiPhase } from "@/lib/clube-album";
@@ -278,41 +279,42 @@ const PHASE_META = [
   { id: "4", label: "Escuta" },
 ];
 
-function PhaseSteps({ current }: { current: UiPhase }) {
+function PhaseSteps({ current, isMobile }: { current: UiPhase; isMobile?: boolean }) {
   const ci = current === "0" ? 0 : parseInt(current);
+  const circleSize = isMobile ? 24 : 28;
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 24 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", marginBottom: isMobile ? 18 : 24 }}>
       {PHASE_META.map((p, i) => {
         const pi = parseInt(p.id);
         const active = pi === ci;
         const done = pi < ci;
         return (
           <div key={p.id} style={{ display: "contents" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
               <div
                 style={{
-                  width: 28,
-                  height: 28,
+                  width: circleSize,
+                  height: circleSize,
                   borderRadius: "50%",
                   background: active || done ? "var(--accent)" : "var(--fill-inset)",
                   border: active || done ? "none" : "1.5px solid var(--divider-strong)",
                   display: "grid",
                   placeItems: "center",
-                  fontSize: 11,
+                  fontSize: isMobile ? 10 : 11,
                   fontWeight: 700,
                   color: active || done ? "white" : "var(--text-muted)",
                   flexShrink: 0,
                 }}
               >
                 {done ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                  <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 ) : (
                   p.id
                 )}
               </div>
-              <span style={{ fontSize: 11, fontWeight: active ? 700 : 500, color: active ? "var(--accent)" : "var(--text-muted)", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: isMobile ? 10 : 11, fontWeight: active ? 700 : 500, color: active ? "var(--accent)" : "var(--text-muted)", whiteSpace: "nowrap" }}>
                 {p.label}
               </span>
             </div>
@@ -322,8 +324,8 @@ function PhaseSteps({ current }: { current: UiPhase }) {
                   flex: 1,
                   height: 1.5,
                   background: parseInt(PHASE_META[i + 1].id) <= ci ? "var(--accent)" : "var(--divider-strong)",
-                  margin: "13px 6px 0",
-                  minWidth: 12,
+                  margin: `${isMobile ? 11 : 13}px 4px 0`,
+                  minWidth: 8,
                 }}
               />
             )}
@@ -342,13 +344,13 @@ const PHASE_STATUS: Record<UiPhase, { label: string; dot: string }> = {
   "4": { label: "Período de escuta", dot: "#5856D6" },
 };
 
-function ClubHeader({ round }: { round: ClubeRoundData }) {
+function ClubHeader({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
   const s = PHASE_STATUS[round.phase];
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", margin: 0 }}>Clube do Álbum</h2>
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: isMobile ? 16 : 22, gap: 8 }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, marginBottom: 8, flexWrap: "wrap" }}>
+          <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", margin: 0 }}>Clube do Álbum</h2>
           <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-disabled)" }}>Rodada #{round.number}</span>
         </div>
         <span
@@ -374,16 +376,17 @@ function ClubHeader({ round }: { round: ClubeRoundData }) {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 5,
-          fontSize: 13,
+          gap: 4,
+          fontSize: isMobile ? 12 : 13,
           fontWeight: 600,
           color: "var(--text-muted)",
           textDecoration: "none",
-          padding: "7px 12px",
+          padding: isMobile ? "6px 10px" : "7px 12px",
           borderRadius: 8,
           border: "1px solid var(--divider)",
           whiteSpace: "nowrap",
           marginTop: 2,
+          flexShrink: 0,
         }}
       >
         Histórico
@@ -493,7 +496,7 @@ function WinnerCard({ album, idx, revealed }: { album: ClubeWinner; idx: number;
   );
 }
 
-function Phase0({ round }: { round: ClubeRoundData }) {
+function Phase0({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
   const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
@@ -507,7 +510,7 @@ function Phase0({ round }: { round: ClubeRoundData }) {
 
   return (
     <div>
-      <div style={{ background: "var(--fill-inset)", border: "1px solid var(--divider)", borderRadius: 16, padding: "28px 24px", textAlign: "center", marginBottom: 24 }}>
+      <div style={{ background: "var(--fill-inset)", border: "1px solid var(--divider)", borderRadius: 16, padding: isMobile ? "20px 16px" : "28px 24px", textAlign: "center", marginBottom: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
           Próxima rodada
         </div>
@@ -532,7 +535,7 @@ function Phase0({ round }: { round: ClubeRoundData }) {
   );
 }
 
-function Phase1({ round }: { round: ClubeRoundData }) {
+function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
   const router = useRouter();
   const alreadyNominated = (round.myNominations?.length ?? 0) === 2;
   const [myNoms, setMyNoms] = useState<(PickAlbum | null)[]>(
@@ -591,9 +594,9 @@ function Phase1({ round }: { round: ClubeRoundData }) {
         />
       )}
 
-      <div style={{ background: "linear-gradient(135deg,var(--accent) 0%,#FF5858 100%)", borderRadius: 16, padding: "22px 24px", marginBottom: 28, color: "white", boxShadow: "0 4px 20px rgba(250,36,60,0.22)" }}>
+      <div style={{ background: "linear-gradient(135deg,var(--accent) 0%,#FF5858 100%)", borderRadius: 16, padding: isMobile ? "16px 18px" : "22px 24px", marginBottom: 28, color: "white", boxShadow: "0 4px 20px rgba(250,36,60,0.22)" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.8, marginBottom: 6 }}>Tema desta semana</div>
-        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>{round.theme}</div>
+        <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>{round.theme}</div>
         <div style={{ fontSize: 13, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
@@ -706,7 +709,7 @@ function Phase1({ round }: { round: ClubeRoundData }) {
   );
 }
 
-function Phase2({ round }: { round: ClubeRoundData }) {
+function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
   const router = useRouter();
   const [savedVotes, setSavedVotes] = useState<string[]>(round.myVoteNominationIds ?? []);
   const [selected, setSelected] = useState<string[]>(round.myVoteNominationIds ?? []);
@@ -762,9 +765,9 @@ function Phase2({ round }: { round: ClubeRoundData }) {
 
   return (
     <div>
-      <div style={{ background: "linear-gradient(135deg,var(--accent) 0%,#FF5858 100%)", borderRadius: 16, padding: "22px 24px", marginBottom: 28, color: "white", boxShadow: "0 4px 20px rgba(250,36,60,0.22)" }}>
+      <div style={{ background: "linear-gradient(135deg,var(--accent) 0%,#FF5858 100%)", borderRadius: 16, padding: isMobile ? "16px 18px" : "22px 24px", marginBottom: 28, color: "white", boxShadow: "0 4px 20px rgba(250,36,60,0.22)" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.8, marginBottom: 6 }}>Enquete · {round.theme}</div>
-        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>Vote nos álbuns que quer ouvir</div>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>Vote nos álbuns que quer ouvir</div>
         <div style={{ fontSize: 13, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
           Enquete aberta até {round.pollDeadline}
         </div>
@@ -905,7 +908,7 @@ function Phase3({ round }: { round: ClubeRoundData }) {
   );
 }
 
-function Phase4({ round }: { round: ClubeRoundData }) {
+function Phase4({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
   const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
@@ -919,7 +922,7 @@ function Phase4({ round }: { round: ClubeRoundData }) {
 
   return (
     <div>
-      <div style={{ background: "linear-gradient(135deg,#1D1D1F 0%,#3A3A3C 100%)", borderRadius: 16, padding: "22px 24px", marginBottom: 28, color: "white" }}>
+      <div style={{ background: "linear-gradient(135deg,#1D1D1F 0%,#3A3A3C 100%)", borderRadius: 16, padding: isMobile ? "16px 18px" : "22px 24px", marginBottom: 28, color: "white" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
           {round.identitiesRevealed ? "Rodada encerrada" : "Período de escuta"} · {round.theme}
         </div>
@@ -969,9 +972,11 @@ function Phase4({ round }: { round: ClubeRoundData }) {
 }
 
 export function ClubeDoAlbum({ round }: { round: ClubeRoundData | null }) {
+  const isMobile = useIsMobile();
+
   if (!round) {
     return (
-      <div style={{ marginBottom: 40, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, padding: "48px 28px", textAlign: "center" }}>
+      <div style={{ marginBottom: 40, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, padding: isMobile ? "32px 20px" : "48px 28px", textAlign: "center" }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Clube do Álbum</div>
         <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>Nenhuma rodada ativa no momento.</div>
         <Link href="/criticsfm/clube/historico" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
@@ -983,15 +988,15 @@ export function ClubeDoAlbum({ round }: { round: ClubeRoundData | null }) {
 
   return (
     <div style={{ marginBottom: 40 }}>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, padding: "28px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-        <ClubHeader round={round} />
-        <PhaseSteps current={round.phase} />
+      <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, padding: isMobile ? "20px 16px" : "28px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+        <ClubHeader round={round} isMobile={isMobile} />
+        <PhaseSteps current={round.phase} isMobile={isMobile} />
         <HowItWorks />
-        {round.phase === "0" && <Phase0 round={round} />}
-        {round.phase === "1" && <Phase1 round={round} />}
-        {round.phase === "2" && <Phase2 round={round} />}
+        {round.phase === "0" && <Phase0 round={round} isMobile={isMobile} />}
+        {round.phase === "1" && <Phase1 round={round} isMobile={isMobile} />}
+        {round.phase === "2" && <Phase2 round={round} isMobile={isMobile} />}
         {round.phase === "3" && <Phase3 round={round} />}
-        {round.phase === "4" && <Phase4 round={round} />}
+        {round.phase === "4" && <Phase4 round={round} isMobile={isMobile} />}
       </div>
     </div>
   );
