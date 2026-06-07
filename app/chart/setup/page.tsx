@@ -92,7 +92,7 @@ export default function ParadaSetupPage() {
           </h1>
           <p style={{ fontSize: 15, color: "#6B6B70", lineHeight: 1.55, marginBottom: 28, maxWidth: 400 }}>
             {isSecondSlot
-              ? "Use um tema ou gênero diferente da parada principal. Pontuação de 20→1 pt conforme o tamanho da parada; não entra no ranking global."
+              ? "Use um tema ou gênero diferente da parada principal. Pontuação de 10→1 pt conforme o tamanho da parada; não entra no ranking global."
               : "Esse é o nome que aparece nas suas publicações semanais. Pode ser algo pessoal, criativo — o que quiser."}
           </p>
 

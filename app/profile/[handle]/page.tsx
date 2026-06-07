@@ -607,7 +607,7 @@ export default function ProfilePage() {
                 )}
                 {activeParada && !activeParada.isPrimary && (
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "var(--fill-subtle)", color: "var(--text-muted)" }}>
-                    Secundária · {activeParada.cadence === "daily" ? "Diária" : "Semanal"} · 20→1 pt
+                    Secundária · {activeParada.cadence === "daily" ? "Diária" : "Semanal"} · 10→1 pt
                   </span>
                 )}
               </div>

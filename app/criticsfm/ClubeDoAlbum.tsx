@@ -347,7 +347,7 @@ const PHASE_STATUS: Record<UiPhase, { label: string; dot: string }> = {
 function ClubHeader({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
   const s = PHASE_STATUS[round.phase];
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: isMobile ? 16 : 22, gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "flex-start", marginBottom: isMobile ? 16 : 22, gap: 8 }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, marginBottom: 8, flexWrap: "wrap" }}>
           <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", margin: 0 }}>Clube do Álbum</h2>
@@ -371,29 +371,6 @@ function ClubHeader({ round, isMobile }: { round: ClubeRoundData; isMobile?: boo
           {s.label}
         </span>
       </div>
-      <Link
-        href="/criticsfm/clube/historico"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          fontSize: isMobile ? 12 : 13,
-          fontWeight: 600,
-          color: "var(--text-muted)",
-          textDecoration: "none",
-          padding: isMobile ? "6px 10px" : "7px 12px",
-          borderRadius: 8,
-          border: "1px solid var(--divider)",
-          whiteSpace: "nowrap",
-          marginTop: 2,
-          flexShrink: 0,
-        }}
-      >
-        Histórico
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </Link>
     </div>
   );
 }

@@ -3,12 +3,12 @@ export type ParadaScoringTier = "primary" | "secondary";
 
 export const MAX_PARADAS_PER_USER = 2;
 
-export const SECONDARY_POINTS_MAX = 20;
+export const SECONDARY_POINTS_MAX = 10;
 export const SECONDARY_POINTS_MIN = 1;
 
 /**
- * Parada secundária: #1 = 20 pts, última posição = 1 pt, escala linear conforme o tamanho da parada da semana.
- * Ex.: 20 músicas → #1=20, #20=1; 50 músicas → #1=20, #50=1.
+ * Parada secundária: #1 = 10 pts, última posição = 1 pt, escala linear conforme o tamanho da parada da semana.
+ * Ex.: 10 músicas → #1=10, #10=1; 50 músicas → #1=10, #50=1.
  */
 export function pointsForSecondaryPosition(position: number, chartSize: number): number {
   const n = Math.max(1, Math.floor(chartSize));
