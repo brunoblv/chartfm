@@ -14,6 +14,90 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    date: "2026-06-07",
+    label: "7 de junho de 2026",
+    entries: [
+      {
+        title: "Lançamentos da Semana",
+        tag: "novo",
+        description:
+          "O CriticsFM ganhou uma seção dedicada aos lançamentos musicais da semana. Um banner na página principal destaca os álbuns selecionados, e em /criticsfm/lancamentos você pode ouvir, avaliar rapidamente e acessar o Spotify de cada um. O histórico de semanas anteriores fica disponível em Lançamentos → Histórico.",
+      },
+      {
+        title: "Pontuação da segunda parada ajustada",
+        tag: "melhoria",
+        description:
+          "A pontuação máxima por posição na segunda parada foi reduzida de 20 para 10 pontos, alinhando melhor o peso dela em relação à parada principal. Textos e cálculos em todo o site foram atualizados para refletir a nova regra.",
+      },
+    ],
+  },
+  {
+    date: "2026-06-02",
+    label: "2 de junho de 2026",
+    entries: [
+      {
+        title: "Site em inglês",
+        tag: "novo",
+        description:
+          "O ChartFM agora está disponível em português e inglês. Use o seletor de idioma na barra lateral ou nas configurações para alternar — a preferência é salva no navegador e aplicada em todas as páginas, incluindo metadados e textos da interface.",
+      },
+    ],
+  },
+  {
+    date: "2026-05-30",
+    label: "30 de maio de 2026",
+    entries: [
+      {
+        title: "Clube do Álbum",
+        tag: "novo",
+        description:
+          "Uma rodada semanal de descoberta coletiva de álbuns no CriticsFM. A cada semana há um tema: os participantes indicam álbuns, votam na enquete e, depois do resultado, entram num período de escuta para avaliar o vencedor. Acesse em /criticsfm/clube; o histórico de rodadas anteriores fica em Clube → Histórico.",
+      },
+      {
+        title: "Nova home do CriticsFM",
+        tag: "design",
+        description:
+          "A página do CriticsFM foi reorganizada com seções mais claras: Top Álbuns (melhores notas da comunidade), banner do Clube do Álbum, Lançamentos da Semana e link dedicado para todas as reviews. Álbuns precisam de pelo menos duas avaliações para aparecer no catálogo.",
+      },
+    ],
+  },
+  {
+    date: "2026-05-28",
+    label: "28 de maio de 2026",
+    entries: [
+      {
+        title: "Vídeo clipe nas páginas de música",
+        tag: "novo",
+        description:
+          "Cada página de música ganhou a aba Vídeo Clipe. Você pode enviar uma captura do clipe, votar nas opções da comunidade e escolher qual aparece no topo da página e nas paradas no modo Vídeo Clipe. O clipe mais votado é usado como padrão quando ninguém fez uma escolha pessoal.",
+      },
+      {
+        title: "Filtro por ano no perfil",
+        tag: "novo",
+        description:
+          "Na aba Estatísticas do perfil, agora dá para alternar entre visão geral e um ano específico. Artistas e músicas mais presentes são recalculados com base apenas nas paradas daquele ano, facilitando revisitar temporadas passadas.",
+      },
+      {
+        title: "Menu de perfil no celular",
+        tag: "novo",
+        description:
+          "A barra de navegação inferior no mobile agora abre um menu ao tocar em Perfil, com atalho para a sua página e botão de sair da conta — sem precisar ir até as configurações.",
+      },
+      {
+        title: "Layout mobile das paradas",
+        tag: "design",
+        description:
+          "As visualizações Lista e Vídeo Clipe das paradas foram refinadas para telas pequenas: capas com tamanho consistente, badges de #1 pessoal e global nas entradas, e melhor uso do espaço vertical no modo clipe.",
+      },
+      {
+        title: "Compressão automática de imagens",
+        tag: "melhoria",
+        description:
+          "Uploads de logo da parada e capturas de vídeo clipe agora são comprimidos automaticamente antes do envio, reduzindo o tamanho do arquivo sem perder qualidade visível e acelerando o carregamento.",
+      },
+    ],
+  },
+  {
     date: "2026-05-26",
     label: "26 de maio de 2026",
     entries: [

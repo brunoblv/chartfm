@@ -1,6 +1,7 @@
 "use client";
 
 import type { WeeklyReleaseData, WeeklyReleaseAlbumInfo } from "@/lib/weekly-releases";
+import { AlbumQuickRating } from "./AlbumQuickRating";
 
 function albumHue(title: string): number {
   return Math.abs(title.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
@@ -41,6 +42,7 @@ function AlbumCard({ album }: { album: WeeklyReleaseAlbumInfo }) {
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.artist}</div>
         <div style={{ fontSize: 12, color: "var(--text-disabled)", marginTop: 2 }}>{album.year}</div>
       </div>
+      <AlbumQuickRating albumId={album.albumId} />
       {album.spotifyUrl && (
         <a
           href={album.spotifyUrl}

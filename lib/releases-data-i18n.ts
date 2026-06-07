@@ -3,6 +3,90 @@ import { RELEASES, TAG_META, type Release, type ReleaseTag } from "@/lib/release
 
 const RELEASES_EN: Release[] = [
   {
+    date: "2026-06-07",
+    label: "June 7, 2026",
+    entries: [
+      {
+        title: "Weekly Releases",
+        tag: "novo",
+        description:
+          "CriticsFM has a dedicated section for weekly music releases. A banner on the main page highlights selected albums, and at /criticsfm/lancamentos you can listen, quick-rate, and open each album on Spotify. Past weeks are available under Releases → History.",
+      },
+      {
+        title: "Second chart scoring adjusted",
+        tag: "melhoria",
+        description:
+          "Maximum points per position on the second chart were reduced from 20 to 10, better balancing it against the primary chart. Copy and calculations across the site were updated to match.",
+      },
+    ],
+  },
+  {
+    date: "2026-06-02",
+    label: "June 2, 2026",
+    entries: [
+      {
+        title: "English language support",
+        tag: "novo",
+        description:
+          "ChartFM is now available in Portuguese and English. Use the language switcher in the sidebar or Settings — your choice is saved in the browser and applied across all pages, including metadata and UI text.",
+      },
+    ],
+  },
+  {
+    date: "2026-05-30",
+    label: "May 30, 2026",
+    entries: [
+      {
+        title: "Album Club",
+        tag: "novo",
+        description:
+          "A weekly collective album discovery round on CriticsFM. Each week has a theme: participants nominate albums, vote in the poll, then enter a listening period to review the winner. Visit /criticsfm/clube; past rounds are under Club → History.",
+      },
+      {
+        title: "New CriticsFM home",
+        tag: "design",
+        description:
+          "The CriticsFM page was reorganized with clearer sections: Top Albums (community highest scores), Album Club banner, Weekly Releases, and a dedicated link to all reviews. Albums need at least two reviews to appear in the catalog.",
+      },
+    ],
+  },
+  {
+    date: "2026-05-28",
+    label: "May 28, 2026",
+    entries: [
+      {
+        title: "Music video on song pages",
+        tag: "novo",
+        description:
+          "Each song page has a Music Video tab. You can upload a clip capture, vote on community options, and choose which appears at the top and on charts in Video Clip mode. The most-voted clip is the default when you have not picked one.",
+      },
+      {
+        title: "Year filter on profile",
+        tag: "novo",
+        description:
+          "On the profile Stats tab you can switch between overall and a specific year. Top artists and songs are recalculated from that year's charts only, making it easier to revisit past seasons.",
+      },
+      {
+        title: "Profile menu on mobile",
+        tag: "novo",
+        description:
+          "The bottom navigation bar on mobile opens a menu when you tap Profile, with a shortcut to your page and sign out — no need to open Settings.",
+      },
+      {
+        title: "Mobile chart layout",
+        tag: "design",
+        description:
+          "List and Video Clip chart views were refined for small screens: consistent cover sizes, personal and global #1 badges on entries, and better vertical spacing in clip mode.",
+      },
+      {
+        title: "Automatic image compression",
+        tag: "melhoria",
+        description:
+          "Chart logo and video clip uploads are now compressed automatically before upload, reducing file size without visible quality loss and speeding up loading.",
+      },
+    ],
+  },
+  {
     date: "2026-05-26",
     label: "May 26, 2026",
     entries: [
