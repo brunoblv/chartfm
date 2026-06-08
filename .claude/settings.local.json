@@ -65,7 +65,9 @@
       "Bash(cat tailwind.config.js)",
       "Bash(mkdir -p /tmp/design_extract)",
       "Bash(tar -xf /mnt/c/Users/blvbr/AppData/Local/Temp/design_decompressed.tar -C /tmp/design_extract)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Bash(Write-Output \"cache cleared\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",
