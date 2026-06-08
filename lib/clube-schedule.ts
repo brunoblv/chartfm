@@ -10,10 +10,10 @@ export type ClubePhaseSchedule = {
 };
 
 export const CLUBE_SCHEDULE_RULES = [
-  { phase: 1, label: "Inscrições", desc: "Tema em destaque, 2 indicações via Spotify, lista da rodada", when: "Quarta, 6h → 20h" },
-  { phase: 2, label: "Enquete", desc: "Grid com seleção múltipla, mínimo 7 votos", when: "Quarta, 20h → Quinta, 20h" },
-  { phase: 3, label: "Resultado", desc: "2 vencedores em destaque + link Spotify", when: "Quinta, 20h" },
-  { phase: 4, label: "Escuta", desc: "Cards dos escolhidos; nota e indicador revelados na quarta 20h", when: "Quinta, 20h → Quarta, 20h" },
+  { phase: 1, label: "Inscrições", desc: "Tema em destaque, 2 indicações via Spotify, lista da rodada", when: "Dia 1 · 6h → 20h" },
+  { phase: 2, label: "Enquete", desc: "Grid com seleção múltipla, mínimo 7 votos", when: "Dia 1, 20h → Dia 2, 20h" },
+  { phase: 3, label: "Resultado", desc: "2 vencedores em destaque + link Spotify", when: "Dia 2 · 20h" },
+  { phase: 4, label: "Escuta", desc: "Cards dos escolhidos; nota e indicador revelados no 8º dia 20h", when: "Dia 2, 20h → Dia 8, 20h" },
 ] as const;
 
 function atLocalTime(base: Date, hours: number, minutes = 0): Date {
@@ -39,9 +39,9 @@ function formatDateTime(d: Date): string {
   return `${weekdays[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} · ${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-/** Quarta-feira de referência (qualquer hora no dia); horários são normalizados. */
-export function buildScheduleFromWednesday(wednesday: Date): ClubePhaseSchedule {
-  const wed = new Date(wednesday.getFullYear(), wednesday.getMonth(), wednesday.getDate());
+/** Data de início de referência (qualquer dia; qualquer hora); horários são normalizados. */
+export function buildScheduleFromDate(startDate: Date): ClubePhaseSchedule {
+  const wed = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
 
   const nominationsOpenAt = atLocalTime(wed, 6, 0);
   const nominationsCloseAt = atLocalTime(wed, 20, 0);
@@ -89,14 +89,11 @@ export function schedulePreview(schedule: ClubePhaseSchedule) {
   ];
 }
 
-/** Próxima quarta-feira (hoje se for quarta antes das 6h, senão a próxima). */
-export function suggestNextWednesday(from = new Date()): Date {
+/** Próxima data de início disponível (hoje se antes das 20h, amanhã caso contrário). */
+export function suggestNextStartDate(from = new Date()): Date {
   const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-  const day = d.getDay();
-  const wednesday = 3;
-  let delta = (wednesday - day + 7) % 7;
-  if (delta === 0 && from.getHours() >= 20) delta = 7;
-  return addDays(d, delta);
+  if (from.getHours() >= 20) return addDays(d, 1);
+  return d;
 }
 
 export function toDateInputValue(d: Date): string {
@@ -114,9 +111,6 @@ export function parseDateInput(value: string): Date | null {
   return date;
 }
 
-export function isWednesday(d: Date): boolean {
-  return d.getDay() === 3;
-}
 
 export function formatCountdown(target: Date, now = new Date()): string {
   const ms = target.getTime() - now.getTime();

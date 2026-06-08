@@ -6,10 +6,10 @@ import type { AlbumClubPhase } from "@prisma/client";
 import type { ClubeAdminPollPreview, ClubeAdminRound } from "@/lib/clube-album";
 import {
   CLUBE_SCHEDULE_RULES,
-  buildScheduleFromWednesday,
+  buildScheduleFromDate,
   parseDateInput,
   schedulePreview,
-  suggestNextWednesday,
+  suggestNextStartDate,
   toDateInputValue,
   toDateTimeLocalValue,
 } from "@/lib/clube-schedule";
@@ -43,7 +43,7 @@ function scheduleFromRound(r: ClubeAdminRound): ScheduleForm {
 function scheduleFromTemplate(wednesdayDate: string): ScheduleForm | null {
   const wednesday = parseDateInput(wednesdayDate);
   if (!wednesday) return null;
-  const s = buildScheduleFromWednesday(wednesday);
+  const s = buildScheduleFromDate(wednesday);
   return {
     nominationsOpenAt: toDateTimeLocalValue(s.nominationsOpenAt),
     nominationsCloseAt: toDateTimeLocalValue(s.nominationsCloseAt),
@@ -278,10 +278,10 @@ export function ClubeAdminClient({
   const [wednesdayDate, setWednesdayDate] = useState(
     initialActive
       ? toDateInputValue(new Date(initialActive.nominationsOpenAt))
-      : toDateInputValue(suggestNextWednesday()),
+      : toDateInputValue(suggestNextStartDate()),
   );
   const [schedule, setSchedule] = useState<ScheduleForm>(() =>
-    initialActive ? scheduleFromRound(initialActive) : scheduleFromTemplate(toDateInputValue(suggestNextWednesday()))!,
+    initialActive ? scheduleFromRound(initialActive) : scheduleFromTemplate(toDateInputValue(suggestNextStartDate()))!,
   );
   const [phaseOverride, setPhaseOverride] = useState<AlbumClubPhase | "AUTO">("AUTO");
   const [useCustomSchedule, setUseCustomSchedule] = useState(false);
@@ -292,7 +292,7 @@ export function ClubeAdminClient({
   const preview = useMemo(() => {
     const wednesday = parseDateInput(wednesdayDate);
     if (!wednesday) return null;
-    const s = buildScheduleFromWednesday(wednesday);
+    const s = buildScheduleFromDate(wednesday);
     return { dateRange: s.dateRange, rows: schedulePreview(s) };
   }, [wednesdayDate]);
 
@@ -513,11 +513,11 @@ export function ClubeAdminClient({
 
             <div style={{ background: "var(--surface)", borderRadius: 12, padding: "14px 16px", border: "1px solid var(--divider)" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Aplicar cronograma padrão (quarta)
+                Aplicar cronograma padrão
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
                 <label style={{ flex: 1, minWidth: 160, display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontWeight: 600 }}>
-                  Quarta-feira de referência
+                  Data de referência
                   <input type="date" value={wednesdayDate} onChange={(e) => setWednesdayDate(e.target.value)} style={inputStyle} />
                 </label>
                 <button type="button" onClick={handleApplyTemplate} disabled={saving} style={secondaryBtnStyle}>
@@ -570,7 +570,7 @@ export function ClubeAdminClient({
             ) : (
               <>
                 <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
-                  Quarta-feira de início
+                  Data de início
                   <input type="date" value={wednesdayDate} onChange={(e) => setWednesdayDate(e.target.value)} required style={inputStyle} />
                 </label>
                 {preview && (

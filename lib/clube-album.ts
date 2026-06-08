@@ -1,6 +1,6 @@
 import { AlbumClubPhase, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { buildScheduleFromWednesday, parseDateInput, isWednesday, parseDateTimeLocal, buildDateRangeLabel } from "@/lib/clube-schedule";
+import { buildScheduleFromDate, parseDateInput, parseDateTimeLocal, buildDateRangeLabel } from "@/lib/clube-schedule";
 
 export type UiPhase = "0" | "1" | "2" | "3" | "4";
 
@@ -786,9 +786,8 @@ export async function createClubeRound(
     const wednesdayDate = opts.wednesdayDate ?? "";
     const wednesday = parseDateInput(wednesdayDate);
     if (!wednesday) return { ok: false, error: "Data inválida" };
-    if (!isWednesday(wednesday)) return { ok: false, error: "A data de início deve ser uma quarta-feira" };
 
-    const schedule = buildScheduleFromWednesday(wednesday);
+    const schedule = buildScheduleFromDate(wednesday);
     nominationsOpenAt = schedule.nominationsOpenAt;
     nominationsCloseAt = schedule.nominationsCloseAt;
     pollCloseAt = schedule.pollCloseAt;
@@ -849,9 +848,8 @@ export async function updateClubeRound(
   if (data.applyWednesdayTemplate && data.wednesdayDate) {
     const wednesday = parseDateInput(data.wednesdayDate);
     if (!wednesday) return { ok: false, error: "Data inválida" };
-    if (!isWednesday(wednesday)) return { ok: false, error: "A data de início deve ser uma quarta-feira" };
 
-    const schedule = buildScheduleFromWednesday(wednesday);
+    const schedule = buildScheduleFromDate(wednesday);
     update.dateRange = schedule.dateRange;
     update.nominationsOpenAt = schedule.nominationsOpenAt;
     update.nominationsCloseAt = schedule.nominationsCloseAt;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { createClubeRound, getClubeAdminData, type ClubeRoundSchedulePatch } from "@/lib/clube-album";
-import { buildScheduleFromWednesday, parseDateInput, schedulePreview } from "@/lib/clube-schedule";
+import { buildScheduleFromDate, parseDateInput, schedulePreview } from "@/lib/clube-schedule";
 
 export async function GET() {
   const auth = await requirePrivilegedSession();
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (body.preview && body.wednesdayDate) {
     const wednesday = parseDateInput(body.wednesdayDate);
     if (!wednesday) return NextResponse.json({ error: "Data inválida" }, { status: 400 });
-    const schedule = buildScheduleFromWednesday(wednesday);
+    const schedule = buildScheduleFromDate(wednesday);
     return NextResponse.json({
       dateRange: schedule.dateRange,
       preview: schedulePreview(schedule),
