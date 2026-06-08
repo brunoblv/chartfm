@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Star, Award } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Star, Award, ImagePlay } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -355,6 +355,10 @@ function SidebarContent({
                     <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
                       <Sparkles size={14} />
                       <span>Lançamentos</span>
+                    </Link>
+                    <Link href="/admin/gerador-de-imagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/gerador-de-imagens")}>
+                      <ImagePlay size={14} />
+                      <span>Gerador de Imagens</span>
                     </Link>
                   </div>
                 )}

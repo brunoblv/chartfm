@@ -53,6 +53,8 @@ export type ClubeRoundData = {
   revealsAt: string | null;
   /** Rodada já encerrou no banco, mas ainda visível com resultados finais */
   roundComplete: boolean;
+  /** IDs de todos os álbuns já indicados em qualquer rodada (atual + anteriores) */
+  allNominatedAlbumIds: number[];
 };
 
 export type ClubeHistoryRound = {
@@ -459,6 +461,18 @@ async function loadRoundPayload(
       .map((n) => maskNomination(n, viewerHandle, revealed)),
   );
 
+  const prevNominationRows = await prisma.albumClubNomination.findMany({
+    where: { roundId: { not: roundId } },
+    select: { albumId: true },
+    distinct: ["albumId"],
+  });
+  const allNominatedAlbumIds = [
+    ...new Set([
+      ...round.nominations.map((n) => n.album.id),
+      ...prevNominationRows.map((n) => n.albumId),
+    ]),
+  ];
+
   return {
     id: round.id,
     number: round.number,
@@ -480,6 +494,7 @@ async function loadRoundPayload(
     identitiesRevealed: revealed,
     revealsAt: round.listeningCloseAt ? formatDeadline(round.listeningCloseAt) : null,
     roundComplete,
+    allNominatedAlbumIds,
   };
 }
 
@@ -938,6 +953,15 @@ export async function submitClubeNominations(
     select: { id: true },
   });
   if (albums.length !== 2) return { ok: false, error: "Álbum inválido" };
+
+  const conflict = await prisma.albumClubNomination.findFirst({
+    where: {
+      albumId: { in: albumIds },
+      OR: [{ roundId: { not: roundId } }, { userId: { not: userId } }],
+    },
+    select: { albumId: true },
+  });
+  if (conflict) return { ok: false, error: "Este álbum já foi indicado em uma rodada anterior ou por outro participante nesta rodada" };
 
   await prisma.$transaction([
     prisma.albumClubNomination.deleteMany({ where: { roundId, userId } }),

@@ -58,13 +58,17 @@ async function getPublishedThisWeek(
     },
   });
 
-  return charts
-    .sort((a, b) => {
-      const aF = followingIds.has(a.user.id) ? 1 : 0;
-      const bF = followingIds.has(b.user.id) ? 1 : 0;
-      return bF - aF;
-    })
-    .map((c) => ({
+  const sorted = charts.sort((a, b) => {
+    const aF = followingIds.has(a.user.id) ? 1 : 0;
+    const bF = followingIds.has(b.user.id) ? 1 : 0;
+    return bF - aF;
+  });
+
+  const seen = new Set<string>();
+  return sorted.reduce<PublisherRow[]>((acc, c) => {
+    if (seen.has(c.user.id)) return acc;
+    seen.add(c.user.id);
+    acc.push({
       userId: c.user.id,
       chartId: c.id,
       handle: c.user.handle,
@@ -72,7 +76,9 @@ async function getPublishedThisWeek(
       avatarColor: c.user.avatarColor,
       image: c.user.image,
       entryCount: c._count.entries,
-    }));
+    });
+    return acc;
+  }, []);
 }
 
 async function getTimelineFeed(

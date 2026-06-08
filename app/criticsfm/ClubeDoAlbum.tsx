@@ -83,11 +83,13 @@ function SpotifyIcon({ size = 12 }: { size?: number }) {
 
 function SearchModal({
   nominatedAlbumIds,
+  pastNominatedAlbumIds,
   excludeAlbumIds,
   onClose,
   onSelect,
 }: {
   nominatedAlbumIds: Set<number>;
+  pastNominatedAlbumIds: Set<number>;
   excludeAlbumIds: number[];
   onClose: () => void;
   onSelect: (album: PickAlbum) => void;
@@ -218,6 +220,7 @@ function SearchModal({
             results.map((hit) => {
               const dbId = hit.dbId;
               const taken = dbId ? nominatedAlbumIds.has(dbId) : false;
+              const takenPrev = dbId ? (!taken && pastNominatedAlbumIds.has(dbId)) : false;
               const selected = dbId ? excludeAlbumIds.includes(dbId) : false;
               return (
                 <div
@@ -237,6 +240,10 @@ function SearchModal({
                   {taken ? (
                     <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", padding: "5px 10px", borderRadius: 100, background: "var(--fill-inset)", whiteSpace: "nowrap" }}>
                       Já indicado
+                    </span>
+                  ) : takenPrev ? (
+                    <span title="Este álbum já foi indicado em uma rodada anterior" style={{ fontSize: 11, fontWeight: 600, color: "#b45309", padding: "5px 10px", borderRadius: 100, background: "rgba(180,83,9,0.10)", whiteSpace: "nowrap" }}>
+                      Rodada anterior
                     </span>
                   ) : selected ? (
                     <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", padding: "5px 10px", borderRadius: 100, background: "var(--fill-inset)", whiteSpace: "nowrap" }}>
@@ -526,6 +533,10 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
   const [error, setError] = useState<string | null>(null);
 
   const nominatedAlbumIds = useMemo(() => new Set(round.nominations.map((n) => n.albumId)), [round.nominations]);
+  const pastNominatedAlbumIds = useMemo(() => {
+    const current = nominatedAlbumIds;
+    return new Set(round.allNominatedAlbumIds.filter((id) => !current.has(id)));
+  }, [round.allNominatedAlbumIds, nominatedAlbumIds]);
 
   async function confirm() {
     if (!myNoms[0] || !myNoms[1]) return;
@@ -558,6 +569,7 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
       {slot !== null && (
         <SearchModal
           nominatedAlbumIds={nominatedAlbumIds}
+          pastNominatedAlbumIds={pastNominatedAlbumIds}
           excludeAlbumIds={myNoms.filter(Boolean).map((a) => a!.albumId)}
           onClose={() => setSlot(null)}
           onSelect={(album) => {

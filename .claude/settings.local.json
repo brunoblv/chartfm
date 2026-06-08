@@ -62,7 +62,10 @@
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\app\\\\admin\\\\lancamentos\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\blvbr\\\\Downloads\\\\Charts\\\\chartify\\\\app\\\\criticsfm\\\\lancamentos\\\\historico\")",
       "Bash(cat tailwind.config.ts)",
-      "Bash(cat tailwind.config.js)"
+      "Bash(cat tailwind.config.js)",
+      "Bash(mkdir -p /tmp/design_extract)",
+      "Bash(tar -xf /mnt/c/Users/blvbr/AppData/Local/Temp/design_decompressed.tar -C /tmp/design_extract)",
+      "Read(//tmp/**)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

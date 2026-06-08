@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ChartFM – Story Background 9:16</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 1080px; height: 1920px; background: #FCFCFD; }
+
+    .canvas {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      background: #FCFCFD;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    }
+
+    .pill {
+      position: absolute;
+      left: -48px;
+      top: 249px;
+      width: 110px;
+      height: 1209px;
+      border-radius: 9999px;
+      background: linear-gradient(180deg, #FA243C 0%, #FF7098 55%, #FFBCCA 100%);
+    }
+
+    .logo {
+      position: absolute;
+      top: 72px;
+      left: 72px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      background: #FA243C;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-size: 27px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #1D1D1F;
+    }
+
+    .bars {
+      position: absolute;
+      right: 44px;
+      bottom: 0;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+    }
+    .bar {
+      width: 66px;
+      border-radius: 100px 100px 0 0;
+    }
+
+    .dots {
+      position: absolute;
+      display: grid;
+      grid-template-columns: repeat(6, 13px);
+      gap: 8px;
+      pointer-events: none;
+    }
+    .dot {
+      width: 4.5px;
+      height: 4.5px;
+      border-radius: 50%;
+      background: #FA243C;
+      opacity: 0.20;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+
+    <!-- Blob top-right -->
+    <svg style="position:absolute;top:0;right:0;pointer-events:none;" width="560" height="460" viewBox="0 0 560 460">
+      <defs>
+        <linearGradient id="blob1" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%"   stop-color="#FA243C" stop-opacity="0.14"/>
+          <stop offset="100%" stop-color="#FFB8C2" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      <path d="M560,0 L560,270 Q510,460 390,420 Q200,368 222,175 Q248,-38 560,0Z" fill="url(#blob1)"/>
+    </svg>
+
+    <!-- Wave top (subtle sweep) -->
+    <svg style="position:absolute;top:0;right:0;pointer-events:none;" width="900" height="160" viewBox="0 0 900 160" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="twave" x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#FA243C" stop-opacity="0.07"/>
+          <stop offset="100%" stop-color="#FFD0D8" stop-opacity="0.01"/>
+        </linearGradient>
+      </defs>
+      <path d="M900,0 L900,80 Q640,160 360,100 Q120,48 0,130 L0,0Z" fill="url(#twave)"/>
+    </svg>
+
+    <!-- Wave bottom -->
+    <svg style="position:absolute;bottom:0;left:0;pointer-events:none;" width="1080" height="230" viewBox="0 0 1080 230" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wave1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#FFD0D8" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="#FFB8C8" stop-opacity="0.50"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,150 Q270,75 540,118 Q810,158 1080,90 L1080,230 L0,230Z" fill="url(#wave1)"/>
+    </svg>
+
+    <!-- Red pill -->
+    <div class="pill"></div>
+
+    <!-- Logo -->
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <rect x="3"  y="13" width="4" height="8"  rx="1.5"/>
+          <rect x="10" y="8"  width="4" height="13" rx="1.5"/>
+          <rect x="17" y="4"  width="4" height="17" rx="1.5"/>
+        </svg>
+      </div>
+      <span class="logo-text">ChartFM</span>
+    </div>
+
+    <!-- Bars bottom-right -->
+    <div class="bars">
+      <div class="bar" style="height:356px;background:linear-gradient(180deg,#FFB8C8,#FFD8E2);opacity:0.45;"></div>
+      <div class="bar" style="height:569px;background:linear-gradient(180deg,#FF88A8,#FFB8C8);opacity:0.62;"></div>
+      <div class="bar" style="height:836px;background:linear-gradient(180deg,#FA243C,#FF88A8);opacity:0.80;"></div>
+    </div>
+
+    <!-- Dots top-right -->
+    <div class="dots" style="top:68px;right:68px;" id="dots-tr"></div>
+
+    <!-- Dots bottom-left -->
+    <div class="dots" style="bottom:68px;left:108px;" id="dots-bl"></div>
+
+  </div>
+
+  <script>
+    function makeDots(id, count) {
+      const el = document.getElementById(id);
+      for (let i = 0; i < count; i++) {
+        const d = document.createElement('div');
+        d.className = 'dot';
+        el.appendChild(d);
+      }
+    }
+    makeDots('dots-tr', 6 * 9); // 54 dots
+    makeDots('dots-bl', 6 * 7); // 42 dots
+  </script>
+</body>
+</html>
