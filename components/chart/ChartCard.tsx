@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Repeat2, Share, BadgeCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
@@ -35,6 +36,7 @@ export function ChartCard({
   showFollowActions = true,
   showUserHeader = true,
 }: ChartCardProps) {
+  const router = useRouter();
   const { t } = useTranslations();
   const preview = chart.entries.slice(0, highlightTop);
   const remaining = chart.entries.length - preview.length;
@@ -218,11 +220,15 @@ export function ChartCard({
           <Heart size={18} fill={liked ? "currentColor" : "none"} />
           <span>{likeCount > 0 ? likeCount : ""}</span>
         </button>
-        <button style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "8px 12px", borderRadius: 8, background: "transparent",
-          border: "none", color: "var(--text-subtle)", fontSize: 13, fontWeight: 500,
-        }}>
+        <button
+          onClick={() => chart.id && router.push(`/chart/${chart.id}?tab=comments`)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 12px", borderRadius: 8, background: "transparent",
+            border: "none", color: "var(--text-subtle)", fontSize: 13, fontWeight: 500,
+            cursor: chart.id ? "pointer" : "default",
+          }}
+        >
           <MessageCircle size={18} />
           <span>{chart.comments > 0 ? chart.comments : ""}</span>
         </button>

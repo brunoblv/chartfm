@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   ChevronLeft, Heart, Repeat2, Share, Play, Star, MessageCircle,
@@ -102,6 +102,7 @@ type OverlapRow = {
 export default function ChartDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const raw = params?.id;
   const id = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
 
@@ -112,7 +113,8 @@ export default function ChartDetailPage() {
   const [ownerParadaNome, setOwnerParadaNome] = useState<string | null>(null);
 
   const [variant, setVariant] = useState<Variant>("list");
-  const [tab, setTab] = useState<Tab>("chart");
+  const initialTab = (searchParams?.get("tab") as Tab | null) ?? "chart";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
   const [loadingClips, setLoadingClips] = useState(false);
 
@@ -1186,17 +1188,26 @@ function CommentsTab({
     const text = comment.trim();
     if (!text || submitting) return;
     setSubmitting(true);
-    const res = await fetch(`/api/charts/${chartId}/comment`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    setSubmitting(false);
-    if (res.ok) {
-      const newComment = (await res.json()) as CommentRow;
-      setComments((prev) => [newComment, ...prev]);
-      setComment("");
-      onCommentAdded();
+    try {
+      const res = await fetch(`/api/charts/${chartId}/comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        const newComment = (await res.json()) as CommentRow;
+        setComments((prev) => [newComment, ...prev]);
+        setComment("");
+        onCommentAdded();
+      } else if (res.status === 401) {
+        alert("Você precisa estar logado para comentar.");
+      } else {
+        alert("Erro ao enviar comentário. Tente novamente.");
+      }
+    } catch {
+      alert("Erro de conexão. Tente novamente.");
+    } finally {
+      setSubmitting(false);
     }
   }
 

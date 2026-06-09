@@ -91,6 +91,7 @@ type AggregateArtistOptions = {
   previousWeekEntries?: WeeklyChartEntryRow[];
   historicalStatsByArtistKey?: Map<string, { peak?: number; weeks?: number; numberOnes?: number }>;
   comparisonEntries?: WeeklyChartEntryRow[];
+  prevPositionsByKey?: Map<string, number>;
 };
 
 export function aggregateTopArtists(
@@ -153,22 +154,26 @@ export function aggregateTopArtists(
     }
   }
 
-  const prevPosByArtist = new Map<string, number>();
-  if (options?.previousWeekEntries?.length) {
-    const prevByArtist = new Map<string, number>();
-    for (const e of options.previousWeekEntries) {
-      for (const contributor of artistContributors(e.song)) {
-        prevByArtist.set(
-          contributor.key,
-          (prevByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e)
-        );
+  const prevPosByArtist: Map<string, number> = (() => {
+    if (options?.prevPositionsByKey) return new Map(options.prevPositionsByKey);
+    const map = new Map<string, number>();
+    if (options?.previousWeekEntries?.length) {
+      const prevByArtist = new Map<string, number>();
+      for (const e of options.previousWeekEntries) {
+        for (const contributor of artistContributors(e.song)) {
+          prevByArtist.set(
+            contributor.key,
+            (prevByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e)
+          );
+        }
       }
+      [...prevByArtist.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .forEach(([k], i) => map.set(k, i + 1));
     }
-    [...prevByArtist.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .forEach(([k], i) => prevPosByArtist.set(k, i + 1));
-  }
+    return map;
+  })();
 
   return sorted.map(([k, v], i) => {
     const position = i + 1;
@@ -213,6 +218,7 @@ type AggregateGlobalSongsOptions = {
   previousWeekEntries?: WeeklyChartEntryRow[];
   historicalStatsBySongKey?: Map<string, GlobalSongStats>;
   comparisonEntries?: WeeklyChartEntryRow[];
+  prevPositionsByKey?: Map<string, number>;
 };
 
 export function aggregateGlobalSongs(
@@ -236,18 +242,22 @@ export function aggregateGlobalSongs(
 
   const sorted = [...map.values()].sort((a, b) => b.pts - a.pts).slice(0, limit);
 
-  const prevPosBySong = new Map<string, number>();
-  if (options?.previousWeekEntries?.length) {
-    const prevMap = new Map<string, number>();
-    for (const e of options.previousWeekEntries) {
-      const key = songAggregationKey(e.song);
-      prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForWeeklyEntry(e));
+  const prevPosBySong: Map<string, number> = (() => {
+    if (options?.prevPositionsByKey) return new Map(options.prevPositionsByKey);
+    const map = new Map<string, number>();
+    if (options?.previousWeekEntries?.length) {
+      const prevMap = new Map<string, number>();
+      for (const e of options.previousWeekEntries) {
+        const key = songAggregationKey(e.song);
+        prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForWeeklyEntry(e));
+      }
+      [...prevMap.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .forEach(([key], i) => map.set(key, i + 1));
     }
-    [...prevMap.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .forEach(([key], i) => prevPosBySong.set(key, i + 1));
-  }
+    return map;
+  })();
 
   const comparisonBySong = new Map<string, number>();
   if (options?.comparisonEntries?.length) {
