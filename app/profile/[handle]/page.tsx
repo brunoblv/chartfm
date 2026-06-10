@@ -16,7 +16,7 @@ import type { Chart, Song, UserWithCharts } from "@/lib/types";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { pointsForChartPosition, type ParadaScoringTier } from "@/lib/parada-points";
+import { pointsForChartPosition, secondaryPointsRangeLabel, type ParadaScoringTier } from "@/lib/parada-points";
 
 type ParadaTab = "charts" | "evolution" | "artists" | "songs";
 type StatsScope = "overall" | "year";
@@ -140,8 +140,13 @@ type SongTableRow = {
   cover: Chart["entries"][number]["cover"];
 };
 
-function pointsForPosition(position: number, tier: ParadaScoringTier, chartSize: number) {
-  return pointsForChartPosition(position, tier, chartSize);
+function pointsForPosition(
+  position: number,
+  tier: ParadaScoringTier,
+  chartSize: number,
+  cadence?: "weekly" | "daily",
+) {
+  return pointsForChartPosition(position, tier, chartSize, cadence);
 }
 
 function colorForArtist(name: string): [string, string] {
@@ -162,7 +167,12 @@ function mergeArtistRouteMeta(
   if (sid && !cur.artistSpotifyId) cur.artistSpotifyId = sid;
 }
 
-function aggregateArtists(charts: Chart[], previousCharts: Chart[], tier: ParadaScoringTier = "primary"): ArtistTableRow[] {
+function aggregateArtists(
+  charts: Chart[],
+  previousCharts: Chart[],
+  tier: ParadaScoringTier = "primary",
+  cadence?: "weekly" | "daily",
+): ArtistTableRow[] {
   const map = new Map<
     string,
     { points: number; songs: Set<string>; weeks: Set<number>; peak: number; numberOnes: number; artistSpotifyId?: string | null; artistRefId?: number | null }
@@ -182,7 +192,7 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[], tier: Parada
           peak: e.position,
           numberOnes: 0,
         };
-        cur.points += pointsForPosition(e.position, tier, chartSize);
+        cur.points += pointsForPosition(e.position, tier, chartSize, cadence);
         cur.songs.add(e.song.title);
         cur.weeks.add(c.week);
         cur.peak = Math.min(cur.peak, e.position);
@@ -201,7 +211,7 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[], tier: Parada
         .filter(Boolean);
       const unique = [...new Set(artists)];
       unique.forEach((artist) => {
-        prevMap.set(artist, (prevMap.get(artist) ?? 0) + pointsForPosition(e.position, tier, chartSize));
+        prevMap.set(artist, (prevMap.get(artist) ?? 0) + pointsForPosition(e.position, tier, chartSize, cadence));
       });
     });
   });
@@ -253,7 +263,12 @@ function mergeSongRouteMeta(
   if (slugA && !cur.slugArtist) cur.slugArtist = slugA;
 }
 
-function aggregateSongs(charts: Chart[], previousCharts: Chart[], tier: ParadaScoringTier = "primary"): SongTableRow[] {
+function aggregateSongs(
+  charts: Chart[],
+  previousCharts: Chart[],
+  tier: ParadaScoringTier = "primary",
+  cadence?: "weekly" | "daily",
+): SongTableRow[] {
   const map = new Map<
     string,
     {
@@ -284,7 +299,7 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[], tier: ParadaSc
         numberOnes: 0,
         cover: e.cover,
       };
-      cur.points += pointsForPosition(e.position, tier, chartSize);
+      cur.points += pointsForPosition(e.position, tier, chartSize, cadence);
       cur.weeks.add(c.week);
       const prevPeak = cur.peak;
       cur.peak = Math.min(cur.peak, e.position);
@@ -299,7 +314,7 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[], tier: ParadaSc
     const chartSize = c.entries.length;
     c.entries.forEach((e) => {
       const key = `${e.song.title}\0${e.song.artist}`;
-      prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForPosition(e.position, tier, chartSize));
+      prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForPosition(e.position, tier, chartSize, cadence));
     });
   });
   const sorted = [...map.entries()].sort((a, b) => b[1].points - a[1].points);
@@ -484,6 +499,7 @@ export default function ProfilePage() {
   const genres = activeParada?.genres ?? payload?.genres ?? [];
   const scoringTier: ParadaScoringTier =
     fullPayload?.scoringTier ?? payload?.scoringTier ?? (activeParada?.isPrimary === false ? "secondary" : "primary");
+  const scoringCadence = activeParada?.cadence;
   const artistImages = (fullPayload?.artistImages ?? payload?.artistImages) ?? {};
   const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
@@ -506,27 +522,27 @@ export default function ProfilePage() {
   const overallArtistsRows = useMemo(() => {
     if (!latestWeek) return [];
     const previous = chartsSortedAsc.filter((c) => c.week < latestWeek);
-    return aggregateArtists(chartsSortedAsc, previous, scoringTier);
-  }, [chartsSortedAsc, latestWeek, scoringTier]);
+    return aggregateArtists(chartsSortedAsc, previous, scoringTier, scoringCadence);
+  }, [chartsSortedAsc, latestWeek, scoringTier, scoringCadence]);
   const overallSongsRows = useMemo(() => {
     if (!latestWeek) return [];
     const previous = chartsSortedAsc.filter((c) => c.week < latestWeek);
-    return aggregateSongs(chartsSortedAsc, previous, scoringTier);
-  }, [chartsSortedAsc, latestWeek, scoringTier]);
+    return aggregateSongs(chartsSortedAsc, previous, scoringTier, scoringCadence);
+  }, [chartsSortedAsc, latestWeek, scoringTier, scoringCadence]);
   const yearlyArtistsRows = useMemo(() => {
     if (!activeYear) return [];
     const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
     const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
     const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
-    return aggregateArtists(yearCharts, previous, scoringTier);
-  }, [chartsSortedAsc, activeYear, scoringTier]);
+    return aggregateArtists(yearCharts, previous, scoringTier, scoringCadence);
+  }, [chartsSortedAsc, activeYear, scoringTier, scoringCadence]);
   const yearlySongsRows = useMemo(() => {
     if (!activeYear) return [];
     const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
     const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
     const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
-    return aggregateSongs(yearCharts, previous, scoringTier);
-  }, [chartsSortedAsc, activeYear, scoringTier]);
+    return aggregateSongs(yearCharts, previous, scoringTier, scoringCadence);
+  }, [chartsSortedAsc, activeYear, scoringTier, scoringCadence]);
 
   const artistRowsForTab = statsScope === "overall" ? overallArtistsRows : yearlyArtistsRows;
   const songRowsForTab = statsScope === "overall" ? overallSongsRows : yearlySongsRows;
@@ -615,7 +631,7 @@ export default function ProfilePage() {
                 )}
                 {activeParada && !activeParada.isPrimary && (
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "var(--fill-subtle)", color: "var(--text-muted)" }}>
-                    Secundária · {activeParada.cadence === "daily" ? "Diária" : "Semanal"} · 10→1 pt
+                    Secundária · {activeParada.cadence === "daily" ? "Diária" : "Semanal"} · {secondaryPointsRangeLabel(activeParada.cadence)}
                   </span>
                 )}
               </div>

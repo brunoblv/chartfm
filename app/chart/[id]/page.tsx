@@ -241,8 +241,6 @@ export default function ChartDetailPage() {
   const composeImageUrl = session?.user?.image ?? null;
   const tituloDetalheParada = `${ownerParadaNome ?? "Parada"} · Top ${chart?.entries.length ?? 0}`;
   const isOwner = !!session?.user?.id && session.user.id === user?.id;
-  const isDailyParada = isDailyChartIndex(chart.week);
-  const statsLabels = chartStatsLabels(isDailyParada);
 
   async function toggleLike() {
     if (!id || !isDbChart) return;
@@ -322,6 +320,9 @@ export default function ChartDetailPage() {
       </Shell>
     );
   }
+
+  const isDailyParada = isDailyChartIndex(chart.week);
+  const statsLabels = chartStatsLabels(isDailyParada);
 
   return (
     <Shell title="" noPadding>

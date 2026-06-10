@@ -335,7 +335,7 @@ export async function POST(req: NextRequest) {
     const song = songs[i];
     const pos = i + 1;
     const chartSize = entries.length;
-    const points = pointsForChartPosition(pos, scoringTier, chartSize);
+    const points = pointsForChartPosition(pos, scoringTier, chartSize, parada.cadence);
     const prev = previousChart?.entries.find((pe) => pe.songId === song.id);
     const { palette, seed } = paletteFor(e.artist, e.title);
 

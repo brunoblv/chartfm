@@ -22,9 +22,13 @@ export async function GET(req: NextRequest) {
     UPDATE "ChartEntry" ce
     SET "points" = CASE
       WHEN p."is_primary" THEN 101 - ce."position"
-      WHEN cnt.n <= 1 THEN 10
+      WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' AND cnt.n <= 1 THEN 6
+      WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' THEN GREATEST(1, ROUND(
+        6.0 - (ce."position" - 1.0) * 5.0 / (cnt.n - 1.0)
+      ))
+      WHEN NOT p."is_primary" AND cnt.n <= 1 THEN 30
       ELSE GREATEST(1, ROUND(
-        10.0 - (ce."position" - 1.0) * 9.0 / (cnt.n - 1.0)
+        30.0 - (ce."position" - 1.0) * 29.0 / (cnt.n - 1.0)
       ))
     END
     FROM "Chart" c
@@ -37,9 +41,13 @@ export async function GET(req: NextRequest) {
       AND ce."points" IS DISTINCT FROM (
         CASE
           WHEN p."is_primary" THEN 101 - ce."position"
-          WHEN cnt.n <= 1 THEN 10
+          WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' AND cnt.n <= 1 THEN 6
+          WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' THEN GREATEST(1, ROUND(
+            6.0 - (ce."position" - 1.0) * 5.0 / (cnt.n - 1.0)
+          ))
+          WHEN NOT p."is_primary" AND cnt.n <= 1 THEN 30
           ELSE GREATEST(1, ROUND(
-            10.0 - (ce."position" - 1.0) * 9.0 / (cnt.n - 1.0)
+            30.0 - (ce."position" - 1.0) * 29.0 / (cnt.n - 1.0)
           ))
         END
       )

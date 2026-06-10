@@ -347,7 +347,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       userId: true,
       paradaId: true,
       weekIndex: true,
-      parada: { select: { isPrimary: true } },
+      parada: { select: { isPrimary: true, cadence: true } },
     },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -559,7 +559,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const entryData = entries.map((e, i) => {
     const song = songs[i];
     const pos = i + 1;
-    const points = pointsForChartPosition(pos, scoringTier, chartSize);
+    const points = pointsForChartPosition(pos, scoringTier, chartSize, chart.parada.cadence);
     const prev = previousChart?.entries.find((pe) => pe.songId === song.id);
     const { palette, seed } = paletteFor(e.artist, e.title);
 
