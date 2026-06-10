@@ -124,11 +124,6 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
   const cadence = inferCadenceFromWeekIndex(row.weekIndex);
   const currentSongIds = [...new Set(row.entries.map((e) => e.songId))];
-  const songIdToKey = new Map(
-    row.entries
-      .filter((e) => e.song)
-      .map((e) => [e.songId, `${e.song.exhibitionName?.trim() || e.song.title}\0${e.song.artist}`]),
-  );
   const [previousChartFull, nextChart] = await Promise.all([
     prisma.chart.findFirst({
       where: { paradaId: row.paradaId, weekIndex: { lt: row.weekIndex } },
@@ -203,14 +198,12 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
   const personalNumberOnes: Record<string, number> = {};
   for (const [songId, total] of personalOnesBySong.entries()) {
-    const key = songIdToKey.get(songId);
-    if (key) personalNumberOnes[key] = total;
+    personalNumberOnes[songId] = total;
   }
 
   const globalNumberOnes: Record<string, number> = {};
   for (const [songId, total] of globalOnesBySong.entries()) {
-    const key = songIdToKey.get(songId);
-    if (key) globalNumberOnes[key] = total;
+    globalNumberOnes[songId] = total;
   }
 
   const entriesWithComputedStats = row.entries.filter((entry) => entry.song).map((entry) => {

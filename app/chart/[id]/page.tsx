@@ -17,6 +17,7 @@ import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
 import { buildAlbumPath, buildArtistPath, buildSongPath } from "@/lib/music-routes";
+import { lookupNumberOnes } from "@/lib/song-stats-key";
 import {
   DESKTOP_COVER_SIZE,
   MOBILE_ARTIST_SIZE,
@@ -643,8 +644,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes, statsLabel
         ))}
       </div>
       {entries.map((e) => {
-        const key = `${e.song.title}\0${e.song.artist}`;
-        const personal = personalNumberOnes?.[key] ?? 0;
+        const personal = lookupNumberOnes(personalNumberOnes, e.song);
         return (
           <div
             key={e.position}
@@ -859,8 +859,7 @@ function VideoClipVariant({
       </div>
       {entries.map((e) => {
         const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
-        const key = `${e.song.title}\0${e.song.artist}`;
-        const personal = personalNumberOnes?.[key] ?? 0;
+        const personal = lookupNumberOnes(personalNumberOnes, e.song);
         return (
           <div
             key={e.position}
