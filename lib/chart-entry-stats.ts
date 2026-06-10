@@ -71,13 +71,13 @@ export function applyComputedEntryStatsToCharts<TChart extends AnyChart>(
   return charts.map((chart) => ({ ...chart, entries: computedByChart.get(chart) ?? [] }));
 }
 
-export async function recomputePersistedChartEntryStats(
+export async function recomputePersistedChartEntryStatsForParada(
   client: PrismaClient | Prisma.TransactionClient,
-  userId: string,
+  paradaId: string,
   fromWeekIndex?: number,
 ) {
   const charts = await client.chart.findMany({
-    where: { userId },
+    where: { paradaId },
     orderBy: { weekIndex: "asc" },
     select: {
       id: true,
@@ -108,4 +108,24 @@ export async function recomputePersistedChartEntryStats(
   );
 
   await Promise.all(updates);
+  return { charts: charts.length, entries: updates.length };
+}
+
+export async function recomputePersistedChartEntryStats(
+  client: PrismaClient | Prisma.TransactionClient,
+  userId: string,
+  fromWeekIndex?: number,
+) {
+  const paradas = await client.parada.findMany({
+    where: { userId },
+    select: { id: true },
+  });
+  let charts = 0;
+  let entries = 0;
+  for (const parada of paradas) {
+    const result = await recomputePersistedChartEntryStatsForParada(client, parada.id, fromWeekIndex);
+    charts += result.charts;
+    entries += result.entries;
+  }
+  return { charts, entries };
 }
