@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getRankingWeekReference } from "@/lib/chart-week";
+import { getRankingWeekReference, getGlobalSnapshotDeadline } from "@/lib/chart-week";
 import {
   GLOBAL_RANKING_FIRST_WEEK_INDEX,
   globalPrevWeekIndex,
@@ -28,12 +28,14 @@ function asPayload(snapshot: {
   };
 }
 
-/** Apenas paradas principais entram no ranking global (pontuação 100→1). */
-const globalChartFilter = { parada: { isPrimary: true } } as const;
+/** Filtro de chart com prazo de envio: só paradas publicadas antes da terça 00h BRT. */
+function chartFilterWithDeadline(publishedBefore: Date) {
+  return { parada: { isPrimary: true }, publishedAt: { lt: publishedBefore } };
+}
 
-async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntryRow[]> {
+async function loadWeeklyGlobalEntries(weekIdx: number, publishedBefore: Date): Promise<WeeklyChartEntryRow[]> {
   return prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: weekIdx, ...globalChartFilter }, position: { lte: 100 } },
+    where: { chart: { weekIndex: weekIdx, ...chartFilterWithDeadline(publishedBefore) }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,
@@ -58,133 +60,94 @@ async function loadWeeklyGlobalEntries(weekIdx: number): Promise<WeeklyChartEntr
   });
 }
 
-async function loadHistoricalSongStats(
-  upToWeekIdx: number,
-): Promise<Map<string, { peak: number; weeks: number; numberOnes: number }>> {
-  const rows = await prisma.chartEntry.findMany({
-    where: {
-      chart: {
-        weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: upToWeekIdx },
-        ...globalChartFilter,
-      },
-      position: { lte: 100 },
-    },
-    select: {
-      position: true,
-      points: true,
-      chart: { select: { weekIndex: true } },
-      song: { select: { spotifyId: true, title: true, artist: true } },
-    },
-  });
+// ---------------------------------------------------------------------------
+// Chaves de agregação derivadas de snapshots congelados (GlobalChartEntry/TopArtistRow)
+// Usam slugArtist (nome bruto do BD) para músicas sem Spotify ID, o que bate
+// exatamente com songAggregationKey usada em aggregateGlobalSongs.
+// ---------------------------------------------------------------------------
 
-  // Agrupa pontos por semana → música para calcular rank global por semana
-  const weekSongPoints = new Map<number, Map<string, number>>();
-  for (const r of rows) {
-    const key = r.song.spotifyId
-      ? `song_spotify:${r.song.spotifyId}`
-      : `song_local:${r.song.title.trim().replace(/\s+/g, " ").toLowerCase()}|${r.song.artist
-          .trim()
-          .replace(/\s+/g, " ")
-          .toLowerCase()}`;
-    const weekMap = weekSongPoints.get(r.chart.weekIndex) ?? new Map<string, number>();
-    const pts = r.points > 0 ? r.points : 101 - r.position;
-    weekMap.set(key, (weekMap.get(key) ?? 0) + pts);
-    weekSongPoints.set(r.chart.weekIndex, weekMap);
-  }
-
-  // Para cada semana, ranqueia músicas e conta apenas as top 100
-  const stats = new Map<string, { peak: number; weeks: number; numberOnes: number }>();
-  for (const [, songMap] of weekSongPoints) {
-    const sorted = [...songMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100);
-    for (let i = 0; i < sorted.length; i++) {
-      const [key] = sorted[i];
-      const globalPos = i + 1;
-      const cur = stats.get(key) ?? { peak: globalPos, weeks: 0, numberOnes: 0 };
-      cur.peak = Math.min(cur.peak, globalPos);
-      cur.weeks += 1;
-      if (globalPos === 1) cur.numberOnes += 1;
-      stats.set(key, cur);
-    }
-  }
-
-  return stats;
+function songSnapshotAggKey(song: {
+  spotifyId?: string | null;
+  title: string;
+  artist: string;
+  slugArtist?: string | null;
+}): string {
+  if (song.spotifyId) return `song_spotify:${song.spotifyId}`;
+  const t = song.title.trim().replace(/\s+/g, " ").toLowerCase();
+  const a = (song.slugArtist ?? song.artist).trim().replace(/\s+/g, " ").toLowerCase();
+  return `song_local:${t}|${a}`;
 }
 
-async function loadHistoricalArtistStats(
-  upToWeekIdx: number,
-): Promise<Map<string, { peak: number; weeks: number; numberOnes: number }>> {
-  const rows = await prisma.chartEntry.findMany({
-    where: {
-      chart: {
-        weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: upToWeekIdx },
-        ...globalChartFilter,
-      },
-      position: { lte: 100 },
-    },
-    select: {
-      position: true,
-      points: true,
-      chart: { select: { weekIndex: true } },
-      song: {
-        select: {
-          artist: true,
-          artistSpotifyId: true,
-          artistRef: { select: { spotifyId: true } },
-          feats: { select: { artist: { select: { spotifyId: true, name: true } } } },
-        },
-      },
-    },
+function artistSnapshotAggKey(a: { spotifyId: string | null; name: string }): string {
+  if (a.spotifyId) return `artist_spotify:${a.spotifyId}`;
+  return `artist_name:${a.name.trim().replace(/\s+/g, " ").toLowerCase()}`;
+}
+
+type HistoricalStat = { peak: number; weeks: number; numberOnes: number };
+
+function accumulateSongStats(
+  songs: GlobalSnapshotPayload["weeklySongs"],
+  stats: Map<string, HistoricalStat>,
+): void {
+  for (const s of songs) {
+    const key = songSnapshotAggKey(s.song);
+    const cur = stats.get(key) ?? { peak: s.position, weeks: 0, numberOnes: 0 };
+    cur.peak = Math.min(cur.peak, s.position);
+    cur.weeks += 1;
+    if (s.position === 1) cur.numberOnes += 1;
+    stats.set(key, cur);
+  }
+}
+
+function accumulateArtistStats(
+  artists: GlobalSnapshotPayload["weeklyArtists"],
+  stats: Map<string, HistoricalStat>,
+): void {
+  for (const a of artists) {
+    const key = artistSnapshotAggKey(a);
+    const cur = stats.get(key) ?? { peak: a.position, weeks: 0, numberOnes: 0 };
+    cur.peak = Math.min(cur.peak, a.position);
+    cur.weeks += 1;
+    if (a.position === 1) cur.numberOnes += 1;
+    stats.set(key, cur);
+  }
+}
+
+/**
+ * Carrega todos os snapshots congelados para semanas < weekIdx e deriva:
+ * - stats semanais (weeklySongs / weeklyArtists): posição no ranking semanal
+ * - stats acumulados (overallSongs / overallArtists): posição no ranking geral
+ *
+ * Retorna mapas chave→{peak,weeks,numberOnes} para cada dimensão.
+ * Ao contrário de loadHistoricalSongStats (baseado em entradas brutas com um único
+ * deadline de corte), esta função respeita cada snapshot como foi congelado,
+ * evitando que paradas publicadas retroativamente contaminem semanas anteriores.
+ */
+async function loadHistoricalStatsFromSnapshots(weekIdx: number): Promise<{
+  weeklySongs: Map<string, HistoricalStat>;
+  overallSongs: Map<string, HistoricalStat>;
+  weeklyArtists: Map<string, HistoricalStat>;
+  overallArtists: Map<string, HistoricalStat>;
+}> {
+  const snapshots = await prisma.globalSnapshot.findMany({
+    where: { weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lt: weekIdx } },
+    select: { weeklySongs: true, overallSongs: true, weeklyArtists: true, overallArtists: true },
+    orderBy: { weekIndex: "asc" },
   });
 
-  const weekArtistPoints = new Map<string, Map<number, number>>();
-  for (const r of rows) {
-    const contributors = [
-      {
-        sid: r.song.artistRef?.spotifyId ?? r.song.artistSpotifyId ?? null,
-        name: r.song.artist,
-      },
-      ...(r.song.feats ?? []).map((f) => ({
-        sid: f.artist.spotifyId,
-        name: f.artist.name,
-      })),
-    ];
-    const seen = new Set<string>();
-    const pts = r.points > 0 ? r.points : 101 - r.position;
-    for (const contributor of contributors) {
-      const key = contributor.sid
-        ? `artist_spotify:${contributor.sid}`
-        : `artist_name:${contributor.name.trim().replace(/\s+/g, " ").toLowerCase()}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const weekMap = weekArtistPoints.get(key) ?? new Map<number, number>();
-      weekMap.set(r.chart.weekIndex, (weekMap.get(r.chart.weekIndex) ?? 0) + pts);
-      weekArtistPoints.set(key, weekMap);
-    }
+  const weeklySongs = new Map<string, HistoricalStat>();
+  const overallSongs = new Map<string, HistoricalStat>();
+  const weeklyArtists = new Map<string, HistoricalStat>();
+  const overallArtists = new Map<string, HistoricalStat>();
+
+  for (const snap of snapshots) {
+    accumulateSongStats(snap.weeklySongs as unknown as GlobalSnapshotPayload["weeklySongs"], weeklySongs);
+    accumulateSongStats(snap.overallSongs as unknown as GlobalSnapshotPayload["overallSongs"], overallSongs);
+    accumulateArtistStats(snap.weeklyArtists as unknown as GlobalSnapshotPayload["weeklyArtists"], weeklyArtists);
+    accumulateArtistStats(snap.overallArtists as unknown as GlobalSnapshotPayload["overallArtists"], overallArtists);
   }
 
-  const stats = new Map<string, { peak: number; weeks: number; numberOnes: number }>();
-  const weeklyRanks = new Map<number, { key: string; pts: number }[]>();
-  for (const [artistKey, wkMap] of weekArtistPoints) {
-    for (const [wk, pts] of wkMap) {
-      const arr = weeklyRanks.get(wk) ?? [];
-      arr.push({ key: artistKey, pts });
-      weeklyRanks.set(wk, arr);
-    }
-  }
-  for (const [, arr] of weeklyRanks) {
-    const sorted = arr.sort((a, b) => b.pts - a.pts);
-    for (let i = 0; i < Math.min(sorted.length, 100); i++) {
-      const a = sorted[i];
-      const globalPos = i + 1;
-      const cur = stats.get(a.key) ?? { peak: globalPos, weeks: 0, numberOnes: 0 };
-      cur.peak = Math.min(cur.peak, globalPos);
-      cur.weeks += 1;
-      if (globalPos === 1) cur.numberOnes += 1;
-      stats.set(a.key, cur);
-    }
-  }
-
-  return stats;
+  return { weeklySongs, overallSongs, weeklyArtists, overallArtists };
 }
 
 const chartEntrySelect = {
@@ -211,27 +174,20 @@ const chartEntrySelect = {
 
 function buildSongPrevPositions(songs: GlobalSnapshotPayload["weeklySongs"]): Map<string, number> {
   return new Map(
-    songs.map((s) => {
-      const key = s.song.spotifyId
-        ? `song_spotify:${s.song.spotifyId}`
-        : `song_local:${s.song.title.trim().replace(/\s+/g, " ").toLowerCase()}|${s.song.artist.trim().replace(/\s+/g, " ").toLowerCase()}`;
-      return [key, s.position] as [string, number];
-    }),
+    songs.map((s) => [songSnapshotAggKey(s.song), s.position] as [string, number]),
   );
 }
 
 function buildArtistPrevPositions(artists: GlobalSnapshotPayload["weeklyArtists"]): Map<string, number> {
   return new Map(
-    artists.map((a) => {
-      const key = a.spotifyId
-        ? `artist_spotify:${a.spotifyId}`
-        : `artist_name:${a.name.trim().replace(/\s+/g, " ").toLowerCase()}`;
-      return [key, a.position] as [string, number];
-    }),
+    artists.map((a) => [artistSnapshotAggKey(a), a.position] as [string, number]),
   );
 }
 
-export async function computeGlobalSnapshotData(weekIdx: number): Promise<GlobalSnapshotPayload> {
+export async function computeGlobalSnapshotData(
+  weekIdx: number,
+  options?: { skipDeadline?: boolean },
+): Promise<GlobalSnapshotPayload> {
   if (!isGlobalRankingWeek(weekIdx)) {
     throw new Error(
       `Semana ${weekIdx} está antes do corte do Global 100 (${GLOBAL_RANKING_FIRST_WEEK_INDEX}).`,
@@ -239,12 +195,18 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
   }
   const prevWeekIdx = globalPrevWeekIndex(weekIdx);
 
-  const [weeklyEntries, prevWeekEntries, historicalSongStats, historicalArtistStats, prevFrozenSnapshot] =
+  const FAR_FUTURE = new Date("2099-12-31T23:59:59Z");
+  // Apenas paradas publicadas antes de terça 00h BRT entram no cálculo (a menos que skipDeadline)
+  const deadline = options?.skipDeadline ? FAR_FUTURE : getGlobalSnapshotDeadline(weekIdx);
+  const prevDeadline = prevWeekIdx
+    ? (options?.skipDeadline ? FAR_FUTURE : getGlobalSnapshotDeadline(prevWeekIdx))
+    : null;
+
+  const [weeklyEntries, prevWeekEntries, historicalStats, prevFrozenSnapshot] =
     await Promise.all([
-      loadWeeklyGlobalEntries(weekIdx),
-      prevWeekIdx ? loadWeeklyGlobalEntries(prevWeekIdx) : Promise.resolve([]),
-      loadHistoricalSongStats(weekIdx),
-      loadHistoricalArtistStats(weekIdx),
+      loadWeeklyGlobalEntries(weekIdx, deadline),
+      prevWeekIdx && prevDeadline ? loadWeeklyGlobalEntries(prevWeekIdx, prevDeadline) : Promise.resolve([]),
+      loadHistoricalStatsFromSnapshots(weekIdx),
       prevWeekIdx ? prisma.globalSnapshot.findUnique({ where: { weekIndex: prevWeekIdx } }) : Promise.resolve(null),
     ]);
 
@@ -253,18 +215,18 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
       where: {
         chart: {
           weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: weekIdx },
-          ...globalChartFilter,
+          ...chartFilterWithDeadline(deadline),
         },
         position: { lte: 100 },
       },
       select: chartEntrySelect,
     }),
-    prevWeekIdx
+    prevWeekIdx && prevDeadline
       ? prisma.chartEntry.findMany({
           where: {
             chart: {
               weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX, lte: prevWeekIdx },
-              ...globalChartFilter,
+              ...chartFilterWithDeadline(prevDeadline),
             },
             position: { lte: 100 },
           },
@@ -278,25 +240,25 @@ export async function computeGlobalSnapshotData(weekIdx: number): Promise<Global
   return {
     weeklySongs: aggregateGlobalSongs(weeklyEntries, 100, {
       previousWeekEntries: prevWeekEntries,
-      historicalStatsBySongKey: historicalSongStats,
+      historicalStatsBySongKey: historicalStats.weeklySongs,
       comparisonEntries: prevWeekEntries,
       prevPositionsByKey: prevPayload ? buildSongPrevPositions(prevPayload.weeklySongs) : undefined,
     }),
     weeklyArtists: aggregateTopArtists(weeklyEntries, 100, {
       previousWeekEntries: prevWeekEntries,
-      historicalStatsByArtistKey: historicalArtistStats,
+      historicalStatsByArtistKey: historicalStats.weeklyArtists,
       comparisonEntries: prevWeekEntries,
       prevPositionsByKey: prevPayload ? buildArtistPrevPositions(prevPayload.weeklyArtists) : undefined,
     }),
     overallSongs: aggregateGlobalSongs(overallEntries, 100, {
       previousWeekEntries: prevOverallEntries,
-      historicalStatsBySongKey: historicalSongStats,
+      historicalStatsBySongKey: historicalStats.overallSongs,
       comparisonEntries: prevOverallEntries,
       prevPositionsByKey: prevPayload ? buildSongPrevPositions(prevPayload.overallSongs) : undefined,
     }),
     overallArtists: aggregateTopArtists(overallEntries, 100, {
       previousWeekEntries: prevOverallEntries,
-      historicalStatsByArtistKey: historicalArtistStats,
+      historicalStatsByArtistKey: historicalStats.overallArtists,
       comparisonEntries: prevOverallEntries,
       prevPositionsByKey: prevPayload ? buildArtistPrevPositions(prevPayload.overallArtists) : undefined,
     }),
@@ -370,9 +332,9 @@ export async function listGlobalRankingWeekIndexes(): Promise<number[]> {
   return rows.map((r) => r.weekIndex);
 }
 
-export async function saveGlobalSnapshotForWeek(weekIndex: number) {
+export async function saveGlobalSnapshotForWeek(weekIndex: number, options?: { skipDeadline?: boolean }) {
   const { weekLabel, dateRange } = await resolveWeekMeta(weekIndex);
-  const payload = await computeGlobalSnapshotData(weekIndex);
+  const payload = await computeGlobalSnapshotData(weekIndex, options);
   const saved = await prisma.globalSnapshot.upsert({
     where: { weekIndex },
     update: {

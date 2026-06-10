@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { prevChartWeekIndex } from "@/lib/chart-week";
 
 export type ComputedEntryStats = {
   status: "new" | "return" | "up" | "down" | "same";
@@ -18,23 +19,8 @@ type AnyChart = {
   entries: EntryLike[];
 };
 
-function isoWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-}
-
-function isoWeeksInYear(year: number): number {
-  return isoWeek(new Date(Date.UTC(year, 11, 28)));
-}
-
 export function prevWeekIndex(index: number): number {
-  const year = Math.floor(index / 100);
-  const week = index % 100;
-  if (week > 1) return year * 100 + (week - 1);
-  const prevYear = year - 1;
-  return prevYear * 100 + isoWeeksInYear(prevYear);
+  return prevChartWeekIndex(index);
 }
 
 export function applyComputedEntryStatsToCharts<TChart extends AnyChart>(

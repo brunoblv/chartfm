@@ -183,7 +183,7 @@ export function aggregateTopArtists(
     let status: TopArtistRow["status"] = "new";
     if (prevPos !== null) {
       status = delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
-    } else if ((historical?.weeks ?? 0) > 1) {
+    } else if ((historical?.weeks ?? 0) > 0) {
       status = "return";
     }
     const prevPoints = comparisonByArtist.get(k) ?? 0;
@@ -198,9 +198,9 @@ export function aggregateTopArtists(
       delta,
       prevPos,
       growthPct,
-      peak: historical?.peak ?? position,
-      weeks: historical?.weeks ?? 1,
-      numberOnes: historical?.numberOnes ?? 0,
+      peak: Math.min(historical?.peak ?? position, position),
+      weeks: (historical?.weeks ?? 0) + 1,
+      numberOnes: (historical?.numberOnes ?? 0) + (position === 1 ? 1 : 0),
     };
   });
 }
@@ -277,7 +277,7 @@ export function aggregateGlobalSongs(
       if (delta === 0) status = "same";
       else if ((delta ?? 0) > 0) status = "up";
       else status = "down";
-    } else if ((historical?.weeks ?? 0) > 1) {
+    } else if ((historical?.weeks ?? 0) > 0) {
       status = "return";
     }
     const prevPoints = comparisonBySong.get(row.key) ?? 0;
@@ -310,9 +310,9 @@ export function aggregateGlobalSongs(
       delta,
       prevPos,
       growthPct,
-      peak: historical?.peak ?? row.best.position,
-      weeks: historical?.weeks ?? row.charts.size,
-      numberOnes: historical?.numberOnes ?? 0,
+      peak: Math.min(historical?.peak ?? position, position),
+      weeks: (historical?.weeks ?? 0) + 1,
+      numberOnes: (historical?.numberOnes ?? 0) + (position === 1 ? 1 : 0),
     };
   });
 }

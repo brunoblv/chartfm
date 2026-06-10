@@ -335,6 +335,11 @@ export const pagesEn = {
     tagImprovement: "Improvement",
     tagFix: "Fix",
     tagDesign: "Design",
+    tabAll: "All",
+    tabNew: "New features",
+    tabImprovement: "Improvements",
+    tabFix: "Bug fixes",
+    tabDesign: "Design",
   },
   about: {
     title: "About ChartFM",

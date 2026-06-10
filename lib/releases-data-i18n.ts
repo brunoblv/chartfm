@@ -3,6 +3,24 @@ import { RELEASES, TAG_META, type Release, type ReleaseTag } from "@/lib/release
 
 const RELEASES_EN: Release[] = [
   {
+    date: "2026-06-09",
+    label: "June 9, 2026",
+    entries: [
+      {
+        title: "What's New with categories",
+        tag: "design",
+        description:
+          "The 'What's New' page now has tabs to filter by category: New features, Improvements, Bug fixes, and Design. Each tab shows a counter with the total items in that category.",
+      },
+      {
+        title: "Global Chart snapshot update",
+        tag: "melhoria",
+        description:
+          "The weekly Global Chart snapshot generation logic was improved for greater accuracy and consistency in historical data. The schedule was also revised to reduce windows of inconsistency between publication and recording.",
+      },
+    ],
+  },
+  {
     date: "2026-06-07",
     label: "June 7, 2026",
     entries: [

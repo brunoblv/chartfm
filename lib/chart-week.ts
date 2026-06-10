@@ -50,8 +50,10 @@ export function buildWeekIndexFromDate(date: Date): number {
 }
 
 /** Semana ISO da data 28/12 (última semana ISO do ano civil). */
-function isoWeeksInYear(year: number): number {
-  return isoWeek(new Date(Date.UTC(year, 11, 28)));
+export function isoWeeksInYear(year: number): number {
+  // Usar componentes locais (como buildWeekIndexFromDate) — Date.UTC aqui desloca o dia
+  // em fusos à oeste de Greenwich e subconta anos com 53 semanas ISO (ex.: 2020 → 52 em vez de 53).
+  return isoWeek(new Date(year, 11, 28));
 }
 
 /** `weekIndex` codificado como `ano*100 + semanaISO` (igual ao banco). Semana imediatamente anterior. */
@@ -235,6 +237,26 @@ export function chartWeekUnixRangeFromAnchor(weekAnchor: Date): { from: number; 
     from: Math.floor(fromMs / 1000),
     toExclusive: Math.floor(dayAfter.getTime() / 1000),
   };
+}
+
+/**
+ * Prazo para paradas contarem no snapshot global de uma semana.
+ * Retorna terça-feira 00:00 BRT (= 03:00 UTC) da semana seguinte ao weekIndex.
+ * Charts com publishedAt >= este valor não entram no cálculo.
+ */
+export function getGlobalSnapshotDeadline(weekIndex: number): Date {
+  const year = Math.floor(weekIndex / 100);
+  const week = weekIndex % 100;
+  // Jan 4 está sempre na semana ISO 1
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Dow = jan4.getUTCDay() || 7; // Segunda=1 … Domingo=7
+  const monday = new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate() - jan4Dow + 1 + (week - 1) * 7);
+  // Terça da semana seguinte = segunda + 8 dias, às 03:00 UTC (= 00:00 BRT)
+  const deadline = new Date(monday);
+  deadline.setUTCDate(monday.getUTCDate() + 8);
+  deadline.setUTCHours(3, 0, 0, 0);
+  return deadline;
 }
 
 export function formatChartPeriod(chart: Pick<Chart, "weekLabel" | "dateRange">): string {

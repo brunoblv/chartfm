@@ -111,6 +111,7 @@ type ArtistTableRow = {
   totalPoints: number;
   weeks: number;
   peak: number;
+  numberOnes: number;
   prevPos: number | null;
   delta: number | null;
   status: "new" | "return" | "up" | "down" | "same";
@@ -131,6 +132,7 @@ type SongTableRow = {
   totalPoints: number;
   weeks: number;
   peak: number;
+  numberOnes: number;
   prevPos: number | null;
   delta: number | null;
   status: "new" | "return" | "up" | "down" | "same";
@@ -163,7 +165,7 @@ function mergeArtistRouteMeta(
 function aggregateArtists(charts: Chart[], previousCharts: Chart[], tier: ParadaScoringTier = "primary"): ArtistTableRow[] {
   const map = new Map<
     string,
-    { points: number; songs: Set<string>; weeks: Set<number>; peak: number; artistSpotifyId?: string | null; artistRefId?: number | null }
+    { points: number; songs: Set<string>; weeks: Set<number>; peak: number; numberOnes: number; artistSpotifyId?: string | null; artistRefId?: number | null }
   >();
   charts.forEach((c) => {
     const chartSize = c.entries.length;
@@ -178,11 +180,13 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[], tier: Parada
           songs: new Set<string>(),
           weeks: new Set<number>(),
           peak: e.position,
+          numberOnes: 0,
         };
         cur.points += pointsForPosition(e.position, tier, chartSize);
         cur.songs.add(e.song.title);
         cur.weeks.add(c.week);
         cur.peak = Math.min(cur.peak, e.position);
+        if (e.position === 1) cur.numberOnes += 1;
         mergeArtistRouteMeta(cur, e.song, key);
         map.set(key, cur);
       });
@@ -217,6 +221,7 @@ function aggregateArtists(charts: Chart[], previousCharts: Chart[], tier: Parada
       totalPoints: v.points,
       weeks: v.weeks.size,
       peak: v.peak,
+      numberOnes: v.numberOnes,
       prevPos,
       delta,
       status,
@@ -257,6 +262,7 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[], tier: ParadaSc
       points: number;
       weeks: Set<number>;
       peak: number;
+      numberOnes: number;
       cover: Chart["entries"][number]["cover"];
       songId?: string | null;
       slugArtist?: string | null;
@@ -275,12 +281,14 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[], tier: ParadaSc
         points: 0,
         weeks: new Set<number>(),
         peak: e.position,
+        numberOnes: 0,
         cover: e.cover,
       };
       cur.points += pointsForPosition(e.position, tier, chartSize);
       cur.weeks.add(c.week);
       const prevPeak = cur.peak;
       cur.peak = Math.min(cur.peak, e.position);
+      if (e.position === 1) cur.numberOnes += 1;
       if (e.position < prevPeak) cur.cover = e.cover;
       mergeSongRouteMeta(cur, e.song);
       map.set(key, cur);
@@ -315,6 +323,7 @@ function aggregateSongs(charts: Chart[], previousCharts: Chart[], tier: ParadaSc
       totalPoints: v.points,
       weeks: v.weeks.size,
       peak: v.peak,
+      numberOnes: v.numberOnes,
       prevPos,
       delta,
       status,
@@ -446,7 +455,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!handle || source !== "db") return;
-    if (paradaTab === "charts") return;
     if (fullPayload && fullPayload.activeParadaId === activeParadaId) return;
     let cancelled = false;
     setLoadingFullStats(true);
@@ -465,7 +473,7 @@ export default function ProfilePage() {
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paradaTab, handle, source, fullPayload, activeParadaId]);
+  }, [handle, source, fullPayload, activeParadaId]);
 
   const user = payload?.user ?? mockUser;
   const statsUser = source === "db" ? (fullPayload?.user ?? null) : user;
@@ -1267,9 +1275,17 @@ function PaginationBar({
   );
 }
 
+function NumberOnesCell({ value, fontSize = 13 }: { value: number; fontSize?: number }) {
+  return (
+    <div style={{ fontSize, fontWeight: value > 0 ? 700 : 400, fontVariantNumeric: "tabular-nums", color: value > 0 ? "var(--text)" : "var(--text-disabled)" }}>
+      {value > 0 ? `${value}x` : "—"}
+    </div>
+  );
+}
+
 function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableRow[]; artistImages: Record<string, string | null>; isMobile?: boolean }) {
-  const cols = isMobile ? "36px 48px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 80px 70px 110px";
-  const headers = isMobile ? ["Pos", "", "Artista", "Pts"] : ["Pos", "", "Artista", "Sem.", "Pico", "Músicas", "Pontos"];
+  const cols = isMobile ? "36px 48px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 70px 60px 80px 110px";
+  const headers = isMobile ? ["Pos", "", "Artista", "Pts"] : ["Pos", "", "Artista", "Sem.", "Pico", "#1s", "Músicas", "Pontos"];
   const imgSize = isMobile ? 36 : 44;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -1313,6 +1329,7 @@ function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableR
             </Link>
             {!isMobile && <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>}
             {!isMobile && <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>}
+            {!isMobile && <NumberOnesCell value={r.numberOnes} />}
             {!isMobile && <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.songCount}</div>}
             <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
           </div>
@@ -1323,8 +1340,8 @@ function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableR
 }
 
 function SongStatsTable({ rows, isMobile }: { rows: SongTableRow[]; isMobile?: boolean }) {
-  const cols = isMobile ? "36px 44px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 70px 110px";
-  const headers = isMobile ? ["Pos", "", "Música", "Pts"] : ["Pos", "", "Música", "Sem.", "Pico", "Pontos"];
+  const cols = isMobile ? "36px 44px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 70px 60px 110px";
+  const headers = isMobile ? ["Pos", "", "Música", "Pts"] : ["Pos", "", "Música", "Sem.", "Pico", "#1s", "Pontos"];
   const coverSize = isMobile ? 36 : 48;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -1367,6 +1384,7 @@ function SongStatsTable({ rows, isMobile }: { rows: SongTableRow[]; isMobile?: b
             </div>
             {!isMobile && <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.weeks}</div>}
             {!isMobile && <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{r.peak}</div>}
+            {!isMobile && <NumberOnesCell value={r.numberOnes} />}
             <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums" }}>{r.totalPoints}</div>
           </div>
         );

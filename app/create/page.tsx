@@ -445,7 +445,11 @@ export default function CreatePage() {
   const importLastChart = async () => {
     const wd = weekDate.trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(wd)) {
-      setPublishError("Selecione uma data válida no campo Data para importar a parada da semana anterior.");
+      setPublishError(
+        activeParadaCadence === "daily"
+          ? "Selecione uma data válida no campo Data para importar a parada anterior."
+          : "Selecione uma data válida no campo Data para importar a parada da semana anterior.",
+      );
       return;
     }
     setImportingLast(true);
@@ -459,7 +463,7 @@ export default function CreatePage() {
         if (res.status === 404) {
           setPublishError(
             activeParadaCadence === "daily"
-              ? "Não há parada publicada no dia anterior ao selecionado."
+              ? "Não há parada publicada no dia anterior."
               : "Não há parada publicada na semana anterior à do campo Data.",
           );
           return;
@@ -837,7 +841,11 @@ export default function CreatePage() {
           type="button"
           onClick={importLastChart}
           disabled={importingLast}
-          title="Copia a parada que você publicou na semana ISO imediatamente anterior à do campo Data"
+          title={
+            activeParadaCadence === "daily"
+              ? "Copia a parada que você publicou no dia imediatamente anterior ao do campo Data"
+              : "Copia a parada que você publicou na semana ISO imediatamente anterior à do campo Data"
+          }
           style={{
             border: "1px solid var(--divider-strong)",
             background: "var(--surface)",

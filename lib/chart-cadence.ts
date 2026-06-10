@@ -105,3 +105,18 @@ export function formatDayPickerLabel(date: Date): string {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   return `${dd}/${mm}/${date.getFullYear()}`;
 }
+
+/** Rótulos de estatísticas da parada conforme cadência (diária vs semanal). */
+export function chartStatsLabels(isDaily: boolean) {
+  return {
+    prevPeriodShort: isDaily ? "Anterior" : "Semana ant.",
+    tenureShort: isDaily ? "Dias" : "Sem.",
+    tenurePill: isDaily ? "DIA" : "SEM",
+    tenureSuffix: isDaily ? "dias" : "sem.",
+    noDropouts: isDaily
+      ? "Nenhuma saída neste dia — primeira parada ou todas as músicas permaneceram."
+      : "Nenhuma saída nesta semana — primeira parada ou todas as músicas permaneceram.",
+    overlapLoading: isDaily ? "Calculando afinidade do dia..." : "Calculando afinidade da semana...",
+    overlapEmpty: isDaily ? "Nenhuma afinidade encontrada neste dia." : "Nenhuma afinidade encontrada nesta semana.",
+  };
+}

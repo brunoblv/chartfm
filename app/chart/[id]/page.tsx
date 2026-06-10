@@ -12,6 +12,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { VideoClipCover } from "@/components/ui/VideoClipCover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
+import { chartStatsLabels, isDailyChartIndex } from "@/lib/chart-cadence";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
@@ -240,6 +241,8 @@ export default function ChartDetailPage() {
   const composeImageUrl = session?.user?.image ?? null;
   const tituloDetalheParada = `${ownerParadaNome ?? "Parada"} · Top ${chart?.entries.length ?? 0}`;
   const isOwner = !!session?.user?.id && session.user.id === user?.id;
+  const isDailyParada = isDailyChartIndex(chart.week);
+  const statsLabels = chartStatsLabels(isDailyParada);
 
   async function toggleLike() {
     if (!id || !isDbChart) return;
@@ -458,7 +461,7 @@ export default function ChartDetailPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
                   {dbPayload.previousChart && (
                     <Link href={`/chart/${dbPayload.previousChart.id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px" }}>
-                      ← Parada anterior
+                      ← Anterior
                     </Link>
                   )}
                   {dbPayload.nextChart && (
@@ -536,17 +539,17 @@ export default function ChartDetailPage() {
       {/* Tab content */}
       {tab === "chart" && (
         <>
-          {variant === "list" && <ClassicList entries={chart.entries} personalNumberOnes={personalNumberOnes} globalNumberOnes={globalNumberOnes} />}
-          {variant === "grid" && <GridVariant entries={chart.entries} />}
-          {variant === "podium" && <PodiumVariant entries={chart.entries} />}
+          {variant === "list" && <ClassicList entries={chart.entries} personalNumberOnes={personalNumberOnes} globalNumberOnes={globalNumberOnes} statsLabels={statsLabels} />}
+          {variant === "grid" && <GridVariant entries={chart.entries} statsLabels={statsLabels} />}
+          {variant === "podium" && <PodiumVariant entries={chart.entries} statsLabels={statsLabels} />}
           {variant === "video_clip" && (
             loadingClips
               ? <div style={{ padding: 40, color: "var(--text-muted)", fontSize: 15 }}>Carregando capturas…</div>
-              : <VideoClipVariant entries={chart.entries} videoClips={videoClips} personalNumberOnes={personalNumberOnes} />
+              : <VideoClipVariant entries={chart.entries} videoClips={videoClips} personalNumberOnes={personalNumberOnes} statsLabels={statsLabels} />
           )}
         </>
       )}
-      {tab === "saidas" && <PersonalDropoutsTab dropouts={dropouts} isDbChart={isDbChart} />}
+      {tab === "saidas" && <PersonalDropoutsTab dropouts={dropouts} isDbChart={isDbChart} statsLabels={statsLabels} />}
       {tab === "comments" && (
         <CommentsTab
           chartId={chart.id}
@@ -556,7 +559,7 @@ export default function ChartDetailPage() {
           onCommentAdded={() => setCommentCount((c) => c + 1)}
         />
       )}
-      {tab === "overlap" && <OverlapTab chartId={chart.id} isDbChart={isDbChart} />}
+      {tab === "overlap" && <OverlapTab chartId={chart.id} isDbChart={isDbChart} statsLabels={statsLabels} />}
       </div>
     </Shell>
   );
@@ -572,7 +575,9 @@ function StatPill({ label, value, accent, compact }: { label: string; value: num
   );
 }
 
-function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entries: ChartEntry[]; personalNumberOnes?: Record<string, number>; globalNumberOnes?: Record<string, number> }) {
+type ChartStatsLabels = ReturnType<typeof chartStatsLabels>;
+
+function ClassicList({ entries, personalNumberOnes, globalNumberOnes, statsLabels }: { entries: ChartEntry[]; personalNumberOnes?: Record<string, number>; globalNumberOnes?: Record<string, number>; statsLabels: ChartStatsLabels }) {
   const isMobile = useIsMobile();
   const coverSize = DESKTOP_COVER_SIZE;
   const gridColumns = desktopListGrid(desktopCoverGridColumn(coverSize), "80px 80px 60px 90px");
@@ -614,7 +619,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
               <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
               <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill compact label="SEM" value={e.weeks} />
+              <StatPill compact label={statsLabels.tenurePill} value={e.weeks} />
             </div>
           </div>
         ))}
@@ -632,7 +637,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {["Pos", "", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
+        {["Pos", "", "Música", statsLabels.prevPeriodShort, statsLabels.tenureShort, "Pico", "#1s"].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
         ))}
       </div>
@@ -688,7 +693,7 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes }: { entrie
   );
 }
 
-function GridVariant({ entries }: { entries: ChartEntry[] }) {
+function GridVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsLabels: ChartStatsLabels }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 20 }}>
       {entries.map((e) => (
@@ -707,7 +712,7 @@ function GridVariant({ entries }: { entries: ChartEntry[] }) {
           <div style={{ padding: "10px 12px" }}>
             <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
             <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Pico #{e.peak} · {e.weeks} sem.</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Pico #{e.peak} · {e.weeks} {statsLabels.tenureSuffix}</div>
           </div>
         </div>
       ))}
@@ -715,9 +720,9 @@ function GridVariant({ entries }: { entries: ChartEntry[] }) {
   );
 }
 
-function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
+function PodiumVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsLabels: ChartStatsLabels }) {
   if (entries.length < 3) {
-    return <ClassicList entries={entries} />;
+    return <ClassicList entries={entries} statsLabels={statsLabels} />;
   }
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
@@ -759,7 +764,7 @@ function PodiumVariant({ entries }: { entries: ChartEntry[] }) {
           </div>
         ))}
       </div>
-      <ClassicList entries={rest} />
+      <ClassicList entries={rest} statsLabels={statsLabels} />
     </>
   );
 }
@@ -768,10 +773,12 @@ function VideoClipVariant({
   entries,
   videoClips,
   personalNumberOnes,
+  statsLabels,
 }: {
   entries: ChartEntry[];
   videoClips: Record<string, string>;
   personalNumberOnes?: Record<string, number>;
+  statsLabels: ChartStatsLabels;
 }) {
   const isMobile = useIsMobile();
   const clipHeight = isMobile ? MOBILE_COVER_SIZE : 125;
@@ -826,7 +833,7 @@ function VideoClipVariant({
               <div style={{ display: "flex", gap: 8, paddingLeft: mobileClipIndent }}>
                 <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
                 <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-                <StatPill compact label="SEM" value={e.weeks} />
+                <StatPill compact label={statsLabels.tenurePill} value={e.weeks} />
               </div>
             </div>
           );
@@ -845,7 +852,7 @@ function VideoClipVariant({
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {["Pos", "", "Música", "Semana ant.", "Sem.", "Pico", "#1s"].map((h, i) => (
+        {["Pos", "", "Música", statsLabels.prevPeriodShort, statsLabels.tenureShort, "Pico", "#1s"].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
         ))}
       </div>
@@ -916,7 +923,7 @@ function PersonalExitBadge() {
   );
 }
 
-function PersonalDropoutsTab({ dropouts, isDbChart }: { dropouts: PersonalDropoutEntry[]; isDbChart: boolean }) {
+function PersonalDropoutsTab({ dropouts, isDbChart, statsLabels }: { dropouts: PersonalDropoutEntry[]; isDbChart: boolean; statsLabels: ChartStatsLabels }) {
   const isMobile = useIsMobile();
 
   if (!isDbChart) {
@@ -930,7 +937,7 @@ function PersonalDropoutsTab({ dropouts, isDbChart }: { dropouts: PersonalDropou
   if (dropouts.length === 0) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma saída nesta semana — primeira parada ou todas as músicas permaneceram.
+        {statsLabels.noDropouts}
       </div>
     );
   }
@@ -963,7 +970,7 @@ function PersonalDropoutsTab({ dropouts, isDbChart }: { dropouts: PersonalDropou
             </div>
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
               <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill compact label="SEM" value={e.weeks} />
+              <StatPill compact label={statsLabels.tenurePill} value={e.weeks} />
             </div>
           </div>
         ))}
@@ -976,7 +983,7 @@ function PersonalDropoutsTab({ dropouts, isDbChart }: { dropouts: PersonalDropou
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
       <div style={{ display: "grid", gridTemplateColumns: dropoutGrid, gap: 0, padding: "0 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
-        {["Últ.", "", "Música", "Pico", "Sem."].map((h, i) => (
+        {["Últ.", "", "Música", "Pico", statsLabels.tenureShort].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
         ))}
       </div>
@@ -1265,7 +1272,7 @@ function CommentsTab({
   );
 }
 
-function OverlapTab({ chartId, isDbChart }: { chartId: string; isDbChart: boolean }) {
+function OverlapTab({ chartId, isDbChart, statsLabels }: { chartId: string; isDbChart: boolean; statsLabels: ChartStatsLabels }) {
   const [rows, setRows] = useState<OverlapRow[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -1292,7 +1299,7 @@ function OverlapTab({ chartId, isDbChart }: { chartId: string; isDbChart: boolea
   if (loading) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, color: "var(--text-muted)", fontSize: 14 }}>
-        Calculando afinidade da semana...
+        {statsLabels.overlapLoading}
       </div>
     );
   }
@@ -1300,7 +1307,7 @@ function OverlapTab({ chartId, isDbChart }: { chartId: string; isDbChart: boolea
   if (rows.length === 0) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma afinidade encontrada nesta semana.
+        {statsLabels.overlapEmpty}
       </div>
     );
   }

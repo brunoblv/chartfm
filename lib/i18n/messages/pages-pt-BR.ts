@@ -335,6 +335,11 @@ export const pagesPtBR = {
     tagImprovement: "Melhoria",
     tagFix: "Correção",
     tagDesign: "Design",
+    tabAll: "Tudo",
+    tabNew: "Novas funções",
+    tabImprovement: "Melhorias",
+    tabFix: "Correções",
+    tabDesign: "Design",
   },
   about: {
     title: "Sobre o ChartFM",

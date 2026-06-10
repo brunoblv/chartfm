@@ -14,6 +14,24 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    date: "2026-06-09",
+    label: "9 de junho de 2026",
+    entries: [
+      {
+        title: "O que há de novo com categorias",
+        tag: "design",
+        description:
+          "A página 'O que há de novo' ganhou abas para filtrar por categoria: Novas funções, Melhorias, Correções e Design. Cada aba mostra um contador com o total de itens naquela categoria.",
+      },
+      {
+        title: "Atualização do snapshot da Parada Global",
+        tag: "melhoria",
+        description:
+          "A lógica de geração do snapshot semanal da Parada Global foi aprimorada para garantir maior precisão e consistência nos dados históricos. O agendamento também foi revisado para reduzir janelas de inconsistência entre a publicação e o registro.",
+      },
+    ],
+  },
+  {
     date: "2026-06-07",
     label: "7 de junho de 2026",
     entries: [
