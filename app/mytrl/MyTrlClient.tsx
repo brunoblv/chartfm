@@ -175,6 +175,7 @@ export default function MyTrlClient() {
   const [weekdayLabel, setWeekdayLabel] = useState("Segunda");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generateDate, setGenerateDate] = useState("");
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
 
@@ -225,11 +226,20 @@ export default function MyTrlClient() {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const res = await fetch("/api/mytrl/generate", { method: "POST" });
+      const body = generateDate.trim() ? { date: generateDate.trim() } : undefined;
+      const res = await fetch("/api/mytrl/generate", {
+        method: "POST",
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
       const data = await res.json();
       if (data.ok) {
-        setBanner(`Parada gerada: ${data.count} faixas.`);
-        await loadData(weekday, null);
+        setBanner(
+          `Parada gerada (${data.referenceDate}): ${data.count} faixas · ${data.dateRange}.`,
+        );
+        if (data.weekday) setWeekday(data.weekday);
+        setWeekIndex(data.weekIndex ?? null);
+        await loadData(data.weekday ?? weekday, data.weekIndex ?? null);
       } else {
         setBanner(data.error ?? "Erro ao gerar parada.");
       }
@@ -296,6 +306,23 @@ export default function MyTrlClient() {
                 Crie a playlist &quot;new hits&quot; no Spotify
               </span>
             ) : null}
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+              <span style={{ color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>Data:</span>
+              <input
+                type="date"
+                value={generateDate}
+                onChange={(e) => setGenerateDate(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 8,
+                  border: "1px solid var(--divider)",
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  fontSize: 13,
+                }}
+              />
+            </label>
             <button
               type="button"
               onClick={() => void handleGenerate()}
@@ -316,7 +343,7 @@ export default function MyTrlClient() {
               }}
             >
               <RefreshCw size={16} />
-              Gerar agora
+              {generateDate ? "Gerar para data" : "Gerar agora"}
             </button>
           </div>
         </div>
@@ -370,6 +397,9 @@ export default function MyTrlClient() {
         <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
           Pesos Last.fm (7 dias): ontem ×20, −2 ×18, −3 ×15, −4 ×13, −5 ×12, −6 ×11, −7 ×10.
           Só entram faixas da playlist <strong>new hits</strong>. Cron automático: seg–sex às 18h (BRT).
+          Para testar um dia passado, escolha a data e clique em <strong>Gerar para data</strong> — ou via API:{" "}
+          <code style={{ fontSize: 11 }}>POST /api/mytrl/generate</code> com{" "}
+          <code style={{ fontSize: 11 }}>{`{"date":"YYYY-MM-DD"}`}</code>.
         </p>
       </div>
     </Shell>

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { fetchTracksBetweenUnix } from "@/lib/lastfm";
 import { searchSpotifyTracks } from "@/lib/spotify-server";
 import {
+  brtDateKey,
   brtWeekday,
   buildMyTrlPeriod,
   computeMyTrlChart,
@@ -96,11 +97,20 @@ async function loadHistory(): Promise<MyTrlHistory> {
 }
 
 export type MyTrlGenerateResult =
-  | { ok: true; weekday: number; weekIndex: number; count: number; skipped?: false }
+  | {
+      ok: true;
+      weekday: number;
+      weekIndex: number;
+      count: number;
+      referenceDate: string;
+      weekLabel: string;
+      dateRange: string;
+      skipped?: false;
+    }
   | { ok: false; error: string; skipped?: boolean };
 
-export async function generateMyTrlSnapshot(now: Date = new Date()): Promise<MyTrlGenerateResult> {
-  const weekday = brtWeekday(now);
+export async function generateMyTrlSnapshot(referenceDay: Date = new Date()): Promise<MyTrlGenerateResult> {
+  const weekday = brtWeekday(referenceDay);
   if (weekday === 0) {
     return { ok: false, error: "Fim de semana — MyTRL só roda de segunda a sexta.", skipped: true };
   }
@@ -126,13 +136,13 @@ export async function generateMyTrlSnapshot(now: Date = new Date()): Promise<MyT
 
   const playlistTracks = await getNewHitsTracksForUser(owner.id);
 
-  const { fromUnix, toUnix } = myTrlFetchWindow(now);
+  const { fromUnix, toUnix } = myTrlFetchWindow(referenceDay);
   const rawPlays = await fetchTracksBetweenUnix(fromUnix, toUnix, lastfmUser);
   const enriched = await enrichWithSpotify(rawPlays, allowedIds, playlistTracks);
 
   const history = await loadHistory();
-  const { weekIndex, weekLabel, dateRange } = buildMyTrlPeriod(now);
-  const entries = computeMyTrlChart(enriched, allowedIds, history, weekday, weekIndex, now);
+  const { weekIndex, weekLabel, dateRange } = buildMyTrlPeriod(referenceDay);
+  const entries = computeMyTrlChart(enriched, allowedIds, history, weekday, weekIndex, referenceDay);
 
   const entriesJson = JSON.parse(JSON.stringify(entries));
 
@@ -146,15 +156,23 @@ export async function generateMyTrlSnapshot(now: Date = new Date()): Promise<MyT
       weekLabel,
       dateRange,
       entries: entriesJson,
-      computedAt: now,
+      computedAt: referenceDay,
     },
     update: {
       weekLabel,
       dateRange,
       entries: entriesJson,
-      computedAt: now,
+      computedAt: referenceDay,
     },
   });
 
-  return { ok: true, weekday, weekIndex, count: entries.length };
+  return {
+    ok: true,
+    weekday,
+    weekIndex,
+    count: entries.length,
+    referenceDate: brtDateKey(referenceDay),
+    weekLabel,
+    dateRange,
+  };
 }

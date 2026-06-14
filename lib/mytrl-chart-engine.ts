@@ -229,3 +229,13 @@ export function myTrlFetchWindow(referenceDay: Date = new Date()): { fromUnix: n
   const fromUnix = Math.floor(from.getTime() / 1000);
   return { fromUnix, toUnix };
 }
+
+/** Data de referência (YYYY-MM-DD) simulando publicação às 18h BRT, como o cron. */
+export function parseMyTrlReferenceDate(dateKey: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  const reference = new Date(`${dateKey}T21:00:00.000Z`);
+  if (Number.isNaN(reference.getTime())) return null;
+  if (brtDateKey(reference) !== dateKey) return null;
+  if (reference.getTime() > Date.now()) return null;
+  return reference;
+}

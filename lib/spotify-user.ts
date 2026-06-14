@@ -63,7 +63,7 @@ export function getSpotifyRedirectUri(requestOrigin?: string): string {
   if (process.env.SPOTIFY_REDIRECT_URI) {
     return process.env.SPOTIFY_REDIRECT_URI.replace(/\/$/, "");
   }
-  const base = requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const base = requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://127.0.0.1:3000";
   return `${base.replace(/\/$/, "")}/api/spotify/callback`;
 }
 
