@@ -10,7 +10,8 @@ import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-rout
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
 import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
-import { globalStatsForSingleSong, pointsForPosition, songKey } from "@/lib/chart-page-common";
+import { globalStatsForSingleSong, songKey } from "@/lib/chart-page-common";
+import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
 import { buildSongParadaAppearanceGroups } from "@/lib/song-parada-appearances";
 import { songEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
@@ -166,13 +167,31 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     globalStats = p.globalStats;
   } else {
     const totalPoints = entries.reduce(
-      (sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)),
+      (sum, e) =>
+        sum +
+        resolvedChartEntryPoints({
+          position: e.position,
+          points: e.points,
+          chart: {
+            maxItems: e.chart.maxItems,
+            entryCount: e.chart._count.entries,
+            parada: e.chart.parada,
+          },
+        }),
       0,
     );
     const users = new Set(entries.map((e) => e.chart.userId)).size;
     const topUsersMap = new Map<string, { points: number }>();
     for (const e of entries) {
-      const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+      const pts = resolvedChartEntryPoints({
+        position: e.position,
+        points: e.points,
+        chart: {
+          maxItems: e.chart.maxItems,
+          entryCount: e.chart._count.entries,
+          parada: e.chart.parada,
+        },
+      });
       const current = topUsersMap.get(e.chart.userId) ?? { points: 0 };
       current.points += pts;
       topUsersMap.set(e.chart.userId, current);

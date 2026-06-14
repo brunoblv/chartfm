@@ -1,5 +1,5 @@
 import { formatChartPeriod } from "@/lib/chart-week";
-import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
+import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
 
 export type SongAppearanceRow = {
   chartId: string;
@@ -52,14 +52,7 @@ function chartDateRangeOnly(chart: { weekLabel: string; dateRange: string }): st
 }
 
 function entryPoints(entry: ChartEntryForAppearances): number {
-  const tier = scoringTierFromPrimary(entry.chart.parada.isPrimary);
-  const chartSize = entry.chart.entryCount > 0 ? entry.chart.entryCount : entry.chart.maxItems;
-  return pointsForChartPosition(
-    entry.position,
-    tier,
-    chartSize,
-    entry.chart.parada.cadence,
-  );
+  return resolvedChartEntryPoints(entry);
 }
 
 function buildStats(entries: ChartEntryForAppearances[]): SongParadaUserStats {

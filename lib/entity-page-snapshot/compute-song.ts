@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import {
   globalStatsForSingleSong,
-  pointsForPosition,
   songKey,
 } from "@/lib/chart-page-common";
+import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
 import type { DailyChartSongStatsData } from "@/lib/daily-chart-song-stats";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { parseSongSlug } from "@/lib/music-routes";
@@ -24,7 +24,14 @@ export async function computeSongPageSnapshot(
     select: {
       position: true,
       points: true,
-      chart: { select: { userId: true } },
+      chart: {
+        select: {
+          userId: true,
+          maxItems: true,
+          _count: { select: { entries: true } },
+          parada: { select: { isPrimary: true, cadence: true } },
+        },
+      },
       coverPaletteA: true,
       coverPaletteB: true,
       coverSeed: true,
@@ -67,7 +74,15 @@ export async function computeSongPageSnapshot(
 
   const topUsersMap = new Map<string, { points: number }>();
   for (const e of entries) {
-    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+    const pts = resolvedChartEntryPoints({
+      position: e.position,
+      points: e.points,
+      chart: {
+        maxItems: e.chart.maxItems,
+        entryCount: e.chart._count.entries,
+        parada: e.chart.parada,
+      },
+    });
     const cur = topUsersMap.get(e.chart.userId) ?? { points: 0 };
     cur.points += pts;
     topUsersMap.set(e.chart.userId, cur);
@@ -91,7 +106,17 @@ export async function computeSongPageSnapshot(
     .slice(0, 5);
 
   const totalPoints = entries.reduce(
-    (sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)),
+    (sum, e) =>
+      sum +
+      resolvedChartEntryPoints({
+        position: e.position,
+        points: e.points,
+        chart: {
+          maxItems: e.chart.maxItems,
+          entryCount: e.chart._count.entries,
+          parada: e.chart.parada,
+        },
+      }),
     0,
   );
 

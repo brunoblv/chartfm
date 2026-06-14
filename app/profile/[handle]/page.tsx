@@ -18,7 +18,7 @@ import { formatSongArtist } from "@/lib/song-artist";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { pointsForChartPosition, secondaryPointsRangeLabel, type ParadaScoringTier } from "@/lib/parada-points";
 
-type ParadaTab = "charts" | "evolution" | "artists" | "songs";
+type ParadaTab = "charts" | "evolution" | "artists" | "songs" | "numberOnes";
 type StatsScope = "overall" | "year";
 
 type ParadaInfo = {
@@ -138,6 +138,23 @@ type SongTableRow = {
   status: "new" | "return" | "up" | "down" | "same";
   growthPct: number | null;
   cover: Chart["entries"][number]["cover"];
+};
+
+type NumberOneRow = {
+  title: string;
+  artist: string;
+  count: number;
+  firstWeek: number;
+  lastWeek: number;
+  firstDateRange: string;
+  lastDateRange: string;
+  lastWeekLabel: string;
+  cover: Chart["entries"][number]["cover"];
+  songId?: string | null;
+  slugArtist?: string | null;
+  spotifyId?: string | null;
+  artistSpotifyId?: string | null;
+  artistRefId?: number | null;
 };
 
 function pointsForPosition(
@@ -348,6 +365,63 @@ function aggregateSongs(
   });
 }
 
+function buildNumberOnesList(charts: Chart[]): NumberOneRow[] {
+  const map = new Map<
+    string,
+    {
+      title: string;
+      artist: string;
+      count: number;
+      firstWeek: number;
+      lastWeek: number;
+      firstDateRange: string;
+      lastDateRange: string;
+      lastWeekLabel: string;
+      cover: Chart["entries"][number]["cover"];
+      songId?: string | null;
+      slugArtist?: string | null;
+      spotifyId?: string | null;
+      artistSpotifyId?: string | null;
+      artistRefId?: number | null;
+    }
+  >();
+
+  const sorted = [...charts].sort((a, b) => a.week - b.week);
+  for (const chart of sorted) {
+    const entry = chart.entries.find((e) => e.position === 1);
+    if (!entry) continue;
+    const key = `${entry.song.title}\0${entry.song.artist}`;
+    const cur = map.get(key);
+    if (!cur) {
+      map.set(key, {
+        title: entry.song.title,
+        artist: entry.song.artist,
+        count: 1,
+        firstWeek: chart.week,
+        lastWeek: chart.week,
+        firstDateRange: chart.dateRange,
+        lastDateRange: chart.dateRange,
+        lastWeekLabel: chart.weekLabel,
+        cover: entry.cover,
+        songId: entry.song.id,
+        slugArtist: entry.song.slugArtist,
+        spotifyId: entry.song.spotifyId,
+        artistSpotifyId: entry.song.artistSpotifyId,
+        artistRefId: entry.song.artistRefId,
+      });
+      continue;
+    }
+    cur.count += 1;
+    cur.lastWeek = chart.week;
+    cur.lastDateRange = chart.dateRange;
+    cur.lastWeekLabel = chart.weekLabel;
+    cur.cover = entry.cover;
+    mergeSongRouteMeta(cur, entry.song);
+  }
+
+  return [...map.values()].sort((a, b) => b.lastWeek - a.lastWeek || b.count - a.count);
+}
+
 function buildAchievements(user: UserWithCharts, numberOnes: number) {
   const totalRanked = user.charts.reduce((acc, c) => acc + c.entries.length, 0);
   const list: { emoji: string; name: string; desc: string }[] = [
@@ -546,6 +620,11 @@ export default function ProfilePage() {
 
   const artistRowsForTab = statsScope === "overall" ? overallArtistsRows : yearlyArtistsRows;
   const songRowsForTab = statsScope === "overall" ? overallSongsRows : yearlySongsRows;
+  const numberOnesRows = useMemo(() => (statsUser ? buildNumberOnesList(statsUser.charts) : []), [statsUser]);
+  const totalNumberOneWeeks = useMemo(
+    () => numberOnesRows.reduce((acc, r) => acc + r.count, 0),
+    [numberOnesRows],
+  );
 
   if (phase === "loading") {
     return (
@@ -966,6 +1045,7 @@ export default function ProfilePage() {
             [
               ["charts", "Publicações", "Publ."],
               ["evolution", "Evolução", "Evol."],
+              ["numberOnes", "#1s", "#1s"],
               ["artists", "Artistas", "Artistas"],
               ["songs", "Músicas", "Músicas"],
             ] as [ParadaTab, string, string][]
@@ -1104,6 +1184,21 @@ export default function ProfilePage() {
 
         {paradaTab === "evolution" && (
           <EvolutionChart user={statsUser ?? user} />
+        )}
+
+        {paradaTab === "numberOnes" && hasCharts && (
+          <>
+            {source === "db" && !fullPayload && loadingFullStats && (
+              <div style={{ marginBottom: 14, color: "var(--text-muted)", fontSize: 14 }}>Carregando histórico de #1…</div>
+            )}
+            <NumberOnesTab
+              rows={numberOnesRows.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)}
+              totalSongs={numberOnesRows.length}
+              totalWeeks={totalNumberOneWeeks}
+              isMobile={isMobile}
+            />
+            <StatsPagination page={statsPage} total={numberOnesRows.length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
+          </>
         )}
 
         {paradaTab === "artists" && hasCharts && (
@@ -1351,6 +1446,103 @@ function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableR
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function NumberOnesTab({
+  rows,
+  totalSongs,
+  totalWeeks,
+  isMobile,
+}: {
+  rows: NumberOneRow[];
+  totalSongs: number;
+  totalWeeks: number;
+  isMobile?: boolean;
+}) {
+  if (totalSongs === 0) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center" }}>
+        <Trophy size={36} color="#FFD700" fill="#FFD700" style={{ marginBottom: 12 }} />
+        <p style={{ fontSize: 15, color: "var(--text-muted)", margin: 0 }}>Nenhuma música chegou ao #1 nesta parada ainda.</p>
+      </div>
+    );
+  }
+
+  const cols = isMobile ? "44px minmax(0,1fr) 56px" : "64px minmax(0,1fr) 88px 140px 120px";
+  const headers = isMobile ? ["", "Música", "#1s"] : ["", "Música", "#1s", "Último #1", "Primeiro #1"];
+  const coverSize = isMobile ? 44 : 56;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16, fontSize: 14, color: "var(--text-muted)" }}>
+        <span style={{ fontWeight: 700, color: "var(--text)" }}>{totalSongs}</span> faixa{totalSongs === 1 ? "" : "s"} ·{" "}
+        <span style={{ fontWeight: 700, color: "var(--text)" }}>{totalWeeks}</span> semana{totalWeeks === 1 ? "" : "s"} em #1
+      </div>
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: cols, padding: isMobile ? "8px 12px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+          {headers.map((h, i) => (
+            <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
+          ))}
+        </div>
+        {rows.map((r) => {
+          const songHref = buildSongPath({
+            title: r.title,
+            artist: r.artist,
+            id: r.songId,
+            artistId: r.artistRefId,
+            slugArtist: r.slugArtist,
+            spotifyId: r.spotifyId,
+          });
+          const artistHref = buildArtistPath(r.artist, r.artistSpotifyId, r.artistRefId);
+          return (
+            <div
+              key={`${r.title}-${r.artist}`}
+              style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", padding: isMobile ? "8px 12px" : "10px 20px", borderBottom: "1px solid var(--divider-soft)" }}
+            >
+              <Link href={songHref} prefetch={false} style={{ padding: isMobile ? "2px 4px" : "4px 8px", lineHeight: 0 }}>
+                <Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={coverSize} rounded={isMobile ? 8 : 10} />
+              </Link>
+              <div style={{ minWidth: 0 }}>
+                <Link
+                  href={songHref}
+                  prefetch={false}
+                  style={{ display: "block", fontSize: isMobile ? 14 : 15, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}
+                >
+                  {r.title}
+                </Link>
+                <Link
+                  href={artistHref}
+                  prefetch={false}
+                  style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}
+                >
+                  {formatSongArtist({ artist: r.artist })}
+                </Link>
+                {isMobile && (
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{r.lastDateRange || r.lastWeekLabel}</div>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: isMobile ? "flex-end" : "flex-start", gap: 4 }}>
+                <Trophy size={isMobile ? 14 : 16} color="#FFD700" fill="#FFD700" />
+                <span style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, fontVariantNumeric: "tabular-nums", color: "var(--text)" }}>
+                  {r.count}x
+                </span>
+              </div>
+              {!isMobile && (
+                <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.35 }}>
+                  <div>{r.lastDateRange || r.lastWeekLabel}</div>
+                </div>
+              )}
+              {!isMobile && (
+                <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.35 }}>
+                  {r.firstDateRange}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
