@@ -83,11 +83,7 @@ function DayColumn({
                   ? buildSongPath({
                       title: day.entries[0].track,
                       artist: day.entries[0].artist,
-                      album: day.entries[0].album,
                       spotifyId: day.entries[0].spotifyId,
-                      artistSpotifyId: null,
-                      artistRefId: null,
-                      albumRefId: null,
                     })
                   : "#"
               }

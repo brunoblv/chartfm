@@ -1,6 +1,3966 @@
 [
   {
     "sheet": "LADO B-2025",
+    "label": "ABRIL #1",
+    "date": "2025-04-14",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 2,
+        "artist": "Silva",
+        "title": "Mais Raro"
+      },
+      {
+        "position": 3,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 4,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 5,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 6,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 7,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 8,
+        "artist": "Jair Faria",
+        "title": "Do Better"
+      },
+      {
+        "position": 9,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 10,
+        "artist": "Késia",
+        "title": "Sonhei com Voce"
+      },
+      {
+        "position": 11,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 12,
+        "artist": "JISOO",
+        "title": "earthquake"
+      },
+      {
+        "position": 13,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 14,
+        "artist": "GFRIEND",
+        "title": "Season of Memories"
+      },
+      {
+        "position": 15,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 16,
+        "artist": "Pullovers",
+        "title": "Vida Vale a Pena"
+      },
+      {
+        "position": 17,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 18,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 19,
+        "artist": "WES; Urias",
+        "title": "KAWASAKI"
+      },
+      {
+        "position": 20,
+        "artist": "LISA; Doja Cat; RAYE",
+        "title": "Born Again"
+      },
+      {
+        "position": 21,
+        "artist": "Linkin Park",
+        "title": "Over Each Other"
+      },
+      {
+        "position": 22,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      },
+      {
+        "position": 23,
+        "artist": "Thiaguinho; Liniker",
+        "title": "Febre (Ao Vivo)"
+      },
+      {
+        "position": 24,
+        "artist": "Kerli",
+        "title": "21st Century Kids"
+      },
+      {
+        "position": 25,
+        "artist": "Lady Gaga ft Bruno Mars",
+        "title": "Die With a Smile"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "21/04",
+    "date": "2025-04-21",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 2,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 3,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 4,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 5,
+        "artist": "Silva",
+        "title": "Mais Raro"
+      },
+      {
+        "position": 6,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 7,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 8,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 9,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 10,
+        "artist": "Jair Faria",
+        "title": "Do Better"
+      },
+      {
+        "position": 11,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 12,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 13,
+        "artist": "Késia",
+        "title": "Sonhei com Voce"
+      },
+      {
+        "position": 14,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 15,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      },
+      {
+        "position": 16,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 17,
+        "artist": "JISOO",
+        "title": "earthquake"
+      },
+      {
+        "position": 18,
+        "artist": "GFRIEND",
+        "title": "Season of Memories"
+      },
+      {
+        "position": 19,
+        "artist": "Pullovers",
+        "title": "Vida Vale a Pena"
+      },
+      {
+        "position": 20,
+        "artist": "Linkin Park",
+        "title": "Over Each Other"
+      },
+      {
+        "position": 21,
+        "artist": "WES; Urias",
+        "title": "KAWASAKI"
+      },
+      {
+        "position": 22,
+        "artist": "LISA; Doja Cat; RAYE",
+        "title": "Born Again"
+      },
+      {
+        "position": 23,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 24,
+        "artist": "Thiaguinho; Liniker",
+        "title": "Febre (Ao Vivo)"
+      },
+      {
+        "position": 25,
+        "artist": "Kerli",
+        "title": "21st Century Kids"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "28/04",
+    "date": "2025-04-28",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 2,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 3,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 4,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 5,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 6,
+        "artist": "Silva",
+        "title": "Mais Raro"
+      },
+      {
+        "position": 7,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 8,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 9,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 10,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 11,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      },
+      {
+        "position": 12,
+        "artist": "Jair Faria",
+        "title": "Do Better"
+      },
+      {
+        "position": 13,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 14,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 15,
+        "artist": "Késia",
+        "title": "Sonhei com Voce"
+      },
+      {
+        "position": 16,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 17,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 18,
+        "artist": "Linkin Park",
+        "title": "Over Each Other"
+      },
+      {
+        "position": 19,
+        "artist": "JISOO",
+        "title": "earthquake"
+      },
+      {
+        "position": 20,
+        "artist": "GFRIEND",
+        "title": "Season of Memories"
+      },
+      {
+        "position": 21,
+        "artist": "Pullovers",
+        "title": "Vida Vale a Pena"
+      },
+      {
+        "position": 22,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 23,
+        "artist": "Lorde",
+        "title": "What Was That"
+      },
+      {
+        "position": 24,
+        "artist": "LISA; Doja Cat; RAYE",
+        "title": "Born Again"
+      },
+      {
+        "position": 25,
+        "artist": "Thiaguinho; Liniker",
+        "title": "Febre (Ao Vivo)"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "05/05",
+    "date": "2025-05-05",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 2,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 3,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 4,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 5,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 6,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 7,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 8,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 9,
+        "artist": "Silva",
+        "title": "Mais Raro"
+      },
+      {
+        "position": 10,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 11,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 12,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 13,
+        "artist": "Jair Faria",
+        "title": "Do Better"
+      },
+      {
+        "position": 14,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      },
+      {
+        "position": 15,
+        "artist": "Lorde",
+        "title": "What Was That"
+      },
+      {
+        "position": 16,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 17,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 18,
+        "artist": "Késia",
+        "title": "Sonhei com Voce"
+      },
+      {
+        "position": 19,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 20,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 21,
+        "artist": "Pullovers",
+        "title": "Vida Vale a Pena"
+      },
+      {
+        "position": 22,
+        "artist": "Linkin Park",
+        "title": "Over Each Other"
+      },
+      {
+        "position": 23,
+        "artist": "GFRIEND",
+        "title": "Season of Memories"
+      },
+      {
+        "position": 24,
+        "artist": "JISOO",
+        "title": "earthquake"
+      },
+      {
+        "position": 25,
+        "artist": "LISA; Doja Cat; RAYE",
+        "title": "Born Again"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "12/05",
+    "date": "2025-05-12",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 2,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 3,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 4,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 5,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 6,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 7,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 8,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 9,
+        "artist": "Lorde",
+        "title": "What Was That"
+      },
+      {
+        "position": 10,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 11,
+        "artist": "Silva",
+        "title": "Mais Raro"
+      },
+      {
+        "position": 12,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      },
+      {
+        "position": 13,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 14,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 15,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 16,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 17,
+        "artist": "Jair Faria",
+        "title": "Do Better"
+      },
+      {
+        "position": 18,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 19,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 20,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 21,
+        "artist": "Késia",
+        "title": "Sonhei com Voce"
+      },
+      {
+        "position": 22,
+        "artist": "Pullovers",
+        "title": "Vida Vale a Pena"
+      },
+      {
+        "position": 23,
+        "artist": "Linkin Park",
+        "title": "Over Each Other"
+      },
+      {
+        "position": 24,
+        "artist": "GFRIEND",
+        "title": "Season of Memories"
+      },
+      {
+        "position": 25,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "19/05",
+    "date": "2025-05-19",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 2,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 3,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 4,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 5,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 6,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 7,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 8,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 9,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 10,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 11,
+        "artist": "Lorde",
+        "title": "What Was That"
+      },
+      {
+        "position": 12,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 13,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 14,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 15,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 16,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      },
+      {
+        "position": 17,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 18,
+        "artist": "Silva",
+        "title": "Mais Raro"
+      },
+      {
+        "position": 19,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 20,
+        "artist": "Jair Faria",
+        "title": "Do Better"
+      },
+      {
+        "position": 21,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 22,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 23,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 25,
+        "artist": "Linkin Park",
+        "title": "Over Each Other"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "26/05",
+    "date": "2025-05-26",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 2,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 3,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 4,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 5,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 6,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 7,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 8,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 9,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 10,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 11,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 12,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 13,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 14,
+        "artist": "Lorde",
+        "title": "What Was That"
+      },
+      {
+        "position": 15,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 16,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 17,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 18,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 19,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 20,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      },
+      {
+        "position": 21,
+        "artist": "Jair Faria",
+        "title": "Do Better"
+      },
+      {
+        "position": 22,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 23,
+        "artist": "Silva",
+        "title": "Mais Raro"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 25,
+        "artist": "Linkin Park",
+        "title": "Over Each Other"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "02/06",
+    "date": "2025-06-02",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 2,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 3,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 4,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 5,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 6,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 7,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 8,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 9,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 10,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 11,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 12,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 13,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 14,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 15,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 16,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 17,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 18,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 19,
+        "artist": "Lorde",
+        "title": "What Was That"
+      },
+      {
+        "position": 20,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 21,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 22,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 23,
+        "artist": "Lady Gaga",
+        "title": "Abracadabra"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "Two Faced"
+      },
+      {
+        "position": 25,
+        "artist": "Miley Cyrus",
+        "title": "End of the World"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "09/06",
+    "date": "2025-06-09",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 2,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 3,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 4,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 5,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 6,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 7,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 8,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 9,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 10,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 11,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 12,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 13,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 14,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 15,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 16,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 17,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 18,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 19,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 20,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 21,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 22,
+        "artist": "Lorde",
+        "title": "What Was That"
+      },
+      {
+        "position": 23,
+        "artist": "MARINA",
+        "title": "Butterfly"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 25,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "16/06",
+    "date": "2025-06-16",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 2,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 3,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 4,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 5,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 6,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 7,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 8,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 9,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 10,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 11,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 12,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 13,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 14,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 15,
+        "artist": "Xamã ft Sophie Charlotte",
+        "title": "Flor de Maio"
+      },
+      {
+        "position": 16,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 17,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 18,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 19,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 20,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 21,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 22,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 23,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 25,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "23/06",
+    "date": "2025-06-23",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 2,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 3,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 4,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 5,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 6,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 7,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 8,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 9,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 10,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 11,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 12,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 13,
+        "artist": "Xamã ft Sophie Charlotte",
+        "title": "Flor de Maio"
+      },
+      {
+        "position": 14,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 15,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 16,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 17,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 18,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 19,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 20,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      },
+      {
+        "position": 21,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 22,
+        "artist": "Lucas Pretti",
+        "title": "Falo Demais"
+      },
+      {
+        "position": 23,
+        "artist": "Linkin Park",
+        "title": "The Emptiness Machine"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "Heavy Is The Crown"
+      },
+      {
+        "position": 25,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "30/06",
+    "date": "2025-06-30",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 2,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 3,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 4,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 5,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 6,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 7,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 8,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 9,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 10,
+        "artist": "Xamã ft Sophie Charlotte",
+        "title": "Flor de Maio"
+      },
+      {
+        "position": 11,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 12,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 13,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 14,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 15,
+        "artist": "Marco Baptista",
+        "title": "PARECE OUTRA VIDA"
+      },
+      {
+        "position": 16,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 17,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 18,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 19,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 20,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 21,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 22,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 23,
+        "artist": "Kelly Clarkson",
+        "title": "Where Have You Been"
+      },
+      {
+        "position": 24,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 25,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "07/07",
+    "date": "2025-07-07",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 2,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 3,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 4,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 5,
+        "artist": "Marco Baptista",
+        "title": "PARECE OUTRA VIDA"
+      },
+      {
+        "position": 6,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 7,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 8,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 9,
+        "artist": "Xamã ft Sophie Charlotte",
+        "title": "Flor de Maio"
+      },
+      {
+        "position": 10,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 11,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 12,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 13,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 14,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 15,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 16,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 17,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 18,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 19,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 20,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 21,
+        "artist": "Rachel Reis",
+        "title": "Casca"
+      },
+      {
+        "position": 22,
+        "artist": "Evanescence",
+        "title": "Afterlife"
+      },
+      {
+        "position": 23,
+        "artist": "Jaloo",
+        "title": "Ocitocina"
+      },
+      {
+        "position": 24,
+        "artist": "Avril Lavigne ft Simple Plan",
+        "title": "Young & Dumb"
+      },
+      {
+        "position": 25,
+        "artist": "Doechii",
+        "title": "Anxiety"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "14/07",
+    "date": "2025-07-14",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 2,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 3,
+        "artist": "Marco Baptista",
+        "title": "PARECE OUTRA VIDA"
+      },
+      {
+        "position": 4,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 5,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 6,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 7,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 8,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 9,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 10,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 11,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 12,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 13,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 14,
+        "artist": "Xamã ft Sophie Charlotte",
+        "title": "Flor de Maio"
+      },
+      {
+        "position": 15,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 16,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 17,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 18,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 19,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 20,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 21,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 22,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 23,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 24,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 25,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "21/07",
+    "date": "2025-07-21",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 2,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 3,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 4,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 5,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 6,
+        "artist": "Marco Baptista",
+        "title": "PARECE OUTRA VIDA"
+      },
+      {
+        "position": 7,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 8,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 9,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 10,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 11,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 12,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 13,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 14,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      },
+      {
+        "position": 15,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 16,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 17,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 18,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 19,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 20,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 21,
+        "artist": "Xamã ft Sophie Charlotte",
+        "title": "Flor de Maio"
+      },
+      {
+        "position": 22,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 23,
+        "artist": "Lorde",
+        "title": "Man of the Year"
+      },
+      {
+        "position": 24,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 25,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "28/07",
+    "date": "2025-07-28",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 2,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 3,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 4,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 5,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 6,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 7,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 8,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 9,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 10,
+        "artist": "Marco Baptista",
+        "title": "PARECE OUTRA VIDA"
+      },
+      {
+        "position": 11,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 12,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 13,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 14,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      },
+      {
+        "position": 15,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 16,
+        "artist": "Good Charlotte",
+        "title": "Stepper"
+      },
+      {
+        "position": 17,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 18,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 19,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 20,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      },
+      {
+        "position": 21,
+        "artist": "Linkin Park",
+        "title": "Let You Fade"
+      },
+      {
+        "position": 22,
+        "artist": "JENNIE",
+        "title": "like JENNIE"
+      },
+      {
+        "position": 23,
+        "artist": "Xamã ft Sophie Charlotte",
+        "title": "Flor de Maio"
+      },
+      {
+        "position": 24,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 25,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "04/08",
+    "date": "2025-08-04",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 2,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 3,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 4,
+        "artist": "HAIM",
+        "title": "Down to be Wrong"
+      },
+      {
+        "position": 5,
+        "artist": "MARINA",
+        "title": "I Love You"
+      },
+      {
+        "position": 6,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 7,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 8,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 9,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 10,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 11,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 12,
+        "artist": "Julia Mestre",
+        "title": "Sou Fera"
+      },
+      {
+        "position": 13,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 14,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      },
+      {
+        "position": 15,
+        "artist": "Marco Baptista",
+        "title": "PARECE OUTRA VIDA"
+      },
+      {
+        "position": 16,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 17,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 18,
+        "artist": "Superbus ft RORI",
+        "title": "Butterfly"
+      },
+      {
+        "position": 19,
+        "artist": "Cícero",
+        "title": "Mente Voa"
+      },
+      {
+        "position": 20,
+        "artist": "The Rasmus ft Niko Moilanen",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 21,
+        "artist": "Good Charlotte",
+        "title": "Stepper"
+      },
+      {
+        "position": 22,
+        "artist": "The Rasmus",
+        "title": "Creatures of Chaos"
+      },
+      {
+        "position": 23,
+        "artist": "Fresno & NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 24,
+        "artist": "Evanescence ft K Flay",
+        "title": "Fight Like a Girl"
+      },
+      {
+        "position": 25,
+        "artist": "Halsey ft Amy Lee",
+        "title": "Hand That Feeds"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "04/08 (+1)",
+    "date": "2025-08-11",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 2,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 3,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 4,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 5,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 6,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 7,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 8,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 9,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 10,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 11,
+        "artist": "The Rasmus ft. Blind Channel",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 12,
+        "artist": "MARINA",
+        "title": "I LOVE YOU"
+      },
+      {
+        "position": 13,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 14,
+        "artist": "Superbus ft. RORI",
+        "title": "Butterfly"
+      },
+      {
+        "position": 15,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      },
+      {
+        "position": 16,
+        "artist": "Cícero",
+        "title": "Mente Voa"
+      },
+      {
+        "position": 17,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 18,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 19,
+        "artist": "Good Charlotte",
+        "title": "Stepper"
+      },
+      {
+        "position": 20,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 21,
+        "artist": "Marco Baptista",
+        "title": "PARECE OUTRA VIDA"
+      },
+      {
+        "position": 22,
+        "artist": "Fresno ft NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      },
+      {
+        "position": 23,
+        "artist": "Mahmundi",
+        "title": "Irreversível"
+      },
+      {
+        "position": 24,
+        "artist": "Julia Mestre",
+        "title": "SOU FERA"
+      },
+      {
+        "position": 25,
+        "artist": "Evanescence",
+        "title": "Fight Like a Girl"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "SETEMBRO/SEMANA 1",
+    "date": "2025-09-01",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 2,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 3,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 4,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 5,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 6,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 7,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 8,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 9,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 10,
+        "artist": "The Rasmus ft. Blind Channel",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 11,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 12,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      },
+      {
+        "position": 13,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 14,
+        "artist": "MARINA",
+        "title": "I LOVE YOU"
+      },
+      {
+        "position": 15,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 16,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 17,
+        "artist": "Good Charlotte",
+        "title": "Stepper"
+      },
+      {
+        "position": 18,
+        "artist": "Superbus ft. RORI",
+        "title": "Butterfly"
+      },
+      {
+        "position": 19,
+        "artist": "GRAE",
+        "title": "HATED!"
+      },
+      {
+        "position": 20,
+        "artist": "Grag Queen",
+        "title": "Sideral"
+      },
+      {
+        "position": 21,
+        "artist": "MARINA",
+        "title": "CUNTISSIMO"
+      },
+      {
+        "position": 22,
+        "artist": "Mariah Carey",
+        "title": "Type Dangerous"
+      },
+      {
+        "position": 23,
+        "artist": "Cícero",
+        "title": "Mente Voa"
+      },
+      {
+        "position": 24,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 25,
+        "artist": "Fresno ft NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "SETEMBRO/SEMANA 2",
+    "date": "2025-09-08",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 2,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 3,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 4,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 5,
+        "artist": "The Rasmus ft. Blind Channel",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 6,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 7,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 8,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 9,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 10,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 11,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 12,
+        "artist": "GRAE",
+        "title": "HATED!"
+      },
+      {
+        "position": 13,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 14,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 15,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 16,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 17,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      },
+      {
+        "position": 18,
+        "artist": "MARINA",
+        "title": "I LOVE YOU"
+      },
+      {
+        "position": 19,
+        "artist": "Superbus ft. RORI",
+        "title": "Butterfly"
+      },
+      {
+        "position": 20,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 21,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 22,
+        "artist": "Good Charlotte",
+        "title": "Rejects"
+      },
+      {
+        "position": 23,
+        "artist": "Good Charlotte",
+        "title": "Stepper"
+      },
+      {
+        "position": 24,
+        "artist": "Grag Queen",
+        "title": "Sideral"
+      },
+      {
+        "position": 25,
+        "artist": "Fresno ft NX Zero",
+        "title": "Se Eu For, Eu Vou Com Você"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "SETEMBRO/SEMANA 3",
+    "date": "2025-09-15",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 2,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 3,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 4,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 5,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 6,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 7,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 8,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 9,
+        "artist": "The Rasmus ft. Blind Channel",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 10,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 11,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 12,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 13,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 14,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 15,
+        "artist": "POPPY, Amy Lee, Courtney Lapante",
+        "title": "End of You"
+      },
+      {
+        "position": 16,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 17,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 18,
+        "artist": "Good Charlotte",
+        "title": "Stepper"
+      },
+      {
+        "position": 19,
+        "artist": "GRAE",
+        "title": "HATED!"
+      },
+      {
+        "position": 20,
+        "artist": "MARINA",
+        "title": "I LOVE YOU"
+      },
+      {
+        "position": 21,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 22,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 23,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 24,
+        "artist": "Superbus ft. RORI",
+        "title": "Butterfly"
+      },
+      {
+        "position": 25,
+        "artist": "Mahmundi",
+        "title": "MACIA BAHIA"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "SETEMBRO/SEMANA 4",
+    "date": "2025-09-22",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 2,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 3,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 4,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 5,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 6,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 7,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 8,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 9,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 10,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 11,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 12,
+        "artist": "The Rasmus ft. Blind Channel",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 13,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 14,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 15,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 16,
+        "artist": "POPPY, Amy Lee, Courtney Lapante",
+        "title": "End of You"
+      },
+      {
+        "position": 17,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 18,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 19,
+        "artist": "GRAE",
+        "title": "HATED!"
+      },
+      {
+        "position": 20,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 21,
+        "artist": "MARINA",
+        "title": "I LOVE YOU"
+      },
+      {
+        "position": 22,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 23,
+        "artist": "Good Charlotte",
+        "title": "Stepper"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 25,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "OUTUBRO / SEMANA 1",
+    "date": "2025-09-29",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 2,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 3,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 4,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 5,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 6,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 7,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 8,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 9,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 10,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 11,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 12,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 13,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 14,
+        "artist": "POPPY, Amy Lee, Courtney Lapante",
+        "title": "End of You"
+      },
+      {
+        "position": 15,
+        "artist": "Mariah Carey ft Anderson Paak",
+        "title": "Play This Song"
+      },
+      {
+        "position": 16,
+        "artist": "The Rasmus ft. Blind Channel",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 17,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 18,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 19,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 20,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      },
+      {
+        "position": 21,
+        "artist": "Urias ft Criolo",
+        "title": "Deus"
+      },
+      {
+        "position": 22,
+        "artist": "Jaïr Faria",
+        "title": "Between the Glass"
+      },
+      {
+        "position": 23,
+        "artist": "GRAE",
+        "title": "HATED!"
+      },
+      {
+        "position": 24,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 25,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "OUTUBRO / SEMANA 2",
+    "date": "2025-10-06",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 2,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 3,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 4,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 5,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 6,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 7,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 8,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 9,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 10,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 11,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 12,
+        "artist": "Mariah Carey ft Anderson Paak",
+        "title": "Play This Song"
+      },
+      {
+        "position": 13,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 14,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 15,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 16,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      },
+      {
+        "position": 17,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 18,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 19,
+        "artist": "XG",
+        "title": "GALA"
+      },
+      {
+        "position": 20,
+        "artist": "POPPY, Amy Lee, Courtney Lapante",
+        "title": "End of You"
+      },
+      {
+        "position": 21,
+        "artist": "Urias ft Criolo",
+        "title": "Deus"
+      },
+      {
+        "position": 22,
+        "artist": "Liniker ft Priscila Senna",
+        "title": "Pote de Ouro"
+      },
+      {
+        "position": 23,
+        "artist": "The Rasmus ft. Blind Channel",
+        "title": "Break These Chains"
+      },
+      {
+        "position": 24,
+        "artist": "VIVIZ",
+        "title": "La La Love Me"
+      },
+      {
+        "position": 25,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "OUTUBRO / SEMANA 3",
+    "date": "2025-10-13",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 2,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 3,
+        "artist": "Liniker ft Priscila Senna",
+        "title": "Pote de Ouro"
+      },
+      {
+        "position": 4,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 5,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 6,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 7,
+        "artist": "Mariah Carey ft Anderson Paak",
+        "title": "Play This Song"
+      },
+      {
+        "position": 8,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 9,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 10,
+        "artist": "XG",
+        "title": "GALA"
+      },
+      {
+        "position": 11,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 12,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 13,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      },
+      {
+        "position": 14,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 15,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 16,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 17,
+        "artist": "POPPY, Amy Lee, Courtney Lapante",
+        "title": "End of You"
+      },
+      {
+        "position": 18,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 19,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 20,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 21,
+        "artist": "Urias ft Criolo",
+        "title": "Deus"
+      },
+      {
+        "position": 22,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 23,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 24,
+        "artist": "Djavan",
+        "title": "Um Brinde"
+      },
+      {
+        "position": 25,
+        "artist": "Marisa Monte",
+        "title": "Sua Onda"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "OUTUBRO / SEMANA 4",
+    "date": "2025-10-20",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 2,
+        "artist": "Liniker ft Priscila Senna",
+        "title": "Pote de Ouro"
+      },
+      {
+        "position": 3,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 4,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 5,
+        "artist": "XG",
+        "title": "GALA"
+      },
+      {
+        "position": 6,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 7,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 8,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 9,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      },
+      {
+        "position": 10,
+        "artist": "Mariah Carey ft Anderson Paak",
+        "title": "Play This Song"
+      },
+      {
+        "position": 11,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 12,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 13,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 14,
+        "artist": "Djavan",
+        "title": "Um Brinde"
+      },
+      {
+        "position": 15,
+        "artist": "Marisa Monte",
+        "title": "Sua Onda"
+      },
+      {
+        "position": 16,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 17,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 18,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 19,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 20,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 21,
+        "artist": "POPPY, Amy Lee, Courtney Lapante",
+        "title": "End of You"
+      },
+      {
+        "position": 22,
+        "artist": "Florence + the Machine",
+        "title": "Everybody Scream"
+      },
+      {
+        "position": 23,
+        "artist": "Urias ft Criolo",
+        "title": "Deus"
+      },
+      {
+        "position": 24,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 25,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "OUTUBRO / #4",
+    "date": "2025-10-27",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 2,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 3,
+        "artist": "Liniker ft Priscila Senna",
+        "title": "Pote de Ouro"
+      },
+      {
+        "position": 4,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 5,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 6,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 7,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 8,
+        "artist": "Marisa Monte",
+        "title": "Sua Onda"
+      },
+      {
+        "position": 9,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 10,
+        "artist": "XG",
+        "title": "GALA"
+      },
+      {
+        "position": 11,
+        "artist": "Djavan",
+        "title": "Um Brinde"
+      },
+      {
+        "position": 12,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      },
+      {
+        "position": 13,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 14,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 15,
+        "artist": "Mariah Carey ft Anderson Paak",
+        "title": "Play This Song"
+      },
+      {
+        "position": 16,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 17,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 18,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 19,
+        "artist": "ROSALÍA",
+        "title": "Berghain"
+      },
+      {
+        "position": 20,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 21,
+        "artist": "Vanguart",
+        "title": "Estação Liberdade"
+      },
+      {
+        "position": 22,
+        "artist": "Florence + the Machine",
+        "title": "Sympathy Magic"
+      },
+      {
+        "position": 23,
+        "artist": "BLACKPINK",
+        "title": "JUMP"
+      },
+      {
+        "position": 24,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      },
+      {
+        "position": 25,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "NOVEMBRO / #1",
+    "date": "2025-11-03",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Liniker ft Priscila Senna",
+        "title": "Pote de Ouro"
+      },
+      {
+        "position": 2,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 3,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 4,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 5,
+        "artist": "ROSALÍA",
+        "title": "Berghain"
+      },
+      {
+        "position": 6,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 7,
+        "artist": "Marisa Monte",
+        "title": "Sua Onda"
+      },
+      {
+        "position": 8,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 9,
+        "artist": "Djavan",
+        "title": "Um Brinde"
+      },
+      {
+        "position": 10,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 11,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 12,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 13,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 14,
+        "artist": "XG",
+        "title": "GALA"
+      },
+      {
+        "position": 15,
+        "artist": "Florence + the Machine",
+        "title": "Sympathy Magic"
+      },
+      {
+        "position": 16,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      },
+      {
+        "position": 17,
+        "artist": "Vanguart",
+        "title": "Estação Liberdade"
+      },
+      {
+        "position": 18,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 19,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 20,
+        "artist": "Silva",
+        "title": "Virá"
+      },
+      {
+        "position": 21,
+        "artist": "Gaby Amarantos",
+        "title": "Te Amo Fudido"
+      },
+      {
+        "position": 22,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 23,
+        "artist": "Mariah Carey ft Anderson Paak",
+        "title": "Play This Song"
+      },
+      {
+        "position": 24,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 25,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "NOVEMBRO / #2",
+    "date": "2025-11-10",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "ROSALÍA",
+        "title": "Berghain"
+      },
+      {
+        "position": 2,
+        "artist": "Liniker ft Priscila Senna",
+        "title": "Pote de Ouro"
+      },
+      {
+        "position": 3,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 4,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 5,
+        "artist": "Hillary Duffy",
+        "title": "Mature"
+      },
+      {
+        "position": 6,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 7,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 8,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 9,
+        "artist": "Katy Perry",
+        "title": "Bandaids"
+      },
+      {
+        "position": 10,
+        "artist": "Marisa Monte",
+        "title": "Sua Onda"
+      },
+      {
+        "position": 11,
+        "artist": "Vanguart",
+        "title": "Estação Liberdade"
+      },
+      {
+        "position": 12,
+        "artist": "Djavan",
+        "title": "Um Brinde"
+      },
+      {
+        "position": 13,
+        "artist": "Silva",
+        "title": "Virá"
+      },
+      {
+        "position": 14,
+        "artist": "Florence + the Machine",
+        "title": "Sympathy Magic"
+      },
+      {
+        "position": 15,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 16,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 17,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 18,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 19,
+        "artist": "XG",
+        "title": "GALA"
+      },
+      {
+        "position": 20,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 21,
+        "artist": "Cícero ft Duda Beat",
+        "title": "Sem Dormir"
+      },
+      {
+        "position": 22,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 23,
+        "artist": "Lady Gaga",
+        "title": "The Dead Dance"
+      },
+      {
+        "position": 24,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 25,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
+    "label": "NOVEMBRO / #3",
+    "date": "2025-11-17",
+    "entries": [
+      {
+        "position": 1,
+        "artist": "Hillary Duffy",
+        "title": "Mature"
+      },
+      {
+        "position": 2,
+        "artist": "ROSALÍA",
+        "title": "Berghain"
+      },
+      {
+        "position": 3,
+        "artist": "Katy Perry",
+        "title": "Bandaids"
+      },
+      {
+        "position": 4,
+        "artist": "Liniker ft Priscila Senna",
+        "title": "Pote de Ouro"
+      },
+      {
+        "position": 5,
+        "artist": "RAYE",
+        "title": "WHERE IS MY HUSBAND!"
+      },
+      {
+        "position": 6,
+        "artist": "Sombr",
+        "title": "12 to 12"
+      },
+      {
+        "position": 7,
+        "artist": "Hayley Willians",
+        "title": "Parachute"
+      },
+      {
+        "position": 8,
+        "artist": "Vanguart",
+        "title": "Estação Liberdade"
+      },
+      {
+        "position": 9,
+        "artist": "Marisa Monte",
+        "title": "Sua Onda"
+      },
+      {
+        "position": 10,
+        "artist": "Silva",
+        "title": "Virá"
+      },
+      {
+        "position": 11,
+        "artist": "Lucas Pretti",
+        "title": "Safado"
+      },
+      {
+        "position": 12,
+        "artist": "Dupê",
+        "title": "Te Amo, Te Odeio / Eu Sinto o Shadow"
+      },
+      {
+        "position": 13,
+        "artist": "Marco Baptista",
+        "title": "SE NÃO FOR VOCÊ"
+      },
+      {
+        "position": 14,
+        "artist": "Florence + the Machine",
+        "title": "Sympathy Magic"
+      },
+      {
+        "position": 15,
+        "artist": "Djavan",
+        "title": "Um Brinde"
+      },
+      {
+        "position": 16,
+        "artist": "Hayley Willians",
+        "title": "Glum"
+      },
+      {
+        "position": 17,
+        "artist": "The Rasmus",
+        "title": "Love is a Bitch"
+      },
+      {
+        "position": 18,
+        "artist": "Tokio Hotel",
+        "title": "How to Love"
+      },
+      {
+        "position": 19,
+        "artist": "Pabllo Vittar & NMIXX",
+        "title": "MEXE"
+      },
+      {
+        "position": 20,
+        "artist": "The Rasmus ft Lee Jennings",
+        "title": "Weirdo"
+      },
+      {
+        "position": 21,
+        "artist": "XG",
+        "title": "GALA"
+      },
+      {
+        "position": 22,
+        "artist": "Pabllo Vittar",
+        "title": "Exatamente Igual"
+      },
+      {
+        "position": 23,
+        "artist": "Linkin Park",
+        "title": "Up From the Bottom"
+      },
+      {
+        "position": 24,
+        "artist": "HAIM",
+        "title": "Down to be wrong"
+      },
+      {
+        "position": 25,
+        "artist": "HAIM",
+        "title": "All Over Me"
+      }
+    ]
+  },
+  {
+    "sheet": "LADO B-2025",
     "label": "NOVEMBRO / #4",
     "date": "2025-11-24",
     "entries": [
