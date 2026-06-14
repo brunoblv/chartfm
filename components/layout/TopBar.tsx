@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { Bell, X, Globe, Award } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { SearchBar } from "./SearchBar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
@@ -19,7 +19,7 @@ interface TopBarProps {
   onMenuToggle?: () => void;
 }
 
-export function TopBar({ isMobile = false }: TopBarProps) {
+export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
   const { status } = useSession();
   const authed = status === "authenticated";
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -51,32 +51,30 @@ export function TopBar({ isMobile = false }: TopBarProps) {
         }}
       >
         <div style={{ padding: "12px 16px 10px", display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Logo */}
-          <ChartFMLogo size={30} />
+          {/* Hamburger — abre sidebar mobile */}
+          {onMenuToggle && (
+            <button
+              type="button"
+              onClick={onMenuToggle}
+              aria-label="Abrir menu"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text)", flexShrink: 0 }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="7" x2="21" y2="7" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="17" x2="21" y2="17" />
+              </svg>
+            </button>
+          )}
 
-          <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--text)" }}>
+          {/* Logo */}
+          <ChartFMLogo size={28} />
+
+          <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--text)" }}>
             ChartFM
           </span>
 
           <div style={{ flex: 1 }} />
-
-          {/* Global 100 */}
-          <Link
-            href="/global"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", color: pathname === "/global" || pathname.startsWith("/global/") ? "var(--accent)" : "var(--text-muted)", textDecoration: "none", padding: 4 }}
-          >
-            <Globe size={20} strokeWidth={pathname === "/global" || pathname.startsWith("/global/") ? 2.2 : 1.8} />
-          </Link>
-
-          {/* CriticsFM */}
-          <Link
-            href="/criticsfm"
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", color: pathname === "/criticsfm" || pathname.startsWith("/criticsfm/") ? "var(--accent)" : "var(--text-muted)", textDecoration: "none", padding: 4 }}
-          >
-            <Award size={20} strokeWidth={pathname === "/criticsfm" || pathname.startsWith("/criticsfm/") ? 2.2 : 1.8} />
-          </Link>
-
-          <LanguageSwitcher />
 
           {/* Theme toggle */}
           <button

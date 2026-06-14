@@ -173,7 +173,7 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
         left: 0,
         right: 0,
         zIndex: 1000,
-        background: "white",
+        background: "var(--surface)",
         borderRadius: "20px 20px 0 0",
         boxShadow: "0 -4px 32px rgba(0,0,0,0.16)",
         padding: "12px 16px 32px",
@@ -184,9 +184,9 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
         top: "calc(100% + 8px)",
         right: 0,
         zIndex: 1000,
-        background: "white",
+        background: "var(--surface)",
         borderRadius: 16,
-        border: "1px solid rgba(0,0,0,0.1)",
+        border: "1px solid var(--divider-strong)",
         boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
         padding: 16,
         width: 300,
@@ -202,19 +202,19 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
           display: "flex",
           alignItems: "center",
           gap: 8,
-          border: "1px solid rgba(0,0,0,0.12)",
+          border: "1px solid var(--divider-strong)",
           borderRadius: 10,
           padding: "8px 12px",
-          background: "white",
+          background: "var(--surface)",
           cursor: "pointer",
           fontSize: 13,
           fontWeight: 600,
-          color: "#1D1D1F",
+          color: "var(--text)",
           whiteSpace: "nowrap",
         }}
       >
-        <span style={{ fontSize: 12, fontWeight: 600, color: "#6B6B70" }}>{triggerLabel}</span>
-        <ChevronRight size={14} style={{ color: "#86868B", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} />
+        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-subtle)" }}>{triggerLabel}</span>
+        <ChevronRight size={14} style={{ color: "var(--text-muted)", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} />
       </button>
 
       {open && isMobile && (
@@ -232,8 +232,8 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
           {/* Bottom sheet handle (mobile only) */}
           {isMobile && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(0,0,0,0.15)", marginBottom: 8 }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--divider-strong)", marginBottom: 8 }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
                 {mode === "daily" ? "Selecionar dia" : "Selecionar semana"}
               </span>
             </div>
@@ -247,7 +247,7 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                 else if (pickerMode === "months") setViewYear(y => y - 1);
                 else goToPrev();
               }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#1D1D1F", display: "flex", alignItems: "center", padding: 4, borderRadius: 6 }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)", display: "flex", alignItems: "center", padding: 4, borderRadius: 6 }}
             >
               <ChevronLeft size={18} />
             </button>
@@ -258,25 +258,25 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                 <button
                   type="button"
                   onClick={() => setPickerMode("months")}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#1D1D1F", borderRadius: 6, padding: "4px 6px", display: "flex", alignItems: "center", gap: 3 }}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "var(--text)", borderRadius: 6, padding: "4px 6px", display: "flex", alignItems: "center", gap: 3 }}
                 >
                   {MONTH_NAMES_PT[viewMonth]}
-                  <ChevronRight size={12} style={{ color: "#86868B", transform: "rotate(90deg)" }} />
+                  <ChevronRight size={12} style={{ color: "var(--text-muted)", transform: "rotate(90deg)" }} />
                 </button>
               )}
               {/* Year label — in days/months mode clickable to years; in years mode just label */}
               {pickerMode === "years" ? (
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#1D1D1F", padding: "4px 6px" }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", padding: "4px 6px" }}>
                   {yearRangeStart}–{yearRangeStart + 11}
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => { setYearRangeStart(Math.floor(viewYear / 12) * 12); setYearInput(""); setPickerMode("years"); }}
-                  style={{ background: pickerMode === "months" ? "rgba(0,0,0,0.06)" : "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#1D1D1F", borderRadius: 6, padding: "4px 6px", display: "flex", alignItems: "center", gap: 3 }}
+                  style={{ background: pickerMode === "months" ? "rgba(0,0,0,0.06)" : "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "var(--text)", borderRadius: 6, padding: "4px 6px", display: "flex", alignItems: "center", gap: 3 }}
                 >
                   {viewYear}
-                  <ChevronRight size={12} style={{ color: "#86868B", transform: pickerMode === "months" ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.15s" }} />
+                  <ChevronRight size={12} style={{ color: "var(--text-muted)", transform: pickerMode === "months" ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.15s" }} />
                 </button>
               )}
             </div>
@@ -288,7 +288,7 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                 else if (pickerMode === "months") setViewYear(y => y + 1);
                 else goToNext();
               }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#1D1D1F", display: "flex", alignItems: "center", padding: 4, borderRadius: 6 }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text)", display: "flex", alignItems: "center", padding: 4, borderRadius: 6 }}
             >
               <ChevronRight size={18} />
             </button>
@@ -307,14 +307,14 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                     disabled={isFuture}
                     onClick={() => { setViewYear(yr); setPickerMode("months"); }}
                     style={{
-                      background: isSelected ? "rgba(250,36,60,0.1)" : "rgba(0,0,0,0.03)",
+                      background: isSelected ? "var(--accent-tint)" : "var(--fill-inset)",
                       border: isSelected ? "1.5px solid rgba(250,36,60,0.35)" : "1.5px solid transparent",
                       borderRadius: 8,
                       padding: "8px 4px",
                       cursor: isFuture ? "default" : "pointer",
                       fontSize: 13,
                       fontWeight: isSelected ? 700 : 500,
-                      color: isFuture ? "#C7C7CC" : isSelected ? "#FA243C" : "#1D1D1F",
+                      color: isFuture ? "var(--text-disabled)" : isSelected ? "var(--accent)" : "var(--text)",
                       textAlign: "center",
                     }}
                   >
@@ -327,8 +327,8 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
 
           {/* Year direct input */}
           {pickerMode === "years" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, paddingTop: 4, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-              <span style={{ fontSize: 11, color: "#86868B", whiteSpace: "nowrap" }}>Ir para o ano:</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12, paddingTop: 4, borderTop: "1px solid var(--divider)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>Ir para o ano:</span>
               <input
                 type="number"
                 min={1900}
@@ -348,15 +348,16 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                 }}
                 style={{
                   flex: 1,
-                  border: "1px solid rgba(0,0,0,0.15)",
+                  border: "1px solid var(--divider-strong)",
                   borderRadius: 6,
                   padding: "4px 8px",
                   fontSize: 13,
                   fontWeight: 600,
-                  color: "#1D1D1F",
+                  color: "var(--text)",
                   outline: "none",
                   width: 0,
                   appearance: "textfield",
+                  background: "var(--surface)",
                 }}
               />
             </div>
@@ -373,14 +374,14 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                     type="button"
                     onClick={() => { setViewMonth(idx); setPickerMode(false); }}
                     style={{
-                      background: isCurrentMonth ? "rgba(250,36,60,0.1)" : "rgba(0,0,0,0.03)",
+                      background: isCurrentMonth ? "var(--accent-tint)" : "var(--fill-inset)",
                       border: isCurrentMonth ? "1.5px solid rgba(250,36,60,0.35)" : "1.5px solid transparent",
                       borderRadius: 8,
                       padding: "7px 4px",
                       cursor: "pointer",
                       fontSize: 12,
                       fontWeight: isCurrentMonth ? 700 : 500,
-                      color: isCurrentMonth ? "#FA243C" : "#1D1D1F",
+                      color: isCurrentMonth ? "var(--accent)" : "var(--text)",
                       textAlign: "center",
                     }}
                   >
@@ -395,7 +396,7 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
           {!pickerMode && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr) 12px", marginBottom: 4 }}>
             {DAY_NAMES.map((d) => (
-              <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: "#86868B", letterSpacing: "0.04em", paddingBottom: 6 }}>
+              <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", paddingBottom: 6 }}>
                 {d}
               </div>
             ))}
@@ -421,13 +422,13 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                   borderRadius: 8,
                   marginBottom: 2,
                   cursor: mode === "weekly" && !isFutureWeek ? "pointer" : "default",
-                  background: mode === "weekly" && isSelectedWeek ? "rgba(250,36,60,0.08)" : "transparent",
+                  background: mode === "weekly" && isSelectedWeek ? "var(--accent-tint)" : "transparent",
                   outline: mode === "weekly" && isSelectedWeek ? "1.5px solid rgba(250,36,60,0.3)" : "none",
                   transition: "background 0.1s",
                 }}
                 onMouseEnter={(e) => {
                   if (mode === "weekly" && !isFutureWeek && !isSelectedWeek) {
-                    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)";
+                    (e.currentTarget as HTMLElement).style.background = "var(--fill-inset)";
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -461,17 +462,17 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                         fontSize: 12,
                         fontWeight: isToday || isSelectedDay ? 800 : 500,
                         color: isFuture
-                          ? "#C7C7CC"
+                          ? "var(--text-disabled)"
                           : !inMonth
-                            ? "#C7C7CC"
+                            ? "var(--text-disabled)"
                             : isSelectedDay || (mode === "weekly" && isSelectedWeek)
-                              ? "#FA243C"
-                              : "#1D1D1F",
+                              ? "var(--accent)"
+                              : "var(--text)",
                         padding: isMobile ? "9px 2px" : "5px 2px",
                         borderRadius: 6,
                         position: "relative",
                         cursor: mode === "daily" && !isFuture ? "pointer" : "default",
-                        background: isSelectedDay ? "rgba(250,36,60,0.12)" : "transparent",
+                        background: isSelectedDay ? "var(--accent-tint)" : "transparent",
                       }}
                     >
                       {day.getDate()}
@@ -485,7 +486,7 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                             width: 5,
                             height: 5,
                             borderRadius: "50%",
-                            background: hasParada ? "#1B873F" : "#E5E5EA",
+                            background: hasParada ? "#1B873F" : "var(--fill-subtle)",
                           }}
                         />
                       )}
@@ -500,7 +501,7 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                             height: 4,
                             borderRadius: "50%",
                             background:
-                              isSelectedDay || (mode === "weekly" && isSelectedWeek) ? "#FA243C" : "#86868B",
+                              isSelectedDay || (mode === "weekly" && isSelectedWeek) ? "var(--accent)" : "var(--text-muted)",
                           }}
                         />
                       )}
@@ -516,7 +517,7 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                         width: 7,
                         height: 7,
                         borderRadius: "50%",
-                        background: publishedIndexes.has(wIdx) ? "#1B873F" : "#E5E5EA",
+                        background: publishedIndexes.has(wIdx) ? "#1B873F" : "var(--fill-subtle)",
                         flexShrink: 0,
                       }}
                       title={publishedIndexes.has(wIdx) ? "Parada publicada" : "Sem parada"}
@@ -531,13 +532,13 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
           })}
 
           {/* Legend */}
-          {!pickerMode && <div style={{ display: "flex", gap: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 11, color: "#86868B" }}>
+          {!pickerMode && <div style={{ display: "flex", gap: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--divider)", fontSize: 11, color: "var(--text-muted)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#1B873F" }} />
               Com parada
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#E5E5EA" }} />
+              <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "var(--fill-subtle)" }} />
               Sem parada
             </div>
           </div>}

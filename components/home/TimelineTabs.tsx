@@ -221,12 +221,11 @@ export function TimelineTabs({
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "12px 2px 0 2px" }}>
+      <div style={{ overflowX: "auto", margin: "12px 0 0 0", WebkitOverflowScrolling: "touch" as React.CSSProperties["WebkitOverflowScrolling"] }}>
         <div style={{
-          display: "flex", gap: 3,
+          display: "inline-flex", gap: 3, flexShrink: 0,
           background: "var(--fill-subtle)",
           borderRadius: 11, padding: 3,
-          overflowX: "auto",
         }}>
           {tabs.map((t) => (
             <button key={t.key} onClick={() => setActiveTab(t.key)} style={tabStyle(activeTab === t.key)}>
@@ -234,7 +233,6 @@ export function TimelineTabs({
             </button>
           ))}
         </div>
-        <div style={{ flex: 1, height: 1, background: "var(--divider)" }} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
@@ -15,12 +16,16 @@ interface ShellProps {
 
 export function Shell({ children, title, subtitle, headerRight, noPadding }: ShellProps) {
   const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
       {!isMobile && <Sidebar />}
+      {isMobile && (
+        <Sidebar isMobile isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      )}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <TopBar isMobile={isMobile} />
+        <TopBar isMobile={isMobile} onMenuToggle={isMobile ? () => setSidebarOpen((o) => !o) : undefined} />
         <main
           style={
             noPadding
