@@ -49,6 +49,15 @@ const XLSX_ARG = process.argv.find((a) => a.startsWith("--xlsx="));
 const DELAY_ARG = process.argv.find((a) => a.startsWith("--delay="));
 const SPOTIFY_DELAY_MS = DELAY_ARG ? Math.max(100, parseInt(DELAY_ARG.split("=")[1], 10)) : 200;
 
+/** Faixas da planilha LADO B com match incorreto na busca automática */
+const MANUAL_SPOTIFY_OVERRIDES: Record<string, string> = {
+  "lady gaga ft doechii|runaway": "7BjcYqD0CqXnG45ezWSTYR",
+  "gleen check|good times": "6jtahhWFnTocDmYgyJzS1k",
+  "the veronicas|12 to 12 (cover)": "6bbWS27e099GTDcbpcbM9X",
+  "baiana system, pitty tropkillaz e vandal|cobra criada / bicho solto (refix)": "5Y60BnKGNfUSaP2VHWbKCo",
+  "xg|hypnotized": "3fEX9NgOeklq816Fw00uoo",
+};
+
 type RawEntry = { position: number; artist: string; title: string };
 type RawWeek = { label: string; date: string; entries: RawEntry[] };
 
@@ -234,9 +243,25 @@ function sanitizeForSearch(s: string): string {
   return s.replace(/[!$@#%^&*()+\[\]{}|\\<>?]/g, "").replace(/\s+/g, " ").trim();
 }
 
+async function fetchTrackById(trackId: string): Promise<SpotifyHit | null> {
+  await sleep(SPOTIFY_DELAY_MS);
+  const token = await getSpotifyToken();
+  if (!token) return null;
+  const json = await spotifyGet(`/tracks/${encodeURIComponent(trackId)}?market=BR`, token);
+  if (!json?.id) return null;
+  return mapTrackToHit(json);
+}
+
 async function searchSpotifyTrack(artist: string, title: string): Promise<SpotifyHit | null> {
-  const cacheKey = `${artist.toLowerCase()}|${title.toLowerCase()}`;
+  const cacheKey = `${artist.toLowerCase().trim()}|${title.toLowerCase().trim()}`;
   if (spotifyState.cache.has(cacheKey)) return spotifyState.cache.get(cacheKey)!;
+
+  const overrideId = MANUAL_SPOTIFY_OVERRIDES[cacheKey];
+  if (overrideId) {
+    const hit = await fetchTrackById(overrideId);
+    spotifyState.cache.set(cacheKey, hit);
+    return hit;
+  }
 
   await sleep(SPOTIFY_DELAY_MS);
   const token = await getSpotifyToken();
