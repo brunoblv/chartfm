@@ -80,18 +80,28 @@ type Props = {
   entries: MyTrlChartEntry[];
   videoClips: Record<string, string>;
   compact?: boolean;
+  preview?: boolean;
+  maxEntries?: number;
 };
 
-export function MyTrlVideoClipList({ entries, videoClips, compact = false }: Props) {
+export function MyTrlVideoClipList({
+  entries,
+  videoClips,
+  compact = false,
+  preview = false,
+  maxEntries,
+}: Props) {
   const isMobile = useIsMobile(MOBILE_LIST_BREAKPOINT);
-  const clipHeight = compact ? (isMobile ? 48 : 72) : isMobile ? 48 : 125;
+  const visibleEntries = maxEntries ? entries.slice(0, maxEntries) : entries;
+  const isPreview = preview || compact;
+  const clipHeight = isPreview ? (isMobile ? 52 : 64) : isMobile ? 56 : 125;
   const clipWidth = Math.round(clipHeight * (16 / 9));
   const mobileClipIndent = MOBILE_POS_WIDTH + MOBILE_ROW_GAP + clipWidth + MOBILE_ROW_GAP;
-  const gridColumns = desktopListGrid(`${clipWidth + 16}px`, "80px 80px 60px 90px");
+  const gridColumns = desktopListGrid(`${clipWidth + 16}px`, "72px 56px 56px 72px");
 
-  if (entries.length === 0) {
+  if (visibleEntries.length === 0) {
     return (
-      <div style={{ padding: compact ? 20 : 32, textAlign: "center", color: "var(--text-muted)", fontSize: compact ? 13 : 14 }}>
+      <div style={{ padding: isPreview ? 20 : 32, textAlign: "center", color: "var(--text-muted)", fontSize: isPreview ? 13 : 14 }}>
         Nenhuma música nesta edição.
       </div>
     );
@@ -102,14 +112,14 @@ export function MyTrlVideoClipList({ entries, videoClips, compact = false }: Pro
       <div
         style={{
           background: "var(--surface)",
-          borderRadius: compact ? 12 : 0,
-          border: compact ? "1px solid var(--divider)" : undefined,
-          borderTop: compact ? undefined : "1px solid var(--divider)",
-          borderBottom: compact ? undefined : "1px solid var(--divider)",
+          borderRadius: isPreview ? 12 : 0,
+          border: isPreview ? "1px solid var(--divider)" : undefined,
+          borderTop: isPreview ? undefined : "1px solid var(--divider)",
+          borderBottom: isPreview ? undefined : "1px solid var(--divider)",
           overflow: "hidden",
         }}
       >
-        {entries.map((e) => {
+        {visibleEntries.map((e) => {
           const song = entryToSong(e);
           const { paletteA, paletteB, seed } = entryPalette(e);
           const clipUrl = e.spotifyId ? videoClips[e.spotifyId] ?? null : null;
@@ -120,7 +130,7 @@ export function MyTrlVideoClipList({ entries, videoClips, compact = false }: Pro
                 display: "flex",
                 flexDirection: "column",
                 gap: 6,
-                padding: compact ? "8px 10px" : "10px 12px",
+                padding: isPreview ? "8px 10px" : "10px 12px",
                 borderBottom: "1px solid var(--divider-soft)",
               }}
             >
@@ -155,7 +165,7 @@ export function MyTrlVideoClipList({ entries, videoClips, compact = false }: Pro
                     href={e.spotifyId ? buildSongPath(song) : "#"}
                     style={{
                       display: "block",
-                      fontSize: compact ? 12 : MOBILE_TITLE_SIZE,
+                      fontSize: isPreview ? 12 : MOBILE_TITLE_SIZE,
                       fontWeight: 700,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -170,7 +180,7 @@ export function MyTrlVideoClipList({ entries, videoClips, compact = false }: Pro
                     href={buildArtistPath(e.artist, null, null)}
                     style={{
                       display: "block",
-                      fontSize: compact ? 10 : MOBILE_ARTIST_SIZE,
+                      fontSize: isPreview ? 10 : MOBILE_ARTIST_SIZE,
                       color: "var(--text-muted)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -183,7 +193,7 @@ export function MyTrlVideoClipList({ entries, videoClips, compact = false }: Pro
                   </Link>
                 </div>
               </div>
-              {!compact && (
+              {(!isPreview || preview) && (
                 <div style={{ display: "flex", gap: 8, paddingLeft: mobileClipIndent }}>
                   <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
                   <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
@@ -197,77 +207,85 @@ export function MyTrlVideoClipList({ entries, videoClips, compact = false }: Pro
     );
   }
 
-  return (
-    <div
-      style={{
-        background: "var(--surface)",
-        borderRadius: compact ? 12 : 18,
-        border: "1px solid var(--divider)",
-        overflow: "hidden",
-      }}
-    >
-      {!compact && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: gridColumns,
-            padding: "0 20px",
-            background: "var(--fill-inset)",
-            borderBottom: "1px solid var(--divider)",
-          }}
-        >
-          {["Pos", "", "Música", "Anterior", "Dias", "Pico", "#1s"].map((h, i) => (
-            <div
-              key={i}
-              style={{
-                padding: "10px 8px",
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-                color: "var(--text-muted)",
-              }}
-            >
-              {h}
-            </div>
-          ))}
-        </div>
-      )}
-      {entries.map((e) => {
-        const song = entryToSong(e);
-        const { paletteA, paletteB, seed } = entryPalette(e);
-        const clipUrl = e.spotifyId ? videoClips[e.spotifyId] ?? null : null;
-
-        if (compact) {
+  if (isPreview) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {visibleEntries.map((e) => {
+          const song = entryToSong(e);
+          const { paletteA, paletteB, seed } = entryPalette(e);
+          const clipUrl = e.spotifyId ? videoClips[e.spotifyId] ?? null : null;
           return (
             <div
               key={e.position}
               style={{
-                display: "flex",
-                alignItems: "center",
+                display: "grid",
+                gridTemplateColumns: "28px 1fr auto",
                 gap: 8,
-                padding: "6px 10px",
+                alignItems: "center",
+                padding: "8px 12px",
                 borderBottom: "1px solid var(--divider-soft)",
               }}
             >
-              <span style={{ width: 22, fontWeight: 800, fontSize: 13, textAlign: "center", flexShrink: 0 }}>
+              <span style={{ fontWeight: 800, fontSize: 14, textAlign: "center", color: e.position <= 3 ? "var(--accent)" : "var(--text)" }}>
                 {e.position}
               </span>
-              <Link href={e.spotifyId ? buildSongPath(song) : "#"} style={{ lineHeight: 0, flexShrink: 0 }}>
-                <VideoClipCover imageUrl={clipUrl} paletteA={paletteA} paletteB={paletteB} seed={seed} height={clipHeight} />
-              </Link>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {e.track}
                 </div>
-                <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {formatSongArtist(song)}
                 </div>
               </div>
-              <MovementBadge status={e.status} delta={e.delta} compact />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{e.weeks}d</span>
+                <MovementBadge status={e.status} delta={e.delta} compact />
+              </div>
             </div>
           );
-        }
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 18,
+        border: "1px solid var(--divider)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: gridColumns,
+          padding: "0 20px",
+          background: "var(--fill-inset)",
+          borderBottom: "1px solid var(--divider)",
+        }}
+      >
+        {["Pos", "", "Música", "Anterior", "Dias", "Pico", "#1s"].map((h, i) => (
+          <div
+            key={i}
+            style={{
+              padding: "10px 8px",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+            }}
+          >
+            {h}
+          </div>
+        ))}
+      </div>
+      {visibleEntries.map((e) => {
+        const song = entryToSong(e);
+        const { paletteA, paletteB, seed } = entryPalette(e);
+        const clipUrl = e.spotifyId ? videoClips[e.spotifyId] ?? null : null;
 
         return (
           <div

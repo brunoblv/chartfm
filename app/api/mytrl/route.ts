@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireMyTrlSession } from "@/lib/mytrl-access";
 import { getMyTrlOwnerUser } from "@/lib/spotify-user";
-import { MYTRL_WEEKDAYS, type MyTrlChartEntry } from "@/lib/mytrl-chart-engine";
+import { MYTRL_WEEKDAYS, type MyTrlChartEntry, buildMyTrlScoringWindow, brtDateKey } from "@/lib/mytrl-chart-engine";
 import { collectSpotifyIds, resolveMyTrlVideoClips } from "@/lib/mytrl-video-clips";
 
 export const runtime = "nodejs";
@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
   const videoClips = owner
     ? await resolveMyTrlVideoClips(owner.id, collectSpotifyIds(entries))
     : {};
+  const scoringWindow = buildMyTrlScoringWindow(brtDateKey(snapshot.computedAt));
 
   return NextResponse.json({
     weekday,
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest) {
       weekIndex: snapshot.weekIndex,
       weekLabel: snapshot.weekLabel,
       dateRange: snapshot.dateRange,
+      scoringWindow,
       computedAt: snapshot.computedAt.toISOString(),
       entries,
     },

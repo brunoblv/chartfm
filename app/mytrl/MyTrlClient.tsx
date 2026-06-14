@@ -2,33 +2,27 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Music2, RefreshCw, Link2, AlertCircle, LayoutGrid, CalendarRange } from "lucide-react";
+import { Music2, RefreshCw, Link2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
-import { MYTRL_WEEKDAYS, type MyTrlChartEntry } from "@/lib/mytrl-chart-engine";
+import { brtWeekday, type MyTrlChartEntry } from "@/lib/mytrl-chart-engine";
 import { MyTrlVideoClipList } from "@/components/mytrl/MyTrlVideoClipList";
-import { MyTrlWeekView, type MyTrlWeekDay } from "@/components/mytrl/MyTrlWeekView";
-
-type ViewMode = "week" | "day";
 
 type SnapshotPayload = {
   weekIndex: number;
   weekLabel: string;
   dateRange: string;
+  scoringWindow?: string;
   computedAt: string;
   entries: MyTrlChartEntry[];
 };
 
-type HistoryRow = {
+type TimelineEntry = {
+  weekday: number;
   weekIndex: number;
+  weekdayLabel: string;
   weekLabel: string;
   dateRange: string;
   computedAt: string;
-};
-
-type WeekMeta = {
-  weekIndex: number;
-  weekLabel: string;
-  dateRange: string | null;
 };
 
 type SpotifyStatus = {
@@ -38,58 +32,77 @@ type SpotifyStatus = {
   playlistId: string | null;
 };
 
+function editionKey(entry: Pick<TimelineEntry, "weekday" | "weekIndex">) {
+  return `${entry.weekday}:${entry.weekIndex}`;
+}
+
 export default function MyTrlClient() {
   const searchParams = useSearchParams();
-  const [viewMode, setViewMode] = useState<ViewMode>("week");
-  const [weekday, setWeekday] = useState(1);
-  const [weekIndex, setWeekIndex] = useState<number | null>(null);
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [timelineIndex, setTimelineIndex] = useState(-1);
   const [snapshot, setSnapshot] = useState<SnapshotPayload | null>(null);
-  const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [weekdayLabel, setWeekdayLabel] = useState("Segunda");
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
-  const [weekDays, setWeekDays] = useState<MyTrlWeekDay[]>([]);
-  const [weekLabel, setWeekLabel] = useState("");
-  const [availableWeeks, setAvailableWeeks] = useState<WeekMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generateDate, setGenerateDate] = useState("");
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
 
-  const loadDay = useCallback(async (wd: number, wi: number | null) => {
+  const currentEdition = timelineIndex >= 0 ? timeline[timelineIndex] ?? null : null;
+  const canGoPrev = timelineIndex > 0;
+  const canGoNext = timelineIndex >= 0 && timelineIndex < timeline.length - 1;
+
+  const loadEdition = useCallback(async (entry: TimelineEntry) => {
     setLoading(true);
     try {
-      const qs = new URLSearchParams({ weekday: String(wd) });
-      if (wi != null) qs.set("weekIndex", String(wi));
+      const qs = new URLSearchParams({
+        weekday: String(entry.weekday),
+        weekIndex: String(entry.weekIndex),
+      });
       const res = await fetch(`/api/mytrl?${qs}`, { cache: "no-store" });
       if (!res.ok) return;
       const data = await res.json();
       setSnapshot(data.snapshot);
-      setHistory(data.history ?? []);
-      setWeekdayLabel(data.weekdayLabel ?? "");
       setVideoClips(data.videoClips ?? {});
-      if (!wi && data.snapshot?.weekIndex) setWeekIndex(data.snapshot.weekIndex);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const loadWeek = useCallback(async (wi: number | null) => {
+  const loadTimeline = useCallback(async (preferLatest = true) => {
     setLoading(true);
     try {
-      const qs = wi != null ? `?weekIndex=${wi}` : "";
-      const res = await fetch(`/api/mytrl/week${qs}`, { cache: "no-store" });
-      if (!res.ok) return;
+      const res = await fetch("/api/mytrl/timeline", { cache: "no-store" });
+      if (!res.ok) return [];
       const data = await res.json();
-      setWeekDays(data.days ?? []);
-      setWeekLabel(data.weekLabel ?? "");
-      setVideoClips(data.videoClips ?? {});
-      setAvailableWeeks(data.availableWeeks ?? []);
-      if (data.weekIndex != null) setWeekIndex(data.weekIndex);
+      const editions = (data.editions ?? []) as TimelineEntry[];
+      setTimeline(editions);
+
+      if (editions.length === 0) {
+        setTimelineIndex(-1);
+        setSnapshot(null);
+        setVideoClips({});
+        return editions;
+      }
+
+      let index = editions.length - 1;
+      if (preferLatest) {
+        const todayWd = brtWeekday();
+        if (todayWd > 0) {
+          const todayIdx = editions.findLastIndex(
+            (e) => e.weekday === todayWd && e.weekIndex === editions[editions.length - 1]?.weekIndex,
+          );
+          if (todayIdx >= 0) index = todayIdx;
+        }
+      }
+
+      setTimelineIndex(index);
+      await loadEdition(editions[index]);
+      return editions;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadEdition]);
 
   const loadSpotify = useCallback(async () => {
     const res = await fetch("/api/spotify/status", { cache: "no-store" });
@@ -98,7 +111,8 @@ export default function MyTrlClient() {
 
   useEffect(() => {
     void loadSpotify();
-  }, [loadSpotify]);
+    void loadTimeline();
+  }, [loadSpotify, loadTimeline]);
 
   useEffect(() => {
     const spotifyParam = searchParams.get("spotify");
@@ -109,16 +123,41 @@ export default function MyTrlClient() {
     else if (spotifyParam === "token_error") setBanner("Não foi possível obter token do Spotify.");
   }, [searchParams]);
 
-  useEffect(() => {
-    if (viewMode === "week") void loadWeek(weekIndex);
-    else void loadDay(weekday, weekIndex);
-  }, [viewMode, weekday, weekIndex, loadDay, loadWeek]);
+  const goToIndex = useCallback(
+    (index: number) => {
+      const entry = timeline[index];
+      if (!entry) return;
+      setTimelineIndex(index);
+      void loadEdition(entry);
+    },
+    [timeline, loadEdition],
+  );
 
-  const handleWeekdayChange = (wd: number) => {
-    setWeekday(wd);
-    setWeekIndex(null);
-    setViewMode("day");
-  };
+  const goPrev = useCallback(() => {
+    if (timelineIndex <= 0) return;
+    goToIndex(timelineIndex - 1);
+  }, [timelineIndex, goToIndex]);
+
+  const goNext = useCallback(() => {
+    if (timelineIndex < 0 || timelineIndex >= timeline.length - 1) return;
+    goToIndex(timelineIndex + 1);
+  }, [timelineIndex, timeline.length, goToIndex]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        if (timelineIndex <= 0) return;
+        e.preventDefault();
+        goToIndex(timelineIndex - 1);
+      } else if (e.key === "ArrowRight") {
+        if (timelineIndex < 0 || timelineIndex >= timeline.length - 1) return;
+        e.preventDefault();
+        goToIndex(timelineIndex + 1);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [timelineIndex, timeline.length, goToIndex]);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -132,12 +171,10 @@ export default function MyTrlClient() {
       const data = await res.json();
       if (data.ok) {
         setBanner(`Parada gerada (${data.referenceDate}): ${data.count} faixas · ${data.dateRange}.`);
-        if (data.weekIndex != null) setWeekIndex(data.weekIndex);
-        if (viewMode === "week") await loadWeek(data.weekIndex ?? weekIndex);
-        else {
-          if (data.weekday) setWeekday(data.weekday);
-          await loadDay(data.weekday ?? weekday, data.weekIndex ?? weekIndex);
-        }
+        const editions = await loadTimeline(false);
+        const key = `${data.weekday}:${data.weekIndex}`;
+        const idx = editions.findIndex((e) => editionKey(e) === key);
+        if (idx >= 0) goToIndex(idx);
       } else {
         setBanner(data.error ?? "Erro ao gerar parada.");
       }
@@ -146,30 +183,33 @@ export default function MyTrlClient() {
     }
   };
 
-  const viewToggleStyle = (active: boolean) => ({
+  const navBtnStyle = (enabled: boolean) => ({
     display: "inline-flex" as const,
     alignItems: "center" as const,
-    gap: 6,
-    padding: "8px 14px",
-    borderRadius: 999,
+    justifyContent: "center" as const,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     border: "1px solid var(--divider)",
-    background: active ? "var(--accent)" : "var(--surface)",
-    color: active ? "#fff" : "var(--text)",
-    fontWeight: 600,
-    fontSize: 13,
-    cursor: "pointer" as const,
+    background: "var(--surface)",
+    color: enabled ? "var(--text)" : "var(--text-disabled)",
+    cursor: enabled ? "pointer" as const : "default" as const,
+    opacity: enabled ? 1 : 0.45,
+    flexShrink: 0,
   });
 
+  const prevEdition = canGoPrev ? timeline[timelineIndex - 1] : null;
+  const nextEdition = canGoNext ? timeline[timelineIndex + 1] : null;
+
   return (
-    <Shell title="MyTRL" subtitle="Top 10 new hits · vídeo clipe · seg–sex 18h">
+    <Shell title="MyTRL" subtitle="Parada diária · top 10 new hits · seg–sex às 18h">
       <div
         style={{
-          maxWidth: viewMode === "week" ? 1440 : 960,
+          maxWidth: 960,
           margin: "0 auto",
           display: "flex",
           flexDirection: "column",
           gap: 20,
-          transition: "max-width 0.2s ease",
         }}
       >
         {banner && (
@@ -178,193 +218,164 @@ export default function MyTrlClient() {
           </div>
         )}
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            <button type="button" onClick={() => setViewMode("week")} style={viewToggleStyle(viewMode === "week")}>
-              <CalendarRange size={16} />
-              Semana
-            </button>
-            <button type="button" onClick={() => setViewMode("day")} style={viewToggleStyle(viewMode === "day")}>
-              <LayoutGrid size={16} />
-              Dia
-            </button>
-            {viewMode === "day" &&
-              MYTRL_WEEKDAYS.map((d) => (
-                <button
-                  key={d.value}
-                  type="button"
-                  onClick={() => handleWeekdayChange(d.value)}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 999,
-                    border: "1px solid var(--divider)",
-                    background: weekday === d.value ? "var(--text)" : "var(--surface)",
-                    color: weekday === d.value ? "var(--surface)" : "var(--text)",
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: "pointer",
-                  }}
-                >
-                  {d.label}
-                </button>
-              ))}
-          </div>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {!spotify?.connected ? (
-              <a
-                href="/api/spotify/auth"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "8px 14px",
-                  borderRadius: 10,
-                  background: "#1DB954",
-                  color: "#fff",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textDecoration: "none",
-                }}
-              >
-                <Link2 size={16} />
-                Conectar Spotify
-              </a>
-            ) : !spotify.playlistFound ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-muted)" }}>
-                <AlertCircle size={16} />
-                Crie a playlist &quot;new hits&quot; no Spotify
-              </span>
-            ) : null}
-            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-              <span style={{ color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>Data:</span>
-              <input
-                type="date"
-                value={generateDate}
-                onChange={(e) => setGenerateDate(e.target.value)}
-                max={new Date().toISOString().slice(0, 10)}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 8,
-                  border: "1px solid var(--divider)",
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                  fontSize: 13,
-                }}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => void handleGenerate()}
-              disabled={generating}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
+          {!spotify?.connected ? (
+            <a
+              href="/api/spotify/auth"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
                 padding: "8px 14px",
                 borderRadius: 10,
+                background: "#1DB954",
+                color: "#fff",
+                fontWeight: 600,
+                fontSize: 13,
+                textDecoration: "none",
+              }}
+            >
+              <Link2 size={16} />
+              Conectar Spotify
+            </a>
+          ) : !spotify.playlistFound ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-muted)" }}>
+              <AlertCircle size={16} />
+              Crie a playlist &quot;new hits&quot; no Spotify
+            </span>
+          ) : null}
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+            <span style={{ color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>Data:</span>
+            <input
+              type="date"
+              value={generateDate}
+              onChange={(e) => setGenerateDate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 8,
                 border: "1px solid var(--divider)",
                 background: "var(--surface)",
                 color: "var(--text)",
-                fontWeight: 600,
                 fontSize: 13,
-                cursor: generating ? "wait" : "pointer",
-                opacity: generating ? 0.7 : 1,
               }}
-            >
-              <RefreshCw size={16} />
-              {generateDate ? "Gerar para data" : "Gerar agora"}
-            </button>
-          </div>
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => void handleGenerate()}
+            disabled={generating}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: "1px solid var(--divider)",
+              background: "var(--surface)",
+              color: "var(--text)",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: generating ? "wait" : "pointer",
+              opacity: generating ? 0.7 : 1,
+            }}
+          >
+            <RefreshCw size={16} />
+            {generateDate ? "Gerar para data" : "Gerar agora"}
+          </button>
         </div>
 
-        {viewMode === "week" && availableWeeks.length > 1 && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>Semanas:</span>
-            {availableWeeks.map((w) => (
-              <button
-                key={w.weekIndex}
-                type="button"
-                onClick={() => setWeekIndex(w.weekIndex)}
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 8,
-                  border: "1px solid var(--divider)",
-                  background: weekIndex === w.weekIndex ? "var(--accent-tint)" : "transparent",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  color: "var(--text)",
-                }}
-              >
-                {w.dateRange ?? w.weekLabel}
-              </button>
-            ))}
-          </div>
-        )}
+        {timeline.length > 0 && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "44px 1fr 44px",
+              gap: 12,
+              alignItems: "center",
+            }}
+          >
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={!canGoPrev || loading}
+              aria-label={prevEdition ? `Edição anterior: ${prevEdition.dateRange}` : "Sem edição anterior"}
+              style={navBtnStyle(canGoPrev && !loading)}
+            >
+              <ChevronLeft size={22} />
+            </button>
 
-        {viewMode === "day" && snapshot && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "baseline" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Music2 size={20} color="var(--accent)" />
-              <span style={{ fontSize: 18, fontWeight: 700 }}>{weekdayLabel}</span>
+            <div style={{ minWidth: 0, textAlign: "center" }}>
+              {snapshot && currentEdition ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+                    <Music2 size={20} color="var(--accent)" />
+                    <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>{snapshot.dateRange}</span>
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 13, color: "var(--text-muted)" }}>
+                    {snapshot.weekLabel}
+                    {snapshot.scoringWindow && <> · Janela: {snapshot.scoringWindow}</>}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-disabled)" }}>
+                    {timelineIndex + 1} de {timeline.length}
+                    {" · "}
+                    Atualizado{" "}
+                    {new Date(snapshot.computedAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                  </div>
+                </>
+              ) : !loading ? (
+                <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>
+                  Nenhuma parada nesta posição.
+                </p>
+              ) : null}
             </div>
-            <span style={{ fontSize: 14, color: "var(--text-muted)" }}>{snapshot.weekLabel}</span>
-            <span style={{ fontSize: 14, color: "var(--text-muted)" }}>· {snapshot.dateRange}</span>
-            <span style={{ fontSize: 12, color: "var(--text-disabled)" }}>
-              Atualizado {new Date(snapshot.computedAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
-            </span>
+
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canGoNext || loading}
+              aria-label={nextEdition ? `Próxima edição: ${nextEdition.dateRange}` : "Sem próxima edição"}
+              style={navBtnStyle(canGoNext && !loading)}
+            >
+              <ChevronRight size={22} />
+            </button>
           </div>
         )}
 
-        {viewMode === "day" && !snapshot && !loading && (
-          <p style={{ color: "var(--text-muted)", fontSize: 14 }}>
-            Nenhuma edição de {weekdayLabel.toLowerCase()} ainda. Conecte o Spotify e gere a primeira parada.
+        {timeline.length === 0 && !loading && (
+          <p style={{ color: "var(--text-muted)", fontSize: 14, textAlign: "center", padding: "24px 0" }}>
+            Nenhuma parada ainda. Conecte o Spotify e gere a primeira edição.
           </p>
         )}
 
-        {viewMode === "day" && history.length > 1 && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>Edições:</span>
-            {history.map((h) => (
-              <button
-                key={h.weekIndex}
-                type="button"
-                onClick={() => setWeekIndex(h.weekIndex)}
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 8,
-                  border: "1px solid var(--divider)",
-                  background: snapshot?.weekIndex === h.weekIndex ? "var(--accent-tint)" : "transparent",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  color: "var(--text)",
-                }}
-              >
-                {h.dateRange}
-              </button>
-            ))}
+        {(prevEdition || nextEdition) && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              fontSize: 11,
+              color: "var(--text-muted)",
+              padding: "0 4px",
+            }}
+          >
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%" }}>
+              {prevEdition ? `← ${prevEdition.dateRange}` : ""}
+            </span>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%", textAlign: "right" }}>
+              {nextEdition ? `${nextEdition.dateRange} →` : ""}
+            </span>
           </div>
         )}
 
         {loading ? (
           <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Carregando…</div>
-        ) : viewMode === "week" ? (
-          <MyTrlWeekView
-            weekLabel={weekLabel}
-            days={weekDays}
-            videoClips={videoClips}
-            onSelectDay={(wd) => {
-              setWeekday(wd);
-              setViewMode("day");
-            }}
-          />
-        ) : (
-          <MyTrlVideoClipList entries={snapshot?.entries ?? []} videoClips={videoClips} />
-        )}
+        ) : snapshot ? (
+          <MyTrlVideoClipList entries={snapshot.entries} videoClips={videoClips} />
+        ) : null}
 
-        <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-          Visualização em <strong>vídeo clipe</strong> (capturas da comunidade ou sua escolha por música).
-          Pesos Last.fm (7 dias): ontem ×20 até −7 ×10. Só entram faixas da playlist <strong>new hits</strong>.
+        <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, textAlign: "center" }}>
+          Use as setas ou o teclado (← →) para navegar entre as edições diárias.
+          Movimentação e &quot;Dias&quot; comparam com a parada do dia anterior.
         </p>
       </div>
     </Shell>

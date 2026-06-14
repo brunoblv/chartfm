@@ -60,6 +60,25 @@ export function myTrlSnapshotKey(weekday: number, weekIndex: number): string {
   return `${weekday}:${weekIndex}`;
 }
 
+/** Ordem cronológica das paradas diárias (seg–sex dentro de cada semana ISO). */
+export function isEditionBefore(
+  weekday: number,
+  weekIndex: number,
+  targetWeekday: number,
+  targetWeekIndex: number,
+): boolean {
+  if (weekIndex < targetWeekIndex) return true;
+  if (weekIndex > targetWeekIndex) return false;
+  return weekday < targetWeekday;
+}
+
+/** Edição imediatamente anterior: ter–sex → dia anterior; seg → sex da semana ISO anterior. */
+export function prevMyTrlEditionKey(weekday: number, weekIndex: number): string | null {
+  if (weekday > 1) return myTrlSnapshotKey(weekday - 1, weekIndex);
+  if (weekday === 1) return myTrlSnapshotKey(5, prevChartWeekIndex(weekIndex));
+  return null;
+}
+
 function playWeight(diffDays: number): number {
   if (diffDays < 1 || diffDays > 7) return 0;
   return DAY_WEIGHTS[diffDays - 1];
@@ -80,7 +99,7 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDayKey: string)
   return score;
 }
 
-export function buildMyTrlDateRange(referenceDayKey: string): string {
+export function buildMyTrlScoringWindow(referenceDayKey: string): string {
   const ref = new Date(`${referenceDayKey}T00:00:00Z`);
   const start = new Date(ref);
   start.setUTCDate(start.getUTCDate() - 7);
@@ -95,6 +114,22 @@ export function buildMyTrlDateRange(referenceDayKey: string): string {
   return `${fmt(start)} – ${fmt(ref)}/${endYear}`;
 }
 
+/** Rótulo da edição diária (data da parada). */
+export function buildMyTrlEditionDate(referenceDay: Date = new Date()): string {
+  const brt = toBrtDate(referenceDay);
+  const dd = String(brt.getUTCDate()).padStart(2, "0");
+  const mm = String(brt.getUTCMonth() + 1).padStart(2, "0");
+  const yyyy = brt.getUTCFullYear();
+  const wd = brtWeekday(referenceDay);
+  const wdLabel = MYTRL_WEEKDAYS.find((d) => d.value === wd)?.label ?? "";
+  return wdLabel ? `${wdLabel}, ${dd}/${mm}/${yyyy}` : `${dd}/${mm}/${yyyy}`;
+}
+
+/** @deprecated Use buildMyTrlScoringWindow — mantido para compatibilidade. */
+export function buildMyTrlDateRange(referenceDayKey: string): string {
+  return buildMyTrlScoringWindow(referenceDayKey);
+}
+
 function trackKey(track: string, artist: string, spotifyId?: string | null): string {
   if (spotifyId) return `sp:${spotifyId}`;
   return `na:${track.toLowerCase()}|||${artist.toLowerCase()}`;
@@ -106,26 +141,24 @@ function aggregateHistoryStats(
   weekIndex: number,
   history: MyTrlHistory,
   currentPosition: number,
-): { weeks: number; peak: number; numberOnes: number; everOnChart: boolean } {
-  let weeks = 0;
+): { peak: number; numberOnes: number; everOnChart: boolean } {
   let peak = currentPosition;
   let numberOnes = 0;
   let everOnChart = false;
 
   for (const [snapKey, snap] of Object.entries(history)) {
     const [wd, wi] = snapKey.split(":").map(Number);
-    if (wd !== weekday || wi === weekIndex) continue;
+    if (!isEditionBefore(wd, wi, weekday, weekIndex)) continue;
 
     const entry = snap.entries.find((e) => trackKey(e.track, e.artist, e.spotifyId) === key);
     if (!entry) continue;
 
     everOnChart = true;
-    weeks += 1;
     if (entry.position < peak) peak = entry.position;
     if (entry.position === 1) numberOnes += 1;
   }
 
-  return { weeks, peak, numberOnes, everOnChart };
+  return { peak, numberOnes, everOnChart };
 }
 
 export function computeMyTrlChart(
@@ -137,8 +170,8 @@ export function computeMyTrlChart(
   referenceDay: Date = new Date(),
 ): MyTrlChartEntry[] {
   const referenceDayKey = brtDateKey(referenceDay);
-  const prevKey = myTrlSnapshotKey(weekday, prevChartWeekIndex(weekIndex));
-  const prevSnapshot = history[prevKey] ?? null;
+  const prevKey = prevMyTrlEditionKey(weekday, weekIndex);
+  const prevSnapshot = prevKey ? (history[prevKey] ?? null) : null;
 
   const prevMap = new Map<string, MyTrlChartEntry>();
   if (prevSnapshot) {
@@ -168,28 +201,34 @@ export function computeMyTrlChart(
     const prevPos = prev?.position ?? null;
 
     const histStats = aggregateHistoryStats(key, weekday, weekIndex, history, position);
-    let peak = Math.min(histStats.peak, position);
-    const weeks = histStats.weeks + 1;
+    const peak = Math.min(histStats.peak, position);
     const numberOnes = histStats.numberOnes + (position === 1 ? 1 : 0);
+    const prevDays = prev?.weeks ?? 0;
 
     let status: MyTrlEntryStatus;
     let delta: number | null;
+    let weeks: number;
 
     if (prevPos === null && !histStats.everOnChart) {
       status = "new";
       delta = null;
+      weeks = 1;
     } else if (prevPos === null) {
       status = "return";
       delta = null;
+      weeks = 1;
     } else if (position < prevPos) {
       status = "up";
       delta = prevPos - position;
+      weeks = prevDays + 1;
     } else if (position > prevPos) {
       status = "down";
       delta = position - prevPos;
+      weeks = prevDays + 1;
     } else {
       status = "same";
       delta = 0;
+      weeks = prevDays + 1;
     }
 
     const spotifyId = (item as TrackPlays & { spotifyId?: string | null; imageUrl?: string | null }).spotifyId ?? null;
@@ -216,8 +255,9 @@ export function computeMyTrlChart(
 export function buildMyTrlPeriod(referenceDay: Date = new Date()) {
   const weekIndex = buildWeekIndexFromDate(referenceDay);
   const weekLabel = buildWeekLabelFromDate(referenceDay);
-  const dateRange = buildMyTrlDateRange(brtDateKey(referenceDay));
-  return { weekIndex, weekLabel, dateRange };
+  const dateRange = buildMyTrlEditionDate(referenceDay);
+  const scoringWindow = buildMyTrlScoringWindow(brtDateKey(referenceDay));
+  return { weekIndex, weekLabel, dateRange, scoringWindow };
 }
 
 export function myTrlFetchWindow(referenceDay: Date = new Date()): { fromUnix: number; toUnix: number } {

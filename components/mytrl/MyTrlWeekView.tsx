@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronRight } from "lucide-react";
 import type { MyTrlChartEntry } from "@/lib/mytrl-chart-engine";
-import { buildSongPath } from "@/lib/music-routes";
 import { MyTrlVideoClipList } from "@/components/mytrl/MyTrlVideoClipList";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { MOBILE_LIST_BREAKPOINT } from "@/lib/chart-list-layout";
@@ -12,6 +10,7 @@ export type MyTrlWeekDay = {
   weekday: number;
   weekdayLabel: string;
   dateRange: string | null;
+  scoringWindow?: string | null;
   computedAt: string | null;
   entries: MyTrlChartEntry[];
 };
@@ -58,7 +57,9 @@ function DayColumn({
           type="button"
           onClick={() => onSelectDay?.(day.weekday)}
           style={{
-            display: "block",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
             width: "100%",
             textAlign: "left",
             background: "none",
@@ -66,54 +67,55 @@ function DayColumn({
             padding: 0,
             cursor: onSelectDay ? "pointer" : "default",
             color: "inherit",
+            gap: 8,
           }}
         >
-          <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em" }}>{day.weekdayLabel}</div>
-          {day.dateRange ? (
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.35 }}>{day.dateRange}</div>
-          ) : (
-            <div style={{ fontSize: 11, color: "var(--text-disabled)", marginTop: 4 }}>Sem parada</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em" }}>{day.weekdayLabel}</div>
+            {day.dateRange ? (
+              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", marginTop: 4, lineHeight: 1.35 }}>
+                {day.dateRange}
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, color: "var(--text-disabled)", marginTop: 4 }}>Sem parada</div>
+            )}
+            {day.scoringWindow && (
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.35 }}>
+                Janela: {day.scoringWindow}
+              </div>
+            )}
+          </div>
+          {onSelectDay && hasData && (
+            <ChevronRight size={18} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 2 }} />
           )}
         </button>
-        {hasData && day.entries[0] && (
-          <div style={{ marginTop: 12 }}>
-            <Link
-              href={
-                day.entries[0].spotifyId
-                  ? buildSongPath({
-                      title: day.entries[0].track,
-                      artist: day.entries[0].artist,
-                      spotifyId: day.entries[0].spotifyId,
-                    })
-                  : "#"
-              }
-              style={{ display: "block", textDecoration: "none", color: "inherit" }}
-            >
-              <div
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: 10,
-                  background: "var(--accent-tint)",
-                  border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
-                }}
-              >
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)" }}>
-                  #1 do dia
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {day.entries[0].track}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {day.entries[0].artist}
-                </div>
-              </div>
-            </Link>
-          </div>
-        )}
       </header>
       <div style={{ flex: 1 }}>
         {hasData ? (
-          <MyTrlVideoClipList entries={day.entries} videoClips={videoClips} compact />
+          <>
+            <MyTrlVideoClipList entries={day.entries} videoClips={videoClips} preview maxEntries={5} />
+            {day.entries.length > 5 && onSelectDay && (
+              <button
+                type="button"
+                onClick={() => onSelectDay(day.weekday)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "none",
+                  borderTop: "1px solid var(--divider-soft)",
+                  background: "var(--fill-inset)",
+                  color: "var(--accent)",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textAlign: "center",
+                }}
+              >
+                Ver top 10 completo
+              </button>
+            )}
+          </>
         ) : (
           <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
             Gere a parada deste dia para preencher a coluna.
@@ -173,7 +175,7 @@ export function MyTrlWeekView({ weekLabel, days, videoClips, onSelectDay }: Prop
           <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em" }}>{weekLabel}</span>
         </div>
         <span style={{ fontSize: 14, color: "var(--text-muted)" }}>
-          {filledDays} de 5 dias com parada
+          {filledDays} de 5 dias com parada · toque em um dia para ver o top 10 completo
         </span>
       </div>
       <div
