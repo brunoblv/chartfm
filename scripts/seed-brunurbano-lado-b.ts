@@ -1,13 +1,13 @@
 /**
- * Seed script: insere paradas LADO B do @brunourbano a partir da planilha Excel.
+ * Seed script: insere paradas LADO B do @brunurbano a partir da planilha Excel.
  *
  * Usage:
- *   npx tsx scripts/seed-brunourbano-lado-b.ts
- *   npx tsx scripts/seed-brunourbano-lado-b.ts --xlsx="C:\Users\...\LADO B.xlsx"
- *   npx tsx scripts/seed-brunourbano-lado-b.ts --json=scripts/data/lado-b-2026.json
- *   npx tsx scripts/seed-brunourbano-lado-b.ts --dry-run
- *   npx tsx scripts/seed-brunourbano-lado-b.ts --skip-spotify
- *   npx tsx scripts/seed-brunourbano-lado-b.ts --patch-songs
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts --xlsx="C:\Users\...\LADO B.xlsx"
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts --json=scripts/data/lado-b-2026.json
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts --dry-run
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts --skip-spotify
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts --patch-songs
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -35,7 +35,7 @@ if (existsSync(envPath)) {
 
 const prisma = new PrismaClient();
 
-const HANDLE = "brunourbano";
+const HANDLE = "brunurbano";
 const PARADA_NAME = "LADO B";
 const DEFAULT_JSON = join(process.cwd(), "scripts", "data", "lado-b-2026.json");
 const DEFAULT_XLSX = "C:\\Users\\blvbr\\Downloads\\LADO B.xlsx";
@@ -421,7 +421,7 @@ async function resolveParada(userId: string, userName: string) {
 }
 
 async function seedCharts() {
-  console.log("\n=== Seed @brunourbano — LADO B ===");
+  console.log("\n=== Seed @brunurbano — LADO B ===");
   console.log(`  Skip Spotify : ${SKIP_SPOTIFY}`);
   console.log(`  Dry run      : ${DRY_RUN}\n`);
 
@@ -586,7 +586,7 @@ async function seedCharts() {
 }
 
 async function patchMissingSongs() {
-  console.log("\n=== Patch: músicas sem Spotify (@brunourbano / LADO B) ===\n");
+  console.log("\n=== Patch: músicas sem Spotify (@brunurbano / LADO B) ===\n");
   const user = await prisma.user.findUnique({
     where: { handle: HANDLE },
     select: { id: true },
