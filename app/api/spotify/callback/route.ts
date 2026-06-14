@@ -3,11 +3,16 @@ import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
-import { exchangeSpotifyAuthCode, saveSpotifyConnection } from "@/lib/spotify-user";
+import {
+  exchangeSpotifyAuthCode,
+  getSpotifyRedirectUri,
+  saveSpotifyConnection,
+} from "@/lib/spotify-user";
 
 export const runtime = "nodejs";
 
 const STATE_COOKIE = "spotify_oauth_state";
+const REDIRECT_URI_COOKIE = "spotify_oauth_redirect_uri";
 
 // GET /api/spotify/callback — retorno do OAuth Spotify
 export async function GET(req: NextRequest) {
@@ -26,13 +31,17 @@ export async function GET(req: NextRequest) {
   const state = url.searchParams.get("state");
   const jar = await cookies();
   const stored = jar.get(STATE_COOKIE)?.value;
+  const storedRedirectUri = jar.get(REDIRECT_URI_COOKIE)?.value;
   jar.delete(STATE_COOKIE);
+  jar.delete(REDIRECT_URI_COOKIE);
 
   if (!code || !state || !stored || state !== stored) {
     return NextResponse.redirect(new URL("/mytrl?spotify=invalid_state", req.url));
   }
 
-  const tokens = await exchangeSpotifyAuthCode(code);
+  const redirectUri =
+    storedRedirectUri ?? getSpotifyRedirectUri(new URL(req.url).origin);
+  const tokens = await exchangeSpotifyAuthCode(code, redirectUri);
   if (!tokens) {
     return NextResponse.redirect(new URL("/mytrl?spotify=token_error", req.url));
   }

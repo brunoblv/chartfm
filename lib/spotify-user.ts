@@ -58,8 +58,12 @@ export type NewHitsTrack = {
   imageUrl: string | null;
 };
 
-function getRedirectUri(): string {
-  const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+/** URI de callback OAuth — deve coincidir exatamente com o Spotify Developer Dashboard. */
+export function getSpotifyRedirectUri(requestOrigin?: string): string {
+  if (process.env.SPOTIFY_REDIRECT_URI) {
+    return process.env.SPOTIFY_REDIRECT_URI.replace(/\/$/, "");
+  }
+  const base = requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   return `${base.replace(/\/$/, "")}/api/spotify/callback`;
 }
 
@@ -67,12 +71,12 @@ export function spotifyUserOAuthConfigured(): boolean {
   return Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET);
 }
 
-export function buildSpotifyAuthorizeUrl(state: string): string {
+export function buildSpotifyAuthorizeUrl(state: string, redirectUri: string): string {
   const clientId = process.env.SPOTIFY_CLIENT_ID!;
   const url = new URL(AUTHORIZE_URL);
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("redirect_uri", getRedirectUri());
+  url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("scope", SPOTIFY_USER_SCOPES);
   url.searchParams.set("state", state);
   url.searchParams.set("show_dialog", "true");
@@ -97,11 +101,14 @@ async function exchangeTokens(body: URLSearchParams): Promise<TokenResponse | nu
   return (await res.json()) as TokenResponse;
 }
 
-export async function exchangeSpotifyAuthCode(code: string): Promise<TokenResponse | null> {
+export async function exchangeSpotifyAuthCode(
+  code: string,
+  redirectUri: string,
+): Promise<TokenResponse | null> {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: getRedirectUri(),
+    redirect_uri: redirectUri,
   });
   return exchangeTokens(body);
 }

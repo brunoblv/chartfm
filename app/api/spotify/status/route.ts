@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireMyTrlSession } from "@/lib/mytrl-access";
-import { getMyTrlOwnerUser, spotifyUserOAuthConfigured } from "@/lib/spotify-user";
+import {
+  getMyTrlOwnerUser,
+  getSpotifyRedirectUri,
+  spotifyUserOAuthConfigured,
+} from "@/lib/spotify-user";
 
 export const runtime = "nodejs";
 
@@ -17,6 +21,7 @@ export async function GET() {
 
   return NextResponse.json({
     configured: spotifyUserOAuthConfigured(),
+    redirectUri: getSpotifyRedirectUri(),
     connected,
     playlistFound: Boolean(playlistId),
     playlistId,

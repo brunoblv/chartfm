@@ -1,15 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 import { requireMyTrlSession } from "@/lib/mytrl-access";
-import { buildSpotifyAuthorizeUrl, spotifyUserOAuthConfigured } from "@/lib/spotify-user";
+import {
+  buildSpotifyAuthorizeUrl,
+  getSpotifyRedirectUri,
+  spotifyUserOAuthConfigured,
+} from "@/lib/spotify-user";
 
 export const runtime = "nodejs";
 
 const STATE_COOKIE = "spotify_oauth_state";
+const REDIRECT_URI_COOKIE = "spotify_oauth_redirect_uri";
 
 // GET /api/spotify/auth — inicia OAuth Spotify (somente @bruno)
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireMyTrlSession();
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -23,14 +28,17 @@ export async function GET() {
   }
 
   const state = crypto.randomBytes(24).toString("hex");
+  const redirectUri = getSpotifyRedirectUri(new URL(req.url).origin);
   const jar = await cookies();
-  jar.set(STATE_COOKIE, state, {
+  const cookieOpts = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     maxAge: 600,
     path: "/",
-  });
+  };
+  jar.set(STATE_COOKIE, state, cookieOpts);
+  jar.set(REDIRECT_URI_COOKIE, redirectUri, cookieOpts);
 
-  return NextResponse.redirect(buildSpotifyAuthorizeUrl(state));
+  return NextResponse.redirect(buildSpotifyAuthorizeUrl(state, redirectUri));
 }
