@@ -12,6 +12,8 @@
     "seed:boofrnds": "tsx scripts/seed-boofrnds.ts",
     "seed:clube-r3": "tsx scripts/seed-clube-round-3.ts",
     "audit:boofrnds": "tsx scripts/audit-boofrnds.ts",
+    "audit:user-points": "tsx scripts/audit-user-points.ts",
+    "recompute:chart-entry-points": "tsx scripts/recompute-chart-entry-points.ts",
     "fix:boofrnds": "tsx scripts/fix-boofrnds-charts.ts",
     "rebuild:global-2026": "tsx scripts/rebuild-global-snapshots-2026.ts",
     "refresh:entity-snapshots": "tsx scripts/refresh-entity-page-snapshots.ts",

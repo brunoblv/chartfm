@@ -597,6 +597,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     prisma.chart.update({
       where: { id: chartId },
       data: {
+        maxItems: entries.length,
         entries: { create: entryData },
       },
     }),

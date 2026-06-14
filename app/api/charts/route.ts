@@ -383,6 +383,7 @@ export async function POST(req: NextRequest) {
       weekLabel,
       dateRange,
       publishedAt,
+      maxItems: entries.length,
       entries: { create: entryData },
     },
   });

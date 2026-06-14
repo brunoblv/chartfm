@@ -8,21 +8,13 @@ import { Cover } from "@/components/ui/Cover";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
-import { formatChartPeriod } from "@/lib/chart-week";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
 import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
 import { globalStatsForSingleSong, pointsForPosition, songKey } from "@/lib/chart-page-common";
+import { buildSongParadaAppearanceGroups } from "@/lib/song-parada-appearances";
 import { songEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
-
-/** Apenas o intervalo de datas (sem o sufixo "Semana …"). */
-function chartDateRangeOnly(chart: { weekLabel: string; dateRange: string }): string {
-  const full = formatChartPeriod(chart);
-  const marker = " - ";
-  const cut = full.lastIndexOf(marker);
-  return cut >= 0 ? full.slice(0, cut) : full;
-}
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);
@@ -83,6 +75,17 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           userId: true,
           weekLabel: true,
           dateRange: true,
+          maxItems: true,
+          _count: { select: { entries: true } },
+          parada: {
+            select: {
+              id: true,
+              name: true,
+              isPrimary: true,
+              sortOrder: true,
+              cadence: true,
+            },
+          },
         },
       },
       song: {
@@ -205,6 +208,23 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
 
   const currentUserId = session?.user?.id ?? null;
   const myEntries = currentUserId ? entries.filter((e) => e.chart.userId === currentUserId) : [];
+  const userParadas = currentUserId
+    ? await prisma.parada.findMany({
+        where: { userId: currentUserId },
+        select: { id: true, name: true, isPrimary: true, sortOrder: true },
+        orderBy: { sortOrder: "asc" },
+      })
+    : [];
+  const myParadaSections = buildSongParadaAppearanceGroups(
+    myEntries.map((entry) => ({
+      ...entry,
+      chart: {
+        ...entry.chart,
+        entryCount: entry.chart._count.entries,
+      },
+    })),
+    userParadas,
+  );
 
   const myVideoClip = currentUserId
     ? await prisma.userSongVideoClipChoice.findUnique({
@@ -246,23 +266,6 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     isMyChoice: myVideoClip?.clipId === c.id,
     isMyUpload: c.uploadedBy === currentUserId,
   }));
-
-  const myAppearancesSorted = [...myEntries]
-    .sort((a, b) => a.chart.weekIndex - b.chart.weekIndex)
-    .map((e) => ({
-      chartId: e.chart.id,
-      position: e.position,
-      dateRange: chartDateRangeOnly({ weekLabel: e.chart.weekLabel, dateRange: e.chart.dateRange }),
-      weekOfYear: e.chart.weekIndex % 100,
-      year: Math.floor(e.chart.weekIndex / 100),
-    }));
-
-  const myStats = {
-    appearances: myEntries.length,
-    bestPosition: myEntries.length > 0 ? Math.min(...myEntries.map((e) => e.position)) : 9999,
-    points: myEntries.reduce((sum, e) => sum + (e.points > 0 ? e.points : pointsForPosition(e.position)), 0),
-    number1s: myEntries.filter((e) => e.position === 1).length,
-  };
 
   return (
     <Shell title="" noPadding>
@@ -316,8 +319,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         <SongAppearancesTabs
           currentUserId={currentUserId}
           songId={songId}
-          myAppearances={myAppearancesSorted}
-          myStats={myStats}
+          myParadaSections={myParadaSections}
           globalStats={globalStats}
           topUsers={topUsers}
           initialVideoClipUrl={myVideoClip?.clip?.imageUrl ?? null}

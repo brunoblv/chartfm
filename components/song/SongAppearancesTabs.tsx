@@ -4,6 +4,7 @@ import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { Star, Upload, Trash2, ThumbsUp, Check } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import type { SongParadaAppearanceGroup, SongParadaUserStats, SongAppearanceRow } from "@/lib/song-parada-appearances";
 
 async function compressImage(file: File, maxBytes = 700 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
@@ -44,21 +45,6 @@ async function compressImage(file: File, maxBytes = 700 * 1024): Promise<File> {
   });
 }
 
-type Appearance = {
-  chartId: string;
-  position: number;
-  dateRange: string;
-  weekOfYear: number;
-  year: number;
-};
-
-type UserStats = {
-  appearances: number;
-  bestPosition: number;
-  points: number;
-  number1s: number;
-};
-
 type GlobalStats = {
   totalPoints: number;
   uniqueUsers: number;
@@ -87,17 +73,98 @@ type VideoClip = {
 type Props = {
   currentUserId: string | null;
   songId: string;
-  myAppearances: Appearance[];
-  myStats: UserStats;
+  myParadaSections: SongParadaAppearanceGroup[];
   globalStats: GlobalStats;
   topUsers: TopUser[];
   initialVideoClipUrl: string | null;
   initialClips: VideoClip[];
 };
 
-export function SongAppearancesTabs({ currentUserId, songId, myAppearances, myStats, globalStats, topUsers, initialVideoClipUrl, initialClips }: Props) {
+function userStatsCards(stats: SongParadaUserStats): { label: string; value: string | number }[] {
+  return [
+    { label: "Semanas na parada", value: stats.appearances },
+    { label: "Melhor posição", value: stats.bestPosition === 9999 ? "—" : `#${stats.bestPosition}` },
+    { label: "Seus pontos", value: stats.points },
+    { label: "#1s seus", value: stats.number1s },
+  ];
+}
+
+function paradaTabLabel(section: SongParadaAppearanceGroup): string {
+  return section.isPrimary ? "Parada principal" : section.paradaName || "Parada secundária";
+}
+
+function AppearancesTable({ rows }: { rows: SongAppearanceRow[] }) {
+  return (
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "60px minmax(0,1fr) 110px 70px 110px",
+          padding: "0 20px",
+          background: "var(--fill-inset)",
+          borderBottom: "1px solid var(--divider)",
+        }}
+      >
+        {(["Pos", "Semana", "Semana do ano", "Ano", ""] as const).map((h, i) => (
+          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B" }}>
+            {h}
+          </div>
+        ))}
+      </div>
+      {rows.map((row, i) => {
+        const last = i === rows.length - 1;
+        return (
+          <div
+            key={row.chartId}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "60px minmax(0,1fr) 110px 70px 110px",
+              alignItems: "center",
+              padding: "8px 20px",
+              borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.04)",
+              gap: 0,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                letterSpacing: "-0.04em",
+                color: "var(--text)",
+                fontVariantNumeric: "tabular-nums",
+                textAlign: "right",
+                paddingRight: 12,
+              }}
+            >
+              {row.position}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {row.dateRange}
+            </div>
+            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+              Sem. {row.weekOfYear}
+            </div>
+            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+              {row.year}
+            </div>
+            <div style={{ padding: "0 8px" }}>
+              <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+                Ver parada →
+              </Link>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, globalStats, topUsers, initialVideoClipUrl, initialClips }: Props) {
   const isLoggedIn = !!currentUserId;
   const [activeTab, setActiveTab] = useState<"mine" | "global" | "video_clip">(isLoggedIn ? "mine" : "global");
+  const [activeParadaId, setActiveParadaId] = useState<string | null>(myParadaSections[0]?.paradaId ?? null);
+  const activeParadaSection =
+    myParadaSections.find((section) => section.paradaId === activeParadaId) ?? myParadaSections[0] ?? null;
   const [videoClipUrl, setVideoClipUrl] = useState<string | null>(initialVideoClipUrl);
   const [uploading, setUploading] = useState(false);
   const [clipError, setClipError] = useState<string | null>(null);
@@ -106,12 +173,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
   const [votingId, setVotingId] = useState<string | null>(null);
   const [choosingId, setChoosingId] = useState<string | null>(null);
 
-  const userCards: { label: string; value: string | number }[] = [
-    { label: "Semanas na parada", value: myStats.appearances },
-    { label: "Melhor posição", value: myStats.bestPosition === 9999 ? "—" : `#${myStats.bestPosition}` },
-    { label: "Seus pontos", value: myStats.points },
-    { label: "#1s seus", value: myStats.number1s },
-  ];
+  const userCards = activeParadaSection ? userStatsCards(activeParadaSection.stats) : [];
 
   const globalCards: { label: string; value: string | number }[] = [
     { label: "Pontos totais", value: globalStats.totalPoints },
@@ -315,68 +377,46 @@ export function SongAppearancesTabs({ currentUserId, songId, myAppearances, mySt
               {" — "}
               entre na sua conta para ver posição, datas e ano em cada semana em que você publicou esta faixa.
             </div>
-          ) : myAppearances.length > 0 ? (
-            <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "60px minmax(0,1fr) 110px 70px 110px",
-                  padding: "0 20px",
-                  background: "var(--fill-inset)",
-                  borderBottom: "1px solid var(--divider)",
-                }}
-              >
-                {(["Pos", "Semana", "Semana do ano", "Ano", ""] as const).map((h, i) => (
-                  <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B" }}>
-                    {h}
-                  </div>
-                ))}
-              </div>
-              {myAppearances.map((row, i) => {
-                const last = i === myAppearances.length - 1;
-                return (
-                  <div
-                    key={row.chartId}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "60px minmax(0,1fr) 110px 70px 110px",
-                      alignItems: "center",
-                      padding: "8px 20px",
-                      borderBottom: last ? "none" : "1px solid rgba(0,0,0,0.04)",
-                      gap: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 700,
-                        letterSpacing: "-0.04em",
-                        color: "var(--text)",
-                        fontVariantNumeric: "tabular-nums",
-                        textAlign: "right",
-                        paddingRight: 12,
-                      }}
-                    >
-                      {row.position}
-                    </div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {row.dateRange}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-                      Sem. {row.weekOfYear}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-                      {row.year}
-                    </div>
-                    <div style={{ padding: "0 8px" }}>
-                      <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
-                        Ver parada →
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          ) : myParadaSections.length > 0 ? (
+            <>
+              {myParadaSections.length > 1 && (
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 16, background: "var(--fill-subtle)", borderRadius: 100, padding: 3 }}>
+                  {myParadaSections.map((section) => {
+                    const isActive = section.paradaId === activeParadaSection?.paradaId;
+                    return (
+                      <button
+                        key={section.paradaId}
+                        type="button"
+                        onClick={() => setActiveParadaId(section.paradaId)}
+                        style={{
+                          padding: "7px 14px",
+                          borderRadius: 100,
+                          border: "none",
+                          fontSize: 13,
+                          fontWeight: isActive ? 700 : 500,
+                          background: isActive ? "var(--surface)" : "transparent",
+                          color: isActive ? "var(--text)" : "var(--text-muted)",
+                          cursor: "pointer",
+                          boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {paradaTabLabel(section)}
+                        {section.isPrimary ? " ★" : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {activeParadaSection && activeParadaSection.appearances.length > 0 ? (
+                <AppearancesTable rows={activeParadaSection.appearances} />
+              ) : (
+                <div style={{ padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
+                  Esta música ainda não aparece na {activeParadaSection?.isPrimary ? "parada principal" : "parada secundária"}
+                  {activeParadaSection?.paradaName ? ` (${activeParadaSection.paradaName})` : ""}. Quando você votar com ela, aparecerá aqui a posição, a data e o ano de cada semana.
+                </div>
+              )}
+            </>
           ) : (
             <div style={{ padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
               Esta música ainda não aparece em nenhuma das suas paradas publicadas. Quando você votar com ela, aparecerá aqui a posição, a data e o ano de cada semana.
