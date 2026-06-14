@@ -1,17 +1,20 @@
 /**
  * Seed script: insere paradas LADO B do @brunurbano a partir da planilha Excel.
+ * Importa todas as abas LADO B-YYYY (ex.: 2025, 2026).
  *
  * Usage:
  *   npx tsx scripts/seed-brunurbano-lado-b.ts
  *   npx tsx scripts/seed-brunurbano-lado-b.ts --xlsx="C:\Users\...\LADO B.xlsx"
- *   npx tsx scripts/seed-brunurbano-lado-b.ts --json=scripts/data/lado-b-2026.json
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts --year=2025
+ *   npx tsx scripts/seed-brunurbano-lado-b.ts --json=scripts/data/lado-b-all.json
  *   npx tsx scripts/seed-brunurbano-lado-b.ts --dry-run
  *   npx tsx scripts/seed-brunurbano-lado-b.ts --skip-spotify
  *   npx tsx scripts/seed-brunurbano-lado-b.ts --patch-songs
  */
 
 import { PrismaClient } from "@prisma/client";
-import { execFileSync, existsSync, readFileSync } from "fs";
+import { execFileSync } from "child_process";
+import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import {
   buildDateRangeFromDate,
@@ -37,7 +40,7 @@ const prisma = new PrismaClient();
 
 const HANDLE = "brunurbano";
 const PARADA_NAME = "LADO B";
-const DEFAULT_JSON = join(process.cwd(), "scripts", "data", "lado-b-2026.json");
+const DEFAULT_JSON = join(process.cwd(), "scripts", "data", "lado-b-all.json");
 const DEFAULT_XLSX = "C:\\Users\\blvbr\\Downloads\\LADO B.xlsx";
 const PARSE_PY = join(process.cwd(), "scripts", "parse-lado-b-xlsx.py");
 
@@ -46,6 +49,8 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const PATCH_SONGS = process.argv.includes("--patch-songs");
 const JSON_ARG = process.argv.find((a) => a.startsWith("--json="));
 const XLSX_ARG = process.argv.find((a) => a.startsWith("--xlsx="));
+const YEAR_ARG = process.argv.find((a) => a.startsWith("--year="));
+const SHEET_ARG = process.argv.find((a) => a.startsWith("--sheet="));
 const DELAY_ARG = process.argv.find((a) => a.startsWith("--delay="));
 const SPOTIFY_DELAY_MS = DELAY_ARG ? Math.max(100, parseInt(DELAY_ARG.split("=")[1], 10)) : 200;
 
@@ -59,9 +64,10 @@ const MANUAL_SPOTIFY_OVERRIDES: Record<string, string> = {
 };
 
 type RawEntry = { position: number; artist: string; title: string };
-type RawWeek = { label: string; date: string; entries: RawEntry[] };
+type RawWeek = { sheet?: string; label: string; date: string; entries: RawEntry[] };
 
 type ParsedWeek = {
+  sheet?: string;
   label: string;
   refDate: Date;
   startDate: Date;
@@ -118,11 +124,23 @@ function parseDateYmd(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
+function parseArgsForPython(xlsxPath: string): string[] {
+  const args = [PARSE_PY, xlsxPath];
+  if (SHEET_ARG) args.push(SHEET_ARG);
+  else if (YEAR_ARG) args.push(YEAR_ARG);
+  return args;
+}
+
 function loadRawWeeks(): RawWeek[] {
-  if (XLSX_ARG) {
-    const xlsxPath = XLSX_ARG.split("=").slice(1).join("=");
+  const xlsxPath = XLSX_ARG
+    ? XLSX_ARG.split("=").slice(1).join("=")
+    : existsSync(DEFAULT_XLSX)
+      ? DEFAULT_XLSX
+      : null;
+
+  if (xlsxPath) {
     if (!existsSync(xlsxPath)) throw new Error(`XLSX não encontrado: ${xlsxPath}`);
-    const out = execFileSync("python", [PARSE_PY, xlsxPath], { encoding: "utf-8" });
+    const out = execFileSync("python", parseArgsForPython(xlsxPath), { encoding: "utf-8" });
     return JSON.parse(out) as RawWeek[];
   }
 
@@ -131,12 +149,7 @@ function loadRawWeeks(): RawWeek[] {
     return JSON.parse(readFileSync(jsonPath, "utf-8")) as RawWeek[];
   }
 
-  if (existsSync(DEFAULT_XLSX)) {
-    const out = execFileSync("python", [PARSE_PY, DEFAULT_XLSX], { encoding: "utf-8" });
-    return JSON.parse(out) as RawWeek[];
-  }
-
-  throw new Error(`Nenhuma fonte encontrada. Use --json= ou --xlsx=`);
+  throw new Error(`Nenhuma fonte encontrada. Use --xlsx= ou --json=`);
 }
 
 function normalizeWeeks(raw: RawWeek[]): ParsedWeek[] {
@@ -145,9 +158,18 @@ function normalizeWeeks(raw: RawWeek[]): ParsedWeek[] {
       const refDate = parseDateYmd(w.date);
       const { start, end } = getChartWeekRange(refDate);
       const entries = [...w.entries].sort((a, b) => a.position - b.position);
-      return { label: w.label, refDate, startDate: start, endDate: end, entries };
+      return { sheet: w.sheet, label: w.label, refDate, startDate: start, endDate: end, entries };
     })
     .sort((a, b) => a.refDate.getTime() - b.refDate.getTime());
+}
+
+function summarizeBySheet(weeks: ParsedWeek[]) {
+  const counts = new Map<string, number>();
+  for (const w of weeks) {
+    const key = w.sheet ?? String(w.refDate.getFullYear());
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
 function parseAlbumType(raw: string | undefined): SpotifyHit["albumType"] {
@@ -453,8 +475,12 @@ async function seedCharts() {
   const raw = loadRawWeeks();
   const weeks = normalizeWeeks(raw);
   console.log(`Semanas parseadas: ${weeks.length}`);
+  for (const [sheet, count] of summarizeBySheet(weeks)) {
+    console.log(`  ${sheet}: ${count} semanas`);
+  }
   for (const w of weeks) {
-    console.log(`  ${w.label} (${buildDateRangeFromDate(w.refDate)}) — ${w.entries.length} músicas`);
+    const tag = w.sheet ? `[${w.sheet}] ` : "";
+    console.log(`  ${tag}${w.label} (${buildDateRangeFromDate(w.refDate)}) — ${w.entries.length} músicas`);
   }
 
   if (DRY_RUN) return;
