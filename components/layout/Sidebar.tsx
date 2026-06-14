@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Star, Award, ImagePlay } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Star, Award, ImagePlay, Radio } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -25,6 +25,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const profileHandle = authed ? session!.user.handle! : null;
   const isAdmin = authed && (session?.user?.role === "ADMIN" || session?.user?.role === "DEV");
+  const isMyTrlOwner = authed && session?.user?.handle === "bruno";
   const profilePath = profileHandle ? `/profile/${profileHandle}` : "/login";
   const profileActive =
     !!profileHandle &&
@@ -114,6 +115,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
             session={session}
             onNavClick={handleNavClick}
             isAdmin={isAdmin}
+            isMyTrlOwner={isMyTrlOwner}
             t={t}
           />
         </aside>
@@ -154,6 +156,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
         session={session}
         onNavClick={() => {}}
         isAdmin={isAdmin}
+        isMyTrlOwner={isMyTrlOwner}
         t={t}
       />
     </aside>
@@ -172,6 +175,7 @@ function SidebarContent({
   session,
   onNavClick,
   isAdmin,
+  isMyTrlOwner,
   t,
 }: {
   pathname: string;
@@ -185,6 +189,7 @@ function SidebarContent({
   session: ReturnType<typeof useSession>["data"];
   onNavClick: () => void;
   isAdmin: boolean;
+  isMyTrlOwner: boolean;
   t: (key: string) => string;
 }) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
@@ -196,6 +201,7 @@ function SidebarContent({
     { href: "/communities", label: t("nav.communities"), icon: Users },
     { href: "/albums", label: t("nav.albums"), icon: Star },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
+    ...(isMyTrlOwner ? [{ href: "/mytrl", label: t("nav.mytrl"), icon: Radio }] : []),
     { href: "/notifications", label: t("nav.notifications"), icon: Bell, requiresAuth: true },
     { href: "/whats-new", label: t("nav.whatsNew"), icon: Sparkles, badge: t("nav.badgeNew") },
   ];

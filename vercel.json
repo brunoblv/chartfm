@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/entity-page-snapshots",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/mytrl",
+      "schedule": "0 21 * * 1-5"
     }
   ]
 }

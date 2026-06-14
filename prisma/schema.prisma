@@ -34,6 +34,11 @@ model User {
   role                 UserRole          @default(USER)
   needsHandle          Boolean           @default(false) @map("needs_handle")
   lastfmUser           String?
+  spotifyAccessToken   String?           @map("spotify_access_token")
+  spotifyRefreshToken  String?           @map("spotify_refresh_token")
+  spotifyTokenExpiresAt DateTime?        @map("spotify_token_expires_at")
+  spotifyUserId        String?           @map("spotify_user_id")
+  spotifyNewHitsPlaylistId String?       @map("spotify_new_hits_playlist_id")
   twitterUser          String?
   instagramUser        String?
   chartSize            Int?              @map("chart_size")
@@ -623,6 +628,21 @@ model WeeklyRelease {
   updatedAt DateTime             @updatedAt @map("updated_at")
 
   @@map("weekly_releases")
+}
+
+/// Snapshots da parada pessoal MyTRL (seg–sex, gerados às 18h BRT).
+model MyTrlSnapshot {
+  id         String   @id @default(cuid())
+  weekday    Int
+  weekIndex  Int      @map("week_index")
+  weekLabel  String   @map("week_label")
+  dateRange  String   @map("date_range")
+  entries    Json
+  computedAt DateTime @default(now()) @map("computed_at")
+
+  @@unique([weekday, weekIndex])
+  @@index([weekday, weekIndex(sort: Desc)])
+  @@map("mytrl_snapshots")
 }
 
 model WeeklyReleaseAlbum {
