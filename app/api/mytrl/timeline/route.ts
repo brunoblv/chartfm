@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireMyTrlSession } from "@/lib/mytrl-access";
-import { MYTRL_WEEKDAYS } from "@/lib/mytrl-chart-engine";
+import { MYTRL_WEEKDAYS, formatMyTrlEditionDisplay } from "@/lib/mytrl-chart-engine";
 import { myTrlDayIndexFromDate } from "@/lib/mytrl-stats";
 
 export const runtime = "nodejs";
@@ -25,15 +25,19 @@ export async function GET() {
   });
 
   const editions = rows
-    .map((row) => ({
-      weekday: row.weekday,
-      weekIndex: row.weekIndex,
-      weekdayLabel: MYTRL_WEEKDAYS.find((d) => d.value === row.weekday)?.label ?? "",
-      weekLabel: row.weekLabel,
-      dateRange: row.dateRange,
-      computedAt: row.computedAt.toISOString(),
-      dayIndex: myTrlDayIndexFromDate(row.computedAt),
-    }))
+    .map((row) => {
+      const edition = formatMyTrlEditionDisplay(row.computedAt);
+      return {
+        weekday: row.weekday,
+        weekIndex: row.weekIndex,
+        weekdayLabel: edition.weekdayLabel || (MYTRL_WEEKDAYS.find((d) => d.value === row.weekday)?.label ?? ""),
+        weekLabel: row.weekLabel,
+        dateRange: edition.fullLabel,
+        edition,
+        computedAt: row.computedAt.toISOString(),
+        dayIndex: myTrlDayIndexFromDate(row.computedAt),
+      };
+    })
     .sort((a, b) => a.dayIndex - b.dayIndex)
     .map(({ dayIndex: _dayIndex, ...edition }) => edition);
 

@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Music2, RefreshCw, Link2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Link2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
-import { brtWeekday, type MyTrlChartEntry } from "@/lib/mytrl-chart-engine";
+import { brtWeekday, formatMyTrlEditionDisplay, type MyTrlChartEntry, type MyTrlEditionDisplay } from "@/lib/mytrl-chart-engine";
 import { MyTrlVideoClipList } from "@/components/mytrl/MyTrlVideoClipList";
 
 type SnapshotPayload = {
   weekIndex: number;
   weekLabel: string;
   dateRange: string;
+  edition?: MyTrlEditionDisplay;
   scoringWindow?: string;
   computedAt: string;
   entries: MyTrlChartEntry[];
@@ -22,8 +23,14 @@ type TimelineEntry = {
   weekdayLabel: string;
   weekLabel: string;
   dateRange: string;
+  edition?: MyTrlEditionDisplay;
   computedAt: string;
 };
+
+function editionFromEntry(entry: { edition?: MyTrlEditionDisplay; computedAt: string; weekdayLabel?: string }): MyTrlEditionDisplay {
+  if (entry.edition) return entry.edition;
+  return formatMyTrlEditionDisplay(new Date(entry.computedAt));
+}
 
 type SpotifyStatus = {
   configured: boolean;
@@ -220,6 +227,7 @@ export default function MyTrlClient() {
 
   const prevEdition = canGoPrev ? timeline[timelineIndex - 1] : null;
   const nextEdition = canGoNext ? timeline[timelineIndex + 1] : null;
+  const editionDisplay = snapshot ? editionFromEntry(snapshot) : null;
 
   return (
     <Shell title="MyTRL" subtitle="Parada diária · top 10 new hits · seg–sex às 18h">
@@ -340,22 +348,54 @@ export default function MyTrlClient() {
               type="button"
               onClick={goPrev}
               disabled={!canGoPrev || loading}
-              aria-label={prevEdition ? `Edição anterior: ${prevEdition.dateRange}` : "Sem edição anterior"}
+              aria-label={prevEdition ? `Edição anterior: ${editionFromEntry(prevEdition).shortLabel}` : "Sem edição anterior"}
               style={navBtnStyle(canGoPrev && !loading)}
             >
               <ChevronLeft size={22} />
             </button>
 
             <div style={{ minWidth: 0, textAlign: "center" }}>
-              {snapshot && currentEdition ? (
+              {snapshot && currentEdition && editionDisplay ? (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
-                    <Music2 size={20} color="var(--accent)" />
-                    <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>{snapshot.dateRange}</span>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 800,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color: "var(--accent)",
+                    }}
+                  >
+                    {editionDisplay.weekdayLabel}
                   </div>
-                  <div style={{ marginTop: 6, fontSize: 13, color: "var(--text-muted)" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      justifyContent: "center",
+                      gap: 10,
+                      marginTop: 4,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 44,
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        letterSpacing: "-0.04em",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {editionDisplay.dayOfMonth}
+                    </span>
+                    <span style={{ fontSize: 17, fontWeight: 600, color: "var(--text-muted)" }}>
+                      de {editionDisplay.monthLabel} de {editionDisplay.year}
+                    </span>
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 13, color: "var(--text-muted)" }}>
                     {snapshot.weekLabel}
-                    {snapshot.scoringWindow && <> · Janela: {snapshot.scoringWindow}</>}
+                    {snapshot.scoringWindow && <> · Janela Last.fm: {snapshot.scoringWindow}</>}
                   </div>
                   <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-disabled)" }}>
                     {timelineIndex + 1} de {timeline.length}
@@ -375,7 +415,7 @@ export default function MyTrlClient() {
               type="button"
               onClick={goNext}
               disabled={!canGoNext || loading}
-              aria-label={nextEdition ? `Próxima edição: ${nextEdition.dateRange}` : "Sem próxima edição"}
+              aria-label={nextEdition ? `Próxima edição: ${editionFromEntry(nextEdition).shortLabel}` : "Sem próxima edição"}
               style={navBtnStyle(canGoNext && !loading)}
             >
               <ChevronRight size={22} />
@@ -401,10 +441,10 @@ export default function MyTrlClient() {
             }}
           >
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%" }}>
-              {prevEdition ? `← ${prevEdition.dateRange}` : ""}
+              {prevEdition ? `← ${editionFromEntry(prevEdition).shortLabel}` : ""}
             </span>
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "45%", textAlign: "right" }}>
-              {nextEdition ? `${nextEdition.dateRange} →` : ""}
+              {nextEdition ? `${editionFromEntry(nextEdition).shortLabel} →` : ""}
             </span>
           </div>
         )}

@@ -116,13 +116,50 @@ export function buildMyTrlScoringWindow(referenceDayKey: string): string {
 
 /** Rótulo da edição diária (data da parada). */
 export function buildMyTrlEditionDate(referenceDay: Date = new Date()): string {
+  return formatMyTrlEditionDisplay(referenceDay).fullLabel;
+}
+
+export type MyTrlEditionDisplay = {
+  weekdayLabel: string;
+  dayOfMonth: number;
+  monthLabel: string;
+  year: number;
+  /** Ex.: "Sexta, 14 de junho de 2026" */
+  fullLabel: string;
+  /** Ex.: "Sexta · 14/06" */
+  shortLabel: string;
+};
+
+const MONTH_NAMES_PT = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
+/** Dia da semana + dia do mês da parada (sempre a partir da data BRT da edição). */
+export function formatMyTrlEditionDisplay(referenceDay: Date = new Date()): MyTrlEditionDisplay {
   const brt = toBrtDate(referenceDay);
-  const dd = String(brt.getUTCDate()).padStart(2, "0");
-  const mm = String(brt.getUTCMonth() + 1).padStart(2, "0");
-  const yyyy = brt.getUTCFullYear();
+  const dayOfMonth = brt.getUTCDate();
+  const monthIndex = brt.getUTCMonth();
+  const year = brt.getUTCFullYear();
+  const monthLabel = MONTH_NAMES_PT[monthIndex] ?? "";
+  const monthCap = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
   const wd = brtWeekday(referenceDay);
-  const wdLabel = MYTRL_WEEKDAYS.find((d) => d.value === wd)?.label ?? "";
-  return wdLabel ? `${wdLabel}, ${dd}/${mm}/${yyyy}` : `${dd}/${mm}/${yyyy}`;
+  const weekdayLabel = MYTRL_WEEKDAYS.find((d) => d.value === wd)?.label ?? "";
+  const dd = String(dayOfMonth).padStart(2, "0");
+  const mm = String(monthIndex + 1).padStart(2, "0");
+
+  const fullLabel = weekdayLabel
+    ? `${weekdayLabel}, ${dayOfMonth} de ${monthCap} de ${year}`
+    : `${dayOfMonth} de ${monthCap} de ${year}`;
+
+  return {
+    weekdayLabel,
+    dayOfMonth,
+    monthLabel: monthCap,
+    year,
+    fullLabel,
+    shortLabel: weekdayLabel ? `${weekdayLabel} · ${dd}/${mm}` : `${dd}/${mm}/${year}`,
+  };
 }
 
 /** @deprecated Use buildMyTrlScoringWindow — mantido para compatibilidade. */
