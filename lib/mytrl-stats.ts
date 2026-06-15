@@ -24,34 +24,33 @@ function parseDayIndex(dayIndex: number): Date {
   return new Date(Date.UTC(y, m - 1, d));
 }
 
-/** Dia útil anterior à publicação (pula fim de semana). */
-export function prevMyTrlPublicationDayIndex(dayIndex: number): number | null {
-  const date = parseDayIndex(dayIndex);
-  date.setUTCDate(date.getUTCDate() - 1);
+/** Edição publicada imediatamente anterior na timeline (mesma ordem das setas ←). */
+export function prevPublishedDayIndex(dayIndex: number, sortedDayIndexes: number[]): number | null {
+  const i = sortedDayIndexes.indexOf(dayIndex);
+  if (i <= 0) return null;
+  return sortedDayIndexes[i - 1] ?? null;
+}
 
-  for (let i = 0; i < 3; i++) {
-    const wd = date.getUTCDay();
-    if (wd >= 1 && wd <= 5) {
-      return myTrlDayIndexFromDate(date);
-    }
-    date.setUTCDate(date.getUTCDate() - 1);
-  }
-  return null;
+export function sortEditionsChronologically<T extends { computedAt: Date }>(rows: T[]): T[] {
+  return [...rows].sort(
+    (a, b) => myTrlDayIndexFromDate(a.computedAt) - myTrlDayIndexFromDate(b.computedAt),
+  );
 }
 
 export function myTrlEditionStorageKey(weekday: number, weekIndex: number): string {
   return `${weekday}:${weekIndex}`;
 }
 
-function trackKeys(track: string, artist: string, spotifyId: string | null): string[] {
-  const keys = [`na:${track.toLowerCase()}|||${artist.toLowerCase()}`];
-  if (spotifyId) keys.unshift(`sp:${spotifyId}`);
-  return keys;
-}
-
 function entriesMatch(a: MyTrlChartEntry, track: string, artist: string, spotifyId: string | null): boolean {
-  const aKeys = new Set(trackKeys(a.track, a.artist, a.spotifyId));
-  return trackKeys(track, artist, spotifyId).some((k) => aKeys.has(k));
+  const aKeys = new Set([
+    `na:${a.track.toLowerCase()}|||${a.artist.toLowerCase()}`,
+    ...(a.spotifyId ? [`sp:${a.spotifyId}`] : []),
+  ]);
+  const bKeys = [
+    `na:${track.toLowerCase()}|||${artist.toLowerCase()}`,
+    ...(spotifyId ? [`sp:${spotifyId}`] : []),
+  ];
+  return bKeys.some((k) => aKeys.has(k));
 }
 
 function findEntry(
@@ -64,10 +63,9 @@ function findEntry(
 }
 
 /**
- * Mesma lógica da exibição de paradas diárias (GET /api/charts/[id]):
- * - prevPos: só a edição imediatamente anterior (dia útil)
- * - dias (weeks): total de aparições até esta edição
- * - pico / #1s: acumulado até esta edição
+ * Estatísticas na ordem cronológica (mais antiga → mais recente):
+ * - Ao ver a edição de hoje, "Anterior" = edição imediatamente anterior publicada (←)
+ * - "Dias" / pico / #1s = acumulado desde a primeira edição até a atual
  */
 export function applyMyTrlStatsToEntries(
   dayIndex: number,
@@ -75,7 +73,7 @@ export function applyMyTrlStatsToEntries(
   editionsByDay: Map<number, MyTrlChartEntry[]>,
   sortedDayIndexes: number[],
 ): MyTrlChartEntry[] {
-  const prevPubDay = prevMyTrlPublicationDayIndex(dayIndex);
+  const prevPubDay = prevPublishedDayIndex(dayIndex, sortedDayIndexes);
   const prevEntries = prevPubDay != null ? (editionsByDay.get(prevPubDay) ?? []) : [];
 
   return entries.map((entry, i) => {
@@ -86,7 +84,6 @@ export function applyMyTrlStatsToEntries(
     let weeks = 0;
     let peak = position;
     let numberOnes = 0;
-    let hasOlder = false;
 
     for (const d of sortedDayIndexes) {
       if (d > dayIndex) break;
@@ -97,8 +94,17 @@ export function applyMyTrlStatsToEntries(
       weeks += 1;
       peak = Math.min(peak, past.position);
       if (past.position === 1) numberOnes += 1;
+    }
 
-      if (prevPubDay != null && d < prevPubDay) hasOlder = true;
+    let hasOlder = false;
+    if (prevPos === null) {
+      for (const d of sortedDayIndexes) {
+        if (d >= dayIndex) break;
+        if (findEntry(editionsByDay.get(d) ?? [], entry.track, entry.artist, entry.spotifyId)) {
+          hasOlder = true;
+          break;
+        }
+      }
     }
 
     let status: MyTrlEntryStatus;
@@ -132,26 +138,27 @@ export function applyMyTrlStatsToEntries(
 }
 
 export function recomputeMyTrlEditionStats(rows: MyTrlEditionRow[]): Map<string, MyTrlChartEntry[]> {
+  const sortedRows = sortEditionsChronologically(rows);
   const editionsByDay = new Map<number, MyTrlChartEntry[]>();
   const rowByDay = new Map<number, MyTrlEditionRow>();
-  const dayIndexes: number[] = [];
+  const sortedDayIndexes: number[] = [];
 
-  for (const row of rows) {
+  for (const row of sortedRows) {
     const dayIndex = myTrlDayIndexFromDate(row.computedAt);
     editionsByDay.set(dayIndex, row.entries);
     rowByDay.set(dayIndex, row);
-    dayIndexes.push(dayIndex);
+    sortedDayIndexes.push(dayIndex);
   }
 
-  const sortedDayIndexes = [...new Set(dayIndexes)].sort((a, b) => a - b);
+  const uniqueSortedDays = [...new Set(sortedDayIndexes)].sort((a, b) => a - b);
   const result = new Map<string, MyTrlChartEntry[]>();
 
-  for (const dayIndex of sortedDayIndexes) {
+  for (const dayIndex of uniqueSortedDays) {
     const row = rowByDay.get(dayIndex);
     const entries = editionsByDay.get(dayIndex);
     if (!row || !entries) continue;
 
-    const computed = applyMyTrlStatsToEntries(dayIndex, entries, editionsByDay, sortedDayIndexes);
+    const computed = applyMyTrlStatsToEntries(dayIndex, entries, editionsByDay, uniqueSortedDays);
     result.set(myTrlEditionStorageKey(row.weekday, row.weekIndex), computed);
   }
 

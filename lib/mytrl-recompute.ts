@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { MyTrlChartEntry } from "@/lib/mytrl-chart-engine";
-import { recomputeMyTrlEditionStats } from "@/lib/mytrl-stats";
+import { recomputeMyTrlEditionStats, sortEditionsChronologically } from "@/lib/mytrl-stats";
 
 /** Recalcula estatísticas de todas as edições em ordem cronológica (por data BRT). */
 export async function recomputeAllMyTrlSnapshots(): Promise<{ editions: number }> {
-  const rows = await prisma.myTrlSnapshot.findMany({
-    orderBy: { computedAt: "asc" },
-  });
+  const rows = sortEditionsChronologically(
+    await prisma.myTrlSnapshot.findMany(),
+  );
 
   if (rows.length === 0) return { editions: 0 };
 

@@ -417,8 +417,9 @@ export default function MyTrlClient() {
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, textAlign: "center" }}>
           Use as setas ou o teclado (← →) para navegar entre as edições diárias.
-          &quot;Dias&quot; = total de aparições; &quot;Anterior&quot; = posição na edição do dia útil anterior.
-          Clique em <strong>Recalcular stats</strong> para corrigir edições antigas.
+          &quot;Dias&quot; = total de aparições do mais antigo até esta edição.
+          &quot;Anterior&quot; = posição na edição imediatamente anterior (← nas setas).
+          Clique em <strong>Recalcular stats</strong> após esta atualização.
         </p>
       </div>
     </Shell>
