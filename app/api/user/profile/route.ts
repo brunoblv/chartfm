@@ -33,6 +33,7 @@ export async function GET() {
       twitterUser: true,
       instagramUser: true,
       chartSize: true,
+      spotifyRefreshToken: true,
     },
   });
   if (!user) {
@@ -40,8 +41,9 @@ export async function GET() {
   }
 
   const paradas = await ensureUserParadas(prisma, session.user.id);
+  const { spotifyRefreshToken, ...userPublic } = user;
 
-  return NextResponse.json({ ...user, paradas });
+  return NextResponse.json({ ...userPublic, spotifyConnected: Boolean(spotifyRefreshToken), paradas });
 }
 
 export async function PATCH(req: Request) {

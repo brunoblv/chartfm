@@ -127,6 +127,12 @@ export default function CreatePage() {
   const [globalTopSongs, setGlobalTopSongs] = useState<Song[]>([]);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
+  const [showSpotifyModal, setShowSpotifyModal] = useState(false);
+  const [spotifyImportCount, setSpotifyImportCount] = useState(20);
+  const [importingSpotify, setImportingSpotify] = useState(false);
+  const [spotifyUserConnected, setSpotifyUserConnected] = useState(false);
+  const spotifyImportRunRef = useRef(0);
+  const spotifyImportAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     fetch("/api/global/top")
@@ -177,9 +183,10 @@ export default function CreatePage() {
   useEffect(() => {
     fetch("/api/user/profile")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { lastfmUser?: string | null } | null) => {
+      .then((data: { lastfmUser?: string | null; spotifyConnected?: boolean } | null) => {
         if (!data) return;
         setUserLastfmUser(data.lastfmUser ?? null);
+        setSpotifyUserConnected(data.spotifyConnected ?? false);
       })
       .catch(() => {});
   }, []);
@@ -190,6 +197,7 @@ export default function CreatePage() {
       setPublishError(null);
       setImportingLast(false);
       setImportingLastfm(false);
+      setImportingSpotify(false);
     };
     const onPageShow = (event: PageTransitionEvent) => {
       // Quando a página volta do histórico do navegador (bfcache),
@@ -543,6 +551,54 @@ export default function CreatePage() {
     }
   };
 
+  const importFromSpotify = async (limit: number = 20) => {
+    spotifyImportAbortRef.current?.abort();
+    const runId = ++spotifyImportRunRef.current;
+    const ac = new AbortController();
+    spotifyImportAbortRef.current = ac;
+
+    setShowSpotifyModal(false);
+    setEntries([]);
+    setImportingSpotify(true);
+    setPublishError(null);
+    try {
+      const res = await fetch(`/api/spotify/recent?ts=${Date.now()}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+        body: JSON.stringify({ limit }),
+        signal: ac.signal,
+        cache: "no-store",
+      });
+      if (runId !== spotifyImportRunRef.current) return;
+
+      const data = (await res.json()) as {
+        songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>;
+        error?: string;
+      };
+      if (!res.ok) {
+        if (runId !== spotifyImportRunRef.current) return;
+        setPublishError(data.error ?? "Erro ao importar do Spotify.");
+        return;
+      }
+      if (runId !== spotifyImportRunRef.current) return;
+
+      const songs: Song[] = (data.songs ?? []).slice(0, limit).map((s) => ({
+        title: s.title,
+        artist: s.artist,
+        album: s.album,
+        spotifyId: s.spotifyId ?? undefined,
+        imageUrl: s.imageUrl ?? undefined,
+      }));
+      setEntries(songs);
+    } catch (e: unknown) {
+      if (runId !== spotifyImportRunRef.current) return;
+      if (e instanceof Error && e.name === "AbortError") return;
+      setPublishError("Erro de conexão ao importar do Spotify.");
+    } finally {
+      if (runId === spotifyImportRunRef.current) setImportingSpotify(false);
+    }
+  };
+
   const handleParadaChange = (paradaId: string) => {
     const parada = paradas.find((p) => p.id === paradaId);
     if (!parada) return;
@@ -816,26 +872,48 @@ export default function CreatePage() {
           </div>
         </div>
         {session?.user && (
-          <button
-            type="button"
-            onClick={() => !importingLastfm && setShowLastfmModal(true)}
-            disabled={importingLastfm}
-            title="Importar suas músicas mais ouvidas no Last.fm nos últimos 30 dias"
-            style={{
-              border: "1px solid rgba(250,36,60,0.3)",
-              background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
-              color: "#FA243C",
-              borderRadius: 10,
-              padding: "8px 12px",
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: importingLastfm ? "not-allowed" : "pointer",
-              opacity: importingLastfm ? 0.65 : 1,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {importingLastfm ? "Buscando Last.fm…" : "↺ Last.fm"}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => !importingLastfm && setShowLastfmModal(true)}
+              disabled={importingLastfm}
+              title="Importar suas músicas mais ouvidas no Last.fm nos últimos 30 dias"
+              style={{
+                border: "1px solid rgba(250,36,60,0.3)",
+                background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
+                color: "#FA243C",
+                borderRadius: 10,
+                padding: "8px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: importingLastfm ? "not-allowed" : "pointer",
+                opacity: importingLastfm ? 0.65 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {importingLastfm ? "Buscando Last.fm…" : "↺ Last.fm"}
+            </button>
+            <button
+              type="button"
+              onClick={() => !importingSpotify && setShowSpotifyModal(true)}
+              disabled={importingSpotify}
+              title="Importar suas músicas tocadas recentemente no Spotify"
+              style={{
+                border: "1px solid rgba(30,215,96,0.35)",
+                background: importingSpotify ? "rgba(30,215,96,0.05)" : "rgba(30,215,96,0.08)",
+                color: "#1DB954",
+                borderRadius: 10,
+                padding: "8px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: importingSpotify ? "not-allowed" : "pointer",
+                opacity: importingSpotify ? 0.65 : 1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {importingSpotify ? "Buscando Spotify…" : "↺ Spotify"}
+            </button>
+          </>
         )}
         <button
           type="button"
@@ -865,7 +943,7 @@ export default function CreatePage() {
           <button
             type="button"
             onClick={() => setEntries([])}
-            disabled={importingLastfm || importingLast}
+            disabled={importingLastfm || importingLast || importingSpotify}
             title="Limpar todas as músicas da lista"
             style={{
               border: "1px solid var(--divider-strong)",
@@ -875,8 +953,8 @@ export default function CreatePage() {
               padding: "8px 12px",
               fontSize: 12,
               fontWeight: 700,
-              cursor: importingLastfm || importingLast ? "not-allowed" : "pointer",
-              opacity: importingLastfm || importingLast ? 0.65 : 1,
+              cursor: importingLastfm || importingLast || importingSpotify ? "not-allowed" : "pointer",
+              opacity: importingLastfm || importingLast || importingSpotify ? 0.65 : 1,
               whiteSpace: "nowrap",
             }}
           >
@@ -1231,6 +1309,180 @@ export default function CreatePage() {
                 }}
               >
                 Importar {lastfmImportCount} música{lastfmImportCount === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de importação do Spotify */}
+      {showSpotifyModal && (
+        <div
+          onClick={() => setShowSpotifyModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: isMobile ? "flex-end" : "center",
+            justifyContent: "center",
+            padding: isMobile ? 0 : 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "white",
+              borderRadius: isMobile ? "20px 20px 0 0" : 20,
+              padding: isMobile ? "28px 20px 32px" : "32px 28px",
+              width: "100%",
+              maxWidth: isMobile ? "100%" : 480,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
+            {isMobile && (
+              <div style={{ display: "flex", justifyContent: "center", marginTop: -12, marginBottom: -8 }}>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(0,0,0,0.15)" }} />
+              </div>
+            )}
+
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(30,215,96,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                  ↺
+                </div>
+                <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Spotify</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                Suas músicas tocadas mais recentemente no Spotify serão importadas na ordem em que foram ouvidas.
+              </p>
+            </div>
+
+            <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+              {spotifyUserConnected ? (
+                <>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1DB954", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 14, color: "white", fontWeight: 800 }}>♪</span>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Conta Spotify</div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Conectada</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(30,215,96,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                    ⚠️
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#15803D" }}>Conta Spotify não conectada</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                      Conecte nas{" "}
+                      <a href="/settings" style={{ color: "#1DB954", fontWeight: 600, textDecoration: "none" }}>
+                        configurações de perfil
+                      </a>
+                      {" "}para usar esta função.
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                Quantas músicas importar?
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <input
+                  type="range"
+                  min={10}
+                  max={50}
+                  step={1}
+                  value={spotifyImportCount}
+                  onChange={(e) => setSpotifyImportCount(Number(e.target.value))}
+                  disabled={!spotifyUserConnected}
+                  style={{ flex: 1, accentColor: "#1DB954", cursor: spotifyUserConnected ? "pointer" : "not-allowed" }}
+                />
+                <div style={{
+                  minWidth: 52,
+                  textAlign: "center",
+                  background: "rgba(30,215,96,0.08)",
+                  border: "1px solid rgba(30,215,96,0.25)",
+                  borderRadius: 8,
+                  padding: "6px 8px",
+                  fontSize: 16,
+                  fontWeight: 800,
+                  color: "#1DB954",
+                  fontVariantNumeric: "tabular-nums",
+                }}>
+                  {spotifyImportCount}
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                De 10 a 50 músicas. Ordenadas da mais recente para a mais antiga.
+              </div>
+            </div>
+
+            {userChartSize && (
+              <div style={{
+                background: "rgba(30,215,96,0.04)",
+                border: "1px solid rgba(30,215,96,0.15)",
+                borderRadius: 12,
+                padding: "12px 14px",
+                display: "flex",
+                gap: 10,
+                alignItems: "flex-start",
+              }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>✂️</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                    Sua parada tem {userChartSize} posições
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
+                    Ao publicar, músicas além da {userChartSize}ª posição serão descartadas. Reordene antes de publicar.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowSpotifyModal(false)}
+                style={{
+                  padding: "10px 18px",
+                  borderRadius: 100,
+                  border: "1px solid rgba(0,0,0,0.12)",
+                  background: "white",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  color: "#1D1D1F",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => importFromSpotify(spotifyImportCount)}
+                disabled={!spotifyUserConnected}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 100,
+                  border: "none",
+                  background: spotifyUserConnected ? "#1DB954" : "var(--fill-subtle)",
+                  color: spotifyUserConnected ? "white" : "var(--text-disabled)",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: spotifyUserConnected ? "pointer" : "not-allowed",
+                  boxShadow: spotifyUserConnected ? "0 2px 8px rgba(30,215,96,0.35)" : "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Importar {spotifyImportCount} música{spotifyImportCount === 1 ? "" : "s"}
               </button>
             </div>
           </div>

@@ -65,6 +65,7 @@ type ProfileData = {
   chartSize: number | null;
   image: string | null;
   paradaLogo: string | null;
+  spotifyConnected?: boolean;
 };
 
 type Tab = "perfil" | "parada" | "conta";
@@ -95,6 +96,8 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [disconnectingSpotify, setDisconnectingSpotify] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -131,6 +134,16 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const spotifyParam = params.get("spotify");
+    if (spotifyParam === "connected") {
+      setSuccess("Spotify conectado com sucesso!");
+      window.history.replaceState({}, "", "/settings");
+    } else if (spotifyParam === "error" || spotifyParam === "token_error" || spotifyParam === "invalid_state") {
+      setError("Erro ao conectar o Spotify. Tente novamente.");
+      window.history.replaceState({}, "", "/settings");
+    }
+
     fetch("/api/user/profile")
       .then(async (res) => {
         if (res.status === 401) {
@@ -155,6 +168,7 @@ export default function SettingsPage() {
           image: data.image ?? null,
           paradaLogo: data.paradaLogo ?? null,
         });
+        setSpotifyConnected(data.spotifyConnected ?? false);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
@@ -674,6 +688,46 @@ export default function SettingsPage() {
                     />
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                       Cole o link do perfil ou só o nome de usuário — o usuário é extraído automaticamente.
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Spotify</span>
+                    {spotifyConnected ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ flex: 1, border: "1px solid rgba(30,215,96,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 14, background: "rgba(30,215,96,0.06)", color: "#1DB954", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>✓</span> Conta conectada
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setDisconnectingSpotify(true);
+                            try {
+                              await fetch("/api/spotify/disconnect", { method: "POST" });
+                              setSpotifyConnected(false);
+                              setSuccess("Spotify desconectado.");
+                            } catch {
+                              setError("Erro ao desconectar o Spotify.");
+                            } finally {
+                              setDisconnectingSpotify(false);
+                            }
+                          }}
+                          disabled={disconnectingSpotify}
+                          style={{ border: "1px solid var(--divider-strong)", background: "var(--fill-subtle)", color: "var(--text-muted)", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: disconnectingSpotify ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: disconnectingSpotify ? 0.6 : 1 }}
+                        >
+                          {disconnectingSpotify ? "Desconectando…" : "Desconectar"}
+                        </button>
+                      </div>
+                    ) : (
+                      <a
+                        href="/api/spotify/connect"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(30,215,96,0.35)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 600, color: "#1DB954", background: "rgba(30,215,96,0.06)", textDecoration: "none" }}
+                      >
+                        <span style={{ fontSize: 16 }}>♪</span> Conectar Spotify
+                      </a>
+                    )}
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      Permite importar suas músicas tocadas recentemente ao montar sua parada.
                     </span>
                   </div>
                 </div>

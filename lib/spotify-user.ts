@@ -15,6 +15,7 @@ export const SPOTIFY_USER_SCOPES = [
   "playlist-read-private",
   "playlist-read-collaborative",
   "user-read-private",
+  "user-read-recently-played",
 ].join(" ");
 
 export const NEW_HITS_PLAYLIST_NAME = "new hits";
@@ -58,13 +59,22 @@ export type NewHitsTrack = {
   imageUrl: string | null;
 };
 
-/** URI de callback OAuth — deve coincidir exatamente com o Spotify Developer Dashboard. */
+/** URI de callback OAuth para o admin — deve coincidir exatamente com o Spotify Developer Dashboard. */
 export function getSpotifyRedirectUri(requestOrigin?: string): string {
   if (process.env.SPOTIFY_REDIRECT_URI) {
     return process.env.SPOTIFY_REDIRECT_URI.replace(/\/$/, "");
   }
   const base = requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://127.0.0.1:3000";
   return `${base.replace(/\/$/, "")}/api/spotify/callback`;
+}
+
+/** URI de callback OAuth para usuários comuns — registrar também no Spotify Developer Dashboard. */
+export function getSpotifyUserConnectRedirectUri(requestOrigin?: string): string {
+  if (process.env.SPOTIFY_USER_REDIRECT_URI) {
+    return process.env.SPOTIFY_USER_REDIRECT_URI.replace(/\/$/, "");
+  }
+  const base = requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://127.0.0.1:3000";
+  return `${base.replace(/\/$/, "")}/api/spotify/connect/callback`;
 }
 
 export function spotifyUserOAuthConfigured(): boolean {
@@ -238,6 +248,19 @@ export async function fetchNewHitsTracks(accessToken: string, playlistId: string
   return out;
 }
 
+export async function saveUserSpotifyTokens(userId: string, tokens: TokenResponse): Promise<void> {
+  const me = await fetchSpotifyCurrentUser(tokens.access_token);
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      spotifyAccessToken: tokens.access_token,
+      spotifyRefreshToken: tokens.refresh_token ?? undefined,
+      spotifyTokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000 - 60_000),
+      spotifyUserId: me?.id ?? undefined,
+    },
+  });
+}
+
 export async function saveSpotifyConnection(
   userId: string,
   tokens: TokenResponse,
@@ -288,4 +311,60 @@ export async function getNewHitsTracksForUser(userId: string): Promise<NewHitsTr
 
 export function mapNewHitsToLookup(tracks: NewHitsTrack[]): Map<string, NewHitsTrack> {
   return new Map(tracks.map((t) => [t.spotifyId, t]));
+}
+
+type SpotifyRecentlyPlayedItem = {
+  track: {
+    id: string;
+    name: string;
+    artists: { id: string; name: string }[];
+    album: { name: string; images: { url: string; height: number | null }[] };
+  };
+  played_at: string;
+};
+
+type SpotifyRecentlyPlayedPage = {
+  items: SpotifyRecentlyPlayedItem[];
+  next: string | null;
+};
+
+export type RecentTrack = {
+  spotifyId: string;
+  title: string;
+  artist: string;
+  album: string;
+  imageUrl: string | null;
+  playedAt: string;
+};
+
+export async function fetchSpotifyRecentlyPlayed(
+  accessToken: string,
+  limit: number = 50,
+): Promise<RecentTrack[]> {
+  const clampedLimit = Math.min(50, Math.max(1, limit));
+  const res = await spotifyUserFetch(accessToken, "/me/player/recently-played?limit=50");
+  if (!res) return [];
+
+  const json = (await res.json()) as SpotifyRecentlyPlayedPage;
+  const seen = new Set<string>();
+  const out: RecentTrack[] = [];
+
+  for (const item of json.items ?? []) {
+    const track = item.track;
+    if (!track?.id || seen.has(track.id)) continue;
+    seen.add(track.id);
+    out.push({
+      spotifyId: track.id,
+      title: track.name,
+      artist: track.artists.map((a) => a.name).join(", "),
+      album: track.album.name,
+      imageUrl: pickAlbumImageUrl(
+        track.album.images as { url: string; height: number | null; width: number | null }[],
+      ),
+      playedAt: item.played_at,
+    });
+    if (out.length >= clampedLimit) break;
+  }
+
+  return out;
 }

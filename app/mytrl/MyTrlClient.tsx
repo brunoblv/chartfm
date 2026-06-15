@@ -6,6 +6,7 @@ import { RefreshCw, Link2, AlertCircle, ChevronLeft, ChevronRight } from "lucide
 import { Shell } from "@/components/layout/Shell";
 import { brtWeekday, formatMyTrlEditionDisplay, type MyTrlChartEntry, type MyTrlEditionDisplay } from "@/lib/mytrl-chart-engine";
 import { MyTrlVideoClipList } from "@/components/mytrl/MyTrlVideoClipList";
+import { MyTrlCalendar } from "@/components/mytrl/MyTrlCalendar";
 
 type SnapshotPayload = {
   weekIndex: number;
@@ -334,6 +335,16 @@ export default function MyTrlClient() {
             {generateDate ? "Gerar para data" : "Gerar agora"}
           </button>
         </div>
+
+        {timeline.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <MyTrlCalendar
+              timeline={timeline}
+              currentIndex={timelineIndex}
+              onSelect={goToIndex}
+            />
+          </div>
+        )}
 
         {timeline.length > 0 && (
           <div
