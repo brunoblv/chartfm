@@ -176,7 +176,12 @@ export function computeMyTrlChart(
   const prevMap = new Map<string, MyTrlChartEntry>();
   if (prevSnapshot) {
     for (const entry of prevSnapshot.entries) {
-      prevMap.set(trackKey(entry.track, entry.artist, entry.spotifyId), entry);
+      for (const k of new Set([
+        trackKey(entry.track, entry.artist, entry.spotifyId),
+        trackKey(entry.track, entry.artist, null),
+      ])) {
+        prevMap.set(k, entry);
+      }
     }
   }
 
@@ -197,11 +202,14 @@ export function computeMyTrlChart(
   return ranked.map((item, i) => {
     const position = i + 1;
     const key = trackKey(item.track, item.artist, (item as typeof item & { spotifyId?: string }).spotifyId);
-    const prev = prevMap.get(key);
+    const prev =
+      prevMap.get(key) ??
+      prevMap.get(trackKey(item.track, item.artist, null)) ??
+      null;
     const prevPos = prev?.position ?? null;
 
     const histStats = aggregateHistoryStats(key, weekday, weekIndex, history, position);
-    const peak = Math.min(histStats.peak, position);
+    const peak = prev ? Math.min(position, prev.peak) : Math.min(histStats.peak, position);
     const numberOnes = histStats.numberOnes + (position === 1 ? 1 : 0);
     const prevDays = prev?.weeks ?? 0;
 
@@ -253,8 +261,10 @@ export function computeMyTrlChart(
 }
 
 export function buildMyTrlPeriod(referenceDay: Date = new Date()) {
-  const weekIndex = buildWeekIndexFromDate(referenceDay);
-  const weekLabel = buildWeekLabelFromDate(referenceDay);
+  const brt = toBrtDate(referenceDay);
+  const localDate = new Date(brt.getUTCFullYear(), brt.getUTCMonth(), brt.getUTCDate());
+  const weekIndex = buildWeekIndexFromDate(localDate);
+  const weekLabel = buildWeekLabelFromDate(localDate);
   const dateRange = buildMyTrlEditionDate(referenceDay);
   const scoringWindow = buildMyTrlScoringWindow(brtDateKey(referenceDay));
   return { weekIndex, weekLabel, dateRange, scoringWindow };

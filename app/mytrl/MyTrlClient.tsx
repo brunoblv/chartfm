@@ -44,6 +44,7 @@ export default function MyTrlClient() {
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [recomputing, setRecomputing] = useState(false);
   const [generateDate, setGenerateDate] = useState("");
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
@@ -159,6 +160,25 @@ export default function MyTrlClient() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [timelineIndex, timeline.length, goToIndex]);
 
+  const handleRecompute = async () => {
+    setRecomputing(true);
+    try {
+      const res = await fetch("/api/mytrl/recompute", { method: "POST" });
+      const data = await res.json();
+      if (data.ok) {
+        setBanner(`Estatísticas recalculadas (${data.editions} edições).`);
+        await loadTimeline(false);
+        if (timelineIndex >= 0 && timeline[timelineIndex]) {
+          await loadEdition(timeline[timelineIndex]);
+        }
+      } else {
+        setBanner(data.error ?? "Erro ao recalcular estatísticas.");
+      }
+    } finally {
+      setRecomputing(false);
+    }
+  };
+
   const handleGenerate = async () => {
     setGenerating(true);
     try {
@@ -261,6 +281,28 @@ export default function MyTrlClient() {
               }}
             />
           </label>
+          <button
+            type="button"
+            onClick={() => void handleRecompute()}
+            disabled={recomputing || timeline.length === 0}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: "1px solid var(--divider)",
+              background: "var(--surface)",
+              color: "var(--text)",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: recomputing ? "wait" : "pointer",
+              opacity: recomputing || timeline.length === 0 ? 0.6 : 1,
+            }}
+          >
+            <RefreshCw size={16} />
+            Recalcular stats
+          </button>
           <button
             type="button"
             onClick={() => void handleGenerate()}
@@ -375,7 +417,8 @@ export default function MyTrlClient() {
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, textAlign: "center" }}>
           Use as setas ou o teclado (← →) para navegar entre as edições diárias.
-          Movimentação e &quot;Dias&quot; comparam com a parada do dia anterior.
+          &quot;Dias&quot; = total de aparições; &quot;Anterior&quot; = posição na edição do dia útil anterior.
+          Clique em <strong>Recalcular stats</strong> para corrigir edições antigas.
         </p>
       </div>
     </Shell>

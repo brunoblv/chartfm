@@ -12,6 +12,7 @@ import {
   type MyTrlSnapshotPayload,
 } from "@/lib/mytrl-chart-engine";
 import { getMyTrlOwnerUser, getNewHitsSpotifyIds, getNewHitsTracksForUser } from "@/lib/spotify-user";
+import { recomputeAllMyTrlSnapshots } from "@/lib/mytrl-recompute";
 import type { TrackPlays } from "@/lib/lastfm";
 
 function normalizeKey(s: string): string {
@@ -165,6 +166,8 @@ export async function generateMyTrlSnapshot(referenceDay: Date = new Date()): Pr
       computedAt: referenceDay,
     },
   });
+
+  await recomputeAllMyTrlSnapshots();
 
   return {
     ok: true,
