@@ -25,7 +25,27 @@ export function pointsForChartPosition(position: number): number {
   return 101 - position;
 }
 
-function pointsForWeeklyEntry(entry: WeeklyChartEntryRow): number {
+/**
+ * Pesos do Global 100.
+ * Curva geométrica: o #1 de cada parada vale GLOBAL_TOP_POINTS e cada posição
+ * abaixo vale GLOBAL_DECAY_RATIO da anterior. Isso valoriza o topo (convicção)
+ * sobre o volume de paradas em que a música aparece.
+ */
+export const GLOBAL_TOP_POINTS = 1000;
+export const GLOBAL_DECAY_RATIO = 0.95;
+
+export function globalWeight(position: number): number {
+  return Math.round(GLOBAL_TOP_POINTS * Math.pow(GLOBAL_DECAY_RATIO, position - 1));
+}
+
+/**
+ * "stored": usa os pontos persistidos na ChartEntry (escala da própria parada).
+ * "global": usa a curva geométrica do Global 100 a partir da posição.
+ */
+export type WeightMode = "stored" | "global";
+
+function pointsForWeeklyEntry(entry: WeeklyChartEntryRow, mode: WeightMode = "stored"): number {
+  if (mode === "global") return globalWeight(entry.position);
   return entry.points > 0 ? entry.points : pointsForChartPosition(entry.position);
 }
 
@@ -92,6 +112,7 @@ type AggregateArtistOptions = {
   historicalStatsByArtistKey?: Map<string, { peak?: number; weeks?: number; numberOnes?: number }>;
   comparisonEntries?: WeeklyChartEntryRow[];
   prevPositionsByKey?: Map<string, number>;
+  weightMode?: WeightMode;
 };
 
 export function aggregateTopArtists(
@@ -99,12 +120,13 @@ export function aggregateTopArtists(
   limit = 100,
   options?: AggregateArtistOptions
 ): TopArtistRow[] {
+  const mode = options?.weightMode ?? "stored";
   const byKey = new Map<
     string,
     { points: number; charts: Set<string>; displayName: string; spotifyId: string | null }
   >();
   for (const e of entries) {
-    const pts = pointsForWeeklyEntry(e);
+    const pts = pointsForWeeklyEntry(e, mode);
     for (const contributor of artistContributors(e.song)) {
       const cur = byKey.get(contributor.key) ?? {
         points: 0,
@@ -148,7 +170,7 @@ export function aggregateTopArtists(
       for (const contributor of artistContributors(e.song)) {
         comparisonByArtist.set(
           contributor.key,
-          (comparisonByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e)
+          (comparisonByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e, mode)
         );
       }
     }
@@ -163,7 +185,7 @@ export function aggregateTopArtists(
         for (const contributor of artistContributors(e.song)) {
           prevByArtist.set(
             contributor.key,
-            (prevByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e)
+            (prevByArtist.get(contributor.key) ?? 0) + pointsForWeeklyEntry(e, mode)
           );
         }
       }
@@ -219,6 +241,7 @@ type AggregateGlobalSongsOptions = {
   historicalStatsBySongKey?: Map<string, GlobalSongStats>;
   comparisonEntries?: WeeklyChartEntryRow[];
   prevPositionsByKey?: Map<string, number>;
+  weightMode?: WeightMode;
 };
 
 export function aggregateGlobalSongs(
@@ -226,10 +249,11 @@ export function aggregateGlobalSongs(
   limit = 100,
   options?: AggregateGlobalSongsOptions
 ): GlobalChartEntry[] {
+  const mode = options?.weightMode ?? "stored";
   const map = new Map<string, SongAgg>();
   for (const e of entries) {
     const key = songAggregationKey(e.song);
-    const pts = pointsForWeeklyEntry(e);
+    const pts = pointsForWeeklyEntry(e, mode);
     const cur = map.get(key);
     if (!cur) {
       map.set(key, { key, pts, charts: new Set([e.chartId]), best: e });
@@ -249,7 +273,7 @@ export function aggregateGlobalSongs(
       const prevMap = new Map<string, number>();
       for (const e of options.previousWeekEntries) {
         const key = songAggregationKey(e.song);
-        prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForWeeklyEntry(e));
+        prevMap.set(key, (prevMap.get(key) ?? 0) + pointsForWeeklyEntry(e, mode));
       }
       [...prevMap.entries()]
         .sort((a, b) => b[1] - a[1])
@@ -263,7 +287,7 @@ export function aggregateGlobalSongs(
   if (options?.comparisonEntries?.length) {
     for (const e of options.comparisonEntries) {
       const key = songAggregationKey(e.song);
-      comparisonBySong.set(key, (comparisonBySong.get(key) ?? 0) + pointsForWeeklyEntry(e));
+      comparisonBySong.set(key, (comparisonBySong.get(key) ?? 0) + pointsForWeeklyEntry(e, mode));
     }
   }
 
