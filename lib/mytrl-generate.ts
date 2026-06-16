@@ -43,9 +43,11 @@ async function enrichWithSpotify(
   allowedIds: Set<string>,
   playlistTracks: Array<{ spotifyId: string; title: string; artist: string; imageUrl: string | null }>,
 ): Promise<Array<TrackPlays & { spotifyId: string | null; imageUrl: string | null }>> {
-  const out: Array<TrackPlays & { spotifyId: string | null; imageUrl: string | null }> = [];
+  const CONCURRENCY = 8;
 
-  for (const tp of trackPlays) {
+  async function enrichOne(
+    tp: TrackPlays,
+  ): Promise<(TrackPlays & { spotifyId: string; imageUrl: string | null }) | null> {
     let best: (typeof playlistTracks)[number] | null = null;
     let bestScore = -1;
 
@@ -64,21 +66,24 @@ async function enrichWithSpotify(
         const sc = scoreTrackMatch(tp.track, tp.artist, m.title, m.artist);
         if (sc > bestScore && sc >= 120) {
           bestScore = sc;
-          best = {
-            spotifyId: m.spotifyId,
-            title: m.title,
-            artist: m.artist,
-            imageUrl: m.imageUrl,
-          };
+          best = { spotifyId: m.spotifyId, title: m.title, artist: m.artist, imageUrl: m.imageUrl };
         }
       }
     }
 
     if (best && allowedIds.has(best.spotifyId)) {
-      out.push({ ...tp, spotifyId: best.spotifyId, imageUrl: best.imageUrl });
+      return { ...tp, spotifyId: best.spotifyId, imageUrl: best.imageUrl };
     }
+    return null;
   }
 
+  const out: Array<TrackPlays & { spotifyId: string | null; imageUrl: string | null }> = [];
+  for (let i = 0; i < trackPlays.length; i += CONCURRENCY) {
+    const batch = await Promise.all(trackPlays.slice(i, i + CONCURRENCY).map(enrichOne));
+    for (const r of batch) {
+      if (r) out.push(r);
+    }
+  }
   return out;
 }
 
