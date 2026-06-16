@@ -229,7 +229,6 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" as const }}>
-              <StatPill compact label={t("global.colPrevShort")} value={e.prevPos ?? "—"} />
               <StatPill compact label={t("global.colPeak")} value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
               <StatPill compact label={t("global.colWeeks")} value={e.weeks} />
               <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"} />
@@ -244,7 +243,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
   const coverCol = isLarge ? `${LARGE_COVER_SIZE + 20}px` : desktopCoverGridColumn(DESKTOP_COVER_SIZE);
   const gridTemplateColumns = desktopListGrid(
     coverCol,
-    isLarge ? "96px 96px 80px 50px 120px" : "80px 80px 60px 50px 100px",
+    isLarge ? "96px 80px 50px 120px" : "80px 60px 50px 100px",
     isLarge,
   );
   const rowPadding = isLarge ? "14px 24px" : "8px 20px";
@@ -265,7 +264,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
         background: "var(--fill-inset)",
         borderBottom: "1px solid var(--divider)",
       }}>
-        {[t("global.colPos"), "", t("global.colSong"), t("global.colPrevWeek"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints"), t("global.colGrowth")].map((h, i) => (
+        {[t("global.colPos"), "", t("global.colSong"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints"), t("global.colGrowth")].map((h, i) => (
           <div key={i} style={{ fontSize: isLarge ? 12 : 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
         ))}
       </div>
@@ -294,9 +293,6 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
             <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: artistSize, color: "var(--text-muted)", textDecoration: "none" }}>
               {formatSongArtist(e.song)}
             </Link>
-          </div>
-          <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-            {e.prevPos ?? "—"}
           </div>
           <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.weeks}
@@ -416,9 +412,6 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
             <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: artistSize, color: "var(--text-muted)", textDecoration: "none" }}>
               {formatSongArtist(e.song)}
             </Link>
-          </div>
-          <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-            {e.prevPos ?? "—"}
           </div>
           <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.weeks}

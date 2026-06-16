@@ -191,6 +191,21 @@ export default function CreatePage() {
       .catch(() => {});
   }, []);
 
+  // Retorno do OAuth do Spotify iniciado a partir desta página (?spotify=connected|error|...).
+  useEffect(() => {
+    const status = searchParams.get("spotify");
+    if (!status) return;
+    if (status === "connected") {
+      setSpotifyUserConnected(true);
+      setShowSpotifyModal(true);
+    } else {
+      setPublishError("Não foi possível conectar sua conta do Spotify. Tente novamente.");
+    }
+    // Limpa o parâmetro da URL sem recarregar.
+    window.history.replaceState({}, "", "/create");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const resetDraft = () => {
       setEntries([]);
@@ -574,9 +589,15 @@ export default function CreatePage() {
       const data = (await res.json()) as {
         songs?: Array<{ title: string; artist: string; album: string; spotifyId: string | null; imageUrl: string | null }>;
         error?: string;
+        needsReconnect?: boolean;
       };
       if (!res.ok) {
         if (runId !== spotifyImportRunRef.current) return;
+        // Token sem permissão / expirado: marcar como desconectado para exibir o botão de reconectar.
+        if (data.needsReconnect) {
+          setSpotifyUserConnected(false);
+          setShowSpotifyModal(true);
+        }
         setPublishError(data.error ?? "Erro ao importar do Spotify.");
         return;
       }
@@ -589,6 +610,10 @@ export default function CreatePage() {
         spotifyId: s.spotifyId ?? undefined,
         imageUrl: s.imageUrl ?? undefined,
       }));
+      if (songs.length === 0) {
+        setPublishError("Nenhuma música tocada recentemente encontrada no seu Spotify.");
+        return;
+      }
       setEntries(songs);
     } catch (e: unknown) {
       if (runId !== spotifyImportRunRef.current) return;
@@ -1382,13 +1407,29 @@ export default function CreatePage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#15803D" }}>Conta Spotify não conectada</div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                      Conecte nas{" "}
-                      <a href="/settings" style={{ color: "#1DB954", fontWeight: 600, textDecoration: "none" }}>
-                        configurações de perfil
-                      </a>
-                      {" "}para usar esta função.
+                      Conecte sua conta para importar suas músicas recentes.
                     </div>
                   </div>
+                  <a
+                    href="/api/spotify/connect?from=/create"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      border: "none",
+                      borderRadius: 100,
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: "white",
+                      background: "#1DB954",
+                      textDecoration: "none",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 15 }}>♪</span> Conectar
+                  </a>
                 </>
               )}
             </div>

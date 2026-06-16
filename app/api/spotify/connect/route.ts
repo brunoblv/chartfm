@@ -12,6 +12,14 @@ import {
 export const runtime = "nodejs";
 
 const STATE_COOKIE = "spotify_connect_state";
+const FROM_COOKIE = "spotify_connect_from";
+
+/** Aceita apenas caminhos relativos internos (evita open redirect). */
+function sanitizeFrom(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
 
 // GET /api/spotify/connect — inicia OAuth Spotify para qualquer usuário autenticado
 export async function GET(req: NextRequest) {
@@ -29,6 +37,7 @@ export async function GET(req: NextRequest) {
 
   const state = crypto.randomBytes(24).toString("hex");
   const redirectUri = getSpotifyUserConnectRedirectUri(new URL(req.url).origin);
+  const from = sanitizeFrom(new URL(req.url).searchParams.get("from"));
   const jar = await cookies();
   jar.set(STATE_COOKIE, state, {
     httpOnly: true,
@@ -37,6 +46,17 @@ export async function GET(req: NextRequest) {
     maxAge: 600,
     path: "/",
   });
+  if (from) {
+    jar.set(FROM_COOKIE, from, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 600,
+      path: "/",
+    });
+  } else {
+    jar.delete(FROM_COOKIE);
+  }
 
   return NextResponse.redirect(buildSpotifyAuthorizeUrl(state, redirectUri));
 }

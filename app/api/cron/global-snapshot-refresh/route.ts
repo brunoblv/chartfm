@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import { refreshRankingWeekSnapshot } from "@/lib/global-snapshot";
 
 export const runtime = "nodejs";
 
@@ -14,11 +14,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const snapshot = await getOrCreateRankingWeekSnapshot(new Date());
+  // Recomputa (upsert) o snapshot da semana de ranking corrente a cada execução,
+  // para refletir paradas publicadas após a primeira geração até o deadline.
+  // Reexecutar após o deadline é idempotente (o filtro de corte é fixo).
+  const snapshot = await refreshRankingWeekSnapshot(new Date());
 
   return NextResponse.json({
     ok: true,
-    created: snapshot.created,
     weekIndex: snapshot.weekIndex,
     weekLabel: snapshot.weekLabel,
     dateRange: snapshot.dateRange,

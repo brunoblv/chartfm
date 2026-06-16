@@ -337,13 +337,35 @@ export type RecentTrack = {
   playedAt: string;
 };
 
+/** Erro de autorização do Spotify que exige reconectar a conta (token inválido ou sem o escopo necessário). */
+export class SpotifyAuthError extends Error {
+  readonly needsReconnect = true;
+  constructor(message: string) {
+    super(message);
+    this.name = "SpotifyAuthError";
+  }
+}
+
 export async function fetchSpotifyRecentlyPlayed(
   accessToken: string,
   limit: number = 50,
 ): Promise<RecentTrack[]> {
   const clampedLimit = Math.min(50, Math.max(1, limit));
-  const res = await spotifyUserFetch(accessToken, "/me/player/recently-played?limit=50");
-  if (!res) return [];
+  // Não usamos `spotifyUserFetch` aqui porque ele engole o status de erro:
+  // precisamos distinguir 401/403 (reconectar) de uma indisponibilidade temporária.
+  const res = await fetch(`${API_BASE}/me/player/recently-played?limit=50`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new SpotifyAuthError(
+        "Sua conexão com o Spotify está sem a permissão necessária (músicas recentes). Reconecte sua conta para continuar.",
+      );
+    }
+    throw new Error(`Falha ao buscar músicas recentes no Spotify (HTTP ${res.status}).`);
+  }
 
   const json = (await res.json()) as SpotifyRecentlyPlayedPage;
   const seen = new Set<string>();

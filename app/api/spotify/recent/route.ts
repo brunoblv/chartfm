@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { getSpotifyUserAccessToken, fetchSpotifyRecentlyPlayed } from "@/lib/spotify-user";
+import { getSpotifyUserAccessToken, fetchSpotifyRecentlyPlayed, SpotifyAuthError } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -77,6 +77,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ songs }, { headers: NO_CACHE });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500, headers: NO_CACHE });
+    if (err instanceof SpotifyAuthError) {
+      return NextResponse.json(
+        { error: err.message, needsReconnect: true },
+        { status: 400, headers: NO_CACHE },
+      );
+    }
+    return NextResponse.json(
+      { error: "Não foi possível buscar suas músicas recentes do Spotify. Tente novamente." },
+      { status: 502, headers: NO_CACHE },
+    );
   }
 }
