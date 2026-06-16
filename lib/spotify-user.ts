@@ -59,12 +59,17 @@ export type NewHitsTrack = {
   imageUrl: string | null;
 };
 
+/** Spotify rejeita `localhost` no redirect — normaliza para 127.0.0.1. */
+function normalizeSpotifyOAuthOrigin(origin: string): string {
+  return origin.replace(/^http:\/\/localhost(?=:\d+|\/|$)/i, "http://127.0.0.1");
+}
+
 /** URI de callback OAuth para o admin — deve coincidir exatamente com o Spotify Developer Dashboard. */
 export function getSpotifyRedirectUri(requestOrigin?: string): string {
   if (process.env.SPOTIFY_REDIRECT_URI) {
     return process.env.SPOTIFY_REDIRECT_URI.replace(/\/$/, "");
   }
-  const base = requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://127.0.0.1:3000";
+  const base = normalizeSpotifyOAuthOrigin(requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://127.0.0.1:3000");
   return `${base.replace(/\/$/, "")}/api/spotify/callback`;
 }
 
@@ -73,7 +78,7 @@ export function getSpotifyUserConnectRedirectUri(requestOrigin?: string): string
   if (process.env.SPOTIFY_USER_REDIRECT_URI) {
     return process.env.SPOTIFY_USER_REDIRECT_URI.replace(/\/$/, "");
   }
-  const base = requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://127.0.0.1:3000";
+  const base = normalizeSpotifyOAuthOrigin(requestOrigin ?? process.env.NEXTAUTH_URL ?? "http://127.0.0.1:3000");
   return `${base.replace(/\/$/, "")}/api/spotify/connect/callback`;
 }
 

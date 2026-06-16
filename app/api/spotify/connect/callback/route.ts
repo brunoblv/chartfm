@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth-options";
+import { appPathUrl, getAppOrigin } from "@/lib/app-url";
 import {
   exchangeSpotifyAuthCode,
   getSpotifyUserConnectRedirectUri,
@@ -21,7 +22,7 @@ function resolveReturnTo(raw: string | undefined): string {
 
 /** Anexa `spotify=<status>` preservando query existente do caminho de retorno. */
 function withSpotifyParam(returnTo: string, status: string, req: NextRequest): URL {
-  const dest = new URL(returnTo, req.url);
+  const dest = appPathUrl(returnTo, new URL(req.url).origin);
   dest.searchParams.set("spotify", status);
   return dest;
 }
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
   jar.delete(FROM_COOKIE);
 
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(appPathUrl("/login", new URL(req.url).origin));
   }
 
   const url = new URL(req.url);
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(withSpotifyParam(returnTo, "invalid_state", req));
   }
 
-  const redirectUri = getSpotifyUserConnectRedirectUri(new URL(req.url).origin);
+  const redirectUri = getSpotifyUserConnectRedirectUri(getAppOrigin(new URL(req.url).origin));
   const tokens = await exchangeSpotifyAuthCode(code, redirectUri);
   if (!tokens) {
     return NextResponse.redirect(withSpotifyParam(returnTo, "token_error", req));
