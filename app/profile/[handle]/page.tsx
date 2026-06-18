@@ -1400,17 +1400,17 @@ function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableR
   const imgSize = isMobile ? 36 : 44;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: cols, padding: isMobile ? "8px 12px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, columnGap: 12, padding: isMobile ? "8px 16px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
         {headers.map((h, i) => (
-          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 0" }}>{h}</div>
         ))}
       </div>
       {rows.map((r) => {
         const artistHref = buildArtistPath(r.name, r.artistSpotifyId, r.artistRefId);
         return (
-          <div key={r.name} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", padding: isMobile ? "6px 12px" : "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
-            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, textAlign: "right", paddingRight: isMobile ? 8 : 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-            <Link href={artistHref} prefetch={false} style={{ padding: isMobile ? "4px 6px" : "4px 8px", lineHeight: 0 }}>
+          <div key={r.name} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", columnGap: 12, padding: isMobile ? "10px 16px" : "12px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
+            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, textAlign: "right", paddingRight: isMobile ? 4 : 6, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+            <Link href={artistHref} prefetch={false} style={{ paddingTop: 4, paddingBottom: 4, lineHeight: 0 }}>
               {artistImages[r.name] ? (
                 <img
                   src={artistImages[r.name] as string}
@@ -1481,7 +1481,7 @@ function NumberOnesTab({
         <span style={{ fontWeight: 700, color: "var(--text)" }}>{totalWeeks}</span> semana{totalWeeks === 1 ? "" : "s"} em #1
       </div>
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: cols, padding: isMobile ? "8px 12px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: cols, columnGap: 12, padding: isMobile ? "8px 16px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
           {headers.map((h, i) => (
             <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
           ))}
@@ -1499,9 +1499,9 @@ function NumberOnesTab({
           return (
             <div
               key={`${r.title}-${r.artist}`}
-              style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", padding: isMobile ? "8px 12px" : "10px 20px", borderBottom: "1px solid var(--divider-soft)" }}
+              style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", columnGap: 12, padding: isMobile ? "10px 16px" : "12px 20px", borderBottom: "1px solid var(--divider-soft)" }}
             >
-              <Link href={songHref} prefetch={false} style={{ padding: isMobile ? "2px 4px" : "4px 8px", lineHeight: 0 }}>
+              <Link href={songHref} prefetch={false} style={{ paddingTop: isMobile ? 2 : 4, paddingBottom: isMobile ? 2 : 4, lineHeight: 0 }}>
                 <Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={coverSize} rounded={isMobile ? 8 : 10} />
               </Link>
               <div style={{ minWidth: 0 }}>
@@ -1553,9 +1553,9 @@ function SongStatsTable({ rows, isMobile }: { rows: SongTableRow[]; isMobile?: b
   const coverSize = isMobile ? 36 : 48;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: cols, padding: isMobile ? "8px 12px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, columnGap: 12, padding: isMobile ? "8px 16px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
         {headers.map((h, i) => (
-          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 8px" }}>{h}</div>
+          <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "6px 0" }}>{h}</div>
         ))}
       </div>
       {rows.map((r) => {
@@ -1569,9 +1569,9 @@ function SongStatsTable({ rows, isMobile }: { rows: SongTableRow[]; isMobile?: b
         });
         const artistHref = buildArtistPath(r.artist, r.artistSpotifyId, r.artistRefId);
         return (
-          <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", padding: isMobile ? "6px 12px" : "8px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
-            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, textAlign: "right", paddingRight: isMobile ? 8 : 12, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
-            <Link href={songHref} prefetch={false} style={{ padding: isMobile ? "4px 4px" : "4px 8px", lineHeight: 0 }}>
+          <div key={`${r.title}-${r.artist}`} style={{ display: "grid", gridTemplateColumns: cols, alignItems: "center", columnGap: 12, padding: isMobile ? "10px 16px" : "12px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
+            <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, textAlign: "right", paddingRight: isMobile ? 4 : 6, fontVariantNumeric: "tabular-nums" }}>{r.position}</div>
+            <Link href={songHref} prefetch={false} style={{ paddingTop: 4, paddingBottom: 4, lineHeight: 0 }}>
               <Cover cover={r.cover} song={{ title: r.title, artist: r.artist, album: "" }} size={coverSize} rounded={isMobile ? 6 : 8} />
             </Link>
             <div style={{ minWidth: 0 }}>
