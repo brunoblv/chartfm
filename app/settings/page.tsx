@@ -729,7 +729,7 @@ export default function SettingsPage() {
                       </a>
                     )}
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      Permite importar suas músicas tocadas recentemente ao montar sua parada.
+                      Permite importar músicas recentes e criar playlists das suas paradas no Spotify.
                     </span>
                   </div>
                 </div>

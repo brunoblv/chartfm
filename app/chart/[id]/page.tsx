@@ -126,6 +126,9 @@ export default function ChartDetailPage() {
   const [repostCount, setRepostCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
   const [deletingChart, setDeletingChart] = useState(false);
+  const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [exportingSpotify, setExportingSpotify] = useState(false);
+  const [spotifyExportMsg, setSpotifyExportMsg] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -191,6 +194,7 @@ export default function ChartDetailPage() {
   const globalNumberOnes = dbPayload?.globalNumberOnes ?? {};
   const dropouts: PersonalDropoutEntry[] = dbPayload?.dropouts ?? [];
   const isDbChart = !!dbPayload;
+  const isOwner = !!session?.user?.id && !!user?.id && session.user.id === user.id;
 
   useEffect(() => {
     if (!user?.handle) return;
@@ -231,6 +235,98 @@ export default function ChartDetailPage() {
     return () => { cancelled = true; };
   }, [variant, id, isDbChart]);
 
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setSpotifyConnected(false);
+      return;
+    }
+    fetch("/api/user/profile", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { spotifyConnected?: boolean } | null) => {
+        setSpotifyConnected(data?.spotifyConnected ?? false);
+      })
+      .catch(() => setSpotifyConnected(false));
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    const status = searchParams?.get("spotify");
+    if (status === "connected") {
+      setSpotifyConnected(true);
+      setSpotifyExportMsg("Spotify conectado! Toque em \"Salvar no Spotify\" para criar a playlist.");
+      window.history.replaceState({}, "", `/chart/${id}`);
+    }
+  }, [searchParams, id]);
+
+  async function exportChartToSpotify() {
+    if (!id || !isDbChart || !isOwner || exportingSpotify) return;
+    if (!session?.user?.id) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(`/chart/${id}`)}`);
+      return;
+    }
+    if (!spotifyConnected) {
+      window.location.href = `/api/spotify/connect?from=${encodeURIComponent(`/chart/${id}`)}`;
+      return;
+    }
+
+    setExportingSpotify(true);
+    setSpotifyExportMsg(null);
+    try {
+      const res = await fetch("/api/spotify/playlist-from-chart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chartId: id }),
+      });
+      const data = (await res.json()) as {
+        playlistUrl?: string;
+        trackCount?: number;
+        skippedCount?: number;
+        error?: string;
+        needsReconnect?: boolean;
+      };
+      if (!res.ok) {
+        if (data.needsReconnect) setSpotifyConnected(false);
+        setSpotifyExportMsg(data.error ?? "Não foi possível criar a playlist no Spotify.");
+        return;
+      }
+      const skipped =
+        typeof data.skippedCount === "number" && data.skippedCount > 0
+          ? ` (${data.skippedCount} sem link Spotify foram ignoradas)`
+          : "";
+      setSpotifyExportMsg(`Playlist criada com ${data.trackCount ?? 0} músicas${skipped}.`);
+      if (data.playlistUrl) window.open(data.playlistUrl, "_blank", "noopener,noreferrer");
+    } catch {
+      setSpotifyExportMsg("Erro de conexão ao criar playlist no Spotify.");
+    } finally {
+      setExportingSpotify(false);
+    }
+  }
+
+  const spotifyExportButton = isOwner && isDbChart ? (
+    <button
+      type="button"
+      onClick={exportChartToSpotify}
+      disabled={exportingSpotify}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        background: "#1DB954",
+        color: "white",
+        border: "none",
+        padding: isMobile ? "10px 16px" : "10px 20px",
+        borderRadius: 100,
+        fontSize: isMobile ? 13 : 14,
+        fontWeight: 700,
+        boxShadow: "0 2px 8px rgba(30,215,96,0.35)",
+        cursor: exportingSpotify ? "not-allowed" : "pointer",
+        opacity: exportingSpotify ? 0.7 : 1,
+      }}
+    >
+      <Play size={isMobile ? 13 : 14} fill="white" />
+      {exportingSpotify ? "Criando playlist…" : spotifyConnected ? "Salvar no Spotify" : "Conectar Spotify"}
+    </button>
+  ) : null;
+
   const composeUser = useMemo((): Pick<User, "name" | "avatar"> => {
     if (session?.user?.name) {
       return { name: session.user.name, avatar: "#FA243C" };
@@ -241,7 +337,6 @@ export default function ChartDetailPage() {
 
   const composeImageUrl = session?.user?.image ?? null;
   const tituloDetalheParada = `${ownerParadaNome ?? "Parada"} · Top ${chart?.entries.length ?? 0}`;
-  const isOwner = !!session?.user?.id && session.user.id === user?.id;
 
   async function toggleLike() {
     if (!id || !isDbChart) return;
@@ -402,10 +497,7 @@ export default function ChartDetailPage() {
 
             {/* Action buttons */}
             <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-              <button style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--accent)", color: "white", border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 13, fontWeight: 700, boxShadow: "0 2px 8px rgba(250,36,60,0.25)" }}>
-                <Play size={13} fill="white" />
-                Ouvir no Spotify
-              </button>
+              {spotifyExportButton}
               <button onClick={toggleLike} style={{ display: "flex", alignItems: "center", gap: 6, background: liked ? "var(--accent-tint)" : "var(--fill-subtle)", color: liked ? "var(--accent)" : "var(--text-subtle)", border: "none", padding: "10px 14px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: isDbChart ? "pointer" : "default" }}>
                 <Heart size={15} fill={liked ? "currentColor" : "none"} />
                 {liked ? "Curtido" : "Curtir"}
@@ -418,6 +510,11 @@ export default function ChartDetailPage() {
                 <Share size={15} />
               </button>
             </div>
+            {spotifyExportMsg && (
+              <div style={{ fontSize: 12, color: spotifyExportMsg.startsWith("Playlist criada") ? "#15803D" : "#B91C1C", marginBottom: 10, lineHeight: 1.5 }}>
+                {spotifyExportMsg}
+              </div>
+            )}
 
             {/* Variant toggle full-width */}
             <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 8, padding: 3, gap: 2 }}>
@@ -485,10 +582,7 @@ export default function ChartDetailPage() {
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <button style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--accent)", color: "white", border: "none", padding: "10px 20px", borderRadius: 100, fontSize: 14, fontWeight: 700, boxShadow: "0 2px 8px rgba(250,36,60,0.25)" }}>
-                    <Play size={14} fill="white" />
-                    Ouvir no Spotify
-                  </button>
+                  {spotifyExportButton}
                   <button onClick={toggleLike} style={{ display: "flex", alignItems: "center", gap: 6, background: liked ? "var(--accent-tint)" : "var(--fill-subtle)", color: liked ? "var(--accent)" : "var(--text-subtle)", border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: isDbChart ? "pointer" : "default" }}>
                     <Heart size={16} fill={liked ? "currentColor" : "none"} />
                     {liked ? "Curtido" : "Curtir"}
@@ -501,6 +595,11 @@ export default function ChartDetailPage() {
                     <Share size={16} />
                   </button>
                 </div>
+                {spotifyExportMsg && (
+                  <div style={{ fontSize: 13, color: spotifyExportMsg.startsWith("Playlist criada") ? "#15803D" : "#B91C1C", lineHeight: 1.5 }}>
+                    {spotifyExportMsg}
+                  </div>
+                )}
                 <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 8, padding: 3, gap: 2, alignSelf: "flex-start" }}>
                   {(["list", "grid", "podium", "video_clip"] as Variant[]).map((v) => (
                     <button key={v} onClick={() => setVariant(v)} style={{ padding: "6px 12px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, background: variant === v ? "var(--surface)" : "transparent", color: variant === v ? "var(--text)" : "var(--text-muted)", boxShadow: variant === v ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition: "background 120ms" }}>

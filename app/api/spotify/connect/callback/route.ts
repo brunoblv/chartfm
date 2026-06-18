@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { cookies } from "next/headers";
 import { authOptions } from "@/lib/auth-options";
-import { appPathUrl, getAppOrigin } from "@/lib/app-url";
-import {
-  SPOTIFY_CONNECT_FROM_COOKIE,
-  SPOTIFY_CONNECT_REDIRECT_URI_COOKIE,
-  SPOTIFY_CONNECT_STATE_COOKIE,
-} from "@/lib/spotify-connect-oauth";
+import { appPathUrl, ensureCanonicalAppOrigin, getAppOrigin } from "@/lib/app-url";
+import { prisma } from "@/lib/prisma";
+import { verifySpotifyConnectState } from "@/lib/spotify-connect-oauth";
 import {
   exchangeSpotifyAuthCode,
-  getSpotifyUserConnectRedirectUri,
+  fetchSpotifyMeStatus,
   saveUserSpotifyTokens,
 } from "@/lib/spotify-user";
 
@@ -32,39 +28,57 @@ function withSpotifyParam(returnTo: string, status: string, req: NextRequest, re
 
 // GET /api/spotify/connect/callback — retorno do OAuth Spotify para usuários comuns
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  const jar = await cookies();
-  const returnTo = resolveReturnTo(jar.get(SPOTIFY_CONNECT_FROM_COOKIE)?.value);
-  jar.delete(SPOTIFY_CONNECT_FROM_COOKIE);
+  const canonicalRedirect = ensureCanonicalAppOrigin(req);
+  if (canonicalRedirect) return canonicalRedirect;
 
+  const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.redirect(appPathUrl("/login", getAppOrigin(new URL(req.url).origin)));
   }
 
   const url = new URL(req.url);
   const error = url.searchParams.get("error");
+  const returnToDefault = "/settings";
+
   if (error) {
     const status = error === "access_denied" ? "access_denied" : "error";
-    return NextResponse.redirect(withSpotifyParam(returnTo, status, req, error));
+    return NextResponse.redirect(withSpotifyParam(returnToDefault, status, req, error));
   }
 
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const stored = jar.get(SPOTIFY_CONNECT_STATE_COOKIE)?.value;
-  const storedRedirectUri = jar.get(SPOTIFY_CONNECT_REDIRECT_URI_COOKIE)?.value;
-  jar.delete(SPOTIFY_CONNECT_STATE_COOKIE);
-  jar.delete(SPOTIFY_CONNECT_REDIRECT_URI_COOKIE);
+  const verified = state ? verifySpotifyConnectState(state, session.user.id) : null;
+  const returnTo = resolveReturnTo(verified?.from);
 
-  if (!code || !state || !stored || state !== stored) {
+  if (!code || !verified) {
     return NextResponse.redirect(withSpotifyParam(returnTo, "invalid_state", req));
   }
 
-  const redirectUri =
-    storedRedirectUri ?? getSpotifyUserConnectRedirectUri(getAppOrigin(new URL(req.url).origin));
-  const tokens = await exchangeSpotifyAuthCode(code, redirectUri);
+  const tokens = await exchangeSpotifyAuthCode(code, verified.redirectUri);
   if (!tokens) {
-    console.error("[spotify/connect/callback] token exchange failed", { redirectUri, userId: session.user.id });
+    console.error("[spotify/connect/callback] token exchange failed", {
+      redirectUri: verified.redirectUri,
+      userId: session.user.id,
+    });
     return NextResponse.redirect(withSpotifyParam(returnTo, "token_error", req));
+  }
+
+  const me = await fetchSpotifyMeStatus(tokens.access_token);
+  if (me.status === 403) {
+    console.warn("[spotify/connect/callback] user not on Spotify app allowlist", { userId: session.user.id });
+    return NextResponse.redirect(withSpotifyParam(returnTo, "not_registered", req));
+  }
+  if (!me.ok) {
+    console.error("[spotify/connect/callback] /me failed", { status: me.status, userId: session.user.id });
+    return NextResponse.redirect(withSpotifyParam(returnTo, "token_error", req));
+  }
+
+  const existing = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { spotifyRefreshToken: true },
+  });
+  if (!tokens.refresh_token && !existing?.spotifyRefreshToken) {
+    return NextResponse.redirect(withSpotifyParam(returnTo, "no_refresh_token", req));
   }
 
   await saveUserSpotifyTokens(session.user.id, tokens);

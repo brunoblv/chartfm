@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { ensureCanonicalAppOrigin } from "@/lib/app-url";
 import {
   LOCALE_COOKIE,
   LOCALE_COOKIE_MAX_AGE,
@@ -9,6 +10,9 @@ import {
 } from "@/lib/i18n/config";
 
 export async function middleware(request: NextRequest) {
+  const canonicalRedirect = ensureCanonicalAppOrigin(request);
+  if (canonicalRedirect) return canonicalRedirect;
+
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
   if (token?.needsHandle && token.prismaUserId) {
@@ -32,6 +36,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/spotify/:path*",
     "/((?!api|_next/static|_next/image|favicon\\.ico|login|onboarding|public).*)",
   ],
 };

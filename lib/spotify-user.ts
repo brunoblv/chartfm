@@ -14,6 +14,7 @@ const API_BASE = "https://api.spotify.com/v1";
 export const SPOTIFY_USER_SCOPES = [
   "playlist-read-private",
   "playlist-read-collaborative",
+  "playlist-modify-private",
   "user-read-private",
   "user-read-recently-played",
 ].join(" ");
@@ -95,6 +96,7 @@ export function buildSpotifyAuthorizeUrl(state: string, redirectUri: string): st
   url.searchParams.set("scope", SPOTIFY_USER_SCOPES);
   url.searchParams.set("state", state);
   url.searchParams.set("show_dialog", "true");
+  url.searchParams.set("access_type", "offline");
   return url.toString();
 }
 
@@ -208,11 +210,21 @@ async function spotifyUserFetch(accessToken: string, path: string): Promise<Resp
   return res;
 }
 
-export async function fetchSpotifyCurrentUser(accessToken: string): Promise<{ id: string } | null> {
-  const res = await spotifyUserFetch(accessToken, "/me");
-  if (!res) return null;
+export async function fetchSpotifyMeStatus(
+  accessToken: string,
+): Promise<{ ok: boolean; status: number; id?: string }> {
+  const res = await fetch(`${API_BASE}/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!res.ok) return { ok: false, status: res.status };
   const json = (await res.json()) as { id?: string };
-  return json.id ? { id: json.id } : null;
+  return { ok: true, status: res.status, id: json.id };
+}
+
+export async function fetchSpotifyCurrentUser(accessToken: string): Promise<{ id: string } | null> {
+  const me = await fetchSpotifyMeStatus(accessToken);
+  return me.ok && me.id ? { id: me.id } : null;
 }
 
 export async function findNewHitsPlaylistId(accessToken: string): Promise<string | null> {
@@ -258,12 +270,16 @@ export async function fetchNewHitsTracks(accessToken: string, playlistId: string
 }
 
 export async function saveUserSpotifyTokens(userId: string, tokens: TokenResponse): Promise<void> {
+  const existing = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { spotifyRefreshToken: true },
+  });
   const me = await fetchSpotifyCurrentUser(tokens.access_token);
   await prisma.user.update({
     where: { id: userId },
     data: {
       spotifyAccessToken: tokens.access_token,
-      spotifyRefreshToken: tokens.refresh_token ?? undefined,
+      spotifyRefreshToken: tokens.refresh_token ?? existing?.spotifyRefreshToken ?? undefined,
       spotifyTokenExpiresAt: new Date(Date.now() + tokens.expires_in * 1000 - 60_000),
       spotifyUserId: me?.id ?? undefined,
     },
@@ -398,4 +414,95 @@ export async function fetchSpotifyRecentlyPlayed(
   }
 
   return out;
+}
+
+export type SpotifyPlaylistCreateResult =
+  | { ok: true; id: string; url: string }
+  | { ok: false; status: number; needsReconnect?: boolean; message: string };
+
+export type SpotifyPlaylistAddTracksResult =
+  | { ok: true }
+  | { ok: false; status: number; needsReconnect?: boolean; message: string };
+
+/** Cria playlist na conta do usuário autenticado. */
+export async function createSpotifyPlaylist(
+  accessToken: string,
+  name: string,
+  description: string,
+  isPublic = false,
+): Promise<SpotifyPlaylistCreateResult> {
+  const res = await fetch(`${API_BASE}/me/playlists`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: name.slice(0, 100),
+      description: description.slice(0, 300),
+      public: isPublic,
+    }),
+    cache: "no-store",
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    return {
+      ok: false,
+      status: res.status,
+      needsReconnect: true,
+      message: "Sem permissão para criar playlists. Reconecte sua conta Spotify nas configurações.",
+    };
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[spotify] create playlist failed", res.status, body.slice(0, 300));
+    return { ok: false, status: res.status, message: "Não foi possível criar a playlist no Spotify." };
+  }
+
+  const json = (await res.json()) as { id?: string; external_urls?: { spotify?: string } };
+  if (!json.id) {
+    return { ok: false, status: res.status, message: "Resposta inválida ao criar playlist." };
+  }
+
+  return {
+    ok: true,
+    id: json.id,
+    url: json.external_urls?.spotify ?? `https://open.spotify.com/playlist/${json.id}`,
+  };
+}
+
+/** Adiciona faixas a uma playlist (lotes de até 100 URIs). */
+export async function addTracksToSpotifyPlaylist(
+  accessToken: string,
+  playlistId: string,
+  trackUris: string[],
+): Promise<SpotifyPlaylistAddTracksResult> {
+  for (let i = 0; i < trackUris.length; i += 100) {
+    const batch = trackUris.slice(i, i + 100);
+    const res = await fetch(`${API_BASE}/playlists/${encodeURIComponent(playlistId)}/tracks`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ uris: batch }),
+      cache: "no-store",
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      return {
+        ok: false,
+        status: res.status,
+        needsReconnect: true,
+        message: "Sem permissão para editar playlists. Reconecte sua conta Spotify nas configurações.",
+      };
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error("[spotify] add tracks failed", res.status, body.slice(0, 300));
+      return { ok: false, status: res.status, message: "Não foi possível adicionar músicas à playlist." };
+    }
+  }
+
+  return { ok: true };
 }
