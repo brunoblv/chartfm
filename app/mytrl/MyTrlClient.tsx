@@ -52,6 +52,7 @@ export default function MyTrlClient() {
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [publishingWeekly, setPublishingWeekly] = useState(false);
   const [recomputing, setRecomputing] = useState(false);
   const [generateDate, setGenerateDate] = useState("");
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
@@ -187,6 +188,28 @@ export default function MyTrlClient() {
     }
   };
 
+  const handlePublishWeekly = async () => {
+    setPublishingWeekly(true);
+    try {
+      const body = generateDate.trim() ? { date: generateDate.trim() } : undefined;
+      const res = await fetch("/api/mytrl/publish-weekly", {
+        method: "POST",
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setBanner(
+          `Parada semanal publicada: ${data.weekLabel} · ${data.count} faixas${data.created ? "" : " (atualizada)"}.`,
+        );
+      } else {
+        setBanner(data.error ?? "Erro ao publicar parada semanal.");
+      }
+    } finally {
+      setPublishingWeekly(false);
+    }
+  };
+
   const handleGenerate = async () => {
     setGenerating(true);
     try {
@@ -198,7 +221,9 @@ export default function MyTrlClient() {
       });
       const data = await res.json();
       if (data.ok) {
-        setBanner(`Parada gerada (${data.referenceDate}): ${data.count} faixas · ${data.dateRange}.`);
+        setBanner(
+          `Parada gerada (${data.referenceDate}): top ${data.count} de ${data.totalTracks} faixas · ${data.dateRange}.`,
+        );
         const editions = await loadTimeline(false);
         const key = `${data.weekday}:${data.weekIndex}`;
         const idx = editions.findIndex((e) => editionKey(e) === key);
@@ -231,7 +256,7 @@ export default function MyTrlClient() {
   const editionDisplay = snapshot ? editionFromEntry(snapshot) : null;
 
   return (
-    <Shell title="MyTRL" subtitle="Parada diária · top 10 new hits · seg–sex às 18h">
+    <Shell title="MyTRL" subtitle="Parada diária · top 10 new hits · seg–sex às 6h">
       <div
         style={{
           maxWidth: 960,
@@ -311,6 +336,28 @@ export default function MyTrlClient() {
           >
             <RefreshCw size={16} />
             Recalcular stats
+          </button>
+          <button
+            type="button"
+            onClick={() => void handlePublishWeekly()}
+            disabled={publishingWeekly}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: "1px solid var(--divider)",
+              background: "var(--surface)",
+              color: "var(--text)",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: publishingWeekly ? "wait" : "pointer",
+              opacity: publishingWeekly ? 0.7 : 1,
+            }}
+          >
+            <RefreshCw size={16} />
+            {generateDate ? "Publicar semana (data)" : "Publicar semana"}
           </button>
           <button
             type="button"
@@ -467,10 +514,11 @@ export default function MyTrlClient() {
         ) : null}
 
         <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, textAlign: "center" }}>
+          Diário (seg–sex 6h): salva pontos de todas as faixas new hits; exibe o top 10.
+          Semanal (sexta 7h): soma os pontos da semana e publica top 20 na sua parada.
           Use as setas ou o teclado (← →) para navegar entre as edições diárias.
           &quot;Dias&quot; = total de aparições do mais antigo até esta edição.
-          &quot;Anterior&quot; = posição na edição imediatamente anterior (← nas setas).
-          Clique em <strong>Recalcular stats</strong> após esta atualização.
+          Clique em <strong>Recalcular stats</strong> após regenerar edições antigas.
         </p>
       </div>
     </Shell>

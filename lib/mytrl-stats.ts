@@ -76,9 +76,16 @@ export function applyMyTrlStatsToEntries(
   const prevPubDay = prevPublishedDayIndex(dayIndex, sortedDayIndexes);
   const prevEntries = prevPubDay != null ? (editionsByDay.get(prevPubDay) ?? []) : [];
 
-  return entries.map((entry, i) => {
-    const position = entry.position || i + 1;
-    const prevEntry = findEntry(prevEntries, entry.track, entry.artist, entry.spotifyId);
+  return entries.map((entry) => {
+    if (entry.position == null) return entry;
+
+    const position = entry.position;
+    const prevEntry = findEntry(
+      prevEntries.filter((e) => e.position != null),
+      entry.track,
+      entry.artist,
+      entry.spotifyId,
+    );
     const prevPos = prevEntry?.position ?? null;
 
     let weeks = 0;
@@ -89,7 +96,7 @@ export function applyMyTrlStatsToEntries(
       if (d > dayIndex) break;
       const list = d === dayIndex ? entries : (editionsByDay.get(d) ?? []);
       const past = findEntry(list, entry.track, entry.artist, entry.spotifyId);
-      if (!past) continue;
+      if (!past || past.position == null) continue;
 
       weeks += 1;
       peak = Math.min(peak, past.position);

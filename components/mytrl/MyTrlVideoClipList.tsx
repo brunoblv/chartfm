@@ -92,7 +92,8 @@ export function MyTrlVideoClipList({
   maxEntries,
 }: Props) {
   const isMobile = useIsMobile(MOBILE_LIST_BREAKPOINT);
-  const visibleEntries = maxEntries ? entries.slice(0, maxEntries) : entries;
+  const chartedEntries = entries.filter((e): e is MyTrlChartEntry & { position: number } => e.position != null);
+  const visibleEntries = maxEntries ? chartedEntries.slice(0, maxEntries) : chartedEntries;
   const isPreview = preview || compact;
   const clipHeight = isPreview ? (isMobile ? 52 : 64) : isMobile ? 56 : 125;
   const clipWidth = Math.round(clipHeight * (16 / 9));

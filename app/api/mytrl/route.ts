@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireMyTrlSession } from "@/lib/mytrl-access";
 import { getMyTrlOwnerUser } from "@/lib/spotify-user";
-import { MYTRL_WEEKDAYS, type MyTrlChartEntry, buildMyTrlScoringWindow, brtDateKey, formatMyTrlEditionDisplay } from "@/lib/mytrl-chart-engine";
+import { MYTRL_WEEKDAYS, type MyTrlChartEntry, buildMyTrlScoringWindow, brtDateKey, formatMyTrlEditionDisplay, myTrlTopEntries } from "@/lib/mytrl-chart-engine";
 import { collectSpotifyIds, resolveMyTrlVideoClips } from "@/lib/mytrl-video-clips";
 
 export const runtime = "nodejs";
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const entries = snapshot.entries as unknown as MyTrlChartEntry[];
+  const entries = myTrlTopEntries(snapshot.entries as unknown as MyTrlChartEntry[]);
   const owner = await getMyTrlOwnerUser();
   const videoClips = owner
     ? await resolveMyTrlVideoClips(owner.id, collectSpotifyIds(entries))

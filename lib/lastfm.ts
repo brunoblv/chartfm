@@ -1,7 +1,7 @@
 const BASE_URL = "https://ws.audioscrobbler.com/2.0/";
 
 export interface DayPlays {
-  date: string; // YYYY-MM-DD UTC
+  date: string; // YYYY-MM-DD (UTC por padrão; MyTRL usa BRT via dateKeyFn)
   plays: number;
 }
 
@@ -106,8 +106,17 @@ async function fetchPage(
   return { tracks, totalPages };
 }
 
+export function utcDateKeyFromUnix(uts: number): string {
+  return new Date(uts * 1000).toISOString().slice(0, 10);
+}
+
 /** Scrobbles com `from <= uts < to` (parâmetros do Last.fm: after `from`, before `to`). */
-export async function fetchTracksBetweenUnix(from: number, toExclusive: number, usernameOverride?: string): Promise<TrackPlays[]> {
+export async function fetchTracksBetweenUnix(
+  from: number,
+  toExclusive: number,
+  usernameOverride?: string,
+  dateKeyFn: (uts: number) => string = utcDateKeyFromUnix,
+): Promise<TrackPlays[]> {
   const username = usernameOverride || process.env.LASTFM_USERNAME;
   const apiKey = process.env.API_KEY;
 
@@ -129,7 +138,7 @@ export async function fetchTracksBetweenUnix(from: number, toExclusive: number, 
       const trackName = canonicalizeTrackName(rawTrackName);
       const artistName = canonicalizeArtistName(rawArtistName) || rawArtistName;
       const key = `${normalizeKeyPart(trackName)}|||${normalizeKeyPart(artistName)}`;
-      const dateStr = new Date(Number(track.date.uts) * 1000).toISOString().slice(0, 10);
+      const dateStr = dateKeyFn(Number(track.date.uts));
 
       if (!grouped.has(key)) {
         grouped.set(key, { track: trackName, artist: artistName, album: track.album["#text"].trim(), dayPlays: [] });

@@ -630,7 +630,7 @@ model WeeklyRelease {
   @@map("weekly_releases")
 }
 
-/// Snapshots da parada pessoal MyTRL (seg–sex, gerados às 18h BRT).
+/// Snapshots da parada pessoal MyTRL (seg–sex, gerados às 6h BRT).
 model MyTrlSnapshot {
   id         String   @id @default(cuid())
   weekday    Int

@@ -15,6 +15,9 @@ import { getMyTrlOwnerUser, getNewHitsSpotifyIds, getNewHitsTracksForUser } from
 import { recomputeAllMyTrlSnapshots } from "@/lib/mytrl-recompute";
 import type { TrackPlays } from "@/lib/lastfm";
 
+function brtDateKeyFromUnix(uts: number): string {
+  return brtDateKey(new Date(uts * 1000));
+}
 function normalizeKey(s: string): string {
   return s
     .toLowerCase()
@@ -108,13 +111,13 @@ export type MyTrlGenerateResult =
       weekday: number;
       weekIndex: number;
       count: number;
+      totalTracks: number;
       referenceDate: string;
       weekLabel: string;
       dateRange: string;
       skipped?: false;
     }
   | { ok: false; error: string; skipped?: boolean };
-
 export async function generateMyTrlSnapshot(referenceDay: Date = new Date()): Promise<MyTrlGenerateResult> {
   const weekday = brtWeekday(referenceDay);
   if (weekday === 0) {
@@ -143,7 +146,7 @@ export async function generateMyTrlSnapshot(referenceDay: Date = new Date()): Pr
   const playlistTracks = await getNewHitsTracksForUser(owner.id);
 
   const { fromUnix, toUnix } = myTrlFetchWindow(referenceDay);
-  const rawPlays = await fetchTracksBetweenUnix(fromUnix, toUnix, lastfmUser);
+  const rawPlays = await fetchTracksBetweenUnix(fromUnix, toUnix, lastfmUser, brtDateKeyFromUnix);
   const enriched = await enrichWithSpotify(rawPlays, allowedIds, playlistTracks);
 
   const history = await loadHistory();
@@ -178,9 +181,9 @@ export async function generateMyTrlSnapshot(referenceDay: Date = new Date()): Pr
     ok: true,
     weekday,
     weekIndex,
-    count: entries.length,
+    count: entries.filter((e) => e.position != null).length,
+    totalTracks: entries.length,
     referenceDate: brtDateKey(referenceDay),
     weekLabel,
     dateRange,
-  };
-}
+  };}

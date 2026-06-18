@@ -12,8 +12,11 @@ export interface MyTrlChartEntry {
   album: string;
   spotifyId: string | null;
   imageUrl: string | null;
+  /** Plays por dia BRT na janela de pontuação (últimos 7 dias). */
+  dayPlays?: Array<{ date: string; plays: number }>;
   score: number;
-  position: number;
+  /** Top 10 diário; `null` = fora do top 10 mas com pontos salvos. */
+  position: number | null;
   prevPos: number | null;
   peak: number;
   weeks: number;
@@ -60,6 +63,14 @@ export function myTrlSnapshotKey(weekday: number, weekIndex: number): string {
   return `${weekday}:${weekIndex}`;
 }
 
+/** Entradas ranqueadas no top diário (com posição). */
+export function myTrlTopEntries(entries: MyTrlChartEntry[], limit = 10): MyTrlChartEntry[] {
+  return entries
+    .filter((e) => e.position != null)
+    .sort((a, b) => (a.position ?? 99) - (b.position ?? 99))
+    .slice(0, limit);
+}
+
 /** Ordem cronológica das paradas diárias (seg–sex dentro de cada semana ISO). */
 export function isEditionBefore(
   weekday: number,
@@ -82,6 +93,20 @@ export function prevMyTrlEditionKey(weekday: number, weekIndex: number): string 
 function playWeight(diffDays: number): number {
   if (diffDays < 1 || diffDays > 7) return 0;
   return DAY_WEIGHTS[diffDays - 1];
+}
+
+/** Plays por dia BRT que entram na pontuação (1–7 dias antes da edição). */
+function scoringDayPlays(dayPlays: TrackPlays["dayPlays"], referenceDayKey: string): Array<{ date: string; plays: number }> {
+  const refMs = new Date(`${referenceDayKey}T00:00:00Z`).getTime();
+  const out: Array<{ date: string; plays: number }> = [];
+
+  for (const { date, plays } of dayPlays) {
+    const playMs = new Date(`${date}T00:00:00Z`).getTime();
+    const diffDays = Math.round((refMs - playMs) / 86_400_000);
+    if (playWeight(diffDays) > 0) out.push({ date, plays });
+  }
+
+  return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDayKey: string): number {
@@ -187,8 +212,10 @@ function aggregateHistoryStats(
     const [wd, wi] = snapKey.split(":").map(Number);
     if (!isEditionBefore(wd, wi, weekday, weekIndex)) continue;
 
-    const entry = snap.entries.find((e) => trackKey(e.track, e.artist, e.spotifyId) === key);
-    if (!entry) continue;
+    const entry = snap.entries.find(
+      (e) => e.position != null && trackKey(e.track, e.artist, e.spotifyId) === key,
+    );
+    if (!entry || entry.position == null) continue;
 
     everOnChart = true;
     if (entry.position < peak) peak = entry.position;
@@ -213,6 +240,7 @@ export function computeMyTrlChart(
   const prevMap = new Map<string, MyTrlChartEntry>();
   if (prevSnapshot) {
     for (const entry of prevSnapshot.entries) {
+      if (entry.position == null) continue;
       for (const k of new Set([
         trackKey(entry.track, entry.artist, entry.spotifyId),
         trackKey(entry.track, entry.artist, null),
@@ -233,12 +261,35 @@ export function computeMyTrlChart(
       score: computeScore(tp.dayPlays, referenceDayKey),
     }))
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
+    .sort((a, b) => b.score - a.score);
 
   return ranked.map((item, i) => {
+    const spotifyId = (item as TrackPlays & { spotifyId?: string | null; imageUrl?: string | null }).spotifyId ?? null;
+    const imageUrl = (item as TrackPlays & { imageUrl?: string | null }).imageUrl ?? null;
+    const dayPlays = scoringDayPlays(item.dayPlays, referenceDayKey);
+    const score = Math.round(item.score * 100) / 100;
+
+    if (i >= 10) {
+      return {
+        track: item.track,
+        artist: item.artist,
+        album: item.album,
+        spotifyId,
+        imageUrl,
+        dayPlays,
+        score,
+        position: null,
+        prevPos: null,
+        peak: 0,
+        weeks: 0,
+        numberOnes: 0,
+        status: "new" as MyTrlEntryStatus,
+        delta: null,
+      };
+    }
+
     const position = i + 1;
-    const key = trackKey(item.track, item.artist, (item as typeof item & { spotifyId?: string }).spotifyId);
+    const key = trackKey(item.track, item.artist, spotifyId);
     const prev =
       prevMap.get(key) ??
       prevMap.get(trackKey(item.track, item.artist, null)) ??
@@ -276,16 +327,14 @@ export function computeMyTrlChart(
       weeks = prevDays + 1;
     }
 
-    const spotifyId = (item as TrackPlays & { spotifyId?: string | null; imageUrl?: string | null }).spotifyId ?? null;
-    const imageUrl = (item as TrackPlays & { imageUrl?: string | null }).imageUrl ?? null;
-
     return {
       track: item.track,
       artist: item.artist,
       album: item.album,
       spotifyId,
       imageUrl,
-      score: Math.round(item.score * 100) / 100,
+      dayPlays,
+      score,
       position,
       prevPos,
       peak,
@@ -317,10 +366,10 @@ export function myTrlFetchWindow(referenceDay: Date = new Date()): { fromUnix: n
   return { fromUnix, toUnix };
 }
 
-/** Data de referência (YYYY-MM-DD) simulando publicação às 18h BRT, como o cron. */
+/** Data de referência (YYYY-MM-DD) simulando publicação às 6h BRT, como o cron. */
 export function parseMyTrlReferenceDate(dateKey: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
-  const reference = new Date(`${dateKey}T21:00:00.000Z`);
+  const reference = new Date(`${dateKey}T09:00:00.000Z`);
   if (Number.isNaN(reference.getTime())) return null;
   if (brtDateKey(reference) !== dateKey) return null;
   if (reference.getTime() > Date.now()) return null;

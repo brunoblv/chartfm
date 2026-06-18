@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireMyTrlSession } from "@/lib/mytrl-access";
 import { getMyTrlOwnerUser } from "@/lib/spotify-user";
-import { MYTRL_WEEKDAYS, type MyTrlChartEntry, buildMyTrlScoringWindow, brtDateKey } from "@/lib/mytrl-chart-engine";
+import { MYTRL_WEEKDAYS, type MyTrlChartEntry, buildMyTrlScoringWindow, brtDateKey, myTrlTopEntries } from "@/lib/mytrl-chart-engine";
 import { collectSpotifyIds, resolveMyTrlVideoClips } from "@/lib/mytrl-video-clips";
 
 export const runtime = "nodejs";
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       dateRange: snap?.dateRange ?? null,
       scoringWindow: snap ? buildMyTrlScoringWindow(brtDateKey(snap.computedAt)) : null,
       computedAt: snap?.computedAt.toISOString() ?? null,
-      entries: (snap?.entries as unknown as MyTrlChartEntry[]) ?? [],
+      entries: myTrlTopEntries((snap?.entries as unknown as MyTrlChartEntry[]) ?? []),
     };
   });
 

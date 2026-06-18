@@ -8,7 +8,7 @@ export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
 // POST /api/mytrl/generate — gera snapshot manualmente (somente @bruno ou cron)
-// Body opcional: { "date": "YYYY-MM-DD" } — simula um dia no passado (18h BRT)
+// Body opcional: { "date": "YYYY-MM-DD" } — simula um dia no passado (6h BRT)
 export async function POST(req: Request) {
   const session = await requireMyTrlSession();
   const cronOk = authorizeMyTrlCron(req);

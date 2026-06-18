@@ -5,7 +5,7 @@ import { generateMyTrlSnapshot } from "@/lib/mytrl-generate";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-// GET /api/cron/mytrl — seg–sex 18h BRT (21:00 UTC)
+// GET /api/cron/mytrl — seg–sex 6h BRT (09:00 UTC)
 export async function GET(req: NextRequest) {
   if (!authorizeMyTrlCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
