@@ -112,7 +112,11 @@ async function exchangeTokens(body: URLSearchParams): Promise<TokenResponse | nu
     body,
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[spotify] token exchange failed", res.status, body.slice(0, 300));
+    return null;
+  }
   return (await res.json()) as TokenResponse;
 }
 

@@ -3,6 +3,13 @@ import { getServerSession } from "next-auth";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 import { authOptions } from "@/lib/auth-options";
+import { getAppOrigin } from "@/lib/app-url";
+import {
+  SPOTIFY_CONNECT_COOKIE_OPTS,
+  SPOTIFY_CONNECT_FROM_COOKIE,
+  SPOTIFY_CONNECT_REDIRECT_URI_COOKIE,
+  SPOTIFY_CONNECT_STATE_COOKIE,
+} from "@/lib/spotify-connect-oauth";
 import {
   buildSpotifyAuthorizeUrl,
   getSpotifyUserConnectRedirectUri,
@@ -10,9 +17,6 @@ import {
 } from "@/lib/spotify-user";
 
 export const runtime = "nodejs";
-
-const STATE_COOKIE = "spotify_connect_state";
-const FROM_COOKIE = "spotify_connect_from";
 
 /** Aceita apenas caminhos relativos internos (evita open redirect). */
 function sanitizeFrom(raw: string | null): string | null {
@@ -36,26 +40,15 @@ export async function GET(req: NextRequest) {
   }
 
   const state = crypto.randomBytes(24).toString("hex");
-  const redirectUri = getSpotifyUserConnectRedirectUri(new URL(req.url).origin);
+  const redirectUri = getSpotifyUserConnectRedirectUri(getAppOrigin(new URL(req.url).origin));
   const from = sanitizeFrom(new URL(req.url).searchParams.get("from"));
   const jar = await cookies();
-  jar.set(STATE_COOKIE, state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 600,
-    path: "/",
-  });
+  jar.set(SPOTIFY_CONNECT_STATE_COOKIE, state, SPOTIFY_CONNECT_COOKIE_OPTS);
+  jar.set(SPOTIFY_CONNECT_REDIRECT_URI_COOKIE, redirectUri, SPOTIFY_CONNECT_COOKIE_OPTS);
   if (from) {
-    jar.set(FROM_COOKIE, from, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 600,
-      path: "/",
-    });
+    jar.set(SPOTIFY_CONNECT_FROM_COOKIE, from, SPOTIFY_CONNECT_COOKIE_OPTS);
   } else {
-    jar.delete(FROM_COOKIE);
+    jar.delete(SPOTIFY_CONNECT_FROM_COOKIE);
   }
 
   return NextResponse.redirect(buildSpotifyAuthorizeUrl(state, redirectUri));

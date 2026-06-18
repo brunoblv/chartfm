@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverModel, Song } from "@/lib/types";
 import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
+import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -194,12 +195,13 @@ export default function CreatePage() {
   // Retorno do OAuth do Spotify iniciado a partir desta página (?spotify=connected|error|...).
   useEffect(() => {
     const status = searchParams.get("spotify");
+    const reason = searchParams.get("spotify_reason");
     if (!status) return;
     if (status === "connected") {
       setSpotifyUserConnected(true);
       setShowSpotifyModal(true);
     } else {
-      setPublishError("Não foi possível conectar sua conta do Spotify. Tente novamente.");
+      setPublishError(spotifyConnectErrorMessage(status, reason) ?? "Não foi possível conectar sua conta do Spotify. Tente novamente.");
     }
     // Limpa o parâmetro da URL sem recarregar.
     window.history.replaceState({}, "", "/create");

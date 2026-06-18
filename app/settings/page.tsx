@@ -9,6 +9,7 @@ import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
+import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
 
 async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
@@ -136,11 +137,12 @@ export default function SettingsPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const spotifyParam = params.get("spotify");
+    const spotifyReason = params.get("spotify_reason");
     if (spotifyParam === "connected") {
       setSuccess("Spotify conectado com sucesso!");
       window.history.replaceState({}, "", "/settings");
-    } else if (spotifyParam === "error" || spotifyParam === "token_error" || spotifyParam === "invalid_state") {
-      setError("Erro ao conectar o Spotify. Tente novamente.");
+    } else if (spotifyParam) {
+      setError(spotifyConnectErrorMessage(spotifyParam, spotifyReason) ?? "Erro ao conectar o Spotify. Tente novamente.");
       window.history.replaceState({}, "", "/settings");
     }
 
