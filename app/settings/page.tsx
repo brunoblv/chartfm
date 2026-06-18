@@ -10,6 +10,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
+import { isMyTrlOwner } from "@/lib/mytrl-access";
 
 async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
@@ -74,6 +75,7 @@ type Tab = "perfil" | "parada" | "conta";
 export default function SettingsPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const canUseSpotifyImport = isMyTrlOwner(session?.user?.handle);
   const { t } = useTranslations();
   const [tab, setTab] = useState<Tab>("perfil");
   const [loading, setLoading] = useState(true);
@@ -693,6 +695,7 @@ export default function SettingsPage() {
                     </span>
                   </div>
 
+                  {canUseSpotifyImport && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Spotify</span>
                     {spotifyConnected ? (
@@ -732,6 +735,7 @@ export default function SettingsPage() {
                       Permite importar músicas recentes e criar playlists das suas paradas no Spotify.
                     </span>
                   </div>
+                  )}
                 </div>
 
                 {error && <div style={{ fontSize: 13, color: "#B91C1C" }}>{error}</div>}

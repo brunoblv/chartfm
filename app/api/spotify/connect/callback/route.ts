@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { appPathUrl, ensureCanonicalAppOrigin, getAppOrigin } from "@/lib/app-url";
+import { isMyTrlOwner } from "@/lib/mytrl-access";
 import { prisma } from "@/lib/prisma";
 import { verifySpotifyConnectState } from "@/lib/spotify-connect-oauth";
 import {
@@ -34,6 +35,9 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.redirect(appPathUrl("/login", getAppOrigin(new URL(req.url).origin)));
+  }
+  if (!isMyTrlOwner(session.user.handle)) {
+    return NextResponse.redirect(appPathUrl("/settings", getAppOrigin(new URL(req.url).origin)));
   }
 
   const url = new URL(req.url);

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { ensureCanonicalAppOrigin, getAppOrigin } from "@/lib/app-url";
+import { requireMyTrlSession } from "@/lib/mytrl-access";
 import { createSpotifyConnectState } from "@/lib/spotify-connect-oauth";
 import {
   buildSpotifyAuthorizeUrl,
@@ -18,14 +17,14 @@ function sanitizeFrom(raw: string | null): string | null {
   return raw;
 }
 
-// GET /api/spotify/connect — inicia OAuth Spotify para qualquer usuário autenticado
+// GET /api/spotify/connect — inicia OAuth Spotify (somente @bruno)
 export async function GET(req: NextRequest) {
   const canonicalRedirect = ensureCanonicalAppOrigin(req);
   if (canonicalRedirect) return canonicalRedirect;
 
-  const session = await getServerSession(authOptions);
+  const session = await requireMyTrlSession();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   }
 
   if (!spotifyUserOAuthConfigured()) {

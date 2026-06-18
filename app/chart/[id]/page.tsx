@@ -31,6 +31,7 @@ import {
 } from "@/lib/chart-list-layout";
 import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
+import { isMyTrlOwner } from "@/lib/mytrl-access";
 import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, PersonalDropoutEntry, TimelineItem, User } from "@/lib/types";
 
@@ -195,6 +196,7 @@ export default function ChartDetailPage() {
   const dropouts: PersonalDropoutEntry[] = dbPayload?.dropouts ?? [];
   const isDbChart = !!dbPayload;
   const isOwner = !!session?.user?.id && !!user?.id && session.user.id === user.id;
+  const canUseSpotifyImport = isMyTrlOwner(session?.user?.handle);
 
   useEffect(() => {
     if (!user?.handle) return;
@@ -236,7 +238,7 @@ export default function ChartDetailPage() {
   }, [variant, id, isDbChart]);
 
   useEffect(() => {
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !canUseSpotifyImport) {
       setSpotifyConnected(false);
       return;
     }
@@ -246,9 +248,10 @@ export default function ChartDetailPage() {
         setSpotifyConnected(data?.spotifyConnected ?? false);
       })
       .catch(() => setSpotifyConnected(false));
-  }, [session?.user?.id]);
+  }, [session?.user?.id, canUseSpotifyImport]);
 
   useEffect(() => {
+    if (!canUseSpotifyImport) return;
     const status = searchParams?.get("spotify");
     if (status === "connected") {
       setSpotifyConnected(true);
@@ -301,7 +304,7 @@ export default function ChartDetailPage() {
     }
   }
 
-  const spotifyExportButton = isOwner && isDbChart ? (
+  const spotifyExportButton = isOwner && isDbChart && canUseSpotifyImport ? (
     <button
       type="button"
       onClick={exportChartToSpotify}

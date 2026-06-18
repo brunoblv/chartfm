@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { requireMyTrlSession } from "@/lib/mytrl-access";
 import { prisma } from "@/lib/prisma";
 import {
   addTracksToSpotifyPlaylist,
@@ -20,9 +19,9 @@ const NO_CACHE = {
 // POST /api/spotify/playlist-from-chart
 // Body: { chartId: string; isPublic?: boolean }
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await requireMyTrlSession();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401, headers: NO_CACHE });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 403, headers: NO_CACHE });
   }
 
   let body: { chartId?: unknown; isPublic?: unknown } = {};

@@ -14,6 +14,7 @@ import type { Cover as CoverModel, Song } from "@/lib/types";
 import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
+import { isMyTrlOwner } from "@/lib/mytrl-access";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -98,6 +99,7 @@ export default function CreatePage() {
   const paradaIdFromUrl = searchParams.get("paradaId");
   const isMobile = useIsMobile();
   const { data: session } = useSession();
+  const canUseSpotifyImport = isMyTrlOwner(session?.user?.handle);
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [dbQuery, setDbQuery] = useState("");
@@ -182,6 +184,10 @@ export default function CreatePage() {
   }, []);
 
   useEffect(() => {
+    if (!canUseSpotifyImport) {
+      setSpotifyUserConnected(false);
+      return;
+    }
     fetch("/api/user/profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { lastfmUser?: string | null; spotifyConnected?: boolean } | null) => {
@@ -190,10 +196,11 @@ export default function CreatePage() {
         setSpotifyUserConnected(data.spotifyConnected ?? false);
       })
       .catch(() => {});
-  }, []);
+  }, [canUseSpotifyImport]);
 
   // Retorno do OAuth do Spotify iniciado a partir desta página (?spotify=connected|error|...).
   useEffect(() => {
+    if (!canUseSpotifyImport) return;
     const status = searchParams.get("spotify");
     const reason = searchParams.get("spotify_reason");
     if (!status) return;
@@ -920,6 +927,7 @@ export default function CreatePage() {
             >
               {importingLastfm ? "Buscando Last.fm…" : "↺ Last.fm"}
             </button>
+            {canUseSpotifyImport && (
             <button
               type="button"
               onClick={() => !importingSpotify && setShowSpotifyModal(true)}
@@ -940,6 +948,7 @@ export default function CreatePage() {
             >
               {importingSpotify ? "Buscando Spotify…" : "↺ Spotify"}
             </button>
+            )}
           </>
         )}
         <button
@@ -1343,7 +1352,7 @@ export default function CreatePage() {
       )}
 
       {/* Modal de importação do Spotify */}
-      {showSpotifyModal && (
+      {canUseSpotifyImport && showSpotifyModal && (
         <div
           onClick={() => setShowSpotifyModal(false)}
           style={{

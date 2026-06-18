@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { requireMyTrlSession } from "@/lib/mytrl-access";
 import { getSpotifyUserAccessToken, fetchSpotifyRecentlyPlayed, SpotifyAuthError } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
 
@@ -17,9 +16,9 @@ const NO_CACHE = {
 // POST /api/spotify/recent
 // Body: { limit?: number } — busca as faixas tocadas recentemente no Spotify do usuário.
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await requireMyTrlSession();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 403, headers: NO_CACHE });
   }
 
   const token = await getSpotifyUserAccessToken(session.user.id);
