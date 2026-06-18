@@ -8,6 +8,8 @@ export const messagesPtBR = {
     communities: "Comunidades",
     albums: "Álbuns",
     criticsfm: "CriticsFM",
+    criticsfmClube: "Clube do Álbum",
+    criticsfmNewAlbums: "Novos Álbuns",
     mytrl: "MyTRL",
     notifications: "Notificações",
     whatsNew: "O que há de novo",

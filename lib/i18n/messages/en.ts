@@ -8,6 +8,8 @@ export const messagesEn = {
     communities: "Communities",
     albums: "Albums",
     criticsfm: "CriticsFM",
+    criticsfmClube: "Album Club",
+    criticsfmNewAlbums: "New Albums",
     mytrl: "MyTRL",
     notifications: "Notifications",
     whatsNew: "What's new",

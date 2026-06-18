@@ -206,6 +206,8 @@ export const pagesEn = {
     noInfo: "No information available",
     reviewPlaceholder: "What did you think of {album}?",
     albumClub: "Album Club",
+    newAlbums: "New Albums",
+    newAlbumsSubtitle: "Albums highlighted to listen to this week",
     phaseSignups: "Sign-ups",
     phasePoll: "Poll",
     phaseResult: "Result",

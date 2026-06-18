@@ -206,6 +206,8 @@ export const pagesPtBR = {
     noInfo: "Sem informações disponíveis",
     reviewPlaceholder: "O que achou de {album}?",
     albumClub: "Clube do Álbum",
+    newAlbums: "Novos Álbuns",
+    newAlbumsSubtitle: "Álbuns em destaque para ouvir esta semana",
     phaseSignups: "Inscrições",
     phasePoll: "Enquete",
     phaseResult: "Resultado",

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { getActiveClubeRound } from "@/lib/clube-album";
-import { getCriticsFMAlbums, getTopRatedAlbums } from "@/lib/criticsfm-data";
+import { getCriticsFMAlbums } from "@/lib/criticsfm-data";
 import { getActiveWeeklyRelease } from "@/lib/weekly-releases";
-import { TopAlbumsSection } from "./TopAlbumsSection";
+import { CriticsFMClient } from "./CriticsFMClient";
 import type { ClubeRoundData } from "@/lib/clube-album";
 import type { WeeklyReleaseData, WeeklyReleaseAlbumInfo } from "@/lib/weekly-releases";
 
@@ -384,8 +384,6 @@ export default async function CriticsFMPage() {
     getActiveClubeRound(session?.user?.id ?? null),
     getActiveWeeklyRelease(),
   ]);
-  const topAlbums = getTopRatedAlbums(albums);
-
   return (
     <Shell
       title="CriticsFM"
@@ -407,7 +405,10 @@ export default async function CriticsFMPage() {
 
       <LancamentosSection release={weeklyRelease} />
       <ClubeSection round={round} />
-      <TopAlbumsSection albums={topAlbums} />
+
+      <section style={{ marginTop: 8 }}>
+        <CriticsFMClient albums={albums} />
+      </section>
     </Shell>
   );
 }

@@ -1,17 +1,21 @@
 import { Shell } from "@/components/layout/Shell";
 import { getActiveWeeklyRelease } from "@/lib/weekly-releases";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { LancamentosDaSemana } from "./LancamentosDaSemana";
 import Link from "next/link";
 
 export const revalidate = 300;
 
 export default async function LancamentosPage() {
-  const release = await getActiveWeeklyRelease();
+  const [{ t }, release] = await Promise.all([
+    getServerTranslations(),
+    getActiveWeeklyRelease(),
+  ]);
 
   return (
     <Shell
-      title="Lançamentos da Semana"
-      subtitle="Álbuns em destaque para ouvir esta semana"
+      title={t("criticsfm.newAlbums")}
+      subtitle={t("criticsfm.newAlbumsSubtitle")}
       headerRight={
         <Link
           href="/criticsfm/lancamentos/historico"

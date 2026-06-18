@@ -193,6 +193,20 @@ function SidebarContent({
   t: (key: string) => string;
 }) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [criticsfmMenuOpen, setCriticsfmMenuOpen] = useState(
+    () => pathname === "/criticsfm" || pathname.startsWith("/criticsfm/"),
+  );
+
+  useEffect(() => {
+    if (pathname === "/criticsfm" || pathname.startsWith("/criticsfm/")) {
+      setCriticsfmMenuOpen(true);
+    }
+  }, [pathname]);
+
+  const criticsfmSubLinks = [
+    { href: "/criticsfm/clube", label: t("nav.criticsfmClube"), icon: Award },
+    { href: "/criticsfm/lancamentos", label: t("nav.criticsfmNewAlbums"), icon: Disc3 },
+  ];
 
   const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean; badge?: string }[] = [
     { href: "/", label: t("nav.home"), icon: Home },
@@ -217,9 +231,10 @@ function SidebarContent({
   return (
     <>
       {NAV.map(({ href, label, icon: Icon, requiresAuth, badge }) => {
-        const active = pathname === href;
+        const active = pathname === href || (href === "/criticsfm" && pathname.startsWith("/criticsfm"));
         const locked = requiresAuth && !authed;
         const isNotifications = href === "/notifications";
+        const isCriticsFM = href === "/criticsfm";
         const showUnreadBadge = isNotifications && authed && unreadNotifications > 0;
         const link = (
           <Link
@@ -278,6 +293,89 @@ function SidebarContent({
             {showUnreadBadge && <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />}
           </Link>
         );
+
+        if (isCriticsFM) {
+          return (
+            <Fragment key={href}>
+              <div style={{ margin: "2px 0 4px" }}>
+                <div style={{ display: "flex", alignItems: "stretch", gap: 2 }}>
+                  <Link
+                    href={href}
+                    onClick={onNavClick}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "9px 10px",
+                      borderRadius: 8,
+                      textDecoration: "none",
+                      color: active ? "var(--accent)" : "var(--text)",
+                      background: active ? "var(--accent-tint)" : "transparent",
+                      fontWeight: active ? 600 : 500,
+                      fontSize: 15,
+                      letterSpacing: "-0.01em",
+                      transition: "background 120ms",
+                      minWidth: 0,
+                    }}
+                  >
+                    <Award size={20} />
+                    <span style={{ flex: 1 }}>{label}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setCriticsfmMenuOpen((o) => !o)}
+                    aria-expanded={criticsfmMenuOpen}
+                    aria-label={label}
+                    style={{
+                      width: 36,
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 8,
+                      border: "none",
+                      background: criticsfmMenuOpen ? "var(--accent-tint)" : "transparent",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <ChevronDown
+                      size={18}
+                      style={{ transform: criticsfmMenuOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms ease" }}
+                    />
+                  </button>
+                </div>
+                {criticsfmMenuOpen && (
+                  <div
+                    style={{
+                      marginLeft: 8,
+                      marginTop: 4,
+                      marginBottom: 6,
+                      padding: "8px 8px 10px",
+                      borderLeft: "2px solid var(--accent-tint)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    {criticsfmSubLinks.map(({ href: subHref, label: subLabel, icon: SubIcon }) => (
+                      <Link
+                        key={subHref}
+                        href={subHref}
+                        onClick={onNavClick}
+                        style={adminLinkStyle(pathname, subHref)}
+                      >
+                        <SubIcon size={14} />
+                        <span>{subLabel}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Fragment>
+          );
+        }
 
         if (isNotifications && isAdmin) {
           return (
