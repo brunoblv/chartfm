@@ -67,7 +67,7 @@ function canonicalizeTrackName(track: string): string {
 
 function canonicalizeArtistName(artist: string): string {
   return artist
-    .replace(/\s+(feat\.?|ft\.?|featuring|with)\s+.+$/i, "")
+    .replace(/\s+(?:feat\.?|ft\.?|featuring)\s+.+$/i, "")
     .replace(/\s+/g, " ")
     .trim();
 }

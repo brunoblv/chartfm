@@ -39,7 +39,7 @@ export function canonicalSongTitle(title: string): string {
 }
 
 export function canonicalArtistName(artist: string): string {
-  return normalizeLoose(artist.replace(/\s+(feat\.?|ft\.?|featuring|with)\s+.+$/i, ""));
+  return normalizeLoose(artist.replace(/\s+(?:feat\.?|ft\.?|featuring)\s+.+$/i, ""));
 }
 
 export function canonicalAlbumTitle(title: string): string {

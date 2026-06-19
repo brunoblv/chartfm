@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Star, Award, ImagePlay, Radio } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Award, ImagePlay, Radio, Zap } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -213,7 +213,7 @@ function SidebarContent({
     { href: "/discover", label: t("nav.discover"), icon: Search },
     { href: "/global", label: t("nav.global"), icon: Globe },
     { href: "/communities", label: t("nav.communities"), icon: Users },
-    { href: "/albums", label: t("nav.albums"), icon: Star },
+    { href: "/push", label: "Push", icon: Zap },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
     ...(isMyTrlOwner ? [{ href: "/mytrl", label: t("nav.mytrl"), icon: Radio }] : []),
     { href: "/notifications", label: t("nav.notifications"), icon: Bell, requiresAuth: true },
@@ -455,6 +455,10 @@ function SidebarContent({
                     <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
                       <Award size={14} />
                       <span>{t("nav.adminClube")}</span>
+                    </Link>
+                    <Link href="/admin/push" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/push")}>
+                      <Zap size={14} />
+                      <span>Push</span>
                     </Link>
                     <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
                       <Sparkles size={14} />

@@ -65,6 +65,8 @@ model User {
   videoClipChoices     UserSongVideoClipChoice[]
   albumClubNominations AlbumClubNomination[]
   albumClubPollVotes   AlbumClubPollVote[]
+  pushSubmissions      PushSubmission[]
+  pushVotes            PushVote[]
 }
 
 model Artist {
@@ -140,6 +142,7 @@ model Song {
   chartEntriesBySpotify ChartEntry[] @relation("ChartEntrySongSpotify")
   videoClips            SongVideoClip[]
   videoClipChoices      UserSongVideoClipChoice[]
+  pushSubmissions       PushSubmission[]
 
   @@unique([title, artist])
   @@index([spotifyId], map: "idx_songs_spotify_id")
@@ -656,4 +659,67 @@ model WeeklyReleaseAlbum {
   @@unique([weeklyReleaseId, albumId])
   @@index([weeklyReleaseId], map: "idx_weekly_release_albums_release_id")
   @@map("weekly_release_albums")
+}
+
+// ─── Push Game ────────────────────────────────────────────────────────────────
+
+enum PushPhase {
+  SUBMISSION
+  LISTENING
+  RANKING
+  RESULT
+
+  @@map("push_phase")
+}
+
+model PushRound {
+  id                String           @id @default(cuid())
+  number            Int              @unique
+  title             String?
+  phase             PushPhase        @default(SUBMISSION)
+  submissionEndsAt  DateTime         @map("submission_ends_at")
+  listeningEndsAt   DateTime         @map("listening_ends_at")
+  rankingEndsAt     DateTime         @map("ranking_ends_at")
+  spotifyPlaylistId String?          @map("spotify_playlist_id")
+  season            Int              @default(1)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  submissions       PushSubmission[]
+  votes             PushVote[]
+
+  @@map("push_rounds")
+}
+
+model PushSubmission {
+  id             String      @id @default(cuid())
+  roundId        String      @map("round_id")
+  userId         String      @map("user_id")
+  songId         String      @map("song_id")
+  spotifyTrackId String      @unique @map("spotify_track_id")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  round          PushRound   @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song           Song        @relation(fields: [songId], references: [id])
+  votes          PushVote[]
+
+  @@unique([roundId, userId])
+  @@index([roundId])
+  @@map("push_submissions")
+}
+
+model PushVote {
+  id           String         @id @default(cuid())
+  roundId      String         @map("round_id")
+  userId       String         @map("user_id")
+  submissionId String         @map("submission_id")
+  position     Int
+  submittedAt  DateTime       @default(now()) @map("submitted_at")
+  round        PushRound      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submission   PushSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, userId, submissionId])
+  @@index([roundId, userId])
+  @@index([submissionId])
+  @@map("push_votes")
 }

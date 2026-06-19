@@ -785,7 +785,7 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(148px,1fr))", gap: 10, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(118px,1fr))", gap: 10, marginBottom: 24 }}>
         {round.nominations.map((a) => {
           const sel = selected.includes(a.id);
           const hue = albumHue(a.title);
@@ -866,7 +866,7 @@ function Phase3({ round }: { round: ClubeRoundData }) {
       </div>
 
       {round.winners.length > 0 ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 40 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 16, marginBottom: 40 }}>
           {round.winners.map((album, idx) => (
             <WinnerCard key={album.nominationId} album={album} idx={idx} revealed={round.identitiesRevealed} />
           ))}
@@ -878,7 +878,7 @@ function Phase3({ round }: { round: ClubeRoundData }) {
       {others.length > 0 && (
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>Outras indicações</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(118px,1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(96px,1fr))", gap: 10 }}>
             {others.map((a) => (
               <div key={a.id} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, overflow: "hidden" }}>
                 <div style={{ width: "100%", aspectRatio: "1/1", background: a.coverUrl ? undefined : `hsl(${albumHue(a.title)},45%,55%)`, position: "relative" }}>
@@ -929,7 +929,7 @@ function Phase4({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
       </div>
 
       {round.winners.length > 0 ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 28 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 16, marginBottom: 28 }}>
           {round.winners.map((album, idx) => (
             <WinnerCard key={album.nominationId} album={album} idx={idx} revealed={round.identitiesRevealed} />
           ))}

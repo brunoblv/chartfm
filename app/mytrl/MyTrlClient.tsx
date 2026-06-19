@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { RefreshCw, Link2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Link2, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { brtWeekday, formatMyTrlEditionDisplay, type MyTrlChartEntry, type MyTrlEditionDisplay } from "@/lib/mytrl-chart-engine";
 import { MyTrlVideoClipList } from "@/components/mytrl/MyTrlVideoClipList";
@@ -57,6 +57,7 @@ export default function MyTrlClient() {
   const [generateDate, setGenerateDate] = useState("");
   const [spotify, setSpotify] = useState<SpotifyStatus | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const currentEdition = timelineIndex >= 0 ? timeline[timelineIndex] ?? null : null;
   const canGoPrev = timelineIndex > 0;
@@ -207,6 +208,36 @@ export default function MyTrlClient() {
       }
     } finally {
       setPublishingWeekly(false);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (
+      !window.confirm(
+        "Tem certeza? Isso apaga TODAS as paradas MyTRL (edições diárias e semanais publicadas). Essa ação não pode ser desfeita.",
+      )
+    ) {
+      return;
+    }
+
+    setClearing(true);
+    try {
+      const res = await fetch("/api/mytrl", { method: "DELETE" });
+      const data = await res.json();
+      if (data.ok) {
+        const parts: string[] = [];
+        if (data.snapshots > 0) parts.push(`${data.snapshots} edição(ões) diária(s)`);
+        if (data.weeklyCharts > 0) parts.push(`${data.weeklyCharts} parada(s) semanal(is)`);
+        setBanner(parts.length > 0 ? `Apagado: ${parts.join(" e ")}.` : "Nenhuma parada MyTRL para apagar.");
+        setTimeline([]);
+        setTimelineIndex(-1);
+        setSnapshot(null);
+        setVideoClips({});
+      } else {
+        setBanner(data.error ?? "Erro ao apagar paradas MyTRL.");
+      }
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -380,6 +411,28 @@ export default function MyTrlClient() {
           >
             <RefreshCw size={16} />
             {generateDate ? "Gerar para data" : "Gerar agora"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleClearAll()}
+            disabled={clearing || (timeline.length === 0 && !loading)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(239, 68, 68, 0.35)",
+              background: "rgba(239, 68, 68, 0.08)",
+              color: "#ef4444",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: clearing ? "wait" : "pointer",
+              opacity: clearing || (timeline.length === 0 && !loading) ? 0.55 : 1,
+            }}
+          >
+            <Trash2 size={16} />
+            Apagar tudo
           </button>
         </div>
 

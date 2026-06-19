@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { clearAllMyTrlData } from "@/lib/mytrl-clear";
 import { requireMyTrlSession } from "@/lib/mytrl-access";
 import { getMyTrlOwnerUser } from "@/lib/spotify-user";
 import { MYTRL_WEEKDAYS, type MyTrlChartEntry, buildMyTrlScoringWindow, brtDateKey, formatMyTrlEditionDisplay, myTrlTopEntries } from "@/lib/mytrl-chart-engine";
@@ -71,4 +72,19 @@ export async function GET(req: NextRequest) {
     history,
     videoClips,
   });
+}
+
+// DELETE /api/mytrl — apaga todas as paradas MyTRL (somente @bruno)
+export async function DELETE() {
+  const session = await requireMyTrlSession();
+  if (!session) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
+  try {
+    const { snapshots, weeklyCharts } = await clearAllMyTrlData();
+    return NextResponse.json({ ok: true, snapshots, weeklyCharts });
+  } catch (err) {
+    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
+  }
 }
