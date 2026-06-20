@@ -20,7 +20,7 @@ import {
   type Top20Entry,
   type WeekdayLabel,
 } from "../lib/disk-mtv-daily";
-import { UMS_REQUEST_LIVE_PARADA_ID } from "../lib/mytrl-access";
+import { UMS_REQUEST_LIVE_PARADA_ID, UMS_VIDEO_WEEKLY_PARADA_ID } from "../lib/mytrl-access";
 import { paletteFor } from "../lib/mytrl-weekly-chart";
 import { pointsForChartPosition, scoringTierFromPrimary } from "../lib/parada-points";
 
@@ -37,11 +37,13 @@ if (existsSync(envPath)) {
 const prisma = new PrismaClient();
 
 const HANDLE = "bruno";
-const WEEKLY_PARADA_NAME = "Under My Skin Video";
-const DAILY_PARADA_NAMES = ["UMS Live Request", "UMS Request Live"];
+const WEEKLY_PARADA_ID = UMS_VIDEO_WEEKLY_PARADA_ID;
+const DAILY_PARADA_ID = UMS_REQUEST_LIVE_PARADA_ID;
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const WEEK_ARG = process.argv.find((a) => a.startsWith("--week="));
+const WEEKLY_ID_ARG = process.argv.find((a) => a.startsWith("--weekly-parada-id="));
+const DAILY_ID_ARG = process.argv.find((a) => a.startsWith("--daily-parada-id="));
 
 function weekdayDate(weekStartMonday: Date, dayIndex: number): Date {
   const d = new Date(weekStartMonday);
@@ -50,25 +52,43 @@ function weekdayDate(weekStartMonday: Date, dayIndex: number): Date {
 }
 
 async function resolveParadas(userId: string) {
-  const weekly = await prisma.parada.findFirst({
-    where: { userId, name: WEEKLY_PARADA_NAME, cadence: "WEEKLY" },
+  const weeklyId = WEEKLY_ID_ARG?.split("=").slice(1).join("=") ?? WEEKLY_PARADA_ID;
+  const dailyId = DAILY_ID_ARG?.split("=").slice(1).join("=") ?? DAILY_PARADA_ID;
+
+  let weekly = await prisma.parada.findFirst({
+    where: { id: weeklyId, userId, cadence: "WEEKLY" },
   });
-  if (!weekly) throw new Error(`Parada semanal "${WEEKLY_PARADA_NAME}" não encontrada.`);
+  if (!weekly) {
+    weekly = await prisma.parada.findFirst({
+      where: {
+        userId,
+        cadence: "WEEKLY",
+        name: { contains: "Under My Skin Video", mode: "insensitive" },
+      },
+      orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+    });
+  }
+  if (!weekly) {
+    throw new Error(
+      `Parada semanal não encontrada (id=${weeklyId}). Use --weekly-parada-id=<id>.`,
+    );
+  }
 
   let daily = await prisma.parada.findFirst({
-    where: {
-      userId,
-      cadence: "DAILY",
-      OR: [
-        { id: UMS_REQUEST_LIVE_PARADA_ID },
-        ...DAILY_PARADA_NAMES.map((name) => ({ name })),
-        { name: { contains: "Live Request", mode: "insensitive" as const } },
-      ],
-    },
+    where: { id: dailyId, userId, cadence: "DAILY" },
   });
   if (!daily) {
+    daily = await prisma.parada.findFirst({
+      where: {
+        userId,
+        cadence: "DAILY",
+        name: { contains: "Live Request", mode: "insensitive" },
+      },
+    });
+  }
+  if (!daily) {
     throw new Error(
-      `Parada diária UMS Live Request não encontrada. Nomes esperados: ${DAILY_PARADA_NAMES.join(", ")}`,
+      `Parada diária não encontrada (id=${dailyId}). Use --daily-parada-id=<id>.`,
     );
   }
 

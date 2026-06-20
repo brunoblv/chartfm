@@ -6,6 +6,9 @@ export const UMS_REQUEST_LIVE_PARADA_ID = "cmc06e6c262cf93ad97616c3c";
 /** Parada semanal @bruno alimentada pelo MyTRL (sexta 8:05 BRT, após as 5 diárias). */
 export const MYTRL_WEEKLY_PARADA_ID = "cmpn5qqi20001mly9beqx3xkt";
 
+/** Alias: Top 20 semanal Under My Skin Video (@bruno). */
+export const UMS_VIDEO_WEEKLY_PARADA_ID = MYTRL_WEEKLY_PARADA_ID;
+
 /** Publicação diária às 8h BRT (= 11:00 UTC). */
 export const MYTRL_DAILY_PUBLISH_UTC_HOUR = 11;
 
