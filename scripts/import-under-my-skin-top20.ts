@@ -58,7 +58,7 @@ if (existsSync(envPath)) {
 const prisma = new PrismaClient();
 
 const HANDLE = "bruno";
-const PARADA_NAME = "Under My Skin Video Countdown (Top 20)";
+const PARADA_NAME = "Under My Skin Video";
 const XLSX_PATH = join(process.cwd(), "public", "Brunos Top 20.xlsx");
 const PARSE_SCRIPT_PATH = join(process.cwd(), "scripts", "parse-brunos-top20-xlsx.py");
 const SPOTIFY_DELAY_MS = 450;
@@ -129,35 +129,33 @@ async function findUserAndParada() {
   });
   if (!user) throw new Error(`Usuário @${HANDLE} não encontrado.`);
 
-  let parada = await prisma.parada.findFirst({
-    where: { userId: user.id, name: PARADA_NAME, cadence: "WEEKLY" },
+  const parada = await prisma.parada.findFirst({
+    where: {
+      userId: user.id,
+      cadence: "WEEKLY",
+      OR: [
+        { name: PARADA_NAME },
+        {
+          isPrimary: true,
+          name: { contains: "Under My Skin Video", mode: "insensitive" },
+        },
+      ],
+    },
+    orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
   });
+
   if (!parada) {
-    if (DRY_RUN) {
-      return {
-        user,
-        parada: {
-          id: "dry-run-parada",
-          isPrimary: false,
-        } as Awaited<ReturnType<typeof prisma.parada.findFirst>>,
-      };
-    }
-    const currentMaxSort = await prisma.parada.aggregate({
-      where: { userId: user.id },
-      _max: { sortOrder: true },
-    });
-    parada = await prisma.parada.create({
-      data: {
-        userId: user.id,
-        name: PARADA_NAME,
-        isPrimary: false,
-        cadence: "WEEKLY",
-        sortOrder: (currentMaxSort._max.sortOrder ?? -1) + 1,
-        chartSize: 20,
-      },
-    });
-    console.log(`[info] Parada criada: ${PARADA_NAME}`);
+    throw new Error(
+      `Parada "${PARADA_NAME}" não encontrada para @${HANDLE}. Crie a parada principal antes de importar.`,
+    );
   }
+
+  if (parada.name !== PARADA_NAME) {
+    console.log(`[info] Usando parada: "${parada.name}" (principal=${parada.isPrimary})`);
+  } else if (!parada.isPrimary) {
+    console.log(`[warn] Parada "${PARADA_NAME}" existe mas não está marcada como principal.`);
+  }
+
   return { user, parada };
 }
 
