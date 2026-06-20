@@ -20,6 +20,7 @@ import { pointsForChartPosition, type ParadaScoringTier } from "@/lib/parada-poi
 
 type ParadaTab = "charts" | "artists" | "songs" | "numberOnes";
 type StatsScope = "overall" | "year";
+const STATS_TABS = new Set<ParadaTab>(["artists", "songs", "numberOnes"]);
 
 type ParadaInfo = {
   id: string;
@@ -51,6 +52,10 @@ type ApiProfile = {
   filterYear?: number | null;
   artistImages?: Record<string, string | null>;
   globalNumberOnes?: Record<string, number>;
+  statsSummary?: {
+    totalRankedSlots: number;
+    numberOnes: number;
+  };
 };
 
 function IconX({ size = 16 }: { size?: number }) {
@@ -422,14 +427,18 @@ function buildNumberOnesList(charts: Chart[]): NumberOneRow[] {
   return [...map.values()].sort((a, b) => b.lastWeek - a.lastWeek || b.count - a.count);
 }
 
-function buildAchievements(user: UserWithCharts, numberOnes: number) {
-  const totalRanked = user.charts.reduce((acc, c) => acc + c.entries.length, 0);
+function buildAchievements(
+  user: UserWithCharts,
+  numberOnes: number,
+  totalCharts: number,
+  totalRanked: number,
+) {
   const list: { emoji: string; name: string; desc: string }[] = [
     { emoji: "🔥", name: "Streak", desc: `${user.streak} semanas de streak` },
     { emoji: "🎵", name: "Curador", desc: totalRanked >= 100 ? `${totalRanked}+ entradas no chart` : `${totalRanked} músicas rankeadas` },
     { emoji: "🏆", name: "Chart topper", desc: numberOnes > 0 ? `${numberOnes} faixa(s) em #1` : "Busque o primeiro #1" },
     { emoji: "🌟", name: "Rede", desc: `${user.followers.toLocaleString("pt-BR")} seguidores` },
-    { emoji: "📊", name: "Paradas", desc: `${user.charts.length} publicação(ões)` },
+    { emoji: "📊", name: "Paradas", desc: `${totalCharts} publicação(ões)` },
     { emoji: "💎", name: "Membro", desc: "ChartFM" },
   ];
   return list;
@@ -473,21 +482,19 @@ export default function ProfilePage() {
     }
     let cancelled = false;
     setPhase("loading");
+    setActiveParadaId(null);
     setChartPage(1);
     setChartsYearFilter(null);
     setFullPayload(null);
     (async () => {
       try {
-        const res = await fetch(profileQuery("summary", 1));
+        const q = new URLSearchParams({ mode: "summary", page: "1", perPage: String(CHARTS_PER_PAGE) });
+        const res = await fetch(`/api/profile/${encodeURIComponent(handle)}?${q}`);
         if (cancelled) return;
         if (res.ok) {
           const data = (await res.json()) as ApiProfile;
           setPayload(data);
-          if (data.activeParadaId && !activeParadaId) {
-            setActiveParadaId(data.activeParadaId);
-          } else if (!activeParadaId && data.paradas?.[0]?.id) {
-            setActiveParadaId(data.paradas[0].id);
-          }
+          setActiveParadaId(data.activeParadaId ?? data.paradas?.[0]?.id ?? null);
           setMockUser(null);
           setSource("db");
           setPhase("ready");
@@ -509,8 +516,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handle, CHARTS_PER_PAGE, activeParadaId]);
+  }, [handle, CHARTS_PER_PAGE]);
 
   useEffect(() => {
     if (!handle || source !== "db") return;
@@ -543,7 +549,7 @@ export default function ProfilePage() {
   }, [chartPage, handle, source, CHARTS_PER_PAGE, payload?.page, activeParadaId, chartsYearFilter]);
 
   useEffect(() => {
-    if (!handle || source !== "db") return;
+    if (!handle || source !== "db" || !STATS_TABS.has(paradaTab)) return;
     if (fullPayload && fullPayload.activeParadaId === activeParadaId) return;
     let cancelled = false;
     setLoadingFullStats(true);
@@ -562,10 +568,26 @@ export default function ProfilePage() {
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handle, source, fullPayload, activeParadaId]);
+  }, [handle, source, fullPayload, activeParadaId, paradaTab]);
 
   const user = payload?.user ?? mockUser;
-  const statsUser = source === "db" ? (fullPayload?.user ?? null) : user;
+  const statsUser = source === "db" && STATS_TABS.has(paradaTab) ? (fullPayload?.user ?? null) : user;
+  const totalChartsCount = payload?.totalCharts ?? user?.charts.length ?? 0;
+  const sidebarTopArtists = useMemo(() => (user ? buildTopArtists(user) : []), [user]);
+  const sidebarNumberOnes =
+    payload?.statsSummary?.numberOnes ??
+    (source === "mock" && user
+      ? countDistinctNumberOnes(user.charts)
+      : fullPayload
+        ? countDistinctNumberOnes(fullPayload.user.charts)
+        : 0);
+  const sidebarRankedSlots =
+    payload?.statsSummary?.totalRankedSlots ??
+    (source === "mock" && user
+      ? user.charts.reduce((acc, c) => acc + c.entries.length, 0)
+      : fullPayload
+        ? fullPayload.user.charts.reduce((acc, c) => acc + c.entries.length, 0)
+        : 0);
   const imageUrl = payload?.imageUrl ?? null;
   const paradas = payload?.paradas ?? [];
   const activeParada = paradas.find((p) => p.id === activeParadaId) ?? paradas[0] ?? null;
@@ -581,10 +603,17 @@ export default function ProfilePage() {
   const instagramUser = payload?.instagramUser ?? null;
   const lastfmUser = payload?.lastfmUser ?? null;
 
-  const topArtists = useMemo(() => (statsUser ? buildTopArtists(statsUser) : []), [statsUser]);
-  const numberOnes = useMemo(() => (statsUser ? countDistinctNumberOnes(statsUser.charts) : 0), [statsUser]);
-  const achievements = useMemo(() => (statsUser ? buildAchievements(statsUser, numberOnes) : []), [statsUser, numberOnes]);
-  const years = useMemo(() => statsUser ? [...new Set(statsUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a) : [], [statsUser]);
+  const topArtists = useMemo(() => (statsUser ? buildTopArtists(statsUser) : sidebarTopArtists), [statsUser, sidebarTopArtists]);
+  const numberOnes = statsUser ? countDistinctNumberOnes(statsUser.charts) : sidebarNumberOnes;
+  const achievements = useMemo(
+    () => (user ? buildAchievements(user, sidebarNumberOnes, totalChartsCount, sidebarRankedSlots) : []),
+    [user, sidebarNumberOnes, totalChartsCount, sidebarRankedSlots],
+  );
+  const years = useMemo(() => {
+    if (statsUser) return [...new Set(statsUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a);
+    if (payload?.chartYears?.length) return payload.chartYears;
+    return [];
+  }, [statsUser, payload?.chartYears]);
   const publicationYears = useMemo(() => {
     if (payload?.chartYears?.length) return payload.chartYears;
     if (mockUser) return [...new Set(mockUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a);
@@ -664,7 +693,9 @@ export default function ProfilePage() {
 
   const hasCharts = (payload?.totalCharts ?? user.charts.length) > 0;
   const totalCharts = payload?.totalCharts ?? user.charts.length;
-  const totalRankedSlots = statsUser ? statsUser.charts.reduce((acc, c) => acc + c.entries.length, 0) : 0;
+  const totalRankedSlots = statsUser
+    ? statsUser.charts.reduce((acc, c) => acc + c.entries.length, 0)
+    : sidebarRankedSlots;
 
   return (
     <Shell title="" noPadding>

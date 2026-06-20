@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { toApiCadence } from "@/lib/chart-cadence";
 import { buildPublicProfilePayload } from "@/lib/map-db-profile";
-import { applyComputedEntryStatsToCharts } from "@/lib/chart-entry-stats";
 import { ensureUserParadas } from "@/lib/paradas";
 
 export const runtime = "nodejs";
@@ -72,99 +71,83 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         }
       : chartWhereBase;
 
-  const [totalCharts, charts, chartStatsHistory, weekIndexes] = await Promise.all([
-    prisma.chart.count({ where: chartWhere }),
-    prisma.chart.findMany({
-      where: chartWhere,
-      orderBy: { weekIndex: "desc" },
-      ...(mode === "summary" ? { skip: (page - 1) * perPage, take: perPage } : {}),
+  const chartEntryWhere = { chart: chartWhereBase };
+
+  const chartSelect = {
+    id: true,
+    weekIndex: true,
+    weekLabel: true,
+    dateRange: true,
+    likes: true,
+    comments: true,
+    reposts: true,
+    entries: {
+      orderBy: { position: "asc" as const },
       select: {
         id: true,
-        weekIndex: true,
-        weekLabel: true,
-        dateRange: true,
-        likes: true,
-        comments: true,
-        reposts: true,
-        entries: {
-          orderBy: { position: "asc" },
+        songId: true,
+        position: true,
+        status: true,
+        delta: true,
+        prevPos: true,
+        peak: true,
+        weeks: true,
+        coverPaletteA: true,
+        coverPaletteB: true,
+        coverSeed: true,
+        song: {
           select: {
             id: true,
-            songId: true,
-            position: true,
-            status: true,
-            delta: true,
-            prevPos: true,
-            peak: true,
-            weeks: true,
-            coverPaletteA: true,
-            coverPaletteB: true,
-            coverSeed: true,
-            song: {
+            title: true,
+            exhibitionName: true,
+            artist: true,
+            album: true,
+            albumRef: { select: { id: true, coverUrl: true } },
+            spotifyId: true,
+            artistSpotifyId: true,
+            artistRef: {
+              select: { id: true, name: true },
+            },
+            feats: {
               select: {
-                id: true,
-                title: true,
-                exhibitionName: true,
-                artist: true,
-                album: true,
-                albumRef: { select: { id: true, coverUrl: true } },
-                spotifyId: true,
-                artistSpotifyId: true,
-                artistRef: {
-                  select: { id: true, name: true },
-                },
-                feats: {
-                  select: {
-                    artist: {
-                      select: { name: true },
-                    },
-                  },
+                artist: {
+                  select: { name: true },
                 },
               },
             },
           },
         },
       },
-    }),
+    },
+  };
+
+  const [totalCharts, charts, weekIndexes, statsSummary] = await Promise.all([
+    prisma.chart.count({ where: chartWhere }),
     prisma.chart.findMany({
       where: chartWhere,
-      orderBy: { weekIndex: "asc" },
-      select: {
-        weekIndex: true,
-        entries: {
-          orderBy: { position: "asc" },
-          select: { id: true, songId: true, position: true },
-        },
-      },
+      orderBy: { weekIndex: "desc" },
+      ...(mode === "summary" ? { skip: (page - 1) * perPage, take: perPage } : {}),
+      select: chartSelect,
     }),
     prisma.chart.findMany({
       where: chartWhereBase,
       select: { weekIndex: true },
     }),
+    mode === "summary"
+      ? Promise.all([
+          prisma.chartEntry.count({ where: chartEntryWhere }),
+          prisma.chartEntry.groupBy({
+            by: ["songId"],
+            where: { ...chartEntryWhere, position: 1 },
+          }),
+        ]).then(([totalRankedSlots, numberOneGroups]) => ({
+          totalRankedSlots,
+          numberOnes: numberOneGroups.length,
+        }))
+      : Promise.resolve(null),
   ]);
   const chartYears = [...new Set(weekIndexes.map((c) => Math.floor(c.weekIndex / 100)))].sort((a, b) => b - a);
-  const statsByEntryId = new Map(
-    applyComputedEntryStatsToCharts(chartStatsHistory).flatMap((chart) =>
-      chart.entries.map((entry) => [entry.id, entry] as const),
-    ),
-  );
-  const computedCharts = charts.map((chart) => ({
-    ...chart,
-    entries: chart.entries.map((entry) => {
-      const stats = statsByEntryId.get(entry.id);
-      return stats
-        ? {
-            ...entry,
-            status: stats.status,
-            delta: stats.delta,
-            prevPos: stats.prevPos,
-            peak: stats.peak,
-            weeks: stats.weeks,
-          }
-        : entry;
-    }),
-  }));
-  const dbUser = { ...dbUserBase, charts: computedCharts };
+  const dbUser = { ...dbUserBase, charts };
 
   let isFollowing = false;
   if (session?.user?.id && session.user.id !== dbUserBase.id) {
@@ -235,6 +218,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     filterYear: yearFilter,
     artistImages,
     globalNumberOnes,
+    ...(statsSummary ? { statsSummary } : {}),
   });
   } catch (err) {
     console.error("[GET /api/profile/[handle]]", err);
