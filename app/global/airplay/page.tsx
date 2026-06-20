@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Youtube } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { GlobalLastfmHero } from "@/components/global/GlobalLastfmHero";
 import { GlobalLastfmRanking } from "@/components/global/GlobalLastfmRanking";
@@ -55,6 +55,33 @@ export default async function GlobalAirplayPage({ searchParams }: PageProps) {
         newerWeek={data.newerWeek}
         gradient="radial-gradient(circle at 30% 30%, #8338EC, #3A86FF)"
       />
+
+      {data.youtubePlaylistId && (
+        <div style={{ marginBottom: 24 }}>
+          <a
+            href={`https://www.youtube.com/playlist?list=${data.youtubePlaylistId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#FF0000",
+              color: "white",
+              border: "none",
+              padding: "10px 20px",
+              borderRadius: 100,
+              fontSize: 14,
+              fontWeight: 700,
+              textDecoration: "none",
+              boxShadow: "0 2px 8px rgba(255,0,0,0.30)",
+            }}
+          >
+            <Youtube size={16} fill="white" />
+            Ouvir no YouTube
+          </a>
+        </div>
+      )}
 
       <section style={{ marginBottom: 52 }}>
         <GlobalLastfmRanking entries={data.entries} mode="airplay" emptyMessage={t("global.airplayEmpty")} />

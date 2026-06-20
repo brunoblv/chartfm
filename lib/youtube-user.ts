@@ -444,9 +444,128 @@ export async function addVideosToYouTubePlaylist(
   return { ok: true, data: { added } };
 }
 
-export type SyncPushYouTubeResult =
+export type SyncYouTubeResult =
   | { ok: true; playlistId: string; playlistUrl: string; videoCount: number; missing: PushTrackForYouTube[] }
   | { ok: false; message: string; needsReconnect?: boolean };
+
+/** @deprecated Use SyncYouTubeResult */
+export type SyncPushYouTubeResult = SyncYouTubeResult;
+
+/** Cria playlist do Global 100 no canal @bruno (uma por semana — idempotente via youtubePlaylistId). */
+export async function syncGlobal100YouTubePlaylist(
+  weekIndex: number,
+  weekLabel: string,
+): Promise<SyncYouTubeResult> {
+  const owner = await getPushYouTubeOwnerUser();
+  const token = owner?.id ? await getYouTubeAccessToken(owner.id) : null;
+  if (!token) {
+    return { ok: false, needsReconnect: true, message: "Conta YouTube (@chartFM) não conectada." };
+  }
+
+  const row = await prisma.globalSnapshot.findUnique({
+    where: { weekIndex },
+    select: { youtubePlaylistId: true, weeklySongs: true },
+  });
+  if (!row) return { ok: false, message: `Snapshot da semana ${weekIndex} não encontrado.` };
+
+  if (row.youtubePlaylistId) {
+    return {
+      ok: true,
+      playlistId: row.youtubePlaylistId,
+      playlistUrl: youtubePlaylistUrl(row.youtubePlaylistId),
+      videoCount: 0,
+      missing: [],
+    };
+  }
+
+  const songs = (row.weeklySongs as Array<{ song: { title: string; artist: string } }> | null) ?? [];
+  if (!songs.length) return { ok: false, message: "Nenhuma música no Global 100 ainda." };
+
+  const tracks = songs.slice(0, 50).map((e) => ({ title: e.song.title, artist: e.song.artist }));
+  const { videoIds, missing } = await resolveYouTubeVideoIds(tracks);
+  if (!videoIds.length) return { ok: false, message: "Nenhum vídeo encontrado no YouTube." };
+
+  const created = await createYouTubePlaylist(
+    token,
+    `ChartFM · Global 100 · ${weekLabel}`,
+    `Global 100 do ChartFM — semana ${weekLabel} · youtube.com/@chartFM`,
+  );
+  if (!created.ok) return { ok: false, message: created.message, needsReconnect: created.needsReconnect };
+
+  const added = await addVideosToYouTubePlaylist(token, created.data.id, videoIds);
+  if (!added.ok) return { ok: false, message: added.message, needsReconnect: added.needsReconnect };
+
+  await prisma.globalSnapshot.update({
+    where: { weekIndex },
+    data: { youtubePlaylistId: created.data.id },
+  });
+
+  return {
+    ok: true,
+    playlistId: created.data.id,
+    playlistUrl: created.data.url,
+    videoCount: videoIds.length,
+    missing,
+  };
+}
+
+/** Cria playlist do Global Airplay no canal @bruno (uma por semana — idempotente via youtubePlaylistId). */
+export async function syncGlobalAirplayYouTubePlaylist(
+  weekIndex: number,
+  weekLabel: string,
+): Promise<SyncYouTubeResult> {
+  const owner = await getPushYouTubeOwnerUser();
+  const token = owner?.id ? await getYouTubeAccessToken(owner.id) : null;
+  if (!token) {
+    return { ok: false, needsReconnect: true, message: "Conta YouTube (@chartFM) não conectada." };
+  }
+
+  const row = await prisma.globalAirplaySnapshot.findUnique({
+    where: { weekIndex },
+    select: { youtubePlaylistId: true, entries: true },
+  });
+  if (!row) return { ok: false, message: `Snapshot de airplay da semana ${weekIndex} não encontrado.` };
+
+  if (row.youtubePlaylistId) {
+    return {
+      ok: true,
+      playlistId: row.youtubePlaylistId,
+      playlistUrl: youtubePlaylistUrl(row.youtubePlaylistId),
+      videoCount: 0,
+      missing: [],
+    };
+  }
+
+  const entries = (row.entries as Array<{ song: { title: string; artist: string } }> | null) ?? [];
+  if (!entries.length) return { ok: false, message: "Nenhuma música no Global Airplay ainda." };
+
+  const tracks = entries.slice(0, 50).map((e) => ({ title: e.song.title, artist: e.song.artist }));
+  const { videoIds, missing } = await resolveYouTubeVideoIds(tracks);
+  if (!videoIds.length) return { ok: false, message: "Nenhum vídeo encontrado no YouTube." };
+
+  const created = await createYouTubePlaylist(
+    token,
+    `ChartFM · Global Airplay · ${weekLabel}`,
+    `Global Airplay do ChartFM — semana ${weekLabel} · youtube.com/@chartFM`,
+  );
+  if (!created.ok) return { ok: false, message: created.message, needsReconnect: created.needsReconnect };
+
+  const added = await addVideosToYouTubePlaylist(token, created.data.id, videoIds);
+  if (!added.ok) return { ok: false, message: added.message, needsReconnect: added.needsReconnect };
+
+  await prisma.globalAirplaySnapshot.update({
+    where: { weekIndex },
+    data: { youtubePlaylistId: created.data.id },
+  });
+
+  return {
+    ok: true,
+    playlistId: created.data.id,
+    playlistUrl: created.data.url,
+    videoCount: videoIds.length,
+    missing,
+  };
+}
 
 /** Cria uma nova playlist do Push no canal @chartFM (sempre nova, para histórico). */
 export async function syncPushYouTubePlaylist(opts: {

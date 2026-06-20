@@ -269,6 +269,7 @@ export async function loadGlobalLastfmSnapshot(mode: GlobalLastfmMode, weekIndex
       weekLabel: row.weekLabel,
       dateRange: row.dateRange,
       scoringWindow: row.scoringWindow,
+      youtubePlaylistId: row.youtubePlaylistId ?? null,
       payload: asPayload(row),
     };
   }
@@ -279,6 +280,7 @@ export async function loadGlobalLastfmSnapshot(mode: GlobalLastfmMode, weekIndex
     weekLabel: row.weekLabel,
     dateRange: row.dateRange,
     scoringWindow: row.scoringWindow,
+    youtubePlaylistId: null,
     payload: asPayload(row),
   };
 }

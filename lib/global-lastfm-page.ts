@@ -37,6 +37,7 @@ export async function loadGlobalLastfmPageData(mode: GlobalLastfmMode, searchPar
     scoringWindow: snapshot?.scoringWindow ?? "",
     entries: snapshot?.payload.entries ?? [],
     contributorCount: snapshot?.payload.contributorCount ?? 0,
+    youtubePlaylistId: snapshot?.youtubePlaylistId ?? null,
     hasSnapshot: Boolean(snapshot),
     olderWeek,
     newerWeek,

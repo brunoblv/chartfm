@@ -5,7 +5,7 @@ import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
-import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft } from "lucide-react";
+import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft, Youtube } from "lucide-react";
 import { GlobalHero } from "@/components/global/GlobalHero";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 
@@ -115,6 +115,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
   const currentMeta = availableSnapshots.find((w) => w.weekIndex === weekIndex) ?? null;
 
   const snapshotRow = await prisma.globalSnapshot.findUnique({ where: { weekIndex } });
+  const youtubePlaylistId = snapshotRow?.youtubePlaylistId ?? null;
   const snapshot = {
     weekIndex,
     weekLabel: snapshotRow?.weekLabel ?? currentMeta?.weekLabel ?? rankingWeek.weekLabel,
@@ -239,6 +240,33 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         olderWeek={olderWeek}
         newerWeek={newerWeek}
       />
+
+      {youtubePlaylistId && (
+        <div style={{ marginBottom: 24 }}>
+          <a
+            href={`https://www.youtube.com/playlist?list=${youtubePlaylistId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#FF0000",
+              color: "white",
+              border: "none",
+              padding: "10px 20px",
+              borderRadius: 100,
+              fontSize: 14,
+              fontWeight: 700,
+              textDecoration: "none",
+              boxShadow: "0 2px 8px rgba(255,0,0,0.30)",
+            }}
+          >
+            <Youtube size={16} fill="white" />
+            Ouvir no YouTube
+          </a>
+        </div>
+      )}
 
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
