@@ -127,9 +127,14 @@ export function NoRoundView() {
     <div style={{ padding: "48px 16px", textAlign: "center", color: "var(--text-muted)" }}>
       <Trophy size={40} style={{ opacity: 0.3, marginBottom: 12, display: "block", margin: "0 auto 12px" }} />
       <p style={{ margin: "0 0 16px" }}>Nenhuma rodada ativa no momento.</p>
-      <Link href="/push/historico" style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-        Ver histórico de rodadas →
-      </Link>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+        <Link href="/push/ranking" style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+          Ver ranking →
+        </Link>
+        <Link href="/push/historico" style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
+          Ver histórico de rodadas →
+        </Link>
+      </div>
     </div>
   );
 }
