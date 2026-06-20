@@ -79,6 +79,9 @@ export default function EditChartPage() {
   const [lastfmConfigured, setLastfmConfigured] = useState(true);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
+  const touchDragIdx = useRef<number | null>(null);
+  const touchStartY = useRef(0);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!chartId) return;
@@ -311,6 +314,49 @@ export default function EditChartPage() {
     const [item] = arr.splice(dragIndex, 1);
     arr.splice(i, 0, item);
     setEntries(arr);
+    setDragIndex(null);
+    setDragOver(null);
+  };
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const prevent = (e: TouchEvent) => {
+      if (touchDragIdx.current !== null) e.preventDefault();
+    };
+    el.addEventListener("touchmove", prevent, { passive: false });
+    return () => el.removeEventListener("touchmove", prevent);
+  }, []);
+
+  const handleTouchStart = (e: React.TouchEvent, i: number) => {
+    touchDragIdx.current = i;
+    touchStartY.current = e.touches[0].clientY;
+    setDragIndex(i);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchDragIdx.current === null) return;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    const itemH = 57;
+    const steps = Math.round(dy / itemH);
+    if (steps === 0) return;
+    const fromIdx = touchDragIdx.current;
+    const toIdx = Math.max(0, Math.min(entries.length - 1, fromIdx + steps));
+    if (toIdx === fromIdx) return;
+    setEntries((prev) => {
+      const arr = [...prev];
+      const [item] = arr.splice(fromIdx, 1);
+      arr.splice(toIdx, 0, item);
+      return arr;
+    });
+    touchDragIdx.current = toIdx;
+    touchStartY.current = e.touches[0].clientY;
+    setDragOver(toIdx);
+    setDragIndex(toIdx);
+  };
+
+  const handleTouchEnd = () => {
+    touchDragIdx.current = null;
     setDragIndex(null);
     setDragOver(null);
   };
@@ -615,7 +661,7 @@ export default function EditChartPage() {
   );
 
   const chartList = (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+    <div ref={listRef} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
       <div
         style={{
           padding: "18px 20px",
@@ -703,6 +749,9 @@ export default function EditChartPage() {
               setDragOver(i);
             }}
             onDrop={() => handleDrop(i)}
+            onTouchStart={(e) => handleTouchStart(e, i)}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             style={{
               display: "grid",
               gridTemplateColumns: isMobile ? "32px 36px 52px 1fr 32px" : "38px 44px 56px 1fr 36px",

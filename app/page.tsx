@@ -89,7 +89,6 @@ async function getTimelineFeed(
 ) {
   const rows = await prisma.chart.findMany({
     where: {
-      userId: { not: userId },
       weekIndex: { gte: weekIdx - 2 },
       isPublished: true,
     },
@@ -150,8 +149,16 @@ async function getTimelineFeed(
     },
   });
 
-  const friendsRows = rows.filter((r) => followingIds.has(r.user.id)).slice(0, 15);
-  const allRows = rows.filter((r) => !followingIds.has(r.user.id)).slice(0, 15);
+  const sortByPublished = (a: (typeof rows)[number], b: (typeof rows)[number]) =>
+    b.publishedAt.getTime() - a.publishedAt.getTime();
+
+  const friendsRows = rows
+    .filter((r) => followingIds.has(r.user.id) || r.user.id === userId)
+    .sort(sortByPublished)
+    .slice(0, 15);
+
+  const allRows = rows.sort(sortByPublished).slice(0, 15);
+
   const combined = [...friendsRows, ...allRows];
 
   const likedRows = await prisma.chartLike.findMany({
