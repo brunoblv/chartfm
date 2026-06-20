@@ -64,7 +64,16 @@ function parseWeeksFromExcel(): RawWeek[] {
   if (!existsSync(XLSX_PATH)) {
     throw new Error(`Arquivo não encontrado: ${XLSX_PATH}`);
   }
-  const output = execFileSync("python", [PARSE_SCRIPT_PATH, XLSX_PATH], { encoding: "utf-8" });
+  let output: string;
+  try {
+    output = execFileSync("python", [PARSE_SCRIPT_PATH, XLSX_PATH], { encoding: "utf-8" });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/spawnSync python ENOENT/i.test(msg)) {
+      throw err;
+    }
+    output = execFileSync("python3", [PARSE_SCRIPT_PATH, XLSX_PATH], { encoding: "utf-8" });
+  }
   const rows = JSON.parse(output) as RawWeek[];
   return rows.sort((a, b) => a.date.localeCompare(b.date));
 }
