@@ -90,6 +90,15 @@ function cleanArtistForLookup(input: string): string {
   return text || input.trim();
 }
 
+/** Ignora linhas-lixo da planilha (ex.: artista "111", música "11"). */
+function isValidTrack(artist: string, title: string): boolean {
+  const a = artist.trim();
+  const t = title.trim();
+  if (a.length < 2 || t.length < 2) return false;
+  if (/^\d+$/.test(a) && /^\d+$/.test(t)) return false;
+  return true;
+}
+
 function parseYmdDate(ymd: string): Date {
   const [y, m, d] = ymd.split("-").map(Number);
   return new Date(y, m - 1, d);
@@ -313,6 +322,7 @@ function buildFinalWeekEntries(
   if (needFill > 0 && previousWeek?.length) {
     const dropouts = previousWeek
       .filter((e) => !currentSongIds.has(e.songId))
+      .filter((e) => isValidTrack(e.artist, e.title))
       .sort((a, b) => a.position - b.position);
 
     const picks = dropouts.slice(0, needFill);
@@ -390,6 +400,8 @@ async function importWeeks() {
     const resolvedByRow = new Map<RawEntry, ResolvedSong>();
 
     for (const row of sortedEntries) {
+      if (!isValidTrack(row.artist, row.title)) continue;
+
       const cacheKey = `${normalizeText(row.title)}|${normalizeText(cleanArtistForLookup(row.artist))}`;
       let resolved = resolverCache.get(cacheKey) ?? null;
       if (!resolverCache.has(cacheKey)) {
@@ -442,7 +454,7 @@ async function importWeeks() {
       continue;
     }
 
-    previousWeek = finalEntries;
+    previousWeek = finalEntries.filter((e) => isValidTrack(e.artist, e.title));
 
     if (DRY_RUN) {
       if (DEBUG && hasIssue) {

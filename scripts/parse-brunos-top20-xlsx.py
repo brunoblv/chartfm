@@ -12,6 +12,7 @@ Formato esperado:
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import date, datetime, timedelta
 from typing import Any
@@ -22,6 +23,17 @@ import openpyxl
 START_DATE = date(2001, 1, 1)
 END_DATE = date(2010, 9, 30)
 DATA_START_ROW = 2
+
+
+def is_valid_track(artist: str, title: str) -> bool:
+    a = str(artist).strip()
+    t = str(title).strip()
+    if len(a) < 2 or len(t) < 2:
+        return False
+    # Ignora linhas-lixo da planilha (ex.: artista "111", música "11")
+    if re.fullmatch(r"\d+", a) and re.fullmatch(r"\d+", t):
+        return False
+    return True
 
 
 def parse_excel_date(value: Any) -> date | None:
@@ -81,11 +93,15 @@ def main() -> None:
                 title = ws.cell(row, 3).value
                 if not artist or not title:
                     continue
+                artist_s = str(artist).strip()
+                title_s = str(title).strip()
+                if not is_valid_track(artist_s, title_s):
+                    continue
                 entries.append(
                     {
                         "position": pos,
-                        "artist": str(artist).strip(),
-                        "title": str(title).strip(),
+                        "artist": artist_s,
+                        "title": title_s,
                     }
                 )
 
