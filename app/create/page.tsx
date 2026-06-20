@@ -184,19 +184,16 @@ export default function CreatePage() {
   }, []);
 
   useEffect(() => {
-    if (!canUseSpotifyImport) {
-      setSpotifyUserConnected(false);
-      return;
-    }
     fetch("/api/user/profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { lastfmUser?: string | null; spotifyConnected?: boolean } | null) => {
         if (!data) return;
         setUserLastfmUser(data.lastfmUser ?? null);
-        setSpotifyUserConnected(data.spotifyConnected ?? false);
+        if (canUseSpotifyImport) setSpotifyUserConnected(data.spotifyConnected ?? false);
       })
       .catch(() => {});
-  }, [canUseSpotifyImport]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Retorno do OAuth do Spotify iniciado a partir desta página (?spotify=connected|error|...).
   useEffect(() => {

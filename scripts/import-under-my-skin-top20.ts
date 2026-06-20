@@ -11,6 +11,14 @@ type RawEntry = { position: number; artist: string; title: string };
 type RawWeek = { date: string; entries: RawEntry[] };
 type ResolvedSong = { id: string; spotifyId: string | null; albumSpotifyId: string | null };
 type NotFoundRow = { weekDate: string; position: number; artist: string; title: string };
+type WeekIssue = {
+  weekDate: string;
+  excelCount: number;
+  resolvedCount: number;
+  missingPositions: number[];
+  duplicatePositions: number[];
+  notFound: NotFoundRow[];
+};
 
 const envPath = join(process.cwd(), ".env");
 if (existsSync(envPath)) {
@@ -30,6 +38,8 @@ const XLSX_PATH = join(process.cwd(), "public", "Brunos Top 20.xlsx");
 const PARSE_SCRIPT_PATH = join(process.cwd(), "scripts", "parse-brunos-top20-xlsx.py");
 const SPOTIFY_DELAY_MS = 450;
 const DRY_RUN = process.argv.includes("--dry-run");
+const VERBOSE = process.argv.includes("--verbose");
+const DEBUG = process.argv.includes("--debug") || DRY_RUN;
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -89,6 +99,15 @@ async function findUserAndParada() {
     where: { userId: user.id, name: PARADA_NAME, cadence: "WEEKLY" },
   });
   if (!parada) {
+    if (DRY_RUN) {
+      return {
+        user,
+        parada: {
+          id: "dry-run-parada",
+          isPrimary: false,
+        } as Awaited<ReturnType<typeof prisma.parada.findFirst>>,
+      };
+    }
     const currentMaxSort = await prisma.parada.aggregate({
       where: { userId: user.id },
       _max: { sortOrder: true },
@@ -157,6 +176,14 @@ async function resolveSongWithSpotify(
   const best = pickBestSpotifyHit(hits, title, artistClean);
   if (!best?.spotifyId) return null;
 
+  if (DRY_RUN) {
+    return {
+      id: `dry-run:${best.spotifyId}`,
+      spotifyId: best.spotifyId,
+      albumSpotifyId: null,
+    };
+  }
+
   const metadata = await getSpotifyTrackMetadataById(best.spotifyId, "BR");
   if (!metadata) return null;
   const song = await upsertSongFromSpotify(metadata.spotifyId, {
@@ -171,6 +198,37 @@ async function resolveSongWithSpotify(
   };
 }
 
+function analyzeWeekExcelEntries(entries: RawEntry[]) {
+  const positions = entries.map((e) => e.position);
+  const seen = new Set<number>();
+  const duplicatePositions: number[] = [];
+  for (const pos of positions) {
+    if (seen.has(pos)) duplicatePositions.push(pos);
+    seen.add(pos);
+  }
+  const missingPositions = Array.from({ length: 20 }, (_, i) => i + 1).filter(
+    (pos) => !positions.includes(pos),
+  );
+  return { missingPositions, duplicatePositions: [...new Set(duplicatePositions)] };
+}
+
+function printWeekIssue(issue: WeekIssue) {
+  console.log(
+    `[incompleta] ${issue.weekDate}: excel=${issue.excelCount}, resolvidas=${issue.resolvedCount}`,
+  );
+  if (issue.missingPositions.length) {
+    console.log(`  posições vazias no Excel: ${issue.missingPositions.join(", ")}`);
+  }
+  if (issue.duplicatePositions.length) {
+    console.log(`  posições duplicadas no Excel: ${issue.duplicatePositions.join(", ")}`);
+  }
+  for (const miss of issue.notFound) {
+    console.log(
+      `  [miss] #${miss.position} - ${miss.artist} - ${miss.title} (não achou no BD nem no Spotify)`,
+    );
+  }
+}
+
 async function importWeeks() {
   const weeks = parseWeeksFromExcel();
   console.log(`[info] Semanas válidas encontradas: ${weeks.length}`);
@@ -179,6 +237,7 @@ async function importWeeks() {
   const { user, parada } = await findUserAndParada();
   const scoringTier = scoringTierFromPrimary(parada.isPrimary);
   const notFound: NotFoundRow[] = [];
+  const weekIssues: WeekIssue[] = [];
   const resolverCache = new Map<string, ResolvedSong | null>();
 
   let createdCharts = 0;
@@ -192,7 +251,9 @@ async function importWeeks() {
     const dateRange = buildDateRangeFromDate(refDate);
     const { start: weekStart } = getChartWeekRange(refDate);
 
-    const sortedEntries = [...week.entries].sort((a, b) => a.position - b.position).slice(0, 20);
+    const sortedEntries = [...week.entries].sort((a, b) => a.position - b.position);
+    const { missingPositions, duplicatePositions } = analyzeWeekExcelEntries(sortedEntries);
+    const weekNotFound: NotFoundRow[] = [];
     const finalEntries: Array<{
       position: number;
       songId: string;
@@ -213,12 +274,14 @@ async function importWeeks() {
       }
 
       if (!resolved) {
-        notFound.push({
+        const miss = {
           weekDate: week.date,
           position: row.position,
           artist: row.artist,
           title: row.title,
-        });
+        };
+        notFound.push(miss);
+        weekNotFound.push(miss);
         continue;
       }
 
@@ -231,13 +294,34 @@ async function importWeeks() {
       });
     }
 
+    const hasIssue =
+      finalEntries.length < 20 ||
+      missingPositions.length > 0 ||
+      duplicatePositions.length > 0 ||
+      weekNotFound.length > 0;
+
+    if (hasIssue) {
+      weekIssues.push({
+        weekDate: week.date,
+        excelCount: sortedEntries.length,
+        resolvedCount: finalEntries.length,
+        missingPositions,
+        duplicatePositions,
+        notFound: weekNotFound,
+      });
+    }
+
     if (!finalEntries.length) {
       console.log(`[warn] Semana ${week.date} sem entradas resolvidas, pulando.`);
       continue;
     }
 
     if (DRY_RUN) {
-      console.log(`[dry-run] Semana ${week.date}: ${finalEntries.length} entradas.`);
+      if (DEBUG && hasIssue) {
+        printWeekIssue(weekIssues[weekIssues.length - 1]!);
+      } else if (VERBOSE) {
+        console.log(`[dry-run] Semana ${week.date}: ${finalEntries.length} entradas.`);
+      }
       continue;
     }
 
@@ -318,11 +402,23 @@ async function importWeeks() {
   console.log(`Charts atualizados: ${updatedCharts}`);
   console.log(`Entradas inseridas: ${createdEntries}`);
   console.log(`Não encontradas (BD + Spotify): ${notFound.length}`);
+  console.log(`Semanas incompletas (<20 ou com lacunas): ${weekIssues.length}`);
+
   if (notFound.length) {
+    console.log("");
+    console.log("=== NÃO ENCONTRADAS (BD + Spotify) ===");
     for (const miss of notFound) {
       console.log(
         `[miss] ${miss.weekDate} #${miss.position} - ${miss.artist} - ${miss.title}`,
       );
+    }
+  }
+
+  if (weekIssues.length) {
+    console.log("");
+    console.log("=== SEMANAS INCOMPLETAS ===");
+    for (const issue of weekIssues) {
+      printWeekIssue(issue);
     }
   }
 }
