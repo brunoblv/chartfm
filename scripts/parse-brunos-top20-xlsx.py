@@ -9,6 +9,8 @@ Formato esperado:
   - Em cada coluna de semana (G+), célula numérica = posição naquela semana
 """
 
+from __future__ import annotations
+
 import json
 import sys
 from datetime import date, datetime, timedelta
