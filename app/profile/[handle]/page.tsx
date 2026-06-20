@@ -610,13 +610,13 @@ export default function ProfilePage() {
     [user, sidebarNumberOnes, totalChartsCount, sidebarRankedSlots],
   );
   const years = useMemo(() => {
-    if (statsUser) return [...new Set(statsUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a);
+    if (statsUser) return [...new Set(statsUser.charts.map((c) => c.week >= 1_000_000 ? Math.floor(c.week / 10000) : Math.floor(c.week / 100)))].sort((a, b) => b - a);
     if (payload?.chartYears?.length) return payload.chartYears;
     return [];
   }, [statsUser, payload?.chartYears]);
   const publicationYears = useMemo(() => {
     if (payload?.chartYears?.length) return payload.chartYears;
-    if (mockUser) return [...new Set(mockUser.charts.map((c) => Math.floor(c.week / 100)))].sort((a, b) => b - a);
+    if (mockUser) return [...new Set(mockUser.charts.map((c) => c.week >= 1_000_000 ? Math.floor(c.week / 10000) : Math.floor(c.week / 100)))].sort((a, b) => b - a);
     return [];
   }, [payload?.chartYears, mockUser]);
   const activeYear = selectedYear ?? years[0] ?? null;
@@ -634,14 +634,14 @@ export default function ProfilePage() {
   }, [chartsSortedAsc, latestWeek, scoringTier, scoringCadence]);
   const yearlyArtistsRows = useMemo(() => {
     if (!activeYear) return [];
-    const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
+    const yearCharts = chartsSortedAsc.filter((c) => (c.week >= 1_000_000 ? Math.floor(c.week / 10000) : Math.floor(c.week / 100)) === activeYear);
     const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
     const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
     return aggregateArtists(yearCharts, previous, scoringTier, scoringCadence);
   }, [chartsSortedAsc, activeYear, scoringTier, scoringCadence]);
   const yearlySongsRows = useMemo(() => {
     if (!activeYear) return [];
-    const yearCharts = chartsSortedAsc.filter((c) => Math.floor(c.week / 100) === activeYear);
+    const yearCharts = chartsSortedAsc.filter((c) => (c.week >= 1_000_000 ? Math.floor(c.week / 10000) : Math.floor(c.week / 100)) === activeYear);
     const latestYearWeek = yearCharts[yearCharts.length - 1]?.week ?? null;
     const previous = latestYearWeek ? yearCharts.filter((c) => c.week < latestYearWeek) : [];
     return aggregateSongs(yearCharts, previous, scoringTier, scoringCadence);
@@ -1172,7 +1172,7 @@ export default function ProfilePage() {
               const totalPages = Math.max(1, Math.ceil(totalCharts / CHARTS_PER_PAGE));
               const pageCharts =
                 source === "mock" && chartsYearFilter != null
-                  ? user.charts.filter((c) => Math.floor(c.week / 100) === chartsYearFilter)
+                  ? user.charts.filter((c) => (c.week >= 1_000_000 ? Math.floor(c.week / 10000) : Math.floor(c.week / 100)) === chartsYearFilter)
                   : user.charts;
               const mockTotal = source === "mock" ? pageCharts.length : totalCharts;
               const mockTotalPages = Math.max(1, Math.ceil(mockTotal / CHARTS_PER_PAGE));

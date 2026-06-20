@@ -315,6 +315,7 @@ type EntryInput = {
 };
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -605,6 +606,10 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   await recomputePersistedChartEntryStats(prisma, chart.userId, chart.weekIndex);
 
   return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[PATCH /api/charts/[id]]", err);
+    return NextResponse.json({ error: "Erro interno ao salvar a parada." }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, context: { params: Promise<{ id: string }> }) {

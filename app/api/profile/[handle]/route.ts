@@ -62,12 +62,15 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     paradas[0] ??
     null;
 
+  const isDaily = activeParada?.cadence === "DAILY";
   const chartWhereBase = activeParada ? { paradaId: activeParada.id } : { userId: dbUserBase.id };
   const chartWhere =
     yearFilter != null
       ? {
           ...chartWhereBase,
-          weekIndex: { gte: yearFilter * 100, lt: (yearFilter + 1) * 100 },
+          weekIndex: isDaily
+            ? { gte: yearFilter * 10000, lt: (yearFilter + 1) * 10000 }
+            : { gte: yearFilter * 100, lt: (yearFilter + 1) * 100 },
         }
       : chartWhereBase;
 
@@ -146,7 +149,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         }))
       : Promise.resolve(null),
   ]);
-  const chartYears = [...new Set(weekIndexes.map((c) => Math.floor(c.weekIndex / 100)))].sort((a, b) => b - a);
+  const chartYears = [...new Set(weekIndexes.map((c) =>
+    c.weekIndex >= 1_000_000 ? Math.floor(c.weekIndex / 10000) : Math.floor(c.weekIndex / 100)
+  ))].sort((a, b) => b - a);
   const dbUser = { ...dbUserBase, charts };
 
   let isFollowing = false;
