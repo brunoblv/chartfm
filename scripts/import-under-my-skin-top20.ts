@@ -11,13 +11,38 @@ type RawEntry = { position: number; artist: string; title: string };
 type RawWeek = { date: string; entries: RawEntry[] };
 type ResolvedSong = { id: string; spotifyId: string | null; albumSpotifyId: string | null };
 type NotFoundRow = { weekDate: string; position: number; artist: string; title: string };
+type BackfillRow = {
+  position: number;
+  artist: string;
+  title: string;
+  prevPosition: number;
+};
+type WeekEntry = {
+  position: number;
+  excelPosition: number | null;
+  songId: string;
+  songSpotifyId: string | null;
+  albumSpotifyId: string | null;
+  artist: string;
+  title: string;
+  fromDropout: boolean;
+  prevPos: number | null;
+  peak: number;
+  weeks: number;
+  status: string;
+  delta: number | null;
+  points: number;
+};
 type WeekIssue = {
   weekDate: string;
   excelCount: number;
   resolvedCount: number;
+  finalCount: number;
   missingPositions: number[];
   duplicatePositions: number[];
   notFound: NotFoundRow[];
+  backfilled: BackfillRow[];
+  stillMissing: number;
 };
 
 const envPath = join(process.cwd(), ".env");
@@ -214,19 +239,127 @@ function analyzeWeekExcelEntries(entries: RawEntry[]) {
 
 function printWeekIssue(issue: WeekIssue) {
   console.log(
-    `[incompleta] ${issue.weekDate}: excel=${issue.excelCount}, resolvidas=${issue.resolvedCount}`,
+    `[incompleta] ${issue.weekDate}: excel=${issue.excelCount}, resolvidas=${issue.resolvedCount}, final=${issue.finalCount}`,
   );
   if (issue.missingPositions.length) {
-    console.log(`  posições vazias no Excel: ${issue.missingPositions.join(", ")}`);
+    console.log(`  lacunas no Excel: ${issue.missingPositions.join(", ")}`);
   }
   if (issue.duplicatePositions.length) {
     console.log(`  posições duplicadas no Excel: ${issue.duplicatePositions.join(", ")}`);
+  }
+  if (issue.backfilled.length) {
+    console.log("  completado com saídas da semana anterior:");
+    for (const row of issue.backfilled) {
+      console.log(
+        `    #${row.position} - ${row.artist} - ${row.title} (estava #${row.prevPosition})`,
+      );
+    }
+  }
+  if (issue.stillMissing > 0) {
+    console.log(
+      `  ainda faltam ${issue.stillMissing} vaga(s); sem saída suficiente na semana anterior`,
+    );
   }
   for (const miss of issue.notFound) {
     console.log(
       `  [miss] #${miss.position} - ${miss.artist} - ${miss.title} (não achou no BD nem no Spotify)`,
     );
   }
+}
+
+function buildFinalWeekEntries(
+  weekDate: string,
+  sortedExcelRows: RawEntry[],
+  resolvedByRow: Map<RawEntry, ResolvedSong>,
+  previousWeek: WeekEntry[] | null,
+  scoringTier: ReturnType<typeof scoringTierFromPrimary>,
+): { entries: WeekEntry[]; issue: WeekIssue } {
+  const { missingPositions, duplicatePositions } = analyzeWeekExcelEntries(sortedExcelRows);
+  const needFill = Math.max(0, 20 - sortedExcelRows.length);
+
+  const renumbered: WeekEntry[] = sortedExcelRows.map((row, index) => {
+    const resolved = resolvedByRow.get(row)!;
+    const prev = previousWeek?.find((e) => e.songId === resolved.id) ?? null;
+    const position = index + 1;
+    const prevPos = prev?.position ?? null;
+    let status = "new";
+    let delta: number | null = null;
+    if (prevPos != null) {
+      delta = prevPos - position;
+      status = delta > 0 ? "up" : delta < 0 ? "down" : "same";
+    }
+    return {
+      position,
+      excelPosition: row.position,
+      songId: resolved.id,
+      songSpotifyId: resolved.spotifyId ?? null,
+      albumSpotifyId: resolved.albumSpotifyId ?? null,
+      artist: row.artist,
+      title: row.title,
+      fromDropout: false,
+      prevPos,
+      peak: prev ? Math.min(prev.peak, position) : position,
+      weeks: prev ? prev.weeks + 1 : 1,
+      status,
+      delta,
+      points: pointsForChartPosition(position, scoringTier, 20, "WEEKLY"),
+    };
+  });
+
+  const currentSongIds = new Set(renumbered.map((e) => e.songId));
+  const backfilled: BackfillRow[] = [];
+  const dropoutEntries: WeekEntry[] = [];
+
+  if (needFill > 0 && previousWeek?.length) {
+    const dropouts = previousWeek
+      .filter((e) => !currentSongIds.has(e.songId))
+      .sort((a, b) => a.position - b.position);
+
+    const picks = dropouts.slice(0, needFill);
+    for (let i = 0; i < picks.length; i += 1) {
+      const pick = picks[i]!;
+      const position = renumbered.length + i + 1;
+      dropoutEntries.push({
+        position,
+        excelPosition: null,
+        songId: pick.songId,
+        songSpotifyId: pick.songSpotifyId,
+        albumSpotifyId: pick.albumSpotifyId,
+        artist: pick.artist,
+        title: pick.title,
+        fromDropout: true,
+        prevPos: pick.position,
+        peak: Math.min(pick.peak, position),
+        weeks: pick.weeks + 1,
+        status: "down",
+        delta: pick.position - position,
+        points: pointsForChartPosition(position, scoringTier, 20, "WEEKLY"),
+      });
+      backfilled.push({
+        position,
+        artist: pick.artist,
+        title: pick.title,
+        prevPosition: pick.position,
+      });
+    }
+  }
+
+  const entries = [...renumbered, ...dropoutEntries];
+  const stillMissing = Math.max(0, 20 - entries.length);
+
+  const issue: WeekIssue = {
+    weekDate,
+    excelCount: sortedExcelRows.length,
+    resolvedCount: sortedExcelRows.length,
+    finalCount: entries.length,
+    missingPositions,
+    duplicatePositions,
+    notFound: [],
+    backfilled,
+    stillMissing,
+  };
+
+  return { entries, issue };
 }
 
 async function importWeeks() {
@@ -239,6 +372,7 @@ async function importWeeks() {
   const notFound: NotFoundRow[] = [];
   const weekIssues: WeekIssue[] = [];
   const resolverCache = new Map<string, ResolvedSong | null>();
+  let previousWeek: WeekEntry[] | null = null;
 
   let createdCharts = 0;
   let updatedCharts = 0;
@@ -252,15 +386,8 @@ async function importWeeks() {
     const { start: weekStart } = getChartWeekRange(refDate);
 
     const sortedEntries = [...week.entries].sort((a, b) => a.position - b.position);
-    const { missingPositions, duplicatePositions } = analyzeWeekExcelEntries(sortedEntries);
     const weekNotFound: NotFoundRow[] = [];
-    const finalEntries: Array<{
-      position: number;
-      songId: string;
-      songSpotifyId: string | null;
-      albumSpotifyId: string | null;
-      points: number;
-    }> = [];
+    const resolvedByRow = new Map<RawEntry, ResolvedSong>();
 
     for (const row of sortedEntries) {
       const cacheKey = `${normalizeText(row.title)}|${normalizeText(cleanArtistForLookup(row.artist))}`;
@@ -285,30 +412,29 @@ async function importWeeks() {
         continue;
       }
 
-      finalEntries.push({
-        position: row.position,
-        songId: resolved.id,
-        songSpotifyId: resolved.spotifyId ?? null,
-        albumSpotifyId: resolved.albumSpotifyId ?? null,
-        points: pointsForChartPosition(row.position, scoringTier, 20, "WEEKLY"),
-      });
+      resolvedByRow.set(row, resolved);
     }
 
+    const resolvedExcelRows = sortedEntries.filter((row) => resolvedByRow.has(row));
+    const { entries: finalEntries, issue } = buildFinalWeekEntries(
+      week.date,
+      resolvedExcelRows,
+      resolvedByRow,
+      previousWeek,
+      scoringTier,
+    );
+    issue.notFound = weekNotFound;
+
     const hasIssue =
-      finalEntries.length < 20 ||
-      missingPositions.length > 0 ||
-      duplicatePositions.length > 0 ||
-      weekNotFound.length > 0;
+      issue.excelCount < 20 ||
+      issue.missingPositions.length > 0 ||
+      issue.duplicatePositions.length > 0 ||
+      issue.notFound.length > 0 ||
+      issue.backfilled.length > 0 ||
+      issue.stillMissing > 0;
 
     if (hasIssue) {
-      weekIssues.push({
-        weekDate: week.date,
-        excelCount: sortedEntries.length,
-        resolvedCount: finalEntries.length,
-        missingPositions,
-        duplicatePositions,
-        notFound: weekNotFound,
-      });
+      weekIssues.push(issue);
     }
 
     if (!finalEntries.length) {
@@ -316,9 +442,11 @@ async function importWeeks() {
       continue;
     }
 
+    previousWeek = finalEntries;
+
     if (DRY_RUN) {
       if (DEBUG && hasIssue) {
-        printWeekIssue(weekIssues[weekIssues.length - 1]!);
+        printWeekIssue(issue);
       } else if (VERBOSE) {
         console.log(`[dry-run] Semana ${week.date}: ${finalEntries.length} entradas.`);
       }
@@ -330,31 +458,35 @@ async function importWeeks() {
       select: { id: true },
     });
 
+    const chartPayload = {
+      weekLabel,
+      dateRange,
+      publishedAt: refDate,
+      weekStartDate: weekStart,
+      maxItems: finalEntries.length,
+      entries: {
+        create: finalEntries.map((e) => ({
+          position: e.position,
+          songId: e.songId,
+          songSpotifyId: e.songSpotifyId,
+          albumSpotifyId: e.albumSpotifyId,
+          points: e.points,
+          status: e.status,
+          delta: e.delta,
+          prevPos: e.prevPos,
+          peak: e.peak,
+          weeks: e.weeks,
+        })),
+      },
+    };
+
     if (!existing) {
       await prisma.chart.create({
         data: {
           userId: user.id,
           paradaId: parada.id,
           weekIndex,
-          weekLabel,
-          dateRange,
-          publishedAt: refDate,
-          weekStartDate: weekStart,
-          maxItems: 20,
-          entries: {
-            create: finalEntries.map((e) => ({
-              position: e.position,
-              songId: e.songId,
-              songSpotifyId: e.songSpotifyId,
-              albumSpotifyId: e.albumSpotifyId,
-              points: e.points,
-              status: "new",
-              delta: null,
-              prevPos: null,
-              peak: e.position,
-              weeks: 1,
-            })),
-          },
+          ...chartPayload,
         },
       });
       createdCharts += 1;
@@ -364,27 +496,7 @@ async function importWeeks() {
         prisma.chartEntry.deleteMany({ where: { chartId: existing.id } }),
         prisma.chart.update({
           where: { id: existing.id },
-          data: {
-            weekLabel,
-            dateRange,
-            publishedAt: refDate,
-            weekStartDate: weekStart,
-            maxItems: 20,
-            entries: {
-              create: finalEntries.map((e) => ({
-                position: e.position,
-                songId: e.songId,
-                songSpotifyId: e.songSpotifyId,
-                albumSpotifyId: e.albumSpotifyId,
-                points: e.points,
-                status: "new",
-                delta: null,
-                prevPos: null,
-                peak: e.position,
-                weeks: 1,
-              })),
-            },
-          },
+          data: chartPayload,
         }),
       ]);
       updatedCharts += 1;
@@ -392,7 +504,7 @@ async function importWeeks() {
     }
 
     console.log(
-      `[ok] ${week.date} -> weekIndex ${weekIndex} (${finalEntries.length} entradas)`,
+      `[ok] ${week.date} -> weekIndex ${weekIndex} (${finalEntries.length} entradas${issue.backfilled.length ? `, +${issue.backfilled.length} saídas` : ""})`,
     );
   }
 
@@ -402,7 +514,7 @@ async function importWeeks() {
   console.log(`Charts atualizados: ${updatedCharts}`);
   console.log(`Entradas inseridas: ${createdEntries}`);
   console.log(`Não encontradas (BD + Spotify): ${notFound.length}`);
-  console.log(`Semanas incompletas (<20 ou com lacunas): ${weekIssues.length}`);
+  console.log(`Semanas com lacunas/backfill: ${weekIssues.length}`);
 
   if (notFound.length) {
     console.log("");
@@ -416,7 +528,7 @@ async function importWeeks() {
 
   if (weekIssues.length) {
     console.log("");
-    console.log("=== SEMANAS INCOMPLETAS ===");
+    console.log("=== SEMANAS COM LACUNAS / BACKFILL ===");
     for (const issue of weekIssues) {
       printWeekIssue(issue);
     }

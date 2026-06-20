@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { timeAgo } from "@/lib/time-ago";
@@ -33,10 +33,21 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
 
   const unreadCount = items.filter((n) => !n.read).length;
 
+  useEffect(() => {
+    if (unreadCount === 0) return;
+    startTransition(async () => {
+      await fetch("/api/notifications", { method: "PATCH" });
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      window.dispatchEvent(new Event("notifications-read"));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function markAllRead() {
     startTransition(async () => {
       await fetch("/api/notifications", { method: "PATCH" });
       setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      window.dispatchEvent(new Event("notifications-read"));
     });
   }
 

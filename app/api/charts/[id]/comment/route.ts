@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 
 export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id: chartId } = await context.params;
+  const session = await getServerSession(authOptions);
 
   const rows = await prisma.comment.findMany({
     where: { chartId },
@@ -26,10 +27,23 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     },
   });
 
+  const likedIds = new Set<string>();
+  if (session?.user?.id && rows.length > 0) {
+    const likes = await prisma.commentLike.findMany({
+      where: {
+        userId: session.user.id,
+        commentId: { in: rows.map((r) => r.id) },
+      },
+      select: { commentId: true },
+    });
+    for (const like of likes) likedIds.add(like.commentId);
+  }
+
   const comments = rows.map((c) => ({
     id: c.id,
     text: c.text,
     likes: c.likes,
+    liked: likedIds.has(c.id),
     reactions: safeParseReactions(c.reactions),
     replyCount: c.replyCount,
     createdAt: c.createdAt.toISOString(),

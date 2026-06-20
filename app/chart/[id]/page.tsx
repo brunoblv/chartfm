@@ -61,6 +61,7 @@ export type CommentRow = {
   id: string;
   text: string;
   likes: number;
+  liked?: boolean;
   reactions: string[];
   replyCount: number;
   createdAt: string;
@@ -1126,6 +1127,28 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
   const [replyCount, setReplyCount] = useState(comment.replyCount);
+  const [liked, setLiked] = useState(comment.liked ?? false);
+  const [likeCount, setLikeCount] = useState(comment.likes);
+  const [togglingLike, setTogglingLike] = useState(false);
+
+  async function toggleLike() {
+    if (!session?.user || togglingLike) return;
+    setTogglingLike(true);
+    try {
+      const res = await fetch(`/api/charts/${chartId}/comment/${comment.id}/like`, { method: "POST" });
+      if (res.status === 401) {
+        alert("Você precisa estar logado para curtir.");
+        return;
+      }
+      if (res.ok) {
+        const data = (await res.json()) as { liked: boolean; likes: number };
+        setLiked(data.liked);
+        setLikeCount(data.likes);
+      }
+    } finally {
+      setTogglingLike(false);
+    }
+  }
 
   async function loadReplies() {
     setLoadingReplies(true);
@@ -1185,9 +1208,25 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
           </div>
           <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--text)", marginBottom: 10 }}>{comment.text}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "var(--text-muted)", fontSize: 13, cursor: "pointer" }}>
-              <Heart size={14} />
-              {comment.likes > 0 && <span>{comment.likes}</span>}
+            <button
+              onClick={toggleLike}
+              disabled={togglingLike}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                background: liked ? "var(--accent-tint)" : "none",
+                border: "none",
+                color: liked ? "var(--accent)" : "var(--text-muted)",
+                fontSize: 13,
+                cursor: session?.user ? "pointer" : "default",
+                borderRadius: 100,
+                padding: liked ? "4px 8px" : "4px 0",
+                opacity: togglingLike ? 0.6 : 1,
+              }}
+            >
+              <Heart size={14} fill={liked ? "currentColor" : "none"} />
+              {likeCount > 0 && <span>{likeCount}</span>}
             </button>
             <button
               onClick={toggleReplies}

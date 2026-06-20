@@ -11,6 +11,11 @@ export default async function NotificationsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
 
+  await prisma.notification.updateMany({
+    where: { recipientId: session.user.id, read: false },
+    data: { read: true },
+  });
+
   const rows = await prisma.notification.findMany({
     where: { recipientId: session.user.id },
     orderBy: { createdAt: "desc" },
@@ -51,7 +56,7 @@ export default async function NotificationsPage() {
     type: r.type,
     text: r.text,
     targetUrl: r.targetUrl,
-    read: r.read,
+    read: true,
     createdAt: r.createdAt.toISOString(),
     actor: r.actor
       ? {

@@ -53,6 +53,7 @@ model User {
   likes                ChartLike[]
   reposts              ChartRepost[]
   comments             Comment[]
+  commentLikes         CommentLike[]
   commentReplies       CommentReply[]
   communityMemberships CommunityMember[]
   actorNotifs          Notification[]    @relation("NotificationActor")
@@ -298,7 +299,20 @@ model Comment {
   createdAt  DateTime       @default(now())
   chart      Chart          @relation(fields: [chartId], references: [id], onDelete: Cascade)
   user       User           @relation(fields: [userId], references: [id])
+  commentLikes CommentLike[]
   replies    CommentReply[]
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String   @map("comment_id")
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, commentId])
+  @@map("comment_likes")
 }
 
 model CommentReply {

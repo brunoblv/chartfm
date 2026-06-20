@@ -46,6 +46,10 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
       setUnreadNotifications(0);
       return;
     }
+    if (pathname === "/notifications") {
+      setUnreadNotifications(0);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -64,6 +68,15 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
       cancelled = true;
     };
   }, [authed, pathname]);
+
+  useEffect(() => {
+    if (!authed) return;
+    function onNotificationsRead() {
+      setUnreadNotifications(0);
+    }
+    window.addEventListener("notifications-read", onNotificationsRead);
+    return () => window.removeEventListener("notifications-read", onNotificationsRead);
+  }, [authed]);
 
   if (isMobile) {
     return (
