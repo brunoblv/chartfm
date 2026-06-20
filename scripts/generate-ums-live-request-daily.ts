@@ -6,6 +6,8 @@
  *   npx tsx scripts/generate-ums-live-request-daily.ts --dry-run
  *   npx tsx scripts/generate-ums-live-request-daily.ts
  *   npx tsx scripts/generate-ums-live-request-daily.ts --week=200201
+ *   npx tsx scripts/generate-ums-live-request-daily.ts --from=2011-01-01 --to=2015-12-31
+ *   npx tsx scripts/generate-ums-live-request-daily.ts --from-year=2011 --to-year=2015
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -44,6 +46,66 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const WEEK_ARG = process.argv.find((a) => a.startsWith("--week="));
 const WEEKLY_ID_ARG = process.argv.find((a) => a.startsWith("--weekly-parada-id="));
 const DAILY_ID_ARG = process.argv.find((a) => a.startsWith("--daily-parada-id="));
+const FROM_ARG = process.argv.find((a) => a.startsWith("--from="));
+const TO_ARG = process.argv.find((a) => a.startsWith("--to="));
+const FROM_YEAR_ARG = process.argv.find((a) => a.startsWith("--from-year="));
+const TO_YEAR_ARG = process.argv.find((a) => a.startsWith("--to-year="));
+
+/** Padrão: histórico importado até 2010. Sobrescreva com --to / --to-year / --from. */
+const DEFAULT_FROM = "2001-01-01";
+const DEFAULT_TO = "2010-12-31";
+
+function parseYmdArg(value: string, label: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${label} inválido: use AAAA-MM-DD (recebido: ${value})`);
+  }
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) throw new Error(`${label} inválido: ${value}`);
+  return date;
+}
+
+function resolveDateRange(): { from: Date; to: Date; fromLabel: string; toLabel: string } {
+  let fromLabel = DEFAULT_FROM;
+  let toLabel = DEFAULT_TO;
+
+  if (FROM_YEAR_ARG) {
+    const y = Number(FROM_YEAR_ARG.split("=")[1]);
+    if (!Number.isFinite(y)) throw new Error("--from-year inválido");
+    fromLabel = `${y}-01-01`;
+  }
+  if (TO_YEAR_ARG) {
+    const y = Number(TO_YEAR_ARG.split("=")[1]);
+    if (!Number.isFinite(y)) throw new Error("--to-year inválido");
+    toLabel = `${y}-12-31`;
+  }
+  if (FROM_ARG) fromLabel = FROM_ARG.split("=").slice(1).join("=");
+  if (TO_ARG) toLabel = TO_ARG.split("=").slice(1).join("=");
+
+  const from = parseYmdArg(fromLabel, "--from");
+  const to = parseYmdArg(toLabel, "--to");
+  if (from.getTime() > to.getTime()) {
+    throw new Error(`Intervalo inválido: --from (${fromLabel}) > --to (${toLabel})`);
+  }
+  return { from, to, fromLabel, toLabel };
+}
+
+function chartWeekAnchor(chart: {
+  weekStartDate: Date | null;
+  publishedAt: Date;
+}): Date {
+  const anchor = chart.weekStartDate ?? getChartWeekRange(chart.publishedAt).start;
+  return new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+}
+
+function isChartInRange(
+  chart: { weekStartDate: Date | null; publishedAt: Date },
+  from: Date,
+  to: Date,
+): boolean {
+  const anchor = chartWeekAnchor(chart);
+  return anchor.getTime() >= from.getTime() && anchor.getTime() <= to.getTime();
+}
 
 function weekdayDate(weekStartMonday: Date, dayIndex: number): Date {
   const d = new Date(weekStartMonday);
@@ -171,11 +233,13 @@ async function main() {
   if (!user) throw new Error(`Usuário @${HANDLE} não encontrado.`);
 
   const { weekly, daily } = await resolveParadas(user.id);
+  const { from, to, fromLabel, toLabel } = resolveDateRange();
   console.log(`[info] Fonte semanal: "${weekly.name}" (${weekly.id})`);
   console.log(`[info] Destino diário: "${daily.name}" (${daily.id})`);
+  console.log(`[info] Período: ${fromLabel} a ${toLabel}`);
 
   const weekFilter = WEEK_ARG ? Number(WEEK_ARG.split("=")[1]) : null;
-  const weeklyCharts = await prisma.chart.findMany({
+  const weeklyChartsAll = await prisma.chart.findMany({
     where: {
       paradaId: weekly.id,
       ...(weekFilter ? { weekIndex: weekFilter } : {}),
@@ -189,7 +253,16 @@ async function main() {
     orderBy: { weekIndex: "asc" },
   });
 
-  console.log(`[info] Charts semanais a processar: ${weeklyCharts.length}`);
+  const weeklyCharts = weekFilter
+    ? weeklyChartsAll
+    : weeklyChartsAll.filter((c) => isChartInRange(c, from, to));
+
+  console.log(
+    `[info] Charts semanais a processar: ${weeklyCharts.length}` +
+      (weeklyCharts.length !== weeklyChartsAll.length
+        ? ` (de ${weeklyChartsAll.length} no total; filtro de datas)`
+        : ""),
+  );
 
   const scoringTier = scoringTierFromPrimary(daily.isPrimary);
   let created = 0;
@@ -239,6 +312,10 @@ async function main() {
       }
 
       const localDate = weekdayDate(weekStart, dayIdx);
+      if (localDate.getTime() < from.getTime() || localDate.getTime() > to.getTime()) {
+        continue;
+      }
+
       const period = buildPeriodFromDate(localDate, "DAILY");
       const prevBySong = await loadPreviousDayEntries(daily.id, period.periodIndex);
 
