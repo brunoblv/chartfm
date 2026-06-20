@@ -43,10 +43,7 @@ export function createSpotifyConnectState(
   return `${body}.${sig}`;
 }
 
-export function verifySpotifyConnectState(
-  state: string,
-  userId: string,
-): { redirectUri: string; from?: string } | null {
+function verifyStatePayload(state: string): StatePayload | null {
   const dot = state.lastIndexOf(".");
   if (dot <= 0) return null;
   const body = state.slice(0, dot);
@@ -54,18 +51,30 @@ export function verifySpotifyConnectState(
   const expected = crypto.createHmac("sha256", stateSecret()).update(body).digest("base64url");
   if (!safeEqual(sig, expected)) return null;
 
-  let payload: StatePayload;
   try {
-    payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as StatePayload;
+    return JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as StatePayload;
   } catch {
     return null;
   }
+}
 
-  if (!payload.u || !payload.r || !payload.e) return null;
-  if (payload.u !== userId) return null;
+/** Valida o state assinado e retorna o userId sem depender de cookies de sessão. */
+export function parseSpotifyConnectState(
+  state: string,
+): { userId: string; redirectUri: string; from?: string } | null {
+  const payload = verifyStatePayload(state);
+  if (!payload?.u || !payload.r || !payload.e) return null;
   if (payload.e < Date.now()) return null;
+  return { userId: payload.u, redirectUri: payload.r, from: payload.f };
+}
 
-  return { redirectUri: payload.r, from: payload.f };
+export function verifySpotifyConnectState(
+  state: string,
+  userId: string,
+): { redirectUri: string; from?: string } | null {
+  const parsed = parseSpotifyConnectState(state);
+  if (!parsed || parsed.userId !== userId) return null;
+  return { redirectUri: parsed.redirectUri, from: parsed.from };
 }
 
 /** Mensagem amigável para o parâmetro `?spotify=` retornado após o OAuth. */

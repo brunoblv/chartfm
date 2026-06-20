@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
-import { appPathUrl, ensureCanonicalAppOrigin, getAppOrigin } from "@/lib/app-url";
+import { appPathUrl, ensureCanonicalAppOrigin } from "@/lib/app-url";
 import { isMyTrlOwner } from "@/lib/mytrl-access";
 import { prisma } from "@/lib/prisma";
-import { verifySpotifyConnectState } from "@/lib/spotify-connect-oauth";
+import { parseSpotifyConnectState } from "@/lib/spotify-connect-oauth";
 import {
   exchangeSpotifyAuthCode,
   fetchSpotifyMeStatus,
@@ -20,8 +18,8 @@ function resolveReturnTo(raw: string | undefined): string {
 }
 
 /** Anexa `spotify=<status>` preservando query existente do caminho de retorno. */
-function withSpotifyParam(returnTo: string, status: string, req: NextRequest, reason?: string | null): URL {
-  const dest = appPathUrl(returnTo, getAppOrigin(new URL(req.url).origin));
+function withSpotifyParam(returnTo: string, status: string, reason?: string | null): URL {
+  const dest = appPathUrl(returnTo);
   dest.searchParams.set("spotify", status);
   if (reason) dest.searchParams.set("spotify_reason", reason);
   return dest;
@@ -32,59 +30,55 @@ export async function GET(req: NextRequest) {
   const canonicalRedirect = ensureCanonicalAppOrigin(req);
   if (canonicalRedirect) return canonicalRedirect;
 
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.redirect(appPathUrl("/login", getAppOrigin(new URL(req.url).origin)));
-  }
-  if (!isMyTrlOwner(session.user.handle)) {
-    return NextResponse.redirect(appPathUrl("/settings", getAppOrigin(new URL(req.url).origin)));
-  }
-
   const url = new URL(req.url);
   const error = url.searchParams.get("error");
   const returnToDefault = "/settings";
 
   if (error) {
     const status = error === "access_denied" ? "access_denied" : "error";
-    return NextResponse.redirect(withSpotifyParam(returnToDefault, status, req, error));
+    return NextResponse.redirect(withSpotifyParam(returnToDefault, status, error));
   }
 
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  const verified = state ? verifySpotifyConnectState(state, session.user.id) : null;
+  const verified = state ? parseSpotifyConnectState(state) : null;
   const returnTo = resolveReturnTo(verified?.from);
 
   if (!code || !verified) {
-    return NextResponse.redirect(withSpotifyParam(returnTo, "invalid_state", req));
+    return NextResponse.redirect(withSpotifyParam(returnTo, "invalid_state"));
+  }
+
+  const owner = await prisma.user.findUnique({
+    where: { id: verified.userId },
+    select: { id: true, handle: true, spotifyRefreshToken: true },
+  });
+  if (!owner || !isMyTrlOwner(owner.handle)) {
+    return NextResponse.redirect(withSpotifyParam(returnTo, "invalid_state"));
   }
 
   const tokens = await exchangeSpotifyAuthCode(code, verified.redirectUri);
   if (!tokens) {
     console.error("[spotify/connect/callback] token exchange failed", {
       redirectUri: verified.redirectUri,
-      userId: session.user.id,
+      userId: owner.id,
     });
-    return NextResponse.redirect(withSpotifyParam(returnTo, "token_error", req));
+    return NextResponse.redirect(withSpotifyParam(returnTo, "token_error"));
   }
 
   const me = await fetchSpotifyMeStatus(tokens.access_token);
   if (me.status === 403) {
-    console.warn("[spotify/connect/callback] user not on Spotify app allowlist", { userId: session.user.id });
-    return NextResponse.redirect(withSpotifyParam(returnTo, "not_registered", req));
+    console.warn("[spotify/connect/callback] user not on Spotify app allowlist", { userId: owner.id });
+    return NextResponse.redirect(withSpotifyParam(returnTo, "not_registered"));
   }
   if (!me.ok) {
-    console.error("[spotify/connect/callback] /me failed", { status: me.status, userId: session.user.id });
-    return NextResponse.redirect(withSpotifyParam(returnTo, "token_error", req));
+    console.error("[spotify/connect/callback] /me failed", { status: me.status, userId: owner.id });
+    return NextResponse.redirect(withSpotifyParam(returnTo, "token_error"));
   }
 
-  const existing = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { spotifyRefreshToken: true },
-  });
-  if (!tokens.refresh_token && !existing?.spotifyRefreshToken) {
-    return NextResponse.redirect(withSpotifyParam(returnTo, "no_refresh_token", req));
+  if (!tokens.refresh_token && !owner.spotifyRefreshToken) {
+    return NextResponse.redirect(withSpotifyParam(returnTo, "no_refresh_token"));
   }
 
-  await saveUserSpotifyTokens(session.user.id, tokens);
-  return NextResponse.redirect(withSpotifyParam(returnTo, "connected", req));
+  await saveUserSpotifyTokens(owner.id, tokens);
+  return NextResponse.redirect(withSpotifyParam(returnTo, "connected"));
 }

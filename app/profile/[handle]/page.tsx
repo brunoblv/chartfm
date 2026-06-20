@@ -698,6 +698,22 @@ export default function ProfilePage() {
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2, flexWrap: "wrap" }}>
               <h1 style={{ fontSize: isMobile ? 26 : 48, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.1, margin: 0 }}>{user.name}</h1>
               {user.verified && <BadgeCheck size={isMobile ? 20 : 28} color="#0A84FF" fill="#0A84FF" />}
+              {user.isStaff && source === "db" && (
+                <span
+                  style={{
+                    fontSize: isMobile ? 10 : 12,
+                    fontWeight: 700,
+                    padding: isMobile ? "2px 7px" : "3px 10px",
+                    borderRadius: 100,
+                    background: "rgba(124, 58, 237, 0.12)",
+                    color: "#7C3AED",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Staff
+                </span>
+              )}
             </div>
             <div style={{ fontSize: isMobile ? 13 : 15, color: "var(--text-muted)", marginBottom: isMobile ? 6 : 10 }}>@{user.handle}</div>
             {paradaNome && source === "db" && (

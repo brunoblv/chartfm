@@ -1,6 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
-
 export const MYTRL_OWNER_HANDLE = "bruno";
 
 /** Parada diária @bruno — top 10 new hits (MyTRL → UMS Request Live). */
@@ -15,14 +12,6 @@ export const MYTRL_DAILY_PUBLISH_UTC_HOUR = 11;
 /** Publicação semanal às 8:05 BRT (= 11:05 UTC), após a diária de sexta. */
 export const MYTRL_WEEKLY_PUBLISH_UTC_HOUR = 11;
 export const MYTRL_WEEKLY_PUBLISH_UTC_MINUTE = 5;
-
-export async function requireMyTrlSession() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.handle || session.user.handle !== MYTRL_OWNER_HANDLE) {
-    return null;
-  }
-  return session;
-}
 
 export function isMyTrlOwner(handle: string | null | undefined): boolean {
   return handle === MYTRL_OWNER_HANDLE;

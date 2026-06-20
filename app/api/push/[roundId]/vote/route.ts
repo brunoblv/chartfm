@@ -32,8 +32,8 @@ export async function POST(
   });
 
   if (!round) return NextResponse.json({ error: "Rodada não encontrada" }, { status: 404 });
-  if (round.phase !== "RANKING") {
-    return NextResponse.json({ error: "Fora do período de avaliação" }, { status: 400 });
+  if (round.phase !== "LISTENING" && round.phase !== "RANKING") {
+    return NextResponse.json({ error: "Fora do período de escuta e avaliação" }, { status: 400 });
   }
 
   const mySubmission = round.submissions.find((s) => s.userId === session.user.id);

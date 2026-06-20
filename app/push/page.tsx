@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
-import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
+import { pushRoundTitle } from "@/lib/push-format";
 import PushClient, { type RoundData } from "./PushClient";
 
 export const revalidate = 30;
@@ -15,7 +15,7 @@ async function getCurrentRound(userId: string | null) {
       submissions: {
         include: {
           song: { select: { id: true, title: true, artist: true, spotifyId: true, spotifyUrl: true } },
-          user: { select: { handle: true, name: true } },
+          user: { select: { id: true, handle: true, name: true, avatarColor: true } },
         },
       },
       votes: userId ? { where: { userId } } : false,
@@ -90,15 +90,24 @@ async function getCurrentRound(userId: string | null) {
     }));
   }
 
+  const participants = round.submissions.map((s) => ({
+    userId: s.userId,
+    handle: s.user.handle,
+    name: s.user.name,
+    avatarColor: s.user.avatarColor,
+    isMe: s.userId === userId,
+  }));
+
   return {
     id: round.id,
     number: round.number,
-    title: round.title,
+    title: pushRoundTitle(round.season, round.number),
     phase: round.phase,
     submissionEndsAt: round.submissionEndsAt.toISOString(),
     listeningEndsAt: round.listeningEndsAt.toISOString(),
     rankingEndsAt: round.rankingEndsAt.toISOString(),
     spotifyPlaylistId: round.spotifyPlaylistId,
+    youtubePlaylistId: round.youtubePlaylistId,
     season: round.season,
     submissionCount: round.submissions.length,
     mySubmission: mySubmission
@@ -107,6 +116,7 @@ async function getCurrentRound(userId: string | null) {
     submissions,
     myVotes,
     results,
+    participants,
   };
 }
 
@@ -115,18 +125,7 @@ export default async function PushPage() {
   const round = await getCurrentRound(session?.user?.id ?? null);
 
   return (
-    <Shell
-      title="Push"
-      subtitle="Indique uma música, ouça as indicações e vote no seu favorito"
-      headerRight={
-        <Link
-          href="/push/historico"
-          style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textDecoration: "none" }}
-        >
-          Histórico →
-        </Link>
-      }
-    >
+    <Shell noPadding>
       <PushClient initialRound={round as RoundData | null} />
     </Shell>
   );

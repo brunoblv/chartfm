@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMyTrlSession } from "@/lib/mytrl-access";
+import { requireMyTrlSession } from "@/lib/mytrl-access-server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";

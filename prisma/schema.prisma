@@ -39,6 +39,11 @@ model User {
   spotifyTokenExpiresAt DateTime?        @map("spotify_token_expires_at")
   spotifyUserId        String?           @map("spotify_user_id")
   spotifyNewHitsPlaylistId String?       @map("spotify_new_hits_playlist_id")
+  youtubeAccessToken   String?           @map("youtube_access_token")
+  youtubeRefreshToken  String?           @map("youtube_refresh_token")
+  youtubeTokenExpiresAt DateTime?        @map("youtube_token_expires_at")
+  youtubeChannelId     String?           @map("youtube_channel_id")
+  youtubeChannelHandle String?           @map("youtube_channel_handle")
   twitterUser          String?
   instagramUser        String?
   chartSize            Int?              @map("chart_size")
@@ -535,11 +540,24 @@ model AlbumReviewHelpful {
   @@map("album_review_helpful")
 }
 
+enum ClipType {
+  OFFICIAL
+  LYRIC_VIDEO
+  VISUALIZER
+  LIVE
+  OTHER
+
+  @@map("clip_type")
+}
+
 model SongVideoClip {
   id          String   @id @default(cuid())
   songId      String   @map("song_id")
   uploadedBy  String   @map("uploaded_by")
+  youtubeId   String?  @map("youtube_id")
   imageUrl    String   @map("image_url")
+  publishedAt DateTime? @map("published_at")
+  clipType    ClipType  @default(OFFICIAL) @map("clip_type")
   votes       Int      @default(0)
   createdAt   DateTime @default(now()) @map("created_at")
   song        Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
@@ -713,6 +731,7 @@ model PushRound {
   listeningEndsAt   DateTime         @map("listening_ends_at")
   rankingEndsAt     DateTime         @map("ranking_ends_at")
   spotifyPlaylistId String?          @map("spotify_playlist_id")
+  youtubePlaylistId String?          @map("youtube_playlist_id")
   season            Int              @default(1)
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")

@@ -8,7 +8,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface ShellProps {
   children: React.ReactNode;
-  title: string;
+  title?: string;
   subtitle?: string;
   headerRight?: React.ReactNode;
   noPadding?: boolean;

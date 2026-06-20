@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireMyTrlSession, authorizeMyTrlCron } from "@/lib/mytrl-access";
+import { authorizeMyTrlCron } from "@/lib/mytrl-access";
+import { requireMyTrlSession } from "@/lib/mytrl-access-server";
 import { parseMyTrlWeeklyReferenceDate, publishMyTrlWeeklyChart } from "@/lib/mytrl-weekly-chart";
 
 export const runtime = "nodejs";

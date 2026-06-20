@@ -16,6 +16,7 @@ export interface User {
   following: number;
   streak: number;
   verified?: boolean;
+  isStaff?: boolean;
   paradaNome?: string | null;
   paradaLogo?: string | null;
 }

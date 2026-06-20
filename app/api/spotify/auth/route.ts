@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
-import { requireMyTrlSession } from "@/lib/mytrl-access";
+import { requireMyTrlSession } from "@/lib/mytrl-access-server";
 import {
   buildSpotifyAuthorizeUrl,
   getSpotifyRedirectUri,
@@ -15,7 +15,7 @@ const REDIRECT_URI_COOKIE = "spotify_oauth_redirect_uri";
 
 // GET /api/spotify/auth — inicia OAuth Spotify (somente @bruno)
 export async function GET(req: NextRequest) {
-  const session = await requireMyTrlSession();
+  const session = await requireMyTrlSession(req);
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }

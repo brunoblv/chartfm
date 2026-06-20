@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
+import { pushRoundTitle } from "@/lib/push-format";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET() {
       submissions: {
         include: {
           song: { select: { id: true, title: true, artist: true, spotifyId: true, spotifyUrl: true } },
-          user: { select: { handle: true, name: true } },
+          user: { select: { id: true, handle: true, name: true, avatarColor: true } },
         },
       },
       votes: userId ? { where: { userId } } : false,
@@ -71,12 +72,12 @@ export async function GET() {
     const totals = new Map<string, number>();
     const allVotes = await prisma.pushVote.findMany({
       where: { roundId: round.id },
-      select: { submissionId: true, position: true, roundId: true },
+      select: { submissionId: true, position: true },
     });
-    const total = round.submissions.length;
-    const n = total - 1; // songs each voter ranks
+    const totalToRank = round.submissions.length - 1;
     for (const v of allVotes) {
-      const pts = n <= 1 ? 10 : Math.max(1, Math.round(10 - (v.position - 1) * 9 / (n - 1)));
+      const k = totalToRank <= 1 ? 0 : Math.log(20) / (totalToRank - 1);
+      const pts = totalToRank <= 1 ? 20 : Math.max(1, Math.round(20 * Math.exp(-k * (v.position - 1))));
       totals.set(v.submissionId, (totals.get(v.submissionId) ?? 0) + pts);
     }
     const sorted = round.submissions
@@ -94,16 +95,25 @@ export async function GET() {
     }));
   }
 
+  const participants = round.submissions.map((s) => ({
+    userId: s.userId,
+    handle: s.user.handle,
+    name: s.user.name,
+    avatarColor: s.user.avatarColor,
+    isMe: s.userId === userId,
+  }));
+
   return NextResponse.json({
     round: {
       id: round.id,
       number: round.number,
-      title: round.title,
+      title: pushRoundTitle(round.season, round.number),
       phase: round.phase,
       submissionEndsAt: round.submissionEndsAt.toISOString(),
       listeningEndsAt: round.listeningEndsAt.toISOString(),
       rankingEndsAt: round.rankingEndsAt.toISOString(),
       spotifyPlaylistId: round.spotifyPlaylistId,
+      youtubePlaylistId: round.youtubePlaylistId,
       season: round.season,
       submissionCount: round.submissions.length,
       mySubmission: mySubmission
@@ -121,6 +131,7 @@ export async function GET() {
       submissions,
       myVotes,
       results,
+      participants,
     },
   });
 }

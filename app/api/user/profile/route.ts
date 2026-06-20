@@ -34,6 +34,8 @@ export async function GET() {
       instagramUser: true,
       chartSize: true,
       spotifyRefreshToken: true,
+      youtubeRefreshToken: true,
+      youtubeChannelHandle: true,
     },
   });
   if (!user) {
@@ -41,9 +43,15 @@ export async function GET() {
   }
 
   const paradas = await ensureUserParadas(prisma, session.user.id);
-  const { spotifyRefreshToken, ...userPublic } = user;
+  const { spotifyRefreshToken, youtubeRefreshToken, youtubeChannelHandle, ...userPublic } = user;
 
-  return NextResponse.json({ ...userPublic, spotifyConnected: Boolean(spotifyRefreshToken), paradas });
+  return NextResponse.json({
+    ...userPublic,
+    spotifyConnected: Boolean(spotifyRefreshToken),
+    youtubeConnected: Boolean(youtubeRefreshToken),
+    youtubeChannelHandle: youtubeChannelHandle ?? null,
+    paradas,
+  });
 }
 
 export async function PATCH(req: Request) {

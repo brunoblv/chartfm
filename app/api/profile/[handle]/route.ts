@@ -40,6 +40,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         following: true,
         streak: true,
         verified: true,
+        role: true,
         image: true,
         paradaNome: true,
         paradaLogo: true,

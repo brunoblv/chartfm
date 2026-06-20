@@ -6,7 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export function getAppOrigin(requestOrigin?: string): string {
   const fromEnv = process.env.NEXTAUTH_URL?.trim().replace(/\/$/, "");
-  const raw = fromEnv || requestOrigin?.replace(/\/$/, "") || "http://127.0.0.1:3000";
+  if (fromEnv) return fromEnv;
+  const raw = requestOrigin?.replace(/\/$/, "") || "http://127.0.0.1:3000";
   return raw.replace(/^http:\/\/localhost(?=:\d+|\/|$)/i, "http://127.0.0.1");
 }
 
@@ -32,5 +33,6 @@ export function ensureCanonicalAppOrigin(req: NextRequest): NextResponse | null 
   const dest = new URL(req.url);
   dest.protocol = canonicalUrl.protocol;
   dest.hostname = canonicalUrl.hostname;
+  if (canonicalUrl.port) dest.port = canonicalUrl.port;
   return NextResponse.redirect(dest, 308);
 }

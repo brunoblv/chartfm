@@ -447,11 +447,15 @@ export async function createSpotifyPlaylist(
   });
 
   if (res.status === 401 || res.status === 403) {
+    const body = await res.json().catch(() => ({} as { error?: { message?: string } }));
+    const insufficientScope = body?.error?.message === "Insufficient client scope";
     return {
       ok: false,
       status: res.status,
       needsReconnect: true,
-      message: "Sem permissão para criar playlists. Reconecte sua conta Spotify nas configurações.",
+      message: insufficientScope
+        ? "Falta permissão para criar playlists. Reconecte o Spotify em Configurações para autorizar acesso de escrita."
+        : "Sem permissão para criar playlists. Reconecte sua conta Spotify nas configurações.",
     };
   }
   if (!res.ok) {
@@ -490,11 +494,15 @@ export async function replaceTracksInSpotifyPlaylist(
   });
 
   if (res.status === 401 || res.status === 403) {
+    const body = await res.json().catch(() => ({} as { error?: { message?: string } }));
+    const insufficientScope = body?.error?.message === "Insufficient client scope";
     return {
       ok: false,
       status: res.status,
       needsReconnect: true,
-      message: "Sem permissão para editar playlists. Reconecte sua conta Spotify.",
+      message: insufficientScope
+        ? "Falta permissão para editar playlists. Reconecte o Spotify em Configurações."
+        : "Sem permissão para editar playlists. Reconecte sua conta Spotify.",
     };
   }
   if (!res.ok) {
@@ -529,11 +537,15 @@ export async function addTracksToSpotifyPlaylist(
     });
 
     if (res.status === 401 || res.status === 403) {
+      const body = await res.json().catch(() => ({} as { error?: { message?: string } }));
+      const insufficientScope = body?.error?.message === "Insufficient client scope";
       return {
         ok: false,
         status: res.status,
         needsReconnect: true,
-        message: "Sem permissão para editar playlists. Reconecte sua conta Spotify nas configurações.",
+        message: insufficientScope
+          ? "Falta permissão para editar playlists. Reconecte o Spotify em Configurações."
+          : "Sem permissão para editar playlists. Reconecte sua conta Spotify nas configurações.",
       };
     }
     if (!res.ok) {

@@ -10,6 +10,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
+import { youtubeConnectErrorMessage } from "@/lib/youtube-connect-oauth";
 import { isMyTrlOwner } from "@/lib/mytrl-access";
 
 async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
@@ -68,14 +69,24 @@ type ProfileData = {
   image: string | null;
   paradaLogo: string | null;
   spotifyConnected?: boolean;
+  youtubeConnected?: boolean;
+  youtubeChannelHandle?: string | null;
 };
 
 type Tab = "perfil" | "parada" | "conta";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const canUseSpotifyImport = isMyTrlOwner(session?.user?.handle);
+
+  function startOAuthConnect(path: string) {
+    if (sessionStatus !== "authenticated" || !session?.user) {
+      router.push("/login?from=/settings");
+      return;
+    }
+    window.location.href = path;
+  }
   const { t } = useTranslations();
   const [tab, setTab] = useState<Tab>("perfil");
   const [loading, setLoading] = useState(true);
@@ -101,6 +112,9 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [disconnectingSpotify, setDisconnectingSpotify] = useState(false);
+  const [youtubeConnected, setYoutubeConnected] = useState(false);
+  const [youtubeChannelHandle, setYoutubeChannelHandle] = useState<string | null>(null);
+  const [disconnectingYoutube, setDisconnectingYoutube] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -136,22 +150,51 @@ export default function SettingsPage() {
     loadParadas().catch(() => {});
   }, []);
 
+  // Retorno do OAuth Spotify/YouTube — processa uma vez e limpa a URL.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const spotifyParam = params.get("spotify");
     const spotifyReason = params.get("spotify_reason");
-    if (spotifyParam === "connected") {
+    const youtubeParam = params.get("youtube");
+    const youtubeReason = params.get("youtube_reason");
+    if (!spotifyParam && !youtubeParam) return;
+
+    if (spotifyParam === "connected" || spotifyParam === "connected_no_playlist") {
       setSuccess("Spotify conectado com sucesso!");
-      window.history.replaceState({}, "", "/settings");
+      setSpotifyConnected(true);
     } else if (spotifyParam) {
-      setError(spotifyConnectErrorMessage(spotifyParam, spotifyReason) ?? "Erro ao conectar o Spotify. Tente novamente.");
-      window.history.replaceState({}, "", "/settings");
+      setError(
+        spotifyConnectErrorMessage(spotifyParam, spotifyReason) ??
+          "Erro ao conectar o Spotify. Tente novamente.",
+      );
     }
 
-    fetch("/api/user/profile")
+    if (youtubeParam === "connected") {
+      setSuccess("YouTube @chartFM conectado com sucesso!");
+      setYoutubeConnected(true);
+    } else if (youtubeParam) {
+      setError(
+        youtubeConnectErrorMessage(youtubeParam, youtubeReason) ??
+          "Erro ao conectar o YouTube. Tente novamente.",
+      );
+    }
+
+    router.replace("/settings");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (sessionStatus === "loading") return;
+
+    if (!session?.user) {
+      router.replace("/login?from=/settings");
+      return;
+    }
+
+    fetch("/api/user/profile", { credentials: "include" })
       .then(async (res) => {
         if (res.status === 401) {
-          router.replace("/login");
+          router.replace("/login?from=/settings");
           return null;
         }
         if (!res.ok) throw new Error("Não foi possível carregar seus dados.");
@@ -172,11 +215,13 @@ export default function SettingsPage() {
           image: data.image ?? null,
           paradaLogo: data.paradaLogo ?? null,
         });
-        setSpotifyConnected(data.spotifyConnected ?? false);
+        setSpotifyConnected((prev) => prev || (data.spotifyConnected ?? false));
+        setYoutubeConnected((prev) => prev || (data.youtubeConnected ?? false));
+        setYoutubeChannelHandle(data.youtubeChannelHandle ?? null);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [router]);
+  }, [router, session, sessionStatus]);
 
   function updateParadaDraft(
     paradaId: string,
@@ -724,15 +769,61 @@ export default function SettingsPage() {
                         </button>
                       </div>
                     ) : (
-                      <a
-                        href="/api/spotify/connect"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(30,215,96,0.35)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 600, color: "#1DB954", background: "rgba(30,215,96,0.06)", textDecoration: "none" }}
+                      <button
+                        type="button"
+                        onClick={() => startOAuthConnect("/api/spotify/connect?from=/settings&reconnect=1")}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(30,215,96,0.35)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 600, color: "#1DB954", background: "rgba(30,215,96,0.06)", cursor: "pointer", fontFamily: "inherit" }}
                       >
                         <span style={{ fontSize: 16 }}>♪</span> Conectar Spotify
-                      </a>
+                      </button>
                     )}
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                       Permite importar músicas recentes e criar playlists das suas paradas no Spotify.
+                    </span>
+                  </div>
+                  )}
+
+                  {canUseSpotifyImport && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>YouTube @chartFM</span>
+                    {youtubeConnected ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ flex: 1, border: "1px solid rgba(255,0,0,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 14, background: "rgba(255,0,0,0.06)", color: "#FF0000", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>✓</span>
+                          {youtubeChannelHandle ? `@${youtubeChannelHandle}` : "Canal conectado"}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setDisconnectingYoutube(true);
+                            try {
+                              await fetch("/api/youtube/disconnect", { method: "POST" });
+                              setYoutubeConnected(false);
+                              setYoutubeChannelHandle(null);
+                              setSuccess("YouTube desconectado.");
+                            } catch {
+                              setError("Erro ao desconectar o YouTube.");
+                            } finally {
+                              setDisconnectingYoutube(false);
+                            }
+                          }}
+                          disabled={disconnectingYoutube}
+                          style={{ border: "1px solid var(--divider-strong)", background: "var(--fill-subtle)", color: "var(--text-muted)", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: disconnectingYoutube ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: disconnectingYoutube ? 0.6 : 1 }}
+                        >
+                          {disconnectingYoutube ? "Desconectando…" : "Desconectar"}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startOAuthConnect("/api/youtube/connect?from=/settings")}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(255,0,0,0.35)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 600, color: "#FF0000", background: "rgba(255,0,0,0.06)", cursor: "pointer", fontFamily: "inherit" }}
+                      >
+                        <span style={{ fontSize: 16 }}>▶</span> Conectar YouTube @chartFM
+                      </button>
+                    )}
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      Use a conta Google do canal youtube.com/@chartFM para criar playlists do Push.
                     </span>
                   </div>
                   )}

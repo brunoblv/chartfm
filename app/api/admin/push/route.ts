@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { pushRoundTitle } from "@/lib/push-format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,8 +30,19 @@ export async function POST(req: NextRequest) {
     rankingEndsAt?: string;
   };
 
-  if (!body.submissionEndsAt || !body.listeningEndsAt || !body.rankingEndsAt) {
+  if (!body.submissionEndsAt || !body.rankingEndsAt) {
     return NextResponse.json({ error: "Datas obrigatórias" }, { status: 400 });
+  }
+
+  const submissionEndsAt = new Date(body.submissionEndsAt);
+  const listeningEndsAt = body.listeningEndsAt ? new Date(body.listeningEndsAt) : submissionEndsAt;
+  const rankingEndsAt = new Date(body.rankingEndsAt);
+
+  if (listeningEndsAt < submissionEndsAt) {
+    return NextResponse.json({ error: "A escuta deve começar após o fim das inscrições" }, { status: 400 });
+  }
+  if (rankingEndsAt <= listeningEndsAt) {
+    return NextResponse.json({ error: "O fim da escuta deve ser após o início" }, { status: 400 });
   }
 
   const last = await prisma.pushRound.findFirst({ orderBy: { number: "desc" }, select: { number: true } });
@@ -39,11 +51,11 @@ export async function POST(req: NextRequest) {
   const round = await prisma.pushRound.create({
     data: {
       number,
-      title: body.title ?? null,
+      title: pushRoundTitle(body.season ?? 1, number),
       season: body.season ?? 1,
-      submissionEndsAt: new Date(body.submissionEndsAt),
-      listeningEndsAt: new Date(body.listeningEndsAt),
-      rankingEndsAt: new Date(body.rankingEndsAt),
+      submissionEndsAt,
+      listeningEndsAt,
+      rankingEndsAt,
     },
   });
 

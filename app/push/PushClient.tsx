@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Music, ExternalLink, Check, Trophy, ChevronRight } from "lucide-react";
+import { Music, ExternalLink, Trophy } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { pushRoundTitle } from "@/lib/push-format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,15 @@ export interface SongData {
   artist: string;
   coverUrl: string | null;
   spotifyUrl: string | null;
+  albumReleaseDate?: string | null;
+}
+
+interface ParticipantData {
+  userId: string;
+  handle: string | null;
+  name: string | null;
+  avatarColor: string;
+  isMe: boolean;
 }
 
 interface SubmissionData {
@@ -44,12 +54,14 @@ export interface RoundData {
   listeningEndsAt: string;
   rankingEndsAt: string;
   spotifyPlaylistId: string | null;
+  youtubePlaylistId: string | null;
   season: number;
   submissionCount: number;
   mySubmission: { id: string; spotifyTrackId: string; song: SongData } | null;
   submissions: SubmissionData[] | null;
   myVotes: { submissionId: string; position: number }[] | null;
   results: ResultData[] | null;
+  participants: ParticipantData[];
 }
 
 interface SpotifyTrack {
@@ -69,27 +81,29 @@ const SPOTIFY_PATH =
 
 const PODIUM_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"];
 
-const STAGE_LABELS = ["Inscrição", "Escuta", "Avaliação", "Resultado"];
+const STAGES = ["Inscrição", "Revelação", "Escuta & Avaliação", "Resultado"] as const;
 const PHASE_TO_STAGE: Record<RoundData["phase"], number> = {
   SUBMISSION: 0,
-  LISTENING: 1,
+  LISTENING: 2,
   RANKING: 2,
   RESULT: 3,
 };
 
+function isListenAndRankPhase(phase: RoundData["phase"]) {
+  return phase === "LISTENING" || phase === "RANKING";
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function phaseName(phase: RoundData["phase"]) {
+function phaseLabel(phase: RoundData["phase"]) {
   if (phase === "SUBMISSION") return "Inscrição";
-  if (phase === "LISTENING") return "Escuta";
-  if (phase === "RANKING") return "Avaliação";
+  if (isListenAndRankPhase(phase)) return "Escuta & Avaliação";
   return "Resultado";
 }
 
 function phaseColor(phase: RoundData["phase"]) {
   if (phase === "SUBMISSION") return "var(--accent)";
-  if (phase === "LISTENING") return "#6366f1";
-  if (phase === "RANKING") return "#f59e0b";
+  if (isListenAndRankPhase(phase)) return "#6366f1";
   return "#10b981";
 }
 
@@ -102,7 +116,14 @@ function formatDate(iso: string) {
   });
 }
 
-// Geometric points: #1 = 20 pts, #last = 1 pt, non-linear decay
+function formatReleaseDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const m = months[d.getMonth()];
+  return `${m[0].toUpperCase() + m.slice(1)} ${d.getFullYear()}`;
+}
+
 function pushPoints(pos: number, totalToRank: number): number {
   if (totalToRank <= 0) return 0;
   if (totalToRank === 1) return 20;
@@ -136,112 +157,129 @@ function useTimeRemaining(endIso: string | null): string {
   return remaining;
 }
 
+// ─── Atoms ────────────────────────────────────────────────────────────────────
+
+function CheckIcon({ color = "white", size = 10 }: { color?: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
+function ParticipantAvatar({ p, size = 30 }: { p: ParticipantData; size?: number }) {
+  const label = (p.name ?? p.handle ?? "?")[0].toUpperCase();
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size / 2, flexShrink: 0,
+      background: p.avatarColor,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      color: "white", fontSize: Math.floor(size * 0.4), fontWeight: 700,
+    }}>
+      {label}
+    </div>
+  );
+}
+
+function TrackCover({ imageUrl, size = 40 }: { imageUrl: string | null; size?: number }) {
+  if (imageUrl) {
+    return (
+      <img src={imageUrl} alt="" width={size} height={size}
+        style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+    );
+  }
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: 6, background: "var(--fill-subtle)",
+      display: "grid", placeItems: "center", flexShrink: 0,
+    }}>
+      <Music size={size * 0.4} color="var(--text-muted)" />
+    </div>
+  );
+}
+
+function RankBadge({ pos, small, isDragging }: { pos: number; small?: boolean; isDragging?: boolean }) {
+  const sz = small ? 22 : 26;
+  const r = small ? 5 : 7;
+  const bg = isDragging ? "var(--accent)" : pos <= 3 ? PODIUM_COLORS[pos - 1] : "var(--fill-subtle)";
+  const color = isDragging || pos <= 3 ? "white" : "var(--text-muted)";
+  return (
+    <div style={{
+      width: sz, height: sz, borderRadius: r,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: small ? 10 : 11, fontWeight: 800, background: bg, color, flexShrink: 0,
+    }}>
+      {pos}
+    </div>
+  );
+}
+
 // ─── Stage Progress Bar ───────────────────────────────────────────────────────
 
-function StageProgressBar({ phase }: { phase: RoundData["phase"] }) {
+function StageBar({ phase }: { phase: RoundData["phase"] }) {
   const activeIdx = PHASE_TO_STAGE[phase];
   const items: React.ReactNode[] = [];
 
-  STAGE_LABELS.forEach((label, i) => {
+  STAGES.forEach((label, i) => {
     const done = i < activeIdx;
-    const highlighted = done || i === activeIdx;
+    const cur  = i === activeIdx;
 
     items.push(
-      <div
-        key={"d" + i}
-        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}
-      >
-        <div
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: highlighted ? "var(--accent)" : "var(--divider-strong)",
-          }}
-        />
-        <div
-          style={{
-            fontSize: 8,
-            fontWeight: 600,
-            color: highlighted ? "var(--accent)" : "var(--text-muted)",
-            whiteSpace: "nowrap",
-            letterSpacing: ".02em",
-          }}
-        >
+      <div key={"d" + i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, flexShrink: 0 }}>
+        <div style={{ width: 7, height: 7, borderRadius: 4, background: done || cur ? "var(--accent)" : "var(--text-disabled)" }} />
+        <div style={{ fontSize: 8, fontWeight: 600, whiteSpace: "nowrap", color: done || cur ? "var(--accent)" : "var(--text-muted)" }}>
           {label}
         </div>
       </div>
     );
 
-    if (i < STAGE_LABELS.length - 1) {
+    if (i < STAGES.length - 1) {
       items.push(
-        <div
-          key={"l" + i}
-          style={{
-            flex: 1,
-            height: 1,
-            background: done ? "var(--accent)" : "var(--divider-strong)",
-            alignSelf: "flex-start",
-            marginTop: 3,
-          }}
-        />
+        <div key={"l" + i} style={{ flex: 1, height: 1, background: done ? "var(--accent)" : "var(--text-disabled)", marginBottom: 11 }} />
       );
     }
   });
 
-  return <div style={{ display: "flex", alignItems: "flex-start" }}>{items}</div>;
+  return <div style={{ display: "flex", alignItems: "center" }}>{items}</div>;
 }
 
-// ─── Round Header ─────────────────────────────────────────────────────────────
+// ─── Round Header Card ────────────────────────────────────────────────────────
 
-function RoundHeader({ round }: { round: RoundData }) {
+function RoundHeader({ round, isMobile }: { round: RoundData; isMobile: boolean }) {
   const endIso =
-    round.phase === "SUBMISSION"
-      ? round.submissionEndsAt
-      : round.phase === "LISTENING"
-      ? round.listeningEndsAt
-      : round.phase === "RANKING"
-      ? round.rankingEndsAt
-      : null;
+    round.phase === "SUBMISSION" ? round.submissionEndsAt
+    : isListenAndRankPhase(round.phase) ? round.rankingEndsAt
+    : null;
 
   const timeLeft = useTimeRemaining(endIso);
   const color = phaseColor(round.phase);
 
   return (
-    <div style={{ paddingBottom: 16, borderBottom: "1px solid var(--divider)", marginBottom: 20 }}>
+    <div style={{
+      background: "var(--surface)",
+      borderRadius: 16,
+      border: "1px solid var(--divider)",
+      padding: isMobile ? "14px 16px" : "18px 22px",
+      marginBottom: 24,
+    }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
         <div>
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "var(--text-muted)",
-              letterSpacing: ".07em",
-              textTransform: "uppercase",
-              marginBottom: 2,
-            }}
-          >
-            Rodada #{round.number} · Temporada {round.season}
+          <div style={{
+            fontSize: isMobile ? 22 : 26, fontWeight: 900, color: "var(--text)",
+            letterSpacing: "-.03em", lineHeight: 1,
+          }}>
+            {pushRoundTitle(round.season, round.number)}
           </div>
-          {round.title && (
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginTop: 2 }}>{round.title}</div>
-          )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
-          <span
-            style={{
-              padding: "3px 10px",
-              borderRadius: 100,
-              background: color + "22",
-              color,
-              border: `1px solid ${color}44`,
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: ".04em",
-              textTransform: "uppercase" as const,
-            }}
-          >
-            {phaseName(round.phase)}
+          <span style={{
+            padding: "3px 10px", borderRadius: 100,
+            background: color + "18", color,
+            border: `1px solid ${color}33`,
+            fontSize: 10, fontWeight: 800, letterSpacing: ".04em", textTransform: "uppercase" as const,
+          }}>
+            {phaseLabel(round.phase)}
           </span>
           {timeLeft && (
             <span style={{ fontSize: 10, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
@@ -250,66 +288,51 @@ function RoundHeader({ round }: { round: RoundData }) {
           )}
         </div>
       </div>
-      <StageProgressBar phase={round.phase} />
+      <StageBar phase={round.phase} />
     </div>
   );
 }
 
-// ─── Rank Badge ───────────────────────────────────────────────────────────────
+// ─── Participants Section ─────────────────────────────────────────────────────
 
-function RankBadge({ pos, small, isDragging }: { pos: number; small?: boolean; isDragging?: boolean }) {
-  const sz = small ? 22 : 26;
-  const r = small ? 5 : 7;
-  const bg = isDragging ? "var(--accent)" : pos <= 3 ? PODIUM_COLORS[pos - 1] : "var(--fill-inset)";
-  const color = isDragging || pos <= 3 ? "white" : "var(--text-muted)";
+function ParticipantsSection({ round }: { round: RoundData }) {
+  const submitted = round.participants.filter((p) => true); // all participants have submitted
+  const total = round.submissionCount;
+
   return (
-    <div
-      style={{
-        width: sz,
-        height: sz,
-        borderRadius: r,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: small ? 10 : 11,
-        fontWeight: 800,
-        background: bg,
-        color,
-        flexShrink: 0,
-      }}
-    >
-      {pos}
-    </div>
-  );
-}
-
-// ─── Track Cover ─────────────────────────────────────────────────────────────
-
-function TrackCover({ imageUrl, size = 48 }: { imageUrl: string | null; size?: number }) {
-  if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        alt=""
-        width={size}
-        height={size}
-        style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
-      />
-    );
-  }
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 6,
-        background: "var(--fill-inset)",
-        display: "grid",
-        placeItems: "center",
-        flexShrink: 0,
-      }}
-    >
-      <Music size={size * 0.4} color="var(--text-muted)" />
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)" }}>
+          Participantes
+        </span>
+        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+          {submitted.length}/{total > submitted.length ? total : submitted.length} indicaram
+        </span>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+        {submitted.map((p) => (
+          <div
+            key={p.userId}
+            style={{
+              display: "flex", alignItems: "center", gap: 4,
+              padding: "4px 9px 4px 5px", borderRadius: 100,
+              background: "color-mix(in srgb, var(--accent) 10%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--accent) 22%, transparent)",
+            }}
+          >
+            <div style={{
+              width: 15, height: 15, borderRadius: 7.5,
+              background: "var(--accent)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <CheckIcon size={7} />
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>
+              {p.isMe ? "Você" : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -326,20 +349,17 @@ function SubmissionView({
   const { data: session } = useSession();
   const authed = !!session?.user?.id;
 
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SpotifyTrack[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [query, setQuery]       = useState("");
+  const [results, setResults]   = useState<SpotifyTrack[]>([]);
+  const [loading, setLoading]   = useState(false);
   const [selected, setSelected] = useState<SpotifyTrack | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState(!round.mySubmission);
+  const [error, setError]       = useState<string | null>(null);
+  const [editing, setEditing]   = useState(!round.mySubmission);
 
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
-      setResults([]);
-      return;
-    }
+    if (q.length < 2) { setResults([]); return; }
     const ac = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -354,10 +374,7 @@ function SubmissionView({
         if (!ac.signal.aborted) setLoading(false);
       }
     }, 280);
-    return () => {
-      ac.abort();
-      clearTimeout(timer);
-    };
+    return () => { ac.abort(); clearTimeout(timer); };
   }, [query]);
 
   async function handleSubmit() {
@@ -370,12 +387,16 @@ function SubmissionView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ spotifyTrackId: selected.spotifyId }),
       });
-      const data = (await res.json()) as { error?: string; id?: string; song?: SongData; spotifyTrackId?: string };
-      if (!res.ok) {
-        setError(data.error ?? "Erro ao inscrever música");
-        return;
-      }
-      onSubmitted({ id: data.id!, spotifyTrackId: data.spotifyTrackId!, song: data.song! });
+      const data = (await res.json()) as {
+        error?: string; id?: string; song?: SongData;
+        spotifyTrackId?: string; albumReleaseDate?: string | null;
+      };
+      if (!res.ok) { setError(data.error ?? "Erro ao inscrever música"); return; }
+      onSubmitted({
+        id: data.id!,
+        spotifyTrackId: data.spotifyTrackId!,
+        song: { ...data.song!, albumReleaseDate: data.albumReleaseDate },
+      });
       setEditing(false);
       setSelected(null);
       setQuery("");
@@ -390,18 +411,10 @@ function SubmissionView({
     return (
       <div style={{ textAlign: "center", padding: "40px 20px" }}>
         <p style={{ color: "var(--text-muted)", marginBottom: 16 }}>Faça login para participar do Push</p>
-        <Link
-          href="/login"
-          style={{
-            padding: "10px 24px",
-            borderRadius: 100,
-            background: "var(--accent)",
-            color: "white",
-            fontWeight: 700,
-            textDecoration: "none",
-            fontSize: 14,
-          }}
-        >
+        <Link href="/login" style={{
+          padding: "10px 24px", borderRadius: 100, background: "var(--accent)",
+          color: "white", fontWeight: 700, textDecoration: "none", fontSize: 14,
+        }}>
           Entrar
         </Link>
       </div>
@@ -409,91 +422,40 @@ function SubmissionView({
   }
 
   const mySong = round.mySubmission;
+  const relDate = formatReleaseDate(mySong?.song.albumReleaseDate);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Confirmed song card */}
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* Confirmed song */}
       {mySong && !editing && (
         <div>
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "var(--text-muted)",
-              letterSpacing: ".07em",
-              textTransform: "uppercase" as const,
-              marginBottom: 8,
-            }}
-          >
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 8 }}>
             Sua indicação
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 11,
-              padding: 13,
-              borderRadius: 14,
-              background: "var(--surface)",
-              border: "1.5px solid var(--accent)33",
-            }}
-          >
+          <div style={{
+            background: "var(--surface)",
+            border: "1.5px solid color-mix(in srgb, var(--accent) 28%, transparent)",
+            borderRadius: 14, padding: 13,
+            display: "flex", alignItems: "center", gap: 11,
+          }}>
             <TrackCover imageUrl={mySong.song.coverUrl} size={46} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "var(--text)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {mySong.song.title}
               </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  marginTop: 2,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {mySong.song.artist}
               </div>
-              <div
-                style={{
-                  fontSize: 10,
-                  color: "#1DB954",
-                  fontWeight: 600,
-                  marginTop: 4,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                <Check size={9} /> Indicação confirmada
+              <div style={{ fontSize: 10, color: "#1DB954", fontWeight: 600, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                <CheckIcon color="#1DB954" size={8} />
+                {relDate ? `Lançada em ${relDate} · Válida` : "Indicação confirmada"}
               </div>
             </div>
             <button
-              onClick={() => {
-                setEditing(true);
-                setQuery("");
-                setSelected(null);
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--text-muted)",
-                cursor: "pointer",
-                fontSize: 11,
-                fontFamily: "inherit",
-                padding: "4px 8px",
-                flexShrink: 0,
-              }}
+              type="button"
+              onClick={() => { setEditing(true); setQuery(""); setSelected(null); }}
+              style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "4px 8px", flexShrink: 0 }}
             >
               Trocar
             </button>
@@ -504,67 +466,35 @@ function SubmissionView({
       {/* Search area */}
       {(!mySong || editing) && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "var(--text-muted)",
-              letterSpacing: ".07em",
-              textTransform: "uppercase" as const,
-            }}
-          >
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const }}>
             Indique sua música
           </div>
 
-          <div
-            style={{
-              padding: "9px 13px",
-              borderRadius: 11,
-              background: "var(--accent)0C",
-              border: "1px solid var(--accent)25",
-              fontSize: 12,
-              color: "var(--text-muted)",
-              lineHeight: 1.5,
-            }}
-          >
+          <div style={{
+            padding: "9px 13px", borderRadius: 11,
+            background: "color-mix(in srgb, var(--accent) 6%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--accent) 18%, transparent)",
+            fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5,
+          }}>
             <span style={{ color: "var(--accent)", fontWeight: 700 }}>Regras: </span>
-            Lançamento máx. 12 meses (data do álbum no Spotify). Música não pode ter sido indicada em nenhuma outra
-            rodada.
+            Lançamento máx. 12 meses (data do álbum no Spotify). Música não pode ter sido indicada em nenhuma outra rodada.
           </div>
 
           <div style={{ position: "relative" }}>
-            <svg
-              width={14}
-              height={14}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--text-muted)"
-              strokeWidth={2.2}
-              strokeLinecap="round"
-              style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-            >
-              <circle cx={11} cy={11} r={7} />
-              <path d="m21 21-4.3-4.3" />
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={2.2} strokeLinecap="round"
+              style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+              <circle cx={11} cy={11} r={7} /><path d="m21 21-4.3-4.3" />
             </svg>
             <input
               type="text"
               value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSelected(null);
-              }}
+              onChange={(e) => { setQuery(e.target.value); setSelected(null); }}
               placeholder="Buscar no Spotify…"
               style={{
-                width: "100%",
-                padding: "11px 14px 11px 38px",
-                borderRadius: 12,
-                border: "1px solid var(--divider-strong)",
-                background: "var(--surface)",
-                color: "var(--text)",
-                fontSize: 14,
-                outline: "none",
-                boxSizing: "border-box",
-                fontFamily: "inherit",
+                width: "100%", padding: "11px 14px 11px 38px", borderRadius: 12,
+                border: "1px solid var(--divider)", background: "var(--surface)",
+                color: "var(--text)", fontSize: 14, outline: "none",
+                boxSizing: "border-box", fontFamily: "inherit",
               }}
             />
           </div>
@@ -572,77 +502,26 @@ function SubmissionView({
           {loading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
 
           {results.length > 0 && !selected && (
-            <div
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--divider)",
-                borderRadius: 13,
-                overflow: "hidden",
-              }}
-            >
+            <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 13, overflow: "hidden" }}>
               {results.map((track, i) => (
                 <button
                   key={track.spotifyId}
                   type="button"
-                  onClick={() => {
-                    setSelected(track);
-                    setQuery(`${track.title} — ${track.artist}`);
-                    setResults([]);
-                  }}
+                  onClick={() => { setSelected(track); setQuery(`${track.title} — ${track.artist}`); setResults([]); }}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 11,
+                    display: "flex", alignItems: "center", gap: 11,
                     padding: "11px 14px",
-                    borderTop: "none",
-                    borderLeft: "none",
-                    borderRight: "none",
+                    borderTop: "none", borderLeft: "none", borderRight: "none",
                     borderBottom: i < results.length - 1 ? "1px solid var(--divider)" : "none",
-                    cursor: "pointer",
-                    background: "none",
-                    width: "100%",
-                    textAlign: "left" as const,
+                    cursor: "pointer", background: "none", width: "100%", textAlign: "left" as const,
                   }}
                 >
                   <TrackCover imageUrl={track.imageUrl} size={42} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "var(--text)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {track.title}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "var(--text-muted)",
-                        marginTop: 2,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {track.artist}
-                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.title}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.artist}</div>
                   </div>
-                  <span
-                    style={{
-                      padding: "2px 7px",
-                      borderRadius: 100,
-                      background: "#1DB95418",
-                      color: "#1DB954",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
+                  <span style={{ padding: "2px 7px", borderRadius: 100, background: "rgba(29,185,84,.12)", color: "#1DB954", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
                     Spotify
                   </span>
                 </button>
@@ -651,109 +530,50 @@ function SubmissionView({
           )}
 
           {selected && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 11,
-                padding: 12,
-                borderRadius: 12,
-                background: "var(--accent)0C",
-                border: "1.5px solid var(--accent)33",
-              }}
-            >
+            <div style={{
+              display: "flex", alignItems: "center", gap: 11, padding: 12, borderRadius: 12,
+              background: "color-mix(in srgb, var(--accent) 6%, transparent)",
+              border: "1.5px solid color-mix(in srgb, var(--accent) 28%, transparent)",
+            }}>
               <TrackCover imageUrl={selected.imageUrl} size={42} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "var(--text)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {selected.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    marginTop: 2,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {selected.artist}
-                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selected.title}</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selected.artist}</div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelected(null);
-                  setQuery("");
-                }}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--text-muted)",
-                  padding: 4,
-                  flexShrink: 0,
-                }}
-              >
+              <button type="button" onClick={() => { setSelected(null); setQuery(""); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, flexShrink: 0 }}>
                 ✕
               </button>
             </div>
           )}
+
+          {error && (
+            <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={!selected || submitting}
+            onClick={handleSubmit}
+            style={{
+              padding: "14px", borderRadius: 14, border: "none",
+              background: selected && !submitting ? "var(--accent)" : "var(--fill-subtle)",
+              color: selected && !submitting ? "white" : "var(--text-muted)",
+              fontSize: 15, fontWeight: 700,
+              cursor: selected && !submitting ? "pointer" : "not-allowed",
+              fontFamily: "inherit", transition: "background 160ms",
+            }}
+          >
+            {submitting ? "Inscrevendo…" : "Confirmar indicação"}
+          </button>
         </div>
       )}
 
-      {/* Submission count */}
-      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-        <strong style={{ color: "var(--text)" }}>{round.submissionCount}</strong> música
-        {round.submissionCount !== 1 ? "s" : ""} inscrita{round.submissionCount !== 1 ? "s" : ""} até agora. As
-        músicas ficam ocultas até a fase de escuta.
-      </div>
-
-      {error && (
-        <div
-          style={{
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            color: "#dc2626",
-            fontSize: 13,
-            fontWeight: 500,
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {(!mySong || editing) && (
-        <button
-          type="button"
-          disabled={!selected || submitting}
-          onClick={handleSubmit}
-          style={{
-            padding: "14px",
-            borderRadius: 14,
-            border: "none",
-            background: selected && !submitting ? "var(--accent)" : "var(--divider-strong)",
-            color: selected && !submitting ? "white" : "var(--text-muted)",
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: selected && !submitting ? "pointer" : "not-allowed",
-            fontFamily: "inherit",
-            transition: "background 160ms",
-          }}
-        >
-          {submitting ? "Inscrevendo…" : "Confirmar indicação"}
-        </button>
+      {/* Participants */}
+      {round.participants.length > 0 && (
+        <ParticipantsSection round={round} />
       )}
     </div>
   );
@@ -763,139 +583,116 @@ function SubmissionView({
 
 function ListeningView({ round }: { round: RoundData }) {
   const submissions = round.submissions ?? [];
-  const playlistUrl = round.spotifyPlaylistId
+  const [platform, setPlatform] = useState<"spotify" | "youtube">("spotify");
+
+  const spotifyUrl = round.spotifyPlaylistId
     ? `https://open.spotify.com/playlist/${round.spotifyPlaylistId}`
     : null;
 
+  const youtubeUrl = round.youtubePlaylistId
+    ? `https://www.youtube.com/playlist?list=${round.youtubePlaylistId}`
+    : null;
+
+  const tabStyle = (active: boolean) => ({
+    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+    padding: "10px 14px", borderRadius: 10, border: "none",
+    fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+    background: active ? "var(--surface)" : "transparent",
+    color: active ? "var(--text)" : "var(--text-muted)",
+    boxShadow: active ? "0 1px 3px rgba(0,0,0,.1)" : "none",
+    transition: "all 150ms",
+  });
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {playlistUrl && (
-        <div
-          style={{
-            background: "#121212",
-            borderRadius: 16,
-            padding: 16,
-            display: "flex",
-            flexDirection: "column",
-            gap: 13,
-          }}
-        >
+      {/* Platform picker */}
+      <div style={{ background: "var(--fill-subtle)", borderRadius: 13, padding: 3, display: "flex", gap: 3 }}>
+        <button type="button" onClick={() => setPlatform("spotify")} style={tabStyle(platform === "spotify") as React.CSSProperties}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill={platform === "spotify" ? "#1DB954" : "var(--text-muted)"}>
+            <path d={SPOTIFY_PATH} />
+          </svg>
+          Spotify
+        </button>
+        <button type="button" onClick={() => setPlatform("youtube")} style={tabStyle(platform === "youtube") as React.CSSProperties}>
+          <svg width={16} height={12} viewBox="0 0 24 18" fill={platform === "youtube" ? "#FF0000" : "var(--text-muted)"}>
+            <path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.138C19.505 0 12 0 12 0S4.495 0 2.627.07a3.02 3.02 0 0 0-2.122 2.138C0 4.07 0 8.123 0 8.123s0 4.052.505 5.917a3.02 3.02 0 0 0 2.122 2.138C4.495 16.246 12 16.246 12 16.246s7.505 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.138C24 12.175 24 8.123 24 8.123s0-4.052-.505-5.918zM9.546 11.56V4.686l6.273 3.437-6.273 3.437z" />
+          </svg>
+          YouTube
+        </button>
+      </div>
+
+      {/* Spotify card */}
+      {platform === "spotify" && spotifyUrl && (
+        <div style={{ background: "#121212", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 13 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 8,
-                background: "#1DB954",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <svg width={22} height={22} viewBox="0 0 24 24" fill="white">
-                <path d={SPOTIFY_PATH} />
-              </svg>
+            <div style={{ width: 38, height: 38, borderRadius: 8, background: "#1DB954", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="white"><path d={SPOTIFY_PATH} /></svg>
             </div>
             <div>
-              <div style={{ color: "white", fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>
-                Push — Rodada #{round.number}
-              </div>
-              <div style={{ color: "#B3B3B3", fontSize: 11, marginTop: 2 }}>
-                {submissions.length} músicas
-              </div>
+              <div style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{pushRoundTitle(round.season, round.number)}</div>
+              <div style={{ color: "#B3B3B3", fontSize: 11, marginTop: 2 }}>{submissions.length} músicas</div>
             </div>
           </div>
-          <a
-            href={playlistUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 7,
-              padding: 11,
-              borderRadius: 100,
-              background: "#1DB954",
-              color: "#000",
-              fontSize: 13,
-              fontWeight: 700,
-              textDecoration: "none",
-            }}
-          >
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="#000">
-              <path d={SPOTIFY_PATH} />
-            </svg>
+          <a href={spotifyUrl} target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: 11, borderRadius: 100, background: "#1DB954", color: "#000", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="#000"><path d={SPOTIFY_PATH} /></svg>
             Abrir no Spotify
           </a>
         </div>
       )}
 
+      {platform === "spotify" && !spotifyUrl && (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 16, padding: 20, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+          Playlist ainda não disponível.
+        </div>
+      )}
+
+      {/* YouTube card */}
+      {platform === "youtube" && youtubeUrl && (
+        <div style={{ background: "#0F0F0F", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 13 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 8, background: "#FF0000", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width={20} height={16} viewBox="0 0 24 18" fill="white">
+                <path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.138C19.505 0 12 0 12 0S4.495 0 2.627.07a3.02 3.02 0 0 0-2.122 2.138C0 4.07 0 8.123 0 8.123s0 4.052.505 5.917a3.02 3.02 0 0 0 2.122 2.138C4.495 16.246 12 16.246 12 16.246s7.505 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.138C24 12.175 24 8.123 24 8.123s0-4.052-.505-5.918zM9.546 11.56V4.686l6.273 3.437-6.273 3.437z" />
+              </svg>
+            </div>
+            <div>
+              <div style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{pushRoundTitle(round.season, round.number)}</div>
+              <div style={{ color: "#AAAAAA", fontSize: 11, marginTop: 2 }}>@chartFM · {submissions.length} vídeos</div>
+            </div>
+          </div>
+          <a href={youtubeUrl} target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: 11, borderRadius: 100, background: "#FF0000", color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+            <svg width={15} height={12} viewBox="0 0 24 18" fill="white">
+              <path d="M23.495 2.205a3.02 3.02 0 0 0-2.122-2.138C19.505 0 12 0 12 0S4.495 0 2.627.07a3.02 3.02 0 0 0-2.122 2.138C0 4.07 0 8.123 0 8.123s0 4.052.505 5.917a3.02 3.02 0 0 0 2.122 2.138C4.495 16.246 12 16.246 12 16.246s7.505 0 9.373-.07a3.02 3.02 0 0 0 2.122-2.138C24 12.175 24 8.123 24 8.123s0-4.052-.505-5.918zM9.546 11.56V4.686l6.273 3.437-6.273 3.437z" />
+            </svg>
+            Abrir no YouTube
+          </a>
+        </div>
+      )}
+
+      {platform === "youtube" && !youtubeUrl && (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 16, padding: 20, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
+          Playlist ainda não disponível no @chartFM.
+        </div>
+      )}
+
+      {/* Track list */}
       {submissions.length > 0 && (
         <div>
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              color: "var(--text-muted)",
-              letterSpacing: ".07em",
-              textTransform: "uppercase" as const,
-              marginBottom: 12,
-            }}
-          >
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 12 }}>
             Playlist da semana
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             {submissions.map((s, i) => (
-              <div
-                key={s.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "9px 0",
-                  borderBottom: i < submissions.length - 1 ? "1px solid var(--divider)" : "none",
-                }}
-              >
-                <div
-                  style={{
-                    width: 20,
-                    textAlign: "right" as const,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "var(--divider-strong)",
-                    flexShrink: 0,
-                  }}
-                >
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < submissions.length - 1 ? "1px solid var(--divider)" : "none" }}>
+                <div style={{ width: 20, textAlign: "right" as const, fontSize: 12, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>
                   {i + 1}
                 </div>
                 <TrackCover imageUrl={s.song.coverUrl} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: "var(--text)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {s.song.title}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      marginTop: 1,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {s.song.artist}
-                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.song.title}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.song.artist}</div>
                 </div>
                 {s.userHandle && (
                   <div style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>@{s.userHandle}</div>
@@ -913,23 +710,9 @@ function ListeningView({ round }: { round: RoundData }) {
 
       {submissions.length === 0 && (
         <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-          Ouça as músicas inscritas antes de avaliá-las.
+          Ouça as músicas inscritas e avalie-as abaixo.
         </div>
       )}
-
-      <div
-        style={{
-          padding: "10px 13px",
-          borderRadius: 12,
-          background: "var(--fill-inset)",
-          border: "1px solid var(--divider)",
-          fontSize: 12,
-          color: "var(--text-muted)",
-        }}
-      >
-        <span style={{ fontWeight: 600 }}>Avaliação abre em: </span>
-        <span style={{ color: "var(--text)", fontWeight: 700 }}>{formatDate(round.listeningEndsAt)}</span>
-      </div>
     </div>
   );
 }
@@ -952,18 +735,16 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
     return toRank;
   };
 
-  const [ranking, setRanking] = useState<SubmissionData[]>(initialOrder);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const dragItem = useRef<number | null>(null);
+  const [ranking, setRanking]   = useState<SubmissionData[]>(initialOrder);
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const dragItem                = useRef<number | null>(null);
 
   const hasVoted = (round.myVotes ?? []).length > 0;
-  const total = toRank.length;
+  const total    = toRank.length;
 
-  function handleDragStart(idx: number) {
-    dragItem.current = idx;
-  }
+  function handleDragStart(idx: number) { dragItem.current = idx; }
   function handleDragEnter(idx: number) {
     if (dragItem.current === null || dragItem.current === idx) return;
     setRanking((prev) => {
@@ -974,22 +755,17 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
       return next;
     });
   }
-  function handleDragEnd() {
-    dragItem.current = null;
-    setSaved(false);
-  }
+  function handleDragEnd() { dragItem.current = null; setSaved(false); }
 
-  const touchDragIdx = useRef<number | null>(null);
-  const touchStartY = useRef<number>(0);
-  const itemHeight = useRef<number>(76);
+  const touchDragIdx  = useRef<number | null>(null);
+  const touchStartY   = useRef<number>(0);
+  const itemHeight    = useRef<number>(76);
 
   function handleTouchStart(e: React.TouchEvent, idx: number) {
     touchDragIdx.current = idx;
-    touchStartY.current = e.touches[0].clientY;
-    const el = e.currentTarget as HTMLElement;
-    itemHeight.current = el.getBoundingClientRect().height + 8;
+    touchStartY.current  = e.touches[0].clientY;
+    itemHeight.current   = (e.currentTarget as HTMLElement).getBoundingClientRect().height + 8;
   }
-
   function handleTouchMove(e: React.TouchEvent) {
     if (touchDragIdx.current === null) return;
     e.preventDefault();
@@ -1006,13 +782,10 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
       return next;
     });
     touchDragIdx.current = to;
-    touchStartY.current = e.touches[0].clientY;
+    touchStartY.current  = e.touches[0].clientY;
     setSaved(false);
   }
-
-  function handleTouchEnd() {
-    touchDragIdx.current = null;
-  }
+  function handleTouchEnd() { touchDragIdx.current = null; }
 
   async function handleSave() {
     setSaving(true);
@@ -1025,10 +798,7 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
         body: JSON.stringify({ votes }),
       });
       const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setError(data.error ?? "Erro ao salvar");
-        return;
-      }
+      if (!res.ok) { setError(data.error ?? "Erro ao salvar"); return; }
       setSaved(true);
       onSaved();
     } catch {
@@ -1038,108 +808,44 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
     }
   }
 
-  if (!authed) {
-    return <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Faça login para avaliar as músicas.</div>;
-  }
-
-  if (!mySubmission) {
-    return (
-      <div
-        style={{
-          padding: "20px",
-          borderRadius: 12,
-          background: "var(--fill-inset)",
-          border: "1px solid var(--divider)",
-          color: "var(--text-muted)",
-          fontSize: 14,
-        }}
-      >
-        Você não inscreveu uma música nesta rodada. Apenas participantes com inscrição podem avaliar.
-      </div>
-    );
-  }
-
-  if (toRank.length === 0) {
-    return <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Não há músicas para avaliar.</div>;
-  }
+  if (!authed) return <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Faça login para avaliar as músicas.</div>;
+  if (!mySubmission) return (
+    <div style={{ padding: 20, borderRadius: 12, background: "var(--fill-subtle)", border: "1px solid var(--divider)", color: "var(--text-muted)", fontSize: 14 }}>
+      Você não inscreveu uma música nesta rodada. Apenas participantes com inscrição podem avaliar.
+    </div>
+  );
+  if (toRank.length === 0) return <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Não há músicas para avaliar.</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {/* My song (non-rankable, shown for reference) */}
+      {/* My song */}
       <div style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--text-muted)",
-            letterSpacing: ".07em",
-            textTransform: "uppercase" as const,
-            marginBottom: 8,
-          }}
-        >
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 8 }}>
           Sua música
         </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "9px 12px",
-            borderRadius: 13,
-            background: "var(--accent)0C",
-            border: "1px solid var(--accent)28",
-          }}
-        >
-          <div
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 7,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "var(--accent)22",
-              flexShrink: 0,
-            }}
-          >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 13, background: "color-mix(in srgb, var(--accent) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 18%, transparent)" }}>
+          <div style={{ width: 26, height: 26, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--accent) 18%, transparent)", flexShrink: 0 }}>
             <Music size={12} color="var(--accent)" />
           </div>
           <TrackCover imageUrl={mySubmission.song.coverUrl} size={38} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "var(--accent)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {mySubmission.song.title}
-            </div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mySubmission.song.title}</div>
             <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{mySubmission.song.artist}</div>
           </div>
           <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>Não avaliada</span>
         </div>
       </div>
 
-      {/* Info strip */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={2} strokeLinecap="round">
-          <circle cx={12} cy={12} r={10} />
-          <line x1={12} y1={8} x2={12} y2={12} />
-          <line x1={12} y1={16} x2={12.01} y2={16} />
+          <circle cx={12} cy={12} r={10} /><line x1={12} y1={8} x2={12} y2={12} /><line x1={12} y1={16} x2={12.01} y2={16} />
         </svg>
         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
           Arraste para ordenar · #1 = 20 pts · #{total} = 1 pt
-          {hasVoted && (
-            <span style={{ color: "#10b981", fontWeight: 600 }}> · ✓ Avaliação salva</span>
-          )}
+          {hasVoted && <span style={{ color: "#10b981", fontWeight: 600 }}> · ✓ Avaliação salva</span>}
         </span>
       </div>
 
-      {/* Ranking list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
         {ranking.map((sub, idx) => {
           const pts = pushPoints(idx + 1, total);
@@ -1154,75 +860,26 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "9px 12px",
-                borderRadius: 13,
-                background: "var(--surface)",
-                border: "1.5px solid var(--divider)",
-                cursor: "grab",
-                userSelect: "none",
-                boxShadow: "0 1px 2px rgba(0,0,0,.04)",
+                display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+                borderRadius: 13, background: "var(--surface)", border: "1.5px solid var(--divider)",
+                cursor: "grab", userSelect: "none", boxShadow: "0 1px 2px rgba(0,0,0,.04)",
               }}
             >
               <RankBadge pos={idx + 1} />
               <TrackCover imageUrl={sub.song.coverUrl} size={38} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "var(--text)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {sub.song.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "var(--text-muted)",
-                    marginTop: 2,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {sub.song.artist}
-                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.song.title}</div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.song.artist}</div>
               </div>
               <div style={{ textAlign: "center" as const, flexShrink: 0, minWidth: 34 }}>
-                <div
-                  style={{
-                    fontSize: 17,
-                    fontWeight: 900,
-                    color: "var(--text)",
-                    lineHeight: 1,
-                    letterSpacing: "-.02em",
-                  }}
-                >
-                  {pts}
-                </div>
-                <div
-                  style={{
-                    fontSize: 8,
-                    fontWeight: 600,
-                    color: "var(--text-muted)",
-                    letterSpacing: ".05em",
-                    marginTop: 1,
-                  }}
-                >
-                  PTS
-                </div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)", lineHeight: 1, letterSpacing: "-.02em" }}>{pts}</div>
+                <div style={{ fontSize: 8, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 1 }}>PTS</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2.5, paddingLeft: 2, flexShrink: 0 }}>
                 {[0, 1, 2].map((row) => (
                   <div key={row} style={{ display: "flex", gap: 2.5 }}>
-                    <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--divider-strong)" }} />
-                    <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--divider-strong)" }} />
+                    <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--text-disabled)" }} />
+                    <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--text-disabled)" }} />
                   </div>
                 ))}
               </div>
@@ -1232,17 +889,7 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
       </div>
 
       {error && (
-        <div
-          style={{
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            color: "#dc2626",
-            fontSize: 13,
-            marginBottom: 12,
-          }}
-        >
+        <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: 13, marginBottom: 12 }}>
           {error}
         </div>
       )}
@@ -1252,64 +899,48 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
         onClick={saved ? undefined : handleSave}
         disabled={saving}
         style={{
-          padding: "14px",
-          borderRadius: 14,
-          border: "none",
+          padding: "14px", borderRadius: 14, border: "none",
           background: saved ? "#10b981" : "var(--accent)",
-          color: "white",
-          fontSize: 15,
-          fontWeight: 700,
+          color: "white", fontSize: 15, fontWeight: 700,
           cursor: saving || saved ? "default" : "pointer",
-          fontFamily: "inherit",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          transition: "background 200ms",
-          marginBottom: 8,
+          fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          transition: "background 200ms", marginBottom: 8,
         }}
       >
         {saved ? (
           <>
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                background: "rgba(255,255,255,0.25)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Check size={10} color="white" />
+            <div style={{ width: 20, height: 20, borderRadius: 10, background: "rgba(255,255,255,.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <CheckIcon size={10} />
             </div>
             Ranking enviado com sucesso!
           </>
-        ) : saving ? (
-          "Salvando…"
-        ) : (
-          "Confirmar meu ranking"
-        )}
+        ) : saving ? "Salvando…" : "Confirmar meu ranking"}
       </button>
 
-      <div
-        style={{
-          padding: "10px 12px",
-          borderRadius: 10,
-          background: "var(--fill-inset)",
-          fontSize: 12,
-          color: "var(--text-muted)",
-        }}
-      >
-        Avaliação até:{" "}
-        <strong style={{ color: "var(--text)" }}>{formatDate(round.rankingEndsAt)}</strong>
+      <div style={{ padding: "10px 12px", borderRadius: 10, background: "var(--fill-subtle)", fontSize: 12, color: "var(--text-muted)" }}>
+        Escuta & avaliação até: <strong style={{ color: "var(--text)" }}>{formatDate(round.rankingEndsAt)}</strong>
       </div>
     </div>
   );
 }
 
-// ─── Rankings Tab ─────────────────────────────────────────────────────────────
+// ─── Listen & Rank View (fase 2: escuta + avaliação juntas) ───────────────────
+
+function ListenAndRankView({ round, onSaved }: { round: RoundData; onSaved: () => void }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <ListeningView round={round} />
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 14 }}>
+          Avaliação
+        </div>
+        <RankingView round={round} onSaved={onSaved} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Result View ──────────────────────────────────────────────────────────────
 
 function RankingsTab({ season }: { season?: number }) {
   const [data, setData] = useState<{ rank: number; handle: string; name: string; points: number; wins: number }[]>([]);
@@ -1319,43 +950,26 @@ function RankingsTab({ season }: { season?: number }) {
     const url = season ? `/api/push/rankings?season=${season}` : "/api/push/rankings";
     fetch(url)
       .then((r) => r.json())
-      .then((d: { ranking?: typeof data }) => {
-        setData(d.ranking ?? []);
-      })
+      .then((d: { ranking?: typeof data }) => { setData(d.ranking ?? []); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [season]);
 
   if (loading) return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Carregando ranking…</div>;
-  if (data.length === 0)
-    return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Nenhuma rodada concluída ainda.</div>;
+  if (data.length === 0) return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Nenhuma rodada concluída ainda.</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
       {data.map((entry) => (
-        <Link
-          key={entry.handle}
-          href={`/profile/${entry.handle}`}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "9px 12px",
-            borderRadius: 12,
-            background: "var(--surface)",
-            border: "1px solid var(--divider)",
-            textDecoration: "none",
-          }}
-        >
+        <Link key={entry.handle} href={`/profile/${entry.handle}`}
+          style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--divider)", textDecoration: "none" }}>
           <RankBadge pos={entry.rank} small />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{entry.name}</div>
             <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>@{entry.handle}</div>
           </div>
           <div style={{ textAlign: "right" as const }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", letterSpacing: "-.02em" }}>
-              {entry.points}
-            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", letterSpacing: "-.02em" }}>{entry.points}</div>
             <div style={{ fontSize: 9, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".04em" }}>PTS</div>
           </div>
         </Link>
@@ -1364,27 +978,15 @@ function RankingsTab({ season }: { season?: number }) {
   );
 }
 
-// ─── Result View ──────────────────────────────────────────────────────────────
-
 function ResultView({ round }: { round: RoundData }) {
   const [resultTab, setResultTab] = useState<"round" | "season" | "geral">("round");
-  const results = round.results ?? [];
+  const results  = round.results ?? [];
   const myResult = results.find((r) => r.submissionId === round.mySubmission?.id) ?? null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {/* Result header */}
       <div style={{ paddingBottom: 14, borderBottom: "1px solid var(--divider)", marginBottom: 18 }}>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--text-muted)",
-            letterSpacing: ".07em",
-            textTransform: "uppercase" as const,
-            marginBottom: 10,
-          }}
-        >
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 10 }}>
           Resultado · Rodada #{round.number}
         </div>
 
@@ -1392,90 +994,28 @@ function ResultView({ round }: { round: RoundData }) {
           <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 14 }}>
             <TrackCover imageUrl={round.mySubmission.song.coverUrl} size={46} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "var(--text)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {round.mySubmission.song.title}
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  marginTop: 1,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {round.mySubmission.song.artist}
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{round.mySubmission.song.title}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{round.mySubmission.song.artist}</div>
             </div>
             <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  color: "var(--text-muted)",
-                  letterSpacing: ".05em",
-                  textTransform: "uppercase" as const,
-                  marginBottom: 3,
-                }}
-              >
-                Posição
-              </div>
-              <div
-                style={{
-                  fontSize: 30,
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  letterSpacing: "-.03em",
-                  color: myResult.rank <= 3 ? PODIUM_COLORS[myResult.rank - 1] : "var(--text)",
-                }}
-              >
+              <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: ".05em", textTransform: "uppercase" as const, marginBottom: 3 }}>Posição</div>
+              <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, letterSpacing: "-.03em", color: myResult.rank <= 3 ? PODIUM_COLORS[myResult.rank - 1] : "var(--text)" }}>
                 #{myResult.rank}
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-                +{myResult.totalPoints} pts
-              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>+{myResult.totalPoints} pts</div>
             </div>
           </div>
         )}
 
-        {/* Tab switcher */}
-        <div
-          style={{
-            display: "flex",
-            background: "var(--fill-inset)",
-            borderRadius: 10,
-            padding: 3,
-          }}
-        >
-          {(
-            [
-              ["round", "Rodada"],
-              ["season", "Temporada"],
-              ["geral", "Geral"],
-            ] as const
-          ).map(([id, label]) => (
+        <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 10, padding: 3 }}>
+          {([ ["round", "Rodada"], ["season", "Temporada"], ["geral", "Geral"] ] as const).map(([id, label]) => (
             <button
               key={id}
               type="button"
               onClick={() => setResultTab(id)}
               style={{
-                flex: 1,
-                padding: "7px 4px",
-                borderRadius: 8,
-                border: "none",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
+                flex: 1, padding: "7px 4px", borderRadius: 8, border: "none",
+                fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
                 background: resultTab === id ? "var(--surface)" : "transparent",
                 color: resultTab === id ? "var(--text)" : "var(--text-muted)",
                 boxShadow: resultTab === id ? "0 1px 3px rgba(0,0,0,.08)" : "none",
@@ -1493,49 +1033,21 @@ function ResultView({ round }: { round: RoundData }) {
           {results.map((r) => {
             const isMe = r.submissionId === round.mySubmission?.id;
             return (
-              <div
-                key={r.submissionId}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "9px 12px",
-                  background: isMe ? "var(--accent)0E" : "var(--surface)",
-                  border: `1px solid ${isMe ? "var(--accent)28" : "var(--divider)"}`,
-                  borderRadius: 12,
-                }}
-              >
+              <div key={r.submissionId} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+                background: isMe ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--surface)",
+                border: `1px solid ${isMe ? "color-mix(in srgb, var(--accent) 20%, transparent)" : "var(--divider)"}`,
+                borderRadius: 12,
+              }}>
                 <RankBadge pos={r.rank} small />
                 <TrackCover imageUrl={r.song.coverUrl} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: "var(--text)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {r.song.title}
-                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.song.title}</div>
                   <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>@{r.userHandle}</div>
                 </div>
                 <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 800,
-                      color: isMe ? "var(--accent)" : "var(--text)",
-                      letterSpacing: "-.02em",
-                    }}
-                  >
-                    {r.totalPoints}
-                  </div>
-                  <div style={{ fontSize: 9, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".04em" }}>
-                    PTS
-                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: isMe ? "var(--accent)" : "var(--text)", letterSpacing: "-.02em" }}>{r.totalPoints}</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".04em" }}>PTS</div>
                 </div>
               </div>
             );
@@ -1549,135 +1061,104 @@ function ResultView({ round }: { round: RoundData }) {
   );
 }
 
-// ─── Info Panel (desktop sidebar) ────────────────────────────────────────────
+// ─── Stats Sidebar ────────────────────────────────────────────────────────────
 
-function InfoPanel({ round }: { round: RoundData }) {
-  const steps: { label: string; desc: string }[] = [
-    { label: "Inscrição", desc: "Indique uma música lançada nos últimos 12 meses" },
-    { label: "Escuta", desc: "Ouça todas as indicações na playlist da semana" },
-    { label: "Avaliação", desc: "Ordene as músicas da sua favorita para a menos favorita" },
-    { label: "Resultado", desc: "Confira a classificação e acumule pontos na temporada" },
-  ];
-  const activeStep = PHASE_TO_STAGE[round.phase];
+function StatsSidebar({ round }: { round: RoundData }) {
+  const endIso =
+    round.phase === "SUBMISSION" ? round.submissionEndsAt
+    : isListenAndRankPhase(round.phase) ? round.rankingEndsAt
+    : null;
+  const timeLeft = useTimeRemaining(endIso);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 24 }}>
-      {/* Round stats */}
-      <div
-        style={{
-          padding: "16px 18px",
-          borderRadius: 16,
-          background: "var(--surface)",
-          border: "1px solid var(--divider)",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--text-muted)",
-            letterSpacing: ".07em",
-            textTransform: "uppercase" as const,
-            marginBottom: 12,
-          }}
-        >
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Participants */}
+      {round.participants.length > 0 && (
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)", marginBottom: 14 }}>
+            Participantes
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {round.participants.map((p) => (
+              <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <ParticipantAvatar p={p} size={30} />
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: p.isMe ? "var(--accent)" : "var(--text)" }}>
+                  {p.isMe ? "Você" : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
+                </div>
+                <div style={{ width: 18, height: 18, borderRadius: 9, background: "#1DB954", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <CheckIcon color="white" size={8} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--divider)", fontSize: 12, color: "var(--text-muted)", textAlign: "center" as const }}>
+            {round.participants.length}/{round.submissionCount} indicaram
+          </div>
+        </div>
+      )}
+
+      {/* Round info */}
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)", marginBottom: 12 }}>
           Rodada #{round.number}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {[
-            ["Temporada", round.season],
-            ["Inscrições", round.submissionCount],
-          ].map(([label, value]) => (
-            <div key={String(label)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{label}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{value}</span>
+            { label: "Temporada",      value: String(round.season),          accent: false },
+            { label: "Músicas",        value: String(round.submissionCount), accent: false },
+            { label: "Fase atual",     value: phaseLabel(round.phase),       accent: true  },
+            ...(isListenAndRankPhase(round.phase)
+              ? [{ label: "Escuta até", value: formatDate(round.rankingEndsAt), accent: false }]
+              : []),
+            ...(timeLeft ? [{ label: "Tempo restante", value: timeLeft, accent: false }] : []),
+          ].map(({ label, value, accent }) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+              <span style={{ color: "var(--text-muted)" }}>{label}</span>
+              <span style={{ fontWeight: 600, color: accent ? "var(--accent)" : "var(--text)" }}>{value}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* How it works */}
-      <div
-        style={{
-          padding: "16px 18px",
-          borderRadius: 16,
-          background: "var(--surface)",
-          border: "1px solid var(--divider)",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--text-muted)",
-            letterSpacing: ".07em",
-            textTransform: "uppercase" as const,
-            marginBottom: 14,
-          }}
-        >
-          Como funciona
+      {/* Rules */}
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)", marginBottom: 12 }}>
+          Regras
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {steps.map((step, i) => {
-            const isActive = i === activeStep;
-            return (
-              <div key={i} style={{ display: "flex", gap: 10 }}>
-                <div
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 6,
-                    background: isActive ? "var(--accent)" : i < activeStep ? "var(--accent)22" : "var(--fill-inset)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    fontSize: 10,
-                    fontWeight: 800,
-                    color: isActive ? "white" : i < activeStep ? "var(--accent)" : "var(--text-muted)",
-                  }}
-                >
-                  {i + 1}
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: isActive ? "var(--accent)" : i < activeStep ? "var(--text)" : "var(--text-muted)",
-                    }}
-                  >
-                    {step.label}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, lineHeight: 1.45 }}>
-                    {step.desc}
-                  </div>
-                </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[
+            "Lançamento máx. 12 meses",
+            "1 indicação por participante",
+            "Músicas ficam ocultas até a revelação",
+            "Escuta começa logo após a revelação",
+            "#1 = 20 pts · último = 1 pt",
+          ].map((rule, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: 8,
+                background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 9, fontWeight: 800, flexShrink: 0, marginTop: 1,
+              }}>
+                {i + 1}
               </div>
-            );
-          })}
+              <div style={{ fontSize: 12, color: "var(--text-subtle)", lineHeight: 1.5 }}>{rule}</div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Histórico link */}
-      <Link
-        href="/push/historico"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 16px",
-          borderRadius: 12,
-          background: "var(--surface)",
-          border: "1px solid var(--divider)",
-          textDecoration: "none",
-        }}
-      >
+      <Link href="/push/historico" style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "12px 16px", borderRadius: 12, background: "var(--surface)",
+        border: "1px solid var(--divider)", textDecoration: "none",
+      }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Histórico</div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>Ver todas as rodadas</div>
         </div>
-        <ChevronRight size={16} color="var(--text-muted)" />
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={2} strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
       </Link>
     </div>
   );
@@ -1691,69 +1172,56 @@ export default function PushClient({ initialRound }: { initialRound: RoundData |
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/push");
+      const res  = await fetch("/api/push");
       const data = (await res.json()) as { round: RoundData | null };
       if (data.round) setRound(data.round);
     } catch {}
   }, []);
 
   function handleSubmitted(sub: RoundData["mySubmission"]) {
-    setRound((r) => (r ? { ...r, mySubmission: sub, submissionCount: r.submissionCount + 1 } : r));
+    setRound((r) => r ? { ...r, mySubmission: sub, submissionCount: r.submissionCount + 1 } : r);
   }
 
   if (!round) {
     return (
-      <div style={{ padding: "48px 0", textAlign: "center", color: "var(--text-muted)" }}>
+      <div style={{ padding: isMobile ? "48px 16px" : "48px 40px", textAlign: "center", color: "var(--text-muted)" }}>
         <Trophy size={40} style={{ opacity: 0.3, marginBottom: 12, display: "block", margin: "0 auto 12px" }} />
         <p style={{ margin: "0 0 16px" }}>Nenhuma rodada ativa no momento.</p>
-        <Link
-          href="/push/historico"
-          style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}
-        >
+        <Link href="/push/historico" style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
           Ver histórico de rodadas →
         </Link>
       </div>
     );
   }
 
+  const content = (
+    <>
+      {round.phase === "SUBMISSION" && <SubmissionView round={round} onSubmitted={handleSubmitted} />}
+      {isListenAndRankPhase(round.phase) && <ListenAndRankView round={round} onSaved={refresh} />}
+      {round.phase === "RESULT"     && <ResultView round={round} />}
+      {isMobile && (
+        <Link href="/push/historico" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-muted)", fontWeight: 600, textDecoration: "none", marginTop: 28 }}>
+          Ver histórico de rodadas
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
+        </Link>
+      )}
+    </>
+  );
+
   return (
-    <div
-      style={
-        isMobile
-          ? { display: "flex", flexDirection: "column" }
-          : { display: "grid", gridTemplateColumns: "1fr 300px", gap: 32, alignItems: "flex-start" }
-      }
-    >
-      {/* Main content column */}
-      <div style={{ minWidth: 0 }}>
-        <RoundHeader round={round} />
+    <div style={{ padding: isMobile ? "16px 16px 88px" : "28px 40px 60px" }}>
+      <RoundHeader round={round} isMobile={isMobile} />
 
-        {round.phase === "SUBMISSION" && <SubmissionView round={round} onSubmitted={handleSubmitted} />}
-        {round.phase === "LISTENING" && <ListeningView round={round} />}
-        {round.phase === "RANKING" && <RankingView round={round} onSaved={refresh} />}
-        {round.phase === "RESULT" && <ResultView round={round} />}
-
-        {isMobile && (
-          <Link
-            href="/push/historico"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 13,
-              color: "var(--text-muted)",
-              fontWeight: 600,
-              textDecoration: "none",
-              marginTop: 28,
-            }}
-          >
-            Ver histórico de rodadas <ChevronRight size={14} />
-          </Link>
-        )}
-      </div>
-
-      {/* Right panel — desktop only */}
-      {!isMobile && <InfoPanel round={round} />}
+      {isMobile ? (
+        content
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 28, alignItems: "flex-start" }}>
+          <div style={{ minWidth: 0 }}>{content}</div>
+          <div style={{ position: "sticky", top: 76 }}>
+            <StatsSidebar round={round} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureCanonicalAppOrigin, getAppOrigin } from "@/lib/app-url";
-import { requireMyTrlSession } from "@/lib/mytrl-access";
+import { appPathUrl, ensureCanonicalAppOrigin, getAppOrigin } from "@/lib/app-url";
+import { requireMyTrlSession } from "@/lib/mytrl-access-server";
+import { prisma } from "@/lib/prisma";
 import { createSpotifyConnectState } from "@/lib/spotify-connect-oauth";
 import {
   buildSpotifyAuthorizeUrl,
@@ -22,9 +23,12 @@ export async function GET(req: NextRequest) {
   const canonicalRedirect = ensureCanonicalAppOrigin(req);
   if (canonicalRedirect) return canonicalRedirect;
 
-  const session = await requireMyTrlSession();
+  const session = await requireMyTrlSession(req);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+    const from = sanitizeFrom(new URL(req.url).searchParams.get("from")) ?? "/settings";
+    const login = appPathUrl("/login");
+    login.searchParams.set("from", from);
+    return NextResponse.redirect(login);
   }
 
   if (!spotifyUserOAuthConfigured()) {
@@ -34,8 +38,23 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const redirectUri = getSpotifyUserConnectRedirectUri(getAppOrigin(new URL(req.url).origin));
+  const redirectUri = getSpotifyUserConnectRedirectUri(getAppOrigin());
   const from = sanitizeFrom(new URL(req.url).searchParams.get("from"));
+  const reconnect = new URL(req.url).searchParams.get("reconnect") === "1";
+
+  // Spotify não renova refresh_token nem escopos em reautorização — limpar antes de pedir novos.
+  if (reconnect) {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        spotifyAccessToken: null,
+        spotifyRefreshToken: null,
+        spotifyTokenExpiresAt: null,
+        spotifyUserId: null,
+      },
+    });
+  }
+
   const state = createSpotifyConnectState(session.user.id, redirectUri, from ?? undefined);
 
   return NextResponse.redirect(buildSpotifyAuthorizeUrl(state, redirectUri));

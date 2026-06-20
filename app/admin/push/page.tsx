@@ -1,5 +1,6 @@
 import { Shell } from "@/components/layout/Shell";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
+import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { prisma } from "@/lib/prisma";
 import PushAdminClient from "./PushAdminClient";
 
@@ -15,10 +16,20 @@ export default async function AdminPushPage() {
     );
   }
 
-  const rounds = await prisma.pushRound.findMany({
-    orderBy: { number: "desc" },
-    include: { submissions: { select: { id: true } } },
-  });
+  const [rounds, owner] = await Promise.all([
+    prisma.pushRound.findMany({
+      orderBy: { number: "desc" },
+      include: { submissions: { select: { id: true } } },
+    }),
+    prisma.user.findUnique({
+      where: { handle: MYTRL_OWNER_HANDLE },
+      select: {
+        spotifyRefreshToken: true,
+        youtubeRefreshToken: true,
+        youtubeChannelHandle: true,
+      },
+    }),
+  ]);
 
   const serialized = rounds.map((r) => ({
     id: r.id,
@@ -30,13 +41,20 @@ export default async function AdminPushPage() {
     listeningEndsAt: r.listeningEndsAt.toISOString(),
     rankingEndsAt: r.rankingEndsAt.toISOString(),
     spotifyPlaylistId: r.spotifyPlaylistId,
+    youtubePlaylistId: r.youtubePlaylistId,
     createdAt: r.createdAt.toISOString(),
     submissionCount: r.submissions.length,
   }));
 
+  const integrations = {
+    spotifyConnected: !!owner?.spotifyRefreshToken,
+    youtubeConnected: !!owner?.youtubeRefreshToken,
+    youtubeChannelHandle: owner?.youtubeChannelHandle ?? null,
+  };
+
   return (
     <Shell title="Push" subtitle="Gerencie as rodadas do jogo Push">
-      <PushAdminClient initialRounds={serialized} />
+      <PushAdminClient initialRounds={serialized} integrations={integrations} />
     </Shell>
   );
 }

@@ -1,4 +1,5 @@
 import type { Chart, ChartEntry, PersonalDropoutEntry, User, UserWithCharts } from "@/lib/types";
+import { isPrivilegedRole } from "@/lib/permissions";
 
 type PrismaProfileUser = {
   id: string;
@@ -10,6 +11,7 @@ type PrismaProfileUser = {
   following: number;
   streak: number;
   verified: boolean;
+  role?: string | null;
   image: string | null;
   paradaNome: string | null;
   paradaLogo?: string | null;
@@ -145,6 +147,7 @@ export function mapPrismaUserToUserWithCharts(db: PrismaProfileUser): UserWithCh
     following: db.following,
     streak: db.streak,
     verified: db.verified,
+    isStaff: isPrivilegedRole(db.role),
     charts,
   };
 }

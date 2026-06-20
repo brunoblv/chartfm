@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
+import { pushRoundTitle } from "@/lib/push-format";
 import { ExternalLink, Trophy } from "lucide-react";
 
 export const revalidate = 60;
@@ -22,10 +23,10 @@ async function getHistory() {
 
   return rounds.map((round) => {
     const totals = new Map<string, number>();
-    const total = round.submissions.length;
-    const n = total - 1;
+    const totalToRank = round.submissions.length - 1;
     for (const v of round.votes) {
-      const pts = n <= 1 ? 10 : Math.max(1, Math.round(10 - (v.position - 1) * 9 / (n - 1)));
+      const k = totalToRank <= 1 ? 0 : Math.log(20) / (totalToRank - 1);
+      const pts = totalToRank <= 1 ? 20 : Math.max(1, Math.round(20 * Math.exp(-k * (v.position - 1))));
       totals.set(v.submissionId, (totals.get(v.submissionId) ?? 0) + pts);
     }
     const sorted = round.submissions
@@ -87,11 +88,9 @@ export default async function PushHistoricoPage() {
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
                   Rodada #{round.number} · Temporada {round.season}
                 </div>
-                {round.title && (
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
-                    {round.title}
-                  </h3>
-                )}
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
+                  {pushRoundTitle(round.season, round.number)}
+                </h3>
               </div>
               {round.spotifyPlaylistId && (
                 <a

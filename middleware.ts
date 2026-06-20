@@ -10,8 +10,17 @@ import {
 } from "@/lib/i18n/config";
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isOAuthConnect =
+    pathname.startsWith("/api/spotify/connect") ||
+    pathname.startsWith("/api/youtube/connect");
+
   const canonicalRedirect = ensureCanonicalAppOrigin(request);
   if (canonicalRedirect) return canonicalRedirect;
+
+  if (isOAuthConnect) {
+    return NextResponse.next();
+  }
 
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
@@ -37,6 +46,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/api/spotify/:path*",
+    "/api/youtube/:path*",
     "/((?!api|_next/static|_next/image|favicon\\.ico|login|onboarding|public).*)",
   ],
 };

@@ -1,12 +1,13 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { isGoogleAuthConfigured } from "@/lib/auth-config";
 import { ensureGoogleUser } from "@/lib/google-user";
 import { prisma } from "@/lib/prisma";
 
-const googleConfigured =
-  Boolean(process.env.GOOGLE_CLIENT_ID?.length) && Boolean(process.env.GOOGLE_CLIENT_SECRET?.length);
+export function getAuthOptions(): NextAuthOptions {
+  const googleConfigured = isGoogleAuthConfigured();
 
-export const authOptions: NextAuthOptions = {
+  return {
   providers: googleConfigured
     ? [
         GoogleProvider({
@@ -80,4 +81,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
+  };
+}
+
+export const authOptions = getAuthOptions();

@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Trash2, ExternalLink, RefreshCw, ChevronRight, Check } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { pushRoundTitle } from "@/lib/push-format";
+import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
+import { youtubeConnectErrorMessage } from "@/lib/youtube-connect-oauth";
 
 type PushPhase = "SUBMISSION" | "LISTENING" | "RANKING" | "RESULT";
 
@@ -16,27 +20,170 @@ interface RoundRow {
   listeningEndsAt: string;
   rankingEndsAt: string;
   spotifyPlaylistId: string | null;
+  youtubePlaylistId: string | null;
   createdAt: string;
   submissionCount: number;
 }
 
+interface IntegrationStatus {
+  spotifyConnected: boolean;
+  youtubeConnected: boolean;
+  youtubeChannelHandle: string | null;
+}
+
+function PlaylistSetupBanner({
+  round,
+  integrations,
+  onSyncPlaylists,
+  syncBusy,
+}: {
+  round: RoundRow;
+  integrations: IntegrationStatus;
+  onSyncPlaylists?: () => void;
+  syncBusy?: boolean;
+}) {
+  const needsSpotify = !round.spotifyPlaylistId;
+  const needsYoutube = !round.youtubePlaylistId;
+  if (!needsSpotify && !needsYoutube) return null;
+  if (round.phase === "SUBMISSION") return null;
+
+  const issues: string[] = [];
+  if (needsSpotify && !integrations.spotifyConnected) {
+    issues.push("Spotify não conectado");
+  } else if (needsSpotify) {
+    issues.push("Playlists ainda não criadas — use o botão abaixo");
+  }
+  if (needsYoutube && !integrations.youtubeConnected) {
+    issues.push("YouTube @chartFM não conectado");
+  }
+
+  return (
+    <div
+      style={{
+        padding: "12px 14px",
+        borderRadius: 10,
+        background: "#fef2f2",
+        border: "1px solid #fecaca",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+      }}
+    >
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#b91c1c" }}>
+        Playlists não criadas para esta rodada
+      </div>
+      {issues.length > 0 && (
+        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#991b1b", lineHeight: 1.5 }}>
+          {issues.map((issue) => (
+            <li key={issue}>{issue}</li>
+          ))}
+        </ul>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        {needsSpotify && !integrations.spotifyConnected && (
+          <a
+            href="/api/spotify/connect?from=/admin/push&reconnect=1"
+            style={{ fontSize: 12, fontWeight: 600, color: "#b91c1c", textDecoration: "underline" }}
+          >
+            Conectar Spotify
+          </a>
+        )}
+        {needsYoutube && !integrations.youtubeConnected && (
+          <a
+            href="/api/youtube/connect?from=/admin/push"
+            style={{ fontSize: 12, fontWeight: 600, color: "#b91c1c", textDecoration: "underline" }}
+          >
+            Conectar YouTube
+          </a>
+        )}
+        {(needsSpotify && integrations.spotifyConnected) || (needsYoutube && integrations.youtubeConnected) ? (
+          <a
+            href="/settings"
+            style={{ fontSize: 12, fontWeight: 600, color: "#b91c1c", textDecoration: "underline" }}
+          >
+            Abrir Configurações
+          </a>
+        ) : null}
+        {onSyncPlaylists && canRunPlaylistSync(round, integrations) && (
+          <PlaylistSyncButton onClick={onSyncPlaylists} busy={!!syncBusy} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function isListenAndRankPhase(phase: PushPhase) {
+  return phase === "LISTENING" || phase === "RANKING";
+}
+
+function needsPlaylistSync(round: RoundRow): boolean {
+  return (
+    (isListenAndRankPhase(round.phase) || round.phase === "RESULT") &&
+    (!round.spotifyPlaylistId || !round.youtubePlaylistId)
+  );
+}
+
+function canRunPlaylistSync(round: RoundRow, integrations: IntegrationStatus): boolean {
+  const needsSpotify = !round.spotifyPlaylistId;
+  const needsYoutube = !round.youtubePlaylistId;
+  if (needsSpotify && !integrations.spotifyConnected) return false;
+  if (needsYoutube && !integrations.youtubeConnected) return false;
+  return needsPlaylistSync(round);
+}
+
+function PlaylistSyncButton({
+  onClick,
+  busy,
+  size = "md",
+}: {
+  onClick: () => void;
+  busy: boolean;
+  size?: "md" | "lg";
+}) {
+  const large = size === "lg";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      style={{
+        padding: large ? "10px 18px" : "7px 14px",
+        borderRadius: large ? 10 : 8,
+        border: "none",
+        fontWeight: 700,
+        fontSize: large ? 13 : 12,
+        cursor: busy ? "not-allowed" : "pointer",
+        background: "var(--accent)",
+        color: "white",
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        fontFamily: "inherit",
+      }}
+    >
+      <RefreshCw size={large ? 14 : 13} />
+      {busy ? "Sincronizando…" : "Criar playlists (Spotify + YouTube)"}
+    </button>
+  );
+}
+
 const PHASE_LABELS: Record<PushPhase, string> = {
   SUBMISSION: "Inscrições",
-  LISTENING: "Escuta",
-  RANKING: "Avaliação",
+  LISTENING: "Escuta & Avaliação",
+  RANKING: "Escuta & Avaliação",
   RESULT: "Resultado",
 };
 
 const PHASE_NEXT: Partial<Record<PushPhase, string>> = {
-  SUBMISSION: "Avançar para Escuta",
-  LISTENING: "Avançar para Avaliação",
+  SUBMISSION: "Avançar para Escuta & Avaliação",
+  LISTENING: "Avançar para Resultado",
   RANKING: "Avançar para Resultado",
 };
 
 const PHASE_COLORS: Record<PushPhase, string> = {
   SUBMISSION: "var(--accent)",
   LISTENING: "#6366f1",
-  RANKING: "#f59e0b",
+  RANKING: "#6366f1",
   RESULT: "#10b981",
 };
 
@@ -73,13 +220,15 @@ function formatShort(iso: string) {
 // ─── Stage Timeline ───────────────────────────────────────────────────────────
 
 function StageTimeline({ round }: { round: RoundRow }) {
-  const PHASES: PushPhase[] = ["SUBMISSION", "LISTENING", "RANKING", "RESULT"];
-  const currentIdx = PHASES.indexOf(round.phase);
+  const currentIdx =
+    round.phase === "SUBMISSION" ? 0
+    : isListenAndRankPhase(round.phase) ? 2
+    : 3;
 
   const stages = [
     { name: "Inscrição", start: formatShort(round.createdAt), end: formatShort(round.submissionEndsAt) },
-    { name: "Escuta", start: formatShort(round.submissionEndsAt), end: formatShort(round.listeningEndsAt) },
-    { name: "Avaliação", start: formatShort(round.listeningEndsAt), end: formatShort(round.rankingEndsAt) },
+    { name: "Revelação", start: formatShort(round.submissionEndsAt), end: formatShort(round.listeningEndsAt) },
+    { name: "Escuta & Avaliação", start: formatShort(round.listeningEndsAt), end: formatShort(round.rankingEndsAt) },
     { name: "Resultado", start: formatShort(round.rankingEndsAt), end: "—" },
   ];
 
@@ -162,13 +311,12 @@ function DurationControls({
   durations,
   onChange,
 }: {
-  durations: { sub: number; listen: number; vote: number };
-  onChange: (d: { sub: number; listen: number; vote: number }) => void;
+  durations: { sub: number; listenVote: number };
+  onChange: (d: { sub: number; listenVote: number }) => void;
 }) {
   const fields: { key: keyof typeof durations; label: string }[] = [
     { key: "sub", label: "Inscrição" },
-    { key: "listen", label: "Escuta" },
-    { key: "vote", label: "Avaliação" },
+    { key: "listenVote", label: "Escuta & Avaliação" },
   ];
 
   return (
@@ -220,7 +368,7 @@ function CreateRoundForm({
   onCreated,
   onCancel,
 }: {
-  durations: { sub: number; listen: number; vote: number };
+  durations: { sub: number; listenVote: number };
   onCreated: (round: RoundRow) => void;
   onCancel: () => void;
 }) {
@@ -232,11 +380,10 @@ function CreateRoundForm({
   };
 
   const [form, setForm] = useState({
-    title: "",
     season: 1,
     submissionEndsAt: addHours(durations.sub),
-    listeningEndsAt: addHours(durations.sub + durations.listen),
-    rankingEndsAt: addHours(durations.sub + durations.listen + durations.vote),
+    listeningEndsAt: addHours(durations.sub),
+    listenVoteEndsAt: addHours(durations.sub + durations.listenVote),
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -255,7 +402,7 @@ function CreateRoundForm({
   };
 
   async function handleCreate() {
-    if (!form.submissionEndsAt || !form.listeningEndsAt || !form.rankingEndsAt) {
+    if (!form.submissionEndsAt || !form.listeningEndsAt || !form.listenVoteEndsAt) {
       setError("Preencha todas as datas");
       return;
     }
@@ -266,11 +413,10 @@ function CreateRoundForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: form.title || undefined,
           season: form.season,
           submissionEndsAt: inputToISO(form.submissionEndsAt),
           listeningEndsAt: inputToISO(form.listeningEndsAt),
-          rankingEndsAt: inputToISO(form.rankingEndsAt),
+          rankingEndsAt: inputToISO(form.listenVoteEndsAt),
         }),
       });
       const data = (await res.json()) as RoundRow & { error?: string };
@@ -298,31 +444,20 @@ function CreateRoundForm({
       }}
     >
       <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Nova rodada</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 80px", gap: 8 }}>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
-            Título (opcional)
-          </label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            placeholder="Ex: Hits de verão"
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
-            Temporada
-          </label>
-          <input
-            type="number"
-            value={form.season}
-            onChange={(e) => setForm((f) => ({ ...f, season: Number(e.target.value) }))}
-            min={1}
-            style={inputStyle}
-          />
-        </div>
+      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: -4 }}>
+        O título será gerado automaticamente: Push - Temporada N - Rodada N
+      </div>
+      <div style={{ maxWidth: 120 }}>
+        <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
+          Temporada
+        </label>
+        <input
+          type="number"
+          value={form.season}
+          onChange={(e) => setForm((f) => ({ ...f, season: Number(e.target.value) }))}
+          min={1}
+          style={inputStyle}
+        />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
         <div>
@@ -338,7 +473,7 @@ function CreateRoundForm({
         </div>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
-            Escuta até
+            Escuta começa
           </label>
           <input
             type="datetime-local"
@@ -349,12 +484,12 @@ function CreateRoundForm({
         </div>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
-            Avaliação até
+            Escuta & Avaliação até
           </label>
           <input
             type="datetime-local"
-            value={form.rankingEndsAt}
-            onChange={(e) => setForm((f) => ({ ...f, rankingEndsAt: e.target.value }))}
+            value={form.listenVoteEndsAt}
+            onChange={(e) => setForm((f) => ({ ...f, listenVoteEndsAt: e.target.value }))}
             style={inputStyle}
           />
         </div>
@@ -405,22 +540,30 @@ function CreateRoundForm({
 
 function RoundListItem({
   round,
+  integrations,
   onAdvance,
   onCreatePlaylist,
+  onCreateYoutubePlaylist,
+  onSyncPlaylists,
   onDelete,
   onUpdate,
   busy,
   msg,
+  defaultExpanded = false,
 }: {
   round: RoundRow;
+  integrations: IntegrationStatus;
   onAdvance: () => void;
   onCreatePlaylist: () => void;
+  onCreateYoutubePlaylist: () => void;
+  onSyncPlaylists: () => void;
   onDelete: () => void;
-  onUpdate: (updates: Partial<{ submissionEndsAt: string; listeningEndsAt: string; rankingEndsAt: string; spotifyPlaylistId: string }>) => void;
+  onUpdate: (updates: Partial<{ submissionEndsAt: string; listeningEndsAt: string; rankingEndsAt: string; spotifyPlaylistId: string; youtubePlaylistId: string }>) => void;
   busy: boolean;
   msg: { text: string; ok: boolean } | null;
+  defaultExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const color = PHASE_COLORS[round.phase];
 
   const inputStyle: React.CSSProperties = {
@@ -460,7 +603,7 @@ function RoundListItem({
         />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-            Rodada #{round.number}{round.title ? ` · ${round.title}` : ""} · T{round.season}
+            {pushRoundTitle(round.season, round.number)}
           </div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>
             {round.submissionCount} inscrições · {PHASE_LABELS[round.phase]}
@@ -491,6 +634,12 @@ function RoundListItem({
           }}
         >
           <div style={{ height: 12 }} />
+          <PlaylistSetupBanner
+            round={round}
+            integrations={integrations}
+            onSyncPlaylists={onSyncPlaylists}
+            syncBusy={busy}
+          />
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
             {PHASE_NEXT[round.phase] && (
               <button
@@ -516,7 +665,11 @@ function RoundListItem({
                 {busy ? "Avançando…" : PHASE_NEXT[round.phase]}
               </button>
             )}
-            {(round.phase === "LISTENING" || round.phase === "RANKING" || round.phase === "RESULT") &&
+            {(isListenAndRankPhase(round.phase) || round.phase === "RESULT") &&
+              (!round.spotifyPlaylistId || !round.youtubePlaylistId) && (
+                <PlaylistSyncButton onClick={onSyncPlaylists} busy={busy} />
+              )}
+            {(isListenAndRankPhase(round.phase) || round.phase === "RESULT") &&
               !round.spotifyPlaylistId && (
                 <button
                   type="button"
@@ -561,7 +714,55 @@ function RoundListItem({
                 }}
               >
                 <ExternalLink size={13} />
-                Ver playlist
+                Spotify
+              </a>
+            )}
+            {(isListenAndRankPhase(round.phase) || round.phase === "RESULT") &&
+              !round.youtubePlaylistId && (
+                <button
+                  type="button"
+                  onClick={onCreateYoutubePlaylist}
+                  disabled={busy}
+                  style={{
+                    padding: "7px 14px",
+                    borderRadius: 8,
+                    border: "none",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: busy ? "not-allowed" : "pointer",
+                    background: "#FF0000",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <RefreshCw size={13} />
+                  {busy ? "Criando…" : "Criar playlist YouTube"}
+                </button>
+              )}
+            {round.youtubePlaylistId && (
+              <a
+                href={`https://www.youtube.com/playlist?list=${round.youtubePlaylistId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: "7px 14px",
+                  borderRadius: 8,
+                  border: "none",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  background: "#FF0000",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  textDecoration: "none",
+                }}
+              >
+                <ExternalLink size={13} />
+                YouTube
               </a>
             )}
           </div>
@@ -589,6 +790,31 @@ function RoundListItem({
                 onClick={() => {
                   const val = (document.getElementById(`playlist-${round.id}`) as HTMLInputElement).value.trim();
                   onUpdate({ spotifyPlaylistId: val || "" });
+                }}
+                style={{ padding: "7px 12px", borderRadius: 7, border: "none", fontWeight: 600, fontSize: 12, cursor: "pointer", background: "var(--fill-inset)", color: "var(--text)", fontFamily: "inherit", flexShrink: 0 }}
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>
+              ID Playlist YouTube @chartFM (manual)
+            </label>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input
+                type="text"
+                defaultValue={round.youtubePlaylistId ?? ""}
+                id={`yt-playlist-${round.id}`}
+                placeholder="Ex: PLrAXtmRdnEQy6nuLMH..."
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const val = (document.getElementById(`yt-playlist-${round.id}`) as HTMLInputElement).value.trim();
+                  onUpdate({ youtubePlaylistId: val || "" });
                 }}
                 style={{ padding: "7px 12px", borderRadius: 7, border: "none", fontWeight: 600, fontSize: 12, cursor: "pointer", background: "var(--fill-inset)", color: "var(--text)", fontFamily: "inherit", flexShrink: 0 }}
               >
@@ -639,8 +865,8 @@ function EditDatesInline({
   inputStyle: React.CSSProperties;
 }) {
   const [sub, setSub] = useState(toLocalDatetimeInput(round.submissionEndsAt));
-  const [lis, setLis] = useState(toLocalDatetimeInput(round.listeningEndsAt));
-  const [rnk, setRnk] = useState(toLocalDatetimeInput(round.rankingEndsAt));
+  const [listenStart, setListenStart] = useState(toLocalDatetimeInput(round.listeningEndsAt));
+  const [listenVote, setListenVote] = useState(toLocalDatetimeInput(round.rankingEndsAt));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -650,17 +876,21 @@ function EditDatesInline({
           <input type="datetime-local" value={sub} onChange={(e) => setSub(e.target.value)} style={inputStyle} />
         </div>
         <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 3 }}>Escuta até</label>
-          <input type="datetime-local" value={lis} onChange={(e) => setLis(e.target.value)} style={inputStyle} />
+          <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 3 }}>Escuta começa</label>
+          <input type="datetime-local" value={listenStart} onChange={(e) => setListenStart(e.target.value)} style={inputStyle} />
         </div>
         <div>
-          <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 3 }}>Avaliação até</label>
-          <input type="datetime-local" value={rnk} onChange={(e) => setRnk(e.target.value)} style={inputStyle} />
+          <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 3 }}>Escuta & Avaliação até</label>
+          <input type="datetime-local" value={listenVote} onChange={(e) => setListenVote(e.target.value)} style={inputStyle} />
         </div>
       </div>
       <button
         type="button"
-        onClick={() => onSave({ submissionEndsAt: inputToISO(sub), listeningEndsAt: inputToISO(lis), rankingEndsAt: inputToISO(rnk) })}
+        onClick={() => onSave({
+          submissionEndsAt: inputToISO(sub),
+          listeningEndsAt: inputToISO(listenStart),
+          rankingEndsAt: inputToISO(listenVote),
+        })}
         disabled={busy}
         style={{ padding: "7px 12px", borderRadius: 7, border: "none", fontWeight: 600, fontSize: 12, cursor: busy ? "not-allowed" : "pointer", background: "var(--fill-inset)", color: "var(--text)", alignSelf: "flex-start", fontFamily: "inherit" }}
       >
@@ -672,12 +902,20 @@ function EditDatesInline({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function PushAdminClient({ initialRounds }: { initialRounds: RoundRow[] }) {
+export default function PushAdminClient({
+  initialRounds,
+  integrations: initialIntegrations,
+}: {
+  initialRounds: RoundRow[];
+  integrations: IntegrationStatus;
+}) {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const [rounds, setRounds] = useState<RoundRow[]>(initialRounds);
+  const [integrations, setIntegrations] = useState<IntegrationStatus>(initialIntegrations);
   const [activeNav, setActiveNav] = useState("Rodadas");
   const [creating, setCreating] = useState(false);
-  const [durations, setDurations] = useState({ sub: 48, listen: 72, vote: 24 });
+  const [durations, setDurations] = useState({ sub: 48, listenVote: 96 });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msgs, setMsgs] = useState<Record<string, { text: string; ok: boolean }>>({});
 
@@ -685,8 +923,54 @@ export default function PushAdminClient({ initialRounds }: { initialRounds: Roun
 
   function flash(id: string, text: string, ok: boolean) {
     setMsgs((m) => ({ ...m, [id]: { text, ok } }));
-    setTimeout(() => setMsgs((m) => { const n = { ...m }; delete n[id]; return n; }), 3000);
+    setTimeout(() => setMsgs((m) => { const n = { ...m }; delete n[id]; return n; }), 5000);
   }
+
+  useEffect(() => {
+    fetch("/api/user/profile", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { spotifyConnected?: boolean; youtubeConnected?: boolean; youtubeChannelHandle?: string | null } | null) => {
+        if (!data) return;
+        setIntegrations({
+          spotifyConnected: data.spotifyConnected ?? false,
+          youtubeConnected: data.youtubeConnected ?? false,
+          youtubeChannelHandle: data.youtubeChannelHandle ?? null,
+        });
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const spotifyParam = params.get("spotify");
+    const spotifyReason = params.get("spotify_reason");
+    const youtubeParam = params.get("youtube");
+    const youtubeReason = params.get("youtube_reason");
+    if (!spotifyParam && !youtubeParam) return;
+
+    if (spotifyParam === "connected" || spotifyParam === "connected_no_playlist") {
+      flash("oauth", "Spotify conectado! Clique em “Criar playlists (Spotify + YouTube)”.", true);
+    } else if (spotifyParam) {
+      flash(
+        "oauth",
+        spotifyConnectErrorMessage(spotifyParam, spotifyReason) ?? "Erro ao conectar o Spotify.",
+        false,
+      );
+    }
+
+    if (youtubeParam === "connected") {
+      flash("oauth", "YouTube conectado! Clique em “Criar playlists (Spotify + YouTube)”.", true);
+    } else if (youtubeParam) {
+      flash(
+        "oauth",
+        youtubeConnectErrorMessage(youtubeParam, youtubeReason) ?? "Erro ao conectar o YouTube.",
+        false,
+      );
+    }
+
+    router.replace("/admin/push");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleAdvancePhase(roundId: string) {
     setBusyId(roundId + "-advance");
@@ -696,10 +980,103 @@ export default function PushAdminClient({ initialRounds }: { initialRounds: Roun
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ advancePhase: true }),
       });
-      const data = (await res.json()) as RoundRow & { error?: string };
+      const data = (await res.json()) as RoundRow & {
+        error?: string;
+        playlistSync?: {
+          spotify: { ok: boolean; message?: string; playlistUrl?: string } | null;
+          youtube: { ok: boolean; message?: string; playlistUrl?: string; videoCount?: number } | null;
+        } | null;
+      };
       if (!res.ok) { flash(roundId, data.error ?? "Erro", false); return; }
-      setRounds((prev) => prev.map((r) => r.id === roundId ? { ...r, phase: data.phase } : r));
-      flash(roundId, `Fase avançada para ${PHASE_LABELS[data.phase]}`, true);
+      setRounds((prev) => prev.map((r) => r.id === roundId ? {
+        ...r,
+        phase: data.phase,
+        listeningEndsAt: data.listeningEndsAt ?? r.listeningEndsAt,
+        spotifyPlaylistId: data.spotifyPlaylistId ?? r.spotifyPlaylistId,
+        youtubePlaylistId: data.youtubePlaylistId ?? r.youtubePlaylistId,
+      } : r));
+
+      const warnings: string[] = [];
+      if (data.playlistSync?.spotify && !data.playlistSync.spotify.ok) {
+        warnings.push(`Spotify: ${data.playlistSync.spotify.message}`);
+      }
+      if (data.playlistSync?.youtube && !data.playlistSync.youtube.ok) {
+        warnings.push(`YouTube: ${data.playlistSync.youtube.message}`);
+      }
+
+      const okParts: string[] = [`Fase avançada para ${PHASE_LABELS[data.phase]}`];
+      if (data.playlistSync?.spotify?.ok) okParts.push("Spotify ✓");
+      if (data.playlistSync?.youtube?.ok) {
+        const n = data.playlistSync.youtube.videoCount;
+        okParts.push(n ? `YouTube ✓ (${n} vídeos)` : "YouTube ✓");
+      }
+
+      if (warnings.length > 0) {
+        flash(roundId, `${okParts.join(" · ")} — ${warnings.join(" · ")}`, false);
+      } else {
+        flash(roundId, okParts.join(" · "), true);
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleSyncPlaylists(roundId: string) {
+    setBusyId(roundId + "-sync");
+    try {
+      const res = await fetch(`/api/admin/push/${roundId}/sync-playlists`, { method: "POST" });
+      const data = (await res.json()) as {
+        spotifyPlaylistId?: string | null;
+        youtubePlaylistId?: string | null;
+        playlistSync?: {
+          spotify: { ok: boolean; message?: string; needsReconnect?: boolean } | null;
+          youtube: { ok: boolean; message?: string; needsReconnect?: boolean; videoCount?: number } | null;
+        };
+        error?: string;
+      };
+
+      if (data.spotifyPlaylistId || data.youtubePlaylistId) {
+        setRounds((prev) =>
+          prev.map((r) =>
+            r.id === roundId
+              ? {
+                  ...r,
+                  spotifyPlaylistId: data.spotifyPlaylistId ?? r.spotifyPlaylistId,
+                  youtubePlaylistId: data.youtubePlaylistId ?? r.youtubePlaylistId,
+                }
+              : r,
+          ),
+        );
+      }
+
+      const parts: string[] = [];
+      const errors: string[] = [];
+
+      if (data.playlistSync?.spotify?.ok) parts.push("Spotify ✓");
+      else if (data.playlistSync?.spotify) {
+        errors.push(`Spotify: ${data.playlistSync.spotify.message}`);
+      }
+
+      if (data.playlistSync?.youtube?.ok) {
+        const n = data.playlistSync.youtube.videoCount;
+        parts.push(n ? `YouTube ✓ (${n} vídeos)` : "YouTube ✓");
+      } else if (data.playlistSync?.youtube) {
+        errors.push(`YouTube: ${data.playlistSync.youtube.message}`);
+      }
+
+      if (parts.length > 0 && errors.length === 0) {
+        flash(roundId, parts.join(" · "), true);
+      } else if (parts.length > 0) {
+        flash(roundId, `${parts.join(" · ")} — ${errors.join(" · ")}`, false);
+      } else {
+        flash(
+          roundId,
+          errors.length > 0
+            ? `${errors.join(" · ")} — reconecte em /settings`
+            : data.error ?? "Não foi possível criar as playlists",
+          false,
+        );
+      }
     } finally {
       setBusyId(null);
     }
@@ -709,8 +1086,17 @@ export default function PushAdminClient({ initialRounds }: { initialRounds: Roun
     setBusyId(roundId + "-playlist");
     try {
       const res = await fetch(`/api/admin/push/${roundId}/playlist`, { method: "POST" });
-      const data = (await res.json()) as { playlistId?: string; error?: string };
-      if (!res.ok) { flash(roundId, data.error ?? "Erro ao criar playlist", false); return; }
+      const data = (await res.json()) as { playlistId?: string; error?: string; needsReconnect?: boolean };
+      if (!res.ok) {
+        flash(
+          roundId,
+          data.needsReconnect
+            ? `${data.error ?? "Erro"} — reconecte em /settings`
+            : data.error ?? "Erro ao criar playlist",
+          false,
+        );
+        return;
+      }
       setRounds((prev) => prev.map((r) => r.id === roundId ? { ...r, spotifyPlaylistId: data.playlistId ?? r.spotifyPlaylistId } : r));
       flash(roundId, "Playlist criada no Spotify!", true);
     } finally {
@@ -718,9 +1104,40 @@ export default function PushAdminClient({ initialRounds }: { initialRounds: Roun
     }
   }
 
+  async function handleCreateYoutubePlaylist(roundId: string) {
+    setBusyId(roundId + "-yt-playlist");
+    try {
+      const res = await fetch(`/api/admin/push/${roundId}/youtube-playlist`, { method: "POST" });
+      const data = (await res.json()) as {
+        playlistId?: string;
+        videoCount?: number;
+        missingCount?: number;
+        error?: string;
+        needsReconnect?: boolean;
+      };
+      if (!res.ok) {
+        flash(
+          roundId,
+          data.needsReconnect
+            ? `${data.error ?? "Erro"} — reconecte YouTube em /settings`
+            : data.error ?? "Erro ao criar playlist YouTube",
+          false,
+        );
+        return;
+      }
+      setRounds((prev) =>
+        prev.map((r) => (r.id === roundId ? { ...r, youtubePlaylistId: data.playlistId ?? r.youtubePlaylistId } : r)),
+      );
+      const extra = data.missingCount ? ` (${data.missingCount} música(s) sem vídeo)` : "";
+      flash(roundId, `Playlist YouTube criada com ${data.videoCount ?? 0} vídeos${extra}!`, true);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleUpdate(
     roundId: string,
-    updates: Partial<{ submissionEndsAt: string; listeningEndsAt: string; rankingEndsAt: string; spotifyPlaylistId: string }>
+    updates: Partial<{ submissionEndsAt: string; listeningEndsAt: string; rankingEndsAt: string; spotifyPlaylistId: string; youtubePlaylistId: string }>
   ) {
     setBusyId(roundId + "-update");
     try {
@@ -829,11 +1246,19 @@ export default function PushAdminClient({ initialRounds }: { initialRounds: Roun
           </div>
           <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", letterSpacing: "-.025em" }}>
             {currentRound
-              ? `Rodada #${currentRound.number} — Temporada ${currentRound.season}`
+              ? pushRoundTitle(currentRound.season, currentRound.number)
               : "Nenhuma rodada"}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+          {currentRound &&
+            canRunPlaylistSync(currentRound, integrations) && (
+              <PlaylistSyncButton
+                onClick={() => handleSyncPlaylists(currentRound.id)}
+                busy={busyId === currentRound.id + "-sync"}
+                size="lg"
+              />
+            )}
           {currentRound && PHASE_NEXT[currentRound.phase] && (
             <button
               type="button"
@@ -915,7 +1340,29 @@ export default function PushAdminClient({ initialRounds }: { initialRounds: Roun
                   >
                     Etapas da Rodada #{currentRound.number}
                   </div>
-                  <StageTimeline round={currentRound} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {msgs.oauth && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: msgs.oauth.ok ? "#10b981" : "#dc2626",
+                          padding: "10px 12px",
+                          borderRadius: 8,
+                          background: msgs.oauth.ok ? "rgba(16,185,129,0.08)" : "rgba(220,38,38,0.08)",
+                        }}
+                      >
+                        {msgs.oauth.text}
+                      </div>
+                    )}
+                    <PlaylistSetupBanner
+                      round={currentRound}
+                      integrations={integrations}
+                      onSyncPlaylists={() => handleSyncPlaylists(currentRound.id)}
+                      syncBusy={busyId === currentRound.id + "-sync"}
+                    />
+                    <StageTimeline round={currentRound} />
+                  </div>
                 </div>
                 <div>
                   <div
@@ -957,12 +1404,16 @@ export default function PushAdminClient({ initialRounds }: { initialRounds: Roun
                   Todas as rodadas
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {rounds.map((round) => (
+                  {rounds.map((round, index) => (
                     <RoundListItem
                       key={round.id}
                       round={round}
+                      integrations={integrations}
+                      defaultExpanded={index === 0}
                       onAdvance={() => handleAdvancePhase(round.id)}
                       onCreatePlaylist={() => handleCreatePlaylist(round.id)}
+                      onCreateYoutubePlaylist={() => handleCreateYoutubePlaylist(round.id)}
+                      onSyncPlaylists={() => handleSyncPlaylists(round.id)}
                       onDelete={() => handleDelete(round.id)}
                       onUpdate={(u) => handleUpdate(round.id, u)}
                       busy={!!busyId?.startsWith(round.id)}
