@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import { refreshAllGlobalLastfmSnapshots } from "@/lib/global-lastfm-snapshot";
+import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
+import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -16,72 +20,63 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const rankingWeek = getRankingWeekReference(new Date());
+  const now = new Date();
+  const rankingWeek = getRankingWeekReference(now);
 
-  const updatedRows = await prisma.$executeRaw`
-    UPDATE "ChartEntry" ce
-    SET "points" = CASE
-      WHEN p."is_primary" THEN 101 - ce."position"
-      WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' AND cnt.n <= 1 THEN 6
-      WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' THEN GREATEST(1, ROUND(
-        6.0 - (ce."position" - 1.0) * 5.0 / (cnt.n - 1.0)
-      ))
-      WHEN NOT p."is_primary" AND cnt.n <= 1 THEN 30
-      ELSE GREATEST(1, ROUND(
-        30.0 - (ce."position" - 1.0) * 29.0 / (cnt.n - 1.0)
-      ))
-    END
-    FROM "Chart" c
-    INNER JOIN "paradas" p ON p."id" = c."parada_id"
-    INNER JOIN LATERAL (
-      SELECT COUNT(*)::int AS n FROM "ChartEntry" ce2 WHERE ce2."chartId" = c."id"
-    ) cnt ON true
-    WHERE ce."chartId" = c."id"
-      AND c."weekIndex" = ${rankingWeek.weekIndex}
-      AND ce."points" IS DISTINCT FROM (
-        CASE
-          WHEN p."is_primary" THEN 101 - ce."position"
-          WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' AND cnt.n <= 1 THEN 6
-          WHEN NOT p."is_primary" AND p."cadence" = 'DAILY' THEN GREATEST(1, ROUND(
-            6.0 - (ce."position" - 1.0) * 5.0 / (cnt.n - 1.0)
-          ))
-          WHEN NOT p."is_primary" AND cnt.n <= 1 THEN 30
-          ELSE GREATEST(1, ROUND(
-            30.0 - (ce."position" - 1.0) * 29.0 / (cnt.n - 1.0)
-          ))
-        END
-      )
-  `;
-  const snapshot = await getOrCreateRankingWeekSnapshot(new Date());
+  const entries = await prisma.chartEntry.findMany({
+    where: { chart: { weekIndex: rankingWeek.weekIndex } },
+    select: {
+      id: true,
+      position: true,
+      points: true,
+      chart: {
+        select: {
+          parada: { select: { isPrimary: true, cadence: true } },
+          _count: { select: { entries: true } },
+        },
+      },
+    },
+  });
+
+  let updatedRows = 0;
+  for (const entry of entries) {
+    const chartSize = entry.chart._count.entries;
+    const tier = scoringTierFromPrimary(entry.chart.parada.isPrimary);
+    const expected = pointsForChartPosition(entry.position, tier, chartSize, entry.chart.parada.cadence);
+    if (entry.points === expected) continue;
+    await prisma.chartEntry.update({
+      where: { id: entry.id },
+      data: { points: expected },
+    });
+    updatedRows++;
+  }
+
+  const snapshot = await getOrCreateRankingWeekSnapshot(now);
+  const lastfm = await refreshAllGlobalLastfmSnapshots(now);
 
   let notificationsSent = 0;
   if (snapshot.created) {
-    const targetUrl = `/global`;
-    const existingCount = await prisma.notification.count({
-      where: {
-        type: "global_chart",
-        targetUrl,
-        createdAt: {
-          gte: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-        },
-      },
-    });
+    notificationsSent += await sendGlobalWeeklyNotification(
+      "global_chart",
+      "/global/100",
+      `A Parada Global (${snapshot.weekLabel}) foi publicada! Confira os resultados.`,
+    );
+  }
 
-    if (existingCount === 0) {
-      const allUsers = await prisma.user.findMany({ select: { id: true } });
-      await prisma.notification.createMany({
-        data: allUsers.map((u) => ({
-          recipientId: u.id,
-          actorId: null,
-          type: "global_chart",
-          text: `A Parada Global (${snapshot.weekLabel}) foi publicada! Confira os resultados.`,
-          targetUrl,
-          read: false,
-        })),
-        skipDuplicates: false,
-      });
-      notificationsSent = allUsers.length;
-    }
+  if (lastfm.airplay.created) {
+    notificationsSent += await sendGlobalWeeklyNotification(
+      "global_airplay",
+      "/global/airplay",
+      `O Global 100 Air Play (${lastfm.airplay.weekLabel}) foi publicado! Veja o top de reproduções da semana.`,
+    );
+  }
+
+  if (lastfm.albums.created) {
+    notificationsSent += await sendGlobalWeeklyNotification(
+      "global_albums",
+      "/global/albums",
+      `O Global 100 Álbuns (${lastfm.albums.weekLabel}) foi publicado! Veja os discos mais ouvidos da semana.`,
+    );
   }
 
   return NextResponse.json({
@@ -90,6 +85,8 @@ export async function GET(req: NextRequest) {
     weekLabel: rankingWeek.weekLabel,
     updatedRows,
     snapshotCreated: snapshot.created,
+    lastfmAirplayCreated: lastfm.airplay.created,
+    lastfmAlbumsCreated: lastfm.albums.created,
     notificationsSent,
   });
 }

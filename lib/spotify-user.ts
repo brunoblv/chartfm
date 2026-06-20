@@ -15,6 +15,7 @@ export const SPOTIFY_USER_SCOPES = [
   "playlist-read-private",
   "playlist-read-collaborative",
   "playlist-modify-private",
+  "playlist-modify-public",
   "user-read-private",
   "user-read-recently-played",
 ].join(" ");
@@ -469,6 +470,44 @@ export async function createSpotifyPlaylist(
     id: json.id,
     url: json.external_urls?.spotify ?? `https://open.spotify.com/playlist/${json.id}`,
   };
+}
+
+/** Substitui todas as faixas de uma playlist (PUT para as primeiras 100, POST para o restante). */
+export async function replaceTracksInSpotifyPlaylist(
+  accessToken: string,
+  playlistId: string,
+  trackUris: string[],
+): Promise<SpotifyPlaylistAddTracksResult> {
+  const firstBatch = trackUris.slice(0, 100);
+  const res = await fetch(`${API_BASE}/playlists/${encodeURIComponent(playlistId)}/tracks`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ uris: firstBatch }),
+    cache: "no-store",
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    return {
+      ok: false,
+      status: res.status,
+      needsReconnect: true,
+      message: "Sem permissão para editar playlists. Reconecte sua conta Spotify.",
+    };
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[spotify] replace playlist tracks failed", res.status, body.slice(0, 300));
+    return { ok: false, status: res.status, message: "Não foi possível atualizar a playlist." };
+  }
+
+  if (trackUris.length > 100) {
+    return addTracksToSpotifyPlaylist(accessToken, playlistId, trackUris.slice(100));
+  }
+
+  return { ok: true };
 }
 
 /** Adiciona faixas a uma playlist (lotes de até 100 URIs). */

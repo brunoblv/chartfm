@@ -1,7 +1,8 @@
 import { buildWeekIndexFromDate, getPreviousClosedWeekDate } from "@/lib/chart-week";
+import { calcularPontosPrimary } from "@/lib/parada-points";
 
 export function pointsForPosition(position: number): number {
-  return 101 - position;
+  return calcularPontosPrimary(position);
 }
 
 export function songKey(title: string, artist: string): string {

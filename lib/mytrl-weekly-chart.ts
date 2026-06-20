@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { buildPeriodFromDate, prevPeriodIndex } from "@/lib/chart-cadence";
 import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
 import { getChartWeekRange } from "@/lib/chart-week";
-import { MYTRL_WEEKLY_PARADA_ID } from "@/lib/mytrl-access";
+import { MYTRL_WEEKLY_PARADA_ID, MYTRL_WEEKLY_PUBLISH_UTC_HOUR, MYTRL_WEEKLY_PUBLISH_UTC_MINUTE } from "@/lib/mytrl-access";
 import {
   brtWeekday,
   buildMyTrlPeriod,
@@ -28,7 +28,7 @@ const PALETTES: [string, string][] = [
   ["#8338EC", "#FB5607"],
 ];
 
-function paletteFor(artist: string, title: string) {
+export function paletteFor(artist: string, title: string) {
   const key = artist + title;
   let hash = 0;
   for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
@@ -83,7 +83,10 @@ export function aggregateMyTrlWeeklyScores(
     .slice(0, WEEKLY_TOP_SIZE);
 }
 
-async function upsertSongFromSpotify(spotifyId: string, fallback: WeeklyMyTrlCandidate) {
+export async function upsertSongFromSpotify(
+  spotifyId: string,
+  fallback: Pick<WeeklyMyTrlCandidate, "track" | "artist" | "album">,
+) {
   const metadata = await getSpotifyTrackMetadataById(spotifyId);
   const primaryArtist = metadata?.primaryArtist;
   const albumSpotifyId = metadata?.album.spotifyId ?? null;
@@ -135,6 +138,31 @@ async function upsertSongFromSpotify(spotifyId: string, fallback: WeeklyMyTrlCan
   }
 
   const resolvedTitle = metadata?.title ?? fallback.track;
+
+  // A song may exist without a spotifyId under the same title+artist.
+  // Upserting by spotifyId would try to CREATE and hit the (title,artist) unique constraint.
+  const existingByName = await prisma.song.findFirst({
+    where: { title: resolvedTitle, artist: mainArtistName },
+    select: { id: true, spotifyId: true, albumSpotifyId: true },
+  });
+  if (existingByName) {
+    const song = await prisma.song.update({
+      where: { id: existingByName.id },
+      data: {
+        ...(existingByName.spotifyId == null ? { spotifyId } : {}),
+        album: metadata?.album.title ?? fallback.album ?? null,
+        artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
+        albumSpotifyId: albumSpotifyId ?? undefined,
+        durationMs: metadata?.durationMs ?? undefined,
+        previewUrl: metadata?.previewUrl ?? undefined,
+        spotifyUrl: metadata?.spotifyUrl ?? undefined,
+        trackNumber: metadata?.trackNumber ?? undefined,
+      },
+      select: { id: true, spotifyId: true, albumSpotifyId: true },
+    });
+    return { id: song.id, spotifyId: song.spotifyId, albumSpotifyId: song.albumSpotifyId };
+  }
+
   const song = await prisma.song.upsert({
     where: { spotifyId },
     update: {
@@ -338,10 +366,12 @@ export async function publishMyTrlWeeklyChart(referenceDay: Date = new Date()): 
   };
 }
 
-/** Data de referência simulando publicação semanal às 7h BRT (sexta). */
+/** Data de referência simulando publicação semanal às 8:05 BRT (sexta). */
 export function parseMyTrlWeeklyReferenceDate(dateKey: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
-  const reference = new Date(`${dateKey}T10:00:00.000Z`);
+  const reference = new Date(
+    `${dateKey}T${String(MYTRL_WEEKLY_PUBLISH_UTC_HOUR).padStart(2, "0")}:${String(MYTRL_WEEKLY_PUBLISH_UTC_MINUTE).padStart(2, "0")}:00.000Z`,
+  );
   if (Number.isNaN(reference.getTime())) return null;
   if (brtWeekday(reference) !== 5) return null;
   const brt = toBrtDate(reference);

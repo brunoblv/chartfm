@@ -1,7 +1,28 @@
 import type { ParadaCadence } from "@/lib/chart-cadence";
 
-/** Parada principal: #1 = 100 pts, #100 = 1 pt (101 - posição). */
+/** Parada principal: #1 = 1000 pts, curva decrescente até #100 = 10 pts. */
 export type ParadaScoringTier = "primary" | "secondary";
+
+export const PRIMARY_POINTS_TOP = 1000;
+export const PRIMARY_POINTS_DECAY_EXPONENT = 1.5;
+
+/**
+ * Pontuação de parada principal por posição (1–100).
+ * Top 3 fixo; demais posições seguem curva com expoente p, arredondadas para cima.
+ */
+export function calcularPontosPrimary(posicao: number, p = PRIMARY_POINTS_DECAY_EXPONENT): number {
+  const pos = Math.min(Math.max(1, Math.floor(posicao)), 100);
+  if (pos <= 3) {
+    return { 1: 1000, 2: 900, 3: 850 }[pos]!;
+  }
+  const raw = 10 + (850 - 10) * ((100 - pos) / 97) ** p;
+  // Curva com 1 casa decimal arredondada para cima; persistido como Int no banco.
+  return Math.ceil(Math.ceil(raw * 10) / 10);
+}
+
+export function primaryPointsRangeLabel(): string {
+  return `${PRIMARY_POINTS_TOP}→10 pt`;
+}
 
 export const MAX_PARADAS_PER_USER = 2;
 
@@ -48,7 +69,7 @@ export function pointsForChartPosition(
   chartSize?: number,
   cadence?: string | null,
 ): number {
-  if (tier === "primary") return 101 - position;
+  if (tier === "primary") return calcularPontosPrimary(position);
   const size = chartSize ?? position;
   return pointsForSecondaryPosition(position, size, cadence);
 }

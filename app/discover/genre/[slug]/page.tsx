@@ -16,8 +16,10 @@ const GENRES = [
   { slug: "k-pop", name: "K-Pop", tags: ["k-pop", "kpop"] },
 ] as const;
 
+import { calcularPontosPrimary } from "@/lib/parada-points";
+
 function pointsForPosition(position: number) {
-  return 101 - position;
+  return calcularPontosPrimary(position);
 }
 
 function normalizeText(value: string) {

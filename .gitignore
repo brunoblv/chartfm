@@ -39,3 +39,8 @@ next-env.d.ts
 
 # uploads (servidor local — não versionar)
 /uploads/
+
+# rascunhos / backups locais
+/fix layout/
+/push/
+/MyTrlClient.tsx

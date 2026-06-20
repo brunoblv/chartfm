@@ -25,9 +25,9 @@ export async function GET(req: NextRequest) {
   const userPoints = new Map<string, { handle: string; name: string; points: number; wins: number }>();
 
   for (const vote of votes) {
-    const totalInRound = vote.submission.round.submissions.length;
-    const n = totalInRound - 1;
-    const pts = n <= 1 ? 10 : Math.max(1, Math.round(10 - (vote.position - 1) * 9 / (n - 1)));
+    const totalToRank = vote.submission.round.submissions.length - 1;
+    const k = totalToRank <= 1 ? 0 : Math.log(20) / (totalToRank - 1);
+    const pts = totalToRank <= 1 ? 20 : Math.max(1, Math.round(20 * Math.exp(-k * (vote.position - 1))));
 
     const uid = vote.submission.userId;
     const entry = userPoints.get(uid);

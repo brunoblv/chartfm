@@ -112,6 +112,38 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
                 >
                   🌐
                 </div>
+              ) : n.type === "global_airplay" ? (
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: "linear-gradient(135deg, #8338EC, #3A86FF)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                  }}
+                >
+                  📻
+                </div>
+              ) : n.type === "global_albums" ? (
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: "linear-gradient(135deg, #06D6A0, #073B4C)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                  }}
+                >
+                  💿
+                </div>
               ) : n.type === "milestone" || !actor ? (
                 <div
                   style={{

@@ -1028,7 +1028,7 @@ export default function SettingsPage() {
                         Criar segunda parada
                       </div>
                       <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                        Você pode ter até 2 paradas. A secundária conta menos pontos (30→1 semanal, 6→1 diária) e não entra no ranking global. Escolha se ela será semanal ou diária.
+                        Você pode ter até 2 paradas. A secundária é independente e não entra no ranking global. Escolha se ela será semanal ou diária.
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

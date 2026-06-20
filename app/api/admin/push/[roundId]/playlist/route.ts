@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
-import { createSpotifyPlaylist, addTracksToSpotifyPlaylist, getSpotifyUserAccessToken } from "@/lib/spotify-user";
+import { createSpotifyPlaylist, addTracksToSpotifyPlaylist, getSpotifyUserAccessToken, replaceTracksInSpotifyPlaylist, getMyTrlOwnerUser } from "@/lib/spotify-user";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { roundId: string } },
+  { params }: { params: Promise<{ roundId: string }> },
 ) {
   const auth = await requirePrivilegedSession();
   if (!auth) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
-  const { roundId } = params;
+  const { roundId } = await params;
 
   const round = await prisma.pushRound.findUnique({
     where: { id: roundId },
@@ -31,6 +31,25 @@ export async function POST(
     return NextResponse.json({ error: "Nenhuma música inscrita ainda" }, { status: 400 });
   }
 
+  const uris = trackIds.map((id) => `spotify:track:${id}`);
+
+  // Se há uma playlist fixa configurada, substituir as faixas nela
+  const fixedPlaylistId = process.env.PUSH_SPOTIFY_PLAYLIST_ID ?? null;
+  if (fixedPlaylistId) {
+    const ownerUser = await getMyTrlOwnerUser();
+    const token = ownerUser?.id ? await getSpotifyUserAccessToken(ownerUser.id) : null;
+    if (!token) {
+      return NextResponse.json({ error: "Conta Spotify do administrador não conectada.", needsReconnect: true }, { status: 400 });
+    }
+    const result = await replaceTracksInSpotifyPlaylist(token, fixedPlaylistId, uris);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.message, needsReconnect: result.needsReconnect }, { status: 502 });
+    }
+    await prisma.pushRound.update({ where: { id: roundId }, data: { spotifyPlaylistId: fixedPlaylistId } });
+    return NextResponse.json({ playlistId: fixedPlaylistId, playlistUrl: `https://open.spotify.com/playlist/${fixedPlaylistId}` });
+  }
+
+  // Sem playlist fixa: criar nova playlist na conta do admin
   const token = await getSpotifyUserAccessToken(auth.userId);
   if (!token) {
     return NextResponse.json({ error: "Conta Spotify não conectada. Conecte nas configurações.", needsReconnect: true }, { status: 400 });
@@ -44,7 +63,6 @@ export async function POST(
     return NextResponse.json({ error: created.message, needsReconnect: created.needsReconnect }, { status: 502 });
   }
 
-  const uris = trackIds.map((id) => `spotify:track:${id}`);
   const added = await addTracksToSpotifyPlaylist(token, created.id, uris);
   if (!added.ok) {
     return NextResponse.json({ error: added.message }, { status: 502 });

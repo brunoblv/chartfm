@@ -751,3 +751,51 @@ export async function resolveCoverImageUrl(artist: string, title: string): Promi
   cacheSet(key, img);
   return img;
 }
+
+const trackCoverCache = new Map<string, string | null>();
+const TRACK_COVER_CACHE_MAX = 300;
+
+function trackCoverCacheSet(id: string, url: string | null) {
+  if (trackCoverCache.size >= TRACK_COVER_CACHE_MAX) {
+    const first = trackCoverCache.keys().next().value;
+    if (first !== undefined) trackCoverCache.delete(first);
+  }
+  trackCoverCache.set(id, url);
+}
+
+/** Busca capas de álbum para uma lista de track IDs do Spotify (lotes de 50). */
+export async function fetchSpotifyTrackCovers(trackIds: string[]): Promise<Map<string, string | null>> {
+  const result = new Map<string, string | null>();
+  if (trackIds.length === 0) return result;
+
+  const missing: string[] = [];
+  for (const id of trackIds) {
+    if (trackCoverCache.has(id)) {
+      result.set(id, trackCoverCache.get(id)!);
+    } else {
+      missing.push(id);
+    }
+  }
+  if (missing.length === 0) return result;
+
+  const token = await getAccessToken();
+  if (!token) return result;
+
+  for (let i = 0; i < missing.length; i += 50) {
+    const batch = missing.slice(i, i + 50);
+    const res = await spotifyFetch(
+      `${API_BASE}/tracks?ids=${batch.join(",")}&market=BR`,
+      { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
+    );
+    if (!res?.ok) continue;
+    const json = (await res.json()) as { tracks?: SpotifyTrackApi[] };
+    for (const track of json.tracks ?? []) {
+      if (!track?.id) continue;
+      const url = pickAlbumImageUrl(track.album?.images);
+      trackCoverCacheSet(track.id, url);
+      result.set(track.id, url);
+    }
+  }
+
+  return result;
+}

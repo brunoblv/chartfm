@@ -48,6 +48,24 @@ async function main() {
   let updates = 0;
   let mismatches = 0;
   let maxItemsPatches = 0;
+  const pendingUpdates: { id: string; points: number }[] = [];
+
+  async function flushUpdates() {
+    if (dryRun || pendingUpdates.length === 0) return;
+    const chunkSize = 500;
+    for (let i = 0; i < pendingUpdates.length; i += chunkSize) {
+      const chunk = pendingUpdates.slice(i, i + chunkSize);
+      await prisma.$transaction(
+        chunk.map((row) =>
+          prisma.chartEntry.update({
+            where: { id: row.id },
+            data: { points: row.points },
+          }),
+        ),
+      );
+    }
+    pendingUpdates.length = 0;
+  }
 
   for (const chart of charts) {
     const chartSize = chart.entries.length;
@@ -73,20 +91,17 @@ async function main() {
       );
       if (entry.points === expected) continue;
       mismatches++;
-      if (entry.position <= 20 && tier === "primary" && entry.points < 81) {
+      if (entry.position <= 3 && tier === "primary" && entry.points !== expected) {
         console.log(
           `  @${chart.user.handle} · ${chart.parada.name} · semana ${chart.weekIndex} · #${entry.position}: ${entry.points} → ${expected}`,
         );
       }
-      if (!dryRun) {
-        await prisma.chartEntry.update({
-          where: { id: entry.id },
-          data: { points: expected },
-        });
-      }
+      pendingUpdates.push({ id: entry.id, points: expected });
       updates++;
     }
   }
+
+  await flushUpdates();
 
   console.log(
     dryRun

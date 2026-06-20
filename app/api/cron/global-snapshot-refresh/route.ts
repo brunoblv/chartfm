@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { refreshRankingWeekSnapshot } from "@/lib/global-snapshot";
+import { refreshAllGlobalLastfmSnapshots } from "@/lib/global-lastfm-snapshot";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -14,15 +16,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  // Recomputa (upsert) o snapshot da semana de ranking corrente a cada execução,
-  // para refletir paradas publicadas após a primeira geração até o deadline.
-  // Reexecutar após o deadline é idempotente (o filtro de corte é fixo).
-  const snapshot = await refreshRankingWeekSnapshot(new Date());
+  const now = new Date();
+  const snapshot = await refreshRankingWeekSnapshot(now);
+  const lastfm = await refreshAllGlobalLastfmSnapshots(now);
 
   return NextResponse.json({
     ok: true,
     weekIndex: snapshot.weekIndex,
     weekLabel: snapshot.weekLabel,
     dateRange: snapshot.dateRange,
+    lastfmAirplayWeek: lastfm.airplay.weekIndex,
+    lastfmAlbumsWeek: lastfm.albums.weekIndex,
   });
 }

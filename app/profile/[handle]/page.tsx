@@ -16,9 +16,9 @@ import type { Chart, Song, UserWithCharts } from "@/lib/types";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { pointsForChartPosition, secondaryPointsRangeLabel, type ParadaScoringTier } from "@/lib/parada-points";
+import { pointsForChartPosition, type ParadaScoringTier } from "@/lib/parada-points";
 
-type ParadaTab = "charts" | "evolution" | "artists" | "songs" | "numberOnes";
+type ParadaTab = "charts" | "artists" | "songs" | "numberOnes";
 type StatsScope = "overall" | "year";
 
 type ParadaInfo = {
@@ -98,7 +98,7 @@ function buildTopArtists(user: UserWithCharts) {
     const unique = [...new Set(artists)];
     unique.forEach((a) => {
       if (!artistMap.has(a)) artistMap.set(a, { name: a, points: 0, color: COVER_PALETTES[i % COVER_PALETTES.length] });
-      artistMap.get(a)!.points += 101 - e.position;
+      artistMap.get(a)!.points += pointsForChartPosition(e.position, "primary", latest.entries.length);
     });
   });
   return [...artistMap.values()].sort((a, b) => b.points - a.points).slice(0, 12);
@@ -705,12 +705,12 @@ export default function ProfilePage() {
                 <span>{paradaNome}</span>
                 {activeParada?.isPrimary && (
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "var(--accent-tint)", color: "#FA243C" }}>
-                    Principal · 100→1 pt
+                    Principal
                   </span>
                 )}
                 {activeParada && !activeParada.isPrimary && (
                   <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: "var(--fill-subtle)", color: "var(--text-muted)" }}>
-                    Secundária · {activeParada.cadence === "daily" ? "Diária" : "Semanal"} · {secondaryPointsRangeLabel(activeParada.cadence)}
+                    Secundária · {activeParada.cadence === "daily" ? "Diária" : "Semanal"}
                   </span>
                 )}
               </div>
@@ -1044,7 +1044,6 @@ export default function ProfilePage() {
           {(
             [
               ["charts", "Publicações", "Publ."],
-              ["evolution", "Evolução", "Evol."],
               ["numberOnes", "#1s", "#1s"],
               ["artists", "Artistas", "Artistas"],
               ["songs", "Músicas", "Músicas"],
@@ -1180,10 +1179,6 @@ export default function ProfilePage() {
               );
             })()}
           </>
-        )}
-
-        {paradaTab === "evolution" && (
-          <EvolutionChart user={statsUser ?? user} />
         )}
 
         {paradaTab === "numberOnes" && hasCharts && (
@@ -1601,100 +1596,3 @@ function SongStatsTable({ rows, isMobile }: { rows: SongTableRow[]; isMobile?: b
   );
 }
 
-function EvolutionChart({ user }: { user: UserWithCharts }) {
-  const width = 600;
-  const height = 260;
-  const pad = { top: 20, right: 20, bottom: 40, left: 40 };
-  const chartW = width - pad.left - pad.right;
-  const chartH = height - pad.top - pad.bottom;
-
-  const weeks = user.charts.slice(0, 6).reverse();
-  const weekCount = weeks.length;
-  const maxPos = 20;
-  const colors = ["#FA243C", "#4ECDC4", "#8338EC", "#FB5607", "#06D6A0"];
-
-  const latest = user.charts[0];
-  if (!latest || weekCount < 2) {
-    return (
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 28, color: "var(--text-muted)", fontSize: 15 }}>
-        Publique pelo menos duas paradas em semanas diferentes para ver a evolução das músicas no gráfico.
-      </div>
-    );
-  }
-
-  const top5: Song[] = latest.entries.slice(0, 5).map((e) => e.song);
-
-  const denom = Math.max(1, weekCount - 1);
-  const xFor = (i: number) => pad.left + (i / denom) * chartW;
-  const yFor = (pos: number) => pad.top + ((pos - 1) / (maxPos - 1)) * chartH;
-
-  const gridLines = [1, 5, 10, 15, 20];
-
-  return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24 }}>
-      <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4 }}>Trajetória das top 5 da parada mais recente</div>
-      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>Quanto mais alto, melhor a posição. Linhas tracejadas = música fora da parada.</div>
-      <div style={{ overflowX: "auto" }}>
-        <svg width={width} height={height} style={{ display: "block" }}>
-          {gridLines.map((pos) => (
-            <g key={pos}>
-              <line x1={pad.left} x2={width - pad.right} y1={yFor(pos)} y2={yFor(pos)} stroke="rgba(0,0,0,0.06)" strokeWidth={1} />
-              <text x={pad.left - 8} y={yFor(pos) + 4} fontSize={10} textAnchor="end" fill="var(--text-muted)">
-                #{pos}
-              </text>
-            </g>
-          ))}
-          {weeks.map((w, i) => (
-            <text key={w.id} x={xFor(i)} y={height - 8} fontSize={10} textAnchor="middle" fill="var(--text-muted)">
-              {i === weeks.length - 1 ? "Agora" : `${weeks.length - 1 - i}sem`}
-            </text>
-          ))}
-          {top5.map((song, si) => {
-            const points = weeks.map((w) => {
-              const entry = w.entries.find((e) => e.song.title === song.title && e.song.artist === song.artist);
-              return entry ? { pos: entry.position, present: true } : { pos: maxPos + 2, present: false };
-            });
-            let d = "";
-            points.forEach((p, i) => {
-              const x = xFor(i);
-              const y = yFor(Math.min(p.pos, maxPos));
-              d += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
-            });
-            return (
-              <path
-                key={si}
-                d={d}
-                fill="none"
-                stroke={colors[si]}
-                strokeWidth={2.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeDasharray={points.some((p) => !p.present) ? "4 4" : "none"}
-              />
-            );
-          })}
-          {top5.map((song, si) =>
-            weeks.map((w, wi) => {
-              const entry = w.entries.find((e) => e.song.title === song.title && e.song.artist === song.artist);
-              if (!entry) return null;
-              return <circle key={`${si}-${wi}`} cx={xFor(wi)} cy={yFor(entry.position)} r={4} fill="white" stroke={colors[si]} strokeWidth={2.5} />;
-            })
-          )}
-        </svg>
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-        {top5.map((song, si) => (
-          <div key={si} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <div style={{ width: 12, height: 12, borderRadius: 3, background: colors[si], flexShrink: 0 }} />
-            <Link href={buildSongPath(song)} style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", textDecoration: "none" }}>
-              {song.title}
-            </Link>
-            <Link href={buildArtistPath(song.artist, song.artistSpotifyId, song.artistRefId)} style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none" }}>
-              · {formatSongArtist(song)}
-            </Link>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

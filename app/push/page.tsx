@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
 import PushClient, { type RoundData } from "./PushClient";
 
 export const revalidate = 30;
@@ -25,19 +26,31 @@ async function getCurrentRound(userId: string | null) {
 
   const mySubmission = userId ? (round.submissions.find((s) => s.userId === userId) ?? null) : null;
   const isHidden = round.phase === "SUBMISSION";
+  const revealUsers = round.phase === "RESULT";
+
+  // Buscar capas do Spotify: todas as músicas visíveis + a própria indicação (se existir)
+  const trackIdsForCovers: string[] = [];
+  if (!isHidden) {
+    for (const s of round.submissions) trackIdsForCovers.push(s.spotifyTrackId);
+  } else if (mySubmission) {
+    trackIdsForCovers.push(mySubmission.spotifyTrackId);
+  }
+  const coverMap = trackIdsForCovers.length > 0
+    ? await fetchSpotifyTrackCovers(trackIdsForCovers)
+    : new Map<string, string | null>();
 
   const submissions = isHidden
     ? null
     : round.submissions.map((s) => ({
         id: s.id,
         userId: s.userId,
-        userHandle: s.user.handle,
-        userName: s.user.name,
+        userHandle: revealUsers ? s.user.handle : null,
+        userName: revealUsers ? s.user.name : null,
         spotifyTrackId: s.spotifyTrackId,
         song: {
           title: s.song.title,
           artist: s.song.artist,
-          coverUrl: null as string | null,
+          coverUrl: coverMap.get(s.spotifyTrackId) ?? null,
           spotifyUrl: s.song.spotifyUrl,
         },
       }));
@@ -56,10 +69,10 @@ async function getCurrentRound(userId: string | null) {
       select: { submissionId: true, position: true },
     });
     const totals = new Map<string, number>();
-    const total = round.submissions.length;
-    const n = total - 1;
+    const totalToRank = round.submissions.length - 1;
     for (const v of allVotes) {
-      const pts = n <= 1 ? 10 : Math.max(1, Math.round(10 - (v.position - 1) * 9 / (n - 1)));
+      const k = totalToRank <= 1 ? 0 : Math.log(20) / (totalToRank - 1);
+      const pts = totalToRank <= 1 ? 20 : Math.max(1, Math.round(20 * Math.exp(-k * (v.position - 1))));
       totals.set(v.submissionId, (totals.get(v.submissionId) ?? 0) + pts);
     }
     const sorted = round.submissions
@@ -73,7 +86,7 @@ async function getCurrentRound(userId: string | null) {
       spotifyTrackId: s.spotifyTrackId,
       totalPoints: s.totalPoints,
       rank: i + 1,
-      song: { title: s.song.title, artist: s.song.artist, coverUrl: null, spotifyUrl: s.song.spotifyUrl },
+      song: { title: s.song.title, artist: s.song.artist, coverUrl: coverMap.get(s.spotifyTrackId) ?? null, spotifyUrl: s.song.spotifyUrl },
     }));
   }
 
@@ -89,7 +102,7 @@ async function getCurrentRound(userId: string | null) {
     season: round.season,
     submissionCount: round.submissions.length,
     mySubmission: mySubmission
-      ? { id: mySubmission.id, spotifyTrackId: mySubmission.spotifyTrackId, song: { title: mySubmission.song.title, artist: mySubmission.song.artist, coverUrl: null, spotifyUrl: mySubmission.song.spotifyUrl } }
+      ? { id: mySubmission.id, spotifyTrackId: mySubmission.spotifyTrackId, song: { title: mySubmission.song.title, artist: mySubmission.song.artist, coverUrl: coverMap.get(mySubmission.spotifyTrackId) ?? null, spotifyUrl: mySubmission.song.spotifyUrl } }
       : null,
     submissions,
     myVotes,

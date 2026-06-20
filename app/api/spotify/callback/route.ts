@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const error = url.searchParams.get("error");
   if (error) {
-    return NextResponse.redirect(new URL(`/mytrl?spotify=error&reason=${encodeURIComponent(error)}`, req.url));
+    return NextResponse.redirect(new URL(`/settings?spotify=error&reason=${encodeURIComponent(error)}`, req.url));
   }
 
   const code = url.searchParams.get("code");
@@ -36,17 +36,17 @@ export async function GET(req: NextRequest) {
   jar.delete(REDIRECT_URI_COOKIE);
 
   if (!code || !state || !stored || state !== stored) {
-    return NextResponse.redirect(new URL("/mytrl?spotify=invalid_state", req.url));
+    return NextResponse.redirect(new URL("/settings?spotify=invalid_state", req.url));
   }
 
   const redirectUri =
     storedRedirectUri ?? getSpotifyRedirectUri(new URL(req.url).origin);
   const tokens = await exchangeSpotifyAuthCode(code, redirectUri);
   if (!tokens) {
-    return NextResponse.redirect(new URL("/mytrl?spotify=token_error", req.url));
+    return NextResponse.redirect(new URL("/settings?spotify=token_error", req.url));
   }
 
   const result = await saveSpotifyConnection(session.user.id, tokens);
   const qs = result.playlistFound ? "connected" : "connected_no_playlist";
-  return NextResponse.redirect(new URL(`/mytrl?spotify=${qs}`, req.url));
+  return NextResponse.redirect(new URL(`/settings?spotify=${qs}`, req.url));
 }

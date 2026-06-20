@@ -1,4 +1,5 @@
 import type { GlobalChartEntry, Song } from "@/lib/types";
+import { calcularPontosPrimary } from "@/lib/parada-points";
 
 /** Linha mínima vinda do Prisma para agregar a parada global da semana. */
 export type WeeklyChartEntryRow = {
@@ -22,7 +23,7 @@ export type WeeklyChartEntryRow = {
 };
 
 export function pointsForChartPosition(position: number): number {
-  return 101 - position;
+  return calcularPontosPrimary(position);
 }
 
 /**

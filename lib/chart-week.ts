@@ -259,6 +259,12 @@ export function getGlobalSnapshotDeadline(weekIndex: number): Date {
   return deadline;
 }
 
+/** Segunda 01:00 BRT após o fechamento da semana ISO — referência para snapshots semanais. */
+export function getWeeklySnapshotReferenceDate(weekIndex: number): Date {
+  const deadline = getGlobalSnapshotDeadline(weekIndex);
+  return new Date(deadline.getTime() - 23 * 60 * 60 * 1000);
+}
+
 export function formatChartPeriod(chart: Pick<Chart, "weekLabel" | "dateRange">): string {
   const weekLabel = normalizeWeekLabel(chart.weekLabel);
   const dateRange = normalizeDateRange(chart.dateRange);

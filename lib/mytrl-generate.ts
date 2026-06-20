@@ -118,7 +118,10 @@ export type MyTrlGenerateResult =
       skipped?: false;
     }
   | { ok: false; error: string; skipped?: boolean };
-export async function generateMyTrlSnapshot(referenceDay: Date = new Date()): Promise<MyTrlGenerateResult> {
+export async function generateMyTrlSnapshot(
+  referenceDay: Date = new Date(),
+  options?: { skipRecompute?: boolean },
+): Promise<MyTrlGenerateResult> {
   const weekday = brtWeekday(referenceDay);
   if (weekday === 0) {
     return { ok: false, error: "Fim de semana — MyTRL só roda de segunda a sexta.", skipped: true };
@@ -175,7 +178,9 @@ export async function generateMyTrlSnapshot(referenceDay: Date = new Date()): Pr
     },
   });
 
-  await recomputeAllMyTrlSnapshots();
+  if (!options?.skipRecompute) {
+    await recomputeAllMyTrlSnapshots();
+  }
 
   return {
     ok: true,

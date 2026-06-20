@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
 
 export const dynamic = "force-dynamic";
 
@@ -29,19 +30,31 @@ export async function GET() {
     : null;
 
   const isHidden = round.phase === "SUBMISSION";
+  const revealUsers = round.phase === "RESULT";
+
+  // Buscar capas do Spotify: músicas visíveis + indicação própria
+  const trackIdsForCovers: string[] = [];
+  if (!isHidden) {
+    for (const s of round.submissions) trackIdsForCovers.push(s.spotifyTrackId);
+  } else if (mySubmission) {
+    trackIdsForCovers.push(mySubmission.spotifyTrackId);
+  }
+  const coverMap = trackIdsForCovers.length > 0
+    ? await fetchSpotifyTrackCovers(trackIdsForCovers)
+    : new Map<string, string | null>();
 
   const submissions = isHidden
     ? null
     : round.submissions.map((s) => ({
         id: s.id,
         userId: s.userId,
-        userHandle: s.user.handle,
-        userName: s.user.name,
+        userHandle: revealUsers ? s.user.handle : null,
+        userName: revealUsers ? s.user.name : null,
         spotifyTrackId: s.spotifyTrackId,
         song: {
           title: s.song.title,
           artist: s.song.artist,
-          coverUrl: null as string | null,
+          coverUrl: coverMap.get(s.spotifyTrackId) ?? null,
           spotifyUrl: s.song.spotifyUrl,
         },
       }));
@@ -77,7 +90,7 @@ export async function GET() {
       spotifyTrackId: s.spotifyTrackId,
       totalPoints: s.totalPoints,
       rank: i + 1,
-      song: { title: s.song.title, artist: s.song.artist, coverUrl: null, spotifyUrl: s.song.spotifyUrl },
+      song: { title: s.song.title, artist: s.song.artist, coverUrl: coverMap.get(s.spotifyTrackId) ?? null, spotifyUrl: s.song.spotifyUrl },
     }));
   }
 
@@ -100,7 +113,7 @@ export async function GET() {
             song: {
               title: mySubmission.song.title,
               artist: mySubmission.song.artist,
-              coverUrl: null,
+              coverUrl: coverMap.get(mySubmission.spotifyTrackId) ?? null,
               spotifyUrl: mySubmission.song.spotifyUrl,
             },
           }

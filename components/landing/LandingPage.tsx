@@ -426,7 +426,7 @@ export function LandingPage({
             {[
               { n: "01", title: "Monte sua parada", desc: "De 1 a 100 músicas. Arraste para reordenar. Importe direto do Spotify ou Apple Music. A semana fecha toda segunda às 00h.", accent: "#FA243C" },
               { n: "02", title: "Compartilhe e debata", desc: "Sua parada vai pro feed dos seguidores. Entre em comunidades temáticas (Rockeiros, Divas Pop, Sertanejo…) e poste no feed imersivo.", accent: "#8338EC" },
-              { n: "03", title: "Suba na parada global", desc: "Sua música #1 vale 100 pontos pra parada global. A do #2 vale 99. Veja o ranking agregado por comunidade ou geral.", accent: "#06D6A0" },
+              { n: "03", title: "Suba na parada global", desc: "Sua música #1 vale 1000 pontos na parada global. A do #2 vale 900. Veja o ranking agregado por comunidade ou geral.", accent: "#06D6A0" },
             ].map((s) => (
               <div key={s.n} style={{ background: "#FBFBFD", borderRadius: 20, padding: 30, border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 54, fontWeight: 800, letterSpacing: "-0.04em", color: s.accent, lineHeight: 1, marginBottom: 14 }}>{s.n}</div>
@@ -601,7 +601,7 @@ export function LandingPage({
               O que o mundo<br />está ouvindo agora.
             </h2>
             <p style={{ fontSize: 16, opacity: 0.75, lineHeight: 1.55, marginBottom: 30, margin: "0 0 30px 0" }}>
-              Não é algoritmo de play. São paradas reais, montadas por gente real, agregadas por sistema de pontos transparente. A música #1 de cada usuário vale 100 pontos. A #2, 99. E por aí vai.
+              Não é algoritmo de play. São paradas reais, montadas por gente real, agregadas por sistema de pontos transparente. A música #1 de cada usuário vale 1000 pontos. A #2, 900. E por aí vai.
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 32 }}>
               {[["24,1 mil", "Curadores ativos"], ["418 mil", "Músicas votadas"], ["56", "Comunidades"]].map(([n, l]) => (

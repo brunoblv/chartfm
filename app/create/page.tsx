@@ -890,7 +890,7 @@ export default function CreatePage() {
           <li>Adicione quantas músicas quiser e ordene arrastando</li>
           <li>Prazo: domingo 23:59 (BRT)</li>
           <li>Editável até a publicação</li>
-          <li>A ordem define os pontos na Parada Global</li>
+          <li>A ordem reflete o que mais marcou sua semana</li>
         </ul>
       </div>
     </div>

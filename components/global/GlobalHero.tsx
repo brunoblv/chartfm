@@ -7,15 +7,35 @@ import { useTranslations } from "@/hooks/useTranslations";
 interface GlobalHeroProps {
   weekNow: string;
   weekRangeNow: string;
-  uniqueParadas: number;
   songsCount: number;
   olderWeek: number | null;
   newerWeek: number | null;
+  title?: string;
+  pointsRule?: string;
+  basePath?: string;
+  statPrimaryLabel?: string;
+  /** @deprecated use statPrimaryLabel */
+  uniqueParadas?: number;
 }
 
-export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, olderWeek, newerWeek }: GlobalHeroProps) {
+export function GlobalHero({
+  weekNow,
+  weekRangeNow,
+  songsCount,
+  olderWeek,
+  newerWeek,
+  title = "Global 100",
+  pointsRule,
+  basePath = "/global/100",
+  statPrimaryLabel,
+  uniqueParadas,
+}: GlobalHeroProps) {
   const isMobile = useIsMobile();
   const { t } = useTranslations();
+  const rule = pointsRule ?? t("global.pointsRule");
+  const primaryStat =
+    statPrimaryLabel ??
+    (uniqueParadas != null ? t("global.chartsCount", { count: uniqueParadas }) : t("global.songsCount", { count: songsCount }));
 
   return (
     <div style={{
@@ -59,13 +79,13 @@ export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, o
           {weekNow}
         </div>
         <div style={{ fontSize: isMobile ? 40 : 64, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
-          Global 100
+          {title}
         </div>
         <p style={{ fontSize: isMobile ? 13 : 15, opacity: 0.8, maxWidth: 480, lineHeight: 1.6, marginBottom: 14 }}>
-          {t("global.pointsRule")}
+          {rule}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 6 : 20, fontSize: isMobile ? 12 : 14, opacity: 0.7, marginBottom: 14 }}>
-          <span>{t("global.chartsCount", { count: uniqueParadas })}</span>
+          <span>{primaryStat}</span>
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
           <span>{t("global.songsCount", { count: songsCount })}</span>
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
@@ -74,7 +94,7 @@ export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, o
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {olderWeek ? (
             <Link
-              href={`/global?week=${olderWeek}`}
+              href={`${basePath}?week=${olderWeek}`}
               style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
             >
               {t("global.prevWeek")}
@@ -86,7 +106,7 @@ export function GlobalHero({ weekNow, weekRangeNow, uniqueParadas, songsCount, o
           )}
           {newerWeek ? (
             <Link
-              href={`/global?week=${newerWeek}`}
+              href={`${basePath}?week=${newerWeek}`}
               style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
             >
               {t("global.nextWeek")}

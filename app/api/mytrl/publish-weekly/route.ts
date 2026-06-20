@@ -7,7 +7,7 @@ export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
 // POST /api/mytrl/publish-weekly — publica parada semanal (somente @bruno ou cron)
-// Body opcional: { "date": "YYYY-MM-DD" } — sexta no passado (7h BRT)
+// Body opcional: { "date": "YYYY-MM-DD" } — sexta no passado (8:05 BRT)
 export async function POST(req: Request) {
   const session = await requireMyTrlSession();
   const cronOk = authorizeMyTrlCron(req);

@@ -243,28 +243,28 @@ export async function computeGlobalSnapshotData(
       historicalStatsBySongKey: historicalStats.weeklySongs,
       comparisonEntries: prevWeekEntries,
       prevPositionsByKey: prevPayload ? buildSongPrevPositions(prevPayload.weeklySongs) : undefined,
-      weightMode: "global",
+      weightMode: "stored",
     }),
     weeklyArtists: aggregateTopArtists(weeklyEntries, 100, {
       previousWeekEntries: prevWeekEntries,
       historicalStatsByArtistKey: historicalStats.weeklyArtists,
       comparisonEntries: prevWeekEntries,
       prevPositionsByKey: prevPayload ? buildArtistPrevPositions(prevPayload.weeklyArtists) : undefined,
-      weightMode: "global",
+      weightMode: "stored",
     }),
     overallSongs: aggregateGlobalSongs(overallEntries, 100, {
       previousWeekEntries: prevOverallEntries,
       historicalStatsBySongKey: historicalStats.overallSongs,
       comparisonEntries: prevOverallEntries,
       prevPositionsByKey: prevPayload ? buildSongPrevPositions(prevPayload.overallSongs) : undefined,
-      weightMode: "global",
+      weightMode: "stored",
     }),
     overallArtists: aggregateTopArtists(overallEntries, 100, {
       previousWeekEntries: prevOverallEntries,
       historicalStatsByArtistKey: historicalStats.overallArtists,
       comparisonEntries: prevOverallEntries,
       prevPositionsByKey: prevPayload ? buildArtistPrevPositions(prevPayload.overallArtists) : undefined,
-      weightMode: "global",
+      weightMode: "stored",
     }),
   };
 }

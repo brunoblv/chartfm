@@ -37,6 +37,9 @@
   ],
   "exclude": [
     "node_modules",
-    "scripts"
+    "scripts",
+    "fix layout",
+    "push",
+    "MyTrlClient.tsx"
   ]
 }

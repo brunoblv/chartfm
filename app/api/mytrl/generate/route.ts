@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireMyTrlSession, authorizeMyTrlCron } from "@/lib/mytrl-access";
 import { parseMyTrlReferenceDate } from "@/lib/mytrl-chart-engine";
-import { generateMyTrlSnapshot } from "@/lib/mytrl-generate";
+import { runDailyMyTrlJob } from "@/lib/mytrl-daily-parada";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
-// POST /api/mytrl/generate — gera snapshot manualmente (somente @bruno ou cron)
-// Body opcional: { "date": "YYYY-MM-DD" } — simula um dia no passado (6h BRT)
+// POST /api/mytrl/generate — gera snapshot + publica na UMS Request Live (@bruno ou cron)
+// Body opcional: { "date": "YYYY-MM-DD" } — simula um dia no passado (8h BRT)
 export async function POST(req: Request) {
   const session = await requireMyTrlSession();
   const cronOk = authorizeMyTrlCron(req);
@@ -35,12 +35,22 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await generateMyTrlSnapshot(referenceDay);
+    const result = await runDailyMyTrlJob(referenceDay);
     if (!result.ok) {
       const status = result.skipped ? 200 : 400;
       return NextResponse.json(result, { status });
     }
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ok: true,
+      weekday: result.snapshot.weekday,
+      weekIndex: result.snapshot.weekIndex,
+      count: result.snapshot.count,
+      referenceDate: result.snapshot.referenceDate,
+      weekLabel: result.publish.weekLabel,
+      chartId: result.publish.chartId,
+      published: result.publish.count,
+      created: result.publish.created,
+    });
   } catch (err) {
     return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
   }

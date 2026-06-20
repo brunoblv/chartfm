@@ -14,6 +14,7 @@ export async function POST(
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
+  const userId = session.user.id;
 
   const { roundId } = await params;
   const body = (await req.json()) as { votes?: { submissionId: string; position: number }[] };
@@ -58,8 +59,8 @@ export async function POST(
   await prisma.$transaction(
     votes.map((v) =>
       prisma.pushVote.upsert({
-        where: { roundId_userId_submissionId: { roundId, userId: session.user.id, submissionId: v.submissionId } },
-        create: { roundId, userId: session.user.id, submissionId: v.submissionId, position: v.position },
+        where: { roundId_userId_submissionId: { roundId, userId, submissionId: v.submissionId } },
+        create: { roundId, userId, submissionId: v.submissionId, position: v.position },
         update: { position: v.position },
       }),
     ),
