@@ -15,6 +15,7 @@ import type { Song, Cover as CoverModel, Chart } from "@/lib/types";
 type ChartDetailResponse = {
   user: { id: string; handle: string; name: string };
   chart: Pick<Chart, "id" | "weekLabel" | "dateRange" | "entries">;
+  lastfmImportWeekDate?: string | null;
 };
 
 type SpotifyApiTrack = {
@@ -62,6 +63,7 @@ export default function EditChartPage() {
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weekLabel, setWeekLabel] = useState("");
+  const [lastfmImportWeekDate, setLastfmImportWeekDate] = useState<string | null>(null);
   const [entries, setEntries] = useState<Song[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
@@ -94,6 +96,7 @@ export default function EditChartPage() {
         }
         const data = (await res.json()) as ChartDetailResponse;
         setWeekLabel(data.chart.weekLabel);
+        setLastfmImportWeekDate(data.lastfmImportWeekDate ?? null);
         setEntries(
           data.chart.entries.map((e) => ({
             id: e.song.id,
@@ -378,7 +381,7 @@ export default function EditChartPage() {
           "Cache-Control": "no-store, no-cache, max-age=0",
           Pragma: "no-cache",
         },
-        body: JSON.stringify({ nonce: requestNonce }),
+        body: JSON.stringify({ nonce: requestNonce, weekDate: lastfmImportWeekDate ?? undefined }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -680,7 +683,7 @@ export default function EditChartPage() {
               type="button"
               onClick={importFromLastfm}
               disabled={importingLastfm}
-              title="Substitui a lista pelas músicas mais ouvidas no Last.fm nos últimos 30 dias (ordenadas por plays)"
+              title="Substitui a lista pelas top tracks do Last.fm conforme o mês da parada"
               style={{
                 border: "1px solid rgba(250,36,60,0.3)",
                 background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",

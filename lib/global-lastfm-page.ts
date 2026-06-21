@@ -6,7 +6,8 @@ type SearchParams = Promise<{ week?: string }> | { week?: string };
 
 export async function loadGlobalLastfmPageData(mode: GlobalLastfmMode, searchParams?: SearchParams) {
   const params = searchParams ? ("then" in searchParams ? await searchParams : searchParams) : {};
-  const requestedWeek = Number(params.week ?? "");
+  const requestedWeekRaw = params.week ?? "";
+  const requestedWeek = Number(requestedWeekRaw);
   const rankingWeek = getRankingWeekReference(new Date());
 
   let availableWeekIndexes: number[] = [];
@@ -20,6 +21,9 @@ export async function loadGlobalLastfmPageData(mode: GlobalLastfmMode, searchPar
     Number.isFinite(requestedWeek) && availableWeekIndexes.includes(requestedWeek)
       ? requestedWeek
       : availableWeekIndexes[0] ?? rankingWeek.weekIndex;
+
+  const canonicalWeekParam = String(weekIndex);
+  const needsWeekRedirect = requestedWeekRaw !== canonicalWeekParam;
 
   const snapshot = await loadGlobalLastfmSnapshot(mode, weekIndex).catch(() => null);
 
@@ -41,5 +45,6 @@ export async function loadGlobalLastfmPageData(mode: GlobalLastfmMode, searchPar
     hasSnapshot: Boolean(snapshot),
     olderWeek,
     newerWeek,
+    needsWeekRedirect,
   };
 }

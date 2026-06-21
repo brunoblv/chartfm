@@ -53,6 +53,7 @@ export function GlobalHubCards() {
         <Link
           key={card.href}
           href={card.href}
+          prefetch={false}
           style={{
             display: "flex",
             flexDirection: "column",

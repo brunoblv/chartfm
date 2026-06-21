@@ -15,6 +15,7 @@ import { LandingPage } from "@/components/landing/LandingPage";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs, type ReviewItem } from "@/components/home/TimelineTabs";
+import { getRecommendationsFeed } from "@/lib/recommendations-feed";
 import type { UserWithCharts } from "@/lib/types";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -315,7 +316,7 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeeds, publishedToday, reviewsFeed] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeeds, publishedToday, reviewsFeed, recommendationsFeed] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
@@ -324,6 +325,10 @@ export default async function HomePage() {
       getTimelineFeed(session.user.id, currentWeekIdx, followingIds, locale),
       getPublishedThisWeek(session.user.id, followingIds),
       getReviewsFeed(session.user.id, locale),
+      getRecommendationsFeed(session.user.id, locale).catch((err) => {
+        console.error("[home] getRecommendationsFeed", err);
+        return [] as Awaited<ReturnType<typeof getRecommendationsFeed>>;
+      }),
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
 
@@ -333,7 +338,7 @@ export default async function HomePage() {
 
       {publishedToday.length > 0 && <FriendsRow publishers={publishedToday} />}
 
-      <TimelineTabs friendsFeed={friendsFeed} allFeed={allFeed} reviewsFeed={reviewsFeed} />
+      <TimelineTabs friendsFeed={friendsFeed} allFeed={allFeed} reviewsFeed={reviewsFeed} recommendationsFeed={recommendationsFeed} />
     </div>
   );
 

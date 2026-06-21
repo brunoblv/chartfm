@@ -165,3 +165,109 @@ export async function fetchRecentTracks(days = 30, usernameOverride?: string): P
   const now = Math.floor(Date.now() / 1000);
   return fetchTracksBetweenUnix(now - days * 86400, now + 1, usernameOverride);
 }
+
+export type LastfmTopPeriod = "7day" | "1month" | "3month" | "6month" | "12month" | "overall";
+
+export interface TopTrack {
+  track: string;
+  artist: string;
+  album: string;
+  playcount: number;
+}
+
+interface RawTopTrack {
+  name: string;
+  artist: { name?: string; "#text"?: string };
+  album?: { name?: string; "#text"?: string };
+  playcount?: string;
+}
+
+function artistNameFromRaw(artist: { name?: string; "#text"?: string }): string {
+  return (artist.name ?? artist["#text"] ?? "").trim();
+}
+
+function albumNameFromRaw(album?: { name?: string; "#text"?: string }): string {
+  return (album?.name ?? album?.["#text"] ?? "").trim();
+}
+
+async function fetchTopTracksPage(
+  username: string,
+  apiKey: string,
+  period: LastfmTopPeriod,
+  limit: number,
+  page: number,
+): Promise<{ tracks: RawTopTrack[]; totalPages: number }> {
+  const params = new URLSearchParams({
+    method: "user.getTopTracks",
+    user: username,
+    api_key: apiKey,
+    format: "json",
+    period,
+    limit: String(limit),
+    page: String(page),
+  });
+
+  const res = await fetch(`${BASE_URL}?${params.toString()}`, { cache: "no-store" });
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("Usuário Last.fm não encontrado. Verifique o nome de usuário nas configurações.");
+    throw new Error(`Last.fm HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  if (data.error) throw new Error(`Last.fm error ${data.error}: ${data.message}`);
+
+  const raw = data.toptracks?.track ?? [];
+  const tracks: RawTopTrack[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const totalPages = Number(data.toptracks?.["@attr"]?.totalPages ?? 1);
+
+  return { tracks, totalPages };
+}
+
+/** Top tracks do Last.fm para o período indicado (ex.: `1month`), já ordenados por playcount. */
+export async function fetchTopTracks(
+  period: LastfmTopPeriod = "1month",
+  limit = 200,
+  usernameOverride?: string,
+): Promise<TopTrack[]> {
+  const username = usernameOverride || process.env.LASTFM_USERNAME;
+  const apiKey = process.env.API_KEY;
+
+  if (!username || !apiKey) throw new Error("LASTFM_USERNAME and API_KEY must be set in env");
+  if (limit <= 0) return [];
+
+  const pageSize = Math.min(200, limit);
+  let page = 1;
+  let totalPages = 1;
+  const out: TopTrack[] = [];
+  const seen = new Set<string>();
+
+  do {
+    const result = await fetchTopTracksPage(username, apiKey, period, pageSize, page);
+
+    for (const track of result.tracks) {
+      if (out.length >= limit) break;
+
+      const rawTrackName = track.name.trim();
+      const rawArtistName = artistNameFromRaw(track.artist);
+      if (!rawTrackName || !rawArtistName) continue;
+
+      const trackName = canonicalizeTrackName(rawTrackName);
+      const artistName = canonicalizeArtistName(rawArtistName) || rawArtistName;
+      const key = `${normalizeKeyPart(trackName)}|||${normalizeKeyPart(artistName)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      out.push({
+        track: trackName,
+        artist: artistName,
+        album: albumNameFromRaw(track.album),
+        playcount: Number(track.playcount ?? 0) || 0,
+      });
+    }
+
+    totalPages = result.totalPages;
+    page++;
+  } while (page <= totalPages && out.length < limit);
+
+  return out;
+}

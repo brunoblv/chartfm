@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { fetchRecentTracks } from "@/lib/lastfm";
-import { scoreLastfmTracks } from "@/lib/lastfm-chart-engine";
+import { resolveLastfmImportTracks } from "@/lib/lastfm-import";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 import { prisma } from "@/lib/prisma";
 
@@ -163,7 +162,8 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
 }
 
 // POST /api/lastfm/import
-// Body: { limit?: number } — busca scrobbles dos últimos 30 dias e ranqueia pela soma de plays.
+// Body: { limit?: number; weekDate?: string } — semana atual: top tracks `1month`;
+// outras semanas: mês civil anterior à data da parada (YYYY-MM-DD).
 // Usa o lastfmUser do perfil do usuário autenticado.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Spotify não configurado" }, { status: 503, headers: NO_CACHE_HEADERS });
   }
 
-  let body: { limit?: unknown } = {};
+  let body: { limit?: unknown; weekDate?: unknown } = {};
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -197,18 +197,19 @@ export async function POST(req: NextRequest) {
   const lastfmUsername = userRecord.lastfmUser;
 
   try {
-    const recentPlays = await fetchRecentTracks(30, lastfmUsername);
-    const topTracks = scoreLastfmTracks(recentPlays, limit);
+    const { tracks: topTracks, periodLabel } = await resolveLastfmImportTracks(body.weekDate, limit, lastfmUsername);
 
     const BATCH = 8;
     const enriched: EnrichedSong[] = [];
     for (let i = 0; i < topTracks.length; i += BATCH) {
-      const batch = await enrichBatch(topTracks.slice(i, i + BATCH));
+      const batch = await enrichBatch(
+        topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album })),
+      );
       enriched.push(...batch);
     }
 
     const songs = (await preferExistingSongs(enriched)).slice(0, limit);
-    return NextResponse.json({ songs, total: topTracks.length }, { headers: NO_CACHE_HEADERS });
+    return NextResponse.json({ songs, total: topTracks.length, periodLabel }, { headers: NO_CACHE_HEADERS });
   } catch (err) {
     const msg = String(err);
     const isUserError = msg.includes("não encontrado") || msg.includes("not found") || msg.includes("HTTP 404");

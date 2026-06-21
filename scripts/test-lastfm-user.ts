@@ -19,8 +19,7 @@ if (existsSync(envPath)) {
 }
 
 import { PrismaClient } from "@prisma/client";
-import { fetchRecentTracks } from "../lib/lastfm";
-import { scoreLastfmTracks } from "../lib/lastfm-chart-engine";
+import { fetchTopTracks } from "../lib/lastfm";
 
 const prisma = new PrismaClient();
 const targetHandle = process.argv[2];
@@ -57,13 +56,12 @@ async function main() {
   console.log(`\n=== Testando fetch do Last.fm para "${target.lastfmUser}" ===`);
 
   // 3. Faz o mesmo fetch que a rota /api/lastfm/import faz
-  const recentPlays = await fetchRecentTracks(30, target.lastfmUser!);
-  const topTracks = scoreLastfmTracks(recentPlays, 20);
+  const topTracks = await fetchTopTracks("1month", 20, target.lastfmUser!);
 
-  console.log(`\nScrobbles únicos encontrados: ${recentPlays.length}`);
-  console.log(`\nTop 20 por plays (últimos 30 dias):`);
-  for (const t of topTracks) {
-    console.log(`  ${String(topTracks.indexOf(t) + 1).padStart(2)}. ${t.track} — ${t.artist} (${t.score} plays)`);
+  console.log(`\nTop tracks (último mês): ${topTracks.length}`);
+  for (let i = 0; i < topTracks.length; i += 1) {
+    const t = topTracks[i]!;
+    console.log(`  ${String(i + 1).padStart(2)}. ${t.track} — ${t.artist} (${t.playcount} plays)`);
   }
 
   if (topTracks.length === 0) {

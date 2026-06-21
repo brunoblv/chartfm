@@ -52,17 +52,21 @@ export function getAuthOptions(): NextAuthOptions {
           token.needsHandle = db.needsHandle;
         }
       } else if (token.prismaUserId) {
-        const db = await prisma.user.findUnique({ where: { id: token.prismaUserId } });
-        if (db) {
-          token.handle = db.handle;
-          token.name = db.name;
-          token.picture = db.image ?? undefined;
-          token.streak = db.streak;
-          token.role = db.role;
-          token.needsHandle = db.needsHandle;
-        } else {
-          // User was deleted or DB was reset — invalidate session
-          token.prismaUserId = undefined;
+        try {
+          const db = await prisma.user.findUnique({ where: { id: token.prismaUserId } });
+          if (db) {
+            token.handle = db.handle;
+            token.name = db.name;
+            token.picture = db.image ?? undefined;
+            token.streak = db.streak;
+            token.role = db.role;
+            token.needsHandle = db.needsHandle;
+          } else {
+            // User was deleted or DB was reset — invalidate session
+            token.prismaUserId = undefined;
+          }
+        } catch (e) {
+          console.error("[auth] jwt refresh", e);
         }
       }
       return token;

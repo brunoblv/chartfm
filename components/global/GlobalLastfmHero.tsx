@@ -87,6 +87,7 @@ export function GlobalLastfmHero({
           {olderWeek ? (
             <Link
               href={`${basePath}?week=${olderWeek}`}
+              prefetch={false}
               style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
             >
               {t("global.prevWeek")}
@@ -99,6 +100,7 @@ export function GlobalLastfmHero({
           {newerWeek ? (
             <Link
               href={`${basePath}?week=${newerWeek}`}
+              prefetch={false}
               style={{ border: "1px solid rgba(255,255,255,0.25)", color: "white", padding: isMobile ? "7px 12px" : "8px 14px", borderRadius: 10, textDecoration: "none", fontSize: isMobile ? 12 : 13, fontWeight: 600 }}
             >
               {t("global.nextWeek")}

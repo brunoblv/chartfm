@@ -17,6 +17,27 @@ export function appPathUrl(path: string, requestOrigin?: string): URL {
   return new URL(normalized, `${base}/`);
 }
 
+/**
+ * Em dev, alinha `localhost` com `127.0.0.1` (NEXTAUTH_URL) para cookies de sessão
+ * funcionarem em `/create` e nas rotas `/api/*`.
+ */
+export function ensureDevLocalhostRedirect(req: NextRequest): NextResponse | null {
+  if (process.env.NODE_ENV === "production") return null;
+
+  const canonical = getAppOrigin();
+  const current = new URL(req.url);
+  const canonicalUrl = new URL(`${canonical}/`);
+
+  if (current.hostname !== "localhost" || canonicalUrl.hostname === "localhost") {
+    return null;
+  }
+
+  const dest = new URL(req.url);
+  dest.hostname = canonicalUrl.hostname;
+  if (canonicalUrl.port) dest.port = canonicalUrl.port;
+  return NextResponse.redirect(dest.href, 307);
+}
+
 /** Redireciona www → domínio canônico (NEXTAUTH_URL) para cookies e OAuth funcionarem. */
 export function ensureCanonicalAppOrigin(req: NextRequest): NextResponse | null {
   const canonical = getAppOrigin();

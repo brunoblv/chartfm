@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
@@ -9,6 +10,9 @@ import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-poi
 import { resolveParadaForPublish } from "@/lib/paradas";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
+
+type ResolvedSongRow = { id: string; spotifyId: string | null; albumSpotifyId: string | null };
 
 const PALETTES: [string, string][] = [
   ["#FF6B6B", "#FFE66D"],
@@ -46,6 +50,29 @@ function parseWeekDate(input: unknown): Date | null {
   const date = new Date(y, m - 1, d);
   if (Number.isNaN(date.getTime())) return null;
   return date;
+}
+
+async function upsertSongFastFromEntry(e: EntryInput, spotifyId: string): Promise<ResolvedSongRow> {
+  const song = await prisma.song.upsert({
+    where: { spotifyId },
+    update: {
+      title: e.title,
+      artist: e.artist,
+      ...(e.album ? { album: e.album } : {}),
+    },
+    create: {
+      title: e.title,
+      artist: e.artist,
+      album: e.album ?? null,
+      spotifyId,
+    },
+    select: { id: true, spotifyId: true, albumSpotifyId: true },
+  });
+  return {
+    id: song.id,
+    spotifyId: song.spotifyId ?? null,
+    albumSpotifyId: song.albumSpotifyId ?? null,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -103,9 +130,35 @@ export async function POST(req: NextRequest) {
   }
 
   // Upsert songs/artists/albums sequentially to avoid race on unique constraints
-  const songs: { id: string; spotifyId: string | null; albumSpotifyId: string | null }[] = [];
+  const songs: ResolvedSongRow[] = [];
   const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
   const spotifyArtistNameCache = new Map<string, Awaited<ReturnType<typeof searchSpotifyArtist>>>();
+  const fastSpotifyCache = new Map<string, ResolvedSongRow>();
+
+  if (fastPublish) {
+    const spotifyIds = [
+      ...new Set(
+        entries
+          .map((e) => e.spotifyId?.trim() || null)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    if (spotifyIds.length > 0) {
+      const existing = await prisma.song.findMany({
+        where: { spotifyId: { in: spotifyIds } },
+        select: { id: true, spotifyId: true, albumSpotifyId: true },
+      });
+      for (const row of existing) {
+        if (row.spotifyId) {
+          fastSpotifyCache.set(row.spotifyId, {
+            id: row.id,
+            spotifyId: row.spotifyId,
+            albumSpotifyId: row.albumSpotifyId ?? null,
+          });
+        }
+      }
+    }
+  }
 
   async function spotifyArtistProfile(spotifyId: string) {
     if (spotifyArtistCache.has(spotifyId)) return spotifyArtistCache.get(spotifyId)!;
@@ -124,6 +177,18 @@ export async function POST(req: NextRequest) {
 
   for (const e of entries) {
     const spotifyId = e.spotifyId?.trim() || null;
+    if (fastPublish && spotifyId) {
+      const cached = fastSpotifyCache.get(spotifyId);
+      if (cached) {
+        songs.push(cached);
+        continue;
+      }
+      const row = await upsertSongFastFromEntry(e, spotifyId);
+      fastSpotifyCache.set(spotifyId, row);
+      songs.push(row);
+      continue;
+    }
+
     if (!spotifyId) {
       const resolvedArtist = fastPublish ? null : await spotifyArtistByName(e.artist);
       if (resolvedArtist) {
@@ -413,6 +478,26 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ id: chart.id }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/charts]", err);
+
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        return NextResponse.json(
+          { error: "Você já publicou esta parada neste período." },
+          { status: 409 },
+        );
+      }
+    }
+
+    const code = err instanceof Prisma.PrismaClientInitializationError
+      ? err.errorCode
+      : (err as { code?: string }).code;
+    if (code === "P1001" || code === "P1017") {
+      return NextResponse.json(
+        { error: "Banco de dados indisponível. Verifique se o Postgres está rodando e tente novamente." },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json({ error: "Erro interno ao publicar a parada." }, { status: 500 });
   }
 }

@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Cover as CoverModel, Song } from "@/lib/types";
 import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
+import { describeLastfmImportOrder, describeLastfmImportPeriod } from "@/lib/lastfm-import";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
 import { isMyTrlOwner } from "@/lib/mytrl-access";
 
@@ -159,10 +160,10 @@ export default function CreatePage() {
   useEffect(() => {
     fetch("/api/user/chart-name", { cache: "no-store" })
       .then((r) => r.json())
-      .then((data: { paradaNome?: string | null; paradaId?: string | null; paradas?: Array<{ id: string; name: string; chartSize?: number | null; cadence?: "weekly" | "daily" }> }) => {
+      .then((data: { paradaNome?: string | null; paradaId?: string | null; paradas?: Array<{ id: string; name: string; isPrimary?: boolean; chartSize?: number | null; cadence?: "weekly" | "daily" }> }) => {
         const allParadas = (data.paradas ?? []).map((p) => ({
           ...p,
-          isPrimary: false,
+          isPrimary: p.isPrimary ?? false,
           chartSize: p.chartSize ?? null,
           cadence: p.cadence ?? "weekly",
         }));
@@ -436,6 +437,10 @@ export default function CreatePage() {
   };
 
   const publishChart = async () => {
+    if (!session?.user?.id) {
+      setPublishError("Entre na sua conta para publicar. Use http://127.0.0.1:3000/login se o login não funcionar em localhost.");
+      return;
+    }
     if (entries.length === 0) {
       setPublishError("Adicione ao menos uma música antes de publicar.");
       return;
@@ -447,6 +452,7 @@ export default function CreatePage() {
       const res = await fetch("/api/charts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({
           entries: publishEntries,
           weekDate,
@@ -456,6 +462,14 @@ export default function CreatePage() {
       });
       const data = await res.json().catch(() => null) as { id?: string; error?: string } | null;
       if (!res.ok) {
+        if (res.status === 401) {
+          setPublishError("Sessão expirada. Entre novamente em /login (prefira http://127.0.0.1:3000).");
+          return;
+        }
+        if (res.status === 504 || res.status === 502) {
+          setPublishError("A publicação demorou demais. Tente de novo — se persistir, publique com menos músicas de uma vez.");
+          return;
+        }
         setPublishError(data?.error ?? "Erro ao publicar parada.");
         return;
       }
@@ -538,7 +552,7 @@ export default function CreatePage() {
           "Cache-Control": "no-store, no-cache, max-age=0",
           Pragma: "no-cache",
         },
-        body: JSON.stringify({ nonce: requestNonce, limit }),
+        body: JSON.stringify({ nonce: requestNonce, limit, weekDate: weekDate.trim() }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -908,7 +922,7 @@ export default function CreatePage() {
               type="button"
               onClick={() => !importingLastfm && setShowLastfmModal(true)}
               disabled={importingLastfm}
-              title="Importar suas músicas mais ouvidas no Last.fm nos últimos 30 dias"
+              title="Importar do Last.fm conforme a data da parada selecionada"
               style={{
                 border: "1px solid rgba(250,36,60,0.3)",
                 background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -1202,7 +1216,7 @@ export default function CreatePage() {
                 <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Last.fm</span>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Suas músicas mais ouvidas no Last.fm nos últimos 30 dias serão importadas, ordenadas pela quantidade total de plays.
+                {describeLastfmImportPeriod(weekDate)}
               </p>
             </div>
 
@@ -1268,7 +1282,7 @@ export default function CreatePage() {
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                Máximo de 200 músicas. Ordenadas pela soma de plays nos últimos 30 dias.
+                {describeLastfmImportOrder(weekDate)}
               </div>
             </div>
 

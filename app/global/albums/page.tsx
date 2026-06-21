@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { GlobalLastfmHero } from "@/components/global/GlobalLastfmHero";
@@ -23,6 +24,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function GlobalAlbumsPage({ searchParams }: PageProps) {
   const { t } = await getServerTranslations();
   const data = await loadGlobalLastfmPageData("albums", searchParams);
+
+  if (data.needsWeekRedirect) {
+    redirect(`/global/albums?week=${data.weekIndex}`);
+  }
 
   return (
     <Shell title={t("global.albumsTitle")} subtitle={t("global.albumsSubtitle")}>

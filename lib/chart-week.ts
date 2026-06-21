@@ -224,6 +224,28 @@ export function parseChartWeekPickerDate(input: unknown): Date | null {
   return date;
 }
 
+/** A parada cai na semana ISO corrente (mesmo weekIndex de hoje). */
+export function isCurrentChartWeek(anchor: Date, now: Date = new Date()): boolean {
+  return buildWeekIndexFromDate(anchor) === buildWeekIndexFromDate(now);
+}
+
+/** Mês civil imediatamente anterior ao mês da data âncora, intervalo Unix [from, toExclusive). */
+export function previousCalendarMonthUnixRange(anchor: Date): { from: number; toExclusive: number } {
+  const start = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1, 0, 0, 0, 0);
+  const end = new Date(anchor.getFullYear(), anchor.getMonth(), 1, 0, 0, 0, 0);
+  return {
+    from: Math.floor(start.getTime() / 1000),
+    toExclusive: Math.floor(end.getTime() / 1000),
+  };
+}
+
+export function formatPreviousCalendarMonthLabel(anchor: Date, locale = "pt-BR"): string {
+  const prev = new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1);
+  const month = prev.toLocaleDateString(locale, { month: "long" });
+  const monthCap = month.charAt(0).toUpperCase() + month.slice(1);
+  return `${monthCap} de ${prev.getFullYear()}`;
+}
+
 /**
  * Intervalo Unix [from, to) para a semana da parada (meia-noite local na segunda
  * até meia-noite exclusiva na segunda após o domingo).

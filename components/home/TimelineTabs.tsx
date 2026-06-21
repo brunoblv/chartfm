@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, Sparkles } from "lucide-react";
 import { ChartCard } from "@/components/chart/ChartCard";
+import { RecommendationsTab } from "@/components/home/RecommendationsTab";
 import { Avatar } from "@/components/ui/Avatar";
 import { scoreColor, scoreBg } from "@/lib/album-score";
 import { getReleases, getReleaseTagMeta } from "@/lib/releases-data-i18n";
 import type { UserWithCharts, Chart } from "@/lib/types";
+import type { RecommendationItem } from "@/lib/recommendations-feed";
 import { useTranslations } from "@/hooks/useTranslations";
 
 export type ReviewItem = {
@@ -40,7 +42,7 @@ export type TimelineItem = {
   isLiked: boolean;
 };
 
-type Tab = "amigos" | "todos" | "reviews" | "noticias";
+type Tab = "amigos" | "todos" | "reviews" | "recomendacoes" | "noticias";
 
 function ReviewCard({ review }: { review: ReviewItem }) {
   const { t } = useTranslations();
@@ -190,10 +192,12 @@ export function TimelineTabs({
   friendsFeed,
   allFeed,
   reviewsFeed,
+  recommendationsFeed,
 }: {
   friendsFeed: TimelineItem[];
   allFeed: TimelineItem[];
   reviewsFeed: ReviewItem[];
+  recommendationsFeed: RecommendationItem[];
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("amigos");
   const { t } = useTranslations();
@@ -216,6 +220,7 @@ export function TimelineTabs({
     { key: "amigos", label: t("timeline.friends") },
     { key: "todos", label: t("timeline.all") },
     { key: "reviews", label: t("timeline.reviews") },
+    { key: "recomendacoes", label: t("timeline.recommendations") },
     { key: "noticias", label: t("timeline.news") },
   ];
 
@@ -260,6 +265,8 @@ export function TimelineTabs({
           ) : (
             <EmptyState message={t("timeline.noReviews")} sub={t("timeline.beFirstReview")} />
           )
+        ) : activeTab === "recomendacoes" ? (
+          <RecommendationsTab initialItems={recommendationsFeed} />
         ) : (
           <NewsTab />
         )}

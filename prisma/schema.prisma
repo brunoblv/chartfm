@@ -73,6 +73,11 @@ model User {
   albumClubPollVotes   AlbumClubPollVote[]
   pushSubmissions      PushSubmission[]
   pushVotes            PushVote[]
+  songRecommendations  SongRecommendation[]
+  songRecommendationLikes SongRecommendationLike[]
+  songRecommendationComments SongRecommendationComment[]
+  songRecommendationCommentLikes SongRecommendationCommentLike[]
+  songRecommendationCommentReplies SongRecommendationCommentReply[]
 }
 
 model Artist {
@@ -149,6 +154,7 @@ model Song {
   videoClips            SongVideoClip[]
   videoClipChoices      UserSongVideoClipChoice[]
   pushSubmissions       PushSubmission[]
+  recommendations       SongRecommendation[]
 
   @@unique([title, artist])
   @@index([spotifyId], map: "idx_songs_spotify_id")
@@ -736,6 +742,78 @@ enum PushPhase {
   RESULT
 
   @@map("push_phase")
+}
+
+model SongRecommendation {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  songId    String   @map("song_id")
+  text      String?
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song      Song     @relation(fields: [songId], references: [id])
+  recLikes  SongRecommendationLike[]
+  recComments SongRecommendationComment[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("song_recommendations")
+}
+
+model SongRecommendationLike {
+  id               String             @id @default(cuid())
+  userId           String             @map("user_id")
+  recommendationId String             @map("recommendation_id")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  recommendation   SongRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user             User               @relation(fields: [userId], references: [id])
+
+  @@unique([userId, recommendationId])
+  @@map("song_recommendation_likes")
+}
+
+model SongRecommendationComment {
+  id               String             @id @default(cuid())
+  recommendationId String             @map("recommendation_id")
+  userId           String             @map("user_id")
+  text             String
+  likes            Int                @default(0)
+  replyCount       Int                @default(0) @map("reply_count")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  recommendation   SongRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user             User               @relation(fields: [userId], references: [id])
+  commentLikes     SongRecommendationCommentLike[]
+  replies          SongRecommendationCommentReply[]
+
+  @@index([recommendationId])
+  @@map("song_recommendation_comments")
+}
+
+model SongRecommendationCommentLike {
+  id        String                    @id @default(cuid())
+  userId    String                    @map("user_id")
+  commentId String                    @map("comment_id")
+  createdAt DateTime                  @default(now()) @map("created_at")
+  comment   SongRecommendationComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User                      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, commentId])
+  @@map("song_recommendation_comment_likes")
+}
+
+model SongRecommendationCommentReply {
+  id        String                    @id @default(cuid())
+  commentId String                    @map("comment_id")
+  userId    String                    @map("user_id")
+  text      String
+  likes     Int                       @default(0)
+  createdAt DateTime                  @default(now()) @map("created_at")
+  comment   SongRecommendationComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User                      @relation(fields: [userId], references: [id])
+
+  @@index([commentId])
+  @@map("song_recommendation_comment_replies")
 }
 
 model PushRound {
