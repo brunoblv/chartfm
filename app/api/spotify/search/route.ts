@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
-const SPOTIFY_SEARCH_TIMEOUT_MS = 2500;
+const SPOTIFY_SEARCH_TIMEOUT_MS = 6000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
