@@ -70,6 +70,19 @@ type SpotifyApiTrack = {
   imageUrl: string | null;
 };
 
+type SpotifySearchResponse = {
+  tracks?: SpotifyApiTrack[];
+  configured?: boolean;
+  accessToken?: string | null;
+};
+
+type SpotifyDirectItem = {
+  id: string;
+  name: string;
+  artists: Array<{ name: string }>;
+  album: { name: string; images: Array<{ url: string }> };
+};
+
 type DbSong = {
   id: string;
   title: string;
@@ -354,14 +367,14 @@ export default function CreatePage() {
       setSpotifyLoading(true);
       setSpotifyUnavailable(false);
       try {
-        const spotifyRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
+        // Fase 1: busca no catálogo local + busca token Spotify (ambos no servidor, rápidos)
+        const serverRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
           signal: ac.signal,
         });
         if (ac.signal.aborted) return;
-        if (!spotifyRes.ok) {
-          // 502/504 = Spotify temporariamente fora; não tratar como "não configurado"
+        if (!serverRes.ok) {
           try {
-            const errData = (await spotifyRes.json()) as { configured?: boolean };
+            const errData = (await serverRes.json()) as { configured?: boolean };
             if (!ac.signal.aborted && errData.configured === false) {
               setSpotifyConfigured(false);
             } else if (!ac.signal.aborted) {
@@ -371,32 +384,64 @@ export default function CreatePage() {
             if (!ac.signal.aborted) setSpotifyUnavailable(true);
           }
           setSpotifyTracks([]);
+          return;
+        }
+
+        const serverData = (await serverRes.json()) as SpotifySearchResponse;
+        if (ac.signal.aborted) return;
+
+        if (serverData.configured === false) {
+          setSpotifyConfigured(false);
         } else {
-          try {
-            const spotifyData = (await spotifyRes.json()) as {
-              tracks?: SpotifyApiTrack[];
-              configured?: boolean;
-            };
-            if (ac.signal.aborted) return;
-            if (spotifyData.configured === false) {
-              setSpotifyConfigured(false);
-            } else {
-              setSpotifyConfigured(true);
-            }
-            setSpotifyTracks(
-              (spotifyData.tracks ?? []).map((t) => ({
-                title: t.title,
-                artist: t.artist,
-                album: t.album,
-                imageUrl: t.imageUrl ?? undefined,
-                spotifyId: t.spotifyId,
-              }))
-            );
-          } catch {
-            if (ac.signal.aborted) return;
-            setSpotifyUnavailable(true);
-            setSpotifyTracks([]);
+          setSpotifyConfigured(true);
+        }
+
+        const dbSongs: Song[] = (serverData.tracks ?? []).map((t) => ({
+          title: t.title,
+          artist: t.artist,
+          album: t.album,
+          imageUrl: t.imageUrl ?? undefined,
+          spotifyId: t.spotifyId,
+        }));
+
+        // Mostra resultados do catálogo local imediatamente
+        setSpotifyTracks(dbSongs);
+        setSpotifyLoading(false);
+
+        // Fase 2: busca direto no Spotify pelo browser (evita timeout do servidor)
+        const accessToken = serverData.accessToken;
+        if (!accessToken || serverData.configured === false) return;
+
+        try {
+          const spotRes = await fetch(
+            `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=12&market=BR`,
+            { headers: { Authorization: `Bearer ${accessToken}` }, signal: ac.signal },
+          );
+          if (ac.signal.aborted || !spotRes.ok) return;
+
+          const spotData = (await spotRes.json()) as {
+            tracks?: { items: SpotifyDirectItem[] };
+          };
+          if (ac.signal.aborted) return;
+
+          // Mescla: catálogo local primeiro, depois Spotify sem duplicatas
+          const seen = new Set(dbSongs.map((s) => s.spotifyId).filter(Boolean));
+          const merged = [...dbSongs];
+          for (const item of spotData.tracks?.items ?? []) {
+            if (!item?.id || seen.has(item.id)) continue;
+            seen.add(item.id);
+            merged.push({
+              title: item.name,
+              artist: item.artists?.map((a) => a.name).join(", ") ?? "",
+              album: item.album?.name ?? "",
+              imageUrl: item.album?.images?.[0]?.url ?? undefined,
+              spotifyId: item.id,
+            });
+            if (merged.length >= 12) break;
           }
+          if (!ac.signal.aborted) setSpotifyTracks(merged);
+        } catch {
+          // Falha na fase 2 é silenciosa — resultados do catálogo local já estão visíveis
         }
       } catch {
         if (ac.signal.aborted) return;
