@@ -58,6 +58,8 @@ function parseRetryAfterMs(value: string | null): number | null {
   return null;
 }
 
+const SPOTIFY_FETCH_TIMEOUT_MS = 10000;
+
 async function spotifyFetch(
   input: string | URL,
   init: RequestInit,
@@ -65,8 +67,13 @@ async function spotifyFetch(
 ): Promise<Response | null> {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     let res: Response;
+    const timeoutSignal = AbortSignal.timeout(SPOTIFY_FETCH_TIMEOUT_MS);
+    const mergedSignal =
+      init.signal
+        ? AbortSignal.any([init.signal as AbortSignal, timeoutSignal])
+        : timeoutSignal;
     try {
-      res = await fetch(input, init);
+      res = await fetch(input, { ...init, signal: mergedSignal });
     } catch {
       if (attempt >= maxAttempts) return null;
       await sleep(SPOTIFY_RETRY_BASE_DELAY_MS * attempt);

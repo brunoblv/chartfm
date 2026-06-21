@@ -98,60 +98,50 @@ function buildSongIdentityKey(song: EnrichedSong): string {
 }
 
 async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[]> {
+  const SELECT = { title: true, artist: true, album: true, spotifyId: true, albumRef: { select: { coverUrl: true } } } as const;
+
+  // Batch query 1: por spotifyId
+  const spotifyIds = [...new Set(items.map((i) => i.spotifyId).filter(Boolean) as string[])];
+  const bySpotifyId = new Map<string, EnrichedSong>();
+  if (spotifyIds.length > 0) {
+    const rows = await prisma.song.findMany({ where: { spotifyId: { in: spotifyIds } }, select: SELECT });
+    for (const r of rows) {
+      if (r.spotifyId) {
+        bySpotifyId.set(r.spotifyId, { title: r.title, artist: r.artist, album: r.album ?? "", spotifyId: r.spotifyId, imageUrl: r.albumRef?.coverUrl ?? null });
+      }
+    }
+  }
+
+  // Itens não resolvidos por spotifyId → batch query 2 por título (filtragem de artista no cliente)
+  const needText = items.filter((i) => !i.spotifyId || !bySpotifyId.has(i.spotifyId));
+  const byTextKey = new Map<string, EnrichedSong>();
+  if (needText.length > 0) {
+    const titles = [...new Set(needText.map((i) => i.title))];
+    const rows = await prisma.song.findMany({ where: { title: { in: titles, mode: "insensitive" } }, select: SELECT });
+    for (const r of rows) {
+      const primaryArtist = (r.artist.split(",")[0] ?? r.artist).trim().toLowerCase();
+      const key = `${r.title.toLowerCase()}|||${primaryArtist}`;
+      if (!byTextKey.has(key)) {
+        byTextKey.set(key, { title: r.title, artist: r.artist, album: r.album ?? "", spotifyId: r.spotifyId ?? null, imageUrl: r.albumRef?.coverUrl ?? null });
+      }
+    }
+  }
+
   const out: EnrichedSong[] = [];
   const seen = new Set<string>();
-  const cache = new Map<string, EnrichedSong>();
 
   for (const item of items) {
-    const cacheKey = buildSongIdentityKey(item);
-    let resolved = cache.get(cacheKey);
+    let resolved: EnrichedSong | undefined;
 
-    if (!cache.has(cacheKey)) {
-      const primaryArtist = item.artist.split(",")[0]?.trim() || item.artist.trim();
-      const bySpotify = item.spotifyId
-        ? await prisma.song.findUnique({
-            where: { spotifyId: item.spotifyId },
-            select: {
-              title: true,
-              artist: true,
-              album: true,
-              spotifyId: true,
-              albumRef: { select: { coverUrl: true } },
-            },
-          })
-        : null;
-
-      const byText = bySpotify
-        ? null
-        : await prisma.song.findFirst({
-            where: {
-              title: { equals: item.title, mode: "insensitive" },
-              artist: { equals: primaryArtist, mode: "insensitive" },
-            },
-            select: {
-              title: true,
-              artist: true,
-              album: true,
-              spotifyId: true,
-              albumRef: { select: { coverUrl: true } },
-            },
-          });
-
-      const dbSong = bySpotify ?? byText;
-      resolved = dbSong
-        ? {
-            title: dbSong.title,
-            artist: dbSong.artist,
-            album: dbSong.album ?? item.album,
-            spotifyId: dbSong.spotifyId ?? item.spotifyId,
-            imageUrl: dbSong.albumRef?.coverUrl ?? null,
-          }
-        : item;
-
-      cache.set(cacheKey, resolved);
+    if (item.spotifyId) {
+      resolved = bySpotifyId.get(item.spotifyId);
     }
+    if (!resolved) {
+      const primaryArtist = (item.artist.split(",")[0] ?? item.artist).trim().toLowerCase();
+      resolved = byTextKey.get(`${item.title.toLowerCase()}|||${primaryArtist}`);
+    }
+    resolved ??= item;
 
-    if (!resolved) continue;
     const dedupeKey = buildSongIdentityKey(resolved);
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
@@ -199,7 +189,7 @@ export async function POST(req: NextRequest) {
   try {
     const { tracks: topTracks, periodLabel } = await resolveLastfmImportTracks(body.weekDate, limit, lastfmUsername);
 
-    const BATCH = 8;
+    const BATCH = 20;
     const enriched: EnrichedSong[] = [];
     for (let i = 0; i < topTracks.length; i += BATCH) {
       const batch = await enrichBatch(
