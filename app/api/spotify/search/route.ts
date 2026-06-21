@@ -1,22 +1,74 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
-const SPOTIFY_SEARCH_TIMEOUT_MS = 6000;
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("spotify_search_timeout")), ms);
-    promise.then(
-      (value) => {
+type TrackResult = {
+  spotifyId: string;
+  title: string;
+  artist: string;
+  album: string;
+  imageUrl: string | null;
+  previewUrl: string | null;
+  externalUrl: string | null;
+};
+
+async function searchLocalCatalog(q: string, limit: number): Promise<TrackResult[]> {
+  const rows = await prisma.song.findMany({
+    where: {
+      spotifyId: { not: null },
+      OR: [
+        { title: { contains: q, mode: "insensitive" } },
+        { artist: { contains: q, mode: "insensitive" } },
+      ],
+    },
+    select: {
+      title: true,
+      artist: true,
+      album: true,
+      spotifyId: true,
+      previewUrl: true,
+      spotifyUrl: true,
+      albumRef: { select: { coverUrl: true } },
+    },
+    take: limit,
+    orderBy: { title: "asc" },
+  });
+
+  return rows.map((r) => ({
+    spotifyId: r.spotifyId!,
+    title: r.title,
+    artist: r.artist,
+    album: r.album ?? "",
+    imageUrl: r.albumRef?.coverUrl ?? null,
+    previewUrl: r.previewUrl ?? null,
+    externalUrl: r.spotifyUrl ?? null,
+  }));
+}
+
+function spotifyWithTimeout(q: string, limit: number, ms: number): Promise<TrackResult[] | null> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    searchSpotifyTracks(q, limit)
+      .then((tracks) => {
         clearTimeout(timer);
-        resolve(value);
-      },
-      (err) => {
+        resolve(
+          tracks.map((t) => ({
+            spotifyId: t.spotifyId,
+            title: t.title,
+            artist: t.artist,
+            album: t.album,
+            imageUrl: t.imageUrl ?? null,
+            previewUrl: t.previewUrl ?? null,
+            externalUrl: t.externalUrl,
+          })),
+        );
+      })
+      .catch(() => {
         clearTimeout(timer);
-        reject(err);
-      },
-    );
+        resolve(null);
+      });
   });
 }
 
@@ -29,22 +81,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ tracks: [], configured: spotifyConfigured() });
   }
 
-  if (!spotifyConfigured()) {
-    return NextResponse.json({
-      tracks: [],
-      configured: false,
-      message: "Defina SPOTIFY_CLIENT_ID e SPOTIFY_CLIENT_SECRET no .env",
-    });
+  // DB search (sempre rápido) e Spotify em paralelo com cap de 5s
+  const [dbTracks, spotifyTracks] = await Promise.all([
+    searchLocalCatalog(q, limit),
+    spotifyWithTimeout(q, limit, 5000),
+  ]);
+
+  // Merge: DB primeiro, depois resultados Spotify não presentes no DB
+  const seen = new Set(dbTracks.map((t) => t.spotifyId));
+  const merged: TrackResult[] = [...dbTracks];
+
+  if (spotifyTracks) {
+    for (const t of spotifyTracks) {
+      if (seen.has(t.spotifyId)) continue;
+      seen.add(t.spotifyId);
+      merged.push(t);
+      if (merged.length >= limit) break;
+    }
   }
 
-  try {
-    const tracks = await withTimeout(searchSpotifyTracks(q, limit), SPOTIFY_SEARCH_TIMEOUT_MS);
-    return NextResponse.json({ tracks, configured: true });
-  } catch (err) {
-    const isTimeout = err instanceof Error && err.message === "spotify_search_timeout";
-    return NextResponse.json(
-      { tracks: [], configured: true, error: isTimeout ? "spotify_request_timeout" : "spotify_request_failed" },
-      { status: isTimeout ? 504 : 502 }
-    );
-  }
+  return NextResponse.json({ tracks: merged.slice(0, limit), configured: spotifyConfigured() });
 }

@@ -126,14 +126,18 @@ async function getAccessToken(): Promise<string | null> {
     return tokenState.accessToken;
   }
 
-  const res = await spotifyFetch(AUTH_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+  const res = await spotifyFetch(
+    AUTH_URL,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+      },
+      body: "grant_type=client_credentials",
     },
-    body: "grant_type=client_credentials",
-  });
+    1, // 1 tentativa: falha rápido em vez de acumular retries longos
+  );
 
   if (!res?.ok) return null;
 
