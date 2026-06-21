@@ -3,6 +3,60 @@ import { RELEASES, TAG_META, type Release, type ReleaseTag } from "@/lib/release
 
 const RELEASES_EN: Release[] = [
   {
+    date: "2026-06-20",
+    label: "June 20, 2026",
+    entries: [
+      {
+        title: "Like comments",
+        tag: "novo",
+        description:
+          "You can now like comments on chart pages. Tap the heart next to a comment — the author gets a notification. Tap again to remove your like.",
+      },
+      {
+        title: "Listen to charts on YouTube",
+        tag: "novo",
+        description:
+          "Global 100 and Global Airplay now have a button to listen to the week's chart on YouTube when a playlist is available.",
+      },
+      {
+        title: "Drag songs on mobile",
+        tag: "melhoria",
+        description:
+          "When editing a chart on your phone, you can now reorder songs by dragging with your finger.",
+      },
+    ],
+  },
+  {
+    date: "2026-06-18",
+    label: "June 18, 2026",
+    entries: [
+      {
+        title: "Push",
+        tag: "novo",
+        description:
+          "A new community game: each round you pick one song, listen to everyone else's picks, and build your personal ranking. Winners are crowned at the end. Find it in the Push menu, with round history and an overall participant leaderboard.",
+      },
+      {
+        title: "CriticsFM menu in the sidebar",
+        tag: "design",
+        description:
+          "CriticsFM has a submenu in the sidebar with shortcuts to the catalog, Releases, Album Club, and Reviews.",
+      },
+    ],
+  },
+  {
+    date: "2026-06-14",
+    label: "June 14, 2026",
+    entries: [
+      {
+        title: "#1 history on profile",
+        tag: "novo",
+        description:
+          "The profile Stats tab has a new #1s section with every song that reached number one — week counts and distinct #1 tracks. You can filter by year.",
+      },
+    ],
+  },
+  {
     date: "2026-06-09",
     label: "June 9, 2026",
     entries: [
@@ -11,12 +65,6 @@ const RELEASES_EN: Release[] = [
         tag: "design",
         description:
           "The 'What's New' page now has tabs to filter by category: New features, Improvements, Bug fixes, and Design. Each tab shows a counter with the total items in that category.",
-      },
-      {
-        title: "Global Chart snapshot update",
-        tag: "melhoria",
-        description:
-          "The weekly Global Chart snapshot generation logic was improved for greater accuracy and consistency in historical data. The schedule was also revised to reduce windows of inconsistency between publication and recording.",
       },
     ],
   },

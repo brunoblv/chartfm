@@ -14,6 +14,60 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    date: "2026-06-20",
+    label: "20 de junho de 2026",
+    entries: [
+      {
+        title: "Curtir comentários",
+        tag: "novo",
+        description:
+          "Agora você pode curtir comentários nas páginas de parada. Toque no coração ao lado do comentário — o autor recebe uma notificação. Toque de novo para remover a curtida.",
+      },
+      {
+        title: "Ouvir paradas no YouTube",
+        tag: "novo",
+        description:
+          "A Global 100 e o Global Airplay ganharam um botão para ouvir a parada da semana no YouTube, quando a playlist estiver disponível.",
+      },
+      {
+        title: "Arrastar músicas no celular",
+        tag: "melhoria",
+        description:
+          "Ao editar uma parada no celular, agora dá para reordenar as músicas arrastando com o dedo.",
+      },
+    ],
+  },
+  {
+    date: "2026-06-18",
+    label: "18 de junho de 2026",
+    entries: [
+      {
+        title: "Push",
+        tag: "novo",
+        description:
+          "Novo jogo comunitário: a cada rodada você indica uma música, escuta as escolhas dos outros e monta seu ranking pessoal. No fim, saem os vencedores da rodada. Disponível no menu Push, com histórico de rodadas e ranking geral de participantes.",
+      },
+      {
+        title: "Menu CriticsFM na barra lateral",
+        tag: "design",
+        description:
+          "O CriticsFM ganhou um submenu na barra lateral, com atalhos para o catálogo, Lançamentos, Clube do Álbum e Reviews.",
+      },
+    ],
+  },
+  {
+    date: "2026-06-14",
+    label: "14 de junho de 2026",
+    entries: [
+      {
+        title: "Histórico de #1s no perfil",
+        tag: "novo",
+        description:
+          "A aba Estatísticas do perfil ganhou a seção #1s, com todas as músicas que já ficaram em primeiro na parada — quantas semanas em #1 e total de faixas distintas. Dá para filtrar por ano.",
+      },
+    ],
+  },
+  {
     date: "2026-06-09",
     label: "9 de junho de 2026",
     entries: [
@@ -22,12 +76,6 @@ export const RELEASES: Release[] = [
         tag: "design",
         description:
           "A página 'O que há de novo' ganhou abas para filtrar por categoria: Novas funções, Melhorias, Correções e Design. Cada aba mostra um contador com o total de itens naquela categoria.",
-      },
-      {
-        title: "Atualização do snapshot da Parada Global",
-        tag: "melhoria",
-        description:
-          "A lógica de geração do snapshot semanal da Parada Global foi aprimorada para garantir maior precisão e consistência nos dados históricos. O agendamento também foi revisado para reduzir janelas de inconsistência entre a publicação e o registro.",
       },
     ],
   },
