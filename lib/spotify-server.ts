@@ -139,7 +139,10 @@ async function getAccessToken(): Promise<string | null> {
     1, // 1 tentativa: falha rápido em vez de acumular retries longos
   );
 
-  if (!res?.ok) return null;
+  if (!res?.ok) {
+    console.error(`[spotify] getAccessToken failed: status=${res?.status ?? "no_response"}`);
+    return null;
+  }
 
   const data = (await res.json()) as { access_token: string; expires_in: number };
   tokenState.accessToken = data.access_token;

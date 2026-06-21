@@ -47,18 +47,25 @@ async function searchLocalCatalog(q: string, limit: number): Promise<TrackResult
   }));
 }
 
-function spotifyWithTimeout(q: string, limit: number, ms: number): Promise<TrackResult[] | null> {
+type SpotifyOutcome =
+  | { status: "ok"; tracks: TrackResult[] }
+  | { status: "timeout" }
+  | { status: "error"; reason: string };
+
+function spotifyWithTimeout(q: string, limit: number, ms: number): Promise<SpotifyOutcome> {
   return new Promise((resolve) => {
     const ac = new AbortController();
     const timer = setTimeout(() => {
       ac.abort();
-      resolve(null);
+      console.error(`[spotify/search] timeout after ${ms}ms for query="${q}"`);
+      resolve({ status: "timeout" });
     }, ms);
     searchSpotifyTracks(q, limit, "BR", ac.signal)
       .then((tracks) => {
         clearTimeout(timer);
-        resolve(
-          tracks.map((t) => ({
+        resolve({
+          status: "ok",
+          tracks: tracks.map((t) => ({
             spotifyId: t.spotifyId,
             title: t.title,
             artist: t.artist,
@@ -67,11 +74,13 @@ function spotifyWithTimeout(q: string, limit: number, ms: number): Promise<Track
             previewUrl: t.previewUrl ?? null,
             externalUrl: t.externalUrl,
           })),
-        );
+        });
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         clearTimeout(timer);
-        resolve(null);
+        const reason = err instanceof Error ? err.message : String(err);
+        console.error(`[spotify/search] error for query="${q}": ${reason}`);
+        resolve({ status: "error", reason });
       });
   });
 }
@@ -85,18 +94,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ tracks: [], configured: spotifyConfigured() });
   }
 
+  const configured = spotifyConfigured();
+  if (!configured) {
+    console.error("[spotify/search] SPOTIFY_CLIENT_ID ou SPOTIFY_CLIENT_SECRET não configurados");
+  }
+
   // DB search (sempre rápido) e Spotify em paralelo com cap de 9s
-  const [dbTracks, spotifyTracks] = await Promise.all([
+  const [dbTracks, spotifyOutcome] = await Promise.all([
     searchLocalCatalog(q, limit),
     spotifyWithTimeout(q, limit, 9000),
   ]);
+
+  if (spotifyOutcome.status !== "ok") {
+    console.error(`[spotify/search] spotify_status="${spotifyOutcome.status}" query="${q}" db_count=${dbTracks.length}`);
+  } else if (spotifyOutcome.tracks.length === 0) {
+    console.warn(`[spotify/search] spotify retornou 0 tracks para query="${q}"`);
+  }
 
   // Merge: DB primeiro, depois resultados Spotify não presentes no DB
   const seen = new Set(dbTracks.map((t) => t.spotifyId));
   const merged: TrackResult[] = [...dbTracks];
 
-  if (spotifyTracks) {
-    for (const t of spotifyTracks) {
+  if (spotifyOutcome.status === "ok") {
+    for (const t of spotifyOutcome.tracks) {
       if (seen.has(t.spotifyId)) continue;
       seen.add(t.spotifyId);
       merged.push(t);
@@ -104,5 +124,12 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ tracks: merged.slice(0, limit), configured: spotifyConfigured() });
+  const _debug = {
+    spotifyStatus: spotifyOutcome.status,
+    dbCount: dbTracks.length,
+    spotifyCount: spotifyOutcome.status === "ok" ? spotifyOutcome.tracks.length : 0,
+    mergedCount: merged.length,
+  };
+
+  return NextResponse.json({ tracks: merged.slice(0, limit), configured, _debug });
 }
