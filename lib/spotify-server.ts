@@ -204,7 +204,7 @@ function pickBestVersion(tracks: SpotifyTrackApi[]): SpotifyTrackApi {
   })[0];
 }
 
-export async function searchSpotifyTracks(query: string, limit = 10, market: string = "BR") {
+export async function searchSpotifyTracks(query: string, limit = 10, market: string = "BR", signal?: AbortSignal) {
   const q = query.trim();
   const lim = Math.min(50, Math.max(1, limit));
   const cacheKey = `${q}|${lim}|${market}`;
@@ -214,6 +214,8 @@ export async function searchSpotifyTracks(query: string, limit = 10, market: str
 
   const token = await getAccessToken();
   if (!token) return [];
+
+  if (signal?.aborted) return [];
 
   // Busca mais candidatos para ter opções suficientes após deduplicação
   const fetchLimit = Math.min(50, lim * 4);
@@ -226,6 +228,7 @@ export async function searchSpotifyTracks(query: string, limit = 10, market: str
   const res = await spotifyFetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 0 },
+    signal,
   });
 
   if (!res?.ok) return [];

@@ -49,8 +49,12 @@ async function searchLocalCatalog(q: string, limit: number): Promise<TrackResult
 
 function spotifyWithTimeout(q: string, limit: number, ms: number): Promise<TrackResult[] | null> {
   return new Promise((resolve) => {
-    const timer = setTimeout(() => resolve(null), ms);
-    searchSpotifyTracks(q, limit)
+    const ac = new AbortController();
+    const timer = setTimeout(() => {
+      ac.abort();
+      resolve(null);
+    }, ms);
+    searchSpotifyTracks(q, limit, "BR", ac.signal)
       .then((tracks) => {
         clearTimeout(timer);
         resolve(
@@ -81,10 +85,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ tracks: [], configured: spotifyConfigured() });
   }
 
-  // DB search (sempre rápido) e Spotify em paralelo com cap de 5s
+  // DB search (sempre rápido) e Spotify em paralelo com cap de 9s
   const [dbTracks, spotifyTracks] = await Promise.all([
     searchLocalCatalog(q, limit),
-    spotifyWithTimeout(q, limit, 5000),
+    spotifyWithTimeout(q, limit, 9000),
   ]);
 
   // Merge: DB primeiro, depois resultados Spotify não presentes no DB
