@@ -466,19 +466,7 @@ export async function getSpotifyAlbumDetails(
   };
 }
 
-export async function getSpotifyTrackMetadataById(trackId: string, market: string = "BR"): Promise<SpotifyTrackMetadata | null> {
-  const token = await getAccessToken();
-  if (!token) return null;
-  const id = trackId.trim();
-  if (!id) return null;
-
-  const res = await spotifyFetch(`${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 0 },
-  });
-  if (!res?.ok) return null;
-  const track = (await res.json()) as SpotifyTrackApi;
-
+function mapTrackApiToMetadata(track: SpotifyTrackApi): SpotifyTrackMetadata {
   const artists = track.artists
     .filter((a) => Boolean(a.id))
     .map((a) => ({ spotifyId: a.id, name: a.name, spotifyUrl: a.external_urls?.spotify ?? null }));
@@ -506,6 +494,51 @@ export async function getSpotifyTrackMetadataById(trackId: string, market: strin
     durationMs: track.duration_ms ?? null,
     trackNumber: track.track_number ?? null,
   };
+}
+
+export async function getSpotifyTrackMetadataById(trackId: string, market: string = "BR"): Promise<SpotifyTrackMetadata | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
+  const id = trackId.trim();
+  if (!id) return null;
+
+  const res = await spotifyFetch(`${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 0 },
+  });
+  if (!res?.ok) return null;
+  const track = (await res.json()) as SpotifyTrackApi;
+  if (!track?.id) return null;
+  return mapTrackApiToMetadata(track);
+}
+
+/** Metadados de várias faixas (lotes de 50) — usado na publicação rápida para salvar capas. */
+export async function getSpotifyTracksMetadataByIds(
+  trackIds: string[],
+  market: string = "BR",
+): Promise<Map<string, SpotifyTrackMetadata>> {
+  const result = new Map<string, SpotifyTrackMetadata>();
+  const unique = [...new Set(trackIds.map((id) => id.trim()).filter(Boolean))];
+  if (unique.length === 0) return result;
+
+  const token = await getAccessToken();
+  if (!token) return result;
+
+  for (let i = 0; i < unique.length; i += 50) {
+    const batch = unique.slice(i, i + 50);
+    const res = await spotifyFetch(
+      `${API_BASE}/tracks?ids=${batch.join(",")}&market=${encodeURIComponent(market)}`,
+      { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
+    );
+    if (!res?.ok) continue;
+    const json = (await res.json()) as { tracks?: (SpotifyTrackApi | null)[] };
+    for (const track of json.tracks ?? []) {
+      if (!track?.id) continue;
+      result.set(track.id, mapTrackApiToMetadata(track));
+    }
+  }
+
+  return result;
 }
 
 type SpotifyArtistApi = {

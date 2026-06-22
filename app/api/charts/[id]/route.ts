@@ -6,9 +6,9 @@ import { inferCadenceFromWeekIndex, prevPeriodIndex } from "@/lib/chart-cadence"
 import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
-import { getSpotifyArtistById, getSpotifyTrackMetadataById } from "@/lib/spotify-server";
 import type { PersonalDropoutEntry } from "@/lib/types";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
+import { resolveSongsForFastPublish } from "@/lib/resolve-publish-songs";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -313,6 +313,7 @@ type EntryInput = {
   artist: string;
   album?: string | null;
   spotifyId?: string | null;
+  songId?: string | null;
 };
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -335,6 +336,15 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   }
   if (entries.length > 100) entries.splice(100);
 
+  for (const e of entries) {
+    if (!e.title?.trim() || !e.artist?.trim()) {
+      return NextResponse.json(
+        { error: "Entrada inválida: título e artista são obrigatórios" },
+        { status: 400 },
+      );
+    }
+  }
+
   const chart = await prisma.chart.findUnique({
     where: { id: chartId },
     select: {
@@ -353,189 +363,15 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const scoringTier = scoringTierFromPrimary(chart.parada.isPrimary);
   const chartSize = entries.length;
 
-  const songs: { id: string; spotifyId: string | null; albumSpotifyId: string | null }[] = [];
-  const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
+  const normalizedEntries = entries.map((e) => ({
+    title: e.title.trim(),
+    artist: e.artist.trim(),
+    album: e.album ?? null,
+    spotifyId: e.spotifyId?.trim() || null,
+    songId: e.songId?.trim() || null,
+  }));
 
-  async function spotifyArtistProfile(spotifyId: string) {
-    if (spotifyArtistCache.has(spotifyId)) return spotifyArtistCache.get(spotifyId)!;
-    const profile = await getSpotifyArtistById(spotifyId);
-    spotifyArtistCache.set(spotifyId, profile);
-    return profile;
-  }
-
-  for (const e of entries) {
-    const title = e.title?.trim();
-    const artist = e.artist?.trim();
-    if (!title || !artist) {
-      return NextResponse.json({ error: "Entrada inválida: título e artista são obrigatórios" }, { status: 400 });
-    }
-    const spotifyId = e.spotifyId?.trim() || null;
-    if (spotifyId) {
-      const metadata = await getSpotifyTrackMetadataById(spotifyId);
-      const primaryArtist = metadata?.primaryArtist;
-      const albumSpotifyId = metadata?.album.spotifyId ?? null;
-      const resolvedTitle = metadata?.title ?? title;
-      const mainArtistName = primaryArtist?.name?.trim() || metadata?.artists?.[0]?.name?.trim() || artist;
-
-      if (primaryArtist) {
-        const profile = await spotifyArtistProfile(primaryArtist.spotifyId);
-        await prisma.artist.upsert({
-          where: { spotifyId: primaryArtist.spotifyId },
-          update: {
-            name: profile?.name ?? primaryArtist.name,
-            genres: profile?.genres ?? [],
-            spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? undefined,
-            ...(profile?.imageUrl ? { imageUrl: profile.imageUrl } : {}),
-          },
-          create: {
-            spotifyId: primaryArtist.spotifyId,
-            name: profile?.name ?? primaryArtist.name,
-            genres: profile?.genres ?? [],
-            spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? null,
-            imageUrl: profile?.imageUrl ?? null,
-          },
-        });
-      }
-
-      if (primaryArtist && albumSpotifyId) {
-        await prisma.album.upsert({
-          where: { spotifyId: albumSpotifyId },
-          update: {
-            title: metadata?.album.title ?? e.album ?? "Album",
-            artistSpotifyId: primaryArtist.spotifyId,
-            albumType: metadata?.album.albumType ?? undefined,
-            releaseDate: metadata?.album.releaseDate ?? undefined,
-            coverUrl: metadata?.album.coverUrl ?? undefined,
-            spotifyUrl: metadata?.album.spotifyUrl ?? undefined,
-            totalTracks: metadata?.album.totalTracks ?? undefined,
-          },
-          create: {
-            spotifyId: albumSpotifyId,
-            title: metadata?.album.title ?? e.album ?? "Album",
-            artistSpotifyId: primaryArtist.spotifyId,
-            albumType: metadata?.album.albumType ?? undefined,
-            releaseDate: metadata?.album.releaseDate ?? undefined,
-            coverUrl: metadata?.album.coverUrl ?? null,
-            spotifyUrl: metadata?.album.spotifyUrl ?? null,
-            totalTracks: metadata?.album.totalTracks ?? null,
-          },
-        });
-      }
-
-      // A song may have been created manually (no spotifyId) with the same title+artist.
-      // Upserting by spotifyId would try to CREATE a new record and hit the (title, artist) unique constraint.
-      // Promote the existing record instead.
-      const existingByName = await prisma.song.findFirst({
-        where: { title: resolvedTitle, artist: mainArtistName },
-        select: { id: true, spotifyId: true, albumSpotifyId: true },
-      });
-      if (existingByName) {
-        const song = await prisma.song.update({
-          where: { id: existingByName.id },
-          data: {
-            ...(existingByName.spotifyId == null ? { spotifyId } : {}),
-            album: metadata?.album.title ?? e.album ?? null,
-            artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
-            albumSpotifyId: albumSpotifyId ?? undefined,
-            durationMs: metadata?.durationMs ?? undefined,
-            previewUrl: metadata?.previewUrl ?? undefined,
-            spotifyUrl: metadata?.spotifyUrl ?? undefined,
-            trackNumber: metadata?.trackNumber ?? undefined,
-          },
-          select: { id: true, spotifyId: true, albumSpotifyId: true },
-        });
-        songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
-        continue;
-      }
-      const song = await prisma.song.upsert({
-        where: { spotifyId },
-        update: {
-          title: resolvedTitle,
-          artist: mainArtistName,
-          album: metadata?.album.title ?? e.album ?? null,
-          artistSpotifyId: primaryArtist?.spotifyId ?? undefined,
-          albumSpotifyId: albumSpotifyId ?? undefined,
-          durationMs: metadata?.durationMs ?? undefined,
-          previewUrl: metadata?.previewUrl ?? undefined,
-          spotifyUrl: metadata?.spotifyUrl ?? undefined,
-          trackNumber: metadata?.trackNumber ?? undefined,
-        },
-        create: {
-          title: resolvedTitle,
-          artist: mainArtistName,
-          album: metadata?.album.title ?? e.album ?? null,
-          spotifyId,
-          artistSpotifyId: primaryArtist?.spotifyId ?? null,
-          albumSpotifyId,
-          durationMs: metadata?.durationMs ?? null,
-          previewUrl: metadata?.previewUrl ?? null,
-          spotifyUrl: metadata?.spotifyUrl ?? null,
-          trackNumber: metadata?.trackNumber ?? null,
-        },
-      });
-
-      if (song.spotifyId) {
-        const featured = metadata?.featuredArtists ?? [];
-        const featIds = new Set<string>();
-        for (const feat of featured) {
-          featIds.add(feat.spotifyId);
-          const featProfile = await spotifyArtistProfile(feat.spotifyId);
-          await prisma.artist.upsert({
-            where: { spotifyId: feat.spotifyId },
-            update: {
-              name: featProfile?.name ?? feat.name,
-              genres: featProfile?.genres ?? [],
-              spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? undefined,
-              ...(featProfile?.imageUrl ? { imageUrl: featProfile.imageUrl } : {}),
-            },
-            create: {
-              spotifyId: feat.spotifyId,
-              name: featProfile?.name ?? feat.name,
-              genres: featProfile?.genres ?? [],
-              spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? null,
-              imageUrl: featProfile?.imageUrl ?? null,
-            },
-          });
-          await prisma.songFeat.upsert({
-            where: {
-              songSpotifyId_artistSpotifyId: {
-                songSpotifyId: song.spotifyId,
-                artistSpotifyId: feat.spotifyId,
-              },
-            },
-            update: {},
-            create: {
-              songSpotifyId: song.spotifyId,
-              artistSpotifyId: feat.spotifyId,
-            },
-          });
-        }
-        await prisma.songFeat.deleteMany({
-          where: {
-            songSpotifyId: song.spotifyId,
-            ...(featIds.size ? { artistSpotifyId: { notIn: [...featIds] } } : {}),
-          },
-        });
-      }
-
-      songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
-      continue;
-    }
-
-    const existingSong = await prisma.song.findFirst({
-      where: { title, artist },
-      select: { id: true, spotifyId: true, albumSpotifyId: true },
-    });
-    if (existingSong) {
-      songs.push({ id: existingSong.id, spotifyId: existingSong.spotifyId, albumSpotifyId: existingSong.albumSpotifyId });
-      continue;
-    }
-    const song = await prisma.song.create({
-      data: { title, artist, album: e.album ?? null },
-      select: { id: true, spotifyId: true, albumSpotifyId: true },
-    });
-    songs.push({ id: song.id, spotifyId: song.spotifyId, albumSpotifyId: song.albumSpotifyId });
-  }
+  let songs = await resolveSongsForFastPublish(prisma, normalizedEntries);
 
   const previousChart = await prisma.chart.findFirst({
     where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(chart.weekIndex, cadence) },

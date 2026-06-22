@@ -8,7 +8,9 @@ import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@
 import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
-import { resolveSongsForFastPublish } from "@/lib/resolve-publish-songs";
+import {
+  resolveSongsForFastPublish,
+} from "@/lib/resolve-publish-songs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;

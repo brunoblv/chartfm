@@ -11,6 +11,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "seed:boofrnds": "tsx scripts/seed-boofrnds.ts",
     "fix:spotify-entries": "tsx scripts/fix-wrong-spotify-entries.ts",
+    "backfill:song-covers": "tsx scripts/backfill-song-covers.ts",
     "seed:clube-r3": "tsx scripts/seed-clube-round-3.ts",
     "audit:boofrnds": "tsx scripts/audit-boofrnds.ts",
     "audit:user-points": "tsx scripts/audit-user-points.ts",

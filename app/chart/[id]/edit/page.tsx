@@ -346,18 +346,24 @@ export default function EditChartPage() {
       const res = await fetch(`/api/charts/${chartId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({
           entries: entries.map((e) => ({
             title: e.title,
             artist: e.artist,
             album: e.album,
             spotifyId: e.spotifyId ?? null,
+            songId: e.id ?? null,
           })),
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null) as { error?: string } | null;
       if (!res.ok) {
-        setError(data.error ?? "Erro ao salvar alterações.");
+        if (res.status === 502 || res.status === 504) {
+          setError("Salvar demorou demais ou o Spotify ficou indisponível. Tente de novo.");
+          return;
+        }
+        setError(data?.error ?? "Erro ao salvar alterações.");
         return;
       }
       router.push(`/chart/${chartId}`);

@@ -145,7 +145,8 @@ export function MissingInfoBackfillClient({ initialTotal }: Props) {
             Completar dados pelo Spotify
           </div>
           <div style={{ marginTop: 5, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
-            Atualiza capas, links, duração, álbum, artista, gêneros e datas em lotes pequenos, com pausas para respeitar o limite do Spotify.
+            Capas, links, duração e vínculos de artista/álbum vêm daqui — não na hora de publicar ou editar paradas.
+            Processa em lotes pequenos, com pausas para respeitar o limite do Spotify.
           </div>
         </div>
 
