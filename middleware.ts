@@ -33,7 +33,7 @@ function ensureLocaleCookie(request: NextRequest): NextResponse {
   return response;
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isOAuthConnect =
     pathname.startsWith("/api/spotify/connect") ||
