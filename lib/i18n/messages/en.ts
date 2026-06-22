@@ -34,7 +34,7 @@ export const messagesEn = {
     adminMissingInfo: "Missing information",
     adminEditArtists: "Edit artists",
     adminEditAlbums: "Edit albums",
-    adminAlbumsNoCover: "Albums without cover",
+    adminAlbumsNoCover: "Songs without cover",
     adminEditUsers: "Edit users",
     adminClube: "Album Club",
     ctaTitle: "Create your weekly chart",

@@ -378,6 +378,7 @@ export default function CreatePage() {
             album: e.album,
             spotifyId: e.spotifyId ?? null,
             songId: e.id ?? null,
+            imageUrl: e.imageUrl ?? null,
           })),
           weekDate,
           fastPublish: true,

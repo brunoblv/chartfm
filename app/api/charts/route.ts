@@ -9,7 +9,7 @@ import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist 
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
 import {
-  enrichResolvedSongsWithSpotifyMetadata,
+  finalizeSongsForChartPublish,
   resolveSongsForFastPublish,
   sanitizeChartEntrySpotifyRefs,
 } from "@/lib/resolve-publish-songs";
@@ -116,8 +116,8 @@ export async function POST(req: NextRequest) {
   let songs: ResolvedSongRow[];
 
   if (fastPublish) {
-    songs = await resolveSongsForFastPublish(prisma, entries);
-    songs = await enrichResolvedSongsWithSpotifyMetadata(prisma, songs, { searchFallback: false });
+    const resolved = await resolveSongsForFastPublish(prisma, entries);
+    songs = await finalizeSongsForChartPublish(prisma, entries, resolved);
   } else {
   songs = [];
   const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();

@@ -34,7 +34,7 @@ export const messagesPtBR = {
     adminMissingInfo: "Informações faltando",
     adminEditArtists: "Editar artistas",
     adminEditAlbums: "Editar álbuns",
-    adminAlbumsNoCover: "Álbuns sem capa",
+    adminAlbumsNoCover: "Músicas sem capa",
     adminEditUsers: "Editar usuários",
     adminClube: "Clube do Álbum",
     ctaTitle: "Crie sua parada semanal",

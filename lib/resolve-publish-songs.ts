@@ -11,6 +11,7 @@ export type PublishEntryInput = {
   title: string;
   artist: string;
   album?: string | null;
+  imageUrl?: string | null;
   spotifyId?: string | null;
   songId?: string | null;
 };
@@ -126,9 +127,33 @@ export async function resolveSongsForFastPublish(
     for (const i of needText) {
       const e = entries[i];
       const key = textMatchKey(e.title, e.artist);
-      if (byTextKey.has(key)) {
-        results[i] = byTextKey.get(key)!;
+      if (!byTextKey.has(key)) continue;
+
+      const resolved = byTextKey.get(key)!;
+      const sid = e.spotifyId?.trim();
+      if (sid && isSpotifyTrackId(sid) && resolved.spotifyId !== sid) {
+        const taken = await db.song.findFirst({
+          where: { spotifyId: sid, NOT: { id: resolved.id } },
+          select: { id: true },
+        });
+        if (!taken && (!resolved.spotifyId || !isSpotifyTrackId(resolved.spotifyId))) {
+          const song = await db.song.update({
+            where: { id: resolved.id },
+            data: {
+              spotifyId: sid,
+              ...(e.album ? { album: e.album } : {}),
+            },
+            select: SONG_SELECT,
+          });
+          results[i] = {
+            id: song.id,
+            spotifyId: song.spotifyId ?? null,
+            albumSpotifyId: song.albumSpotifyId ?? null,
+          };
+          continue;
+        }
       }
+      results[i] = resolved;
     }
   }
 
@@ -270,17 +295,49 @@ function normalizeMatchKey(s: string): string {
     .trim();
 }
 
+function primaryArtistName(artist: string): string {
+  return (artist.split(",")[0] ?? artist).split(" feat ")[0]?.trim() || artist.trim();
+}
+
+function titleSearchVariants(title: string): string[] {
+  const stripped = title.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+  return [...new Set([title.trim(), stripped].filter(Boolean))];
+}
+
+function tokenOverlapScore(a: string, b: string): number {
+  const ta = new Set(normalizeMatchKey(a).split(" ").filter((w) => w.length > 1));
+  const tb = new Set(normalizeMatchKey(b).split(" ").filter((w) => w.length > 1));
+  if (!ta.size || !tb.size) return 0;
+  let n = 0;
+  for (const w of ta) if (tb.has(w)) n += 1;
+  return Math.round((n / Math.max(ta.size, tb.size)) * 50);
+}
+
 function scoreSearchMatch(wantTitle: string, wantArtist: string, gotTitle: string, gotArtist: string): number {
   const wt = normalizeMatchKey(wantTitle);
-  const wa = normalizeMatchKey((wantArtist.split(",")[0] ?? wantArtist).split(" feat ")[0] ?? wantArtist);
+  const wa = normalizeMatchKey(primaryArtistName(wantArtist));
   const gt = normalizeMatchKey(gotTitle);
-  const ga = normalizeMatchKey((gotArtist.split(",")[0] ?? gotArtist));
+  const ga = normalizeMatchKey(primaryArtistName(gotArtist));
   let s = 0;
   if (gt === wt) s += 100;
   else if (gt.includes(wt) || wt.includes(gt)) s += 55;
+  else s += tokenOverlapScore(wt, gt);
   if (ga === wa) s += 90;
   else if (ga.includes(wa) || wa.includes(ga)) s += 45;
+  else s += Math.round(tokenOverlapScore(wa, ga) * 0.6);
   return s;
+}
+
+function searchQueriesForRow(row: { title: string; artist: string }): string[] {
+  const artist = primaryArtistName(row.artist);
+  const titles = titleSearchVariants(row.title);
+  const out = new Set<string>();
+  for (const title of titles) {
+    out.add(`${title} ${artist}`);
+    out.add(`${artist} ${title}`);
+    out.add(`track:${title} artist:${artist}`);
+  }
+  return [...out];
 }
 
 async function applySpotifyMetadataToSongRow(
@@ -360,23 +417,78 @@ async function applySpotifyMetadataToSongRow(
   return Boolean(meta.album.coverUrl?.trim());
 }
 
+/** Copia álbum/capa de outra `Song` com mesmo título (ex.: duplicata com ID inválido). */
+async function enrichSongRowFromExistingTwin(
+  db: Db,
+  row: { id: string; title: string; artist: string; spotifyId: string | null },
+): Promise<boolean> {
+  const wantArtist = normalizeMatchKey(primaryArtistName(row.artist));
+  const twins = await db.song.findMany({
+    where: {
+      NOT: { id: row.id },
+      title: { equals: row.title, mode: "insensitive" },
+      albumSpotifyId: { not: null },
+      albumRef: { coverUrl: { not: null } },
+    },
+    select: {
+      artist: true,
+      spotifyId: true,
+      albumSpotifyId: true,
+      albumRef: { select: { coverUrl: true } },
+    },
+  });
+
+  const twin = twins.find((t) => {
+    if (!t.albumRef?.coverUrl?.trim() || !t.albumSpotifyId) return false;
+    const ga = normalizeMatchKey(primaryArtistName(t.artist));
+    return ga === wantArtist || ga.includes(wantArtist) || wantArtist.includes(ga);
+  });
+  if (!twin?.albumSpotifyId) return false;
+
+  const invalidCurrent = row.spotifyId != null && !isSpotifyTrackId(row.spotifyId);
+  let adoptSpotifyId: string | null | undefined;
+  if (invalidCurrent && twin.spotifyId && isSpotifyTrackId(twin.spotifyId)) {
+    const taken = await db.song.findFirst({
+      where: { spotifyId: twin.spotifyId, NOT: { id: row.id } },
+      select: { id: true },
+    });
+    adoptSpotifyId = taken ? null : twin.spotifyId;
+  }
+
+  await db.song.update({
+    where: { id: row.id },
+    data: {
+      ...(invalidCurrent ? { spotifyId: adoptSpotifyId ?? null } : {}),
+      albumSpotifyId: twin.albumSpotifyId,
+    },
+  });
+  return true;
+}
+
 async function enrichSongRowBySearch(
   db: Db,
   row: { id: string; title: string; artist: string; spotifyId: string | null },
 ): Promise<boolean> {
-  const matches = await searchSpotifyTracks(`${row.title} ${row.artist}`, 8);
-  if (!matches.length) return false;
+  const invalidId = row.spotifyId != null && !isSpotifyTrackId(row.spotifyId);
+  const minScore = invalidId ? 100 : 120;
 
-  let best = matches[0];
+  const seen = new Map<string, { title: string; artist: string; album: string; spotifyId: string }>();
+  for (const query of searchQueriesForRow(row)) {
+    const matches = await searchSpotifyTracks(query, 8);
+    for (const m of matches) seen.set(m.spotifyId, m);
+  }
+  if (seen.size === 0) return false;
+
+  let best = [...seen.values()][0];
   let bestScore = -1;
-  for (const m of matches) {
+  for (const m of seen.values()) {
     const sc = scoreSearchMatch(row.title, row.artist, m.title, m.artist);
     if (sc > bestScore) {
       best = m;
       bestScore = sc;
     }
   }
-  if (bestScore < 120) return false;
+  if (bestScore < minScore) return false;
 
   const meta = await getSpotifyTrackMetadataById(best.spotifyId);
   if (!meta?.album.coverUrl?.trim()) return false;
@@ -385,10 +497,16 @@ async function enrichSongRowBySearch(
     db,
     row.id,
     meta,
-    row.spotifyId && !isSpotifyTrackId(row.spotifyId)
-      ? { fixInvalidSpotifyId: row.spotifyId }
-      : undefined,
+    invalidId ? { fixInvalidSpotifyId: row.spotifyId } : undefined,
   );
+}
+
+async function enrichSongRowFallback(
+  db: Db,
+  row: { id: string; title: string; artist: string; spotifyId: string | null },
+): Promise<boolean> {
+  if (await enrichSongRowFromExistingTwin(db, row)) return true;
+  return enrichSongRowBySearch(db, row);
 }
 
 export type EnrichSongsResult = {
@@ -413,17 +531,17 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
     select: SONG_ENRICH_SELECT,
   });
 
-  const needsEnrich = rows.filter(
-    (r) => r.spotifyId && (!r.albumSpotifyId || !r.albumRef?.coverUrl?.trim()),
-  );
+  const needsEnrich = rows.filter((r) => !r.albumRef?.coverUrl?.trim());
   if (needsEnrich.length === 0) return songs;
 
-  const batch = await getSpotifyTracksMetadataByIds(needsEnrich.map((r) => r.spotifyId!));
+  const batch = await getSpotifyTracksMetadataByIds(
+    needsEnrich.map((r) => r.spotifyId).filter((id): id is string => Boolean(id && isSpotifyTrackId(id))),
+  );
   const updatedById = new Map<string, ResolvedPublishSong>();
 
   for (const row of needsEnrich) {
-    const sid = row.spotifyId!;
-    const meta = isSpotifyTrackId(sid) ? batch.metadata.get(sid) : undefined;
+    const sid = row.spotifyId;
+    const meta = sid && isSpotifyTrackId(sid) ? batch.metadata.get(sid) : undefined;
     if (!meta) continue;
 
     try {
@@ -443,7 +561,7 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
     for (const row of needsEnrich) {
       if (updatedById.has(row.id)) continue;
       try {
-        const ok = await enrichSongRowBySearch(db, row);
+        const ok = await enrichSongRowFallback(db, row);
         if (!ok) continue;
         const fresh = await db.song.findUnique({
           where: { id: row.id },
@@ -465,6 +583,146 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
   return songs.map((s) => updatedById.get(s.id) ?? s);
 }
 
+async function reloadResolvedSongs(db: Db, songs: ResolvedPublishSong[]): Promise<ResolvedPublishSong[]> {
+  if (songs.length === 0) return songs;
+  const rows = await db.song.findMany({
+    where: { id: { in: songs.map((s) => s.id) } },
+    select: SONG_SELECT,
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return songs.map((s) => {
+    const row = byId.get(s.id);
+    return row
+      ? {
+          id: row.id,
+          spotifyId: row.spotifyId ?? null,
+          albumSpotifyId: row.albumSpotifyId ?? null,
+        }
+      : s;
+  });
+}
+
+/** Garante que o spotifyId da entrada (UI/Spotify) chegue na `Song` antes do enrich. */
+async function promoteEntrySpotifyIds(
+  db: Db,
+  entries: PublishEntryInput[],
+  songs: ResolvedPublishSong[],
+): Promise<ResolvedPublishSong[]> {
+  const out = [...songs];
+  for (let i = 0; i < out.length; i++) {
+    const sid = entries[i]?.spotifyId?.trim();
+    if (!sid || !isSpotifyTrackId(sid)) continue;
+    const song = out[i];
+    if (song.spotifyId === sid) continue;
+    if (song.spotifyId && isSpotifyTrackId(song.spotifyId) && song.spotifyId !== sid) continue;
+
+    const taken = await db.song.findFirst({
+      where: { spotifyId: sid, NOT: { id: song.id } },
+      select: { id: true },
+    });
+    if (taken) continue;
+
+    const updated = await db.song.update({
+      where: { id: song.id },
+      data: {
+        spotifyId: sid,
+        ...(entries[i].album ? { album: entries[i].album } : {}),
+      },
+      select: SONG_SELECT,
+    });
+    out[i] = {
+      id: updated.id,
+      spotifyId: updated.spotifyId ?? null,
+      albumSpotifyId: updated.albumSpotifyId ?? null,
+    };
+  }
+  return out;
+}
+
+/** Usa imageUrl da UI (busca Spotify) quando o batch ainda não vinculou capa. */
+async function applyEntryCoverHints(
+  db: Db,
+  entries: PublishEntryInput[],
+  songs: ResolvedPublishSong[],
+): Promise<void> {
+  const rows = await db.song.findMany({
+    where: { id: { in: songs.map((s) => s.id) } },
+    select: SONG_ENRICH_SELECT,
+  });
+  const entryIndexBySongId = new Map(songs.map((s, i) => [s.id, i]));
+
+  const needCover = rows.filter((r) => !r.albumRef?.coverUrl?.trim());
+  if (needCover.length === 0) return;
+
+  const batchSpotifyIds = [
+    ...new Set(
+      needCover
+        .map((r) => {
+          const idx = entryIndexBySongId.get(r.id);
+          const fromEntry = idx != null ? entries[idx]?.spotifyId?.trim() : null;
+          const fromRow = r.spotifyId?.trim();
+          const sid =
+            fromEntry && isSpotifyTrackId(fromEntry)
+              ? fromEntry
+              : fromRow && isSpotifyTrackId(fromRow)
+                ? fromRow
+                : null;
+          return sid;
+        })
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const batchMeta = await getSpotifyTracksMetadataByIds(batchSpotifyIds);
+
+  for (const row of needCover) {
+    const idx = entryIndexBySongId.get(row.id);
+    const entry = idx != null ? entries[idx] : undefined;
+    const imageUrl = entry?.imageUrl?.trim();
+    const entrySid = entry?.spotifyId?.trim();
+    const sid =
+      entrySid && isSpotifyTrackId(entrySid)
+        ? entrySid
+        : row.spotifyId && isSpotifyTrackId(row.spotifyId)
+          ? row.spotifyId
+          : null;
+
+    const meta = sid ? batchMeta.metadata.get(sid) : undefined;
+    if (meta?.album.coverUrl?.trim()) {
+      await applySpotifyMetadataToSongRow(db, row.id, meta);
+      continue;
+    }
+
+    if (imageUrl && row.albumSpotifyId) {
+      await db.album.update({
+        where: { spotifyId: row.albumSpotifyId },
+        data: { coverUrl: imageUrl },
+      });
+      continue;
+    }
+
+    if (imageUrl && sid) {
+      const single = meta ?? (await getSpotifyTrackMetadataById(sid));
+      if (single) {
+        await applySpotifyMetadataToSongRow(db, row.id, single);
+      }
+    }
+  }
+}
+
+/**
+ * Resolve rápido + capas: promove spotifyId da entrada, enrich em lote, hints de imageUrl, reload.
+ */
+export async function finalizeSongsForChartPublish(
+  db: Db,
+  entries: PublishEntryInput[],
+  songs: ResolvedPublishSong[],
+): Promise<ResolvedPublishSong[]> {
+  let resolved = await promoteEntrySpotifyIds(db, entries, songs);
+  resolved = await enrichResolvedSongsWithSpotifyMetadata(db, resolved, { searchFallback: true });
+  await applyEntryCoverHints(db, entries, resolved);
+  return reloadResolvedSongs(db, resolved);
+}
+
 const SONG_COVER_SELECT = {
   id: true,
   spotifyId: true,
@@ -474,11 +732,10 @@ const SONG_COVER_SELECT = {
   albumRef: { select: { coverUrl: true } },
 } as const;
 
-/** Músicas com Spotify ID mas sem álbum/capa vinculados. */
+/** Músicas sem capa vinculada (com ou sem spotifyId válido). */
 export async function findSongsMissingCovers(db: Db, limit?: number) {
   const rows = await db.song.findMany({
     where: {
-      spotifyId: { not: null },
       OR: [
         { albumSpotifyId: null },
         { albumRef: null },
@@ -490,7 +747,22 @@ export async function findSongsMissingCovers(db: Db, limit?: number) {
     orderBy: { id: "asc" },
     ...(limit ? { take: limit } : {}),
   });
-  return rows.filter((r) => r.spotifyId && (!r.albumSpotifyId || !r.albumRef?.coverUrl?.trim()));
+  return rows.filter((r) => !r.albumRef?.coverUrl?.trim());
+}
+
+export async function countSongsMissingCovers(db: Db): Promise<number> {
+  const rows = await db.song.findMany({
+    where: {
+      OR: [
+        { albumSpotifyId: null },
+        { albumRef: null },
+        { albumRef: { coverUrl: null } },
+        { albumRef: { coverUrl: "" } },
+      ],
+    },
+    select: { albumRef: { select: { coverUrl: true } } },
+  });
+  return rows.filter((r) => !r.albumRef?.coverUrl?.trim()).length;
 }
 
 /** Enriquece músicas por ID (backfill de capas). */
@@ -507,9 +779,7 @@ export async function enrichSongsWithSpotifyMetadataByIds(
     where: { id: { in: songIds } },
     select: SONG_ENRICH_SELECT,
   });
-  const needsEnrich = before.filter(
-    (r) => r.spotifyId && (!r.albumSpotifyId || !r.albumRef?.coverUrl?.trim()),
-  );
+  const needsEnrich = before.filter((r) => !r.albumRef?.coverUrl?.trim());
   const invalidSpotifyIds = needsEnrich.filter((r) => r.spotifyId && !isSpotifyTrackId(r.spotifyId)).length;
   const coveredBefore = new Set(
     before.filter((r) => r.albumRef?.coverUrl?.trim()).map((r) => r.id),

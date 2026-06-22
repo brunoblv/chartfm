@@ -38,8 +38,12 @@ const BATCH_SIZE = 100;
 
 async function main() {
   const candidates = await findSongsMissingCovers(prisma, LIMIT);
+  const withSpotifyId = candidates.filter((r) => r.spotifyId);
   const invalidIds = candidates.filter((r) => r.spotifyId && !isSpotifyTrackId(r.spotifyId));
-  console.log(`Músicas sem capa (com Spotify ID): ${candidates.length}`);
+  console.log(`Músicas sem capa: ${candidates.length}`);
+  if (withSpotifyId.length > 0) {
+    console.log(`  → ${withSpotifyId.length} com spotifyId preenchido`);
+  }
   if (invalidIds.length > 0) {
     console.log(`  → ${invalidIds.length} com ID inválido (não é faixa Spotify de 22 chars)`);
   }
@@ -102,6 +106,19 @@ async function main() {
   console.log(
     `\nConcluído: ${totalUpdated} músicas enriquecidas, ${totalSkipped} ignoradas (${totalViaSearch} via busca por título/artista).`,
   );
+
+  const remaining = await findSongsMissingCovers(prisma);
+  if (remaining.length > 0) {
+    console.log(`\nAinda sem capa (${remaining.length}):`);
+    for (const row of remaining) {
+      const idNote = row.spotifyId
+        ? isSpotifyTrackId(row.spotifyId)
+          ? `spotify:${row.spotifyId}`
+          : `id inválido:${row.spotifyId}`
+        : "sem spotifyId";
+      console.log(`  - ${row.artist} — ${row.title} (${idNote})`);
+    }
+  }
 }
 
 main()
