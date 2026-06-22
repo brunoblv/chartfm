@@ -3,6 +3,9 @@ import { spotifyConfigured, getAccessToken } from "@/lib/spotify-server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const NO_CACHE = { "Cache-Control": "no-store, no-cache, must-revalidate", Pragma: "no-cache", Expires: "0" };
 
 type TrackResult = {
   spotifyId: string;
@@ -55,7 +58,7 @@ export async function GET(req: NextRequest) {
   const configured = spotifyConfigured();
 
   if (q.length < 1) {
-    return NextResponse.json({ tracks: [], configured, accessToken: null });
+    return NextResponse.json({ tracks: [], configured, accessToken: null }, { headers: NO_CACHE });
   }
 
   // DB search + token fetch em paralelo (ambos rápidos)
@@ -64,11 +67,14 @@ export async function GET(req: NextRequest) {
     configured ? getAccessToken() : Promise.resolve(null),
   ]);
 
-  return NextResponse.json({
-    tracks: dbTracks.slice(0, limit),
-    configured,
-    // Token de curta duração — o browser usa para chamar a API do Spotify diretamente,
-    // evitando a latência do servidor para api.spotify.com
-    accessToken: accessToken ?? null,
-  });
+  return NextResponse.json(
+    {
+      tracks: dbTracks.slice(0, limit),
+      configured,
+      // Token de curta duração — o browser usa para chamar a API do Spotify diretamente,
+      // evitando a latência do servidor para api.spotify.com
+      accessToken: accessToken ?? null,
+    },
+    { headers: NO_CACHE },
+  );
 }

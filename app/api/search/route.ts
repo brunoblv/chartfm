@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const NO_CACHE = { "Cache-Control": "no-store, no-cache, must-revalidate", Pragma: "no-cache", Expires: "0" };
 
 export async function GET(req: NextRequest) {
   const rawQ = req.nextUrl.searchParams.get("q")?.slice(0, 100) ?? "";
   const q = rawQ.replace(/\s+/g, " ").trim();
   if (q.length < 2) {
-    return NextResponse.json({ songs: [], artists: [], users: [] });
+    return NextResponse.json({ songs: [], artists: [], users: [] }, { headers: NO_CACHE });
   }
   const terms = (q.match(/[\p{L}\p{N}]+/gu) ?? [])
     .map((t) => t.trim())
@@ -77,17 +80,20 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  return NextResponse.json({
-    songs: songs.map((s) => ({
-      id: s.id,
-      title: s.exhibitionName?.trim() || s.title,
-      artist: s.artist,
-      album: s.album ?? null,
-      spotifyId: s.spotifyId,
-      artistSpotifyId: s.artistSpotifyId,
-      coverUrl: s.albumRef?.coverUrl ?? null,
-    })),
-    artists,
-    users,
-  });
+  return NextResponse.json(
+    {
+      songs: songs.map((s) => ({
+        id: s.id,
+        title: s.exhibitionName?.trim() || s.title,
+        artist: s.artist,
+        album: s.album ?? null,
+        spotifyId: s.spotifyId,
+        artistSpotifyId: s.artistSpotifyId,
+        coverUrl: s.albumRef?.coverUrl ?? null,
+      })),
+      artists,
+      users,
+    },
+    { headers: NO_CACHE },
+  );
 }

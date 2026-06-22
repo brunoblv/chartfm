@@ -76,6 +76,7 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
         // Fase 1: catálogo local + access token (servidor, rápido)
         const serverRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
           signal: ac.signal,
+          cache: "no-store",
         });
         if (ac.signal.aborted) return;
         if (!serverRes.ok) {

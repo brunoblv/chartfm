@@ -130,7 +130,7 @@ export default function EditChartPage() {
     const timer = setTimeout(async () => {
       setDbLoading(true);
       try {
-        const dbRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ac.signal });
+        const dbRes = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ac.signal, cache: "no-store" });
         if (ac.signal.aborted) return;
         if (!dbRes.ok) {
           setDbSongs([]);

@@ -117,6 +117,12 @@ export function spotifyConfigured(): boolean {
   return Boolean(process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET);
 }
 
+/** ID de faixa Spotify: 22 caracteres base62 com ao menos uma maiúscula. */
+export function isSpotifyTrackId(id: string): boolean {
+  const s = id.trim();
+  return /^[A-Za-z0-9]{22}$/.test(s) && /[A-Z]/.test(s);
+}
+
 export async function getAccessToken(): Promise<string | null> {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -148,6 +154,24 @@ export async function getAccessToken(): Promise<string | null> {
   tokenState.accessToken = data.access_token;
   tokenState.expiresAt = Date.now() + (data.expires_in - 60) * 1000;
   return tokenState.accessToken;
+}
+
+/** Testa credenciais e conectividade com a API do Spotify. */
+export async function probeSpotifyApi(): Promise<{ ok: boolean; error?: string }> {
+  if (!spotifyConfigured()) {
+    return { ok: false, error: "SPOTIFY_CLIENT_ID ou SPOTIFY_CLIENT_SECRET ausentes no ambiente" };
+  }
+  const token = await getAccessToken();
+  if (!token) {
+    return { ok: false, error: "Não foi possível obter access token (credenciais inválidas ou rede)" };
+  }
+  const res = await spotifyFetch(`${API_BASE}/tracks/11dFghVXANMlKmJXsNCbNl?market=BR`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res?.ok) {
+    return { ok: false, error: `API Spotify respondeu HTTP ${res?.status ?? "sem resposta"}` };
+  }
+  return { ok: true };
 }
 
 export function pickAlbumImageUrl(images: SpotifyImage[] | undefined): string | null {
@@ -512,33 +536,51 @@ export async function getSpotifyTrackMetadataById(trackId: string, market: strin
   return mapTrackApiToMetadata(track);
 }
 
+export type SpotifyBatchMetadataResult = {
+  metadata: Map<string, SpotifyTrackMetadata>;
+  invalidIds: string[];
+  tokenMissing: boolean;
+  batchErrors: number;
+};
+
 /** Metadados de várias faixas (lotes de 50) — usado na publicação rápida para salvar capas. */
 export async function getSpotifyTracksMetadataByIds(
   trackIds: string[],
   market: string = "BR",
-): Promise<Map<string, SpotifyTrackMetadata>> {
-  const result = new Map<string, SpotifyTrackMetadata>();
+): Promise<SpotifyBatchMetadataResult> {
+  const metadata = new Map<string, SpotifyTrackMetadata>();
   const unique = [...new Set(trackIds.map((id) => id.trim()).filter(Boolean))];
-  if (unique.length === 0) return result;
+  const invalidIds = unique.filter((id) => !isSpotifyTrackId(id));
+  const validIds = unique.filter((id) => isSpotifyTrackId(id));
+  if (validIds.length === 0) {
+    return { metadata, invalidIds, tokenMissing: !spotifyConfigured(), batchErrors: 0 };
+  }
 
   const token = await getAccessToken();
-  if (!token) return result;
+  if (!token) {
+    return { metadata, invalidIds, tokenMissing: true, batchErrors: validIds.length };
+  }
 
-  for (let i = 0; i < unique.length; i += 50) {
-    const batch = unique.slice(i, i + 50);
+  let batchErrors = 0;
+  for (let i = 0; i < validIds.length; i += 50) {
+    const batch = validIds.slice(i, i + 50);
     const res = await spotifyFetch(
       `${API_BASE}/tracks?ids=${batch.join(",")}&market=${encodeURIComponent(market)}`,
-      { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
+      { headers: { Authorization: `Bearer ${token}` } },
     );
-    if (!res?.ok) continue;
+    if (!res?.ok) {
+      batchErrors += batch.length;
+      console.error(`[spotify] batch tracks failed: status=${res?.status ?? "no_response"}`);
+      continue;
+    }
     const json = (await res.json()) as { tracks?: (SpotifyTrackApi | null)[] };
     for (const track of json.tracks ?? []) {
       if (!track?.id) continue;
-      result.set(track.id, mapTrackApiToMetadata(track));
+      metadata.set(track.id, mapTrackApiToMetadata(track));
     }
   }
 
-  return result;
+  return { metadata, invalidIds, tokenMissing: false, batchErrors };
 }
 
 type SpotifyArtistApi = {
