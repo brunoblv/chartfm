@@ -22,6 +22,7 @@ type SpotifyDirectItem = {
   name: string;
   artists: Array<{ name: string }>;
   album: { name: string; images: Array<{ url: string }> };
+  popularity?: number;
 };
 
 export type SpotifySearchResult = {
@@ -30,6 +31,22 @@ export type SpotifySearchResult = {
   configured: boolean;
   unavailable: boolean;
 };
+
+// Cross-field relevance: highest score when query words match across both title and artist
+function scoreMatch(item: SpotifyDirectItem, words: string[]): number {
+  if (words.length < 2) return 0;
+  const title = item.name.toLowerCase();
+  const artist = (item.artists?.map((a) => a.name).join(" ") ?? "").toLowerCase();
+  let titleHits = 0;
+  let artistHits = 0;
+  for (const w of words) {
+    if (title.includes(w)) titleHits++;
+    if (artist.includes(w)) artistHits++;
+  }
+  // Cross-field match (some words in title, some in artist) is the strongest signal
+  if (titleHits > 0 && artistHits > 0) return 1000 + titleHits * 10 + artistHits * 10;
+  return titleHits * 5 + artistHits * 5;
+}
 
 export function useSpotifySearch(query: string, disabled = false): SpotifySearchResult {
   const [tracks, setTracks] = useState<Song[]>([]);
@@ -97,7 +114,7 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
         if (!accessToken || serverData.configured === false) return;
 
         try {
-          const words = q.split(/\s+/);
+          const words = q.toLowerCase().split(/\s+/);
           const extraQueries: string[] = [];
           if (words.length === 2) {
             extraQueries.push(`artist:${words[0]} track:${words[1]}`);
@@ -107,9 +124,9 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
             extraQueries.push(`artist:${words[words.length - 1]} track:${words.slice(0, -1).join(" ")}`);
           }
 
-          const fetchQuery = (query: string) =>
+          const fetchQuery = (qStr: string) =>
             fetch(
-              `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=12&market=BR`,
+              `https://api.spotify.com/v1/search?q=${encodeURIComponent(qStr)}&type=track&limit=20&market=BR`,
               { headers: { Authorization: `Bearer ${accessToken}` }, signal: ac.signal },
             )
               .then((r) => (r.ok ? r.json() : { tracks: { items: [] } }))
@@ -119,13 +136,22 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
           const allResults = await Promise.all([fetchQuery(q), ...extraQueries.map(fetchQuery)]);
           if (ac.signal.aborted) return;
 
-          // Structured queries first so targeted matches (artist:X track:Y) beat broad plain results
-          const orderedItems = [...allResults.slice(1).flat(), ...allResults[0]];
+          // Deduplicate across all queries
+          const seenPhase2 = new Set<string>();
+          const candidates: SpotifyDirectItem[] = [];
+          for (const item of allResults.flat()) {
+            if (!item?.id || seenPhase2.has(item.id)) continue;
+            seenPhase2.add(item.id);
+            candidates.push(item);
+          }
+
+          // Sort by cross-field relevance: items where words match both title AND artist rank highest
+          candidates.sort((a, b) => scoreMatch(b, words) - scoreMatch(a, words));
 
           const seen = new Set(dbSongs.map((s) => s.spotifyId).filter((id): id is string => Boolean(id)));
           const merged = [...dbSongs];
-          for (const item of orderedItems) {
-            if (!item?.id || seen.has(item.id)) continue;
+          for (const item of candidates) {
+            if (seen.has(item.id)) continue;
             seen.add(item.id);
             merged.push({
               title: item.name,
