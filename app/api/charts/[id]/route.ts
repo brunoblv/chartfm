@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { inferCadenceFromWeekIndex, prevPeriodIndex } from "@/lib/chart-cadence";
 import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
-import { recomputePersistedChartEntryStats } from "@/lib/chart-entry-stats";
+import { recomputePersistedChartEntryStatsForParada } from "@/lib/chart-entry-stats";
 import type { PersonalDropoutEntry } from "@/lib/types";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
-import { resolveSongsForFastPublish } from "@/lib/resolve-publish-songs";
+import {
+  resolveSongsForFastPublish,
+  sanitizeChartEntrySpotifyRefs,
+} from "@/lib/resolve-publish-songs";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -352,7 +356,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       userId: true,
       paradaId: true,
       weekIndex: true,
-      parada: { select: { isPrimary: true, cadence: true } },
+      parada: { select: { isPrimary: true } },
     },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -371,7 +375,12 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     songId: e.songId?.trim() || null,
   }));
 
-  let songs = await resolveSongsForFastPublish(prisma, normalizedEntries);
+  const songs = await resolveSongsForFastPublish(prisma, normalizedEntries);
+  if (songs.length !== entries.length || songs.some((s) => !s?.id)) {
+    return NextResponse.json({ error: "Não foi possível resolver todas as músicas." }, { status: 400 });
+  }
+
+  const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);
 
   const previousChart = await prisma.chart.findFirst({
     where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(chart.weekIndex, cadence) },
@@ -389,16 +398,17 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
   const entryData = entries.map((e, i) => {
     const song = songs[i];
+    const refs = spotifyRefs[i];
     const pos = i + 1;
-    const points = pointsForChartPosition(pos, scoringTier, chartSize, chart.parada.cadence);
+    const points = pointsForChartPosition(pos, scoringTier, chartSize, cadence);
     const prev = previousChart?.entries.find((pe) => pe.songId === song.id);
     const { palette, seed } = paletteFor(e.artist, e.title);
 
     if (!prev) {
       return {
         songId: song.id,
-        songSpotifyId: song.spotifyId,
-        albumSpotifyId: song.albumSpotifyId,
+        songSpotifyId: refs.songSpotifyId,
+        albumSpotifyId: refs.albumSpotifyId,
         points,
         position: pos,
         status: historicalSongIds.has(song.id) ? "return" : "new",
@@ -415,8 +425,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     const delta = prev.position - pos;
     return {
       songId: song.id,
-      songSpotifyId: song.spotifyId,
-      albumSpotifyId: song.albumSpotifyId,
+      songSpotifyId: refs.songSpotifyId,
+      albumSpotifyId: refs.albumSpotifyId,
       points,
       position: pos,
       status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
@@ -440,11 +450,37 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       },
     }),
   ]);
-  await recomputePersistedChartEntryStats(prisma, chart.userId, chart.weekIndex);
+  await recomputePersistedChartEntryStatsForParada(prisma, chart.paradaId, chart.weekIndex);
 
   return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[PATCH /api/charts/[id]]", err);
+
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2003") {
+        return NextResponse.json(
+          { error: "Referência inválida ao salvar uma música. Tente remover e adicionar a faixa de novo." },
+          { status: 400 },
+        );
+      }
+      if (err.code === "P2002") {
+        return NextResponse.json(
+          { error: "Música duplicada no catálogo. Verifique título e artista." },
+          { status: 409 },
+        );
+      }
+    }
+
+    const code = err instanceof Prisma.PrismaClientInitializationError
+      ? err.errorCode
+      : (err as { code?: string }).code;
+    if (code === "P1001" || code === "P1017") {
+      return NextResponse.json(
+        { error: "Banco de dados indisponível. Tente novamente em instantes." },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json({ error: "Erro interno ao salvar a parada." }, { status: 500 });
   }
 }

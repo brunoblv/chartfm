@@ -180,6 +180,23 @@ export async function resolveSongsForFastPublish(
       continue;
     }
 
+    const primaryArtist = (e.artist.split(",")[0] ?? e.artist).trim();
+    const existingByName = await db.song.findFirst({
+      where: {
+        title: { equals: e.title, mode: "insensitive" },
+        artist: { equals: primaryArtist, mode: "insensitive" },
+      },
+      select: SONG_SELECT,
+    });
+    if (existingByName) {
+      results[i] = {
+        id: existingByName.id,
+        spotifyId: existingByName.spotifyId ?? null,
+        albumSpotifyId: existingByName.albumSpotifyId ?? null,
+      };
+      continue;
+    }
+
     const song = await db.song.create({
       data: {
         title: e.title,
@@ -196,6 +213,37 @@ export async function resolveSongsForFastPublish(
   }
 
   return results as ResolvedPublishSong[];
+}
+
+/** Garante FKs válidas ao gravar `ChartEntry.songSpotifyId` / `albumSpotifyId`. */
+export async function sanitizeChartEntrySpotifyRefs(
+  db: Db,
+  songs: ResolvedPublishSong[],
+): Promise<Array<{ songSpotifyId: string | null; albumSpotifyId: string | null }>> {
+  if (songs.length === 0) return [];
+
+  const albumIds = [...new Set(songs.map((s) => s.albumSpotifyId).filter((id): id is string => Boolean(id)))];
+  const songSpotifyIds = [...new Set(songs.map((s) => s.spotifyId).filter((id): id is string => Boolean(id)))];
+
+  const [albumRows, songSpotifyRows] = await Promise.all([
+    albumIds.length > 0
+      ? db.album.findMany({ where: { spotifyId: { in: albumIds } }, select: { spotifyId: true } })
+      : Promise.resolve([] as { spotifyId: string }[]),
+    songSpotifyIds.length > 0
+      ? db.song.findMany({ where: { spotifyId: { in: songSpotifyIds } }, select: { spotifyId: true } })
+      : Promise.resolve([] as { spotifyId: string | null }[]),
+  ]);
+
+  const validAlbums = new Set(albumRows.map((r) => r.spotifyId));
+  const validSongSpotifyIds = new Set(
+    songSpotifyRows.map((r) => r.spotifyId).filter((id): id is string => Boolean(id)),
+  );
+
+  return songs.map((s) => ({
+    songSpotifyId: s.spotifyId && validSongSpotifyIds.has(s.spotifyId) ? s.spotifyId : null,
+    albumSpotifyId:
+      s.albumSpotifyId && validAlbums.has(s.albumSpotifyId) ? s.albumSpotifyId : null,
+  }));
 }
 
 /** Após publicação rápida, busca capas e vínculos de álbum no Spotify (lotes de 50). */

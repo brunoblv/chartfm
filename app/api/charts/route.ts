@@ -10,6 +10,7 @@ import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-poi
 import { resolveParadaForPublish } from "@/lib/paradas";
 import {
   resolveSongsForFastPublish,
+  sanitizeChartEntrySpotifyRefs,
 } from "@/lib/resolve-publish-songs";
 
 export const runtime = "nodejs";
@@ -329,6 +330,8 @@ export async function POST(req: NextRequest) {
   }
   }
 
+  const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);
+
   // Previous chart for delta calculations
   const previousWeekIdx = prevPeriodIndex(weekIndex, parada.cadence);
   const previousChart = await prisma.chart.findFirst({
@@ -347,6 +350,7 @@ export async function POST(req: NextRequest) {
 
   const entryData = entries.map((e, i) => {
     const song = songs[i];
+    const refs = spotifyRefs[i];
     const pos = i + 1;
     const chartSize = entries.length;
     const points = pointsForChartPosition(pos, scoringTier, chartSize, parada.cadence);
@@ -356,8 +360,8 @@ export async function POST(req: NextRequest) {
     if (!prev) {
       return {
         songId: song.id,
-        songSpotifyId: song.spotifyId,
-        albumSpotifyId: song.albumSpotifyId,
+        songSpotifyId: refs.songSpotifyId,
+        albumSpotifyId: refs.albumSpotifyId,
         points,
         position: pos,
         status: historicalSongIds.has(song.id) ? "return" : "new",
@@ -374,8 +378,8 @@ export async function POST(req: NextRequest) {
     const delta = prev.position - pos;
     return {
       songId: song.id,
-      songSpotifyId: song.spotifyId,
-      albumSpotifyId: song.albumSpotifyId,
+      songSpotifyId: refs.songSpotifyId,
+      albumSpotifyId: refs.albumSpotifyId,
       points,
       position: pos,
       status: delta > 0 ? "up" : delta < 0 ? "down" : "same",
