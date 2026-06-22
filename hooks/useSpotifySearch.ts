@@ -119,9 +119,12 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
           const allResults = await Promise.all([fetchQuery(q), ...extraQueries.map(fetchQuery)]);
           if (ac.signal.aborted) return;
 
+          // Structured queries first so targeted matches (artist:X track:Y) beat broad plain results
+          const orderedItems = [...allResults.slice(1).flat(), ...allResults[0]];
+
           const seen = new Set(dbSongs.map((s) => s.spotifyId).filter((id): id is string => Boolean(id)));
           const merged = [...dbSongs];
-          for (const item of allResults.flat()) {
+          for (const item of orderedItems) {
             if (!item?.id || seen.has(item.id)) continue;
             seen.add(item.id);
             merged.push({
