@@ -10,6 +10,7 @@ import { Cover } from "@/components/ui/Cover";
 import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useSpotifySearch } from "@/hooks/useSpotifySearch";
 import type { Cover as CoverModel, Song } from "@/lib/types";
 import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
@@ -62,27 +63,6 @@ function coverForSong(song: Song): CoverModel {
   return song.imageUrl ? { ...base, imageUrl: song.imageUrl } : base;
 }
 
-type SpotifyApiTrack = {
-  spotifyId: string;
-  title: string;
-  artist: string;
-  album: string;
-  imageUrl: string | null;
-};
-
-type SpotifySearchResponse = {
-  tracks?: SpotifyApiTrack[];
-  configured?: boolean;
-  accessToken?: string | null;
-};
-
-type SpotifyDirectItem = {
-  id: string;
-  name: string;
-  artists: Array<{ name: string }>;
-  album: { name: string; images: Array<{ url: string }> };
-};
-
 type DbSong = {
   id: string;
   title: string;
@@ -121,14 +101,16 @@ export default function CreatePage() {
   const [spotifyQuery, setSpotifyQuery] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
-  const [spotifyTracks, setSpotifyTracks] = useState<Song[]>([]);
   const [lastfmTracks, setLastfmTracks] = useState<Song[]>([]);
   const [dbLoading, setDbLoading] = useState(false);
   const [lastfmLoading, setLastfmLoading] = useState(false);
-  const [spotifyLoading, setSpotifyLoading] = useState(false);
   const [dbSongs, setDbSongs] = useState<Song[]>([]);
-  const [spotifyConfigured, setSpotifyConfigured] = useState(true);
-  const [spotifyUnavailable, setSpotifyUnavailable] = useState(false);
+  const {
+    tracks: spotifyTracks,
+    loading: spotifyLoading,
+    configured: spotifyConfigured,
+    unavailable: spotifyUnavailable,
+  } = useSpotifySearch(spotifyQuery, SPOTIFY_SEARCH_DISABLED);
   const [lastfmConfigured, setLastfmConfigured] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -347,115 +329,6 @@ export default function CreatePage() {
       clearTimeout(timer);
     };
   }, [lastfmQuery]);
-
-  useEffect(() => {
-    if (SPOTIFY_SEARCH_DISABLED) {
-      setSpotifyTracks([]);
-      setSpotifyLoading(false);
-      setSpotifyConfigured(false);
-      return;
-    }
-    const q = spotifyQuery.trim();
-    if (q.length < 1) {
-      setSpotifyTracks([]);
-      setSpotifyLoading(false);
-      setSpotifyConfigured(true);
-      return;
-    }
-    const ac = new AbortController();
-    const timer = setTimeout(async () => {
-      setSpotifyLoading(true);
-      setSpotifyUnavailable(false);
-      try {
-        // Fase 1: busca no catálogo local + busca token Spotify (ambos no servidor, rápidos)
-        const serverRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
-          signal: ac.signal,
-        });
-        if (ac.signal.aborted) return;
-        if (!serverRes.ok) {
-          try {
-            const errData = (await serverRes.json()) as { configured?: boolean };
-            if (!ac.signal.aborted && errData.configured === false) {
-              setSpotifyConfigured(false);
-            } else if (!ac.signal.aborted) {
-              setSpotifyUnavailable(true);
-            }
-          } catch {
-            if (!ac.signal.aborted) setSpotifyUnavailable(true);
-          }
-          setSpotifyTracks([]);
-          return;
-        }
-
-        const serverData = (await serverRes.json()) as SpotifySearchResponse;
-        if (ac.signal.aborted) return;
-
-        if (serverData.configured === false) {
-          setSpotifyConfigured(false);
-        } else {
-          setSpotifyConfigured(true);
-        }
-
-        const dbSongs: Song[] = (serverData.tracks ?? []).map((t) => ({
-          title: t.title,
-          artist: t.artist,
-          album: t.album,
-          imageUrl: t.imageUrl ?? undefined,
-          spotifyId: t.spotifyId,
-        }));
-
-        // Mostra resultados do catálogo local imediatamente
-        setSpotifyTracks(dbSongs);
-        setSpotifyLoading(false);
-
-        // Fase 2: busca direto no Spotify pelo browser (evita timeout do servidor)
-        const accessToken = serverData.accessToken;
-        if (!accessToken || serverData.configured === false) return;
-
-        try {
-          const spotRes = await fetch(
-            `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=12&market=BR`,
-            { headers: { Authorization: `Bearer ${accessToken}` }, signal: ac.signal },
-          );
-          if (ac.signal.aborted || !spotRes.ok) return;
-
-          const spotData = (await spotRes.json()) as {
-            tracks?: { items: SpotifyDirectItem[] };
-          };
-          if (ac.signal.aborted) return;
-
-          // Mescla: catálogo local primeiro, depois Spotify sem duplicatas
-          const seen = new Set(dbSongs.map((s) => s.spotifyId).filter(Boolean));
-          const merged = [...dbSongs];
-          for (const item of spotData.tracks?.items ?? []) {
-            if (!item?.id || seen.has(item.id)) continue;
-            seen.add(item.id);
-            merged.push({
-              title: item.name,
-              artist: item.artists?.map((a) => a.name).join(", ") ?? "",
-              album: item.album?.name ?? "",
-              imageUrl: item.album?.images?.[0]?.url ?? undefined,
-              spotifyId: item.id,
-            });
-            if (merged.length >= 12) break;
-          }
-          if (!ac.signal.aborted) setSpotifyTracks(merged);
-        } catch {
-          // Falha na fase 2 é silenciosa — resultados do catálogo local já estão visíveis
-        }
-      } catch {
-        if (ac.signal.aborted) return;
-        setSpotifyUnavailable(true);
-        setSpotifyTracks([]);
-      } finally {
-        if (!ac.signal.aborted) setSpotifyLoading(false);
-      }
-    }, 220);
-    return () => {
-      ac.abort();
-      clearTimeout(timer);
-    };
-  }, [spotifyQuery]);
 
   const addSong = (song: Song) => {
     if (entries.some((e) => e.title === song.title && e.artist === song.artist)) return;
