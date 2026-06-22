@@ -97,20 +97,31 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
         if (!accessToken || serverData.configured === false) return;
 
         try {
-          const spotRes = await fetch(
-            `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=12&market=BR`,
-            { headers: { Authorization: `Bearer ${accessToken}` }, signal: ac.signal },
-          );
-          if (ac.signal.aborted || !spotRes.ok) return;
+          const words = q.split(/\s+/);
+          const extraQueries: string[] = [];
+          if (words.length === 2) {
+            extraQueries.push(`artist:${words[0]} track:${words[1]}`);
+            extraQueries.push(`track:${words[0]} artist:${words[1]}`);
+          } else if (words.length >= 3) {
+            extraQueries.push(`artist:${words[0]} track:${words.slice(1).join(" ")}`);
+            extraQueries.push(`artist:${words[words.length - 1]} track:${words.slice(0, -1).join(" ")}`);
+          }
 
-          const spotData = (await spotRes.json()) as {
-            tracks?: { items: SpotifyDirectItem[] };
-          };
+          const fetchQuery = (query: string) =>
+            fetch(
+              `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=12&market=BR`,
+              { headers: { Authorization: `Bearer ${accessToken}` }, signal: ac.signal },
+            )
+              .then((r) => (r.ok ? r.json() : { tracks: { items: [] } }))
+              .then((d: { tracks?: { items: SpotifyDirectItem[] } }) => d.tracks?.items ?? [])
+              .catch(() => [] as SpotifyDirectItem[]);
+
+          const allResults = await Promise.all([fetchQuery(q), ...extraQueries.map(fetchQuery)]);
           if (ac.signal.aborted) return;
 
           const seen = new Set(dbSongs.map((s) => s.spotifyId).filter((id): id is string => Boolean(id)));
           const merged = [...dbSongs];
-          for (const item of spotData.tracks?.items ?? []) {
+          for (const item of allResults.flat()) {
             if (!item?.id || seen.has(item.id)) continue;
             seen.add(item.id);
             merged.push({

@@ -13,7 +13,7 @@ export const GLOBAL_AIRPLAY_PLAY_CAP = 10;
 export const GLOBAL_ALBUMS_PLAY_CAP = 20;
 export const GLOBAL_LASTFM_POINTS_MULTIPLIER = 10;
 const MAX_TRACKS_PER_USER = 80;
-const MAX_TRACKS_PER_USER_ALBUMS = 50;
+const MAX_TRACKS_PER_USER_ALBUMS = 300;
 const LASTFM_USER_CONCURRENCY = 4;
 const SPOTIFY_ENRICH_CONCURRENCY = 10;
 
@@ -214,6 +214,7 @@ function coverFor(meta: EnrichedTrack, seed: number) {
 type ScoreBucket = {
   points: number;
   contributors: Set<string>;
+  contributorPoints: Map<string, number>;
   meta: EnrichedTrack;
 };
 
@@ -482,10 +483,14 @@ export async function computeGlobalLastfmRanking(
         const bucket = globalScores.get(aggKey) ?? {
           points: 0,
           contributors: new Set<string>(),
+          contributorPoints: new Map<string, number>(),
           meta: enriched,
         };
         bucket.points += contribution;
+        const isNewAirplay = !bucket.contributors.has(userId);
         bucket.contributors.add(userId);
+        if (isNewAirplay) bucket.points += 10;
+        bucket.contributorPoints.set(userId, (bucket.contributorPoints.get(userId) ?? 0) + contribution + (isNewAirplay ? 10 : 0));
         globalScores.set(aggKey, bucket);
       }
       continue;
@@ -506,24 +511,44 @@ export async function computeGlobalLastfmRanking(
       const bucket = globalScores.get(aggKey) ?? {
         points: 0,
         contributors: new Set<string>(),
+        contributorPoints: new Map<string, number>(),
         meta,
       };
       bucket.points += contribution;
+      const isNewAlbum = !bucket.contributors.has(userId);
       bucket.contributors.add(userId);
+      if (isNewAlbum) bucket.points += 10;
+      bucket.contributorPoints.set(userId, (bucket.contributorPoints.get(userId) ?? 0) + contribution + (isNewAlbum ? 10 : 0));
       globalScores.set(aggKey, bucket);
     }
   }
 
-  const ranked = [...globalScores.entries()]
+  const rankedWithBreakdown = [...globalScores.entries()]
     .map(([key, bucket]) => ({
       key,
       points: bucket.points,
       contributors: bucket.contributors.size,
+      contributorPoints: bucket.contributorPoints,
       meta: bucket.meta,
     }))
     .sort((a, b) => b.points - a.points || b.contributors - a.contributors)
     .slice(0, 100);
 
+  const modeLabel = mode === "albums" ? "Álbuns" : "Airplay";
+  console.log(`\n=== Global ${modeLabel} — breakdown por usuário (Top ${rankedWithBreakdown.length}) ===`);
+  for (let i = 0; i < rankedWithBreakdown.length; i++) {
+    const row = rankedWithBreakdown[i];
+    const label = mode === "albums" ? (row.meta.album || row.meta.track) : row.meta.track;
+    const contribs = [...row.contributorPoints.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([uid, pts]) => `${uid}=${pts}pts`)
+      .join(" | ");
+    console.log(`  #${String(i + 1).padStart(3, " ")}  ${label} — ${row.meta.artist}  [total: ${row.points}pts, ${row.contributors} ouvinte(s)]`);
+    console.log(`         ${contribs}`);
+  }
+  console.log("");
+
+  const ranked = rankedWithBreakdown.map(({ contributorPoints: _cp, ...rest }) => rest);
   const entries = buildMovementStats(ranked, prevEntries);
   return { entries, contributorCount, scoringWindow };
 }
