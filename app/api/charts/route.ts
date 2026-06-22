@@ -8,6 +8,7 @@ import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@
 import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
+import { resolveSongsForFastPublish } from "@/lib/resolve-publish-songs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -41,6 +42,7 @@ type EntryInput = {
   album?: string | null;
   imageUrl?: string | null;
   spotifyId?: string | null;
+  songId?: string | null;
 };
 
 function parseWeekDate(input: unknown): Date | null {
@@ -50,29 +52,6 @@ function parseWeekDate(input: unknown): Date | null {
   const date = new Date(y, m - 1, d);
   if (Number.isNaN(date.getTime())) return null;
   return date;
-}
-
-async function upsertSongFastFromEntry(e: EntryInput, spotifyId: string): Promise<ResolvedSongRow> {
-  const song = await prisma.song.upsert({
-    where: { spotifyId },
-    update: {
-      title: e.title,
-      artist: e.artist,
-      ...(e.album ? { album: e.album } : {}),
-    },
-    create: {
-      title: e.title,
-      artist: e.artist,
-      album: e.album ?? null,
-      spotifyId,
-    },
-    select: { id: true, spotifyId: true, albumSpotifyId: true },
-  });
-  return {
-    id: song.id,
-    spotifyId: song.spotifyId ?? null,
-    albumSpotifyId: song.albumSpotifyId ?? null,
-  };
 }
 
 export async function POST(req: NextRequest) {
@@ -129,36 +108,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Upsert songs/artists/albums sequentially to avoid race on unique constraints
-  const songs: ResolvedSongRow[] = [];
-  const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
-  const spotifyArtistNameCache = new Map<string, Awaited<ReturnType<typeof searchSpotifyArtist>>>();
-  const fastSpotifyCache = new Map<string, ResolvedSongRow>();
+  // Upsert songs/artists/albums — publicação rápida evita Spotify (timeout 504 na Vercel)
+  let songs: ResolvedSongRow[];
 
   if (fastPublish) {
-    const spotifyIds = [
-      ...new Set(
-        entries
-          .map((e) => e.spotifyId?.trim() || null)
-          .filter((id): id is string => Boolean(id)),
-      ),
-    ];
-    if (spotifyIds.length > 0) {
-      const existing = await prisma.song.findMany({
-        where: { spotifyId: { in: spotifyIds } },
-        select: { id: true, spotifyId: true, albumSpotifyId: true },
-      });
-      for (const row of existing) {
-        if (row.spotifyId) {
-          fastSpotifyCache.set(row.spotifyId, {
-            id: row.id,
-            spotifyId: row.spotifyId,
-            albumSpotifyId: row.albumSpotifyId ?? null,
-          });
-        }
-      }
-    }
-  }
+    songs = await resolveSongsForFastPublish(prisma, entries);
+  } else {
+  songs = [];
+  const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
+  const spotifyArtistNameCache = new Map<string, Awaited<ReturnType<typeof searchSpotifyArtist>>>();
 
   async function spotifyArtistProfile(spotifyId: string) {
     if (spotifyArtistCache.has(spotifyId)) return spotifyArtistCache.get(spotifyId)!;
@@ -177,20 +135,8 @@ export async function POST(req: NextRequest) {
 
   for (const e of entries) {
     const spotifyId = e.spotifyId?.trim() || null;
-    if (fastPublish && spotifyId) {
-      const cached = fastSpotifyCache.get(spotifyId);
-      if (cached) {
-        songs.push(cached);
-        continue;
-      }
-      const row = await upsertSongFastFromEntry(e, spotifyId);
-      fastSpotifyCache.set(spotifyId, row);
-      songs.push(row);
-      continue;
-    }
-
     if (!spotifyId) {
-      const resolvedArtist = fastPublish ? null : await spotifyArtistByName(e.artist);
+      const resolvedArtist = await spotifyArtistByName(e.artist);
       if (resolvedArtist) {
         await prisma.artist.upsert({
           where: { spotifyId: resolvedArtist.spotifyId },
@@ -378,6 +324,7 @@ export async function POST(req: NextRequest) {
     }
 
     songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
+  }
   }
 
   // Previous chart for delta calculations

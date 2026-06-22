@@ -11,6 +11,7 @@ import type { PersonalDropoutEntry } from "@/lib/types";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 
 export const runtime = "nodejs";
+export const maxDuration = 120;
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
   Pragma: "no-cache",

@@ -372,7 +372,13 @@ export default function CreatePage() {
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         body: JSON.stringify({
-          entries: publishEntries,
+          entries: publishEntries.map((e) => ({
+            title: e.title,
+            artist: e.artist,
+            album: e.album,
+            spotifyId: e.spotifyId ?? null,
+            songId: e.id ?? null,
+          })),
           weekDate,
           fastPublish: true,
           ...(activeParadaId ? { paradaId: activeParadaId } : {}),
