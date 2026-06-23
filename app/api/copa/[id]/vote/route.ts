@@ -22,14 +22,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Fixture not available for voting" }, { status: 400 });
   }
 
-  // Check if user is a participant
-  const participant = await prisma.copaParticipant.findUnique({
-    where: { copaId_userId: { copaId: id, userId: session.user.id } },
-  });
-  if (!participant) {
-    return NextResponse.json({ error: "Not a participant" }, { status: 403 });
-  }
-
+  // Votação aberta a qualquer usuário logado (não precisa ser participante da
+  // Copa). Mantém 1 voto por jogo via @@unique(fixtureId, userId).
   try {
     const vote = await prisma.copaVote.create({
       data: { fixtureId, userId: session.user.id, side },

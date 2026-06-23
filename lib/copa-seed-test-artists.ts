@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import {
+  buildWeeklyBucketsFromChartRows,
+  currentWeekIdxBrt,
   deserializeWeeklyBuckets,
   globalStatsForSongKeys,
   songKey,
@@ -12,16 +14,6 @@ export const COPA_TEST_BOT_HANDLE = "copa-test-bot";
 export const DEFAULT_ARTIST_COUNT = 7;
 export const MIN_CHARTED_SINGLES = 8; // > 7
 export const SINGLES_PER_ARTIST = 7;
-
-type SnapSong = {
-  song: {
-    id?: string | null;
-    title: string;
-    artist: string;
-    spotifyId?: string | null;
-    artistSpotifyId?: string | null;
-  };
-};
 
 export type ChartedArtistPick = {
   spotifyId: string;
@@ -39,94 +31,153 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/** Artistas com mais de 7 singles distintos que já entraram no Global 100 (snapshots semanais). */
+async function loadGlobalWeeklyBuckets(prisma: PrismaClient) {
+  const cached = await prisma.dailyChartSongStats.findFirst({
+    orderBy: { snapshotDay: "desc" },
+  });
+  if (cached) {
+    return {
+      weeklyBuckets: deserializeWeeklyBuckets(cached.weeklyBuckets as WeeklyBucketsSerialized),
+      currentWeekIdx: cached.currentWeekIdx,
+    };
+  }
+
+  const rows = await prisma.chartEntry.findMany({
+    where: { chart: { isPublished: true } },
+    select: {
+      position: true,
+      points: true,
+      chart: { select: { weekIndex: true } },
+      song: { select: { title: true, artist: true } },
+    },
+  });
+
+  return {
+    weeklyBuckets: buildWeeklyBucketsFromChartRows(rows),
+    currentWeekIdx: currentWeekIdxBrt(),
+  };
+}
+
+function globalEraBuckets(buckets: Map<number, Map<string, number>>) {
+  const out = new Map<number, Map<string, number>>();
+  for (const [wk, bySong] of buckets) {
+    if (wk >= GLOBAL_RANKING_FIRST_WEEK_INDEX) out.set(wk, bySong);
+  }
+  return out;
+}
+
+/**
+ * Artistas com mais de 7 singles distintos que já entraram no top 100 do Global 100.
+ * Usa daily_chart_song_stats + tabela songs (mesma lógica da página do artista),
+ * não o JSON dos snapshots — que muitas vezes não traz artistSpotifyId.
+ */
 export async function findQualifyingCopaArtists(
   prisma: PrismaClient,
   excludeSpotifyIds: Set<string>,
 ): Promise<ChartedArtistPick[]> {
-  const snapshots = await prisma.globalSnapshot.findMany({
-    where: { weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX } },
-    select: { weeklySongs: true },
-    orderBy: { weekIndex: "asc" },
-  });
+  const { weeklyBuckets, currentWeekIdx } = await loadGlobalWeeklyBuckets(prisma);
+  const eraBuckets = globalEraBuckets(weeklyBuckets);
 
-  const songsByArtist = new Map<string, Map<string, { title: string; artist: string; songId: string | null }>>();
-
-  for (const snap of snapshots) {
-    for (const entry of snap.weeklySongs as SnapSong[]) {
-      const sid = entry.song.artistSpotifyId?.trim();
-      if (!sid || excludeSpotifyIds.has(sid)) continue;
-      const dedupeKey = entry.song.spotifyId ?? entry.song.id ?? `${entry.song.title}|${entry.song.artist}`;
-      if (!songsByArtist.has(sid)) songsByArtist.set(sid, new Map());
-      songsByArtist.get(sid)!.set(dedupeKey, {
-        title: entry.song.title,
-        artist: entry.song.artist,
-        songId: entry.song.id ?? null,
-      });
-    }
+  const chartedKeys = new Set<string>();
+  for (const [, bySong] of eraBuckets) {
+    const top100 = [...bySong.entries()].sort((a, b) => b[1] - a[1]).slice(0, 100);
+    for (const [key] of top100) chartedKeys.add(key);
   }
+  if (chartedKeys.size === 0) return [];
 
-  const qualifyingIds = [...songsByArtist.entries()]
-    .filter(([, songs]) => songs.size >= MIN_CHARTED_SINGLES)
-    .map(([sid]) => sid);
-
-  if (qualifyingIds.length === 0) return [];
-
-  const artistRows = await prisma.artist.findMany({
-    where: { spotifyId: { in: qualifyingIds } },
-    select: { spotifyId: true, name: true, exhibitionName: true, imageUrl: true },
+  const songs = await prisma.song.findMany({
+    where: { artistSpotifyId: { not: null } },
+    select: {
+      id: true,
+      title: true,
+      artist: true,
+      artistSpotifyId: true,
+      artistRef: { select: { spotifyId: true, name: true, exhibitionName: true, imageUrl: true } },
+    },
   });
-  const artistBySpotify = new Map(artistRows.map((a) => [a.spotifyId, a]));
 
-  const cachedStats = await prisma.dailyChartSongStats.findFirst({
-    orderBy: { snapshotDay: "desc" },
-  });
-  const weeklyBuckets = cachedStats
-    ? deserializeWeeklyBuckets(cachedStats.weeklyBuckets as WeeklyBucketsSerialized)
-    : null;
+  const relevant = songs.filter((s) => chartedKeys.has(songKey(s.title, s.artist)));
+  if (relevant.length === 0) return [];
 
-  const picks: ChartedArtistPick[] = [];
+  const globalStats = globalStatsForSongKeys(
+    relevant.map((s) => songKey(s.title, s.artist)),
+    eraBuckets,
+    currentWeekIdx,
+  );
 
-  for (const spotifyId of qualifyingIds) {
-    const songsMap = songsByArtist.get(spotifyId)!;
-    const meta = artistBySpotify.get(spotifyId);
-    const name = meta?.exhibitionName?.trim() || meta?.name || [...songsMap.values()][0]?.title || spotifyId;
+  type ArtistAcc = {
+    spotifyId: string;
+    name: string;
+    imageUrl: string | null;
+    songs: Map<string, { songId: string; title: string; peak: number; weeks: number }>;
+  };
 
-    let ranked = [...songsMap.values()].map((s) => ({
-      songId: s.songId,
-      title: s.title,
-      peak: 9999,
-      weeks: 0,
-    }));
+  const byArtist = new Map<string, ArtistAcc>();
 
-    if (weeklyBuckets) {
-      const stats = globalStatsForSongKeys(
-        [...songsMap.values()].map((s) => songKey(s.title, s.artist)),
-        weeklyBuckets,
-        999999,
-      );
-      ranked = [...songsMap.values()].map((s) => {
-        const st = stats.get(songKey(s.title, s.artist));
-        return {
-          songId: s.songId,
-          title: s.title,
-          peak: st?.peak ?? 9999,
-          weeks: st?.weeks ?? 0,
-        };
-      });
+  for (const song of relevant) {
+    const sid = song.artistRef?.spotifyId ?? song.artistSpotifyId;
+    if (!sid || excludeSpotifyIds.has(sid)) continue;
+
+    const key = songKey(song.title, song.artist);
+    const gs = globalStats.get(key);
+    if (!gs || gs.weeks === 0) continue;
+
+    let acc = byArtist.get(sid);
+    if (!acc) {
+      acc = {
+        spotifyId: sid,
+        name: song.artistRef?.exhibitionName?.trim() || song.artistRef?.name || song.artist,
+        imageUrl: song.artistRef?.imageUrl ?? null,
+        songs: new Map(),
+      };
+      byArtist.set(sid, acc);
     }
 
-    ranked.sort((a, b) => a.peak - b.peak || b.weeks - a.weeks);
+    if (song.artistRef?.name) {
+      acc.name = song.artistRef.exhibitionName?.trim() || song.artistRef.name;
+    }
+    if (!acc.imageUrl && song.artistRef?.imageUrl) {
+      acc.imageUrl = song.artistRef.imageUrl;
+    }
 
-    picks.push({
-      spotifyId,
-      name,
-      imageUrl: meta?.imageUrl ?? null,
-      songs: ranked.slice(0, SINGLES_PER_ARTIST),
+    acc.songs.set(song.id, {
+      songId: song.id,
+      title: song.title,
+      peak: gs.peak === 9999 ? 0 : gs.peak,
+      weeks: gs.weeks,
     });
   }
 
-  return picks;
+  const missingMeta = [...byArtist.values()].filter((a) => !a.imageUrl);
+  if (missingMeta.length > 0) {
+    const metaRows = await prisma.artist.findMany({
+      where: { spotifyId: { in: missingMeta.map((a) => a.spotifyId) } },
+      select: { spotifyId: true, name: true, exhibitionName: true, imageUrl: true },
+    });
+    for (const row of metaRows) {
+      const acc = byArtist.get(row.spotifyId);
+      if (!acc) continue;
+      acc.name = row.exhibitionName?.trim() || row.name;
+      if (row.imageUrl) acc.imageUrl = row.imageUrl;
+    }
+  }
+
+  return [...byArtist.values()]
+    .filter((a) => a.songs.size >= MIN_CHARTED_SINGLES)
+    .map((a) => ({
+      spotifyId: a.spotifyId,
+      name: a.name,
+      imageUrl: a.imageUrl,
+      songs: [...a.songs.values()]
+        .sort((x, y) => x.peak - y.peak || y.weeks - x.weeks)
+        .slice(0, SINGLES_PER_ARTIST)
+        .map((s) => ({
+          songId: s.songId,
+          title: s.title,
+          peak: s.peak,
+          weeks: s.weeks,
+        })),
+    }));
 }
 
 export type SeedCopaTestArtistsOptions = {

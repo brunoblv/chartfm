@@ -39,12 +39,6 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
   const singlesA = [...f.artistA.singles].sort((a, b) => a.slotIndex - b.slotIndex);
   const singlesB = [...f.artistB.singles].sort((a, b) => a.slotIndex - b.slotIndex);
 
-  const isParticipant = userId
-    ? !!(await prisma.copaParticipant.findUnique({
-        where: { copaId_userId: { copaId: f.copaId, userId } },
-      }))
-    : false;
-
   return (
     <MatchClient
       fixture={{
@@ -90,7 +84,6 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
         },
       }}
       userId={userId}
-      isParticipant={isParticipant}
     />
   );
 }
