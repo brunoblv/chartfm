@@ -424,37 +424,45 @@ function WinnerCard({ album, idx, revealed }: { album: ClubeWinner; idx: number;
   const hue = albumHue(album.title);
   return (
     <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", maxWidth: 600, margin: "0 auto", width: "100%" }}>
-      <div
+      <Link
+        href={`/criticsfm/${album.albumId}`}
+        title={`Avaliar ${album.title}`}
         style={{
-          width: "100%",
+          display: "block",
+          width: "50%",
+          margin: "16px auto 0",
           aspectRatio: "1/1",
+          borderRadius: 14,
+          overflow: "hidden",
           background: album.coverUrl ? undefined : `hsl(${hue},45%,55%)`,
-          display: "grid",
-          placeItems: "center",
           color: "white",
-          fontSize: 76,
+          fontSize: 38,
           fontWeight: 800,
           position: "relative",
+          cursor: "pointer",
         }}
       >
         {album.coverUrl ? (
           <img src={album.coverUrl} alt={album.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          album.title[0]?.toUpperCase()
+          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>{album.title[0]?.toUpperCase()}</div>
         )}
-        <div style={{ position: "absolute", top: 12, left: 12, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", color: "white", borderRadius: 100, padding: "4px 10px", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+        <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", color: "white", borderRadius: 100, padding: "4px 10px", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
           #{idx + 1}
         </div>
         {revealed && album.score !== null && (
-          <div style={{ position: "absolute", top: 12, right: 12, background: scoreColor(album.score), color: "white", borderRadius: 100, padding: "4px 10px", fontSize: 12, fontWeight: 800, boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
+          <div style={{ position: "absolute", top: 8, right: 8, background: scoreColor(album.score), color: "white", borderRadius: 100, padding: "4px 10px", fontSize: 12, fontWeight: 800, boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
             {album.score}
           </div>
         )}
-      </div>
+      </Link>
       <div style={{ padding: "16px" }}>
+        <Link href={`/criticsfm/${album.albumId}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent)", textDecoration: "none", marginBottom: 8 }}>
+          Avaliar álbum →
+        </Link>
         <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 2 }}>{album.title}</div>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>{album.artist} · {album.year}</div>
         {revealed && album.nominatedBy && (
