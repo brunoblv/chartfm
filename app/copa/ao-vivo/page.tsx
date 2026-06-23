@@ -1,0 +1,69 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import { prisma } from "@/lib/prisma";
+import { getVoteCounts } from "@/lib/copa";
+import { LiveClient } from "./LiveClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function CopaAoVivoPage() {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ?? null;
+
+  const copa = await prisma.copaEdition.findFirst({
+    where: { status: { not: "FINISHED" } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!copa) {
+    return (
+      <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+        Nenhuma Copa ativa.
+      </div>
+    );
+  }
+
+  const fixtures = await prisma.copaFixture.findMany({
+    where: { copaId: copa.id, status: "LIVE" },
+    include: {
+      votes: true,
+      artistA: { include: { singles: { select: { slotIndex: true, songName: true } } } },
+      artistB: { include: { singles: { select: { slotIndex: true, songName: true } } } },
+    },
+    orderBy: [{ phase: "asc" }, { groupLetter: "asc" }, { matchIndex: "asc" }],
+  });
+
+  const games = fixtures.map((f) => {
+    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
+    // Jogo Ao vivo → single em disputa é revelado.
+    const sA = f.artistA.singles.find((s) => s.slotIndex === f.singleAIdx)?.songName ?? "";
+    const sB = f.artistB.singles.find((s) => s.slotIndex === f.singleBIdx)?.songName ?? "";
+    return {
+      id: f.id,
+      phase: f.phase as string,
+      groupLetter: f.groupLetter,
+      round: f.round,
+      singleAName: sA,
+      singleBName: sB,
+      votesA,
+      votesB,
+      goalsA,
+      goalsB,
+      myVote: userId ? ((f.votes.find((v) => v.userId === userId)?.side ?? null) as "A" | "B" | null) : null,
+      artistA: {
+        artistName: f.artistA.artistName,
+        artistImage: f.artistA.artistImage,
+        artistColor: f.artistA.artistColor,
+        artistInitials: f.artistA.artistInitials,
+      },
+      artistB: {
+        artistName: f.artistB.artistName,
+        artistImage: f.artistB.artistImage,
+        artistColor: f.artistB.artistColor,
+        artistInitials: f.artistB.artistInitials,
+      },
+    };
+  });
+
+  return <LiveClient games={games} />;
+}

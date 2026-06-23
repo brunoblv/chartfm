@@ -15,7 +15,6 @@ type ArtistInfo = {
   artistImage: string | null;
   artistColor: string;
   artistInitials: string;
-  singles: { slotIndex: number; songName: string }[];
 };
 
 type FixtureInfo = {
@@ -217,7 +216,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
               <CopaArtistAvatar {...data.artistA} size={68} />
               <div style={{ fontSize: 16, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{data.artistA.artistName}</div>
-              <div style={{ fontSize: 12, color: "var(--text-disabled)", textAlign: "center", lineHeight: 1.3 }}>"{data.singleAName}"</div>
+              {data.singleAName && <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>"{data.singleAName}"</div>}
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{data.artistA.ownerName}</div>
             </div>
 
@@ -236,7 +235,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
               <CopaArtistAvatar {...data.artistB} size={68} />
               <div style={{ fontSize: 16, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{data.artistB.artistName}</div>
-              <div style={{ fontSize: 12, color: "var(--text-disabled)", textAlign: "center", lineHeight: 1.3 }}>"{data.singleBName}"</div>
+              {data.singleBName && <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>"{data.singleBName}"</div>}
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{data.artistB.ownerName}</div>
             </div>
           </div>
@@ -310,24 +309,6 @@ export function MatchClient({ fixture: init, userId }: Props) {
           )
         )}
 
-        {/* Singles list */}
-        {[data.artistA, data.artistB].map((art) => (
-          <div key={art.id} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--divider)" }}>
-              <CopaArtistAvatar {...art} size={32} />
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 800 }}>{art.artistName}</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Escalação de singles</div>
-              </div>
-            </div>
-            {art.singles.map((s) => (
-              <div key={s.slotIndex} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", borderTop: "1px solid var(--divider)" }}>
-                <span style={{ width: 20, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>{s.slotIndex + 1}</span>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{s.songName}</span>
-              </div>
-            ))}
-          </div>
-        ))}
       </div>
 
       {goalSide && (
