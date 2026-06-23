@@ -903,6 +903,7 @@ model CopaEdition {
   status          CopaStatus        @default(REGISTRATION)
   maxParticipants Int               @default(8)  @map("max_participants")
   artistsPerUser  Int               @default(8)  @map("artists_per_user")
+  startsAt        DateTime?         @map("starts_at")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
   participants    CopaParticipant[]

@@ -22,7 +22,7 @@
     },
     {
       "path": "/api/cron/copa-advance",
-      "schedule": "0 13 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }

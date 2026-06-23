@@ -165,6 +165,22 @@ export function resolveKnockoutWinner(input: {
   return { winner: "A", decidedBy: "COIN" };
 }
 
+// Rótulos dos 10 dias da Copa, indexados por batchOrder (0..9).
+export const COPA_DAY_LABELS = [
+  "Grupos · Rodada 1 (A–H)",
+  "Grupos · Rodada 1 (I–P)",
+  "Grupos · Rodada 2 (A–H)",
+  "Grupos · Rodada 2 (I–P)",
+  "Grupos · Rodada 3 (A–H)",
+  "Grupos · Rodada 3 (I–P)",
+  "Oitavas de Final",
+  "Quartas de Final",
+  "Semifinais",
+  "Final + 3º Lugar",
+];
+
+export const COPA_LAST_BATCH_ORDER = COPA_DAY_LABELS.length - 1; // 9
+
 // Ordem do "lote do dia" usada pelo botão Avançar Dia do admin (0 = primeiro a
 // abrir). Grupos: meia rodada por dia (A–H = 0, I–P = 1). Depois R16 → QF → SF →
 // Final/3º lugar.
