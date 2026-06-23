@@ -188,7 +188,12 @@ export async function isFullAlbumType(albumSpotifyId: string | null | undefined)
   }
 
   const meta = await getSpotifyAlbumMetadataById(id);
-  const ok = meta?.albumType === "ALBUM";
+  if (!meta) {
+    // Spotify indisponível no VPS: não descartar álbum já vinculado a faixas ouvidas.
+    albumTypeCache.set(id, true);
+    return true;
+  }
+  const ok = meta.albumType === "ALBUM";
   albumTypeCache.set(id, ok);
   return ok;
 }
@@ -340,7 +345,52 @@ async function enrichTracksBatch(tracks: TrackPlays[], needAlbumMeta: boolean): 
     return new Map(enriched);
   }
 
-  const matched = await mapPool(entries, SPOTIFY_ENRICH_CONCURRENCY, async ([key, tp]) => {
+  const out = new Map<string, EnrichedTrack | null>();
+  const needSpotify: Array<[string, TrackPlays]> = [];
+  const DB_LOOKUP_CHUNK = 40;
+
+  for (let c = 0; c < entries.length; c += DB_LOOKUP_CHUNK) {
+    const chunk = entries.slice(c, c + DB_LOOKUP_CHUNK);
+    const rows = await prisma.song.findMany({
+      where: {
+        albumSpotifyId: { not: null },
+        OR: chunk.map(([, tp]) => ({
+          AND: [
+            { title: { equals: tp.track, mode: "insensitive" as const } },
+            { artist: { equals: tp.artist, mode: "insensitive" as const } },
+          ],
+        })),
+      },
+      select: {
+        title: true,
+        artist: true,
+        album: true,
+        spotifyId: true,
+        albumSpotifyId: true,
+        artistSpotifyId: true,
+        albumRef: { select: { spotifyId: true, coverUrl: true } },
+      },
+    });
+    for (const s of rows) {
+      const key = trackPlaysKey(s.title, s.artist);
+      if (out.has(key)) continue;
+      out.set(key, {
+        track: s.title,
+        artist: s.artist,
+        album: s.album ?? "",
+        spotifyId: s.spotifyId,
+        albumSpotifyId: s.albumRef?.spotifyId ?? s.albumSpotifyId,
+        artistSpotifyId: s.artistSpotifyId,
+        imageUrl: s.albumRef?.coverUrl ?? null,
+      });
+    }
+  }
+
+  for (const entry of entries) {
+    if (!out.has(entry[0])) needSpotify.push(entry);
+  }
+
+  const matched = await mapPool(needSpotify, SPOTIFY_ENRICH_CONCURRENCY, async ([key, tp]) => {
     const matches = await searchSpotifyTracks(`${tp.track} ${tp.artist}`, 8);
     let best: (typeof matches)[number] | null = null;
     let bestScore = -1;
@@ -375,7 +425,6 @@ async function enrichTracksBatch(tracks: TrackPlays[], needAlbumMeta: boolean): 
     : [];
   const dbBySpotifyId = new Map(dbSongs.map((s) => [s.spotifyId as string, s]));
 
-  const out = new Map<string, EnrichedTrack | null>();
   const metaQueue: Array<{ key: string; spotifyId: string; fallback: (typeof matched)[number] }> = [];
 
   for (const item of matched) {

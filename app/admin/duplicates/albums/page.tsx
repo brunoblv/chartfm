@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { canonicalAlbumTitle, canonicalArtistName } from "@/lib/duplicate-utils";
+import { mergeAlbums } from "@/lib/merge-albums";
 
 type AlbumRow = {
   id: number;
@@ -41,42 +42,7 @@ async function mergeAlbumsAction(formData: FormData) {
     redirect("/admin/duplicates/albums?error=invalid");
   }
 
-  await prisma.$transaction(async (tx) => {
-    const [keep, drop] = await Promise.all([
-      tx.album.findUnique({ where: { id: keepId }, select: { id: true, title: true, spotifyId: true } }),
-      tx.album.findUnique({ where: { id: dropId }, select: { id: true, title: true, spotifyId: true } }),
-    ]);
-    if (!keep || !drop) return;
-
-    // Migrate songs and chart entries
-    await tx.song.updateMany({
-      where: { albumSpotifyId: drop.spotifyId },
-      data: { albumSpotifyId: keep.spotifyId, album: keep.title },
-    });
-    await tx.chartEntry.updateMany({
-      where: { albumSpotifyId: drop.spotifyId },
-      data: { albumSpotifyId: keep.spotifyId },
-    });
-
-    // Migrate reviews: only those where the user hasn't already reviewed the keep album
-    const [dropReviews, keepReviewerIds] = await Promise.all([
-      tx.albumReview.findMany({ where: { albumId: drop.id }, select: { id: true, userId: true } }),
-      tx.albumReview.findMany({ where: { albumId: keep.id }, select: { userId: true } }),
-    ]);
-    const keepUserSet = new Set(keepReviewerIds.map((r) => r.userId));
-    const reviewIdsToMigrate = dropReviews
-      .filter((r) => !keepUserSet.has(r.userId))
-      .map((r) => r.id);
-    if (reviewIdsToMigrate.length > 0) {
-      await tx.albumReview.updateMany({
-        where: { id: { in: reviewIdsToMigrate } },
-        data: { albumId: keep.id },
-      });
-    }
-
-    // Delete drop album — cascades any remaining conflicting reviews
-    await tx.album.delete({ where: { id: drop.id } });
-  });
+  await mergeAlbums(prisma, keepId, dropId);
 
   redirect("/admin/duplicates/albums?ok=1");
 }

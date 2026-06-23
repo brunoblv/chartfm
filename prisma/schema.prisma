@@ -78,6 +78,9 @@ model User {
   songRecommendationComments SongRecommendationComment[]
   songRecommendationCommentLikes SongRecommendationCommentLike[]
   songRecommendationCommentReplies SongRecommendationCommentReply[]
+  copaParticipations   CopaParticipant[]
+  copaArtists          CopaArtist[]
+  copaVotes            CopaVote[]
 }
 
 model Artist {
@@ -867,4 +870,127 @@ model PushVote {
   @@index([roundId, userId])
   @@index([submissionId])
   @@map("push_votes")
+}
+
+// ── Copa ChartFM ──────────────────────────────────────────────────────────────
+
+enum CopaStatus {
+  REGISTRATION
+  GROUP_STAGE
+  KNOCKOUT
+  FINISHED
+}
+
+enum CopaPhase {
+  GROUP
+  R16
+  QF
+  SF
+  THIRD_PLACE
+  FINAL
+}
+
+enum CopaFixtureStatus {
+  UPCOMING
+  LIVE
+  DONE
+}
+
+model CopaEdition {
+  id              String            @id @default(cuid())
+  name            String
+  year            Int
+  status          CopaStatus        @default(REGISTRATION)
+  maxParticipants Int               @default(8)  @map("max_participants")
+  artistsPerUser  Int               @default(8)  @map("artists_per_user")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  participants    CopaParticipant[]
+  copaArtists     CopaArtist[]
+  fixtures        CopaFixture[]
+
+  @@map("copa_editions")
+}
+
+model CopaParticipant {
+  id        String      @id @default(cuid())
+  copaId    String      @map("copa_id")
+  userId    String      @map("user_id")
+  copa      CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([copaId, userId])
+  @@map("copa_participants")
+}
+
+model CopaArtist {
+  id              String      @id @default(cuid())
+  copaId          String      @map("copa_id")
+  ownerId         String      @map("owner_id")
+  groupLetter     String      @map("group_letter")
+  slotInGroup     Int         @map("slot_in_group")
+  artistSpotifyId String?     @map("artist_spotify_id")
+  artistName      String      @map("artist_name")
+  artistImage     String?     @map("artist_image")
+  artistColor     String      @default("#FA243C") @map("artist_color")
+  artistInitials  String      @default("??") @map("artist_initials")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  copa            CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
+  owner           User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  singles         CopaSingle[]
+  fixturesAsA     CopaFixture[] @relation("FixtureArtistA")
+  fixturesAsB     CopaFixture[] @relation("FixtureArtistB")
+
+  @@unique([copaId, artistSpotifyId])
+  @@unique([copaId, groupLetter, slotInGroup])
+  @@map("copa_artists")
+}
+
+model CopaSingle {
+  id           String     @id @default(cuid())
+  copaArtistId String     @map("copa_artist_id")
+  slotIndex    Int        @map("slot_index")
+  songId       String?    @map("song_id")
+  songName     String     @map("song_name")
+  copaArtist   CopaArtist @relation(fields: [copaArtistId], references: [id], onDelete: Cascade)
+
+  @@unique([copaArtistId, slotIndex])
+  @@map("copa_singles")
+}
+
+model CopaFixture {
+  id          String            @id @default(cuid())
+  copaId      String            @map("copa_id")
+  phase       CopaPhase
+  groupLetter String?           @map("group_letter")
+  round       Int?
+  matchIndex  Int               @map("match_index")
+  artistAId   String            @map("artist_a_id")
+  artistBId   String            @map("artist_b_id")
+  singleAIdx  Int               @default(0) @map("single_a_idx")
+  singleBIdx  Int               @default(0) @map("single_b_idx")
+  status      CopaFixtureStatus @default(UPCOMING)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  endedAt     DateTime?         @map("ended_at")
+  copa        CopaEdition       @relation(fields: [copaId], references: [id], onDelete: Cascade)
+  artistA     CopaArtist        @relation("FixtureArtistA", fields: [artistAId], references: [id])
+  artistB     CopaArtist        @relation("FixtureArtistB", fields: [artistBId], references: [id])
+  votes       CopaVote[]
+
+  @@index([copaId, phase])
+  @@index([copaId, groupLetter])
+  @@map("copa_fixtures")
+}
+
+model CopaVote {
+  id        String      @id @default(cuid())
+  fixtureId String      @map("fixture_id")
+  userId    String      @map("user_id")
+  side      String      // "A" or "B"
+  createdAt DateTime    @default(now()) @map("created_at")
+  fixture   CopaFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([fixtureId, userId])
+  @@map("copa_votes")
 }

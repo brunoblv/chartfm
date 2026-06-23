@@ -1,0 +1,450 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { CopaArtistAvatar } from "../CopaArtistAvatar";
+
+const SLOT_LABELS = [
+  "Grupo · Jogo 1",
+  "Grupo · Jogo 2",
+  "Grupo · Jogo 3",
+  "Oitavas de Final",
+  "Quartas de Final",
+  "Semi-Final",
+  "Final / 3º Lugar",
+];
+
+type SingleData = { slotIndex: number; songName: string; songId: string | null };
+
+type MyArtist = {
+  id: string;
+  artistSpotifyId: string | null;
+  artistName: string;
+  artistImage: string | null;
+  artistColor: string;
+  artistInitials: string;
+  groupLetter: string;
+  standings: { rank: number; pts: number; pj: number };
+  singles: SingleData[];
+  lockedSlots: number[];
+};
+
+type Props = {
+  copaId: string;
+  copaStatus: string;
+  maxArtists: number;
+  myArtists: MyArtist[];
+  takenSpotifyIds: string[];
+};
+
+type SpotifyArtist = {
+  id: string;        // spotifyId
+  spotifyId?: string;
+  name: string;
+  imageUrl: string | null;
+  genres: string[];
+};
+
+export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initArtists, takenSpotifyIds }: Props) {
+  const router = useRouter();
+  const [artists, setArtists] = useState(initArtists);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
+  const [searchResults, setSearchResults] = useState<SpotifyArtist[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  // Single editing
+  const [editSingle, setEditSingle] = useState<{ artistId: string; slotIndex: number } | null>(null);
+  const [singleSearch, setSingleSearch] = useState("");
+  const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string }[]>([]);
+  const [savingSingle, setSavingSingle] = useState(false);
+
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isRegistration = copaStatus === "REGISTRATION";
+
+  async function searchArtists(q: string) {
+    setSearchQ(q);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (q.length < 2) { setSearchResults([]); return; }
+    searchTimeout.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const json = await res.json();
+        // search API returns artists with {spotifyId, name, imageUrl}
+        const raw: { spotifyId?: string; id?: string; name: string; imageUrl?: string | null }[] = json.artists ?? [];
+        setSearchResults(raw.map((a) => ({
+          id: a.spotifyId ?? a.id ?? "",
+          name: a.name,
+          imageUrl: a.imageUrl ?? null,
+          genres: [],
+        })));
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+  }
+
+  async function claimArtist(spotifyArtist: SpotifyArtist) {
+    if (adding) return;
+    setAdding(true);
+    try {
+      const res = await fetch(`/api/copa/${copaId}/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistSpotifyId: spotifyArtist.id || null,
+          artistName: spotifyArtist.name,
+          artistImage: spotifyArtist.imageUrl,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error ?? "Erro ao cadastrar artista");
+        return;
+      }
+      setShowAddModal(false);
+      setSearchQ("");
+      setSearchResults([]);
+      router.refresh();
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function searchSongs(q: string, artistName: string) {
+    setSingleSearch(q);
+    if (!q.trim()) { setSingleResults([]); return; }
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q + " " + artistName)}&type=songs&limit=8`);
+      const json = await res.json();
+      setSingleResults((json.songs ?? []).map((s: { id: string; title: string; artist: string }) => ({
+        id: s.id,
+        title: s.title,
+        artist: s.artist,
+      })));
+    } catch {}
+  }
+
+  async function saveSingle(songName: string, songId: string | null) {
+    if (!editSingle || savingSingle) return;
+    setSavingSingle(true);
+    try {
+      const art = artists.find((a) => a.id === editSingle.artistId);
+      if (!art) return;
+      const newSingles = Array.from({ length: 7 }, (_, i) => {
+        const existing = art.singles.find((s) => s.slotIndex === i);
+        if (i === editSingle.slotIndex) return { slotIndex: i, songName, songId };
+        return existing ?? { slotIndex: i, songName: `Single ${i + 1}`, songId: null };
+      });
+      const res = await fetch(`/api/copa/${copaId}/singles`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artistId: editSingle.artistId, singles: newSingles }),
+      });
+      if (!res.ok) return;
+      setArtists((prev) =>
+        prev.map((a) =>
+          a.id === editSingle.artistId ? { ...a, singles: newSingles } : a,
+        ),
+      );
+      setEditSingle(null);
+      setSingleSearch("");
+      setSingleResults([]);
+    } finally {
+      setSavingSingle(false);
+    }
+  }
+
+  const editArt = editSingle ? artists.find((a) => a.id === editSingle.artistId) : null;
+
+  return (
+    <div>
+      <div style={{ padding: "24px 24px 0" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>Meu Time</h1>
+        <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, marginBottom: 20 }}>
+          {artists.length}/{maxArtists} artistas cadastrados · Defina os singles para cada fase
+        </div>
+      </div>
+
+      <div style={{ padding: "0 24px 24px" }}>
+        {artists.map((art) => {
+          const qual = art.standings.rank === 0 || art.standings.rank === 1;
+          return (
+            <div
+              key={art.id}
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--divider)",
+                borderRadius: 14,
+                overflow: "hidden",
+                marginBottom: 10,
+              }}
+            >
+              {/* Artist header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px" }}>
+                <CopaArtistAvatar {...art} size={44} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em" }}>{art.artistName}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                    Grupo {art.groupLetter} · {art.standings.pts}pts · {art.standings.pj} PJ
+                  </div>
+                </div>
+                {qual ? (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(52,199,89,.12)", color: "#34C759", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    ✓ Classificado
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "var(--fill-inset)", color: "var(--text-muted)", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Em andamento
+                  </span>
+                )}
+              </div>
+
+              {/* Singles */}
+              {Array.from({ length: 7 }, (_, i) => {
+                const single = art.singles.find((s) => s.slotIndex === i);
+                const isLocked = art.lockedSlots.includes(i);
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 9,
+                      padding: "8px 16px",
+                      borderTop: "1px solid var(--divider)",
+                    }}
+                  >
+                    <span style={{ width: 20, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>{i + 1}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 2 }}>
+                        {SLOT_LABELS[i]}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: isLocked ? "var(--text-muted)" : "var(--text)",
+                          cursor: isLocked ? "default" : "pointer",
+                        }}
+                        onClick={() => {
+                          if (isLocked) return;
+                          setEditSingle({ artistId: art.id, slotIndex: i });
+                          setSingleSearch("");
+                          setSingleResults([]);
+                        }}
+                      >
+                        {single?.songName ?? "—"}
+                        {!isLocked && (
+                          <span style={{ color: "var(--text-disabled)", marginLeft: 4, fontSize: 10 }}>✏</span>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: "3px 8px",
+                        borderRadius: 99,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        background: isLocked ? "var(--fill-inset)" : "transparent",
+                        color: isLocked ? "var(--text-muted)" : "var(--text-disabled)",
+                      }}
+                    >
+                      {isLocked ? "Disputado" : "Próximo"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* Add artist slot */}
+        {isRegistration && artists.length < maxArtists && (
+          <div
+            onClick={() => { setShowAddModal(true); setSearchQ(""); setSearchResults([]); }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "14px 16px",
+              background: "var(--fill-inset)",
+              border: "2px dashed var(--divider)",
+              borderRadius: 14,
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: 14,
+              fontWeight: 700,
+              transition: "0.12s",
+              marginBottom: 10,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>+</span>
+            Adicionar artista ({artists.length}/{maxArtists})
+          </div>
+        )}
+      </div>
+
+      {/* Add artist modal */}
+      {showAddModal && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "84vh", borderRadius: "20px 20px 0 0", display: "flex", flexDirection: "column", overflow: "hidden" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>Adicionar Artista</div>
+              <button onClick={() => setShowAddModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
+              <input
+                autoFocus
+                placeholder="Buscar artista no Spotify…"
+                value={searchQ}
+                onChange={(e) => searchArtists(e.target.value)}
+                style={{
+                  width: "100%",
+                  background: "var(--fill-inset)",
+                  border: "1.5px solid var(--divider)",
+                  borderRadius: 10,
+                  padding: "11px 14px",
+                  color: "var(--text)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  outline: "none",
+                  marginBottom: 10,
+                  boxSizing: "border-box",
+                }}
+              />
+              {searching && (
+                <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>
+                  Buscando…
+                </div>
+              )}
+              {!searching && searchQ.length > 1 && searchResults.length === 0 && (
+                <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>
+                  Nenhum artista encontrado.
+                </div>
+              )}
+              {searchResults.map((art) => {
+                const taken = takenSpotifyIds.includes(art.id);
+                return (
+                  <div
+                    key={art.id}
+                    onClick={() => !taken && claimArtist(art)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 12px",
+                      borderRadius: 10,
+                      cursor: taken ? "not-allowed" : "pointer",
+                      opacity: taken ? 0.4 : 1,
+                      transition: "0.1s",
+                    }}
+                  >
+                    {art.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={art.imageUrl} alt={art.name} style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: 40, height: 40, borderRadius: 8, background: "var(--fill-inset)", display: "grid", placeItems: "center", fontSize: 16, fontWeight: 800 }}>
+                        {art.name[0]}
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700 }}>{art.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                        {taken ? "Já cadastrado por outro participante" : art.genres.slice(0, 2).join(", ") || "Artista"}
+                      </div>
+                    </div>
+                    {!taken && (
+                      <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(52,199,89,.12)", color: "#34C759", padding: "3px 8px", borderRadius: 99 }}>
+                        Livre
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit single modal */}
+      {editSingle && editArt && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }}
+        >
+          <div
+            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "84vh", borderRadius: "20px 20px 0 0", display: "flex", flexDirection: "column", overflow: "hidden" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>Definir single</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
+                  {SLOT_LABELS[editSingle.slotIndex]} · {editArt.artistName}
+                </div>
+              </div>
+              <button onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
+              <input
+                autoFocus
+                placeholder={`Buscar música de ${editArt.artistName}…`}
+                value={singleSearch}
+                onChange={(e) => searchSongs(e.target.value, editArt.artistName)}
+                style={{
+                  width: "100%",
+                  background: "var(--fill-inset)",
+                  border: "1.5px solid var(--divider)",
+                  borderRadius: 10,
+                  padding: "11px 14px",
+                  color: "var(--text)",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  outline: "none",
+                  marginBottom: 10,
+                  boxSizing: "border-box",
+                }}
+              />
+              {/* Manual entry option */}
+              {singleSearch.length > 0 && (
+                <div
+                  onClick={() => saveSingle(singleSearch, null)}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: "1px dashed var(--divider)", marginBottom: 8 }}
+                >
+                  <span style={{ fontSize: 18 }}>✏️</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Usar "{singleSearch}"</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Entrada manual</div>
+                  </div>
+                </div>
+              )}
+              {singleResults.map((song) => (
+                <div
+                  key={song.id ?? song.title}
+                  onClick={() => saveSingle(song.title, song.id)}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer" }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{song.title}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{song.artist}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

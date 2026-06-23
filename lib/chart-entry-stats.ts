@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { isDailyChartIndex } from "@/lib/chart-cadence";
 import { prevChartWeekIndex } from "@/lib/chart-week";
 
 export type ComputedEntryStats = {
@@ -31,8 +32,15 @@ export function applyComputedEntryStatsToCharts<TChart extends AnyChart>(
   const entriesByWeek = new Map<number, Map<string, EntryLike>>();
   const computedByChart = new Map<TChart, Array<TChart["entries"][number] & ComputedEntryStats>>();
 
-  for (const chart of sorted) {
-    const previousWeekEntries = entriesByWeek.get(prevWeekIndex(chart.weekIndex));
+  for (let i = 0; i < sorted.length; i++) {
+    const chart = sorted[i];
+    const previousWeekIndex = isDailyChartIndex(chart.weekIndex)
+      ? i > 0
+        ? sorted[i - 1].weekIndex
+        : null
+      : prevWeekIndex(chart.weekIndex);
+    const previousWeekEntries =
+      previousWeekIndex != null ? entriesByWeek.get(previousWeekIndex) : undefined;
     const computedEntries = chart.entries.map((entry) => {
       const previous = previousWeekEntries?.get(entry.songId) ?? null;
       const previousHistory = history.get(entry.songId) ?? null;

@@ -222,6 +222,7 @@ function SidebarContent({
     { href: "/global", label: t("nav.global"), icon: Globe },
     { href: "/communities", label: t("nav.communities"), icon: Users },
     { href: "/push", label: "Push", icon: Zap },
+    { href: "/copa", label: "Copa ChartFM", icon: Flame },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
     { href: "/notifications", label: t("nav.notifications"), icon: Bell, requiresAuth: true },
     { href: "/whats-new", label: t("nav.whatsNew"), icon: Sparkles, badge: t("nav.badgeNew") },
@@ -462,6 +463,10 @@ function SidebarContent({
                     <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
                       <Award size={14} />
                       <span>{t("nav.adminClube")}</span>
+                    </Link>
+                    <Link href="/admin/copa" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/copa")}>
+                      <Flame size={14} />
+                      <span>Copa ChartFM</span>
                     </Link>
                     <Link href="/admin/push" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/push")}>
                       <Zap size={14} />
