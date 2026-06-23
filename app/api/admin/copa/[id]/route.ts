@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { GROUP_PAIRS, COPA_GROUP_LETTERS, COPA_UNASSIGNED_GROUP, drawGroups } from "@/lib/copa";
-import { openNextBatch, advanceCopaDay } from "@/lib/copa-day";
+import { openNextBatch, advanceCopaDay, syncCopaToSchedule } from "@/lib/copa-day";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -135,16 +135,28 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       prisma.copaEdition.update({ where: { id }, data: { status: "GROUP_STAGE" } }),
     ]);
 
-    // Já abre os jogos do primeiro dia (1ª rodada, grupos A–H) automaticamente.
-    const opened = await openNextBatch(id);
+    // Com data marcada, o calendário abre os jogos no horário; sem data, abre já
+    // o primeiro lote (1ª rodada, grupos A–H).
+    const opened = copa.startsAt ? (await syncCopaToSchedule(id))?.opened ?? 0 : await openNextBatch(id);
     return NextResponse.json({ ok: true, created: fixtureData.length, opened });
   }
 
   if (action === "start_knockout") {
     await prisma.copaEdition.update({ where: { id }, data: { status: "KNOCKOUT" } });
-    // Abre o primeiro lote do mata-mata (Oitavas), se já gerado.
-    const opened = await openNextBatch(id);
+    const opened = copa.startsAt ? (await syncCopaToSchedule(id))?.opened ?? 0 : await openNextBatch(id);
     return NextResponse.json({ ok: true, opened });
+  }
+
+  if (action === "set_start") {
+    const { startsAt } = body as { startsAt?: string | null };
+    const dt = startsAt ? new Date(startsAt) : null;
+    if (startsAt && Number.isNaN(dt!.getTime())) {
+      return NextResponse.json({ error: "Data inválida" }, { status: 400 });
+    }
+    await prisma.copaEdition.update({ where: { id }, data: { startsAt: dt } });
+    // Se já está em andamento, reconcilia o estado dos jogos com a nova data.
+    await syncCopaToSchedule(id);
+    return NextResponse.json({ ok: true });
   }
 
   if (action === "advance_day") {

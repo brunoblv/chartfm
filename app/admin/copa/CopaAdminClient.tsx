@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
+import { COPA_DAY_LABELS } from "@/lib/copa";
 
 type Edition = {
   id: string;
   name: string;
   year: number;
   status: string;
+  startsAt: string | null;
   artistCount: number;
   fixtureCount: number;
   participants: { userId: string; name: string; handle: string; avatarColor: string }[];
@@ -20,6 +22,7 @@ type Fixture = {
   groupLetter: string | null;
   round: number | null;
   matchIndex: number;
+  day: number;
   status: string;
   votesA: number;
   votesB: number;
@@ -59,6 +62,36 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
   const [creating, setCreating] = useState(false);
   const [actioning, setActioning] = useState<string | null>(null);
   const [fixtureFilter, setFixtureFilter] = useState("ALL");
+  const [dayFilter, setDayFilter] = useState<number | "ALL">("ALL");
+  const startRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // ISO (UTC) → valor de <input datetime-local> no fuso do navegador.
+  function toLocalInput(iso: string): string {
+    const d = new Date(iso);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+
+  async function saveStart(copaId: string) {
+    const value = startRefs.current[copaId]?.value;
+    setActioning("set_start" + copaId);
+    try {
+      // datetime-local (hora local) → instante UTC.
+      const startsAt = value ? new Date(value).toISOString() : null;
+      const res = await fetch(`/api/admin/copa/${copaId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_start", startsAt }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error ?? "Erro");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setActioning(null);
+    }
+  }
 
   async function createCopa() {
     if (creating) return;
@@ -138,12 +171,16 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
     }
   }
 
-  const filteredFixtures = activeFixtures.filter((f) =>
-    fixtureFilter === "ALL" ? true :
-    fixtureFilter === "LIVE" ? f.status === "LIVE" :
-    fixtureFilter === "UPCOMING" ? f.status === "UPCOMING" :
-    f.phase === fixtureFilter,
-  );
+  const availableDays = [...new Set(activeFixtures.map((f) => f.day))].sort((a, b) => a - b);
+  const filteredFixtures = activeFixtures.filter((f) => {
+    const matchStatusPhase =
+      fixtureFilter === "ALL" ? true :
+      fixtureFilter === "LIVE" ? f.status === "LIVE" :
+      fixtureFilter === "UPCOMING" ? f.status === "UPCOMING" :
+      f.phase === fixtureFilter;
+    const matchDay = dayFilter === "ALL" ? true : f.day === dayFilter;
+    return matchStatusPhase && matchDay;
+  });
 
   return (
     <>
@@ -191,6 +228,29 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
               <div><div style={{ fontSize: 20, fontWeight: 800 }}>{fixturesByStatus.UPCOMING}</div><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Em breve</div></div>
               <div><div style={{ fontSize: 20, fontWeight: 800, color: "#FA243C" }}>{fixturesByStatus.LIVE}</div><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Ao vivo</div></div>
               <div><div style={{ fontSize: 20, fontWeight: 800, color: "#34C759" }}>{fixturesByStatus.DONE}</div><div style={{ fontSize: 11, color: "var(--text-muted)" }}>Encerrados</div></div>
+            </div>
+          )}
+
+          {/* Start date / time */}
+          {e.status !== "FINISHED" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 14, padding: "12px", background: "var(--fill-inset)", borderRadius: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>📅 Início (data e hora dos jogos):</span>
+              <input
+                type="datetime-local"
+                defaultValue={e.startsAt ? toLocalInput(e.startsAt) : ""}
+                ref={(el) => { startRefs.current[e.id] = el; }}
+                style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 8, padding: "6px 10px", color: "var(--text)", fontSize: 13 }}
+              />
+              <button
+                onClick={() => saveStart(e.id)}
+                disabled={!!actioning}
+                style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+              >
+                Salvar
+              </button>
+              <span style={{ fontSize: 11, color: "var(--text-disabled)", width: "100%" }}>
+                A partir dessa data/hora os jogos abrem e avançam 1 dia por vez automaticamente (Dia 1 → grupos · … · Dia 10 → final). Deixe vazio para controle manual (botão Avançar Dia).
+              </span>
             </div>
           )}
 
@@ -270,6 +330,34 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                 }}
               >
                 {f === "ALL" ? "Todos" : f === "LIVE" ? "Ao vivo" : f === "UPCOMING" ? "Em breve" : PHASE_LABELS[f] ?? f}
+              </button>
+            ))}
+          </div>
+
+          {/* Day filter */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+            <button
+              onClick={() => setDayFilter("ALL")}
+              style={{
+                padding: "6px 12px", borderRadius: 99, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
+                background: dayFilter === "ALL" ? "#34C759" : "var(--fill-inset)",
+                color: dayFilter === "ALL" ? "#fff" : "var(--text-muted)",
+              }}
+            >
+              Todos os dias
+            </button>
+            {availableDays.map((d) => (
+              <button
+                key={d}
+                onClick={() => setDayFilter(d)}
+                title={COPA_DAY_LABELS[d - 1]}
+                style={{
+                  padding: "6px 12px", borderRadius: 99, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
+                  background: dayFilter === d ? "#34C759" : "var(--fill-inset)",
+                  color: dayFilter === d ? "#fff" : "var(--text-muted)",
+                }}
+              >
+                Dia {d} · {COPA_DAY_LABELS[d - 1]}
               </button>
             ))}
           </div>

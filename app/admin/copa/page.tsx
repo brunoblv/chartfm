@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { fixtureBatchOrder } from "@/lib/copa";
 import { CopaAdminClient } from "./CopaAdminClient";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,7 @@ export default async function CopaAdminPage() {
         name: e.name,
         year: e.year,
         status: e.status as string,
+        startsAt: e.startsAt ? e.startsAt.toISOString() : null,
         artistCount: e._count.copaArtists,
         fixtureCount: e._count.fixtures,
         participants: e.participants.map((p) => ({
@@ -75,6 +77,7 @@ export default async function CopaAdminPage() {
         groupLetter: f.groupLetter,
         round: f.round,
         matchIndex: f.matchIndex,
+        day: fixtureBatchOrder(f) + 1,
         status: f.status as string,
         votesA: f.votes.filter((v) => v.side === "A").length,
         votesB: f.votes.filter((v) => v.side === "B").length,
