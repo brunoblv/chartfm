@@ -87,7 +87,6 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
   const [squadsEditionId, setSquadsEditionId] = useState<string | null>(null);
   const [squadsData, setSquadsData] = useState<{ artistsPerUser: number; squads: SquadParticipant[] } | null>(null);
   const [loadingSquads, setLoadingSquads] = useState(false);
-  const [expandedParticipant, setExpandedParticipant] = useState<string | null>(null);
   const [editSingle, setEditSingle] = useState<{ artistId: string; artistName: string; slotIndex: number } | null>(null);
   const [singleSearch, setSingleSearch] = useState("");
   const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string }[]>([]);
@@ -188,12 +187,10 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
     if (squadsEditionId === copaId && squadsData) {
       setSquadsEditionId(null);
       setSquadsData(null);
-      setExpandedParticipant(null);
       return;
     }
     setLoadingSquads(true);
     setSquadsEditionId(copaId);
-    setExpandedParticipant(null);
     try {
       const res = await fetch(`/api/admin/copa/${copaId}/squads`);
       if (!res.ok) {
@@ -342,38 +339,34 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
               onClick={() => loadSquads(e.id)}
               disabled={loadingSquads}
               style={{
-                padding: "8px 14px", borderRadius: 8, border: "1px solid var(--divider)",
-                background: squadsEditionId === e.id ? "rgba(255,212,38,.12)" : "var(--fill-inset)",
-                color: squadsEditionId === e.id ? "#FFD426" : "var(--text)",
+                padding: "10px 16px", borderRadius: 8, border: "none",
+                background: squadsEditionId === e.id ? "var(--fill-inset)" : "#FFD426",
+                color: squadsEditionId === e.id ? "var(--text-muted)" : "#000",
                 fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: loadingSquads ? 0.5 : 1,
               }}
             >
               {loadingSquads && squadsEditionId === e.id
-                ? "Carregando…"
+                ? "Carregando escolhas…"
                 : squadsEditionId === e.id
                   ? "Ocultar escolhas"
-                  : "🎵 Gerenciar escolhas dos participantes"}
+                  : "Gerenciar escolhas dos participantes"}
             </button>
           </div>
 
           {squadsEditionId === e.id && squadsData && (
-            <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "0 2px" }}>
+                Use o botão <strong style={{ color: "var(--text)" }}>Editar</strong> ao lado de cada música para corrigir a escolha do participante.
+              </div>
               {squadsData.squads.length === 0 ? (
                 <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "12px", background: "var(--fill-inset)", borderRadius: 10 }}>
                   Nenhum participante inscrito.
                 </div>
               ) : squadsData.squads.map((p) => {
                 const expectedSingles = p.artistCount * 7;
-                const isExpanded = expandedParticipant === p.userId;
                 return (
                   <div key={p.userId} style={{ background: "var(--fill-inset)", borderRadius: 12, overflow: "hidden" }}>
-                    <button
-                      onClick={() => setExpandedParticipant(isExpanded ? null : p.userId)}
-                      style={{
-                        width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
-                        background: "none", border: "none", cursor: "pointer", textAlign: "left", color: "var(--text)",
-                      }}
-                    >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--divider)" }}>
                       <span style={{ width: 28, height: 28, borderRadius: "50%", background: p.avatarColor, flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 800 }}>{p.name}</div>
@@ -381,72 +374,83 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                           @{p.handle} · {p.artistCount}/{squadsData.artistsPerUser} artistas · {p.singlesFilled}/{expectedSingles || "—"} músicas
                         </div>
                       </div>
-                      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{isExpanded ? "▲" : "▼"}</span>
-                    </button>
+                    </div>
 
-                    {isExpanded && (
-                      <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-                        {p.artists.length === 0 ? (
-                          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum artista cadastrado.</div>
-                        ) : p.artists.map((art) => (
-                          <div key={art.id} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 10, overflow: "hidden" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
-                              <CopaArtistAvatar {...art} size={32} />
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 13, fontWeight: 800 }}>{art.artistName}</div>
-                                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                                  {art.groupLetter !== "?" ? `Grupo ${art.groupLetter}` : "Aguardando sorteio"}
-                                </div>
+                    <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                      {p.artists.length === 0 ? (
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum artista cadastrado.</div>
+                      ) : p.artists.map((art) => (
+                        <div key={art.id} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 10, overflow: "hidden" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
+                            <CopaArtistAvatar {...art} size={32} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 800 }}>{art.artistName}</div>
+                              <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                                {art.groupLetter !== "?" ? `Grupo ${art.groupLetter}` : "Aguardando sorteio"}
                               </div>
                             </div>
-                            {Array.from({ length: 7 }, (_, i) => {
-                              const single = art.singles.find((s) => s.slotIndex === i);
-                              const isLocked = art.lockedSlots.includes(i);
-                              const isEmpty = !single || single.songName.startsWith("Single ");
-                              return (
-                                <div
-                                  key={i}
+                          </div>
+                          {Array.from({ length: 7 }, (_, i) => {
+                            const single = art.singles.find((s) => s.slotIndex === i);
+                            const isLocked = art.lockedSlots.includes(i);
+                            const isEmpty = !single || single.songName.startsWith("Single ");
+                            return (
+                              <div
+                                key={i}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
+                                  borderTop: "1px solid var(--divider)", fontSize: 12,
+                                }}
+                              >
+                                <span style={{ width: 16, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>
+                                  {i + 1}
+                                </span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-disabled)", marginBottom: 1 }}>
+                                    {SLOT_LABELS[i]}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontWeight: 600,
+                                      color: isEmpty ? "var(--text-disabled)" : "var(--text)",
+                                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {isEmpty ? "— não definida" : single!.songName}
+                                  </div>
+                                </div>
+                                {isLocked && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: "var(--fill-inset)", color: "var(--text-muted)", flexShrink: 0 }}>
+                                    Disputado
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditSingle({ artistId: art.id, artistName: art.artistName, slotIndex: i });
+                                    setSingleSearch(single && !isEmpty ? single.songName : "");
+                                    setSingleResults([]);
+                                  }}
                                   style={{
-                                    display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
-                                    borderTop: "1px solid var(--divider)", fontSize: 12,
+                                    flexShrink: 0,
+                                    padding: "5px 10px",
+                                    borderRadius: 6,
+                                    border: "none",
+                                    background: "#FFD426",
+                                    color: "#000",
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
                                   }}
                                 >
-                                  <span style={{ width: 16, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>
-                                    {i + 1}
-                                  </span>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-disabled)", marginBottom: 1 }}>
-                                      {SLOT_LABELS[i]}
-                                    </div>
-                                    <div
-                                      onClick={() => {
-                                        setEditSingle({ artistId: art.id, artistName: art.artistName, slotIndex: i });
-                                        setSingleSearch(single && !isEmpty ? single.songName : "");
-                                        setSingleResults([]);
-                                      }}
-                                      style={{
-                                        fontWeight: 600,
-                                        color: isEmpty ? "var(--text-disabled)" : "var(--text)",
-                                        cursor: "pointer",
-                                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                      }}
-                                    >
-                                      {isEmpty ? "— não definida" : single!.songName}
-                                      <span style={{ color: "var(--text-disabled)", marginLeft: 4, fontSize: 10 }}>✏</span>
-                                    </div>
-                                  </div>
-                                  {isLocked && (
-                                    <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: "var(--fill-inset)", color: "var(--text-muted)", flexShrink: 0 }}>
-                                      Disputado
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                                  Editar
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 );
               })}
