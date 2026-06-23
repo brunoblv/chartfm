@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
-import { COPA_DAY_LABELS } from "@/lib/copa";
+import { COPA_DAY_LABELS, SLOT_LABELS } from "@/lib/copa";
 
 type Edition = {
   id: string;
@@ -28,6 +28,27 @@ type Fixture = {
   votesB: number;
   artistA: { artistName: string; artistInitials: string; artistColor: string; artistImage: string | null };
   artistB: { artistName: string; artistInitials: string; artistColor: string; artistImage: string | null };
+};
+
+type SquadArtist = {
+  id: string;
+  artistName: string;
+  artistImage: string | null;
+  artistColor: string;
+  artistInitials: string;
+  groupLetter: string;
+  singles: { slotIndex: number; songName: string; songId: string | null }[];
+  lockedSlots: number[];
+};
+
+type SquadParticipant = {
+  userId: string;
+  name: string;
+  handle: string;
+  avatarColor: string;
+  artistCount: number;
+  singlesFilled: number;
+  artists: SquadArtist[];
 };
 
 type Props = {
@@ -63,6 +84,13 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
   const [actioning, setActioning] = useState<string | null>(null);
   const [fixtureFilter, setFixtureFilter] = useState("ALL");
   const [dayFilter, setDayFilter] = useState<number | "ALL">("ALL");
+  const [squadsEditionId, setSquadsEditionId] = useState<string | null>(null);
+  const [squadsData, setSquadsData] = useState<{ artistsPerUser: number; squads: SquadParticipant[] } | null>(null);
+  const [loadingSquads, setLoadingSquads] = useState(false);
+  const [editSingle, setEditSingle] = useState<{ artistId: string; artistName: string; slotIndex: number } | null>(null);
+  const [singleSearch, setSingleSearch] = useState("");
+  const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string }[]>([]);
+  const [savingSingle, setSavingSingle] = useState(false);
   const startRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // ISO (UTC) → valor de <input datetime-local> no fuso do navegador.
@@ -155,6 +183,89 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
     }
   }
 
+  async function loadSquads(copaId: string) {
+    if (squadsEditionId === copaId && squadsData) {
+      setSquadsEditionId(null);
+      setSquadsData(null);
+      return;
+    }
+    setLoadingSquads(true);
+    setSquadsEditionId(copaId);
+    try {
+      const res = await fetch(`/api/admin/copa/${copaId}/squads`);
+      if (!res.ok) {
+        alert("Erro ao carregar escolhas");
+        setSquadsEditionId(null);
+        return;
+      }
+      const json = await res.json();
+      setSquadsData({ artistsPerUser: json.artistsPerUser, squads: json.squads });
+    } finally {
+      setLoadingSquads(false);
+    }
+  }
+
+  async function searchSongs(q: string, artistName: string) {
+    setSingleSearch(q);
+    if (!q.trim()) { setSingleResults([]); return; }
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q + " " + artistName)}&type=songs&limit=8`);
+      const json = await res.json();
+      setSingleResults((json.songs ?? []).map((s: { id: string; title: string; artist: string }) => ({
+        id: s.id,
+        title: s.title,
+        artist: s.artist,
+      })));
+    } catch {}
+  }
+
+  async function saveAdminSingle(songName: string, songId: string | null) {
+    if (!editSingle || !squadsEditionId || savingSingle) return;
+    setSavingSingle(true);
+    try {
+      const res = await fetch(`/api/admin/copa/${squadsEditionId}/singles`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          artistId: editSingle.artistId,
+          slotIndex: editSingle.slotIndex,
+          songName,
+          songId,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error ?? "Erro ao salvar");
+        return;
+      }
+      setSquadsData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          squads: prev.squads.map((p) => {
+            const artists = p.artists.map((a) => {
+              if (a.id !== editSingle.artistId) return a;
+              const others = a.singles.filter((s) => s.slotIndex !== editSingle.slotIndex);
+              return {
+                ...a,
+                singles: [...others, { slotIndex: editSingle.slotIndex, songName, songId }].sort(
+                  (x, y) => x.slotIndex - y.slotIndex,
+                ),
+              };
+            });
+            const singlesFilled = artists.reduce((n, a) => n + a.singles.length, 0);
+            return { ...p, artists, singlesFilled };
+          }),
+        };
+      });
+      setEditSingle(null);
+      setSingleSearch("");
+      setSingleResults([]);
+    } finally {
+      setSavingSingle(false);
+    }
+  }
+
   async function setFixtureStatus(fixtureId: string, status: "UPCOMING" | "LIVE" | "DONE") {
     if (!activeEditionId) return;
     setActioning(fixtureId + status);
@@ -221,6 +332,130 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
               </span>
             ))}
           </div>
+
+          {/* Participant choices */}
+          <div style={{ marginBottom: 14 }}>
+            <button
+              onClick={() => loadSquads(e.id)}
+              disabled={loadingSquads}
+              style={{
+                padding: "10px 16px", borderRadius: 8, border: "none",
+                background: squadsEditionId === e.id ? "var(--fill-inset)" : "#FFD426",
+                color: squadsEditionId === e.id ? "var(--text-muted)" : "#000",
+                fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: loadingSquads ? 0.5 : 1,
+              }}
+            >
+              {loadingSquads && squadsEditionId === e.id
+                ? "Carregando escolhas…"
+                : squadsEditionId === e.id
+                  ? "Ocultar escolhas"
+                  : "Gerenciar escolhas dos participantes"}
+            </button>
+          </div>
+
+          {squadsEditionId === e.id && squadsData && (
+            <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "0 2px" }}>
+                Use o botão <strong style={{ color: "var(--text)" }}>Editar</strong> ao lado de cada música para corrigir a escolha do participante.
+              </div>
+              {squadsData.squads.length === 0 ? (
+                <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "12px", background: "var(--fill-inset)", borderRadius: 10 }}>
+                  Nenhum participante inscrito.
+                </div>
+              ) : squadsData.squads.map((p) => {
+                const expectedSingles = p.artistCount * 7;
+                return (
+                  <div key={p.userId} style={{ background: "var(--fill-inset)", borderRadius: 12, overflow: "hidden" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--divider)" }}>
+                      <span style={{ width: 28, height: 28, borderRadius: "50%", background: p.avatarColor, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                          @{p.handle} · {p.artistCount}/{squadsData.artistsPerUser} artistas · {p.singlesFilled}/{expectedSingles || "—"} músicas
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                      {p.artists.length === 0 ? (
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum artista cadastrado.</div>
+                      ) : p.artists.map((art) => (
+                        <div key={art.id} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 10, overflow: "hidden" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
+                            <CopaArtistAvatar {...art} size={32} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 800 }}>{art.artistName}</div>
+                              <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                                {art.groupLetter !== "?" ? `Grupo ${art.groupLetter}` : "Aguardando sorteio"}
+                              </div>
+                            </div>
+                          </div>
+                          {Array.from({ length: 7 }, (_, i) => {
+                            const single = art.singles.find((s) => s.slotIndex === i);
+                            const isLocked = art.lockedSlots.includes(i);
+                            const isEmpty = !single || single.songName.startsWith("Single ");
+                            return (
+                              <div
+                                key={i}
+                                style={{
+                                  display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
+                                  borderTop: "1px solid var(--divider)", fontSize: 12,
+                                }}
+                              >
+                                <span style={{ width: 16, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>
+                                  {i + 1}
+                                </span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-disabled)", marginBottom: 1 }}>
+                                    {SLOT_LABELS[i]}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontWeight: 600,
+                                      color: isEmpty ? "var(--text-disabled)" : "var(--text)",
+                                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {isEmpty ? "— não definida" : single!.songName}
+                                  </div>
+                                </div>
+                                {isLocked && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: "var(--fill-inset)", color: "var(--text-muted)", flexShrink: 0 }}>
+                                    Disputado
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditSingle({ artistId: art.id, artistName: art.artistName, slotIndex: i });
+                                    setSingleSearch(single && !isEmpty ? single.songName : "");
+                                    setSingleResults([]);
+                                  }}
+                                  style={{
+                                    flexShrink: 0,
+                                    padding: "5px 10px",
+                                    borderRadius: 6,
+                                    border: "none",
+                                    background: "#FFD426",
+                                    color: "#000",
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  Editar
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Stats */}
           {e.id === activeEditionId && fixturesByStatus && (
@@ -433,6 +668,65 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Admin edit single modal */}
+      {editSingle && (
+        <div
+          style={{ position: "fixed", inset: 0, height: "100dvh", background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box" }}
+          onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }}
+        >
+          <div
+            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "calc(100dvh - 32px)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>Corrigir música</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
+                  {SLOT_LABELS[editSingle.slotIndex]} · {editSingle.artistName}
+                </div>
+              </div>
+              <button onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
+              <input
+                autoFocus
+                placeholder={`Buscar música de ${editSingle.artistName}…`}
+                value={singleSearch}
+                onChange={(ev) => searchSongs(ev.target.value, editSingle.artistName)}
+                style={{
+                  width: "100%", background: "var(--fill-inset)", border: "1.5px solid var(--divider)", borderRadius: 10,
+                  padding: "11px 14px", color: "var(--text)", fontSize: 15, fontWeight: 600, outline: "none", marginBottom: 10, boxSizing: "border-box",
+                }}
+              />
+              {singleSearch.length > 0 && (
+                <div
+                  onClick={() => saveAdminSingle(singleSearch, null)}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: "1px dashed var(--divider)", marginBottom: 8 }}
+                >
+                  <span style={{ fontSize: 18 }}>✏️</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Usar &quot;{singleSearch}&quot;</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Entrada manual</div>
+                  </div>
+                </div>
+              )}
+              {singleResults.map((song) => (
+                <div
+                  key={song.id ?? song.title}
+                  onClick={() => saveAdminSingle(song.title, song.id)}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer" }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{song.title}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{song.artist}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
