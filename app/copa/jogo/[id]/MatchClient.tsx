@@ -42,7 +42,6 @@ type FixtureInfo = {
 type Props = {
   fixture: FixtureInfo;
   userId: string | null;
-  isParticipant: boolean;
 };
 
 function LiveDot() {
@@ -97,7 +96,7 @@ function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
   );
 }
 
-export function MatchClient({ fixture: init, userId, isParticipant }: Props) {
+export function MatchClient({ fixture: init, userId }: Props) {
   const router = useRouter();
   const [data, setData] = useState(init);
   const [myVote, setMyVote] = useState(init.myVote);
@@ -105,7 +104,7 @@ export function MatchClient({ fixture: init, userId, isParticipant }: Props) {
   const [voting, setVoting] = useState(false);
 
   const isLive = data.status === "LIVE";
-  const canVote = isLive && isParticipant && !myVote && !!userId;
+  const canVote = isLive && !myVote && !!userId;
 
   // Poll for live updates every 5s
   const fetchUpdates = useCallback(async () => {
@@ -266,9 +265,9 @@ export function MatchClient({ fixture: init, userId, isParticipant }: Props) {
             <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#34C759", padding: 14, background: "rgba(52,199,89,.1)", borderRadius: 12, marginBottom: 14 }}>
               ✓ Voto registrado para {myVote === "A" ? data.artistA.artistName : data.artistB.artistName}!
             </div>
-          ) : !isParticipant ? (
+          ) : !userId ? (
             <div style={{ textAlign: "center", fontSize: 13, color: "var(--text-muted)", padding: 14, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, marginBottom: 14 }}>
-              Apenas participantes da Copa podem votar
+              Entre na sua conta para votar
             </div>
           ) : (
             <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
