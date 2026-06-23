@@ -36,7 +36,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   // After all group fixtures for all groups are DONE, generate R16 automatically
   if (status === "DONE" && fixture.phase === "GROUP") {
-    await maybeGenerateKnockout(params.id);
+    await maybeGenerateKnockout(id);
   }
 
   return NextResponse.json({ fixture: updated });
