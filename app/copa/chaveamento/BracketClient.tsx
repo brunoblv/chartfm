@@ -55,7 +55,16 @@ function TBDSlot() {
 function BracketMatch({ f, userId, onClick }: { f: BracketFixture; userId: string | null; onClick: () => void }) {
   const canClick = f.status === "LIVE" || f.status === "DONE";
   const isDone = f.status === "DONE";
-  const winnerSide = isDone ? (f.goalsA > f.goalsB ? "A" : f.goalsB > f.goalsA ? "B" : null) : null;
+  // Desempate visual: gols → votos (a prorrogação). O critério do Global 100
+  // (pênaltis) é raríssimo e não vem nos dados do chaveamento; nesse caso o
+  // destaque fica neutro, mas a fase seguinte já mostra quem avançou.
+  const winnerSide = isDone
+    ? f.goalsA > f.goalsB ? "A"
+      : f.goalsB > f.goalsA ? "B"
+      : f.votesA > f.votesB ? "A"
+      : f.votesB > f.votesA ? "B"
+      : null
+    : null;
 
   function Slot({ art, goals, side }: { art: ArtistSlot; goals: number; side: "A" | "B" }) {
     const isWinner = winnerSide === side;

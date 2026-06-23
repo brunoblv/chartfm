@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { GROUP_PAIRS, COPA_GROUP_LETTERS, COPA_UNASSIGNED_GROUP, drawGroups } from "@/lib/copa";
+import { GROUP_PAIRS, COPA_GROUP_LETTERS, COPA_UNASSIGNED_GROUP, drawGroups, fixtureBatchOrder } from "@/lib/copa";
+import { advanceKnockout } from "@/lib/copa-knockout";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -140,6 +141,40 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (action === "start_knockout") {
     await prisma.copaEdition.update({ where: { id }, data: { status: "KNOCKOUT" } });
     return NextResponse.json({ ok: true });
+  }
+
+  if (action === "advance_day") {
+    // Encerra todos os jogos que estão Ao vivo (fecha a enquete do dia)…
+    const live = await prisma.copaFixture.findMany({
+      where: { copaId: id, status: "LIVE" },
+      select: { id: true },
+    });
+    if (live.length > 0) {
+      await prisma.copaFixture.updateMany({
+        where: { copaId: id, status: "LIVE" },
+        data: { status: "DONE", endedAt: new Date() },
+      });
+      // …e tenta avançar o chaveamento (gera a próxima fase, se a atual acabou).
+      await advanceKnockout(id);
+    }
+
+    // …depois abre o próximo lote do dia (o menor batchOrder ainda pendente).
+    const upcoming = await prisma.copaFixture.findMany({
+      where: { copaId: id, status: "UPCOMING" },
+      select: { id: true, phase: true, round: true, groupLetter: true },
+    });
+    if (upcoming.length === 0) {
+      return NextResponse.json({ ok: true, closed: live.length, opened: 0, done: true });
+    }
+
+    const minOrder = Math.min(...upcoming.map((f) => fixtureBatchOrder(f)));
+    const batch = upcoming.filter((f) => fixtureBatchOrder(f) === minOrder);
+    await prisma.copaFixture.updateMany({
+      where: { id: { in: batch.map((f) => f.id) } },
+      data: { status: "LIVE" },
+    });
+
+    return NextResponse.json({ ok: true, closed: live.length, opened: batch.length });
   }
 
   if (action === "finish") {

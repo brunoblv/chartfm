@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { computeStandings, COPA_GROUP_LETTERS } from "@/lib/copa";
+import { advanceKnockout } from "@/lib/copa-knockout";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -34,51 +34,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     },
   });
 
-  // After all group fixtures for all groups are DONE, generate R16 automatically
-  if (status === "DONE" && fixture.phase === "GROUP") {
-    await maybeGenerateKnockout(id);
+  // Ao encerrar um jogo, tenta avançar o chaveamento (grupos → R16 → QF → SF →
+  // Final/3º lugar). Idempotente: só gera a fase seguinte quando a atual termina.
+  if (status === "DONE") {
+    await advanceKnockout(id);
   }
 
   return NextResponse.json({ fixture: updated });
-}
-
-async function maybeGenerateKnockout(copaId: string) {
-  const groupFixtures = await prisma.copaFixture.findMany({
-    where: { copaId, phase: "GROUP" },
-    include: { votes: true },
-  });
-
-  const allDone = groupFixtures.every((f) => f.status === "DONE");
-  if (!allDone) return;
-
-  // Check no R16 exists yet
-  const r16Exists = await prisma.copaFixture.count({ where: { copaId, phase: "R16" } });
-  if (r16Exists > 0) return;
-
-  const artists = await prisma.copaArtist.findMany({ where: { copaId } });
-
-  // Compute standings per group → top2
-  const top2: Record<string, [string, string]> = {};
-  for (const letter of COPA_GROUP_LETTERS) {
-    const groupArtists = artists.filter((a) => a.groupLetter === letter).map((a) => a.id);
-    const groupFixts = groupFixtures.filter((f) => f.groupLetter === letter);
-    if (groupArtists.length < 4) continue;
-    const standings = computeStandings(groupFixts, groupArtists);
-    top2[letter] = [standings[0].artistId, standings[1].artistId];
-  }
-
-  // R16 pairing: 1st A vs 2nd B, 1st C vs 2nd D, ... (cross-pairing)
-  const letters = COPA_GROUP_LETTERS;
-  const r16Data: { copaId: string; phase: "R16"; matchIndex: number; artistAId: string; artistBId: string; singleAIdx: number; singleBIdx: number }[] = [];
-
-  for (let i = 0; i < letters.length; i += 2) {
-    const l1 = letters[i], l2 = letters[i + 1];
-    if (!top2[l1] || !top2[l2]) continue;
-    r16Data.push({ copaId, phase: "R16", matchIndex: i / 2, artistAId: top2[l1][0], artistBId: top2[l2][1], singleAIdx: 3, singleBIdx: 3 });
-    r16Data.push({ copaId, phase: "R16", matchIndex: i / 2 + 1, artistAId: top2[l2][0], artistBId: top2[l1][1], singleAIdx: 3, singleBIdx: 3 });
-  }
-
-  if (r16Data.length > 0) {
-    await prisma.copaFixture.createMany({ data: r16Data });
-  }
 }
