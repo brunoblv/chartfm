@@ -29,7 +29,6 @@ type Fixture = {
 
 type Props = {
   editions: Edition[];
-  allUsers: { id: string; name: string; handle: string; avatarColor: string }[];
   activeEditionId: string | null;
   fixturesByStatus: { UPCOMING: number; LIVE: number; DONE: number } | null;
   activeFixtures: Fixture[];
@@ -51,24 +50,24 @@ const PHASE_LABELS: Record<string, string> = {
   FINAL: "FIN",
 };
 
-export function CopaAdminClient({ editions, allUsers, activeEditionId, fixturesByStatus, activeFixtures }: Props) {
+export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, activeFixtures }: Props) {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("Copa ChartFM");
   const [newYear, setNewYear] = useState(new Date().getFullYear());
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [newMaxParticipants, setNewMaxParticipants] = useState(8);
   const [creating, setCreating] = useState(false);
   const [actioning, setActioning] = useState<string | null>(null);
   const [fixtureFilter, setFixtureFilter] = useState("ALL");
 
   async function createCopa() {
-    if (creating || selectedUsers.length === 0) return;
+    if (creating) return;
     setCreating(true);
     try {
       const res = await fetch("/api/admin/copa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, year: newYear, participantUserIds: selectedUsers }),
+        body: JSON.stringify({ name: newName, year: newYear, maxParticipants: newMaxParticipants }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -125,11 +124,8 @@ export function CopaAdminClient({ editions, allUsers, activeEditionId, fixturesB
   );
 
   return (
-    <div style={{ padding: "24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", margin: 0 }}>
-          🏆 Admin Copa
-        </h1>
+    <>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
         <button
           onClick={() => setShowCreate(true)}
           style={{ background: "#FFD426", color: "#000", border: "none", padding: "10px 18px", borderRadius: 99, fontSize: 14, fontWeight: 700, cursor: "pointer" }}
@@ -179,13 +175,22 @@ export function CopaAdminClient({ editions, allUsers, activeEditionId, fixturesB
           {/* Actions */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {e.status === "REGISTRATION" && (
-              <button
-                onClick={() => editionAction(e.id, "start_group_stage")}
-                disabled={!!actioning}
-                style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#34C759", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
-              >
-                Iniciar Fase de Grupos
-              </button>
+              <>
+                <button
+                  onClick={() => editionAction(e.id, "draw_groups")}
+                  disabled={!!actioning}
+                  style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+                >
+                  🎲 Sortear Grupos
+                </button>
+                <button
+                  onClick={() => editionAction(e.id, "start_group_stage")}
+                  disabled={!!actioning}
+                  style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#34C759", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+                >
+                  Iniciar Fase de Grupos
+                </button>
+              </>
             )}
             {e.status === "GROUP_STAGE" && (
               <button
@@ -339,40 +344,17 @@ export function CopaAdminClient({ editions, allUsers, activeEditionId, fixturesB
 
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-                Participantes (8 usuários)
+                Máximo de participantes
               </label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflowY: "auto" }}>
-                {allUsers.map((u) => {
-                  const checked = selectedUsers.includes(u.id);
-                  return (
-                    <div
-                      key={u.id}
-                      onClick={() => setSelectedUsers((prev) =>
-                        checked ? prev.filter((id) => id !== u.id) : [...prev, u.id],
-                      )}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "8px 12px",
-                        borderRadius: 10,
-                        cursor: "pointer",
-                        background: checked ? "rgba(255,212,38,.1)" : "var(--fill-inset)",
-                        border: `1px solid ${checked ? "#FFD426" : "var(--divider)"}`,
-                      }}
-                    >
-                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: u.avatarColor, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 800, color: "#fff" }}>{u.name[0]}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700 }}>{u.name}</div>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>@{u.handle}</div>
-                      </div>
-                      {checked && <span style={{ fontSize: 14, color: "#FFD426" }}>✓</span>}
-                    </div>
-                  );
-                })}
-              </div>
+              <input
+                type="number"
+                min={2}
+                value={newMaxParticipants}
+                onChange={(e) => setNewMaxParticipants(Number(e.target.value))}
+                style={{ width: "100%", background: "var(--fill-inset)", border: "1.5px solid var(--divider)", borderRadius: 10, padding: "10px 14px", color: "var(--text)", fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
+              />
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-                {selectedUsers.length}/8 selecionados
+                Os próprios usuários se inscrevem enquanto a Copa está em Inscrições.
               </div>
             </div>
 
@@ -385,8 +367,8 @@ export function CopaAdminClient({ editions, allUsers, activeEditionId, fixturesB
               </button>
               <button
                 onClick={createCopa}
-                disabled={creating || selectedUsers.length === 0}
-                style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "#FFD426", color: "#000", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: creating || selectedUsers.length === 0 ? 0.5 : 1 }}
+                disabled={creating}
+                style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "#FFD426", color: "#000", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: creating ? 0.5 : 1 }}
               >
                 {creating ? "Criando…" : "Criar Copa"}
               </button>
@@ -394,6 +376,6 @@ export function CopaAdminClient({ editions, allUsers, activeEditionId, fixturesB
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { getArtistColor, getArtistInitials } from "@/lib/copa";
+import { getArtistColor, getArtistInitials, COPA_UNASSIGNED_GROUP } from "@/lib/copa";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -52,52 +53,51 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Artist limit reached" }, { status: 400 });
   }
 
-  // Find next available group slot (fill groups A-P, 4 artists each)
-  const allArtists = await prisma.copaArtist.findMany({
-    where: { copaId: id },
-    select: { groupLetter: true, slotInGroup: true },
-  });
+  // Artists are NOT placed into a group on claim — groups are formed later by the
+  // draw (sorteio), once every participant has registered their full roster.
+  // We park the artist in the placeholder group with a unique running slot index
+  // to satisfy the (copaId, groupLetter, slotInGroup) uniqueness constraint.
+  const color = getArtistColor(artistSpotifyId);
+  const initials = getArtistInitials(artistName);
 
-  const letters = "ABCDEFGHIJKLMNOP".split("");
-  let targetGroup = "";
-  let targetSlot = 0;
-
-  for (const letter of letters) {
-    const inGroup = allArtists.filter((a) => a.groupLetter === letter);
-    if (inGroup.length < 4) {
-      targetGroup = letter;
-      const usedSlots = new Set(inGroup.map((a) => a.slotInGroup));
-      for (let s = 0; s < 4; s++) {
-        if (!usedSlots.has(s)) { targetSlot = s; break; }
+  let artist = null;
+  for (let attempt = 0; attempt < 10 && !artist; attempt++) {
+    const count = await prisma.copaArtist.count({ where: { copaId: id } });
+    try {
+      artist = await prisma.copaArtist.create({
+        data: {
+          copaId: id,
+          ownerId: session.user.id,
+          groupLetter: COPA_UNASSIGNED_GROUP,
+          slotInGroup: count + attempt,
+          artistSpotifyId: artistSpotifyId ?? null,
+          artistName: artistName.trim(),
+          artistImage: artistImage ?? null,
+          artistColor: color,
+          artistInitials: initials,
+        },
+        include: {
+          owner: { select: { id: true, name: true, handle: true, avatarColor: true } },
+          singles: true,
+        },
+      });
+    } catch (e) {
+      // P2002 on the spotifyId means it was claimed in a race; anything else is a
+      // slot-index collision we can retry with the next index.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        const target = String(e.meta?.target ?? "");
+        if (target.includes("spotify")) {
+          return NextResponse.json({ error: "Artist already claimed" }, { status: 409 });
+        }
+        continue;
       }
-      break;
+      throw e;
     }
   }
 
-  if (!targetGroup) {
-    return NextResponse.json({ error: "Tournament is full" }, { status: 400 });
+  if (!artist) {
+    return NextResponse.json({ error: "Não foi possível cadastrar, tente novamente" }, { status: 409 });
   }
-
-  const color = artistImage ? getArtistColor(artistSpotifyId) : getArtistColor(artistSpotifyId);
-  const initials = getArtistInitials(artistName);
-
-  const artist = await prisma.copaArtist.create({
-    data: {
-      copaId: id,
-      ownerId: session.user.id,
-      groupLetter: targetGroup,
-      slotInGroup: targetSlot,
-      artistSpotifyId: artistSpotifyId ?? null,
-      artistName: artistName.trim(),
-      artistImage: artistImage ?? null,
-      artistColor: color,
-      artistInitials: initials,
-    },
-    include: {
-      owner: { select: { id: true, name: true, handle: true, avatarColor: true } },
-      singles: true,
-    },
-  });
 
   return NextResponse.json({ artist });
 }

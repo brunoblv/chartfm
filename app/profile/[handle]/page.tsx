@@ -16,6 +16,7 @@ import type { Chart, Song, UserWithCharts } from "@/lib/types";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { chartStatsLabels } from "@/lib/chart-cadence";
 import { pointsForChartPosition, type ParadaScoringTier } from "@/lib/parada-points";
 
 type ParadaTab = "charts" | "artists" | "songs" | "numberOnes";
@@ -432,9 +433,11 @@ function buildAchievements(
   numberOnes: number,
   totalCharts: number,
   totalRanked: number,
+  isDaily: boolean,
 ) {
+  const streakUnit = isDaily ? "dias" : "semanas";
   const list: { emoji: string; name: string; desc: string }[] = [
-    { emoji: "🔥", name: "Streak", desc: `${user.streak} semanas de streak` },
+    { emoji: "🔥", name: "Streak", desc: `${user.streak} ${streakUnit} de streak` },
     { emoji: "🎵", name: "Curador", desc: totalRanked >= 100 ? `${totalRanked}+ entradas no chart` : `${totalRanked} músicas rankeadas` },
     { emoji: "🏆", name: "Chart topper", desc: numberOnes > 0 ? `${numberOnes} faixa(s) em #1` : "Busque o primeiro #1" },
     { emoji: "🌟", name: "Rede", desc: `${user.followers.toLocaleString("pt-BR")} seguidores` },
@@ -596,6 +599,8 @@ export default function ProfilePage() {
   const scoringTier: ParadaScoringTier =
     fullPayload?.scoringTier ?? payload?.scoringTier ?? (activeParada?.isPrimary === false ? "secondary" : "primary");
   const scoringCadence = activeParada?.cadence;
+  const isDailyParada = scoringCadence === "daily";
+  const statsLabels = chartStatsLabels(isDailyParada);
   const artistImages = (fullPayload?.artistImages ?? payload?.artistImages) ?? {};
   const isFollowing = payload?.isFollowing ?? false;
   const isOwn = status === "authenticated" && session?.user?.handle === handle;
@@ -606,8 +611,8 @@ export default function ProfilePage() {
   const topArtists = useMemo(() => (statsUser ? buildTopArtists(statsUser) : sidebarTopArtists), [statsUser, sidebarTopArtists]);
   const numberOnes = statsUser ? countDistinctNumberOnes(statsUser.charts) : sidebarNumberOnes;
   const achievements = useMemo(
-    () => (user ? buildAchievements(user, sidebarNumberOnes, totalChartsCount, sidebarRankedSlots) : []),
-    [user, sidebarNumberOnes, totalChartsCount, sidebarRankedSlots],
+    () => (user ? buildAchievements(user, sidebarNumberOnes, totalChartsCount, sidebarRankedSlots, isDailyParada) : []),
+    [user, sidebarNumberOnes, totalChartsCount, sidebarRankedSlots, isDailyParada],
   );
   const years = useMemo(() => {
     if (statsUser) return [...new Set(statsUser.charts.map((c) => c.week >= 1_000_000 ? Math.floor(c.week / 10000) : Math.floor(c.week / 100)))].sort((a, b) => b - a);
@@ -871,7 +876,7 @@ export default function ProfilePage() {
               {user.streak > 0 && (
                 <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#FA243C", fontWeight: 600 }}>
                   <Flame size={14} fill="#FA243C" />
-                  <b>{user.streak}</b> semanas de streak
+                  <b>{user.streak}</b> {isDailyParada ? "dias" : "semanas"} de streak
                 </span>
               )}
             </div>
@@ -1236,7 +1241,8 @@ export default function ProfilePage() {
             <NumberOnesTab
               rows={numberOnesRows.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)}
               totalSongs={numberOnesRows.length}
-              totalWeeks={totalNumberOneWeeks}
+              totalPeriods={totalNumberOneWeeks}
+              periodSuffix={statsLabels.tenureSuffix}
               isMobile={isMobile}
             />
             <StatsPagination page={statsPage} total={numberOnesRows.length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
@@ -1248,7 +1254,7 @@ export default function ProfilePage() {
             {source === "db" && !fullPayload && loadingFullStats && (
               <div style={{ marginBottom: 14, color: "var(--text-muted)", fontSize: 14 }}>Carregando estatísticas completas…</div>
             )}
-            <ArtistStatsTable rows={artistRowsForTab.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} artistImages={artistImages} isMobile={isMobile} />
+            <ArtistStatsTable rows={artistRowsForTab.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} artistImages={artistImages} tenureLabel={statsLabels.tenureShort} isMobile={isMobile} />
             <StatsPagination page={statsPage} total={artistRowsForTab.length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
@@ -1257,7 +1263,7 @@ export default function ProfilePage() {
             {source === "db" && !fullPayload && loadingFullStats && (
               <div style={{ marginBottom: 14, color: "var(--text-muted)", fontSize: 14 }}>Carregando estatísticas completas…</div>
             )}
-            <SongStatsTable rows={songRowsForTab.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} isMobile={isMobile} />
+            <SongStatsTable rows={songRowsForTab.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} tenureLabel={statsLabels.tenureShort} isMobile={isMobile} />
             <StatsPagination page={statsPage} total={songRowsForTab.length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
         )}
@@ -1436,9 +1442,9 @@ function NumberOnesCell({ value, fontSize = 13 }: { value: number; fontSize?: nu
   );
 }
 
-function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableRow[]; artistImages: Record<string, string | null>; isMobile?: boolean }) {
+function ArtistStatsTable({ rows, artistImages, tenureLabel = "Sem.", isMobile }: { rows: ArtistTableRow[]; artistImages: Record<string, string | null>; tenureLabel?: string; isMobile?: boolean }) {
   const cols = isMobile ? "36px 48px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 70px 60px 80px 110px";
-  const headers = isMobile ? ["Pos", "", "Artista", "Pts"] : ["Pos", "", "Artista", "Sem.", "Pico", "#1s", "Músicas", "Pontos"];
+  const headers = isMobile ? ["Pos", "", "Artista", "Pts"] : ["Pos", "", "Artista", tenureLabel, "Pico", "#1s", "Músicas", "Pontos"];
   const imgSize = isMobile ? 36 : 44;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -1495,12 +1501,14 @@ function ArtistStatsTable({ rows, artistImages, isMobile }: { rows: ArtistTableR
 function NumberOnesTab({
   rows,
   totalSongs,
-  totalWeeks,
+  totalPeriods,
+  periodSuffix,
   isMobile,
 }: {
   rows: NumberOneRow[];
   totalSongs: number;
-  totalWeeks: number;
+  totalPeriods: number;
+  periodSuffix: string;
   isMobile?: boolean;
 }) {
   if (totalSongs === 0) {
@@ -1520,7 +1528,7 @@ function NumberOnesTab({
     <div>
       <div style={{ marginBottom: 16, fontSize: 14, color: "var(--text-muted)" }}>
         <span style={{ fontWeight: 700, color: "var(--text)" }}>{totalSongs}</span> faixa{totalSongs === 1 ? "" : "s"} ·{" "}
-        <span style={{ fontWeight: 700, color: "var(--text)" }}>{totalWeeks}</span> semana{totalWeeks === 1 ? "" : "s"} em #1
+        <span style={{ fontWeight: 700, color: "var(--text)" }}>{totalPeriods}</span> {periodSuffix} em #1
       </div>
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
         <div style={{ display: "grid", gridTemplateColumns: cols, columnGap: 12, padding: isMobile ? "8px 16px" : "10px 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
@@ -1589,9 +1597,9 @@ function NumberOnesTab({
   );
 }
 
-function SongStatsTable({ rows, isMobile }: { rows: SongTableRow[]; isMobile?: boolean }) {
+function SongStatsTable({ rows, tenureLabel = "Sem.", isMobile }: { rows: SongTableRow[]; tenureLabel?: string; isMobile?: boolean }) {
   const cols = isMobile ? "36px 44px minmax(0,1fr) 72px" : "60px 64px minmax(0,1fr) 80px 70px 60px 110px";
-  const headers = isMobile ? ["Pos", "", "Música", "Pts"] : ["Pos", "", "Música", "Sem.", "Pico", "#1s", "Pontos"];
+  const headers = isMobile ? ["Pos", "", "Música", "Pts"] : ["Pos", "", "Música", tenureLabel, "Pico", "#1s", "Pontos"];
   const coverSize = isMobile ? 36 : 48;
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>

@@ -29,6 +29,8 @@ export default async function MeuTimePage() {
   });
 
   if (!participant) {
+    // Registration still open → send them to the home where they can sign up.
+    if (copa.status === "REGISTRATION") redirect("/copa");
     return (
       <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
         Você não é participante desta Copa.

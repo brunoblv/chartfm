@@ -220,12 +220,10 @@ function SidebarContent({
     { href: "/", label: t("nav.home"), icon: Home },
     { href: "/discover", label: t("nav.discover"), icon: Search },
     { href: "/global", label: t("nav.global"), icon: Globe },
-    { href: "/communities", label: t("nav.communities"), icon: Users },
     { href: "/push", label: "Push", icon: Zap },
     { href: "/copa", label: "Copa ChartFM", icon: Flame },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
     { href: "/notifications", label: t("nav.notifications"), icon: Bell, requiresAuth: true },
-    { href: "/whats-new", label: t("nav.whatsNew"), icon: Sparkles, badge: t("nav.badgeNew") },
   ];
 
   const footerLinks = [
@@ -233,6 +231,7 @@ function SidebarContent({
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
     { href: "/terms-of-use", label: t("nav.terms") },
+    { href: "/whats-new", label: t("nav.whatsNew") },
     { href: "/privacy-policy", label: t("nav.privacy") },
   ];
 

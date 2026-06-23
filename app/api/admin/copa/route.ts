@@ -33,26 +33,24 @@ export async function POST(req: Request) {
   if (!adminId) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
   const body = await req.json();
-  const { name, year, participantUserIds } = body as {
+  const { name, year, maxParticipants } = body as {
     name: string;
     year: number;
-    participantUserIds: string[];
+    maxParticipants?: number;
   };
 
-  if (!name || !year || !Array.isArray(participantUserIds) || participantUserIds.length === 0) {
-    return NextResponse.json({ error: "name, year, and participantUserIds required" }, { status: 400 });
+  if (!name || !year) {
+    return NextResponse.json({ error: "name and year required" }, { status: 400 });
   }
 
+  // Editions open in REGISTRATION with no participants — users sign themselves up.
   const copa = await prisma.copaEdition.create({
     data: {
       name,
       year,
       status: "REGISTRATION",
-      maxParticipants: 8,
+      maxParticipants: maxParticipants && maxParticipants > 0 ? maxParticipants : 8,
       artistsPerUser: 8,
-      participants: {
-        create: participantUserIds.map((uid) => ({ userId: uid })),
-      },
     },
     include: { participants: true },
   });

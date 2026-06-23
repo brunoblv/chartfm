@@ -5,6 +5,7 @@ import Script from "next/script";
 
 import "./globals.css";
 
+import { ThemeScript } from "@/components/theme-script";
 import { Providers } from "./providers";
 import { authOptions } from "@/lib/auth-options";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -14,8 +15,6 @@ export const metadata: Metadata = {
   description: "Crie sua parada musical semanal, descubra novos artistas e participe de comunidades no ChartFM. Rankings, reviews e curadoria musical feitos por fãs.",
   metadataBase: new URL("https://chartfm.com.br"),
 };
-
-const themeScript = `(function(){try{var t=localStorage.getItem('chartfm.theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else if(t==='light'){document.documentElement.setAttribute('data-theme','light');}else if(!t||t==='auto'){if(window.matchMedia('(prefers-color-scheme:dark)').matches){document.documentElement.setAttribute('data-theme','dark');}}}catch(e){}})();`;
 
 export default async function RootLayout({
   children,
@@ -33,8 +32,7 @@ export default async function RootLayout({
           content="ca-pub-4600084865044867"
         />
         {/* Anti-flash: runs before React hydration to set theme from localStorage */}
-        {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ThemeScript />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

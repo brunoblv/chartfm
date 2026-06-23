@@ -104,9 +104,48 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
         alert(err.error ?? "Erro ao cadastrar artista");
         return;
       }
+      const { artist } = await res.json();
+      // Optimistically append so the list updates without a reload (useState is
+      // seeded once, so router.refresh() alone wouldn't refresh it).
+      setArtists((prev) => [
+        ...prev,
+        {
+          id: artist.id,
+          artistSpotifyId: artist.artistSpotifyId,
+          artistName: artist.artistName,
+          artistImage: artist.artistImage,
+          artistColor: artist.artistColor,
+          artistInitials: artist.artistInitials,
+          groupLetter: artist.groupLetter,
+          standings: { rank: -1, pts: 0, pj: 0 },
+          singles: [],
+          lockedSlots: [],
+        },
+      ]);
       setShowAddModal(false);
       setSearchQ("");
       setSearchResults([]);
+      router.refresh();
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function removeArtist(artistId: string) {
+    if (adding) return;
+    setAdding(true);
+    try {
+      const res = await fetch(`/api/copa/${copaId}/claim`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artistId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error ?? "Erro ao remover artista");
+        return;
+      }
+      setArtists((prev) => prev.filter((a) => a.id !== artistId));
       router.refresh();
     } finally {
       setAdding(false);
@@ -159,16 +198,105 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
 
   const editArt = editSingle ? artists.find((a) => a.id === editSingle.artistId) : null;
 
+  const rosterComplete = artists.length >= maxArtists;
+  // Registration phase 1: still picking artists. Phase 2 (singles) only opens once
+  // the full roster of artists has been claimed.
+  const claiming = isRegistration && !rosterComplete;
+
   return (
     <div>
       <div style={{ padding: "24px 24px 0" }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>Meu Time</h1>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, marginBottom: 20 }}>
-          {artists.length}/{maxArtists} artistas cadastrados · Defina os singles para cada fase
+          {claiming
+            ? `${artists.length}/${maxArtists} artistas · escolha seu time, depois você define as músicas`
+            : isRegistration
+              ? "Time completo! Agora escolha as músicas de cada artista"
+              : `${artists.length}/${maxArtists} artistas · Defina os singles para cada fase`}
         </div>
       </div>
 
+      {/* ── Phase 1: pick your artists ──────────────────────────────────── */}
+      {claiming && (
+        <div style={{ padding: "0 24px 24px" }}>
+          {artists.map((art) => (
+            <div
+              key={art.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "12px 16px",
+                background: "var(--surface)",
+                border: "1px solid var(--divider)",
+                borderRadius: 14,
+                marginBottom: 10,
+              }}
+            >
+              <CopaArtistAvatar {...art} size={40} />
+              <div style={{ flex: 1, fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em" }}>{art.artistName}</div>
+              <button
+                onClick={() => removeArtist(art.id)}
+                disabled={adding}
+                style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 4px" }}
+                aria-label="Remover artista"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+
+          <div
+            onClick={() => { setShowAddModal(true); setSearchQ(""); setSearchResults([]); }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "14px 16px",
+              background: "var(--fill-inset)",
+              border: "2px dashed var(--divider)",
+              borderRadius: 14,
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: 14,
+              fontWeight: 700,
+              transition: "0.12s",
+              marginBottom: 10,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>+</span>
+            Adicionar artista ({artists.length}/{maxArtists})
+          </div>
+
+          <div style={{ fontSize: 12, color: "var(--text-disabled)", textAlign: "center", marginTop: 8 }}>
+            Faltam {maxArtists - artists.length} artista{maxArtists - artists.length !== 1 ? "s" : ""} para liberar a escolha das músicas.
+          </div>
+        </div>
+      )}
+
+      {/* ── Phase 2: choose songs (and live squad during the tournament) ── */}
+      {!claiming && (
       <div style={{ padding: "0 24px 24px" }}>
+        {isRegistration && rosterComplete && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "12px 14px",
+              background: "rgba(52,199,89,.1)",
+              border: "1px solid rgba(52,199,89,.3)",
+              borderRadius: 12,
+              marginBottom: 14,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text)",
+            }}
+          >
+            <span style={{ fontSize: 18 }}>🎵</span>
+            Time completo! Defina as músicas de cada artista. O sorteio dos grupos acontece quando todos terminarem.
+          </div>
+        )}
         {artists.map((art) => {
           const qual = art.standings.rank === 0 || art.standings.rank === 1;
           return (
@@ -188,10 +316,12 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em" }}>{art.artistName}</div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-                    Grupo {art.groupLetter} · {art.standings.pts}pts · {art.standings.pj} PJ
+                    {isRegistration
+                      ? "Defina as músicas"
+                      : `Grupo ${art.groupLetter} · ${art.standings.pts}pts · ${art.standings.pj} PJ`}
                   </div>
                 </div>
-                {qual ? (
+                {isRegistration ? null : qual ? (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(52,199,89,.12)", color: "#34C759", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     ✓ Classificado
                   </span>
@@ -262,41 +392,17 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
             </div>
           );
         })}
-
-        {/* Add artist slot */}
-        {isRegistration && artists.length < maxArtists && (
-          <div
-            onClick={() => { setShowAddModal(true); setSearchQ(""); setSearchResults([]); }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "14px 16px",
-              background: "var(--fill-inset)",
-              border: "2px dashed var(--divider)",
-              borderRadius: 14,
-              cursor: "pointer",
-              color: "var(--text-muted)",
-              fontSize: 14,
-              fontWeight: 700,
-              transition: "0.12s",
-              marginBottom: 10,
-            }}
-          >
-            <span style={{ fontSize: 20 }}>+</span>
-            Adicionar artista ({artists.length}/{maxArtists})
-          </div>
-        )}
       </div>
+      )}
 
       {/* Add artist modal */}
       {showAddModal && (
         <div
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          style={{ position: "fixed", inset: 0, height: "100dvh", background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box" }}
           onClick={() => setShowAddModal(false)}
         >
           <div
-            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "84vh", borderRadius: "20px 20px 0 0", display: "flex", flexDirection: "column", overflow: "hidden" }}
+            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "calc(100dvh - 32px)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
@@ -380,11 +486,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
       {/* Edit single modal */}
       {editSingle && editArt && (
         <div
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          style={{ position: "fixed", inset: 0, height: "100dvh", background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box" }}
           onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }}
         >
           <div
-            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "84vh", borderRadius: "20px 20px 0 0", display: "flex", flexDirection: "column", overflow: "hidden" }}
+            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "calc(100dvh - 32px)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>

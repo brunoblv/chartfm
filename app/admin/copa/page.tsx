@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { CopaAdminClient } from "./CopaAdminClient";
@@ -21,11 +22,6 @@ export default async function CopaAdminPage() {
       },
       _count: { select: { copaArtists: true, fixtures: true } },
     },
-  });
-
-  const allUsers = await prisma.user.findMany({
-    select: { id: true, name: true, handle: true, avatarColor: true },
-    orderBy: { name: "asc" },
   });
 
   // For each active copa, get live/upcoming fixture counts
@@ -55,7 +51,8 @@ export default async function CopaAdminPage() {
     : [];
 
   return (
-    <CopaAdminClient
+    <Shell title="Copa ChartFM" subtitle="Gerencie edições, fases e jogos">
+      <CopaAdminClient
       editions={editions.map((e) => ({
         id: e.id,
         name: e.name,
@@ -70,7 +67,6 @@ export default async function CopaAdminPage() {
           avatarColor: p.user.avatarColor,
         })),
       }))}
-      allUsers={allUsers}
       activeEditionId={activeEdition?.id ?? null}
       fixturesByStatus={fixturesByStatus}
       activeFixtures={activeFixtures.map((f) => ({
@@ -85,6 +81,7 @@ export default async function CopaAdminPage() {
         artistA: { artistName: f.artistA.artistName, artistInitials: f.artistA.artistInitials, artistColor: f.artistA.artistColor, artistImage: f.artistA.artistImage },
         artistB: { artistName: f.artistB.artistName, artistInitials: f.artistB.artistInitials, artistColor: f.artistB.artistColor, artistImage: f.artistB.artistImage },
       }))}
-    />
+      />
+    </Shell>
   );
 }

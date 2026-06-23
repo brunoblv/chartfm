@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { hostname: "lh3.googleusercontent.com" },
+      { hostname: "i.scdn.co" },
     ],
   },
   async redirects() {

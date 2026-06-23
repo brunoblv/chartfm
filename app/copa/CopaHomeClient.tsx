@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "./CopaArtistAvatar";
 
@@ -21,7 +22,7 @@ type SimpleFixture = {
 };
 
 type Props = {
-  copa: { id: string; name: string; year: number; status: string; participants: { userId: string; name: string; handle: string; avatarColor: string }[] };
+  copa: { id: string; name: string; year: number; status: string; maxParticipants: number; isParticipant: boolean; participants: { userId: string; name: string; handle: string; avatarColor: string }[] };
   userId: string | null;
   liveFixture: SimpleFixture | null;
   recentDone: SimpleFixture[];
@@ -102,6 +103,29 @@ function ScoreRow({ f }: { f: SimpleFixture }) {
 
 export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming, myArtists }: Props) {
   const router = useRouter();
+  const [joining, setJoining] = useState(false);
+
+  const isFull = copa.participants.length >= copa.maxParticipants;
+
+  async function join() {
+    if (joining) return;
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+    setJoining(true);
+    try {
+      const res = await fetch(`/api/copa/${copa.id}/join`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error ?? "Erro ao se inscrever");
+        return;
+      }
+      router.push("/copa/meu-time");
+    } finally {
+      setJoining(false);
+    }
+  }
 
   const phaseLabel: Record<string, string> = {
     REGISTRATION: "Fase de Inscrições",
@@ -189,23 +213,44 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
           <div style={{ fontSize: 36, marginBottom: 12 }}>⚽</div>
           <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Inscrições abertas</div>
           <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
-            {copa.participants.length} participante{copa.participants.length !== 1 ? "s" : ""} · Cadastre seus 8 artistas
+            {copa.participants.length}/{copa.maxParticipants} participante{copa.participants.length !== 1 ? "s" : ""}
+            {copa.isParticipant ? " · Cadastre seus 8 artistas" : " · Inscreva-se e monte seu time"}
           </div>
-          <button
-            onClick={() => router.push("/copa/meu-time")}
-            style={{
-              background: "#FFD426",
-              color: "#000",
-              border: "none",
-              padding: "10px 20px",
-              borderRadius: 99,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            Ir para Meu Time →
-          </button>
+          {copa.isParticipant ? (
+            <button
+              onClick={() => router.push("/copa/meu-time")}
+              style={{
+                background: "#FFD426",
+                color: "#000",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: 99,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Ir para Meu Time →
+            </button>
+          ) : (
+            <button
+              onClick={join}
+              disabled={joining || (isFull && !!userId)}
+              style={{
+                background: isFull ? "var(--fill-inset)" : "#FFD426",
+                color: isFull ? "var(--text-muted)" : "#000",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: 99,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: joining || isFull ? "default" : "pointer",
+                opacity: joining ? 0.6 : 1,
+              }}
+            >
+              {isFull ? "Vagas esgotadas" : joining ? "Inscrevendo…" : "Inscrever-se na Copa →"}
+            </button>
+          )}
         </div>
       )}
 
@@ -217,7 +262,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
           </p>
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
             {myArtists.map((art) => {
-              const qual = art.standingRank === 0 || art.standingRank === 1;
+              const drawn = art.groupLetter !== "?";
+              const qual = drawn && (art.standingRank === 0 || art.standingRank === 1);
               return (
                 <div
                   key={art.id}
@@ -239,7 +285,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
                   <div style={{ fontSize: 11, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>
                     {art.artistName.split(" ")[0]}
                   </div>
-                  <div style={{ fontSize: 10, color: "var(--text-muted)" }}>GRP {art.groupLetter}</div>
+                  {drawn && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>GRP {art.groupLetter}</div>}
                   {qual && (
                     <span style={{ fontSize: 9, fontWeight: 700, color: "#34C759", background: "rgba(52,199,89,.12)", padding: "2px 7px", borderRadius: 99 }}>
                       ✓ CLASSIF.
