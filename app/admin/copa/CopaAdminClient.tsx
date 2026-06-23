@@ -100,6 +100,28 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
     }
   }
 
+  async function seedTestArtists(copaId: string) {
+    if (!confirm("Cadastrar 7 artistas aleatórios (Global 100, >7 singles) para o bot de teste?")) return;
+    setActioning("seed-test-artists");
+    try {
+      const res = await fetch(`/api/admin/copa/${copaId}/seed-test-artists`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(json.error ?? "Erro ao cadastrar artistas de teste");
+        return;
+      }
+      const names = (json.artists as { name: string }[]).map((a) => a.name).join(", ");
+      alert(`Cadastrados para @${json.ownerHandle}: ${names}`);
+      router.refresh();
+    } finally {
+      setActioning(null);
+    }
+  }
+
   async function setFixtureStatus(fixtureId: string, status: "UPCOMING" | "LIVE" | "DONE") {
     if (!activeEditionId) return;
     setActioning(fixtureId + status);
@@ -177,6 +199,13 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
             {e.status === "REGISTRATION" && (
               <>
                 <button
+                  onClick={() => seedTestArtists(e.id)}
+                  disabled={!!actioning}
+                  style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--divider)", background: "var(--fill-inset)", color: "var(--text)", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+                >
+                  + 7 artistas de teste
+                </button>
+                <button
                   onClick={() => editionAction(e.id, "draw_groups")}
                   disabled={!!actioning}
                   style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
@@ -192,11 +221,20 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                 </button>
               </>
             )}
+            {(e.status === "GROUP_STAGE" || e.status === "KNOCKOUT") && (
+              <button
+                onClick={() => { if (confirm("Avançar o dia? Encerra os jogos Ao vivo e abre o próximo lote.")) editionAction(e.id, "advance_day"); }}
+                disabled={!!actioning}
+                style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+              >
+                ⏭️ Avançar Dia
+              </button>
+            )}
             {e.status === "GROUP_STAGE" && (
               <button
                 onClick={() => editionAction(e.id, "start_knockout")}
                 disabled={!!actioning}
-                style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+                style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--divider)", background: "transparent", color: "var(--text-muted)", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
               >
                 Iniciar Fase Eliminatória
               </button>

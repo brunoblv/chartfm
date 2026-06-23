@@ -139,6 +139,44 @@ export function getVoteCounts(fixture: { votes: CopaVote[] }) {
   };
 }
 
+// ── Desempate das fases eliminatórias ─────────────────────────────────────────
+// Um jogo de mata-mata nunca pode empatar. A decisão segue, em ordem:
+//   1) GOALS      — mais gols (votos ÷ 2), o tempo normal.
+//   2) VOTES      — empatou em gols, vence quem tem mais votos (o voto "extra"
+//                   que não fechou um gol decide a prorrogação).
+//   3) GLOBAL_100 — empatou também em votos: vai aos pênaltis, vence a música
+//                   com mais pontos totais no Global 100.
+//   4) COIN       — fallback determinístico (praticamente impossível: gols,
+//                   votos e pontos idênticos). Mantém o lado A para não travar.
+export type KnockoutTiebreak = "GOALS" | "VOTES" | "GLOBAL_100" | "COIN";
+
+export function resolveKnockoutWinner(input: {
+  votesA: number;
+  votesB: number;
+  globalPointsA: number;
+  globalPointsB: number;
+}): { winner: "A" | "B"; decidedBy: KnockoutTiebreak } {
+  const goalsA = Math.floor(input.votesA / 2);
+  const goalsB = Math.floor(input.votesB / 2);
+  if (goalsA !== goalsB) return { winner: goalsA > goalsB ? "A" : "B", decidedBy: "GOALS" };
+  if (input.votesA !== input.votesB) return { winner: input.votesA > input.votesB ? "A" : "B", decidedBy: "VOTES" };
+  if (input.globalPointsA !== input.globalPointsB)
+    return { winner: input.globalPointsA > input.globalPointsB ? "A" : "B", decidedBy: "GLOBAL_100" };
+  return { winner: "A", decidedBy: "COIN" };
+}
+
+// Ordem do "lote do dia" usada pelo botão Avançar Dia do admin (0 = primeiro a
+// abrir). Grupos: meia rodada por dia (A–H = 0, I–P = 1). Depois R16 → QF → SF →
+// Final/3º lugar.
+export function fixtureBatchOrder(f: { phase: string; round: number | null; groupLetter: string | null }): number {
+  if (f.phase === "GROUP") {
+    const half = COPA_GROUP_LETTERS.indexOf(f.groupLetter ?? "") < 8 ? 0 : 1;
+    return ((f.round ?? 1) - 1) * 2 + half; // 0..5
+  }
+  const order: Record<string, number> = { R16: 6, QF: 7, SF: 8, FINAL: 9, THIRD_PLACE: 9 };
+  return order[f.phase] ?? 99;
+}
+
 export function getArtistColor(spotifyId: string | null | undefined): string {
   if (!spotifyId) return "#FA243C";
   const hue = Math.abs(
