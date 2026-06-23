@@ -39,6 +39,10 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
   const singlesA = [...f.artistA.singles].sort((a, b) => a.slotIndex - b.slotIndex);
   const singlesB = [...f.artistB.singles].sort((a, b) => a.slotIndex - b.slotIndex);
 
+  // A música em disputa só é revelada no momento do jogo (Ao vivo ou Encerrado).
+  // A escalação completa de singles nunca é exposta aos usuários.
+  const revealed = f.status === "LIVE" || f.status === "DONE";
+
   return (
     <MatchClient
       fixture={{
@@ -51,8 +55,8 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
         status: f.status as string,
         singleAIdx: f.singleAIdx,
         singleBIdx: f.singleBIdx,
-        singleAName: singlesA[f.singleAIdx]?.songName ?? "",
-        singleBName: singlesB[f.singleBIdx]?.songName ?? "",
+        singleAName: revealed ? singlesA[f.singleAIdx]?.songName ?? "" : "",
+        singleBName: revealed ? singlesB[f.singleBIdx]?.songName ?? "" : "",
         votesA,
         votesB,
         goalsA,
@@ -68,7 +72,6 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
           artistImage: f.artistA.artistImage,
           artistColor: f.artistA.artistColor,
           artistInitials: f.artistA.artistInitials,
-          singles: singlesA,
         },
         artistB: {
           id: f.artistB.id,
@@ -80,7 +83,6 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
           artistImage: f.artistB.artistImage,
           artistColor: f.artistB.artistColor,
           artistInitials: f.artistB.artistInitials,
-          singles: singlesB,
         },
       }}
       userId={userId}

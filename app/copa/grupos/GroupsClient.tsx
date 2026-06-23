@@ -16,7 +16,6 @@ type ArtistData = {
   artistImage: string | null;
   artistColor: string;
   artistInitials: string;
-  singles: { slotIndex: number; songName: string }[];
 };
 
 type FixtureRow = {
@@ -25,8 +24,8 @@ type FixtureRow = {
   matchIndex: number;
   artistAId: string;
   artistBId: string;
-  singleAIdx: number;
-  singleBIdx: number;
+  singleAName: string;
+  singleBName: string;
   votesA: number;
   votesB: number;
   goalsA: number;
@@ -166,8 +165,9 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
               const artA = artistMap[f.artistAId];
               const artB = artistMap[f.artistBId];
               const canClick = f.status === "LIVE" || f.status === "DONE";
-              const singleA = artA?.singles[f.singleAIdx]?.songName ?? "";
-              const singleB = artB?.singles[f.singleBIdx]?.songName ?? "";
+              // Single revelado só Ao vivo/Encerrado (vem vazio do servidor antes disso).
+              const singleA = f.singleAName;
+              const singleB = f.singleBName;
               return (
                 <div
                   key={f.id}

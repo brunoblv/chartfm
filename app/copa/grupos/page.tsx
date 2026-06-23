@@ -38,6 +38,14 @@ export default async function CopaGruposPage() {
     orderBy: [{ groupLetter: "asc" }, { round: "asc" }, { matchIndex: "asc" }],
   });
 
+  // Single só é revelado no momento do jogo (Ao vivo/Encerrado). A escalação
+  // completa nunca vai para o cliente.
+  const artistById = new Map(artists.map((a) => [a.id, a]));
+  const revealedSingle = (artistId: string, idx: number, status: string) =>
+    status === "LIVE" || status === "DONE"
+      ? artistById.get(artistId)?.singles.find((s) => s.slotIndex === idx)?.songName ?? ""
+      : "";
+
   // Build group data
   const groups = COPA_GROUP_LETTERS.map((letter) => {
     const groupArtists = artists.filter((a) => a.groupLetter === letter);
@@ -62,7 +70,6 @@ export default async function CopaGruposPage() {
         artistImage: a.artistImage,
         artistColor: a.artistColor,
         artistInitials: a.artistInitials,
-        singles: a.singles.sort((x, y) => x.slotIndex - y.slotIndex),
       })),
       standings,
       fixtures: groupFixtures.map((f) => {
@@ -73,8 +80,8 @@ export default async function CopaGruposPage() {
           matchIndex: f.matchIndex,
           artistAId: f.artistAId,
           artistBId: f.artistBId,
-          singleAIdx: f.singleAIdx,
-          singleBIdx: f.singleBIdx,
+          singleAName: revealedSingle(f.artistAId, f.singleAIdx, f.status as string),
+          singleBName: revealedSingle(f.artistBId, f.singleBIdx, f.status as string),
           votesA,
           votesB,
           goalsA,
