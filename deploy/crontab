@@ -1,32 +1,31 @@
-# ChartFM — crons da VPS (substitui vercel.json)
+# ChartFM — crons da VPS (/root/chartfm)
 #
-# 1. Projeto em /root/chartfm (ajuste se mudar de pasta).
-# 2. mkdir -p /root/chartfm/logs && chmod +x /root/chartfm/scripts/cron-hit.sh
-# 3. Instalar: crontab /root/chartfm/deploy/crontab
-#    (ou: sudo cp deploy/crontab /etc/cron.d/chartfm e adicione usuário no 6º campo)
+# Instalar:
+#   chmod +x /root/chartfm/scripts/cron-hit.sh
+#   mkdir -p /root/chartfm/logs
+#   crontab /root/chartfm/deploy/crontab
 #
-# .env de produção: CRON_SECRET, APP_BASE_URL (ex. http://127.0.0.1:3000)
-#
-# Horários em America/Sao_Paulo (= antigo vercel.json em UTC).
+# .env: CRON_SECRET, APP_BASE_URL (ex. http://127.0.0.1:3000)
+# Horários: America/Sao_Paulo
 
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 TZ=America/Sao_Paulo
 
-# Copa — reconcilia fases agendadas (era 0 * * * * UTC)
-0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-advance >> /root/chartfm/logs/cron.log 2>&1
+# 0h — pontos das paradas + stats globais do app (artista/música/álbum nas páginas)
+0 0 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/daily-app-stats >> /root/chartfm/logs/cron.log 2>&1
 
-# Snapshots artista/álbum/música — 6h BRT (era 0 9 * * * UTC)
-0 6 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/entity-page-snapshots >> /root/chartfm/logs/cron.log 2>&1
+# Terça 5h — Global 100 + Airplay + Álbuns (congelado até próxima terça) + playlists YouTube
+0 5 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/publish-weekly-globals >> /root/chartfm/logs/cron.log 2>&1
 
-# Pontos semanais — terça 6h BRT (era 0 9 * * 2 UTC)
-0 6 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-points >> /root/chartfm/logs/cron.log 2>&1
+# 8h — stats por usuário/parada nas páginas de artista/música/álbum
+0 8 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/daily-user-stats >> /root/chartfm/logs/cron.log 2>&1
 
-# Global 100 / Airplay — ter/qua/sex 6:05 BRT (era 5 9 * * 2,3,5 UTC)
-5 6 * * 2,3,5 /root/chartfm/scripts/cron-hit.sh /api/cron/global-snapshot-refresh >> /root/chartfm/logs/cron.log 2>&1
+# MyTRL → UMS Request Live (@bruno) — seg–sex 8h (após daily-user-stats)
+2 8 * * 1-5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl >> /root/chartfm/logs/cron.log 2>&1
 
-# MyTRL → UMS Request Live (@bruno) — seg–sex 8h BRT (era 0 11 * * 1-5 UTC)
-0 8 * * 1-5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl >> /root/chartfm/logs/cron.log 2>&1
-
-# MyTRL semanal — sexta 8:05 BRT (era 5 11 * * 5 UTC)
+# MyTRL semanal — sexta 8:05
 5 8 * * 5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl-weekly >> /root/chartfm/logs/cron.log 2>&1
+
+# Copa — reconcilia fases agendadas (de hora em hora)
+0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-advance >> /root/chartfm/logs/cron.log 2>&1

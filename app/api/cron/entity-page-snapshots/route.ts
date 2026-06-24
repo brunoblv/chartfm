@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { refreshAllEntityPageSnapshots } from "@/lib/entity-page-snapshot/refresh";
+import { authorizedCron } from "@/lib/cron-auth";
+import { refreshDailyAppStats } from "@/lib/daily-app-stats";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-function authorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
-
-/** Atualiza snapshots diários das páginas de artista, álbum e música (6h BRT via Vercel Cron). */
+/** @deprecated Use /api/cron/daily-app-stats (0h) e /api/cron/daily-user-stats (8h). */
 export async function GET(req: NextRequest) {
-  if (!authorized(req)) {
+  if (!authorizedCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const result = await refreshAllEntityPageSnapshots();
-  return NextResponse.json({ ok: true, ...result });
+  const result = await refreshDailyAppStats(new Date());
+  return NextResponse.json({
+    ok: true,
+    deprecated: true,
+    hint: "Use /api/cron/daily-app-stats e /api/cron/daily-user-stats",
+    ...result,
+  });
 }

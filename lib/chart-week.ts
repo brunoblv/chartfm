@@ -76,7 +76,7 @@ export function getPreviousClosedWeekDate(now: Date = new Date()): Date {
 }
 
 /**
- * A parada global e as paradas de comunidade atualizam na terça-feira às 6h BRT.
+ * A parada global e as paradas de comunidade atualizam na terça-feira às 5h BRT.
  * Antes do corte: exibe a semana anterior à semana que acabou de fechar (14 dias atrás).
  * Depois do corte: exibe a semana que acabou de fechar (7 dias atrás).
  *
@@ -86,9 +86,9 @@ export function getRankingWeekReference(nowUtc: Date = new Date()) {
   const brt = new Date(nowUtc.getTime() - 3 * 60 * 60 * 1000);
   const day = brt.getUTCDay();    // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
   const hour = brt.getUTCHours();
-  // Corte: terça-feira (2) às 6h BRT, ou qualquer dia posterior dentro da semana
+  // Corte: terça-feira (2) às 5h BRT, ou qualquer dia posterior dentro da semana
   const cutoffPassed =
-    (day === 2 && hour >= 6) ||
+    (day === 2 && hour >= 5) ||
     (day >= 3 && day <= 6) ||
     day === 0;
   const daysBack = cutoffPassed ? 7 : 14;

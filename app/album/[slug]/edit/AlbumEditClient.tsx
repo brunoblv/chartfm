@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
+import { DuplicateConflictNotice } from "@/components/admin/DuplicateConflictNotice";
+import type { DuplicateAlbumConflict, DuplicateSongConflict } from "@/lib/duplicate-conflict-payload";
 
 type AlbumEditInitial = {
   id: number;
@@ -55,6 +57,8 @@ export function AlbumEditClient({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [albumConflict, setAlbumConflict] = useState<DuplicateAlbumConflict | null>(null);
+  const [songConflict, setSongConflict] = useState<DuplicateSongConflict | null>(null);
   const [artistTypeaheadActive, setArtistTypeaheadActive] = useState(false);
   const [songs, setSongs] = useState<AlbumSongRow[]>(() => [...initialSongs].sort(sortAlbumSongs));
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -134,14 +138,24 @@ export function AlbumEditClient({
   async function addTrackFromSpotify(trackSpotifyId: string) {
     setAddingTrackId(trackSpotifyId);
     setSpotifyLoadMsg(null);
+    setSongConflict(null);
     try {
       const res = await fetch(`/api/admin/album/${initialAlbum.id}/songs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trackSpotifyId }),
       });
-      const data = (await res.json()) as { song?: AlbumSongRow; error?: string; message?: string };
+      const data = (await res.json()) as {
+        song?: AlbumSongRow;
+        error?: string;
+        message?: string;
+        conflict?: DuplicateSongConflict;
+      };
       if (!res.ok) {
+        if (data.conflict?.kind === "song") {
+          setSongConflict(data.conflict);
+          return;
+        }
         setSpotifyLoadMsg(data.message ?? data.error ?? "Não foi possível adicionar a faixa.");
         return;
       }
@@ -188,6 +202,7 @@ export function AlbumEditClient({
     if (!canSave) return;
     setSaving(true);
     setError(null);
+    setAlbumConflict(null);
     setMessage(null);
     try {
       const res = await fetch(`/api/admin/album/${initialAlbum.id}`, {
@@ -201,9 +216,13 @@ export function AlbumEditClient({
           artistSpotifyId: artistSpotifyId.trim(),
         }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; message?: string; conflict?: DuplicateAlbumConflict };
       if (!res.ok) {
-        setError(data.error ?? "Não foi possível salvar.");
+        if (data.conflict?.kind === "album") {
+          setAlbumConflict(data.conflict);
+          return;
+        }
+        setError(data.message ?? data.error ?? "Não foi possível salvar.");
         return;
       }
       setMessage("Álbum atualizado com sucesso.");
@@ -369,6 +388,9 @@ export function AlbumEditClient({
           </button>
         </div>
         {spotifyLoadMsg && <div style={{ fontSize: 13, color: "#C5291C" }}>{spotifyLoadMsg}</div>}
+        {songConflict && (
+          <DuplicateConflictNotice conflict={songConflict} onDismiss={() => setSongConflict(null)} />
+        )}
         {spotifyTracks && spotifyTracks.length > 0 && (
           <div style={{ display: "grid", gap: 8, maxHeight: 320, overflowY: "auto", paddingRight: 4 }}>
             {spotifyTracks.map((t) => (
@@ -412,6 +434,9 @@ export function AlbumEditClient({
         {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
         {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
       </div>
+      {albumConflict && (
+        <DuplicateConflictNotice conflict={albumConflict} onDismiss={() => setAlbumConflict(null)} />
+      )}
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { findConflictingAlbum } from "@/lib/duplicate-registration-guards";
+import { albumConflictBody } from "@/lib/duplicate-conflict-payload";
 import { isPrivilegedRole } from "@/lib/permissions";
 
 export const runtime = "nodejs";
@@ -58,6 +60,14 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ album
     if (!artist) return NextResponse.json({ error: "artist_not_found" }, { status: 404 });
     nextArtistSpotifyId = aid;
   }
+
+  const titlesToCheck = [title, ...(romanization ? [romanization] : [])];
+  const conflicting = await findConflictingAlbum(prisma, {
+    artistSpotifyId: nextArtistSpotifyId,
+    titles: titlesToCheck,
+    excludeAlbumId: id,
+  });
+  if (conflicting) return NextResponse.json(albumConflictBody(conflicting), { status: 409 });
 
   let album;
   try {

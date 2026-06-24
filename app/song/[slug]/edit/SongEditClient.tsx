@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
+import { DuplicateConflictNotice } from "@/components/admin/DuplicateConflictNotice";
+import type { DuplicateSongConflict } from "@/lib/duplicate-conflict-payload";
 
 type SongEditInitial = {
   id: string;
@@ -44,6 +46,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<DuplicateSongConflict | null>(null);
   /** Só busca sugestões depois que o usuário mexer no campo (evita lista ao abrir a página). */
   const [artistTypeaheadActive, setArtistTypeaheadActive] = useState(false);
   const [albumTypeaheadActive, setAlbumTypeaheadActive] = useState(false);
@@ -114,6 +117,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
     if (!canSave) return;
     setSaving(true);
     setError(null);
+    setConflict(null);
     setMessage(null);
     try {
       const res = await fetch(`/api/admin/music/${encodeURIComponent(initialSong.id)}`, {
@@ -127,9 +131,13 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
           albumSpotifyId: albumSpotifyId.trim() || null,
         }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; message?: string; conflict?: DuplicateSongConflict };
       if (!res.ok) {
-        setError(data.error ?? "Não foi possível salvar.");
+        if (data.conflict?.kind === "song") {
+          setConflict(data.conflict);
+          return;
+        }
+        setError(data.message ?? data.error ?? "Não foi possível salvar.");
         return;
       }
       setMessage("Música atualizada com sucesso.");
@@ -261,6 +269,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
         {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
         {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
       </div>
+      {conflict && <DuplicateConflictNotice conflict={conflict} onDismiss={() => setConflict(null)} />}
     </>
   );
 }
