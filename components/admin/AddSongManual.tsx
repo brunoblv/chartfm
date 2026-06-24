@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 import { buildSongPath } from "@/lib/music-routes";
+import { DuplicateConflictNotice } from "@/components/admin/DuplicateConflictNotice";
+import type { DuplicateSongConflict } from "@/lib/duplicate-conflict-payload";
 
 type ArtistOption = { spotifyId: string; name: string };
 type AlbumOption = { spotifyId: string; title: string; artistName: string };
@@ -68,6 +70,7 @@ export function AddSongManual({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<DuplicateSongConflict | null>(null);
   const [lastCreated, setLastCreated] = useState<CreatedSong | null>(null);
 
   useEffect(() => {
@@ -136,6 +139,7 @@ export function AddSongManual({
     if (!canSubmit) return;
     setSaving(true);
     setError(null);
+    setConflict(null);
     setMessage(null);
     setLastCreated(null);
     try {
@@ -150,9 +154,13 @@ export function AddSongManual({
           romanization: romanization.trim() || undefined,
         }),
       });
-      const data = (await res.json()) as { song?: CreatedSong; error?: string };
+      const data = (await res.json()) as { song?: CreatedSong; error?: string; message?: string; conflict?: DuplicateSongConflict };
       if (!res.ok) {
-        setError(mapCreateError(data.error));
+        if (data.conflict?.kind === "song") {
+          setConflict(data.conflict);
+          return;
+        }
+        setError(mapCreateError(data.error) || data.message || "Não foi possível cadastrar.");
         return;
       }
       if (data.song) {
@@ -273,6 +281,9 @@ export function AddSongManual({
         {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
         {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
       </div>
+      {conflict && (
+        <DuplicateConflictNotice conflict={conflict} onDismiss={() => setConflict(null)} />
+      )}
       {lastCreated && (
         <div style={{ marginTop: 12, fontSize: 13 }}>
           <Link

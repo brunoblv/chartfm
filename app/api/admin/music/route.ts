@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { getSpotifyTrackMetadataById } from "@/lib/spotify-server";
+import { findConflictingSong, findSongConflictByTitleArtist } from "@/lib/duplicate-registration-guards";
+import { songConflictBody } from "@/lib/duplicate-conflict-payload";
 import { upsertSongFromSpotifyMetadata } from "@/lib/upsert-song-from-spotify-metadata";
 
 export const runtime = "nodejs";
@@ -41,6 +43,19 @@ export async function POST(req: NextRequest) {
         { status: 502 },
       );
     }
+
+    const primaryArtistId = metadata.primaryArtist?.spotifyId?.trim();
+    if (primaryArtistId) {
+      const conflicting = await findConflictingSong(prisma, {
+        artistSpotifyId: primaryArtistId,
+        titles: [metadata.title],
+        allowSpotifyId: trackSpotifyId,
+      });
+      if (conflicting) {
+        return NextResponse.json(songConflictBody(conflicting), { status: 409 });
+      }
+    }
+
     const result = await upsertSongFromSpotifyMetadata(metadata);
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: result.status });
@@ -76,6 +91,16 @@ export async function POST(req: NextRequest) {
     if (taken) return NextResponse.json({ error: "spotify_id_already_used" }, { status: 409 });
   }
 
+  const titlesToCheck = [title, ...(romanization ? [romanization] : [])];
+  const conflicting = await findConflictingSong(prisma, {
+    artistSpotifyId: artist.spotifyId,
+    titles: titlesToCheck,
+    allowSpotifyId: spotifyId || null,
+  });
+  if (conflicting) {
+    return NextResponse.json(songConflictBody(conflicting), { status: 409 });
+  }
+
   try {
     const song = await prisma.song.create({
       data: {
@@ -93,6 +118,8 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("Unique constraint")) {
+      const conflict = await findSongConflictByTitleArtist(prisma, title, artist.name);
+      if (conflict) return NextResponse.json(songConflictBody(conflict), { status: 409 });
       return NextResponse.json({ error: "song_already_exists_same_title_artist" }, { status: 409 });
     }
     return NextResponse.json({ error: "create_failed" }, { status: 500 });

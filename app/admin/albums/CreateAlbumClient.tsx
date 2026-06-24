@@ -3,6 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import type { CSSProperties } from "react";
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
+import { DuplicateConflictNotice } from "@/components/admin/DuplicateConflictNotice";
+import type { DuplicateAlbumConflict } from "@/lib/duplicate-conflict-payload";
 
 type ArtistOption = { spotifyId: string; name: string };
 
@@ -22,6 +24,7 @@ export function CreateAlbumClient() {
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<CreatedAlbum | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [conflict, setConflict] = useState<DuplicateAlbumConflict | null>(null);
   const [artistOptions, setArtistOptions] = useState<ArtistOption[]>([]);
   const [artistSearchLoading, setArtistSearchLoading] = useState(false);
   const [artistSearchFailed, setArtistSearchFailed] = useState(false);
@@ -71,6 +74,7 @@ export function CreateAlbumClient() {
     if (!canSave) return;
     setSaving(true);
     setError(null);
+    setConflict(null);
     setCreated(null);
     try {
       const res = await fetch("/api/admin/album", {
@@ -78,12 +82,16 @@ export function CreateAlbumClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: title.trim(), artistName: artistName.trim(), romanization: romanization.trim(), coverUrl: coverUrl.trim() }),
       });
-      const data = (await res.json()) as { album?: CreatedAlbum; error?: string };
+      const data = (await res.json()) as { album?: CreatedAlbum; error?: string; message?: string; conflict?: DuplicateAlbumConflict };
       if (!res.ok) {
+        if (data.conflict?.kind === "album") {
+          setConflict(data.conflict);
+          return;
+        }
         const msgs: Record<string, string> = {
           title_required: "Nome do álbum é obrigatório.",
           artist_required: "Nome do artista é obrigatório.",
-          album_already_exists: "Já existe um álbum com esse nome para esse artista.",
+          album_already_exists: data.message ?? "Já existe um álbum com esse nome para esse artista.",
         };
         setError(msgs[data.error ?? ""] ?? "Não foi possível criar o álbum.");
         return;
@@ -167,6 +175,13 @@ export function CreateAlbumClient() {
             </button>
             {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
           </div>
+
+          {conflict && (
+            <DuplicateConflictNotice
+              conflict={conflict}
+              onDismiss={() => setConflict(null)}
+            />
+          )}
 
           {created && (
             <div style={{ fontSize: 13, color: "#0F9D58" }}>

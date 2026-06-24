@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { findConflictingSong, findSongConflictByTitleArtist } from "@/lib/duplicate-registration-guards";
+import { songConflictBody } from "@/lib/duplicate-conflict-payload";
 import { isPrivilegedRole } from "@/lib/permissions";
 
 export const runtime = "nodejs";
@@ -85,6 +87,17 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
     : null;
   if (albumSpotifyId && !album) return NextResponse.json({ error: "album_not_found" }, { status: 404 });
 
+  const titlesToCheck = [title, ...(romanization ? [romanization] : [])];
+  const conflicting = await findConflictingSong(prisma, {
+    artistSpotifyId: artist.spotifyId,
+    titles: titlesToCheck,
+    excludeSongId: id,
+    allowSpotifyId: spotifyId || existing.spotifyId,
+  });
+  if (conflicting) {
+    return NextResponse.json(songConflictBody(conflicting), { status: 409 });
+  }
+
   try {
     const updated = await prisma.song.update({
       where: { id },
@@ -112,6 +125,13 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("Unique constraint")) {
+      const raceConflict =
+        (await findConflictingSong(prisma, {
+          artistSpotifyId: artist.spotifyId,
+          titles: titlesToCheck,
+          excludeSongId: id,
+        })) ?? (await findSongConflictByTitleArtist(prisma, title, artist.name));
+      if (raceConflict) return NextResponse.json(songConflictBody(raceConflict), { status: 409 });
       return NextResponse.json({ error: "song_already_exists_same_title_artist" }, { status: 409 });
     }
     return NextResponse.json({ error: "update_failed" }, { status: 500 });

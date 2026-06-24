@@ -7,6 +7,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
 import { SpotifyFixButton } from "./SpotifyFixButton";
+import { CleanRemasterButton } from "./CleanRemasterButton";
 
 const PAGE_SIZE = 100;
 
@@ -176,8 +177,18 @@ export default async function AdminMusicVersionsPage({
   return (
     <Shell title="Admin" subtitle="Músicas com versões">
       <div style={{ maxWidth: 1100 }}>
-        <div style={{ marginBottom: 14 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+            marginBottom: 14,
+          }}
+        >
           <Link href="/admin/music" style={backStyle}>← Voltar a editar músicas</Link>
+          <CleanRemasterButton />
         </div>
 
         <p style={{ margin: "0 0 14px", fontSize: 14, color: "#6B6B70", lineHeight: 1.45 }}>

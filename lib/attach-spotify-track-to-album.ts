@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import { findConflictingSong } from "@/lib/duplicate-registration-guards";
 import { getSpotifyTrackMetadataById } from "@/lib/spotify-server";
+import type { DuplicateSongConflict } from "@/lib/duplicate-conflict-payload";
 import { upsertSongFromSpotifyMetadata, type UpsertedSongSummary } from "@/lib/upsert-song-from-spotify-metadata";
 
 export type AttachedAlbumSong = UpsertedSongSummary;
 
 export type AttachSpotifyTrackResult =
   | { ok: true; song: AttachedAlbumSong }
-  | { ok: false; error: string; status: number };
+  | { ok: false; error: string; status: number; conflict?: DuplicateSongConflict };
 
 /**
  * Liga uma faixa do Spotify ao álbum local, desde que o `album` oficial da faixa
@@ -29,6 +31,18 @@ export async function attachSpotifyTrackToAlbum(albumDbId: number, trackSpotifyI
   const metaAlbumId = metadata.album.spotifyId?.trim() ?? "";
   if (!metaAlbumId || metaAlbumId !== album.spotifyId.trim()) {
     return { ok: false, error: "track_not_from_this_album", status: 400 };
+  }
+
+  const primaryArtistId = metadata.primaryArtist?.spotifyId?.trim();
+  if (primaryArtistId) {
+    const conflicting = await findConflictingSong(prisma, {
+      artistSpotifyId: primaryArtistId,
+      titles: [metadata.title],
+      allowSpotifyId: tid,
+    });
+    if (conflicting) {
+      return { ok: false, error: "song_already_exists_same_title_artist", status: 409, conflict: conflicting };
+    }
   }
 
   return upsertSongFromSpotifyMetadata(metadata, { albumTitleFallback: album.title });

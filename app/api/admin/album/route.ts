@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { findConflictingAlbum, findAlbumConflictById } from "@/lib/duplicate-registration-guards";
+import { albumConflictBody } from "@/lib/duplicate-conflict-payload";
 import { slugify } from "@/lib/music-routes";
 
 export const runtime = "nodejs";
@@ -47,8 +49,19 @@ export async function POST(req: NextRequest) {
 
   const albumSpotifyId = `manual_${slugify(artistName)}_${slugify(title)}`;
 
-  const existing = await prisma.album.findUnique({ where: { spotifyId: albumSpotifyId } });
-  if (existing) return NextResponse.json({ error: "album_already_exists" }, { status: 409 });
+  const existing = await prisma.album.findUnique({
+    where: { spotifyId: albumSpotifyId },
+    select: { id: true },
+  });
+  if (existing) {
+    const conflict = await findAlbumConflictById(prisma, existing.id);
+    if (conflict) return NextResponse.json(albumConflictBody(conflict), { status: 409 });
+    return NextResponse.json({ error: "album_already_exists" }, { status: 409 });
+  }
+
+  const titlesToCheck = [title, ...(romanization ? [romanization] : [])];
+  const conflicting = await findConflictingAlbum(prisma, { artistSpotifyId, titles: titlesToCheck });
+  if (conflicting) return NextResponse.json(albumConflictBody(conflicting), { status: 409 });
 
   const album = await prisma.album.create({
     data: {

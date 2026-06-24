@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { attachSpotifyTrackToAlbum } from "@/lib/attach-spotify-track-to-album";
+import { songConflictBody } from "@/lib/duplicate-conflict-payload";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest, context: { params: Promise<{ albumI
 
   const result = await attachSpotifyTrackToAlbum(id, trackSpotifyId);
   if (!result.ok) {
+    if (result.conflict) {
+      return NextResponse.json(songConflictBody(result.conflict), { status: result.status });
+    }
     const msg =
       result.error === "track_not_from_this_album"
         ? "Esta faixa não pertence a este álbum no Spotify."
