@@ -1,8 +1,8 @@
 # ChartFM — crons da VPS (substitui vercel.json)
 #
-# 1. Troque /var/www/chartfm pelo caminho real do projeto na VPS.
-# 2. mkdir -p /var/www/chartfm/logs && chmod +x /var/www/chartfm/scripts/cron-hit.sh
-# 3. Instalar: crontab deploy/crontab
+# 1. Projeto em /root/chartfm (ajuste se mudar de pasta).
+# 2. mkdir -p /root/chartfm/logs && chmod +x /root/chartfm/scripts/cron-hit.sh
+# 3. Instalar: crontab /root/chartfm/deploy/crontab
 #    (ou: sudo cp deploy/crontab /etc/cron.d/chartfm e adicione usuário no 6º campo)
 #
 # .env de produção: CRON_SECRET, APP_BASE_URL (ex. http://127.0.0.1:3000)
@@ -14,19 +14,19 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 TZ=America/Sao_Paulo
 
 # Copa — reconcilia fases agendadas (era 0 * * * * UTC)
-0 * * * * /var/www/chartfm/scripts/cron-hit.sh /api/cron/copa-advance >> /var/www/chartfm/logs/cron.log 2>&1
+0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-advance >> /root/chartfm/logs/cron.log 2>&1
 
 # Snapshots artista/álbum/música — 6h BRT (era 0 9 * * * UTC)
-0 6 * * * /var/www/chartfm/scripts/cron-hit.sh /api/cron/entity-page-snapshots >> /var/www/chartfm/logs/cron.log 2>&1
+0 6 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/entity-page-snapshots >> /root/chartfm/logs/cron.log 2>&1
 
 # Pontos semanais — terça 6h BRT (era 0 9 * * 2 UTC)
-0 6 * * 2 /var/www/chartfm/scripts/cron-hit.sh /api/cron/weekly-points >> /var/www/chartfm/logs/cron.log 2>&1
+0 6 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-points >> /root/chartfm/logs/cron.log 2>&1
 
 # Global 100 / Airplay — ter/qua/sex 6:05 BRT (era 5 9 * * 2,3,5 UTC)
-5 6 * * 2,3,5 /var/www/chartfm/scripts/cron-hit.sh /api/cron/global-snapshot-refresh >> /var/www/chartfm/logs/cron.log 2>&1
+5 6 * * 2,3,5 /root/chartfm/scripts/cron-hit.sh /api/cron/global-snapshot-refresh >> /root/chartfm/logs/cron.log 2>&1
 
 # MyTRL → UMS Request Live (@bruno) — seg–sex 8h BRT (era 0 11 * * 1-5 UTC)
-0 8 * * 1-5 /var/www/chartfm/scripts/cron-hit.sh /api/cron/mytrl >> /var/www/chartfm/logs/cron.log 2>&1
+0 8 * * 1-5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl >> /root/chartfm/logs/cron.log 2>&1
 
 # MyTRL semanal — sexta 8:05 BRT (era 5 11 * * 5 UTC)
-5 8 * * 5 /var/www/chartfm/scripts/cron-hit.sh /api/cron/mytrl-weekly >> /var/www/chartfm/logs/cron.log 2>&1
+5 8 * * 5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl-weekly >> /root/chartfm/logs/cron.log 2>&1
