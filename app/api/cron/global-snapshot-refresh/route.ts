@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authorizedCron } from "@/lib/cron-auth";
 import { refreshRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { refreshAllGlobalLastfmSnapshots } from "@/lib/global-lastfm-snapshot";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
@@ -6,14 +7,9 @@ import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-function authorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
-
+/** @deprecated Sobrescreve rankings /global. Use /api/cron/publish-weekly-globals (terça 5h, congela). */
 export async function GET(req: NextRequest) {
-  if (!authorized(req)) {
+  if (!authorizedCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
@@ -21,7 +17,6 @@ export async function GET(req: NextRequest) {
   const snapshot = await refreshRankingWeekSnapshot(now);
   const lastfm = await refreshAllGlobalLastfmSnapshots(now);
 
-  // Cria playlists YouTube se ainda não existem para esta semana (fire-and-forget).
   syncGlobal100YouTubePlaylist(snapshot.weekIndex, snapshot.weekLabel).catch((e) =>
     console.error("[cron] syncGlobal100YouTube error", e),
   );
@@ -31,6 +26,8 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
+    deprecated: true,
+    hint: "Use /api/cron/publish-weekly-globals — este endpoint recalcula e sobrescreve o ranking exibido",
     weekIndex: snapshot.weekIndex,
     weekLabel: snapshot.weekLabel,
     dateRange: snapshot.dateRange,

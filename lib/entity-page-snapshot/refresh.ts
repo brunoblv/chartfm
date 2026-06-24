@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { buildAndSaveDailyChartSongStats } from "@/lib/daily-chart-song-stats";
+import {
+  buildAndSaveDailyChartSongStats,
+  getLatestDailyChartSongStats,
+  type DailyChartSongStatsData,
+} from "@/lib/daily-chart-song-stats";
 import { loadSongGlobalStatsFromSnapshots } from "@/lib/global-snapshot";
 import { buildAlbumPath, slugify } from "@/lib/music-routes";
 import { computeAlbumPageSnapshot } from "./compute-album";
@@ -15,8 +19,22 @@ export type EntitySnapshotRefreshResult = {
   errors: number;
 };
 
-export async function refreshAllEntityPageSnapshots(): Promise<EntitySnapshotRefreshResult> {
-  const dailyStats = await buildAndSaveDailyChartSongStats();
+export type EntitySnapshotRefreshOptions = {
+  /** Não recalcula dailyChartSongStats (job das 8h reutiliza o da meia-noite). */
+  skipDailyStatsBuild?: boolean;
+  dailyStats?: DailyChartSongStatsData;
+  now?: Date;
+};
+
+export async function refreshAllEntityPageSnapshots(
+  options?: EntitySnapshotRefreshOptions,
+): Promise<EntitySnapshotRefreshResult> {
+  const now = options?.now ?? new Date();
+  const dailyStats =
+    options?.dailyStats ??
+    (options?.skipDailyStatsBuild
+      ? ((await getLatestDailyChartSongStats()) ?? (await buildAndSaveDailyChartSongStats(now)))
+      : await buildAndSaveDailyChartSongStats(now));
   const songGlobalStats = await loadSongGlobalStatsFromSnapshots();
   let artists = 0;
   let albums = 0;
