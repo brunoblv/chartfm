@@ -104,7 +104,54 @@ function GameCard({ g, onClick }: { g: Game; onClick: () => void }) {
   );
 }
 
-export function LiveClient({ games }: { games: Game[] }) {
+type DayPlaylists = {
+  dayLabel: string;
+  spotifyUrl: string | null;
+  youtubeUrl: string | null;
+};
+
+function PlaylistLinks({ playlists }: { playlists: DayPlaylists }) {
+  if (!playlists.spotifyUrl && !playlists.youtubeUrl) return null;
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        border: "1px solid rgba(250,36,60,.35)",
+        borderRadius: 14,
+        padding: "12px 14px",
+        marginBottom: 12,
+      }}
+    >
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-disabled)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+        🎧 Playlist dos jogos de hoje
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {playlists.spotifyUrl && (
+          <a
+            href={playlists.spotifyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#fff", background: "#1DB954", padding: "8px 14px", borderRadius: 99, textDecoration: "none" }}
+          >
+            Ouvir no Spotify
+          </a>
+        )}
+        {playlists.youtubeUrl && (
+          <a
+            href={playlists.youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#fff", background: "#FF0000", padding: "8px 14px", borderRadius: 99, textDecoration: "none" }}
+          >
+            Ver no YouTube
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function LiveClient({ games, playlists }: { games: Game[]; playlists: DayPlaylists | null }) {
   const router = useRouter();
 
   // Atualiza o placar ao vivo a cada 10s.
@@ -119,6 +166,8 @@ export function LiveClient({ games }: { games: Game[] }) {
       <div style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 8px 18px" }}>
         Votação aberta nos jogos Ao vivo do dia
       </div>
+
+      {playlists && <PlaylistLinks playlists={playlists} />}
 
       {games.length === 0 ? (
         <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14, padding: "40px 24px", background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14 }}>

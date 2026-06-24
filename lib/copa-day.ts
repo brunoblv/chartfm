@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { fixtureBatchOrder } from "@/lib/copa";
 import { advanceKnockout } from "@/lib/copa-knockout";
+import { generateCopaDayPlaylistsSafely } from "@/lib/copa-playlist-sync";
 
 const DAY_MS = 86_400_000;
 
@@ -55,6 +56,10 @@ export async function syncCopaToSchedule(
     });
   }
 
+  // Gera (ou completa) as playlists do dia. Idempotente: a cada hora retoma o
+  // que faltou, e sai barato quando Spotify + YouTube já existem.
+  await generateCopaDayPlaylistsSafely(copaId, dayIndex);
+
   return { dayIndex, opened: toOpen.length, closed: toClose.length };
 }
 
@@ -73,6 +78,7 @@ export async function openNextBatch(copaId: string): Promise<number> {
     where: { id: { in: batch.map((f) => f.id) } },
     data: { status: "LIVE" },
   });
+  await generateCopaDayPlaylistsSafely(copaId, minOrder);
   return batch.length;
 }
 

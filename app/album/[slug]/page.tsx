@@ -3,12 +3,11 @@ import { ChevronLeft, Star, MessageSquare } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
-import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
+import { pointsForPosition, songKey } from "@/lib/chart-page-common";
 import {
-  globalStatsForSongKeys,
-  pointsForPosition,
-  songKey,
-} from "@/lib/chart-page-common";
+  loadSongGlobalStatsFromSnapshots,
+  songSnapshotAggKey,
+} from "@/lib/global-snapshot";
 import { albumEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { AlbumPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
@@ -431,20 +430,22 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     topFans = cachedSnapshot.payload.topFans;
     stats = cachedSnapshot.payload.stats;
   } else {
-    const dailyStats = await getDailyChartSongStatsForPages();
-    const globalStatsBySong = globalStatsForSongKeys(
-      songsMap.keys(),
-      dailyStats.weeklyBuckets,
-      dailyStats.currentWeekIdx,
-    );
+    const globalRank = await loadSongGlobalStatsFromSnapshots();
     songs = [...songsMap.values()]
       .map((s) => {
-        const gs = globalStatsBySong.get(s.key);
+        const gs = globalRank.get(
+          songSnapshotAggKey({
+            spotifyId: s.spotifyId,
+            title: s.title,
+            artist: s.dbArtist,
+            slugArtist: s.dbArtist,
+          }),
+        );
         return {
           ...s,
           weeks: gs?.weeks ?? 0,
-          peak: gs?.peak === 9999 ? 0 : (gs?.peak ?? 0),
-          number1s: gs?.number1s ?? 0,
+          peak: gs?.peak ?? 0,
+          number1s: gs?.numberOnes ?? 0,
         };
       })
       .sort((a, b) => b.points - a.points);

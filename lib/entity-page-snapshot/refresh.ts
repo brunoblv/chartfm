@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildAndSaveDailyChartSongStats } from "@/lib/daily-chart-song-stats";
+import { loadSongGlobalStatsFromSnapshots } from "@/lib/global-snapshot";
 import { buildAlbumPath, slugify } from "@/lib/music-routes";
 import { computeAlbumPageSnapshot } from "./compute-album";
 import { computeArtistPageSnapshot } from "./compute-artist";
@@ -16,6 +17,7 @@ export type EntitySnapshotRefreshResult = {
 
 export async function refreshAllEntityPageSnapshots(): Promise<EntitySnapshotRefreshResult> {
   const dailyStats = await buildAndSaveDailyChartSongStats();
+  const songGlobalStats = await loadSongGlobalStatsFromSnapshots();
   let artists = 0;
   let albums = 0;
   let songs = 0;
@@ -50,7 +52,7 @@ export async function refreshAllEntityPageSnapshots(): Promise<EntitySnapshotRef
         artistId: al.artist.id,
         albumId: al.id,
       }).replace(/^\/album\//, "");
-      const payload = await computeAlbumPageSnapshot(slug, dailyStats);
+      const payload = await computeAlbumPageSnapshot(slug, songGlobalStats);
       if (!payload) continue;
       await saveEntityPageSnapshot("ALBUM", `db:${al.artist.id}:${al.id}`, payload);
       albums += 1;
