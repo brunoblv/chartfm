@@ -66,7 +66,7 @@ async function loadWeeklyGlobalEntries(weekIdx: number, publishedBefore: Date): 
 // exatamente com songAggregationKey usada em aggregateGlobalSongs.
 // ---------------------------------------------------------------------------
 
-function songSnapshotAggKey(song: {
+export function songSnapshotAggKey(song: {
   spotifyId?: string | null;
   title: string;
   artist: string;
@@ -83,7 +83,7 @@ function artistSnapshotAggKey(a: { spotifyId: string | null; name: string }): st
   return `artist_name:${a.name.trim().replace(/\s+/g, " ").toLowerCase()}`;
 }
 
-type HistoricalStat = { peak: number; weeks: number; numberOnes: number };
+export type HistoricalStat = { peak: number; weeks: number; numberOnes: number };
 
 function accumulateSongStats(
   songs: GlobalSnapshotPayload["weeklySongs"],
@@ -148,6 +148,27 @@ async function loadHistoricalStatsFromSnapshots(weekIdx: number): Promise<{
   }
 
   return { weeklySongs, overallSongs, weeklyArtists, overallArtists };
+}
+
+/**
+ * Estatísticas de uma música no Global 100 oficial (paradas semanais congeladas):
+ * em quantas semanas entrou no top 100, melhor posição e quantos #1.
+ * Chaveado por {@link songSnapshotAggKey}. Músicas que nunca entraram ficam de fora do mapa.
+ */
+export async function loadSongGlobalStatsFromSnapshots(): Promise<Map<string, HistoricalStat>> {
+  const snapshots = await prisma.globalSnapshot.findMany({
+    where: { weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX } },
+    select: { weeklySongs: true },
+    orderBy: { weekIndex: "asc" },
+  });
+  const stats = new Map<string, HistoricalStat>();
+  for (const snap of snapshots) {
+    accumulateSongStats(
+      snap.weeklySongs as unknown as GlobalSnapshotPayload["weeklySongs"],
+      stats,
+    );
+  }
+  return stats;
 }
 
 const chartEntrySelect = {

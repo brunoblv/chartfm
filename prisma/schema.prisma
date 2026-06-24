@@ -909,8 +909,27 @@ model CopaEdition {
   participants    CopaParticipant[]
   copaArtists     CopaArtist[]
   fixtures        CopaFixture[]
+  dayPlaylists    CopaDayPlaylist[]
 
   @@map("copa_editions")
+}
+
+// Playlists (Spotify + YouTube) geradas automaticamente para cada "dia de jogos"
+// (batchOrder 0..9). Uma linha por dia da Copa; idempotente via @@unique.
+model CopaDayPlaylist {
+  id                String      @id @default(cuid())
+  copaId            String      @map("copa_id")
+  batchOrder        Int         @map("batch_order")
+  dayLabel          String      @map("day_label")
+  spotifyPlaylistId String?     @map("spotify_playlist_id")
+  youtubePlaylistId String?     @map("youtube_playlist_id")
+  trackCount        Int         @default(0) @map("track_count")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+  copa              CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
+
+  @@unique([copaId, batchOrder])
+  @@map("copa_day_playlists")
 }
 
 model CopaParticipant {

@@ -1,7 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { getVoteCounts } from "@/lib/copa";
+import { getVoteCounts, fixtureBatchOrder } from "@/lib/copa";
+import { youtubePlaylistUrl } from "@/lib/youtube-user";
 import { LiveClient } from "./LiveClient";
 
 export const dynamic = "force-dynamic";
@@ -65,5 +66,27 @@ export default async function CopaAoVivoPage() {
     };
   });
 
-  return <LiveClient games={games} />;
+  // Playlists do dia: o lote ao vivo compartilha o mesmo batchOrder.
+  const batchOrder = fixtures.length > 0 ? fixtureBatchOrder(fixtures[0]) : null;
+  const dayPlaylist =
+    batchOrder != null
+      ? await prisma.copaDayPlaylist.findUnique({
+          where: { copaId_batchOrder: { copaId: copa.id, batchOrder } },
+        })
+      : null;
+
+  const playlists =
+    dayPlaylist && (dayPlaylist.spotifyPlaylistId || dayPlaylist.youtubePlaylistId)
+      ? {
+          dayLabel: dayPlaylist.dayLabel,
+          spotifyUrl: dayPlaylist.spotifyPlaylistId
+            ? `https://open.spotify.com/playlist/${dayPlaylist.spotifyPlaylistId}`
+            : null,
+          youtubeUrl: dayPlaylist.youtubePlaylistId
+            ? youtubePlaylistUrl(dayPlaylist.youtubePlaylistId)
+            : null,
+        }
+      : null;
+
+  return <LiveClient games={games} playlists={playlists} />;
 }

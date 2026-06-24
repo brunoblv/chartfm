@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { COVER_PALETTES } from "@/lib/data";
+import { pointsForPosition, songKey } from "@/lib/chart-page-common";
 import {
-  globalStatsForSongKeys,
-  pointsForPosition,
-  songKey,
-} from "@/lib/chart-page-common";
-import type { DailyChartSongStatsData } from "@/lib/daily-chart-song-stats";
+  loadSongGlobalStatsFromSnapshots,
+  songSnapshotAggKey,
+  type HistoricalStat,
+} from "@/lib/global-snapshot";
 import { parseAlbumSlug, slugify } from "@/lib/music-routes";
 import type { AlbumPageSnapshotPayload, AlbumSongSnapshot, FanSnapshot } from "./types";
 
@@ -17,7 +17,7 @@ function albumColor(name: string): [string, string] {
 
 export async function computeAlbumPageSnapshot(
   slug: string,
-  dailyStats: DailyChartSongStatsData,
+  globalRankStats?: Map<string, HistoricalStat>,
 ): Promise<AlbumPageSnapshotPayload | null> {
   const parsed = parseAlbumSlug(slug);
   if (!parsed) return null;
@@ -135,20 +135,23 @@ export async function computeAlbumPageSnapshot(
     songsMap.set(key, cur);
   }
 
-  const globalStatsBySong = globalStatsForSongKeys(
-    songsMap.keys(),
-    dailyStats.weeklyBuckets,
-    dailyStats.currentWeekIdx,
-  );
+  const globalRank = globalRankStats ?? (await loadSongGlobalStatsFromSnapshots());
 
   const songs = [...songsMap.values()]
     .map((s) => {
-      const gs = globalStatsBySong.get(s.key);
+      const gs = globalRank.get(
+        songSnapshotAggKey({
+          spotifyId: s.spotifyId,
+          title: s.title,
+          artist: s.dbArtist,
+          slugArtist: s.dbArtist,
+        }),
+      );
       return {
         ...s,
         weeks: gs?.weeks ?? 0,
-        peak: gs?.peak === 9999 ? 0 : (gs?.peak ?? 0),
-        number1s: gs?.number1s ?? 0,
+        peak: gs?.peak ?? 0,
+        number1s: gs?.numberOnes ?? 0,
       };
     })
     .sort((a, b) => b.points - a.points);

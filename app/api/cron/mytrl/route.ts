@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await runDailyMyTrlJob(new Date());
+    const result = await runDailyMyTrlJob(new Date(), { skipSnapshotRecompute: true });
     if (!result.ok && result.skipped) {
       return NextResponse.json({ ok: true, skipped: true, reason: result.error, stage: result.stage });
     }

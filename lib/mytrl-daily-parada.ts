@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { buildPeriodFromDate } from "@/lib/chart-cadence";
-import { recomputePersistedChartEntryStatsForParada } from "@/lib/chart-entry-stats";
 import {
   formatMyTrlEditionDisplay,
   myTrlTopEntries,
@@ -140,8 +139,6 @@ export async function publishMyTrlDailyToUms(
     created = true;
   }
 
-  await recomputePersistedChartEntryStatsForParada(prisma, parada.id, period.periodIndex);
-
   return {
     ok: true,
     weekIndex: period.periodIndex,
@@ -161,8 +158,13 @@ export type RunDailyMyTrlJobResult =
   | { ok: false; error: string; skipped?: boolean; stage?: "snapshot" | "publish" };
 
 /** Calcula snapshot MyTRL e publica top 10 na UMS Request Live. */
-export async function runDailyMyTrlJob(referenceDay: Date = new Date()): Promise<RunDailyMyTrlJobResult> {
-  const snapshot = await generateMyTrlSnapshot(referenceDay);
+export async function runDailyMyTrlJob(
+  referenceDay: Date = new Date(),
+  options?: { skipSnapshotRecompute?: boolean },
+): Promise<RunDailyMyTrlJobResult> {
+  const snapshot = await generateMyTrlSnapshot(referenceDay, {
+    skipRecompute: options?.skipSnapshotRecompute,
+  });
   if (!snapshot.ok) {
     return { ok: false, error: snapshot.error, skipped: snapshot.skipped, stage: "snapshot" };
   }
