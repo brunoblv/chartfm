@@ -67,7 +67,16 @@
       "Bash(tar -xf /mnt/c/Users/blvbr/AppData/Local/Temp/design_decompressed.tar -C /tmp/design_extract)",
       "Read(//tmp/**)",
       "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
-      "Bash(Write-Output \"cache cleared\")"
+      "Bash(Write-Output \"cache cleared\")",
+      "Bash(cat .nvmrc)",
+      "Bash(node -e \"const t=require\\('./tsconfig.json'\\); console.log\\(JSON.stringify\\(t.compilerOptions?.paths||'none'\\)\\)\")",
+      "Bash(ls node_modules/react/package.json node_modules/react-dom/package.json node_modules/lucide-react/package.json)",
+      "Bash(find app *)",
+      "Bash(ls app/globals.css)",
+      "Bash(mkdir -p .ds-sync)",
+      "Bash(cp -r C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/package-build.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/package-validate.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/package-capture.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/resync.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/lib C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/storybook .ds-sync/)",
+      "Bash(echo '{\"name\":\"ds-sync-deps\",\"private\":true}')",
+      "Bash(npm i *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

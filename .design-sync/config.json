@@ -1,0 +1,23 @@
+{
+  "projectId": "f0588750-09ca-4e88-9539-34a7f9b36dba",
+  "shape": "package",
+  "pkg": "chartfm",
+  "globalName": "ChartFM",
+  "entry": ".design-sync/ui-entry.tsx",
+  "srcDir": "components/ui",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": "app/globals.css",
+  "runtimeFontPrefixes": ["SF Pro", "Inter"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "componentSrcMap": {
+    "ChartFMLogo": "components/ui/ChartFMLogo.tsx",
+    "MovementBadge": "components/ui/MovementBadge.tsx",
+    "PositionNumber": "components/ui/PositionNumber.tsx",
+    "VideoClipCover": "components/ui/VideoClipCover.tsx",
+    "Cover": "components/ui/Cover.tsx"
+  },
+  "overrides": {
+    "Cover": { "cardMode": "column" },
+    "VideoClipCover": { "cardMode": "column" }
+  }
+}
