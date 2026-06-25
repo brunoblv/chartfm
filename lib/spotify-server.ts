@@ -177,7 +177,7 @@ export async function probeSpotifyApi(): Promise<SpotifyProbeResult> {
   });
   if (!res?.ok) {
     const status = res?.status;
-    const retryAfterMs = status === 429 ? parseRetryAfterMs(res.headers.get("retry-after")) : null;
+    const retryAfterMs = status === 429 ? parseRetryAfterMs(res?.headers.get("retry-after") ?? null) : null;
     return {
       ok: false,
       status,
