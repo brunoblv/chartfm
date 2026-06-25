@@ -30,10 +30,10 @@ export default function GuideGlobal100() {
           ],
         },
         {
-          title: "O papel de cada curador",
+          title: "O papel de cada fã de música",
           body: [
             "Cada usuário que publica uma parada semanal contribui igualmente para o Global 100. Não existe peso diferente por número de seguidores, tempo de plataforma ou histórico. Um usuário novo tem o mesmo impacto que alguém que usa o ChartFM há dois anos.",
-            "Essa igualdade de voz é intencional. O Global 100 reflete o gosto coletivo de toda a comunidade, não apenas dos usuários mais populares. Isso cria condições para que artistas independentes e descobertas pessoais apareçam no ranking quando são genuinamente valorizados por vários curadores ao mesmo tempo.",
+            "Essa igualdade de voz é intencional. O Global 100 reflete o gosto coletivo de toda a comunidade, não apenas dos usuários mais populares. Isso cria condições para que artistas independentes e descobertas pessoais apareçam no ranking quando são genuinamente valorizados por vários fãs de música ao mesmo tempo.",
           ],
         },
         {

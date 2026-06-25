@@ -84,10 +84,10 @@ async function spotifyFetch(
     if (attempt >= maxAttempts) return res;
 
     const retryAfterMs = parseRetryAfterMs(res.headers.get("retry-after"));
-    const delay = Math.min(
-      SPOTIFY_RETRY_MAX_DELAY_MS,
-      retryAfterMs ?? SPOTIFY_RETRY_BASE_DELAY_MS * attempt,
-    );
+    const delay =
+      retryAfterMs != null
+        ? Math.min(120_000, retryAfterMs)
+        : Math.min(SPOTIFY_RETRY_MAX_DELAY_MS, SPOTIFY_RETRY_BASE_DELAY_MS * attempt);
     await sleep(delay);
   }
   return null;
@@ -156,8 +156,15 @@ export async function getAccessToken(): Promise<string | null> {
   return tokenState.accessToken;
 }
 
+export type SpotifyProbeResult = {
+  ok: boolean;
+  error?: string;
+  status?: number;
+  retryAfterMs?: number | null;
+};
+
 /** Testa credenciais e conectividade com a API do Spotify. */
-export async function probeSpotifyApi(): Promise<{ ok: boolean; error?: string }> {
+export async function probeSpotifyApi(): Promise<SpotifyProbeResult> {
   if (!spotifyConfigured()) {
     return { ok: false, error: "SPOTIFY_CLIENT_ID ou SPOTIFY_CLIENT_SECRET ausentes no ambiente" };
   }
@@ -169,9 +176,39 @@ export async function probeSpotifyApi(): Promise<{ ok: boolean; error?: string }
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res?.ok) {
-    return { ok: false, error: `API Spotify respondeu HTTP ${res?.status ?? "sem resposta"}` };
+    const status = res?.status;
+    const retryAfterMs = status === 429 ? parseRetryAfterMs(res.headers.get("retry-after")) : null;
+    return {
+      ok: false,
+      status,
+      retryAfterMs,
+      error: `API Spotify respondeu HTTP ${status ?? "sem resposta"}`,
+    };
   }
   return { ok: true };
+}
+
+/** Aguarda rate limit (429) antes de scripts em lote. */
+export async function waitForSpotifyApi(opts?: { maxWaitMs?: number }): Promise<SpotifyProbeResult> {
+  const maxWaitMs = opts?.maxWaitMs ?? 180_000;
+  const deadline = Date.now() + maxWaitMs;
+  let attempt = 0;
+
+  while (true) {
+    const probe = await probeSpotifyApi();
+    if (probe.ok) return probe;
+
+    const is429 = probe.status === 429;
+    if (!is429 || Date.now() >= deadline) return probe;
+
+    const waitMs = Math.min(
+      deadline - Date.now(),
+      probe.retryAfterMs ?? Math.min(60_000, 5_000 * (attempt + 1)),
+    );
+    attempt += 1;
+    console.log(`Spotify rate limit (429) — aguardando ${Math.ceil(waitMs / 1000)}s (tentativa ${attempt})...`);
+    await sleep(waitMs);
+  }
 }
 
 export function pickAlbumImageUrl(images: SpotifyImage[] | undefined): string | null {

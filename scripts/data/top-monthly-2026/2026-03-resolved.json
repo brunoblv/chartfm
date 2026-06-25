@@ -1,0 +1,1807 @@
+{
+  "name": "Março",
+  "total": 300,
+  "hits": 300,
+  "resolved": [
+    {
+      "plays": 45,
+      "query": "Bodybag — Wind Walkers",
+      "uri": "spotify:track:4r9UplnreIv8JVJ3szdPJV",
+      "matched": "Bodybag — Wind Walkers"
+    },
+    {
+      "plays": 25,
+      "query": "Twisting The Knife (feat. Mckenna Grace) — Ice Nine Kills",
+      "uri": "spotify:track:2DaR6GuQKi78Lq32oRv38C",
+      "matched": "Twisting The Knife (feat. Mckenna Grace) — Ice Nine Kills, Mckenna Grace"
+    },
+    {
+      "plays": 24,
+      "query": "Crawl Back To My Coffin — Dayseeker",
+      "uri": "spotify:track:7rhDDCVryx9frLUnXSgrZ5",
+      "matched": "Crawl Back To My Coffin — Dayseeker"
+    },
+    {
+      "plays": 21,
+      "query": "Broken Mirror — Architects",
+      "uri": "spotify:track:44TUJhvq8ZSoIO1AzpD6X7",
+      "matched": "Broken Mirror — Architects"
+    },
+    {
+      "plays": 20,
+      "query": "シルエット — KANA-BOON",
+      "uri": "spotify:track:1di1C0QI6Y92yZPYn6XYAZ",
+      "matched": "シルエット — KANA-BOON"
+    },
+    {
+      "plays": 19,
+      "query": "Different Kind of Love — Young the Giant",
+      "uri": "spotify:track:3P8Ki8W6whZiWzDQ24OiLx",
+      "matched": "Different Kind Of Love — Young the Giant"
+    },
+    {
+      "plays": 19,
+      "query": "IGYEIH — Linkin Park",
+      "uri": "spotify:track:7M8eZBRTD9QNasEVReEM0H",
+      "matched": "IGYEIH — Linkin Park"
+    },
+    {
+      "plays": 18,
+      "query": "Daylight — Taylor Swift",
+      "uri": "spotify:track:1fzAuUVbzlhZ1lJAx9PtY6",
+      "matched": "Daylight — Taylor Swift"
+    },
+    {
+      "plays": 18,
+      "query": "Dilúvio — DAY LIMNS",
+      "uri": "spotify:track:6y8QsQZPWXQVPViAwsuyuT",
+      "matched": "Dilúvio — DAY LIMNS"
+    },
+    {
+      "plays": 16,
+      "query": "Butterflies — All Time Low",
+      "uri": "spotify:track:2BigwKClqvweAvcbc3Xb7O",
+      "matched": "Butterflies — All Time Low"
+    },
+    {
+      "plays": 16,
+      "query": "Lost In Devotion — Carly Rae Jepsen",
+      "uri": "spotify:track:6WYqOPEvKiYihM47u2JNXh",
+      "matched": "Lost In Devotion — Carly Rae Jepsen"
+    },
+    {
+      "plays": 13,
+      "query": "Pale Moonlight — Dayseeker",
+      "uri": "spotify:track:0CPaMCUD85j07HZQi8sWXd",
+      "matched": "Pale Moonlight — Dayseeker"
+    },
+    {
+      "plays": 12,
+      "query": "Dark Void — Asking Alexandria",
+      "uri": "spotify:track:76DODhl0vwR4CpWKexVF4U",
+      "matched": "Dark Void — Asking Alexandria"
+    },
+    {
+      "plays": 12,
+      "query": "Dying to Love — Bad Omens",
+      "uri": "spotify:track:1TPdMmb92BoWvDFQlCuVl0",
+      "matched": "Dying To Love — Bad Omens"
+    },
+    {
+      "plays": 12,
+      "query": "Blackhole — Architects",
+      "uri": "spotify:track:04yjYHGB3aoyS3q7D7LiKy",
+      "matched": "Blackhole — Architects"
+    },
+    {
+      "plays": 12,
+      "query": "Chemical — No Resolve",
+      "uri": "spotify:track:2bneJjVc6ih1yclSraoOSd",
+      "matched": "Chemical — No Resolve"
+    },
+    {
+      "plays": 12,
+      "query": "Finais Mentem — DAY LIMNS",
+      "uri": "spotify:track:1oKwAnLab9xVCgRMvaGZTk",
+      "matched": "Finais Mentem — DAY LIMNS"
+    },
+    {
+      "plays": 11,
+      "query": "The Emptiness Machine — Linkin Park",
+      "uri": "spotify:track:2PnlsTsOTLE5jnBnNe2K0A",
+      "matched": "The Emptiness Machine — Linkin Park"
+    },
+    {
+      "plays": 11,
+      "query": "Static — Sleep Theory",
+      "uri": "spotify:track:5qq3jq7UJeILpqT92UvIGt",
+      "matched": "Static — Sleep Theory"
+    },
+    {
+      "plays": 11,
+      "query": "Disenchanted — My Chemical Romance",
+      "uri": "spotify:track:6T7MAQCekVb3UnCykjX3BP",
+      "matched": "Disenchanted — My Chemical Romance"
+    },
+    {
+      "plays": 11,
+      "query": "Cornelia Street — Taylor Swift",
+      "uri": "spotify:track:12M5uqx0ZuwkpLp5rJim1a",
+      "matched": "Cornelia Street — Taylor Swift"
+    },
+    {
+      "plays": 11,
+      "query": "Chasing Shadows — Magnolia Park",
+      "uri": "spotify:track:19DfXPmEvDNZksvA7OrJeM",
+      "matched": "CHASING SHADOWS — Magnolia Park"
+    },
+    {
+      "plays": 10,
+      "query": "Nightmare Tripping (Feat. Nickelback) — Don Broco",
+      "uri": "spotify:track:0haajy0mhRLd77PjmV2Ayt",
+      "matched": "Nightmare Tripping (Feat. Nickelback) — DON BROCO, Nickelback"
+    },
+    {
+      "plays": 9,
+      "query": "Just Pretend — Bad Omens",
+      "uri": "spotify:track:31rneVrsMC6jefCoDyQKam",
+      "matched": "Just Pretend — Bad Omens"
+    },
+    {
+      "plays": 9,
+      "query": "Without Me — Dayseeker",
+      "uri": "spotify:track:7oGCVuPEyp6m6DhXkU5Pfs",
+      "matched": "Without Me — Dayseeker"
+    },
+    {
+      "plays": 8,
+      "query": "Down Bad — Taylor Swift",
+      "uri": "spotify:track:1kbEbBdEgQdQeLXCJh28pJ",
+      "matched": "Down Bad — Taylor Swift"
+    },
+    {
+      "plays": 8,
+      "query": "Everything Ends — Architects",
+      "uri": "spotify:track:3yC1soClolbb2jFH7XIPqd",
+      "matched": "Everything Ends — Architects"
+    },
+    {
+      "plays": 7,
+      "query": "Something Real — KIDPUNK",
+      "uri": "spotify:track:1SaMvrPBGZhSKClgRJwFQ8",
+      "matched": "Something Real — KIDPUNK"
+    },
+    {
+      "plays": 7,
+      "query": "Left Behind — The Plot in You",
+      "uri": "spotify:track:06j7eVHrgRSt9eQSWhH3zK",
+      "matched": "Left Behind — The Plot In You"
+    },
+    {
+      "plays": 7,
+      "query": "Sweet Talk — The Killers",
+      "uri": "spotify:track:4IBTEftHDFMV8femNMlfMP",
+      "matched": "Sweet Talk — The Killers"
+    },
+    {
+      "plays": 7,
+      "query": "Damocles — Sleep Token",
+      "uri": "spotify:track:3enIFKYJKSVyjXVzmup28I",
+      "matched": "Damocles — Sleep Token"
+    },
+    {
+      "plays": 7,
+      "query": "XO to the Grave — Lø Spirit",
+      "uri": "spotify:track:15RSQIgjm8hN9XCMKb4plR",
+      "matched": "XO to the Grave — Lø Spirit"
+    },
+    {
+      "plays": 6,
+      "query": "Elusive Dream — Rain City Drive",
+      "uri": "spotify:track:13RMSMeXGIJ2g9jVI7bujX",
+      "matched": "Elusive Dream — Rain City Drive"
+    },
+    {
+      "plays": 6,
+      "query": "Everybody Knows — The Devil Wears Prada",
+      "uri": "spotify:track:2Dwv24p98cJwkeQKUY56pk",
+      "matched": "Everybody Knows — The Devil Wears Prada"
+    },
+    {
+      "plays": 6,
+      "query": "FORGET YOU — Dutch Melrose",
+      "uri": "spotify:track:7JQjSQiPjkAlZbIlrm5njS",
+      "matched": "FORGET YOU — Dutch Melrose"
+    },
+    {
+      "plays": 5,
+      "query": "Free — Beartooth",
+      "uri": "spotify:track:3oOhSGUZSmV6XsANXjaEDj",
+      "matched": "Free — Beartooth"
+    },
+    {
+      "plays": 5,
+      "query": "stuck in my head — Sleep Theory",
+      "uri": "spotify:track:73dF7hLLmFY1pqhlVm2n96",
+      "matched": "Stuck In My Head — Sleep Theory"
+    },
+    {
+      "plays": 5,
+      "query": "Midnight Rain — Taylor Swift",
+      "uri": "spotify:track:3rWDp9tBPQR9z6U5YyRSK4",
+      "matched": "Midnight Rain — Taylor Swift"
+    },
+    {
+      "plays": 5,
+      "query": "For You — The Devil Wears Prada",
+      "uri": "spotify:track:31iIf973tO1iLI2ql44fdI",
+      "matched": "For You — The Devil Wears Prada"
+    },
+    {
+      "plays": 5,
+      "query": "Left For Good — Bad Omens",
+      "uri": "spotify:track:4pjSe7n2609YnMWnrJ3OVJ",
+      "matched": "Left For Good — Bad Omens"
+    },
+    {
+      "plays": 5,
+      "query": "Lost — The Temper Trap",
+      "uri": "spotify:track:5ae7SuuGLDODzbhrOdo3ae",
+      "matched": "Lost — The Temper Trap"
+    },
+    {
+      "plays": 4,
+      "query": "cardigan — Taylor Swift",
+      "uri": "spotify:track:4R2kfaDFhslZEMJqAFNpdd",
+      "matched": "cardigan — Taylor Swift"
+    },
+    {
+      "plays": 4,
+      "query": "Maroon — Taylor Swift",
+      "uri": "spotify:track:3eX0NZfLtGzoLUxPNvRfqm",
+      "matched": "Maroon — Taylor Swift"
+    },
+    {
+      "plays": 4,
+      "query": "Gravity — Sleep Theory",
+      "uri": "spotify:track:3tlw6dqv2qejTGLnVaEsgb",
+      "matched": "Gravity — Sleep Theory"
+    },
+    {
+      "plays": 4,
+      "query": "Words Are Worthless — Sleep Theory",
+      "uri": "spotify:track:1FwQ5seq3gFcqLAsIu8QpE",
+      "matched": "Words Are Worthless — Sleep Theory"
+    },
+    {
+      "plays": 4,
+      "query": "Limits — Bad Omens",
+      "uri": "spotify:track:20eY1iHCeGknUmolCjYFoG",
+      "matched": "Limits — Bad Omens"
+    },
+    {
+      "plays": 4,
+      "query": "Frozen — Rain City Drive",
+      "uri": "spotify:track:28sXbkRg5dlyuD0pB8stVV",
+      "matched": "Frozen — Rain City Drive"
+    },
+    {
+      "plays": 4,
+      "query": "Into The Wild — The Temper Trap",
+      "uri": "spotify:track:1SAANVKD826AQxtYTs4zHB",
+      "matched": "Into The Wild — The Temper Trap"
+    },
+    {
+      "plays": 4,
+      "query": "Shelter — Fit For A King",
+      "uri": "spotify:track:53ricdihmEjTUBtBGRWK5b",
+      "matched": "Shelter — Fit For A King"
+    },
+    {
+      "plays": 4,
+      "query": "A Grave Mistake — Ice Nine Kills",
+      "uri": "spotify:track:2mMNBgFRyEiRoGvrdoONeq",
+      "matched": "A Grave Mistake — Ice Nine Kills"
+    },
+    {
+      "plays": 4,
+      "query": "The Ghost of You — My Chemical Romance",
+      "uri": "spotify:track:1yKAqZoi8xWGLCf5vajroL",
+      "matched": "The Ghost of You — My Chemical Romance"
+    },
+    {
+      "plays": 4,
+      "query": "All For You — Atreyu",
+      "uri": "spotify:track:4JQMbQK6139mYC1osRQK0b",
+      "matched": "All For You — Atreyu"
+    },
+    {
+      "plays": 3,
+      "query": "loml — Taylor Swift",
+      "uri": "spotify:track:3YkNIrAvbKNrrwwEd7NVLl",
+      "matched": "loml — Taylor Swift"
+    },
+    {
+      "plays": 3,
+      "query": "this is me trying — Taylor Swift",
+      "uri": "spotify:track:7kt9e9LFSpN1zQtYEl19o1",
+      "matched": "this is me trying — Taylor Swift"
+    },
+    {
+      "plays": 3,
+      "query": "Timeless (Taylor’s Version) (From the Vault) — Taylor Swift",
+      "uri": "spotify:track:1HCdems7PQZRj42QDWLA0A",
+      "matched": "Timeless (Taylor’s Version) (From The Vault) — Taylor Swift"
+    },
+    {
+      "plays": 3,
+      "query": "the 1 — Taylor Swift",
+      "uri": "spotify:track:0Jlcvv8IykzHaSmj49uNW8",
+      "matched": "the 1 — Taylor Swift"
+    },
+    {
+      "plays": 3,
+      "query": "Elizabeth Taylor — Taylor Swift",
+      "uri": "spotify:track:1jgTiNob5cVyXeJ3WgX5bL",
+      "matched": "Elizabeth Taylor — Taylor Swift"
+    },
+    {
+      "plays": 3,
+      "query": "Gasoline (All Rage Still Only Numb) — Story of the Year",
+      "uri": "spotify:track:0QYemx2W3oTiouTgOhRFJQ",
+      "matched": "Gasoline (All Rage Still Only Numb) — Story Of The Year"
+    },
+    {
+      "plays": 3,
+      "query": "Opening Night — Arctic Monkeys",
+      "uri": "spotify:track:7HXzuAd8UNJj2yCAS0NWbB",
+      "matched": "Opening Night — Arctic Monkeys, War Child Records"
+    },
+    {
+      "plays": 3,
+      "query": "exile (feat. Bon Iver) — Taylor Swift",
+      "uri": "spotify:track:4pvb0WLRcMtbPGmtejJJ6y",
+      "matched": "exile (feat. Bon Iver) — Taylor Swift, Bon Iver"
+    },
+    {
+      "plays": 3,
+      "query": "Cruel Summer — Taylor Swift",
+      "uri": "spotify:track:1BxfuPKGuaTgP7aM0Bbdwr",
+      "matched": "Cruel Summer — Taylor Swift"
+    },
+    {
+      "plays": 3,
+      "query": "Somewhere Only We Know — Keane",
+      "uri": "spotify:track:1SKPmfSYaPsETbRHaiA18G",
+      "matched": "Somewhere Only We Know — Keane"
+    },
+    {
+      "plays": 3,
+      "query": "FREEFALL — Nothing More",
+      "uri": "spotify:track:7fYs5KexehGyZyEP8CDNGQ",
+      "matched": "FREEFALL — NOTHING MORE"
+    },
+    {
+      "plays": 3,
+      "query": "Shallow — Magnolia Park",
+      "uri": "spotify:track:7hm7YOaz4CHZYAiYBDbf4m",
+      "matched": "SHALLOW — Magnolia Park"
+    },
+    {
+      "plays": 3,
+      "query": "Fallout — Sleep Theory",
+      "uri": "spotify:track:3M3oltaiY0Hfl7F7IRhPSA",
+      "matched": "Fallout — Sleep Theory"
+    },
+    {
+      "plays": 3,
+      "query": "IF IT DOESN'T HURT — Nothing More",
+      "uri": "spotify:track:1ve6FiKnpfXt8vUxhndH7p",
+      "matched": "IF IT DOESN'T HURT — NOTHING MORE"
+    },
+    {
+      "plays": 3,
+      "query": "Who You Are — KIDPUNK",
+      "uri": "spotify:track:0j9t178RM9qytMVpOFbIqO",
+      "matched": "Who You Are — KIDPUNK"
+    },
+    {
+      "plays": 3,
+      "query": "we can't be friends (wait for your love) — Ariana Grande",
+      "uri": "spotify:track:46kspZSY3aKmwQe7O77fCC",
+      "matched": "we can't be friends (wait for your love) — Ariana Grande"
+    },
+    {
+      "plays": 3,
+      "query": "Style — Taylor Swift",
+      "uri": "spotify:track:0ug5NqcwcFR2xrfTkc7k8e",
+      "matched": "Style — Taylor Swift"
+    },
+    {
+      "plays": 3,
+      "query": "Here To Bleed — Zero 9:36",
+      "uri": "spotify:track:7wsRNKS6CQPoTT1fJbqPGL",
+      "matched": "Here to Bleed — Zero 9:36"
+    },
+    {
+      "plays": 3,
+      "query": "Between Us — Fit For A King",
+      "uri": "spotify:track:1WtuhwrmV5N4XycakHfzKe",
+      "matched": "Between Us — Fit For A King"
+    },
+    {
+      "plays": 3,
+      "query": "Shapeshift — Dayseeker",
+      "uri": "spotify:track:6v7lSNg4DnQHSHacDr6gT6",
+      "matched": "Shapeshift — Dayseeker"
+    },
+    {
+      "plays": 3,
+      "query": "Cyanide — Normandie",
+      "uri": "spotify:track:6oyjVwdaKB9FsAYR6FybmS",
+      "matched": "Cyanide — Normandie"
+    },
+    {
+      "plays": 3,
+      "query": "Doomed — Bring Me the Horizon",
+      "uri": "spotify:track:3lPn81PFyKvXiyHhlkwkQ4",
+      "matched": "Doomed — Bring Me The Horizon"
+    },
+    {
+      "plays": 3,
+      "query": "Phenomenon — No Resolve",
+      "uri": "spotify:track:5wtOkX41uDHxxezzW2Sl0j",
+      "matched": "Phenomenon — No Resolve"
+    },
+    {
+      "plays": 3,
+      "query": "Faísca — Bemti",
+      "uri": "spotify:track:1Rkv1xlxL2vBDZjWkU8sPg",
+      "matched": "Faísca — Bemti, Falso Coral, Tiê"
+    },
+    {
+      "plays": 3,
+      "query": "Você Sabe Bem — Jovem Dionisio",
+      "uri": "spotify:track:08qLu0pFzJMUMhm7X6s6Ta",
+      "matched": "Você Sabe Bem — Jovem Dionisio, Terno Rei"
+    },
+    {
+      "plays": 3,
+      "query": "High — Magnolia Park",
+      "uri": "spotify:track:651QdsQHYk3uuUpx7sYuAq",
+      "matched": "HIGH — Magnolia Park, Arrows in Action"
+    },
+    {
+      "plays": 3,
+      "query": "Quiet Part Loud — The Maine",
+      "uri": "spotify:track:74inkzt2bJeR8onMejewf7",
+      "matched": "Quiet Part Loud — The Maine"
+    },
+    {
+      "plays": 2,
+      "query": "Begin Again — Taylor Swift",
+      "uri": "spotify:track:1yG491M3fRfowMdGN5pey4",
+      "matched": "Begin Again — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "Wi$h Li$t — Taylor Swift",
+      "uri": "spotify:track:2TEQvxxQabwLQMqWMg1qGu",
+      "matched": "Wi$h Li$t — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "hoax — Taylor Swift",
+      "uri": "spotify:track:6MWoRt97mnSTXZhu3ggi9C",
+      "matched": "hoax — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "willow — Taylor Swift",
+      "uri": "spotify:track:0lx2cLdOt3piJbcaXIV74f",
+      "matched": "willow — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "tolerate it — Taylor Swift",
+      "uri": "spotify:track:0PurA4JVJ8YQgSVopY8fn6",
+      "matched": "tolerate it — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "Guilty as Sin? — Taylor Swift",
+      "uri": "spotify:track:0W0iAC1VGlB82PI6elxFYf",
+      "matched": "Guilty as Sin? — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "Amaro — Pinguini Tattici Nucleari",
+      "uri": "spotify:track:15ZWSMDQMfBKVn4zurLX7k",
+      "matched": "Amaro — Pinguini Tattici Nucleari"
+    },
+    {
+      "plays": 2,
+      "query": "Homewrecker — sombr",
+      "uri": "spotify:track:7tICCrK3CcyRFKza7yrR0z",
+      "matched": "Homewrecker — sombr"
+    },
+    {
+      "plays": 2,
+      "query": "True — Ryan Cabrera",
+      "uri": "spotify:track:0jdeV5dSB3kUBRqe1xQJbh",
+      "matched": "True — Ryan Cabrera"
+    },
+    {
+      "plays": 2,
+      "query": "Tattoo — Jordin Sparks",
+      "uri": "spotify:track:3Ui2jdyxbZQrZohfM0NOgG",
+      "matched": "Tattoo — Jordin Sparks"
+    },
+    {
+      "plays": 2,
+      "query": "Hate You More — Paris WYA",
+      "uri": "spotify:track:48sdRXD2FpkiozJJ1jmI6b",
+      "matched": "Hate You More — Paris WYA"
+    },
+    {
+      "plays": 2,
+      "query": "Complicated — Avril Lavigne",
+      "uri": "spotify:track:5xEM5hIgJ1jjgcEBfpkt2F",
+      "matched": "Complicated — Avril Lavigne"
+    },
+    {
+      "plays": 2,
+      "query": "In My Place — Coldplay",
+      "uri": "spotify:track:2nvC4i2aMo4CzRjRflysah",
+      "matched": "In My Place — Coldplay"
+    },
+    {
+      "plays": 2,
+      "query": "White Flag — Dido",
+      "uri": "spotify:track:6si71supnBUhddjR2FJc2L",
+      "matched": "White Flag — Dido"
+    },
+    {
+      "plays": 2,
+      "query": "Torn — Natalie Imbruglia",
+      "uri": "spotify:track:1Jaah2tmN9Hv81A87KZ1MU",
+      "matched": "Torn — Natalie Imbruglia"
+    },
+    {
+      "plays": 2,
+      "query": "My Happy Ending — Avril Lavigne",
+      "uri": "spotify:track:6sqNctd7MlJoKDOxPVCAvU",
+      "matched": "My Happy Ending — Avril Lavigne"
+    },
+    {
+      "plays": 2,
+      "query": "I Don't Love You — My Chemical Romance",
+      "uri": "spotify:track:4RAOI1etsgbh5NP3T5R8rN",
+      "matched": "I Don't Love You — My Chemical Romance"
+    },
+    {
+      "plays": 2,
+      "query": "Die to Fall — The Maine",
+      "uri": "spotify:track:1u7qunj5EmCdipyZWpnzyQ",
+      "matched": "Die To Fall — The Maine"
+    },
+    {
+      "plays": 2,
+      "query": "The Grey — Bad Omens",
+      "uri": "spotify:track:4R6Rh75hGceh7bymGlL81D",
+      "matched": "The Grey — Bad Omens"
+    },
+    {
+      "plays": 2,
+      "query": "Call Your Girlfriend — Robyn",
+      "uri": "spotify:track:15hut9fX33giUAMyycwvsV",
+      "matched": "Call Your Girlfriend — Robyn"
+    },
+    {
+      "plays": 2,
+      "query": "I Hate It Here — Taylor Swift",
+      "uri": "spotify:track:3hlGuz3loYoLfI3bpwieWq",
+      "matched": "I Hate It Here — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "So High School — Taylor Swift",
+      "uri": "spotify:track:1GP8VW5Wk2w2obkWjGCGXd",
+      "matched": "So High School — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "I'm with You — Avril Lavigne",
+      "uri": "spotify:track:1jlG3KJ3gdYmhfuySFfpO1",
+      "matched": "I'm with You — Avril Lavigne"
+    },
+    {
+      "plays": 2,
+      "query": "my tears ricochet — Taylor Swift",
+      "uri": "spotify:track:1MgV7FIyNxIG7WzMRJV5HC",
+      "matched": "my tears ricochet — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "The Overlook — Wind Walkers",
+      "uri": "spotify:track:2hMlViHwOIx8qyt49zyQ0K",
+      "matched": "The Overlook — Wind Walkers"
+    },
+    {
+      "plays": 2,
+      "query": "Feeding the Gods — Wind Walkers",
+      "uri": "spotify:track:7BjldKkYK4xq15kANIHhPT",
+      "matched": "Feeding the Gods — Wind Walkers"
+    },
+    {
+      "plays": 2,
+      "query": "MAGNETIC — Wage War",
+      "uri": "spotify:track:73mrvMAAKWrgbT894Aevf7",
+      "matched": "MAGNETIC — Wage War"
+    },
+    {
+      "plays": 2,
+      "query": "BLUR — Wage War",
+      "uri": "spotify:track:56Lz7mTr1hiiCfsaAoiUo9",
+      "matched": "BLUR — Wage War"
+    },
+    {
+      "plays": 2,
+      "query": "colorblind — Mokita",
+      "uri": "spotify:track:4o3XxiQ9BljY4OU38zanC0",
+      "matched": "colorblind — Mokita"
+    },
+    {
+      "plays": 2,
+      "query": "Like a Villain — Bad Omens",
+      "uri": "spotify:track:7h2EZbGSzzIGgAFzJXHz99",
+      "matched": "Like A Villain — Bad Omens"
+    },
+    {
+      "plays": 2,
+      "query": "See Through — The Band CAMINO",
+      "uri": "spotify:track:1pJzl0YsxaWj6BbPs1mUuQ",
+      "matched": "See Through — The Band CAMINO"
+    },
+    {
+      "plays": 2,
+      "query": "The Suburbs — Ruel",
+      "uri": "spotify:track:16IhnZdX7HXdk7KOdCA7DS",
+      "matched": "The Suburbs — Ruel"
+    },
+    {
+      "plays": 2,
+      "query": "Wild Guess — Ruel",
+      "uri": "spotify:track:4I5etWOFUl5PkGzXtgsJR4",
+      "matched": "Wild Guess — Ruel"
+    },
+    {
+      "plays": 2,
+      "query": "Don't Say That — Ruel",
+      "uri": "spotify:track:3y8b3mpLNiQnHvbZU9s2o6",
+      "matched": "Don't Say That — Ruel"
+    },
+    {
+      "plays": 2,
+      "query": "Drag Path — twenty one pilots",
+      "uri": "spotify:track:0TlcczkVTGpinpkGJpT81L",
+      "matched": "Drag Path — Twenty One Pilots"
+    },
+    {
+      "plays": 2,
+      "query": "Roommates — Hilary Duff",
+      "uri": "spotify:track:6f3oSArp7nLfCjUacknQLO",
+      "matched": "Roommates — Hilary Duff"
+    },
+    {
+      "plays": 2,
+      "query": "The Only Exception — Paramore",
+      "uri": "spotify:track:7JIuqL4ZqkpfGKQhYlrirs",
+      "matched": "The Only Exception — Paramore"
+    },
+    {
+      "plays": 2,
+      "query": "Who Knew - Edit — P!nk",
+      "uri": "spotify:track:2hns6Dv29Yrg68AVTJiAyA",
+      "matched": "Who Knew - Edit — P!nk"
+    },
+    {
+      "plays": 2,
+      "query": "Stop Crying Your Heart Out — Oasis",
+      "uri": "spotify:track:5YciOakY5dB5dULkiLdCaf",
+      "matched": "Stop Crying Your Heart Out — Oasis"
+    },
+    {
+      "plays": 2,
+      "query": "Gravity — Sara Bareilles",
+      "uri": "spotify:track:4oa14QBfWRDfJy2agySy0L",
+      "matched": "Gravity — Sara Bareilles"
+    },
+    {
+      "plays": 2,
+      "query": "Famous Last Words — My Chemical Romance",
+      "uri": "spotify:track:2d6m2F4I7wCuAKtSsdhh83",
+      "matched": "Famous Last Words — My Chemical Romance"
+    },
+    {
+      "plays": 2,
+      "query": "Read My Mind — The Killers",
+      "uri": "spotify:track:7cX4PJz1old9fyFI8RlfgW",
+      "matched": "Read My Mind — The Killers"
+    },
+    {
+      "plays": 2,
+      "query": "Curse — Architects",
+      "uri": "spotify:track:6DLaYITCfzaNEAj0ZyGRad",
+      "matched": "Curse — Architects"
+    },
+    {
+      "plays": 2,
+      "query": "If I Leave — Mitski",
+      "uri": "spotify:track:4eMXMUkWS4aChMfA1UO4YJ",
+      "matched": "If I Leave — Mitski"
+    },
+    {
+      "plays": 2,
+      "query": "Bruised Sky — Poppy",
+      "uri": "spotify:track:4EfQBzzgI2cFistw09c09N",
+      "matched": "Bruised Sky — Poppy"
+    },
+    {
+      "plays": 2,
+      "query": "DOPAMINE — Kami Kehoe",
+      "uri": "spotify:track:1DF3ev9mMihk0SjpEs2Cqn",
+      "matched": "DOPAMINE — Kami Kehoe"
+    },
+    {
+      "plays": 2,
+      "query": "A HOGMAN'S DELIGHT — Bilmuri",
+      "uri": "spotify:track:5m2hTL0rNlQRMV56KjWCuS",
+      "matched": "A HOGMAN'S DELIGHT — Bilmuri, Dayseeker"
+    },
+    {
+      "plays": 2,
+      "query": "4 Mil Horas — Fake Number",
+      "uri": "spotify:track:3XFuBsrxFoE555HJa55b5t",
+      "matched": "4 Mil Horas — Fake Number"
+    },
+    {
+      "plays": 2,
+      "query": "Fim de Festa — Jão",
+      "uri": "spotify:track:65qfqXncAHuQKC3PsRvUl4",
+      "matched": "Fim De Festa — Jão"
+    },
+    {
+      "plays": 2,
+      "query": "Bedroom Posters (feat. Good Charlotte) — Yellowcard",
+      "uri": "spotify:track:1L2Z2Xpta5CZ59kIazq9Xp",
+      "matched": "Bedroom Posters (feat. Good Charlotte) — Yellowcard, Good Charlotte"
+    },
+    {
+      "plays": 2,
+      "query": "Shame On Me — Catch Your Breath",
+      "uri": "spotify:track:6S2iHbyPSlhQgCyAVQ2SO6",
+      "matched": "Shame On Me — Catch Your Breath"
+    },
+    {
+      "plays": 2,
+      "query": "Neon Grave — Dayseeker",
+      "uri": "spotify:track:4pehGtiMD6B2WZHsKmr3oo",
+      "matched": "Neon Grave — Dayseeker"
+    },
+    {
+      "plays": 2,
+      "query": "RAIN — pinknoise",
+      "uri": "spotify:track:04TlEj0Fhxnq4qbc560fnh",
+      "matched": "RAIN — PINKNOISE, Wind Walkers"
+    },
+    {
+      "plays": 2,
+      "query": "Afraid of the Dark — Motionless in White",
+      "uri": "spotify:track:46odPfzMypgxCBMUPmdKxr",
+      "matched": "Afraid Of The Dark — Motionless In White"
+    },
+    {
+      "plays": 2,
+      "query": "SING WITH ME — pinknoise",
+      "uri": "spotify:track:6RCddiGrlOpXUswjliDvET",
+      "matched": "SING WITH ME — PINKNOISE, Zhavia"
+    },
+    {
+      "plays": 2,
+      "query": "Lost — Catch Your Breath",
+      "uri": "spotify:track:0LO5y23GvCzFCr6j3cSecd",
+      "matched": "Lost — Catch Your Breath"
+    },
+    {
+      "plays": 2,
+      "query": "love song — YUNGBLUD",
+      "uri": "spotify:track:0DZr4tVoYT3rUJzm9w15Lg",
+      "matched": "love song — YUNGBLUD"
+    },
+    {
+      "plays": 2,
+      "query": "Ritual — The Devil Wears Prada",
+      "uri": "spotify:track:0F9OoR7mjpuU08J39gNRlP",
+      "matched": "Ritual — The Devil Wears Prada"
+    },
+    {
+      "plays": 2,
+      "query": "Say Don't Go (Taylor's Version) (From the Vault) — Taylor Swift",
+      "uri": "spotify:track:4NioO5R9sHEZh4cGzMHyNt",
+      "matched": "Say Don't Go (Taylor's Version) (From The Vault) — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "Olha Só — Terno Rei",
+      "uri": "spotify:track:4QYGKJExNwTvNhf64Cp2XI",
+      "matched": "Olha Só — Terno Rei"
+    },
+    {
+      "plays": 2,
+      "query": "The Great Unknown — Ice Nine Kills",
+      "uri": "spotify:track:76Pd81B06OSC8AuuDWxsEQ",
+      "matched": "The Great Unknown — Ice Nine Kills"
+    },
+    {
+      "plays": 2,
+      "query": "Sleepwalking — Bring Me the Horizon",
+      "uri": "spotify:track:0gchQwxmBWj5no8NJ8b2yH",
+      "matched": "Sleepwalking — Bring Me The Horizon"
+    },
+    {
+      "plays": 2,
+      "query": "Seeing Red — Architects",
+      "uri": "spotify:track:65qBr6ToDUjTD1RiE1H4Gl",
+      "matched": "Seeing Red — Architects"
+    },
+    {
+      "plays": 2,
+      "query": "Cut the Bridge — Linkin Park",
+      "uri": "spotify:track:5mFZipkX1HZ4Idz5LOWpzq",
+      "matched": "Cut the Bridge — Linkin Park"
+    },
+    {
+      "plays": 2,
+      "query": "Good Enough — Emarosa",
+      "uri": "spotify:track:3A33v9StEDW4CGGZDPllON",
+      "matched": "Good Enough — Emarosa"
+    },
+    {
+      "plays": 2,
+      "query": "Over My Head — Thirty Seconds to Mars",
+      "uri": "spotify:track:3tffqhqjhbLMfefbsMupgL",
+      "matched": "Over My Head — Thirty Seconds To Mars"
+    },
+    {
+      "plays": 2,
+      "query": "Disconnected — Story Of The Year",
+      "uri": "spotify:track:0EsQOpewhnLrKqscGePWsK",
+      "matched": "Disconnected — Story Of The Year"
+    },
+    {
+      "plays": 2,
+      "query": "Photo Voltaire — The Intemperate Sons",
+      "uri": "spotify:track:6LODQf8wlmourtwag3LeOd",
+      "matched": "Photo Voltaire — The Intemperate Sons, Julien-K"
+    },
+    {
+      "plays": 2,
+      "query": "Slumber Party — Brigitte Calls Me Baby",
+      "uri": "spotify:track:4LfGhbo1wVIB39FBAH4iTg",
+      "matched": "Slumber Party — Brigitte Calls Me Baby"
+    },
+    {
+      "plays": 2,
+      "query": "Bloodlust — Dayseeker",
+      "uri": "spotify:track:5j5Fwl2oBvieAP9InfNwks",
+      "matched": "Bloodlust — Dayseeker"
+    },
+    {
+      "plays": 2,
+      "query": "Creature In the Black Night — Dayseeker",
+      "uri": "spotify:track:3yRDf2nsSfYGidmUCtWKr7",
+      "matched": "Creature In The Black Night — Dayseeker"
+    },
+    {
+      "plays": 2,
+      "query": "ASK FOR IT — Magnolia Park",
+      "uri": "spotify:track:0IHxwmEqttvKPQeHG1wGK6",
+      "matched": "ASK FOR IT — Magnolia Park"
+    },
+    {
+      "plays": 2,
+      "query": "DANGEROUS — Magnolia Park",
+      "uri": "spotify:track:53LPlyThPU8L8SIUM1pkgA",
+      "matched": "DANGEROUS — Magnolia Park"
+    },
+    {
+      "plays": 2,
+      "query": "ANYTHING > HUMAN — Bad Omens",
+      "uri": "spotify:track:5ZOB4koZl0mogpMGFklgzd",
+      "matched": "ANYTHING > HUMAN — Bad Omens, ERRA"
+    },
+    {
+      "plays": 2,
+      "query": "Sirens — Pearl Jam",
+      "uri": "spotify:track:1cAMXz9mnvrqyQLSG4KeeE",
+      "matched": "Sirens — Pearl Jam"
+    },
+    {
+      "plays": 2,
+      "query": "Where the Flowers Never Grow — The Devil Wears Prada",
+      "uri": "spotify:track:5bhBJgeAvjpx8HkfIHyyGA",
+      "matched": "Where the Flowers Never Grow — The Devil Wears Prada"
+    },
+    {
+      "plays": 2,
+      "query": "Wake Up Calling — Papa Roach",
+      "uri": "spotify:track:1rkpbebpB9LyLbR0lvOjtW",
+      "matched": "Wake Up Calling — Papa Roach"
+    },
+    {
+      "plays": 2,
+      "query": "Make Me Feel — Zero 9:36",
+      "uri": "spotify:track:3v3oBCz5bf9BsY65oETFTX",
+      "matched": "Make Me Feel — Zero 9:36"
+    },
+    {
+      "plays": 2,
+      "query": "You’re Losing Me (From the Vault) — Taylor Swift",
+      "uri": "spotify:track:3CWq0pAKKTWb0K4yiglDc4",
+      "matched": "You’re Losing Me (From The Vault) — Taylor Swift"
+    },
+    {
+      "plays": 2,
+      "query": "Astronaut — City and Colour",
+      "uri": "spotify:track:6WH9cU9LYRnjSiJfPa2QLg",
+      "matched": "Astronaut — City and Colour"
+    },
+    {
+      "plays": 2,
+      "query": "Are You Listening Yet? — Harry Styles",
+      "uri": "spotify:track:7s7v5EoNLD6TwDu4Nw51Oy",
+      "matched": "Are You Listening Yet? — Harry Styles"
+    },
+    {
+      "plays": 2,
+      "query": "Superposition — Young the Giant",
+      "uri": "spotify:track:67YPjbcxUypwNOwYBZquq1",
+      "matched": "Superposition — Young the Giant"
+    },
+    {
+      "plays": 2,
+      "query": "スターマーカー (Album Mix) — KANA-BOON",
+      "uri": "spotify:track:6NAtVhZ5LrvoKy2Gijr5gj",
+      "matched": "スターマーカー (Album Mix) — KANA-BOON"
+    },
+    {
+      "plays": 1,
+      "query": "Sign — Flow",
+      "uri": "spotify:track:0xmWQKzc5m9rLv2ucDWxwD",
+      "matched": "Sign — FLOW"
+    },
+    {
+      "plays": 1,
+      "query": "The Last Time — Taylor Swift",
+      "uri": "spotify:track:2Tz4JnXZOcjcp8fWfMjBBk",
+      "matched": "The Last Time — Taylor Swift, Gary Lightbody"
+    },
+    {
+      "plays": 1,
+      "query": "Delicate — Taylor Swift",
+      "uri": "spotify:track:6NFyWDv5CjfwuzoCkw47Xf",
+      "matched": "Delicate — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Getaway Car — Taylor Swift",
+      "uri": "spotify:track:0VE4kBnHJUgtMf0dy6DRmW",
+      "matched": "Getaway Car — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Teardrops on My Guitar - Radio Single Remix — Taylor Swift",
+      "uri": "spotify:track:2TF4UtYreqNbQ6Z9AccldU",
+      "matched": "Teardrops On My Guitar - Radio Single Remix — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Red — Taylor Swift",
+      "uri": "spotify:track:7gJtmLyPTwKzhGzMBXtuXH",
+      "matched": "Red — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "You Are in Love — Taylor Swift",
+      "uri": "spotify:track:2KrOAg6FftbjgSKdd2a4rS",
+      "matched": "You Are In Love — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "The Story of Us — Taylor Swift",
+      "uri": "spotify:track:3lXekiVK1ZPZbKconsys73",
+      "matched": "The Story Of Us — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Vigilante Shit — Taylor Swift",
+      "uri": "spotify:track:1xwAWUI6Dj0WGC3KiUPN0O",
+      "matched": "Vigilante Shit — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Wildest Dreams — Taylor Swift",
+      "uri": "spotify:track:3fVnlF4pGqWI9flVENcT28",
+      "matched": "Wildest Dreams — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Call It What You Want — Taylor Swift",
+      "uri": "spotify:track:1GwMQaZz6Au3QLDbjbMdme",
+      "matched": "Call It What You Want — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "illicit affairs — Taylor Swift",
+      "uri": "spotify:track:2NmsngXHeC1GQ9wWrzhOMf",
+      "matched": "illicit affairs — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "august — Taylor Swift",
+      "uri": "spotify:track:3hUxzQpSfdDqwM3ZTFQY0K",
+      "matched": "august — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "King of My Heart — Taylor Swift",
+      "uri": "spotify:track:7HuBDWi18s4aJM8UFnNheH",
+      "matched": "King Of My Heart — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "The Alchemy — Taylor Swift",
+      "uri": "spotify:track:1tuNqJOtRQVHvONR8Lg3MZ",
+      "matched": "The Alchemy — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Would've, Could've, Should've — Taylor Swift",
+      "uri": "spotify:track:0aV5uARAknQgYhBaK944FP",
+      "matched": "Would've, Could've, Should've — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "All of the Girls You Loved Before — Taylor Swift",
+      "uri": "spotify:track:4P9Q0GojKVXpRTJCaL3kyy",
+      "matched": "All Of The Girls You Loved Before — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "I Knew You Were Trouble. — Taylor Swift",
+      "uri": "spotify:track:3lKZf71jeNi14udIFPJ29V",
+      "matched": "I Knew You Were Trouble. — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Blank Space — Taylor Swift",
+      "uri": "spotify:track:1u8c2t2Cy7UBoG4ArRcF5g",
+      "matched": "Blank Space — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Dear Reader — Taylor Swift",
+      "uri": "spotify:track:3QF5RsWzK1lCvf2o2cY65P",
+      "matched": "Dear Reader — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "False God — Taylor Swift",
+      "uri": "spotify:track:5hQSXkFgbxjZo9uCwd11so",
+      "matched": "False God — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "I Know Places — Taylor Swift",
+      "uri": "spotify:track:6EwNJz8CuVsrsLvXprJ20Q",
+      "matched": "I Know Places — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Afterglow — Taylor Swift",
+      "uri": "spotify:track:1SymEzIT3H8UZfibCs3TYi",
+      "matched": "Afterglow — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "You're on Your Own, Kid — Taylor Swift",
+      "uri": "spotify:track:4D7BCuvgdJlYvlX5WlN54t",
+      "matched": "You're On Your Own, Kid — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "marjorie — Taylor Swift",
+      "uri": "spotify:track:12ntTeqEeTg7GAVpe8Mhpl",
+      "matched": "marjorie — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Everything Has Changed — Taylor Swift",
+      "uri": "spotify:track:5PjfMmF06QtxTPZBZHdhoZ",
+      "matched": "Everything Has Changed — Taylor Swift, Ed Sheeran"
+    },
+    {
+      "plays": 1,
+      "query": "Nevica — Pinguini Tattici Nucleari",
+      "uri": "spotify:track:3xPLkr2ZxSsIBxbTv0zluy",
+      "matched": "Nevica — Pinguini Tattici Nucleari"
+    },
+    {
+      "plays": 1,
+      "query": "Heroes Are Calling — Smash Into Pieces",
+      "uri": "spotify:track:4P95NVkHsLm95s8Pb9buPs",
+      "matched": "Heroes Are Calling — Smash Into Pieces"
+    },
+    {
+      "plays": 1,
+      "query": "Burnout — Pinguini Tattici Nucleari",
+      "uri": "spotify:track:51iPrtVlQPm9QfPMpICwdi",
+      "matched": "Burnout — Pinguini Tattici Nucleari"
+    },
+    {
+      "plays": 1,
+      "query": "Islanda — Pinguini Tattici Nucleari",
+      "uri": "spotify:track:0JiJbbKU6RTYJXMBI34UzM",
+      "matched": "Islanda — Pinguini Tattici Nucleari"
+    },
+    {
+      "plays": 1,
+      "query": "Per Non Sentire La Fine Del Mondo — Pinguini Tattici Nucleari",
+      "uri": "spotify:track:4YECnjDhvMzLNWOAntndgn",
+      "matched": "Per Non Sentire La Fine Del Mondo — Pinguini Tattici Nucleari"
+    },
+    {
+      "plays": 1,
+      "query": "Hello World — Pinguini Tattici Nucleari",
+      "uri": "spotify:track:34ZFdrPlax66Fl0aCoRBJm",
+      "matched": "Hello World — Pinguini Tattici Nucleari"
+    },
+    {
+      "plays": 1,
+      "query": "Bottiglie Vuote (feat. Max Pezzali) — Pinguini Tattici Nucleari",
+      "uri": "spotify:track:5wpNF7XLTW4gLyU0NjVOL8",
+      "matched": "Bottiglie Vuote (feat. Max Pezzali) — Pinguini Tattici Nucleari, Max Pezzali"
+    },
+    {
+      "plays": 1,
+      "query": "Sleepwalk — Prodigal",
+      "uri": "spotify:track:3I4xIa5RekFgtdVRhvveKc",
+      "matched": "Sleepwalk — Prodigal"
+    },
+    {
+      "plays": 1,
+      "query": "A Daily AntheM — David Cook",
+      "uri": "spotify:track:3MacDFAXGucOEfMYwSnVQF",
+      "matched": "A Daily AntheM — David Cook"
+    },
+    {
+      "plays": 1,
+      "query": "Permanent — David Cook",
+      "uri": "spotify:track:7bppBAD4NHqVqzXkrkZVxY",
+      "matched": "Permanent — David Cook"
+    },
+    {
+      "plays": 1,
+      "query": "Avalanche — David Cook",
+      "uri": "spotify:track:7EOQ6hIG3fx3E0USHcsopk",
+      "matched": "Avalanche — David Cook"
+    },
+    {
+      "plays": 1,
+      "query": "40 Kinds of Sadness — Ryan Cabrera",
+      "uri": "spotify:track:1JABKVjlKeIeNhoYbnQyQn",
+      "matched": "40 Kinds of Sadness — Ryan Cabrera"
+    },
+    {
+      "plays": 1,
+      "query": "The Great Escape — Boys Like Girls",
+      "uri": "spotify:track:72XWsiLW8q2g8Lv0a010ha",
+      "matched": "The Great Escape — BOYS LIKE GIRLS"
+    },
+    {
+      "plays": 1,
+      "query": "Two Is Better Than One (feat. Taylor Swift) — Boys Like Girls",
+      "uri": "spotify:track:1MaqkdFNIKPdpQGDzme5ss",
+      "matched": "Two Is Better Than One (feat. Taylor Swift) — BOYS LIKE GIRLS, Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Fuga da culpa — FOTO EM GRUPO",
+      "uri": "spotify:track:3kN2d1ojZu90jB5ZaT0KZW",
+      "matched": "Fuga da culpa — FOTO EM GRUPO"
+    },
+    {
+      "plays": 1,
+      "query": "Sexo — FOTO EM GRUPO",
+      "uri": "spotify:track:1K3PPqSiUKOAVGZFcV0lLT",
+      "matched": "Sexo — FOTO EM GRUPO"
+    },
+    {
+      "plays": 1,
+      "query": "Toda esfera — FOTO EM GRUPO",
+      "uri": "spotify:track:72CUj3k30fLMUahKP89nWp",
+      "matched": "Toda esfera — FOTO EM GRUPO"
+    },
+    {
+      "plays": 1,
+      "query": "Fame Is a Gun — Addison Rae",
+      "uri": "spotify:track:1c2AFg2WpURtpsOTMr6ZBX",
+      "matched": "Fame is a Gun — Addison Rae"
+    },
+    {
+      "plays": 1,
+      "query": "Diet Pepsi — Addison Rae",
+      "uri": "spotify:track:6MzofobZt2dm0Kf1hTThFz",
+      "matched": "Diet Pepsi — Addison Rae"
+    },
+    {
+      "plays": 1,
+      "query": "Burn It Down — Linkin Park",
+      "uri": "spotify:track:7oVEtyuv9NBmnytsCIsY5I",
+      "matched": "BURN IT DOWN — Linkin Park"
+    },
+    {
+      "plays": 1,
+      "query": "Runaway — Linkin Park",
+      "uri": "spotify:track:6xtQ23d8GEXgcxyUKPtwc5",
+      "matched": "Runaway — Linkin Park"
+    },
+    {
+      "plays": 1,
+      "query": "By Myself — Linkin Park",
+      "uri": "spotify:track:6UzeOH4bRPzKTo2wCXMZmC",
+      "matched": "By Myself — Linkin Park"
+    },
+    {
+      "plays": 1,
+      "query": "QWERTY — Linkin Park",
+      "uri": "spotify:track:5njHkFji5oL7cYrbuHZyaC",
+      "matched": "QWERTY — Linkin Park"
+    },
+    {
+      "plays": 1,
+      "query": "Nobody's Listening — Linkin Park",
+      "uri": "spotify:track:1EU3VuKGZOvd1HTkxLPUXK",
+      "matched": "Nobody's Listening — Linkin Park"
+    },
+    {
+      "plays": 1,
+      "query": "With You — Linkin Park",
+      "uri": "spotify:track:5uuXtfqM7Wp3idCxyHeOll",
+      "matched": "With You — Linkin Park"
+    },
+    {
+      "plays": 1,
+      "query": "evermore (feat. Bon Iver) — Taylor Swift",
+      "uri": "spotify:track:3O5osWf1rSoKMwe6E9ZaXP",
+      "matched": "evermore (feat. Bon Iver) — Taylor Swift, Bon Iver"
+    },
+    {
+      "plays": 1,
+      "query": "The Archer — Taylor Swift",
+      "uri": "spotify:track:3pHkh7d0lzM2AldUtz2x37",
+      "matched": "The Archer — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Bejeweled — Taylor Swift",
+      "uri": "spotify:track:3qoftcUZaUOncvIYjFSPdE",
+      "matched": "Bejeweled — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "invisible string — Taylor Swift",
+      "uri": "spotify:track:6VsvKPJ4xjVNKpI8VVZ3SV",
+      "matched": "invisible string — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Honey — Taylor Swift",
+      "uri": "spotify:track:4qmFC3Jz5aQ0erlk2OSi2X",
+      "matched": "Honey — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "This Is the Last Time — Keane",
+      "uri": "spotify:track:6IVlHRrjTKep5SS9kbcpTa",
+      "matched": "This Is The Last Time — Keane"
+    },
+    {
+      "plays": 1,
+      "query": "Everybody's Changing — Keane",
+      "uri": "spotify:track:0yac0FPhLRH9i9lOng3f81",
+      "matched": "Everybody's Changing — Keane"
+    },
+    {
+      "plays": 1,
+      "query": "Indestructible — Robyn",
+      "uri": "spotify:track:0FenOOyd5CNdDGlxtQ86gN",
+      "matched": "Indestructible — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Dancing on My Own — Robyn",
+      "uri": "spotify:track:6aqNCrRA7vs7v6QvRpI50t",
+      "matched": "Dancing On My Own — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Knife In The Heart — Lykke Li",
+      "uri": "spotify:track:6UVueGhjSjcfs8wJWnYzrd",
+      "matched": "Knife In The Heart — Lykke Li"
+    },
+    {
+      "plays": 1,
+      "query": "Rockstar — modernlove.",
+      "uri": "spotify:track:4BLKNqKYKynnpuOgpDPP80",
+      "matched": "Rockstar — modernlove."
+    },
+    {
+      "plays": 1,
+      "query": "I Got A Thing For Love — Elle Coves",
+      "uri": "spotify:track:5UFjPmGDGlhBP6XHH5dMJn",
+      "matched": "I Got A Thing For Love — Elle Coves"
+    },
+    {
+      "plays": 1,
+      "query": "Stay — Stephen Dawes",
+      "uri": "spotify:track:1wnRcv6H4OlsmifkekVI6p",
+      "matched": "Stay — Stephen Dawes"
+    },
+    {
+      "plays": 1,
+      "query": "Into the Sun — Robyn",
+      "uri": "spotify:track:0rv6JbGN1bJoD2Il4UXZxk",
+      "matched": "Into The Sun — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Light Up — Robyn",
+      "uri": "spotify:track:0MbXd5ORajlik2wu7g1trU",
+      "matched": "Light Up — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Sexistential — Robyn",
+      "uri": "spotify:track:2UfXaLBHektuW22kD2HKZF",
+      "matched": "Sexistential — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Talk to Me — Robyn",
+      "uri": "spotify:track:2U4Yi7LH63EiAf6094S087",
+      "matched": "Talk To Me — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "It Don't Mean A Thing — Robyn",
+      "uri": "spotify:track:2vf44ukpDRgtF4XNdXnf4u",
+      "matched": "It Don't Mean A Thing — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Sucker for Love — Robyn",
+      "uri": "spotify:track:5O8GYy3zDYonQno0UWYc9n",
+      "matched": "Sucker For Love — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Blow My Mind — Robyn",
+      "uri": "spotify:track:1VDfq61UbPycYsPnqSdrSH",
+      "matched": "Blow My Mind — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Dopamine — Robyn",
+      "uri": "spotify:track:2kqQoTZ4b5D8lLtMlUrZcC",
+      "matched": "Dopamine — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Really Real — Robyn",
+      "uri": "spotify:track:6xRB2fycu6goQZWumt5zVv",
+      "matched": "Really Real — Robyn"
+    },
+    {
+      "plays": 1,
+      "query": "Déjà Vu — Escape The Fate",
+      "uri": "spotify:track:7dLAJQG3gkQxN08ReKQlch",
+      "matched": "Déjà Vu — Escape the Fate"
+    },
+    {
+      "plays": 1,
+      "query": "True Believers (feat. Sam Carter) — Don Broco",
+      "uri": "spotify:track:6bzbBeqibhl70svGOboJDN",
+      "matched": "True Believers (Feat. Sam Carter) — DON BROCO, Sam Carter"
+    },
+    {
+      "plays": 1,
+      "query": "Florida!!! (feat. Florence + the Machine) — Taylor Swift",
+      "uri": "spotify:track:5ExOm0dh4NyRyAdSAO9hyM",
+      "matched": "Florida!!! (feat. Florence + The Machine) — Taylor Swift, Florence + The Machine"
+    },
+    {
+      "plays": 1,
+      "query": "Fresh Out the Slammer — Taylor Swift",
+      "uri": "spotify:track:7IWcDWOfiooH5hRs9XOVYz",
+      "matched": "Fresh Out The Slammer — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "But Daddy I Love Him — Taylor Swift",
+      "uri": "spotify:track:5og4Qzt92jJzVDkOtSEilb",
+      "matched": "But Daddy I Love Him — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "So Long, London — Taylor Swift",
+      "uri": "spotify:track:7wAkQFShJ27V8362MqevQr",
+      "matched": "So Long, London — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "How Did It End? — Taylor Swift",
+      "uri": "spotify:track:5Bedn0svl0ZD7RGmJkmKKw",
+      "matched": "How Did It End? — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Chloe or Sam or Sophia or Marcus — Taylor Swift",
+      "uri": "spotify:track:1rmEsOezwf2lmIZTMAO5Ag",
+      "matched": "Chloe or Sam or Sophia or Marcus — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "The Albatross — Taylor Swift",
+      "uri": "spotify:track:4EF6IyONolQy0bIQXm2EmX",
+      "matched": "The Albatross — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "imgonnagetyouback — Taylor Swift",
+      "uri": "spotify:track:1kcwpPDQnqEqmezzXdJTCP",
+      "matched": "imgonnagetyouback — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "The Black Dog — Taylor Swift",
+      "uri": "spotify:track:62E2nR0od0M5HYxuYLaDz7",
+      "matched": "The Black Dog — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "The Manuscript — Taylor Swift",
+      "uri": "spotify:track:1DTRUYVd8rYpla9hhVVwjo",
+      "matched": "The Manuscript — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Robin — Taylor Swift",
+      "uri": "spotify:track:2CnjDMdpRjlWv04Xk3s6MW",
+      "matched": "Robin — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "The Bolter — Taylor Swift",
+      "uri": "spotify:track:2913xXOVAIDAqxzV2g4VcU",
+      "matched": "The Bolter — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Peter — Taylor Swift",
+      "uri": "spotify:track:3zMDGj4D8ogaYgAIZPeU7S",
+      "matched": "Peter — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Cassandra — Taylor Swift",
+      "uri": "spotify:track:0g4fMVo4JjwnIpTfFfLdxS",
+      "matched": "Cassandra — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "The Prophecy — Taylor Swift",
+      "uri": "spotify:track:18WFFUIsewmA8g31KAeo3e",
+      "matched": "The Prophecy — Taylor Swift"
+    },
+    {
+      "plays": 1,
+      "query": "Indie Rokkers — MGMT",
+      "uri": "spotify:track:1wbba6PHMvfYECI07VsfNl",
+      "matched": "Indie Rokkers — MGMT"
+    },
+    {
+      "plays": 1,
+      "query": "Primadonna — Marina",
+      "uri": "spotify:track:4sOX1nhpKwFWPvoMMExi3q",
+      "matched": "Primadonna — MARINA"
+    },
+    {
+      "plays": 1,
+      "query": "Dead Talk — Wind Walkers",
+      "uri": "spotify:track:2LHEmAUf9ybEC7x3670sXh",
+      "matched": "Dead Talk — Wind Walkers"
+    },
+    {
+      "plays": 1,
+      "query": "The Light You Attract — Adult Leisure",
+      "uri": "spotify:track:2S41NMPh9vuuyhWG3OQS8b",
+      "matched": "The Light You Attract — Adult Leisure"
+    },
+    {
+      "plays": 1,
+      "query": "Cruel — Curse",
+      "uri": "spotify:track:49IaZZFwtlZWjfx2nzBkUh",
+      "matched": "Cruel — CURSE"
+    },
+    {
+      "plays": 1,
+      "query": "Mayday — Normandie",
+      "uri": "spotify:track:2cjZ5XyePT7WXlVotv00FW",
+      "matched": "Mayday — Normandie"
+    },
+    {
+      "plays": 1,
+      "query": "DERELICT (feat. Spencer Charnas from Ice Nine Kills) — Goldfinger",
+      "uri": "spotify:track:4nzNLOMboszyXjoHeeEcbW",
+      "matched": "DERELICT (feat. Spencer Charnas from Ice Nine Kills) — Goldfinger, Ice Nine Kills, Spencer Charnas"
+    },
+    {
+      "plays": 1,
+      "query": "Ambrosia — Mosaic",
+      "uri": "spotify:track:06LdhvwHq2FmaG8Usx3YiC",
+      "matched": "Ambrosia — Mosaic"
+    },
+    {
+      "plays": 1,
+      "query": "Hurricane — I Prevail",
+      "uri": "spotify:track:2GFwwTIVLjnOrtP7m9luHC",
+      "matched": "Hurricane — I Prevail"
+    },
+    {
+      "plays": 1,
+      "query": "Might Love Myself — Beartooth",
+      "uri": "spotify:track:1VLM75hY5fluRorkbIt6NT",
+      "matched": "Might Love Myself — Beartooth"
+    },
+    {
+      "plays": 1,
+      "query": "Paralyzed — Sleep Theory",
+      "uri": "spotify:track:5AdLs8ZRRgvCmOTqr41xiP",
+      "matched": "Paralyzed — Sleep Theory"
+    },
+    {
+      "plays": 1,
+      "query": "Numb — Sleep Theory",
+      "uri": "spotify:track:4aoQieyuKhiKwgukgJTg6n",
+      "matched": "Numb — Sleep Theory"
+    },
+    {
+      "plays": 1,
+      "query": "Witches Brew — Brooke Taylor",
+      "uri": "spotify:track:6NLCUVqi3NwkMPDIpblLNl",
+      "matched": "Witches Brew — Brooke Taylor"
+    },
+    {
+      "plays": 1,
+      "query": "Melodramatic Fanatic — Lime Cordiale",
+      "uri": "spotify:track:6kJB0UAaSCnFCJMRc5nVze",
+      "matched": "Melodramatic Fanatic — Lime Cordiale, Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "OH! Not Again — Balu Brigada",
+      "uri": "spotify:track:2r8X1ePGbN2AwoEfoL4CML",
+      "matched": "OH! Not Again — Balu Brigada"
+    },
+    {
+      "plays": 1,
+      "query": "Painkiller — Ruel",
+      "uri": "spotify:track:1YlulsUKDduOmC7WxvXYPW",
+      "matched": "Painkiller — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "Afterthought — Joji",
+      "uri": "spotify:track:4G9hlKVIwuWE8qpW2UQpV3",
+      "matched": "Afterthought — Joji, BENEE"
+    },
+    {
+      "plays": 1,
+      "query": "Deep Green — Christian Kuria",
+      "uri": "spotify:track:2xGGpmywtvPY3h7JkcwP1E",
+      "matched": "Deep Green — Christian Kuria"
+    },
+    {
+      "plays": 1,
+      "query": "Cigarette — Alfie Jukes",
+      "uri": "spotify:track:1w7QUlz2elKsMHZRQ7scxS",
+      "matched": "Cigarette — Alfie Jukes"
+    },
+    {
+      "plays": 1,
+      "query": "dst (outro) — Ruel",
+      "uri": "spotify:track:117s2y6svjbjlpbUNLMT4Z",
+      "matched": "dst (outro) — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "Kicking My Feet — Ruel",
+      "uri": "spotify:track:5WGXrHXKjTNqfpnyNjChkP",
+      "matched": "Kicking My Feet — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "Even Angels Won’t — Ruel",
+      "uri": "spotify:track:4P5oe4DEQiD2jfYy2M7B9P",
+      "matched": "Even Angels Won’t — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "No News Is Good News — Ruel",
+      "uri": "spotify:track:61836AsNfXNWqCELz1gcUN",
+      "matched": "No News Is Good News — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "Destroyer — Ruel",
+      "uri": "spotify:track:3qqNjczSJVovUyxBzAKXqM",
+      "matched": "Destroyer — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "Not What’s Going On — Ruel",
+      "uri": "spotify:track:08zcEhmeMxCQIGIuyuvTl9",
+      "matched": "Not What’s Going On — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "I Can Die Now — Ruel",
+      "uri": "spotify:track:5cwslMvLevVazYTJGCMPfo",
+      "matched": "I Can Die Now — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "When You Walk In The Room — Ruel",
+      "uri": "spotify:track:0C7yscd8TsZTpgFh8L63JU",
+      "matched": "When You Walk In The Room — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "Only Ever — Ruel",
+      "uri": "spotify:track:1CjJ4EJk33CTNNlSUYZQhD",
+      "matched": "Only Ever — Ruel"
+    },
+    {
+      "plays": 1,
+      "query": "Better Now — Post Malone",
+      "uri": "spotify:track:7dt6x5M1jzdTEt8oCbisTK",
+      "matched": "Better Now — Post Malone"
+    },
+    {
+      "plays": 1,
+      "query": "Goodbyes (feat. Young Thug) — Post Malone",
+      "uri": "spotify:track:0t3ZvGKlmYmVsDzBJAXK8C",
+      "matched": "Goodbyes (feat. Young Thug) — Post Malone, Young Thug"
+    },
+    {
+      "plays": 1,
+      "query": "Dark Thoughts — The Funeral Portrait",
+      "uri": "spotify:track:5TrZpK9NH0PBqBoZssXN9c",
+      "matched": "Dark Thoughts — The Funeral Portrait"
+    },
+    {
+      "plays": 1,
+      "query": "I Was Alive — Beartooth",
+      "uri": "spotify:track:7Csk3CTefKI9mEZvwNCjNX",
+      "matched": "I Was Alive — Beartooth"
+    },
+    {
+      "plays": 1,
+      "query": "Chasing Cars — Snow Patrol",
+      "uri": "spotify:track:5hnyJvgoWiQUYZttV4wXy6",
+      "matched": "Chasing Cars — Snow Patrol"
+    },
+    {
+      "plays": 1,
+      "query": "Big Girls Don't Cry (Personal) — Fergie",
+      "uri": "spotify:track:6dgWWAs5yhWPOtvE1zuoQ1",
+      "matched": "Big Girls Don't Cry (Personal) — Fergie"
+    },
+    {
+      "plays": 1,
+      "query": "Say It Right — Nelly Furtado",
+      "uri": "spotify:track:2aI21FnmY7TJVKeMaoQZ0t",
+      "matched": "Say It Right — Nelly Furtado"
+    },
+    {
+      "plays": 1,
+      "query": "Wrecking Ball — Miley Cyrus",
+      "uri": "spotify:track:2vwlzO0Qp8kfEtzTsCXfyE",
+      "matched": "Wrecking Ball — Miley Cyrus"
+    },
+    {
+      "plays": 1,
+      "query": "Sign of the Times — Harry Styles",
+      "uri": "spotify:track:5Ohxk2dO5COHF1krpoPigN",
+      "matched": "Sign of the Times — Harry Styles"
+    },
+    {
+      "plays": 1,
+      "query": "She Used to Be Mine — Sara Bareilles",
+      "uri": "spotify:track:2D4BSm5Z8Hq5zYbSgJwEOh",
+      "matched": "She Used To Be Mine — Sara Bareilles"
+    },
+    {
+      "plays": 1,
+      "query": "Because of You — Kelly Clarkson",
+      "uri": "spotify:track:0gJvqi9QyASOCtJu99tytc",
+      "matched": "Because of You — Kelly Clarkson"
+    },
+    {
+      "plays": 1,
+      "query": "Beautiful — Christina Aguilera",
+      "uri": "spotify:track:3TCauNPqFiniaYHBvEVoHG",
+      "matched": "Beautiful — Christina Aguilera"
+    },
+    {
+      "plays": 1,
+      "query": "Wind of Change — Scorpions",
+      "uri": "spotify:track:3ovjw5HZZv43SxTwApooCM",
+      "matched": "Wind Of Change — Scorpions"
+    },
+    {
+      "plays": 1,
+      "query": "Don't Speak — No Doubt",
+      "uri": "spotify:track:6urCAbunOQI4bLhmGpX7iS",
+      "matched": "Don't Speak — No Doubt"
+    },
+    {
+      "plays": 1,
+      "query": "Jar of Hearts — Christina Perri",
+      "uri": "spotify:track:0HZhYMZOcUzZKSFwPOti6m",
+      "matched": "jar of hearts — Christina Perri"
+    },
+    {
+      "plays": 1,
+      "query": "The Scientist — Coldplay",
+      "uri": "spotify:track:75JFxkI2RXiU7L9VXzMkle",
+      "matched": "The Scientist — Coldplay"
+    },
+    {
+      "plays": 1,
+      "query": "What's Up? — 4 Non Blondes",
+      "uri": "spotify:track:0jWgAnTrNZmOGmqgvHhZEm",
+      "matched": "What's Up? — 4 Non Blondes"
+    },
+    {
+      "plays": 1,
+      "query": "Heaven — Bryan Adams",
+      "uri": "spotify:track:7Ewz6bJ97vUqk5HdkvguFQ",
+      "matched": "Heaven — Bryan Adams"
+    },
+    {
+      "plays": 1,
+      "query": "You and Me — Lifehouse",
+      "uri": "spotify:track:0815caqt2Lytro5EIzMufT",
+      "matched": "You And Me — Lifehouse"
+    },
+    {
+      "plays": 1,
+      "query": "Trouble — Coldplay",
+      "uri": "spotify:track:0R8P9KfGJCDULmlEoBagcO",
+      "matched": "Trouble — Coldplay"
+    }
+  ]
+}

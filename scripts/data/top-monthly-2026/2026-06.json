@@ -1,0 +1,1809 @@
+{
+  "month": 6,
+  "name": "Junho",
+  "from": 1780282800,
+  "toExclusive": 1782402628,
+  "scrobbles": 1504,
+  "top": [
+    {
+      "track": "Evolution",
+      "artist": "Nothing But Thieves",
+      "album": "Evolution",
+      "plays": 33
+    },
+    {
+      "track": "the cure",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 28
+    },
+    {
+      "track": "Sorry Scusa Lo Siento",
+      "artist": "Pinguini Tattici Nucleari",
+      "album": "Sorry Scusa Lo Siento",
+      "plays": 28
+    },
+    {
+      "track": "Who Will You Follow",
+      "artist": "Evanescence",
+      "album": "Who Will You Follow",
+      "plays": 24
+    },
+    {
+      "track": "Headlights",
+      "artist": "In Color",
+      "album": "Headlights",
+      "plays": 24
+    },
+    {
+      "track": "Hit the Wall",
+      "artist": "Gracie Abrams",
+      "album": "Hit The Wall",
+      "plays": 23
+    },
+    {
+      "track": "When You're Gone",
+      "artist": "The Devil Wears Prada",
+      "album": "Flowers",
+      "plays": 19
+    },
+    {
+      "track": "Evergreen",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 17
+    },
+    {
+      "track": "Just Pretend",
+      "artist": "Bad Omens",
+      "album": "THE DEATH OF PEACE OF MIND",
+      "plays": 17
+    },
+    {
+      "track": "Debbie Don't Cry",
+      "artist": "Ruel",
+      "album": "Debbie Don't Cry",
+      "plays": 16
+    },
+    {
+      "track": "Elizabeth Taylor",
+      "artist": "Taylor Swift",
+      "album": "The Life of a Showgirl",
+      "plays": 16
+    },
+    {
+      "track": "Cut",
+      "artist": "Black Veil Brides",
+      "album": "Vindicate",
+      "plays": 16
+    },
+    {
+      "track": "Broken Mirror",
+      "artist": "Architects",
+      "album": "The Sky, the Earth & All Between",
+      "plays": 16
+    },
+    {
+      "track": "drop dead",
+      "artist": "Olivia Rodrigo",
+      "album": "Drop Dead",
+      "plays": 15
+    },
+    {
+      "track": "Best Of Me",
+      "artist": "YONAKA",
+      "album": "Until You're Satisfied",
+      "plays": 15
+    },
+    {
+      "track": "Dazed & Confused",
+      "artist": "Glen Check",
+      "album": "Bleach",
+      "plays": 15
+    },
+    {
+      "track": "Damocles",
+      "artist": "Sleep Token",
+      "album": "Even In Arcadia",
+      "plays": 15
+    },
+    {
+      "track": "Down Bad",
+      "artist": "Taylor Swift",
+      "album": "THE TORTURED POETS DEPARTMENT",
+      "plays": 15
+    },
+    {
+      "track": "stupid song",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 15
+    },
+    {
+      "track": "I Knew It, I Knew You",
+      "artist": "Taylor Swift",
+      "album": "I Knew It, I Knew You",
+      "plays": 14
+    },
+    {
+      "track": "Butterflies",
+      "artist": "All Time Low",
+      "album": "Everyone's Talking!",
+      "plays": 14
+    },
+    {
+      "track": "The Emptiness Machine",
+      "artist": "Linkin Park",
+      "album": "From Zero",
+      "plays": 14
+    },
+    {
+      "track": "Cruel World",
+      "artist": "Holly Humberstone",
+      "album": "Cruel World",
+      "plays": 13
+    },
+    {
+      "track": "hate that i made you love me",
+      "artist": "Ariana Grande",
+      "album": "hate that i made you love me",
+      "plays": 13
+    },
+    {
+      "track": "Blurry",
+      "artist": "Zero 9:36",
+      "album": "Blurry",
+      "plays": 13
+    },
+    {
+      "track": "Do What You Gotta Do",
+      "artist": "The Band CAMINO",
+      "album": "NeverAlways (Vol. 2)",
+      "plays": 12
+    },
+    {
+      "track": "Mannequin",
+      "artist": "Jutes",
+      "album": "Mannequin / Goodnight (Interlude) <3",
+      "plays": 12
+    },
+    {
+      "track": "Rapture",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 12
+    },
+    {
+      "track": "Dance No More",
+      "artist": "Harry Styles",
+      "album": "Kiss All The Time. Disco, Occasionally.",
+      "plays": 12
+    },
+    {
+      "track": "Homewrecker",
+      "artist": "sombr",
+      "album": "Homewrecker",
+      "plays": 12
+    },
+    {
+      "track": "The Prophecy",
+      "artist": "Taylor Swift",
+      "album": "THE TORTURED POETS DEPARTMENT: THE ANTHOLOGY",
+      "plays": 10
+    },
+    {
+      "track": "Your Girlfriend",
+      "artist": "Weathers",
+      "album": "Your Girlfriend",
+      "plays": 10
+    },
+    {
+      "track": "SS26",
+      "artist": "Charli xcx",
+      "album": "SS26",
+      "plays": 9
+    },
+    {
+      "track": "Pure Ecstasy",
+      "artist": "Beartooth",
+      "album": "Pure Ecstasy",
+      "plays": 9
+    },
+    {
+      "track": "Wide Open Heart",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 9
+    },
+    {
+      "track": "Beautiful Lie",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 9
+    },
+    {
+      "track": "How Do You Sleep?",
+      "artist": "Hoobastank",
+      "album": "How Do You Sleep?",
+      "plays": 8
+    },
+    {
+      "track": "skinny dip",
+      "artist": "Almost Monday",
+      "album": "skinny dip",
+      "plays": 8
+    },
+    {
+      "track": "Different Kind of Love",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 8
+    },
+    {
+      "track": "Forever Without You",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "Self Destruct",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "Calm Down",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "About us",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "How Do I Heal",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "Sanctuary",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "Afterlife",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "Tell Me When You've Had Enough",
+      "artist": "Evanescence",
+      "album": "Sanctuary",
+      "plays": 8
+    },
+    {
+      "track": "expectations",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 7
+    },
+    {
+      "track": "Heart",
+      "artist": "The Wldlfe",
+      "album": "Heart",
+      "plays": 7
+    },
+    {
+      "track": "Mirror",
+      "artist": "MOD SUN",
+      "album": "Mirror",
+      "plays": 7
+    },
+    {
+      "track": "OTHERSIDE",
+      "artist": "Nevertel",
+      "album": "OTHERSIDE",
+      "plays": 7
+    },
+    {
+      "track": "Eastside Girls",
+      "artist": "MUNA",
+      "album": "Dancing on the Wall",
+      "plays": 7
+    },
+    {
+      "track": "Who You Are",
+      "artist": "KIDPUNK",
+      "album": "Who You Are",
+      "plays": 6
+    },
+    {
+      "track": "House Of Matches",
+      "artist": "Sleeping With Sirens",
+      "album": "An Ending In Itself",
+      "plays": 6
+    },
+    {
+      "track": "Poison",
+      "artist": "Dean Lewis",
+      "album": "Poison",
+      "plays": 6
+    },
+    {
+      "track": "Offerings",
+      "artist": "Ibeyi",
+      "album": "Offerings",
+      "plays": 6
+    },
+    {
+      "track": "Sinner Systems",
+      "artist": "DEAD POET SOCIETY",
+      "album": "Sinner Systems",
+      "plays": 6
+    },
+    {
+      "track": "THERE GOES THE NEIGHBORHOOD",
+      "artist": "Girlfriends",
+      "album": "There Goes The Neighborhood",
+      "plays": 6
+    },
+    {
+      "track": "Big Shop Of Horrors",
+      "artist": "Highly Suspect",
+      "album": "Big Shop Of Horrors",
+      "plays": 6
+    },
+    {
+      "track": "Rock Music",
+      "artist": "Charli xcx",
+      "album": "Rock Music",
+      "plays": 6
+    },
+    {
+      "track": "Left For Good",
+      "artist": "Bad Omens",
+      "album": "Left For Good",
+      "plays": 5
+    },
+    {
+      "track": "[Gen]inside",
+      "artist": "Catch Your Breath",
+      "album": "[Gen]inside",
+      "plays": 5
+    },
+    {
+      "track": "Starting Over Again",
+      "artist": "Saosin",
+      "album": "Starting Over Again",
+      "plays": 5
+    },
+    {
+      "track": "cigarette smoke",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 5
+    },
+    {
+      "track": "Dark",
+      "artist": "Catch Your Breath",
+      "album": "Dark",
+      "plays": 5
+    },
+    {
+      "track": "Time Will Tell",
+      "artist": "Poppy",
+      "album": "Empty Hands",
+      "plays": 5
+    },
+    {
+      "track": "Punching the Flowers",
+      "artist": "Death Cab for Cutie",
+      "album": "I Built You A Tower",
+      "plays": 4
+    },
+    {
+      "track": "no more regrets",
+      "artist": "Almost Monday",
+      "album": "no more regrets",
+      "plays": 4
+    },
+    {
+      "track": "Twisting The Knife (feat. Mckenna Grace)",
+      "artist": "Ice Nine Kills",
+      "album": "Twisting The Knife (feat. Mckenna Grace)",
+      "plays": 4
+    },
+    {
+      "track": "Limits",
+      "artist": "Bad Omens",
+      "album": "Finding God Before God Finds Me (Deluxe)",
+      "plays": 4
+    },
+    {
+      "track": "Dying to Love",
+      "artist": "Bad Omens",
+      "album": "Dying To Love",
+      "plays": 4
+    },
+    {
+      "track": "less",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "what’s wrong with me",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "begged",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "purple",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "my way",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "u + me = <3",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "maggots for brains",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "honeybee",
+      "artist": "Olivia Rodrigo",
+      "album": "you seem pretty sad for a girl so in love",
+      "plays": 4
+    },
+    {
+      "track": "Forever",
+      "artist": "From Ashes to New",
+      "album": "Reflections",
+      "plays": 4
+    },
+    {
+      "track": "2SIDED",
+      "artist": "Arlo Parks",
+      "album": "Ambiguous Desire",
+      "plays": 4
+    },
+    {
+      "track": "Dead to the World",
+      "artist": "The Ivory",
+      "album": "Dead to the World",
+      "plays": 4
+    },
+    {
+      "track": "True Believers (feat. Sam Carter)",
+      "artist": "Don Broco",
+      "album": "Nightmare Tripping",
+      "plays": 4
+    },
+    {
+      "track": "Bullet Between My Teeth",
+      "artist": "Loveshy",
+      "album": "Aftertaste",
+      "plays": 4
+    },
+    {
+      "track": "Il Vuoto",
+      "artist": "Sea John",
+      "album": "Il Vuoto",
+      "plays": 4
+    },
+    {
+      "track": "Potential",
+      "artist": "sombr",
+      "album": "Potential",
+      "plays": 4
+    },
+    {
+      "track": "Aset",
+      "artist": "Ibeyi",
+      "album": "Aset",
+      "plays": 4
+    },
+    {
+      "track": "Meet Me In Love",
+      "artist": "Blossoms",
+      "album": "Meet Me In Love",
+      "plays": 3
+    },
+    {
+      "track": "Don't Wanna Go Home Tonight",
+      "artist": "Three Days Grace",
+      "album": "Alienation",
+      "plays": 3
+    },
+    {
+      "track": "BLINDFOLD",
+      "artist": "Wage War",
+      "album": "It Calls Me By Name",
+      "plays": 3
+    },
+    {
+      "track": "Dead Roses",
+      "artist": "Broadside",
+      "album": "Nowhere, At Last",
+      "plays": 3
+    },
+    {
+      "track": "Pool",
+      "artist": "Paramore",
+      "album": "After Laughter",
+      "plays": 3
+    },
+    {
+      "track": "Everything Ends",
+      "artist": "Architects",
+      "album": "The Sky, the Earth & All Between",
+      "plays": 3
+    },
+    {
+      "track": "Style",
+      "artist": "Taylor Swift",
+      "album": "1989 (Deluxe)",
+      "plays": 3
+    },
+    {
+      "track": "Like a Villain",
+      "artist": "Bad Omens",
+      "album": "THE DEATH OF PEACE OF MIND",
+      "plays": 3
+    },
+    {
+      "track": "Frozen",
+      "artist": "Rain City Drive",
+      "album": "Things Are Different Now",
+      "plays": 3
+    },
+    {
+      "track": "Palms",
+      "artist": "The Maine",
+      "album": "Joy Next Door",
+      "plays": 3
+    },
+    {
+      "track": "Wi$h Li$t",
+      "artist": "Taylor Swift",
+      "album": "The Life of a Showgirl",
+      "plays": 3
+    },
+    {
+      "track": "End of You",
+      "artist": "Poppy",
+      "album": "End of You",
+      "plays": 3
+    },
+    {
+      "track": "august",
+      "artist": "Taylor Swift",
+      "album": "folklore",
+      "plays": 3
+    },
+    {
+      "track": "Roman Holiday",
+      "artist": "Halsey",
+      "album": "BADLANDS (Deluxe)",
+      "plays": 3
+    },
+    {
+      "track": "Already There",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 3
+    },
+    {
+      "track": "Bitter Fruit",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 3
+    },
+    {
+      "track": "Emergency",
+      "artist": "Løren",
+      "album": "EMERGENCY",
+      "plays": 3
+    },
+    {
+      "track": "ANTIDOTE",
+      "artist": "Daughtry",
+      "album": "Antidote",
+      "plays": 3
+    },
+    {
+      "track": "Never Let Me Go",
+      "artist": "Florence + the Machine",
+      "album": "Ceremonials (Original Deluxe Version)",
+      "plays": 3
+    },
+    {
+      "track": "Broken Pieces Shine",
+      "artist": "Evanescence",
+      "album": "The Bitter Truth",
+      "plays": 3
+    },
+    {
+      "track": "SLC Punk on an SSRI",
+      "artist": "Slow Joy",
+      "album": "SLC Punk on an SSRI",
+      "plays": 3
+    },
+    {
+      "track": "Sparirò",
+      "artist": "Sea John",
+      "album": "Sparirò",
+      "plays": 3
+    },
+    {
+      "track": "Gimmie Love",
+      "artist": "Carly Rae Jepsen",
+      "album": "Emotion",
+      "plays": 3
+    },
+    {
+      "track": "The Alchemy",
+      "artist": "Taylor Swift",
+      "album": "THE TORTURED POETS DEPARTMENT",
+      "plays": 3
+    },
+    {
+      "track": "Trailers",
+      "artist": "Terno Rei",
+      "album": "Gêmeos",
+      "plays": 3
+    },
+    {
+      "track": "Crawl Back To My Coffin",
+      "artist": "Dayseeker",
+      "album": "Creature In The Black Night",
+      "plays": 3
+    },
+    {
+      "track": "Olha Só",
+      "artist": "Terno Rei",
+      "album": "Gêmeos",
+      "plays": 3
+    },
+    {
+      "track": "How to Be a Heartbreaker",
+      "artist": "Marina",
+      "album": "Electra Heart (Deluxe)",
+      "plays": 3
+    },
+    {
+      "track": "Holly!",
+      "artist": "The Band CAMINO",
+      "album": "Holly!",
+      "plays": 3
+    },
+    {
+      "track": "Words Are Worthless",
+      "artist": "Sleep Theory",
+      "album": "Afterglow",
+      "plays": 3
+    },
+    {
+      "track": "We Might as Well Be Strangers (ft. Wednesday)",
+      "artist": "Weezer",
+      "album": "We Might as Well Be Strangers (ft. Wednesday)",
+      "plays": 3
+    },
+    {
+      "track": "She Does It Right",
+      "artist": "The Black Keys",
+      "album": "Peaches!",
+      "plays": 3
+    },
+    {
+      "track": "Follow You",
+      "artist": "Bring Me the Horizon",
+      "album": "That's the Spirit",
+      "plays": 3
+    },
+    {
+      "track": "Ego",
+      "artist": "The Warning",
+      "album": "Ego",
+      "plays": 3
+    },
+    {
+      "track": "Good To Go",
+      "artist": "New Found Glory",
+      "album": "Good To Go",
+      "plays": 3
+    },
+    {
+      "track": "SWITCH",
+      "artist": "milune",
+      "album": "SWITCH",
+      "plays": 3
+    },
+    {
+      "track": "Sweet Talk",
+      "artist": "The Killers",
+      "album": "Sawdust",
+      "plays": 3
+    },
+    {
+      "track": "my tears ricochet",
+      "artist": "Taylor Swift",
+      "album": "folklore",
+      "plays": 3
+    },
+    {
+      "track": "Sorte Ainda",
+      "artist": "Terno Rei",
+      "album": "Gêmeos",
+      "plays": 3
+    },
+    {
+      "track": "Dias da Juventude",
+      "artist": "Terno Rei",
+      "album": "Gêmeos",
+      "plays": 3
+    },
+    {
+      "track": "Esperando Você",
+      "artist": "Terno Rei",
+      "album": "Gêmeos",
+      "plays": 3
+    },
+    {
+      "track": "Become The Disease",
+      "artist": "Outlier",
+      "album": "Become The Disease",
+      "plays": 2
+    },
+    {
+      "track": "Make Amends",
+      "artist": "Above Snakes",
+      "album": "Make Amends",
+      "plays": 2
+    },
+    {
+      "track": "Easier to Run",
+      "artist": "Linkin Park",
+      "album": "Meteora (Bonus Edition)",
+      "plays": 2
+    },
+    {
+      "track": "Decode",
+      "artist": "Paramore",
+      "album": "Decode",
+      "plays": 2
+    },
+    {
+      "track": "Stay Together for the Kids",
+      "artist": "blink-182",
+      "album": "Take Off Your Pants and Jacket",
+      "plays": 2
+    },
+    {
+      "track": "To the End",
+      "artist": "My Chemical Romance",
+      "album": "Three Cheers for Sweet Revenge",
+      "plays": 2
+    },
+    {
+      "track": "Upside",
+      "artist": "Porch Light",
+      "album": "Navy Blue",
+      "plays": 2
+    },
+    {
+      "track": "Not What’s Going On",
+      "artist": "Ruel",
+      "album": "Kicking My Feet",
+      "plays": 2
+    },
+    {
+      "track": "The Fountain",
+      "artist": "Bad Omens",
+      "album": "Bad Omens",
+      "plays": 2
+    },
+    {
+      "track": "Touch It",
+      "artist": "Ariana Grande",
+      "album": "Dangerous Woman",
+      "plays": 2
+    },
+    {
+      "track": "Somewhere I Belong",
+      "artist": "Linkin Park",
+      "album": "Meteora (Bonus Edition)",
+      "plays": 2
+    },
+    {
+      "track": "NØBØDY'S PUPPET",
+      "artist": "MØNØDREAM",
+      "album": "NØBØDY'S PUPPET",
+      "plays": 2
+    },
+    {
+      "track": "chainwhip",
+      "artist": "Saint Blonde",
+      "album": "chainwhip",
+      "plays": 2
+    },
+    {
+      "track": "Edge of a Knife",
+      "artist": "Saliva",
+      "album": "Edge of a Knife",
+      "plays": 2
+    },
+    {
+      "track": "Graveyard Whistling",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 2
+    },
+    {
+      "track": "Pale Moonlight",
+      "artist": "Dayseeker",
+      "album": "Pale Moonlight",
+      "plays": 2
+    },
+    {
+      "track": "L'amore in bocca",
+      "artist": "SANTI FRANCESI",
+      "album": "l'amore in bocca - Single",
+      "plays": 2
+    },
+    {
+      "track": "Tu no",
+      "artist": "Irama",
+      "album": "Tu No - Single",
+      "plays": 2
+    },
+    {
+      "track": "Amaro",
+      "artist": "Pinguini Tattici Nucleari",
+      "album": "Hello World",
+      "plays": 2
+    },
+    {
+      "track": "Over Each Other",
+      "artist": "Linkin Park",
+      "album": "From Zero",
+      "plays": 2
+    },
+    {
+      "track": "IGYEIH",
+      "artist": "Linkin Park",
+      "album": "From Zero",
+      "plays": 2
+    },
+    {
+      "track": "hesitate",
+      "artist": "HRVY",
+      "album": "hesitate",
+      "plays": 2
+    },
+    {
+      "track": "The Archer",
+      "artist": "Taylor Swift",
+      "album": "Lover",
+      "plays": 2
+    },
+    {
+      "track": "we can't be friends (wait for your love)",
+      "artist": "Ariana Grande",
+      "album": "eternal sunshine",
+      "plays": 2
+    },
+    {
+      "track": "Renegade",
+      "artist": "Big Red Machine",
+      "album": "How Long Do You Think It's Gonna Last?",
+      "plays": 2
+    },
+    {
+      "track": "Electric Shock",
+      "artist": "f(x)",
+      "album": "Electric Shock - The 2nd Mini Album",
+      "plays": 2
+    },
+    {
+      "track": "tolerate it",
+      "artist": "Taylor Swift",
+      "album": "evermore",
+      "plays": 2
+    },
+    {
+      "track": "this is me trying",
+      "artist": "Taylor Swift",
+      "album": "folklore",
+      "plays": 2
+    },
+    {
+      "track": "Colors",
+      "artist": "Halsey",
+      "album": "BADLANDS",
+      "plays": 2
+    },
+    {
+      "track": "Cornelia Street",
+      "artist": "Taylor Swift",
+      "album": "Lover",
+      "plays": 2
+    },
+    {
+      "track": "All Too Well (10 Minute Version) (Taylor's Version) (From the Vault)",
+      "artist": "Taylor Swift",
+      "album": "Red (Taylor's Version)",
+      "plays": 2
+    },
+    {
+      "track": "I'm Not Okay (I Promise)",
+      "artist": "My Chemical Romance",
+      "album": "Three Cheers for Sweet Revenge",
+      "plays": 2
+    },
+    {
+      "track": "Helena",
+      "artist": "My Chemical Romance",
+      "album": "Three Cheers for Sweet Revenge",
+      "plays": 2
+    },
+    {
+      "track": "Behind These Hazel Eyes",
+      "artist": "Our Last Night",
+      "album": "Behind These Hazel Eyes",
+      "plays": 2
+    },
+    {
+      "track": "So Easy (To Fall In Love)",
+      "artist": "Olivia Dean",
+      "album": "The Art of Loving",
+      "plays": 2
+    },
+    {
+      "track": "Drag Path",
+      "artist": "twenty one pilots",
+      "album": "Drag Path",
+      "plays": 2
+    },
+    {
+      "track": "WILDFLOWER",
+      "artist": "Billie Eilish",
+      "album": "HIT ME HARD AND SOFT",
+      "plays": 2
+    },
+    {
+      "track": "deja vu",
+      "artist": "Olivia Rodrigo",
+      "album": "SOUR",
+      "plays": 2
+    },
+    {
+      "track": "Centuries",
+      "artist": "Fall Out Boy",
+      "album": "American Beauty/American Psycho",
+      "plays": 2
+    },
+    {
+      "track": "Cryogen",
+      "artist": "Muse",
+      "album": "Cryogen",
+      "plays": 2
+    },
+    {
+      "track": "Reptilia",
+      "artist": "The Strokes",
+      "album": "Room on Fire",
+      "plays": 2
+    },
+    {
+      "track": "Dancing on My Own",
+      "artist": "Robyn",
+      "album": "Body Talk",
+      "plays": 2
+    },
+    {
+      "track": "Untouched",
+      "artist": "Harrison",
+      "album": "Untouched",
+      "plays": 2
+    },
+    {
+      "track": "Left Behind",
+      "artist": "The Plot in You",
+      "album": "Vol. 1",
+      "plays": 2
+    },
+    {
+      "track": "My Way",
+      "artist": "Limp Bizkit",
+      "album": "Chocolate Starfish and the Hot Dog Flavored Water",
+      "plays": 2
+    },
+    {
+      "track": "stuck in my head",
+      "artist": "Sleep Theory",
+      "album": "Afterglow",
+      "plays": 2
+    },
+    {
+      "track": "Routines in the Night",
+      "artist": "Twenty One Pilots",
+      "album": "Clancy",
+      "plays": 2
+    },
+    {
+      "track": "Help Is on the Way",
+      "artist": "Rise Against",
+      "album": "Endgame",
+      "plays": 2
+    },
+    {
+      "track": "In The End",
+      "artist": "Black Veil Brides",
+      "album": "Wretched And Divine: The Story Of The Wild Ones",
+      "plays": 2
+    },
+    {
+      "track": "MANTRA",
+      "artist": "Bring Me the Horizon",
+      "album": "amo",
+      "plays": 2
+    },
+    {
+      "track": "Wood",
+      "artist": "Taylor Swift",
+      "album": "The Life of a Showgirl",
+      "plays": 2
+    },
+    {
+      "track": "Almost Ecstasy",
+      "artist": "Wind Walkers",
+      "album": "What If I Break?",
+      "plays": 2
+    },
+    {
+      "track": "Close to You",
+      "artist": "Gracie Abrams",
+      "album": "The Secret of Us",
+      "plays": 2
+    },
+    {
+      "track": "Call Me When You're Sober",
+      "artist": "Evanescence",
+      "album": "The Open Door",
+      "plays": 2
+    },
+    {
+      "track": "Leave Out All the Rest",
+      "artist": "Linkin Park",
+      "album": "Minutes to Midnight",
+      "plays": 2
+    },
+    {
+      "track": "Dying To Forget",
+      "artist": "Poppy",
+      "album": "Empty Hands",
+      "plays": 2
+    },
+    {
+      "track": "R.I.P. (feat. Skylar Grey)",
+      "artist": "Motionless in White",
+      "album": "R.I.P. (feat. Skylar Grey)",
+      "plays": 2
+    },
+    {
+      "track": "Mercy",
+      "artist": "President",
+      "album": "Mercy",
+      "plays": 2
+    },
+    {
+      "track": "All We've Known of Heaven",
+      "artist": "Soft Vein",
+      "album": "All We've Known of Heaven",
+      "plays": 2
+    },
+    {
+      "track": "Vindicate",
+      "artist": "Black Veil Brides",
+      "album": "Vindicate",
+      "plays": 2
+    },
+    {
+      "track": "Ludens",
+      "artist": "Bring Me the Horizon",
+      "album": "POST HUMAN: SURVIVAL HORROR",
+      "plays": 2
+    },
+    {
+      "track": "Clean (Taylor's Version)",
+      "artist": "Taylor Swift",
+      "album": "1989 (Taylor's Version)",
+      "plays": 2
+    },
+    {
+      "track": "Going Under",
+      "artist": "Evanescence",
+      "album": "Fallen",
+      "plays": 2
+    },
+    {
+      "track": "Animals",
+      "artist": "Architects",
+      "album": "For Those That Wish To Exist",
+      "plays": 2
+    },
+    {
+      "track": "Papercut",
+      "artist": "Linkin Park",
+      "album": "Hybrid Theory (Bonus Edition)",
+      "plays": 2
+    },
+    {
+      "track": "Heavy Is the Crown",
+      "artist": "Linkin Park",
+      "album": "From Zero",
+      "plays": 2
+    },
+    {
+      "track": "Die for You",
+      "artist": "From Ashes to New",
+      "album": "Reflections",
+      "plays": 2
+    },
+    {
+      "track": "Static",
+      "artist": "Sleep Theory",
+      "album": "Afterglow",
+      "plays": 2
+    },
+    {
+      "track": "Halo",
+      "artist": "Normandie",
+      "album": "Side Effects Pt.1",
+      "plays": 2
+    },
+    {
+      "track": "Forever/Always",
+      "artist": "Sleeping With Sirens",
+      "album": "Forever/Always",
+      "plays": 2
+    },
+    {
+      "track": "Lithium",
+      "artist": "Evanescence",
+      "album": "The Open Door",
+      "plays": 2
+    },
+    {
+      "track": "The Black Dog",
+      "artist": "Taylor Swift",
+      "album": "THE TORTURED POETS DEPARTMENT: THE ANTHOLOGY",
+      "plays": 2
+    },
+    {
+      "track": "Mind Over Matter",
+      "artist": "Young the Giant",
+      "album": "Mind Over Matter",
+      "plays": 2
+    },
+    {
+      "track": "illicit affairs",
+      "artist": "Taylor Swift",
+      "album": "folklore",
+      "plays": 2
+    },
+    {
+      "track": "Two Hearts",
+      "artist": "Stephen Dawes",
+      "album": "Two Hearts",
+      "plays": 2
+    },
+    {
+      "track": "Daylight",
+      "artist": "Taylor Swift",
+      "album": "Lover",
+      "plays": 2
+    },
+    {
+      "track": "I Don't Love You",
+      "artist": "My Chemical Romance",
+      "album": "The Black Parade",
+      "plays": 2
+    },
+    {
+      "track": "Solidão de Volta",
+      "artist": "Terno Rei",
+      "album": "Violeta",
+      "plays": 2
+    },
+    {
+      "track": "Brutal",
+      "artist": "Terno Rei",
+      "album": "Gêmeos",
+      "plays": 2
+    },
+    {
+      "track": "Difícil",
+      "artist": "Terno Rei",
+      "album": "Gêmeos",
+      "plays": 2
+    },
+    {
+      "track": "The Manuscript",
+      "artist": "Taylor Swift",
+      "album": "THE TORTURED POETS DEPARTMENT: THE ANTHOLOGY",
+      "plays": 2
+    },
+    {
+      "track": "The Subway",
+      "artist": "Chappell Roan",
+      "album": "The Subway",
+      "plays": 2
+    },
+    {
+      "track": "Begin Again (Taylor's Version)",
+      "artist": "Taylor Swift",
+      "album": "Red (Taylor's Version)",
+      "plays": 2
+    },
+    {
+      "track": "imgonnagetyouback",
+      "artist": "Taylor Swift",
+      "album": "THE TORTURED POETS DEPARTMENT: THE ANTHOLOGY",
+      "plays": 2
+    },
+    {
+      "track": "Smile",
+      "artist": "Lily Allen",
+      "album": "Alright, Still",
+      "plays": 2
+    },
+    {
+      "track": "relacionamento a b e r t o",
+      "artist": "Bruno Gadiol",
+      "album": "relacionamento a b e r t o",
+      "plays": 2
+    },
+    {
+      "track": "Oh!",
+      "artist": "Johnny Orlando",
+      "album": "Songs For Young Lovers",
+      "plays": 1
+    },
+    {
+      "track": "Say My Name In Your Sleep",
+      "artist": "Maisie Peters",
+      "album": "Florescence",
+      "plays": 1
+    },
+    {
+      "track": "Told You So",
+      "artist": "The Band CAMINO",
+      "album": "The Dark",
+      "plays": 1
+    },
+    {
+      "track": "One That Got Away",
+      "artist": "MUNA",
+      "album": "One That Got Away",
+      "plays": 1
+    },
+    {
+      "track": "Lost",
+      "artist": "Linkin Park",
+      "album": "Meteora 20th Anniversary Edition",
+      "plays": 1
+    },
+    {
+      "track": "sTraNgeRs",
+      "artist": "Bring Me the Horizon",
+      "album": "sTraNgeRs",
+      "plays": 1
+    },
+    {
+      "track": "Maroon",
+      "artist": "Taylor Swift",
+      "album": "Midnights",
+      "plays": 1
+    },
+    {
+      "track": "Everything You Want",
+      "artist": "Vertical Horizon",
+      "album": "Everything You Want",
+      "plays": 1
+    },
+    {
+      "track": "Barely Breathing",
+      "artist": "Duncan Sheik",
+      "album": "Duncan Sheik",
+      "plays": 1
+    },
+    {
+      "track": "Bionic - RE:CREATED VERSION",
+      "artist": "Placebo",
+      "album": "Placebo RE:CREATED",
+      "plays": 1
+    },
+    {
+      "track": "We're in This Together",
+      "artist": "Nine Inch Nails",
+      "album": "The Fragile",
+      "plays": 1
+    },
+    {
+      "track": "Clarity",
+      "artist": "Jimmy Eat World",
+      "album": "Clarity (Expanded Edition)",
+      "plays": 1
+    },
+    {
+      "track": "Go With the Flow",
+      "artist": "Queens of the Stone Age",
+      "album": "Songs for the Deaf",
+      "plays": 1
+    },
+    {
+      "track": "istillfeelthesame",
+      "artist": "5 Seconds of Summer",
+      "album": "EVERYONE'S A STAR!",
+      "plays": 1
+    },
+    {
+      "track": "Going Shopping",
+      "artist": "The Strokes",
+      "album": "Going Shopping",
+      "plays": 1
+    },
+    {
+      "track": "First",
+      "artist": "Cold War Kids",
+      "album": "Hold My Home",
+      "plays": 1
+    },
+    {
+      "track": "talking to myself",
+      "artist": "dreamfone",
+      "album": "postMANIC",
+      "plays": 1
+    },
+    {
+      "track": "Dazed & Confused",
+      "artist": "Broadside",
+      "album": "Hotel Bleu",
+      "plays": 1
+    },
+    {
+      "track": "Time",
+      "artist": "In Color",
+      "album": "Time",
+      "plays": 1
+    },
+    {
+      "track": "Birch Tree",
+      "artist": "Foals",
+      "album": "What Went Down",
+      "plays": 1
+    },
+    {
+      "track": "Speed Freak",
+      "artist": "Makari",
+      "album": "Speed Freak",
+      "plays": 1
+    },
+    {
+      "track": "Arteries",
+      "artist": "hey, nothing",
+      "album": "Hound",
+      "plays": 1
+    },
+    {
+      "track": "Guardar em Sí",
+      "artist": "Ad Astra",
+      "album": "Guardar em Sí",
+      "plays": 1
+    },
+    {
+      "track": "You Get One",
+      "artist": "The Plot in You",
+      "album": "You Get One",
+      "plays": 1
+    },
+    {
+      "track": "The One You Loved",
+      "artist": "The Plot in You",
+      "album": "Dispose",
+      "plays": 1
+    },
+    {
+      "track": "Is There Somewhere",
+      "artist": "Halsey",
+      "album": "Badlands (Decade Edition Anthology)",
+      "plays": 1
+    },
+    {
+      "track": "I Think I'm OKAY - Sad Version",
+      "artist": "mgk",
+      "album": "Hotel Diablo: FLOOR 13 EDITION",
+      "plays": 1
+    },
+    {
+      "track": "London Thunder",
+      "artist": "Foals",
+      "album": "What Went Down",
+      "plays": 1
+    },
+    {
+      "track": "Dark Void",
+      "artist": "Asking Alexandria",
+      "album": "DarK VOiD",
+      "plays": 1
+    },
+    {
+      "track": "Amerika",
+      "artist": "Young the Giant",
+      "album": "Home of the Strange",
+      "plays": 1
+    },
+    {
+      "track": "Where the Silence Goes",
+      "artist": "Leap",
+      "album": "One Million Pieces",
+      "plays": 1
+    },
+    {
+      "track": "Lights Out",
+      "artist": "Royal Blood",
+      "album": "How Did We Get So Dark?",
+      "plays": 1
+    },
+    {
+      "track": "Real Love Song",
+      "artist": "Nothing But Thieves",
+      "album": "Moral Panic",
+      "plays": 1
+    },
+    {
+      "track": "Farewell to the Fairground",
+      "artist": "White Lies",
+      "album": "To Lose My Life... (Bonus remix version)",
+      "plays": 1
+    },
+    {
+      "track": "Dead and Gone - 2021 Remaster",
+      "artist": "The Black Keys",
+      "album": "El Camino (2021 Remaster)",
+      "plays": 1
+    },
+    {
+      "track": "Mirrorball",
+      "artist": "Young the Giant",
+      "album": "Mirrorball / Mind Over Matter (Reprise)",
+      "plays": 1
+    },
+    {
+      "track": "Exit Signs",
+      "artist": "Leap",
+      "album": "Entropy",
+      "plays": 1
+    },
+    {
+      "track": "Little Monster",
+      "artist": "Royal Blood",
+      "album": "Royal Blood",
+      "plays": 1
+    },
+    {
+      "track": "Amsterdam",
+      "artist": "Nothing But Thieves",
+      "album": "Broken Machine (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Six Billion",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Neon Brother",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Hanging",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Honey Whiskey",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Tempt You (Evocatio)",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Painkiller",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Drawing Pins",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Lover, Please Stay",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Trip Switch",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Hostage",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "If I Get High",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Itch",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Wake Up Call",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Ban All the Music",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Excuse Me",
+      "artist": "Nothing But Thieves",
+      "album": "Nothing But Thieves (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "New Divide",
+      "artist": "Linkin Park",
+      "album": "New Divide",
+      "plays": 1
+    },
+    {
+      "track": "Rollin' (Air Raid Vehicle)",
+      "artist": "Limp Bizkit",
+      "album": "Chocolate Starfish and the Hot Dog Flavored Water",
+      "plays": 1
+    },
+    {
+      "track": "Cool",
+      "artist": "Gracie Abrams",
+      "album": "The Secret of Us (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Charades",
+      "artist": "Halsey",
+      "album": "The Great Impersonator (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Nothing!",
+      "artist": "Halsey",
+      "album": "The Great Impersonator (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Alice of the Upper Class",
+      "artist": "Halsey",
+      "album": "The Great Impersonator (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Afraid of the Dark - Demo",
+      "artist": "Halsey",
+      "album": "The Great Impersonator (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Lessons",
+      "artist": "Halsey",
+      "album": "The Great Impersonator (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Carry The Weight",
+      "artist": "Halsey",
+      "album": "The Great Impersonator (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "Lucid",
+      "artist": "Halsey",
+      "album": "The Great Impersonator (Deluxe)",
+      "plays": 1
+    },
+    {
+      "track": "On My Way (MYUNG HYUNGSEO SOLO)",
+      "artist": "CLASS:y",
+      "album": "RE:BOOT [AFTER TEARS]",
+      "plays": 1
+    },
+    {
+      "track": "Tear Drop",
+      "artist": "CLASS:y",
+      "album": "RE:BOOT [AFTER TEARS]",
+      "plays": 1
+    },
+    {
+      "track": "The Rush",
+      "artist": "Editors",
+      "album": "The Rush",
+      "plays": 1
+    },
+    {
+      "track": "To The End (Feat. Brandon Saller Of Atreyu)",
+      "artist": "Silent Theory",
+      "album": "To The End (Feat. Brandon Saller Of Atreyu)",
+      "plays": 1
+    },
+    {
+      "track": "Uma vida",
+      "artist": "Bullet Bane",
+      "album": "O agora que cobra viver",
+      "plays": 1
+    },
+    {
+      "track": "INLAND (THE PREY)",
+      "artist": "DEAD SUGAR",
+      "album": "INLAND (THE PREY)",
+      "plays": 1
+    },
+    {
+      "track": "GONE, GONE, GONE",
+      "artist": "Autumn Kings",
+      "album": "GONE, GONE, GONE",
+      "plays": 1
+    },
+    {
+      "track": "Heaven's Favorite Sin",
+      "artist": "Awake For Days",
+      "album": "Heaven's Favorite Sin",
+      "plays": 1
+    },
+    {
+      "track": "Infinity Pool",
+      "artist": "SUNBORN",
+      "album": "Infinity Pool",
+      "plays": 1
+    },
+    {
+      "track": "DOOM LOOP",
+      "artist": "President",
+      "album": "DOOM LOOP",
+      "plays": 1
+    },
+    {
+      "track": "Reflection",
+      "artist": "Holding Absence",
+      "album": "Reflection",
+      "plays": 1
+    },
+    {
+      "track": "Say OK",
+      "artist": "Vanessa Hudgens",
+      "album": "V",
+      "plays": 1
+    },
+    {
+      "track": "Slipped Away",
+      "artist": "Avril Lavigne",
+      "album": "Under My Skin",
+      "plays": 1
+    },
+    {
+      "track": "Freak Out",
+      "artist": "Avril Lavigne",
+      "album": "Under My Skin",
+      "plays": 1
+    },
+    {
+      "track": "Fall to Pieces",
+      "artist": "Avril Lavigne",
+      "album": "Under My Skin",
+      "plays": 1
+    },
+    {
+      "track": "Love Me Insane",
+      "artist": "Avril Lavigne",
+      "album": "Head Above Water",
+      "plays": 1
+    },
+    {
+      "track": "Crush",
+      "artist": "Avril Lavigne",
+      "album": "Head Above Water",
+      "plays": 1
+    },
+    {
+      "track": "It Was in Me",
+      "artist": "Avril Lavigne",
+      "album": "Head Above Water",
+      "plays": 1
+    },
+    {
+      "track": "God as Witness",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 1
+    },
+    {
+      "track": "Mona Lisa",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 1
+    },
+    {
+      "track": "This Too Shall Pass",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 1
+    },
+    {
+      "track": "Ships Passing",
+      "artist": "Young the Giant",
+      "album": "Victory Garden",
+      "plays": 1
+    }
+  ]
+}

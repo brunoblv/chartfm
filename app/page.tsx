@@ -262,8 +262,11 @@ export default async function HomePage() {
   if (!session || !session.user?.id) {
     const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
     const rankingWeek = getRankingWeekReference(nowBRT);
+    // A semana fechada de referência pode ainda não ter parada consolidada.
+    // Para a landing usamos a semana mais recente que de fato tem dados.
+    const dataWeekIndex = (await getLatestAvailableWeekIndex(rankingWeek.weekIndex)) ?? rankingWeek.weekIndex;
     const [globalChart, userCount, recentUsers] = await Promise.all([
-      getGlobalTopSongs(rankingWeek.weekIndex, 8),
+      getGlobalTopSongs(dataWeekIndex, 10),
       prisma.user.count(),
       prisma.user.findMany({
         orderBy: { createdAt: "desc" },
@@ -520,6 +523,26 @@ async function getReviewsFeed(userId: string, locale: Awaited<ReturnType<typeof 
       artistName: r.album.artist.exhibitionName || r.album.artist.name,
     },
   }));
+}
+
+/** Semana mais recente (<= referência) que possui parada consolidada ou charts publicadas. */
+async function getLatestAvailableWeekIndex(maxWeekIndex: number): Promise<number | null> {
+  const [latestSnap, latestChart] = await Promise.all([
+    prisma.globalSnapshot.findFirst({
+      where: { weekIndex: { lte: maxWeekIndex } },
+      orderBy: { weekIndex: "desc" },
+      select: { weekIndex: true },
+    }),
+    prisma.chart.findFirst({
+      where: { weekIndex: { lte: maxWeekIndex } },
+      orderBy: { weekIndex: "desc" },
+      select: { weekIndex: true },
+    }),
+  ]);
+  const candidates = [latestSnap?.weekIndex, latestChart?.weekIndex].filter(
+    (v): v is number => typeof v === "number",
+  );
+  return candidates.length ? Math.max(...candidates) : null;
 }
 
 async function getGlobalTopSongs(weekIdx: number, limit = 3) {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { USERS_DATA, COVER_PALETTES, COMMUNITIES } from "@/lib/data";
+import { USERS_DATA, COVER_PALETTES } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { GlobalChartEntry } from "@/lib/types";
@@ -34,14 +34,6 @@ function StatusBadge({ status, delta, newLabel }: { status: string; delta?: numb
   );
 }
 
-function CheckIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" stroke="white" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
 type RecentUser = { id: string; name: string; avatarColor: string; image: string | null };
 
 export function LandingPage({
@@ -64,7 +56,7 @@ export function LandingPage({
   };
 
   const covers = Array.from({ length: 25 }, (_, i) => COVER_PALETTES[i % COVER_PALETTES.length]);
-  const top8 = globalChart.slice(0, 8);
+  const top10 = globalChart.slice(0, 10);
   const previewUser = USERS_DATA[2];
 
   const heroEntries = [
@@ -108,7 +100,7 @@ export function LandingPage({
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FBFBFD", fontFamily: "inherit" }}>
+    <div style={{ minHeight: "100vh", background: "#FBFBFD", color: "#1D1D1F", fontFamily: "inherit" }}>
 
       {/* NAVBAR */}
       <nav style={{
@@ -234,19 +226,6 @@ export function LandingPage({
                   </svg>
                 )}
               </button>
-              <a
-                href="#parada-global"
-                style={{
-                  padding: "15px 22px", borderRadius: 100,
-                  background: "white", color: "#1D1D1F",
-                  border: "1.5px solid rgba(0,0,0,0.12)", fontSize: 14, fontWeight: 600,
-                  letterSpacing: "-0.01em", cursor: "pointer", textDecoration: "none",
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                {t("landing.ctaDemo")}
-              </a>
             </div>
 
             {/* Social proof */}
@@ -416,17 +395,17 @@ export function LandingPage({
           <div style={{ textAlign: "center" as const, marginBottom: 60 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Como funciona</div>
             <h2 style={{ fontSize: isMobile ? 32 : 48, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.1, color: "#1D1D1F" }}>
-              Três passos. Toda semana.
+            Toda semana, uma nova parada.
             </h2>
             <p style={{ fontSize: 17, color: "#6B6B70", maxWidth: 560, margin: "0 auto", lineHeight: 1.5 }}>
-              O ritual é simples. O que você faz com ele é que define seu lugar na cena.
+            Monte seu ranking, compartilhe com a comunidade e ajude a definir as paradas globais.
             </p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 24 }}>
             {[
-              { n: "01", title: "Monte sua parada", desc: "De 1 a 100 músicas. Arraste para reordenar. Importe direto do Spotify ou Apple Music. A semana fecha toda segunda às 00h.", accent: "#FA243C" },
-              { n: "02", title: "Compartilhe e debata", desc: "Sua parada vai pro feed dos seguidores. Entre em comunidades temáticas (Rockeiros, Divas Pop, Sertanejo…) e poste no feed imersivo.", accent: "#8338EC" },
-              { n: "03", title: "Suba na parada global", desc: "Sua música #1 vale 1000 pontos na parada global. A do #2 vale 900. Veja o ranking agregado por comunidade ou geral.", accent: "#06D6A0" },
+              { n: "01", title: "Monte sua parada", desc: "Escolha suas músicas favoritas da semana e organize sua parada do seu jeito.", accent: "#FA243C" },
+              { n: "02", title: "Compartilhe seu gosto", desc: "Publique sua parada, siga outros usuários e interaja com fãs de música como você.", accent: "#8338EC" },
+              { n: "03", title: "Influencie as paradas", desc: "Cada posição do seu ranking gera pontos para as músicas e ajuda a formar as paradas globais do ChartFM.", accent: "#06D6A0" },
             ].map((s) => (
               <div key={s.n} style={{ background: "#FBFBFD", borderRadius: 20, padding: 30, border: "1px solid rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: 54, fontWeight: 800, letterSpacing: "-0.04em", color: s.accent, lineHeight: 1, marginBottom: 14 }}>{s.n}</div>
@@ -435,106 +414,6 @@ export function LandingPage({
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* COMMUNITIES FEATURE */}
-      <section id="comunidades" style={{ padding: isMobile ? "60px 24px" : "100px 56px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 60, alignItems: "center" }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#8338EC", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14 }}>Comunidades</div>
-            <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 18px 0", lineHeight: 1.1, color: "#1D1D1F" }}>
-              Encontre sua tribo.<br />Influencie a parada.
-            </h2>
-            <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, margin: "0 0 28px 0" }}>
-              Comunidades temáticas com parada global própria — agregada a partir das paradas pessoais dos membros. Poste imagens, vídeos do YouTube ou textos no feed imersivo estilo Reels. Comente, debata, brigue (educadamente).
-            </p>
-            <div style={{ display: "flex", flexDirection: "column" as const, gap: 12 }}>
-              {[
-                "Parada agregada da comunidade em tempo real",
-                "Feed imersivo full-screen para posts",
-                "Moderação por admins fundadores",
-                "Comunidades públicas ou só por convite",
-              ].map((b) => (
-                <div key={b} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
-                  <span style={{
-                    width: 20, height: 20, borderRadius: "50%",
-                    background: "#8338EC", display: "grid", placeItems: "center", flexShrink: 0,
-                  }}>
-                    <CheckIcon />
-                  </span>
-                  <span style={{ color: "#1D1D1F" }}>{b}</span>
-                </div>
-              ))}
-            </div>
-
-            {isMobile && (
-              <div style={{ marginTop: 28, marginLeft: -24, marginRight: -24, overflowX: "auto", paddingLeft: 24 }}>
-                <div style={{ display: "flex", gap: 14, paddingRight: 24, paddingBottom: 4, width: "max-content" }}>
-                  {COMMUNITIES.slice(0, 4).map((c) => (
-                    <div key={c.id} style={{
-                      width: 180, borderRadius: 16, overflow: "hidden",
-                      background: "white", border: "1px solid rgba(0,0,0,0.06)",
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.06)", flexShrink: 0,
-                    }}>
-                      <div style={{
-                        height: 64, display: "grid", placeItems: "center",
-                        background: `linear-gradient(135deg, ${c.cover[0]}, ${c.cover[1]})`,
-                      }}>
-                        <div style={{ fontSize: 28 }}>{c.icon}</div>
-                      </div>
-                      <div style={{ padding: 12 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>{c.name}</div>
-                        <div style={{ fontSize: 11, color: "#86868B", marginTop: 2 }}>{c.members.toLocaleString("pt-BR")} membros</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Visual: stack of community cards */}
-          {!isMobile && (
-            <div style={{ position: "relative", height: 440 }}>
-              {COMMUNITIES.slice(0, 4).map((c, i) => (
-                <div
-                  key={c.id}
-                  style={{
-                    position: "absolute",
-                    top: i * 70,
-                    left: i % 2 === 0 ? 0 : 60,
-                    width: 320,
-                    background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)",
-                    boxShadow: `0 ${10 + i * 4}px ${30 + i * 8}px rgba(0,0,0,${(0.08 - i * 0.01).toFixed(2)})`,
-                    overflow: "hidden",
-                    transform: `rotate(${(i % 2 === 0 ? -1 : 1) * 2}deg)`,
-                  }}
-                >
-                  <div style={{
-                    height: 80,
-                    background: `linear-gradient(135deg, ${c.cover[0]}, ${c.cover[1]})`,
-                    display: "grid", placeItems: "center",
-                  }}>
-                    <div style={{ fontSize: 36 }}>{c.icon}</div>
-                  </div>
-                  <div style={{ padding: 14, display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700 }}>{c.name}</div>
-                      <div style={{ fontSize: 11, color: "#86868B" }}>{c.members.toLocaleString("pt-BR")} membros · {c.posts} posts</div>
-                    </div>
-                    <div style={{ display: "flex" }}>
-                      {(c.memberSample ?? []).slice(0, 3).map((u, j) => (
-                        <div key={u.id} style={{ marginLeft: j === 0 ? 0 : -6, border: "2px solid white", borderRadius: "50%" }}>
-                          <Avatar user={u} size={22} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </section>
 
@@ -561,10 +440,9 @@ export function LandingPage({
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FA243C", boxShadow: "0 0 0 3px rgba(250,36,60,0.2)" }} />
                 <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, opacity: 0.7 }}>Parada global · ao vivo</div>
                 <div style={{ flex: 1 }} />
-                <div style={{ fontSize: 11, opacity: 0.6 }}>{top8[0]?.voters ?? 0}+ curadores</div>
+                <div style={{ fontSize: 11, opacity: 0.6 }}>{top10[0]?.voters ?? 0}+ fãs de música</div>
               </div>
-              {top8.slice(0, 6).map((entry, i) => {
-                const maxPoints = top8[0]?.points ?? 1;
+              {top10.map((entry, i) => {
                 return (
                   <div key={entry.position} style={{
                     display: "flex", alignItems: "center", gap: 12,
@@ -576,16 +454,25 @@ export function LandingPage({
                       fontVariantNumeric: "tabular-nums", textAlign: "center" as const,
                       color: i < 3 ? "#FA243C" : "rgba(255,255,255,0.5)",
                     }}>{entry.position}</div>
-                    <div style={{
-                      width: 42, height: 42, borderRadius: 8, flexShrink: 0,
-                      background: `linear-gradient(135deg, ${entry.cover.palette[0]}, ${entry.cover.palette[1]})`,
-                    }} />
+                    {entry.cover.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={entry.cover.imageUrl}
+                        alt={entry.song.title}
+                        style={{ width: 42, height: 42, borderRadius: 8, flexShrink: 0, objectFit: "cover" as const }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: 42, height: 42, borderRadius: 8, flexShrink: 0,
+                        background: `linear-gradient(135deg, ${entry.cover.palette[0]}, ${entry.cover.palette[1]})`,
+                      }} />
+                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.title}</div>
                       <div style={{ fontSize: 11, opacity: 0.6, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.artist}</div>
                     </div>
-                    <div style={{ width: 80, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                      <div style={{ height: "100%", width: `${Math.round((entry.points / maxPoints) * 100)}%`, background: "linear-gradient(90deg, #FA243C, #FF8C42)" }} />
+                    <div style={{ flexShrink: 0 }}>
+                      <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                     </div>
                     <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", width: 50, textAlign: "right" as const, opacity: 0.9 }}>{entry.points.toLocaleString("pt-BR")}</div>
                   </div>
@@ -598,19 +485,11 @@ export function LandingPage({
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14 }}>Parada Global</div>
             <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 18px 0", lineHeight: 1.1 }}>
-              O que o mundo<br />está ouvindo agora.
+              O que o mundo<br />está ouvindo.
             </h2>
             <p style={{ fontSize: 16, opacity: 0.75, lineHeight: 1.55, marginBottom: 30, margin: "0 0 30px 0" }}>
-              Não é algoritmo de play. São paradas reais, montadas por gente real, agregadas por sistema de pontos transparente. A música #1 de cada usuário vale 1000 pontos. A #2, 900. E por aí vai.
+            Toda semana, os rankings dos usuários se transformam nas paradas globais do ChartFM. Quanto mais alta uma música aparece, mais pontos ela recebe.
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 32 }}>
-              {[["24,1 mil", "Curadores ativos"], ["418 mil", "Músicas votadas"], ["56", "Comunidades"]].map(([n, l]) => (
-                <div key={l}>
-                  <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.035em", background: "linear-gradient(135deg, #FA243C, #FF8C42)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{n}</div>
-                  <div style={{ fontSize: 12, opacity: 0.6 }}>{l}</div>
-                </div>
-              ))}
-            </div>
             <button
               onClick={handleSignIn}
               disabled={signingIn}
@@ -629,64 +508,29 @@ export function LandingPage({
         </div>
       </section>
 
-      {/* FEATURE GRID — 6 recursos */}
+      {/* FEATURE GRID — 4 recursos */}
       <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center" as const, marginBottom: 50 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Recursos</div>
             <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.1, color: "#1D1D1F" }}>
-              Pensado para quem leva<br />música a sério.
+              Tudo para acompanhar<br />seu gosto musical.
             </h2>
           </div>
           <div style={{
             display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)",
             gap: 18,
           }}>
             {[
-              { icon: "🎯", title: "Estatísticas Billboard", desc: "Pico, semanas na parada, mudança de posição, #1s históricos. Tudo que importa." },
-              { icon: "🎨", title: "Três formatos de parada", desc: "Lista clássica, grid de capas visual ou pódio com top 3 em destaque. Você escolhe." },
-              { icon: "🤝", title: "Match de gosto", desc: "Veja quem tem gosto parecido com o seu e descubra músicas pelas paradas dos outros." },
-              { icon: "📊", title: "Trajetória de músicas", desc: "Acompanhe como cada música se moveu na sua parada nas últimas 6 semanas." },
-              { icon: "🔔", title: "Notificações inteligentes", desc: "Curadores que você segue postaram uma nova parada? Sua música subiu? A gente avisa." },
-              { icon: "🎵", title: "Importe do Spotify", desc: "Conecte sua conta Spotify ou Apple Music e gere sua parada a partir do histórico." },
+              { title: "Estatísticas completas", desc: "Acompanhe pico, semanas na parada, entradas, quedas e o histórico de cada música." },
+              { title: "Pessoas com o seu gosto", desc: "Descubra usuários com gostos parecidos e encontre novas músicas através das paradas deles." },
+              { title: "A trajetória das músicas", desc: "Veja como cada faixa subiu, caiu ou permaneceu na sua parada ao longo das semanas." },
+              { title: "Importe suas músicas", desc: "Conecte seu last.fm para montar suas paradas a partir do seu histórico de reprodução." },
             ].map((f) => (
               <div key={f.title} style={{ padding: 24, borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", background: "#FBFBFD" }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
                 <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6, color: "#1D1D1F" }}>{f.title}</div>
                 <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "#FBFBFD" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ textAlign: "center" as const, marginBottom: 50 }}>
-            <h2 style={{ fontSize: isMobile ? 28 : 38, fontWeight: 800, letterSpacing: "-0.035em", margin: 0, lineHeight: 1.1, color: "#1D1D1F" }}>Curadores. Críticos. Fãs.</h2>
-          </div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-            gap: 18,
-          }}>
-            {[
-              { user: USERS_DATA[2], role: "Curador · Rockeiros", quote: "Finalmente um lugar onde minha parada importa. Largei de vez aquelas listas chatas no Notes." },
-              { user: USERS_DATA[4], role: "Crítica musical", quote: "A parada agregada de Divas Pop é melhor curadoria que a maioria das playlists editoriais que vejo por aí." },
-              { user: USERS_DATA[0], role: "DJ · Pop 2000s", quote: "Posto vídeo de set semanal na minha comunidade e o engajamento é real. Gente que ouve, não que faz scroll." },
-            ].map((t, i) => (
-              <div key={i} style={{ background: "white", borderRadius: 18, padding: 26, border: "1px solid rgba(0,0,0,0.06)" }}>
-                <div style={{ fontSize: 24, color: "#FA243C", lineHeight: 1, marginBottom: 14, fontWeight: 800 }}>&ldquo;</div>
-                <div style={{ fontSize: 15, color: "#1D1D1F", lineHeight: 1.5, marginBottom: 20, letterSpacing: "-0.01em" }}>{t.quote}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Avatar user={t.user} size={36} />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>{t.user.name}</div>
-                    <div style={{ fontSize: 11, color: "#86868B" }}>{t.role}</div>
-                  </div>
-                </div>
               </div>
             ))}
           </div>

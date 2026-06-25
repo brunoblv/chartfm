@@ -36,7 +36,7 @@ const GUIDES_RANKINGS = [
     slug: "como-descobrir-musicas",
     title: "Como descobrir músicas no ChartFM",
     description:
-      "Use o Discover para encontrar novos artistas, seguir curadores com gosto parecido com o seu e explorar charts por gênero musical.",
+      "Use o Discover para encontrar novos artistas, seguir fãs de música com gosto parecido com o seu e explorar charts por gênero musical.",
     readTime: "3 min de leitura",
     tag: "Descoberta",
     icon: <Search size={20} color="#FA243C" />,

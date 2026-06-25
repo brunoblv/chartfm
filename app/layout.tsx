@@ -41,7 +41,7 @@ export default async function RootLayout({
               "@type": "WebSite",
               name: "ChartFM",
               url: "https://chartfm.com.br",
-              description: "Rede social de paradas musicais semanais. Publique seu ranking, acompanhe artistas e descubra curadores.",
+              description: "Rede social de paradas musicais semanais. Publique seu ranking, acompanhe artistas e descubra fãs de música.",
               potentialAction: {
                 "@type": "SearchAction",
                 target: "https://chartfm.com.br/communities?q={search_term_string}",

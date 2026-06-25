@@ -88,5 +88,5 @@ export default async function CopaAoVivoPage() {
         }
       : null;
 
-  return <LiveClient games={games} playlists={playlists} />;
+  return <LiveClient games={games} playlists={playlists} copaId={copa.id} userId={userId} />;
 }

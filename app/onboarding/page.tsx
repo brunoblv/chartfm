@@ -293,7 +293,7 @@ export default function OnboardingPage() {
               Escolha seu<br />nome de usuário.
             </h1>
             <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
-              É com esse nome que os outros curadores vão te encontrar e seguir. Você pode mudar depois nas configurações.
+              É com esse nome que os outros fãs de música vão te encontrar e seguir. Você pode mudar depois nas configurações.
             </p>
 
             {/* Google account card */}
@@ -517,7 +517,7 @@ export default function OnboardingPage() {
                 Próxima etapa
               </div>
               <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>
-                Vamos te apresentar 12 curadores com gosto parecido com o seu pra você seguir e ver as paradas deles.
+                Vamos te apresentar 12 fãs de música com gosto parecido com o seu pra você seguir e ver as paradas deles.
               </div>
             </div>
 

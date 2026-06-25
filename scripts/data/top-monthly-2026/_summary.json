@@ -1,0 +1,44 @@
+[
+  {
+    "month": 1,
+    "name": "Janeiro",
+    "scrobbles": 1878,
+    "uniqueTracks": 1058,
+    "top": 300
+  },
+  {
+    "month": 2,
+    "name": "Fevereiro",
+    "scrobbles": 1012,
+    "uniqueTracks": 635,
+    "top": 300
+  },
+  {
+    "month": 3,
+    "name": "Março",
+    "scrobbles": 1282,
+    "uniqueTracks": 657,
+    "top": 300
+  },
+  {
+    "month": 4,
+    "name": "Abril",
+    "scrobbles": 1401,
+    "uniqueTracks": 761,
+    "top": 300
+  },
+  {
+    "month": 5,
+    "name": "Maio",
+    "scrobbles": 1761,
+    "uniqueTracks": 824,
+    "top": 300
+  },
+  {
+    "month": 6,
+    "name": "Junho",
+    "scrobbles": 1504,
+    "uniqueTracks": 574,
+    "top": 300
+  }
+]
