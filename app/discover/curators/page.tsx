@@ -12,16 +12,14 @@ export default async function CuratorsRankingPage() {
   const rankingWeek = getRankingWeekReference(nowBRT);
   const session = await getServerSession(authOptions);
 
-  const [rows, followRows] = await Promise.all([
+  const weekIndex = rankingWeek.weekIndex;
+  const [charts, followRows] = await Promise.all([
     prisma.chart.findMany({
-      where: { weekIndex: rankingWeek.weekIndex, isPublished: true },
+      where: { weekIndex, isPublished: true },
       orderBy: [{ publishedAt: "asc" }],
-      take: 20,
       select: {
         id: true,
-        likes: true,
-        comments: true,
-        reposts: true,
+        userId: true,
         user: {
           select: {
             id: true,
@@ -44,11 +42,52 @@ export default async function CuratorsRankingPage() {
   ]);
 
   const followingIds = new Set(followRows.map((r) => r.followingId));
-  const rankedRows = rows
+
+  // Pontuação por atividade da pessoa na semana: criar parada = 100,
+  // cada like dado em paradas = 5, cada comentário escrito = 25.
+  const candidateUserIds = [...new Set(charts.map((c) => c.userId))];
+  const [likesGivenRows, commentsWrittenRows] = await Promise.all([
+    candidateUserIds.length
+      ? prisma.chartLike.groupBy({
+          by: ["userId"],
+          where: { userId: { in: candidateUserIds }, chart: { weekIndex, isPublished: true } },
+          _count: { _all: true },
+        })
+      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
+    candidateUserIds.length
+      ? prisma.comment.groupBy({
+          by: ["userId"],
+          where: { userId: { in: candidateUserIds }, chart: { weekIndex, isPublished: true } },
+          _count: { _all: true },
+        })
+      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
+  ]);
+  const likesGivenByUser = new Map(likesGivenRows.map((r) => [r.userId, r._count._all]));
+  const commentsWrittenByUser = new Map(commentsWrittenRows.map((r) => [r.userId, r._count._all]));
+
+  const byUser = new Map<string, { chartId: string; chartCount: number; user: (typeof charts)[number]["user"] }>();
+  for (const c of charts) {
+    const existing = byUser.get(c.userId);
+    if (existing) existing.chartCount += 1;
+    else byUser.set(c.userId, { chartId: c.id, chartCount: 1, user: c.user });
+  }
+
+  const rankedRows = [...byUser.values()]
+    .map((row) => {
+      const likesGiven = likesGivenByUser.get(row.user.id) ?? 0;
+      const commentsWritten = commentsWrittenByUser.get(row.user.id) ?? 0;
+      return {
+        id: row.chartId,
+        user: row.user,
+        likesGiven,
+        commentsWritten,
+        score: row.chartCount * 100 + likesGiven * 5 + commentsWritten * 25,
+      };
+    })
     .sort((a, b) => {
-      if (b.likes !== a.likes) return b.likes - a.likes;
-      if (b.comments !== a.comments) return b.comments - a.comments;
-      return b.reposts - a.reposts;
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.commentsWritten !== a.commentsWritten) return b.commentsWritten - a.commentsWritten;
+      return b.likesGiven - a.likesGiven;
     })
     .slice(0, 20);
 
@@ -70,7 +109,7 @@ export default async function CuratorsRankingPage() {
                 gap: 12,
                 alignItems: "center",
                 padding: "14px 18px",
-                borderBottom: i < rows.length - 1 ? "1px solid var(--divider-soft)" : "none",
+                borderBottom: i < rankedRows.length - 1 ? "1px solid var(--divider-soft)" : "none",
               }}
             >
               <div style={{ fontSize: 18, fontWeight: 700, color: i < 3 ? "var(--accent)" : "var(--text)", fontVariantNumeric: "tabular-nums" }}>

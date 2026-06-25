@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Home, Search, Users, User, LogOut, UserCircle } from "lucide-react";
+import { Home, Search, User, LogOut, UserCircle } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "@/hooks/useTranslations";
 
@@ -42,7 +42,6 @@ export function BottomNav() {
   const tabs = [
     { href: "/",            label: t("nav.home"),         Icon: Home,   exact: true  },
     { href: "/discover",    label: t("nav.discover"),     Icon: Search, exact: false },
-    { href: "/communities", label: t("nav.communities"), Icon: Users,  exact: false },
   ];
 
   return (
@@ -58,7 +57,7 @@ export function BottomNav() {
         WebkitBackdropFilter: "blur(20px) saturate(160%)",
         borderTop: "0.5px solid var(--divider)",
         display: "grid",
-        gridTemplateColumns: "repeat(5, 1fr)",
+        gridTemplateColumns: "repeat(4, 1fr)",
         alignItems: "center",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
@@ -93,16 +92,6 @@ export function BottomNav() {
           </svg>
         </div>
       </Link>
-
-      {tabs.slice(2).map(({ href, label, Icon, exact }) => {
-        const active = exact ? pathname === href : pathname === href || pathname.startsWith(href + "/");
-        return (
-          <Link key={href} href={href} style={tabStyle(active)}>
-            <Icon size={22} strokeWidth={active ? 2.2 : 1.8} />
-            <span style={labelStyle(active)}>{label}</span>
-          </Link>
-        );
-      })}
 
       {/* Perfil */}
       {authed ? (

@@ -130,13 +130,13 @@ export const pagesPtBR = {
     metaDescription: "Descubra novas músicas, artistas em ascensão e fãs de música em destaque no ChartFM.",
     editorialTitle: "Descubra novas músicas no ChartFM",
     editorialP1:
-      "O Discover do ChartFM foi criado para ajudar fãs de música a explorar novos artistas, álbuns, charts e tendências dentro da comunidade. Todos os dias, usuários compartilham suas paradas pessoais, avaliações e descobertas musicais, criando um ambiente dinâmico onde diferentes estilos e gêneros convivem em um único lugar. O resultado é um retrato honesto do que a comunidade está ouvindo — não o que um algoritmo decidiu promover.",
+      "O Discover reúne tudo o que está acontecendo na comunidade. Explore artistas em alta, acompanhe as músicas que estão subindo nas paradas e descubra novos sons através dos rankings de outros usuários.",
     editorialP2:
-      "Diferente de plataformas baseadas apenas em algoritmos automáticos, o Discover do ChartFM é construído a partir da atividade real da comunidade. Cada chart publicada, review escrita e avaliação enviada ajuda a destacar novos lançamentos, artistas emergentes e clássicos revisitados pelos usuários. Isso significa que os rankings que você vê aqui refletem escolhas humanas e intencionais — não contagens de reprodução passiva.",
+      "Em vez de depender apenas de algoritmos, o ChartFM mostra o que pessoas reais estão ouvindo, avaliando e compartilhando. Cada parada publicada ajuda a revelar tendências, destacar lançamentos e redescobrir músicas que merecem atenção.",
     editorialP3:
-      "Através da página Discover, é possível acompanhar os artistas mais comentados do momento, encontrar fãs de música com gosto musical parecido com o seu, explorar charts semanais de outros usuários e descobrir músicas que estão crescendo organicamente dentro da plataforma. Os rankings são atualizados toda semana, então sempre há algo novo para explorar.",
+      "Siga usuários com gostos parecidos, explore gêneros, acompanhe as paradas semanais e encontre sua próxima música favorita através da comunidade.",
     editorialP4:
-      "Seja para descobrir novos sons, acompanhar tendências musicais ou explorar o gosto coletivo da comunidade, o Discover funciona como um espaço central para navegar pelo universo musical do ChartFM. Fãs de música reais, rankings transparentes e exploração por gênero tornam a descoberta de música uma experiência mais rica e menos aleatória.",
+      "Porque às vezes a melhor recomendação ainda vem de outro fã de música.",
     howItWorksTitle: "Como funciona o Discover",
     howItWorksIntro:
       "O sistema de descoberta do ChartFM utiliza dados das charts pessoais, avaliações e atividade da comunidade para destacar conteúdos relevantes. Conforme usuários adicionam músicas às suas paradas semanais e interagem com artistas, novas tendências surgem organicamente dentro da plataforma.",

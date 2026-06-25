@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { HotTabs } from "./HotTabs";
 import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
-import { TrendingUp, Users, Music, Headphones, Radio, BarChart2, Star, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { formatWeekLabel } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/config";
@@ -22,10 +22,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-function weeklyScore(likes: number, comments: number, reposts: number): number {
-  return likes * 1 + comments * 2 + reposts * 3;
-}
-
 const GENRES = [
   { slug: "pop", name: "Pop", color: ["#FA243C", "#FF5858"], letter: "P", tags: ["pop"] },
   { slug: "hip-hop-rap", name: "Hip-Hop/Rap", color: ["#1D1D1F", "#4A4A4F"], letter: "H", tags: ["hip hop", "rap", "trap"] },
@@ -36,15 +32,6 @@ const GENRES = [
   { slug: "eletronica", name: "Eletrônica", color: ["#8338EC", "#3A86FF"], letter: "E", tags: ["electronic", "dance", "house", "techno", "edm", "eletronica", "eletronic"] },
   { slug: "k-pop", name: "K-Pop", color: ["#FB5607", "#FFBE0B"], letter: "K", tags: ["k-pop", "kpop"] },
 ];
-
-function buildHowItWorks(t: (key: string) => string) {
-  return [
-    { icon: <BarChart2 size={20} />, title: t("discover.stepWeeklyTitle"), desc: t("discover.stepWeeklyDesc") },
-    { icon: <TrendingUp size={20} />, title: t("discover.stepRankingsTitle"), desc: t("discover.stepRankingsDesc") },
-    { icon: <Users size={20} />, title: t("discover.stepCurationTitle"), desc: t("discover.stepCurationDesc") },
-    { icon: <Music size={20} />, title: t("discover.stepGenresTitle"), desc: t("discover.stepGenresDesc") },
-  ];
-}
 
 function buildFaq(t: (key: string) => string) {
   return [
@@ -102,12 +89,9 @@ async function loadPageData(
     prisma.chart.findMany({
       where: { weekIndex, isPublished: true },
       orderBy: [{ publishedAt: "asc" }],
-      take: 5,
       select: {
         id: true,
-        likes: true,
-        comments: true,
-        reposts: true,
+        userId: true,
         user: {
           select: {
             id: true,
@@ -168,16 +152,53 @@ async function loadPageData(
   ]);
 
   const followingIds = new Set(followRows.map((r) => r.followingId));
-  const rankedCurators = curatorCharts
-    .map((row) => ({
-      ...row,
-      score: weeklyScore(row.likes, row.comments, row.reposts),
-    }))
+
+  // Pontuação por atividade da pessoa na semana: criar parada = 100,
+  // cada like dado em paradas = 5, cada comentário escrito = 25.
+  const candidateUserIds = [...new Set(curatorCharts.map((c) => c.userId))];
+  const [likesGivenRows, commentsWrittenRows] = await Promise.all([
+    candidateUserIds.length
+      ? prisma.chartLike.groupBy({
+          by: ["userId"],
+          where: { userId: { in: candidateUserIds }, chart: { weekIndex, isPublished: true } },
+          _count: { _all: true },
+        })
+      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
+    candidateUserIds.length
+      ? prisma.comment.groupBy({
+          by: ["userId"],
+          where: { userId: { in: candidateUserIds }, chart: { weekIndex, isPublished: true } },
+          _count: { _all: true },
+        })
+      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
+  ]);
+  const likesGivenByUser = new Map(likesGivenRows.map((r) => [r.userId, r._count._all]));
+  const commentsWrittenByUser = new Map(commentsWrittenRows.map((r) => [r.userId, r._count._all]));
+
+  const curatorByUser = new Map<string, { chartId: string; chartCount: number; user: (typeof curatorCharts)[number]["user"] }>();
+  for (const c of curatorCharts) {
+    const existing = curatorByUser.get(c.userId);
+    if (existing) existing.chartCount += 1;
+    else curatorByUser.set(c.userId, { chartId: c.id, chartCount: 1, user: c.user });
+  }
+
+  const rankedCurators = [...curatorByUser.values()]
+    .map((row) => {
+      const likesGiven = likesGivenByUser.get(row.user.id) ?? 0;
+      const commentsWritten = commentsWrittenByUser.get(row.user.id) ?? 0;
+      return {
+        id: row.chartId,
+        user: row.user,
+        chartCount: row.chartCount,
+        likesGiven,
+        commentsWritten,
+        score: row.chartCount * 100 + likesGiven * 5 + commentsWritten * 25,
+      };
+    })
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
-      if (b.likes !== a.likes) return b.likes - a.likes;
-      if (b.comments !== a.comments) return b.comments - a.comments;
-      return b.reposts - a.reposts;
+      if (b.commentsWritten !== a.commentsWritten) return b.commentsWritten - a.commentsWritten;
+      return b.likesGiven - a.likesGiven;
     })
     .slice(0, 5);
 
@@ -263,7 +284,6 @@ async function loadPageData(
     return { title: row.title, artist: row.artist, spotifyId: row.spotifyId, artistSpotifyId: row.artistSpotifyId, users: row.users, status, delta };
   });
 
-  const howItWorks = buildHowItWorks(t);
   const faq = buildFaq(t);
 
   return (
@@ -290,33 +310,6 @@ async function loadPageData(
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>
           {t("discover.editorialP4")}
         </p>
-      </section>
-
-      {/* ===== COMO FUNCIONA ===== */}
-      <section style={{ marginBottom: 52 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>
-          {t("discover.howItWorksTitle")}
-        </h2>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          {t("discover.howItWorksIntro")}
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
-          {howItWorks.map((step) => (
-            <div
-              key={step.title}
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--divider)",
-                borderRadius: 14,
-                padding: "18px 20px",
-              }}
-            >
-              <div style={{ color: "#FA243C", marginBottom: 10 }}>{step.icon}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{step.title}</div>
-              <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>{step.desc}</div>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* ===== CURADORES EM DESTAQUE ===== */}
