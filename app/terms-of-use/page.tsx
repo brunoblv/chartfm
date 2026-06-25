@@ -63,7 +63,7 @@ export default function TermsPage() {
         {
           title: "7. Encerramento",
           body: [
-            "Você pode parar de usar o ChartFM a qualquer momento. Pode solicitar a exclusão da conta pelo e-mail contato@chartfm.app. Após a exclusão, seu perfil e dados privados serão removidos do uso ativo, sujeito aos requisitos de retenção descritos em nossa Política de Privacidade.",
+            "Você pode parar de usar o ChartFM a qualquer momento. Pode solicitar a exclusão da conta pelo e-mail contato@chartfm.com.br. Após a exclusão, seu perfil e dados privados serão removidos do uso ativo, sujeito aos requisitos de retenção descritos em nossa Política de Privacidade.",
             "Podemos encerrar ou suspender seu acesso caso você viole estes Termos, adote comportamento que prejudique a plataforma ou outros usuários, ou conforme exigido por lei. Após o encerramento, sua licença para usar o ChartFM termina imediatamente.",
           ],
         },

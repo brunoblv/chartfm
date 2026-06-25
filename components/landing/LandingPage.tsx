@@ -351,38 +351,6 @@ export function LandingPage({
                 ))}
               </div>
 
-              {/* Floating community pill */}
-              <div style={{
-                position: "absolute", bottom: 50, right: 0,
-                background: "white", borderRadius: 16,
-                boxShadow: "0 20px 50px rgba(0,0,0,0.12)",
-                padding: 14, width: 240, border: "1px solid rgba(0,0,0,0.04)",
-                display: "flex", alignItems: "center", gap: 10, zIndex: 2,
-              }}>
-                <div style={{
-                  width: 42, height: 42, borderRadius: 11, flexShrink: 0,
-                  background: "linear-gradient(135deg, #FA243C, #FF5858)",
-                  display: "grid", placeItems: "center", fontSize: 22,
-                }}>👑</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>Divas Pop</div>
-                  <div style={{ fontSize: 11, color: "#86868B" }}>24,1 mil membros · ao vivo</div>
-                </div>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#06D6A0", boxShadow: "0 0 0 3px rgba(6,214,160,0.2)" }} />
-              </div>
-
-              {/* Floating notification */}
-              <div style={{
-                position: "absolute", top: 0, right: -20,
-                background: "#1D1D1F", color: "white",
-                borderRadius: 14, padding: "10px 14px",
-                fontSize: 12, fontWeight: 600,
-                display: "flex", alignItems: "center", gap: 8,
-                boxShadow: "0 12px 30px rgba(0,0,0,0.2)", zIndex: 2,
-              }}>
-                <span style={{ color: "#FFB000" }}>★</span>
-                &ldquo;Luther&rdquo; entrou no #1 global
-              </div>
             </div>
           )}
         </div>
@@ -534,45 +502,6 @@ export function LandingPage({
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* FINAL CTA */}
-      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px" }}>
-        <div style={{
-          maxWidth: 1000, margin: "0 auto",
-          borderRadius: 32, overflow: "hidden",
-          position: "relative",
-          background: "linear-gradient(135deg, #FA243C 0%, #8338EC 100%)",
-          padding: isMobile ? "60px 32px" : "80px 60px",
-          textAlign: "center" as const, color: "white",
-        }}>
-          <div style={{ position: "absolute", top: -30, left: -30, opacity: 0.15, pointerEvents: "none" }}>
-            <div style={{ width: 120, height: 120, borderRadius: 16, background: `linear-gradient(135deg, ${COVER_PALETTES[0][0]}, ${COVER_PALETTES[0][1]})`, transform: "rotate(-12deg)" }} />
-          </div>
-          <div style={{ position: "absolute", bottom: -40, right: -30, opacity: 0.15, pointerEvents: "none" }}>
-            <div style={{ width: 140, height: 140, borderRadius: 16, background: `linear-gradient(135deg, ${COVER_PALETTES[7][0]}, ${COVER_PALETTES[7][1]})`, transform: "rotate(15deg)" }} />
-          </div>
-          <h2 style={{ fontSize: isMobile ? 36 : 54, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05, position: "relative" }}>
-            {t("landing.closingTitle")}
-          </h2>
-          <p style={{ fontSize: 17, opacity: 0.9, maxWidth: 520, margin: "0 auto 32px auto", lineHeight: 1.5, position: "relative" }}>
-            {t("landing.closingBody")}
-          </p>
-          <button
-            onClick={handleSignIn}
-            disabled={signingIn}
-            style={{
-              background: "white", color: "#FA243C",
-              border: "none", padding: "16px 32px",
-              borderRadius: 100, fontSize: 15, fontWeight: 700,
-              cursor: signingIn ? "not-allowed" : "pointer",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-              position: "relative", opacity: signingIn ? 0.7 : 1,
-            }}
-          >
-            {signingIn ? t("landing.signingIn") : t("landing.closingCta")}
-          </button>
         </div>
       </section>
 

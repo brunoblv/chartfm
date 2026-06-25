@@ -101,13 +101,13 @@ export function spotifyConnectErrorMessage(status: string, reason?: string | nul
       return (
         "Autorização negada pelo Spotify. Se você cancelou, tente de novo. " +
         "Se apareceu uma mensagem sobre conta não registrada, o app ainda está em modo de desenvolvimento " +
-        "da Spotify — entre em contato pelo contato@chartfm.app para solicitar acesso."
+        "da Spotify — entre em contato pelo contato@chartfm.com.br para solicitar acesso."
       );
     case "not_registered":
       return (
         "Sua conta Spotify não está autorizada a usar o ChartFM. " +
         "O app está em modo de desenvolvimento da Spotify (máx. 5 usuários cadastrados manualmente). " +
-        "Envie seu e-mail da conta Spotify para contato@chartfm.app para liberarmos o acesso."
+        "Envie seu e-mail da conta Spotify para contato@chartfm.com.br para liberarmos o acesso."
       );
     case "error":
       if (reason === "access_denied") return spotifyConnectErrorMessage("access_denied");

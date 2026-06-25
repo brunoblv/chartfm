@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
           title: "5. Seus direitos pela LGPD",
           body: [
             "A Lei Geral de Proteção de Dados (Lei 13.709/2018) garante os seguintes direitos em relação aos seus dados pessoais mantidos pelo ChartFM: confirmação de que tratamos seus dados, acesso a uma cópia dos seus dados, correção de dados incorretos ou incompletos, anonimização ou exclusão de dados desnecessários ou excessivos, portabilidade de dados, informações sobre terceiros com quem compartilhamos seus dados e retirada de consentimento para tratamentos baseados em consentimento.",
-            "Para exercer qualquer desses direitos, entre em contato pelo contato@chartfm.app com o assunto 'Pedido de Privacidade — LGPD'. Podemos solicitar confirmação de identidade antes de atender pedidos que envolvam acesso ou modificação de dados sensíveis da conta. Responderemos dentro dos prazos exigidos pela legislação aplicável.",
+            "Para exercer qualquer desses direitos, entre em contato pelo contato@chartfm.com.br com o assunto 'Pedido de Privacidade — LGPD'. Podemos solicitar confirmação de identidade antes de atender pedidos que envolvam acesso ou modificação de dados sensíveis da conta. Responderemos dentro dos prazos exigidos pela legislação aplicável.",
           ],
         },
         {

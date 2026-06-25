@@ -61,7 +61,7 @@ export default async function RootLayout({
               logo: "https://chartfm.com.br/logo.png",
               contactPoint: {
                 "@type": "ContactPoint",
-                email: "contato@chartfm.app",
+                email: "contato@chartfm.com.br",
                 contactType: "customer support",
               },
             }),
