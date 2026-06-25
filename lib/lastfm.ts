@@ -110,15 +110,25 @@ export function utcDateKeyFromUnix(uts: number): string {
   return new Date(uts * 1000).toISOString().slice(0, 10);
 }
 
+export type FetchTracksBetweenUnixOptions = {
+  /** Limite de páginas Last.fm (200 scrobbles/página). Padrão: 50 (~10k scrobbles). */
+  maxPages?: number;
+  /** Pausa entre páginas — evita rate limit em consultas longas. */
+  pageDelayMs?: number;
+};
+
 /** Scrobbles com `from <= uts < to` (parâmetros do Last.fm: after `from`, before `to`). */
 export async function fetchTracksBetweenUnix(
   from: number,
   toExclusive: number,
   usernameOverride?: string,
   dateKeyFn: (uts: number) => string = utcDateKeyFromUnix,
+  options?: FetchTracksBetweenUnixOptions,
 ): Promise<TrackPlays[]> {
   const username = usernameOverride || process.env.LASTFM_USERNAME;
   const apiKey = process.env.API_KEY;
+  const maxPages = options?.maxPages ?? 50;
+  const pageDelayMs = options?.pageDelayMs ?? 0;
 
   if (!username || !apiKey) throw new Error("LASTFM_USERNAME and API_KEY must be set in env");
   if (from >= toExclusive) return [];
@@ -154,8 +164,11 @@ export async function fetchTracksBetweenUnix(
     }
 
     totalPages = result.totalPages;
+    if (page < totalPages && pageDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, pageDelayMs));
+    }
     page++;
-    if (page > 50) break; // safety cap: ~10 000 scrobbles
+    if (page > maxPages) break;
   } while (page <= totalPages);
 
   return Array.from(grouped.values());

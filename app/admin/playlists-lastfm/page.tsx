@@ -2,7 +2,6 @@ import { Shell } from "@/components/layout/Shell";
 import { requireMyTrlSession } from "@/lib/mytrl-access-server";
 import {
   getMyTrlOwnerUser,
-  getSpotifyUserAccessToken,
   spotifyUserOAuthConfigured,
 } from "@/lib/spotify-user";
 import MonthlyPlaylistsClient from "./MonthlyPlaylistsClient";
@@ -29,10 +28,7 @@ export default async function AdminLastfmPlaylistsPage() {
     );
   }
 
-  const [owner, token] = await Promise.all([
-    getMyTrlOwnerUser(),
-    getSpotifyUserAccessToken(session.user.id),
-  ]);
+  const owner = await getMyTrlOwnerUser();
 
   const year = 2026;
   const nowUnix = Math.floor(Date.now() / 1000);
@@ -47,9 +43,9 @@ export default async function AdminLastfmPlaylistsPage() {
       <MonthlyPlaylistsClient
         year={year}
         months={months}
-        lastfmUser={owner?.lastfmUser ?? null}
+        lastfmUser={owner?.lastfmUser ?? process.env.LASTFM_USERNAME ?? null}
         spotifyConfigured={spotifyUserOAuthConfigured()}
-        spotifyConnected={Boolean(token && owner?.spotifyRefreshToken)}
+        spotifyConnected={Boolean(owner?.spotifyRefreshToken)}
       />
     </Shell>
   );

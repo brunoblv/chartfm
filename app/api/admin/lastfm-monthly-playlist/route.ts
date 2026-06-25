@@ -72,14 +72,13 @@ async function resolveSpotifyIds(
 }
 
 /** GET — status da conexão e meses disponíveis em 2026. */
-export async function GET() {
-  const session = await requireMyTrlSession();
+export async function GET(req: NextRequest) {
+  const session = await requireMyTrlSession(req);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403, headers: NO_CACHE });
   }
 
   const owner = await getMyTrlOwnerUser();
-  const token = await getSpotifyUserAccessToken(session.user.id);
 
   const now = new Date();
   const year = 2026;
@@ -92,7 +91,7 @@ export async function GET() {
   return NextResponse.json(
     {
       configured: spotifyUserOAuthConfigured(),
-      spotifyConnected: Boolean(token && owner?.spotifyRefreshToken),
+      spotifyConnected: Boolean(owner?.spotifyRefreshToken),
       lastfmUser: owner?.lastfmUser ?? process.env.LASTFM_USERNAME ?? null,
       year,
       months,
@@ -103,7 +102,7 @@ export async function GET() {
 
 /** POST — gera a playlist do mês: top N do Last.fm → Spotify. */
 export async function POST(req: NextRequest) {
-  const session = await requireMyTrlSession();
+  const session = await requireMyTrlSession(req);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403, headers: NO_CACHE });
   }
@@ -152,7 +151,10 @@ export async function POST(req: NextRequest) {
   // 1. Agrega scrobbles do mês e ordena por playcount.
   let grouped: TrackPlays[];
   try {
-    grouped = await fetchTracksBetweenUnix(from, toExclusive, lastfmUser);
+    grouped = await fetchTracksBetweenUnix(from, toExclusive, lastfmUser, undefined, {
+      maxPages: 500,
+      pageDelayMs: 120,
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Falha ao buscar dados do Last.fm" },

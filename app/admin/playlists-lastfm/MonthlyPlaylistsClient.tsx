@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
 
 type MonthInfo = { month: number; name: string };
 
@@ -35,12 +36,14 @@ const btn = (disabled: boolean): React.CSSProperties => ({
   whiteSpace: "nowrap",
 });
 
+const SPOTIFY_CONNECT_URL = "/api/spotify/connect?from=/admin/playlists-lastfm&reconnect=1";
+
 export default function MonthlyPlaylistsClient({
   year,
   months,
   lastfmUser,
   spotifyConfigured,
-  spotifyConnected,
+  spotifyConnected: spotifyConnectedInitial,
 }: {
   year: number;
   months: MonthInfo[];
@@ -53,6 +56,35 @@ export default function MonthlyPlaylistsClient({
   const [results, setResults] = useState<Record<number, Result>>({});
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [bulk, setBulk] = useState(false);
+  const [spotifyConnected, setSpotifyConnected] = useState(spotifyConnectedInitial);
+  const [banner, setBanner] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  useEffect(() => {
+    setSpotifyConnected(spotifyConnectedInitial);
+  }, [spotifyConnectedInitial]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const spotifyParam = params.get("spotify");
+    const spotifyReason = params.get("spotify_reason");
+    if (!spotifyParam) return;
+
+    if (spotifyParam === "connected" || spotifyParam === "connected_no_playlist") {
+      setSpotifyConnected(true);
+      setBanner({ type: "ok", text: "Spotify conectado com sucesso. Pode gerar as playlists." });
+    } else {
+      const msg =
+        spotifyConnectErrorMessage(spotifyParam, spotifyReason) ??
+        "Erro ao conectar o Spotify. Tente novamente.";
+      setBanner({ type: "err", text: msg });
+    }
+
+    params.delete("spotify");
+    params.delete("spotify_reason");
+    const qs = params.toString();
+    const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+    window.history.replaceState(null, "", next);
+  }, []);
 
   const ready = spotifyConfigured && spotifyConnected;
 
@@ -63,12 +95,16 @@ export default function MonthlyPlaylistsClient({
       const res = await fetch("/api/admin/lastfm-monthly-playlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ year, month, limit, isPublic }),
       });
       const data = (await res.json()) as Result;
+      if (!res.ok && !data.error) {
+        data.error = res.status === 403 ? "Não autorizado — faça login como @bruno." : `Erro ${res.status}`;
+      }
       setResults((r) => ({ ...r, [month]: data }));
     } catch {
-      setResults((r) => ({ ...r, [month]: { error: "Falha de rede" } }));
+      setResults((r) => ({ ...r, [month]: { error: "Falha de rede ou tempo esgotado. Tente um mês por vez." } }));
     } finally {
       setLoading((l) => ({ ...l, [month]: false }));
     }
@@ -85,6 +121,20 @@ export default function MonthlyPlaylistsClient({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 720 }}>
+      {banner && (
+        <div
+          style={{
+            padding: "10px 12px",
+            borderRadius: 8,
+            background: banner.type === "ok" ? "var(--accent-tint)" : "rgba(229, 72, 77, 0.12)",
+            color: "var(--text)",
+            fontSize: 14,
+          }}
+        >
+          {banner.text}
+        </div>
+      )}
+
       <div style={card}>
         <div style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>
           Gera uma playlist na sua conta Spotify com as faixas mais ouvidas de cada mês de {year},
@@ -108,7 +158,7 @@ export default function MonthlyPlaylistsClient({
               : (
                 <>
                   Sua conta Spotify não está conectada.{" "}
-                  <a href="/api/spotify/connect?from=/admin/playlists-lastfm" style={{ color: "var(--accent, #1db954)", fontWeight: 600 }}>
+                  <a href={SPOTIFY_CONNECT_URL} style={{ color: "var(--accent, #1db954)", fontWeight: 600 }}>
                     Conectar agora
                   </a>
                   .
@@ -151,6 +201,10 @@ export default function MonthlyPlaylistsClient({
         </div>
       </div>
 
+      {months.length === 0 && (
+        <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Nenhum mês disponível ainda em {year}.</div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {months.map((m) => {
           const r = results[m.month];
@@ -163,9 +217,19 @@ export default function MonthlyPlaylistsClient({
               <div style={{ fontWeight: 600, fontSize: 15, minWidth: 96 }}>{m.name}</div>
 
               <div style={{ flex: 1, fontSize: 13, color: "var(--text-muted)" }}>
-                {isLoading && "Calculando e criando no Spotify…"}
+                {isLoading && "Buscando scrobbles no Last.fm e criando no Spotify… (pode levar 1–2 min)"}
                 {!isLoading && r?.error && (
-                  <span style={{ color: "var(--danger, #e5484d)" }}>{r.error}</span>
+                  <span style={{ color: "var(--danger, #e5484d)" }}>
+                    {r.error}
+                    {r.needsReconnect && (
+                      <>
+                        {" "}
+                        <a href={SPOTIFY_CONNECT_URL} style={{ color: "var(--accent, #1db954)", fontWeight: 600 }}>
+                          Reconectar Spotify
+                        </a>
+                      </>
+                    )}
+                  </span>
                 )}
                 {!isLoading && r?.ok && (
                   <span>
