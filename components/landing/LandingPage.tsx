@@ -40,10 +40,12 @@ export function LandingPage({
   globalChart,
   userCount = 0,
   recentUsers = [],
+  children,
 }: {
   globalChart: GlobalChartEntry[];
   userCount?: number;
   recentUsers?: RecentUser[];
+  children?: React.ReactNode;
 }) {
   const isMobile = useIsMobile();
   const { t, locale } = useTranslations();
@@ -356,6 +358,7 @@ export function LandingPage({
         </div>
       </section>
 
+      {children}
 
 {/* COMO FUNCIONA — 3 steps */}
       <section id="como-funciona" style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>

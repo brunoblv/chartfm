@@ -414,4 +414,31 @@ export const pagesPtBR = {
     lastUpdated: "Última atualização: {date}",
     backHome: "← Voltar ao início",
   },
+  landingEditorial: {
+    eyebrow: "Parada Global · ChartFM",
+    title: "Global 100 — {week}",
+    introLeader:
+      "Na {week}, o Global 100 do ChartFM é liderado por \"{title}\", de {artist}, com {points} pontos acumulados a partir de {voters} paradas pessoais publicadas pela comunidade. Esse ranking coletivo mostra, em tempo real, quais faixas os fãs de música mais valorizaram na semana — não por reproduções passivas, mas por escolhas deliberadas em suas paradas semanais.",
+    introHow:
+      "Cada posição numa parada pessoal gera pontos: a faixa em 1º vale 100 pontos, a de 2º vale 99, e assim por diante até a 20ª posição. O ChartFM soma esses pontos de todas as paradas publicadas e consolida o ranking toda segunda-feira às 01h (horário de Brasília). O resultado é uma parada feita por curadores reais, não por algoritmos de streaming.",
+    introEmpty:
+      "O Global 100 é a parada musical coletiva do ChartFM: um ranking semanal construído a partir das paradas pessoais publicadas por fãs de música. Cada posição numa chart individual gera pontos que se acumulam ao longo da semana. Quando a comunidade publicar novas paradas, esta página exibirá automaticamente o top 10 atualizado.",
+    moversUp:
+      "Entre as maiores subidas desta semana, \"{title}\" ({artist}) avançou {delta} posições — sinal de que mais fãs estão colocando essa faixa em destaque nas suas paradas.",
+    moversNew:
+      "{count} faixa(s) estreiam no ranking esta semana, incluindo {names}. Estreias indicam descobertas recentes que a comunidade começou a valorizar coletivamente.",
+    listHeading: "Top 10 do Global 100 — {week}",
+    pts: "pts",
+    statusNew: "estreia",
+    statusReturn: "retorno",
+    statusUp: "↑ {delta}",
+    statusDown: "↓ {delta}",
+    statusSame: "—",
+    outro:
+      "O ChartFM reúne paradas pessoais, reviews de álbuns, comunidades temáticas e rankings globais em um só lugar. Explore o ranking completo, leia o guia sobre o cálculo do Global 100 ou conheça a história da plataforma.",
+    navLabel: "Links sobre o Global 100",
+    viewFull: "Ver ranking completo",
+    readGuide: "Como funciona o Global 100",
+    aboutChartfm: "Sobre o ChartFM",
+  },
 };

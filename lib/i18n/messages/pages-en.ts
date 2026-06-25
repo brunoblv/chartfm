@@ -414,4 +414,31 @@ export const pagesEn = {
     lastUpdated: "Last updated: {date}",
     backHome: "← Back to home",
   },
+  landingEditorial: {
+    eyebrow: "Global Chart · ChartFM",
+    title: "Global 100 — {week}",
+    introLeader:
+      "For {week}, the ChartFM Global 100 is led by \"{title}\" by {artist}, with {points} points accumulated from {voters} personal charts published by the community. This collective ranking shows, in real time, which tracks music fans valued most that week — not through passive plays, but through deliberate choices in their weekly charts.",
+    introHow:
+      "Each position on a personal chart earns points: #1 is worth 100 points, #2 is worth 99, and so on down to #20. ChartFM adds up these points from every published chart and consolidates the ranking every Monday at 1:00 AM (Brasília time). The result is a chart built by real curators, not streaming algorithms.",
+    introEmpty:
+      "The Global 100 is ChartFM's collective music chart: a weekly ranking built from personal charts published by music fans. Each position on an individual chart earns points that accumulate throughout the week. When the community publishes new charts, this page will automatically show the updated top 10.",
+    moversUp:
+      "Among this week's biggest climbers, \"{title}\" ({artist}) moved up {delta} spots — a sign that more fans are highlighting this track on their charts.",
+    moversNew:
+      "{count} track(s) debut on the chart this week, including {names}. Debuts highlight recent discoveries the community is starting to value collectively.",
+    listHeading: "Global 100 top 10 — {week}",
+    pts: "pts",
+    statusNew: "debut",
+    statusReturn: "re-entry",
+    statusUp: "↑ {delta}",
+    statusDown: "↓ {delta}",
+    statusSame: "—",
+    outro:
+      "ChartFM brings together personal charts, album reviews, themed communities, and global rankings in one place. Explore the full chart, read the Global 100 guide, or learn about the platform.",
+    navLabel: "Global 100 links",
+    viewFull: "View full chart",
+    readGuide: "How the Global 100 works",
+    aboutChartfm: "About ChartFM",
+  },
 };

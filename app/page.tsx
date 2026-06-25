@@ -10,8 +10,14 @@ import { FriendsRow, GlobalTeaser, SuggestedUsers, TrendingArtists } from "@/com
 import { formatRelativeTime } from "@/lib/i18n/format";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
-import { buildWeekIndexFromDate, buildWeekLabelFromDate, getRankingWeekReference } from "@/lib/chart-week";
+import {
+  buildWeekIndexFromDate,
+  buildWeekLabelFromDate,
+  getRankingWeekReference,
+  getWeeklySnapshotReferenceDate,
+} from "@/lib/chart-week";
 import { LandingPage } from "@/components/landing/LandingPage";
+import { LandingEditorialSection } from "@/components/landing/LandingEditorialSection";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs, type ReviewItem } from "@/components/home/TimelineTabs";
@@ -265,6 +271,8 @@ export default async function HomePage() {
     // A semana fechada de referência pode ainda não ter parada consolidada.
     // Para a landing usamos a semana mais recente que de fato tem dados.
     const dataWeekIndex = (await getLatestAvailableWeekIndex(rankingWeek.weekIndex)) ?? rankingWeek.weekIndex;
+    const weekRefDate = getWeeklySnapshotReferenceDate(dataWeekIndex);
+    const weekLabel = buildWeekLabelFromDate(weekRefDate);
     const [globalChart, userCount, recentUsers] = await Promise.all([
       getGlobalTopSongs(dataWeekIndex, 10),
       prisma.user.count(),
@@ -274,7 +282,15 @@ export default async function HomePage() {
         select: { id: true, name: true, avatarColor: true, image: true },
       }),
     ]);
-    return <LandingPage globalChart={globalChart} userCount={userCount} recentUsers={recentUsers} />;
+    return (
+      <LandingPage globalChart={globalChart} userCount={userCount} recentUsers={recentUsers}>
+        <LandingEditorialSection
+          globalChart={globalChart}
+          weekLabel={weekLabel}
+          weekIndex={dataWeekIndex}
+        />
+      </LandingPage>
+    );
   }
 
   let userStreak = 0;
