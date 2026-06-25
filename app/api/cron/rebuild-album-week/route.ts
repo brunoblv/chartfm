@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GLOBAL_RANKING_FIRST_WEEK_INDEX } from "@/lib/global-ranking-config";
+import { authorizedCron } from "@/lib/cron-auth";
 import { saveGlobalLastfmSnapshotForWeek } from "@/lib/global-lastfm-snapshot";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
-function authorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
-
 /** Recalcula o snapshot Global 100 Álbuns de uma semana (evita timeout do rebuild completo). */
 export async function GET(req: NextRequest) {
-  if (!authorized(req)) {
+  if (!authorizedCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
@@ -24,6 +19,21 @@ export async function GET(req: NextRequest) {
       { error: `weekIndex inválido (mínimo ${GLOBAL_RANKING_FIRST_WEEK_INDEX})` },
       { status: 400 },
     );
+  }
+
+  const asyncMode = req.nextUrl.searchParams.get("async") === "1";
+  if (asyncMode) {
+    void saveGlobalLastfmSnapshotForWeek("albums", weekIndex)
+      .then((result) => {
+        console.log(
+          `[rebuild-album-week] Semana ${weekIndex} → ${result.payload.entries.length} álbum(ns)`,
+        );
+      })
+      .catch((err) => {
+        console.error(`[rebuild-album-week] Semana ${weekIndex} ERRO:`, err);
+      });
+
+    return NextResponse.json({ ok: true, weekIndex, status: "started" }, { status: 202 });
   }
 
   const result = await saveGlobalLastfmSnapshotForWeek("albums", weekIndex);

@@ -438,7 +438,7 @@ function buildAchievements(
   const streakUnit = isDaily ? "dias" : "semanas";
   const list: { emoji: string; name: string; desc: string }[] = [
     { emoji: "🔥", name: "Streak", desc: `${user.streak} ${streakUnit} de streak` },
-    { emoji: "🎵", name: "Curador", desc: totalRanked >= 100 ? `${totalRanked}+ entradas no chart` : `${totalRanked} músicas rankeadas` },
+    { emoji: "🎵", name: "Fã de música", desc: totalRanked >= 100 ? `${totalRanked}+ entradas no chart` : `${totalRanked} músicas rankeadas` },
     { emoji: "🏆", name: "Chart topper", desc: numberOnes > 0 ? `${numberOnes} faixa(s) em #1` : "Busque o primeiro #1" },
     { emoji: "🌟", name: "Rede", desc: `${user.followers.toLocaleString("pt-BR")} seguidores` },
     { emoji: "📊", name: "Paradas", desc: `${totalCharts} publicação(ões)` },

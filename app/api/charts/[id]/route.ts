@@ -10,6 +10,7 @@ import { recomputePersistedChartEntryStatsForParada } from "@/lib/chart-entry-st
 import type { PersonalDropoutEntry } from "@/lib/types";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import {
+  finalizeSongsForChartPublish,
   resolveSongsForFastPublish,
   sanitizeChartEntrySpotifyRefs,
 } from "@/lib/resolve-publish-songs";
@@ -316,6 +317,7 @@ type EntryInput = {
   title: string;
   artist: string;
   album?: string | null;
+  imageUrl?: string | null;
   spotifyId?: string | null;
   songId?: string | null;
 };
@@ -371,11 +373,13 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     title: e.title.trim(),
     artist: e.artist.trim(),
     album: e.album ?? null,
+    imageUrl: e.imageUrl?.trim() || null,
     spotifyId: e.spotifyId?.trim() || null,
     songId: e.songId?.trim() || null,
   }));
 
-  const songs = await resolveSongsForFastPublish(prisma, normalizedEntries);
+  const resolved = await resolveSongsForFastPublish(prisma, normalizedEntries);
+  const songs = await finalizeSongsForChartPublish(prisma, normalizedEntries, resolved);
   if (songs.length !== entries.length || songs.some((s) => !s?.id)) {
     return NextResponse.json({ error: "Não foi possível resolver todas as músicas." }, { status: 400 });
   }

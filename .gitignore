@@ -44,3 +44,6 @@ next-env.d.ts
 /fix layout/
 /push/
 /MyTrlClient.tsx
+
+.vercel
+.env*

@@ -126,17 +126,17 @@ export const pagesEn = {
   },
   discover: {
     title: "Discover",
-    subtitle: "Explore songs, artists, and curators",
-    metaDescription: "Discover new music, rising artists, and featured curators on ChartFM.",
+    subtitle: "Explore songs, artists, and music fans",
+    metaDescription: "Discover new music, rising artists, and featured music fans on ChartFM.",
     editorialTitle: "Discover New Music on ChartFM",
     editorialP1:
       "ChartFM Discover was created to help music fans explore new artists, albums, charts, and trends within the community. Every day, users share their personal charts, reviews, and musical discoveries, creating a dynamic environment where different styles and genres coexist in one place. The result is an authentic snapshot of what the community is actually listening to — not what an algorithm has decided to promote.",
     editorialP2:
       "Unlike platforms that rely solely on automated recommendation systems, ChartFM Discover is built from real community activity. Every chart published, review written, and rating submitted helps highlight new releases, emerging artists, and classic records being revisited by users. This means the rankings you see here reflect intentional human choices — not passive streaming counts.",
     editorialP3:
-      "Through the Discover page, you can follow the most talked-about artists of the moment, find curators with musical tastes similar to yours, explore weekly charts from other users, and discover songs that are growing organically across the platform. Rankings are updated every week, so there is always something new to explore.",
+      "Through the Discover page, you can follow the most talked-about artists of the moment, find music fans with musical tastes similar to yours, explore weekly charts from other users, and discover songs that are growing organically across the platform. Rankings are updated every week, so there is always something new to explore.",
     editorialP4:
-      "Whether you're looking for new sounds, tracking music trends, or exploring the community's collective taste, Discover serves as a central hub for navigating the musical universe of ChartFM. Real curators, transparent rankings, and genre-based exploration make music discovery a richer and less random experience.",
+      "Whether you're looking for new sounds, tracking music trends, or exploring the community's collective taste, Discover serves as a central hub for navigating the musical universe of ChartFM. Real music fans, transparent rankings, and genre-based exploration make music discovery a richer and less random experience.",
     howItWorksTitle: "How Discover Works",
     howItWorksIntro:
       "ChartFM's discovery system uses data from personal charts, ratings, reviews, and community activity to highlight relevant content. As users add songs to their weekly charts and interact with artists, new trends emerge organically across the platform.",
@@ -148,37 +148,37 @@ export const pagesEn = {
       "Artists and songs climb the ranking as more users include them in their charts. No opaque algorithm — just real taste from real people.",
     stepCurationTitle: "Human curation, not automation",
     stepCurationDesc:
-      "Every curator is a real person with a defined musical taste. Following curators helps you discover music through people who think like you.",
+      "Every music fan is a real person with a defined musical taste. Following music fans helps you discover music through people who think like you.",
     stepGenresTitle: "Explore by genre",
     stepGenresDesc:
       "Filter artists and songs by genre to find what's trending within a specific style — from electronic to country, funk to K-Pop.",
-    featuredCuratorsTitle: "Featured curators",
+    featuredCuratorsTitle: "Featured music fans",
     viewTop20: "View top 20 →",
     featuredCuratorsIntro:
-      "Curators are users who publish music charts regularly and consistently. Following a curator is the most direct way to discover new music through someone whose taste you trust. The highlights below reflect activity and engagement for week {weekLabel}.",
+      "Music fans are users who publish music charts regularly and consistently. Following a music fan is the most direct way to discover new music through someone whose taste you trust. The highlights below reflect activity and engagement for week {weekLabel}.",
     featuredBadge: "Featured",
-    featuredBioFallback: "Featured curator this week.",
+    featuredBioFallback: "Featured music fan this week.",
     exploreGenresTitle: "Explore by Genre",
     exploreGenresIntro:
-      "Every music genre has its own dedicated discovery space on ChartFM. Filter artists, songs, and curators by style to uncover genre-specific trends — from Funk to K-Pop, from Indie to Electronic. Genre rankings are built from the charts of users who listen to and engage most with each style, providing a community-driven view of what's popular within every scene.",
+      "Every music genre has its own dedicated discovery space on ChartFM. Filter artists, songs, and music fans by style to uncover genre-specific trends — from Funk to K-Pop, from Indie to Electronic. Genre rankings are built from the charts of users who listen to and engage most with each style, providing a community-driven view of what's popular within every scene.",
     hotIntro:
       "Weekly ranking consolidated every Tuesday at 6:00 AM (BRT). Artists and songs are ranked based on the number of users who included them in their personal charts during {weekLabel}.",
     faqTitle: "Frequently asked questions",
     faq1Q: "What is ChartFM Discover?",
     faq1A:
-      "Discover is ChartFM's central discovery page. Here you'll find featured curators of the week, rankings of the most-charted artists and songs in the community, and shortcuts to explore by musical genre. All content is updated weekly based on charts published by users.",
+      "Discover is ChartFM's central discovery page. Here you'll find featured music fans of the week, rankings of the most-charted artists and songs in the community, and shortcuts to explore by musical genre. All content is updated weekly based on charts published by users.",
     faq2Q: "How does content appear on Discover?",
     faq2A:
-      "Rankings are generated automatically from personal charts published by users. The more people include an artist or song in their weekly chart, the higher their position. Featured curators are selected based on chart activity and engagement for the week.",
+      "Rankings are generated automatically from personal charts published by users. The more people include an artist or song in their weekly chart, the higher their position. Featured music fans are selected based on chart activity and engagement for the week.",
     faq3Q: "How do I discover new artists on ChartFM?",
     faq3A:
-      "The most effective way is to follow curators whose taste you already admire. When they publish new charts, you can explore artists and songs you didn't know yet. You can also browse by genre to find trends within a specific style.",
-    faq4Q: "What are curators on ChartFM?",
+      "The most effective way is to follow music fans whose taste you already admire. When they publish new charts, you can explore artists and songs you didn't know yet. You can also browse by genre to find trends within a specific style.",
+    faq4Q: "What are music fans on ChartFM?",
     faq4A:
-      "Curators are users who publish weekly music charts consistently. Each chart is a personal, deliberate selection of the songs that defined the curator's week. Following a curator is a way to keep up with someone's musical taste you trust.",
+      "Music fans are users who publish weekly music charts consistently. Each chart is a personal, deliberate selection of the songs that defined the fan's week. Following a music fan is a way to keep up with someone's musical taste you trust.",
     faq5Q: "How often is Discover updated?",
     faq5A:
-      "Artist and song rankings are updated every Tuesday at 6:00 AM (Brasília time), along with the weekly consolidation of charts. Featured curators reflect current-week activity and may change as new charts are published.",
+      "Artist and song rankings are updated every Tuesday at 6:00 AM (Brasília time), along with the weekly consolidation of charts. Featured music fans reflect current-week activity and may change as new charts are published.",
     hot: "Trending",
     tabArtists: "Artists",
     tabSongs: "Songs",
@@ -187,7 +187,7 @@ export const pagesEn = {
     colEntries: "Entries",
     colUsers: "Users",
     colArtist: "Artist",
-    topCurators: "Top 20 curators",
+    topCurators: "Top 20 music fans",
     weeklyRanking: "Weekly ranking · {label}",
     backToDiscover: "← Back to discover",
     viewChart: "View chart",

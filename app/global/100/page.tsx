@@ -182,7 +182,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
     },
     {
       q: "As charts pessoais influenciam o ranking?",
-      a: "Sim, diretamente. Cada parada publicada por um usuário contribui para o Global 100. Quanto mais curadores incluem uma música em suas charts, maior o impacto dela no ranking coletivo. É a democracia musical em ação.",
+      a: "Sim, diretamente. Cada parada publicada por um usuário contribui para o Global 100. Quanto mais fãs de música incluem uma música em suas charts, maior o impacto dela no ranking coletivo. É a democracia musical em ação.",
     },
     {
       q: "A parada global é igual às charts de streaming?",
@@ -216,7 +216,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
           {[
             { icon: <Music size={20} />, title: "Curadoria da comunidade", desc: "Cada música entra porque alguém escolheu colocá-la na própria parada." },
-            { icon: <Users size={20} />, title: "Mais curadores, mais força", desc: "Quanto mais usuários incluem uma música, maior sua presença no ranking." },
+            { icon: <Users size={20} />, title: "Mais fãs de música, mais força", desc: "Quanto mais usuários incluem uma música, maior sua presença no ranking." },
             { icon: <BarChart2 size={20} />, title: "Atualizado toda semana", desc: "A consolidação ocorre toda segunda-feira com base nas paradas da semana anterior." },
             { icon: <TrendingUp size={20} />, title: "Histórico preservado", desc: "Cada semana gera um snapshot permanente para consulta histórica." },
           ].map((item) => (

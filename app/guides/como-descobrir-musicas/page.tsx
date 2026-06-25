@@ -4,7 +4,7 @@ import { LegalPage } from "@/components/legal/LegalPage";
 export const metadata: Metadata = {
   title: "Como descobrir músicas no ChartFM | Guias ChartFM",
   description:
-    "Use o Discover do ChartFM para encontrar novos artistas, seguir curadores com gosto parecido e explorar charts por gênero. Guia completo para descoberta musical.",
+    "Use o Discover do ChartFM para encontrar novos artistas, seguir fãs de música com gosto parecido e explorar charts por gênero. Guia completo para descoberta musical.",
   alternates: { canonical: "/guides/como-descobrir-musicas" },
 };
 
@@ -12,30 +12,30 @@ export default function GuideDescobrir() {
   return (
     <LegalPage
       title="Como descobrir músicas no ChartFM"
-      subtitle="Encontre novos artistas, curadores e tendências musicais"
+      subtitle="Encontre novos artistas, fãs de música e tendências musicais"
       sections={[
         {
           title: "Por que descobrir música pelo ChartFM?",
           body: [
             "Plataformas de streaming recomendam músicas com base em algoritmos que analisam seu histórico de reprodução. O resultado é muitas vezes uma câmara de eco: você descobre mais do mesmo, raramente algo que verdadeiramente surpreende.",
-            "O ChartFM oferece uma alternativa baseada em pessoas reais. Ao seguir curadores com gosto musical parecido com o seu, você descobre músicas através de alguém que deliberadamente escolheu incluí-las em sua lista da semana — não porque um algoritmo as recomendou, mas porque genuinamente as valorizou.",
+            "O ChartFM oferece uma alternativa baseada em pessoas reais. Ao seguir fãs de música com gosto musical parecido com o seu, você descobre músicas através de alguém que deliberadamente escolheu incluí-las em sua lista da semana — não porque um algoritmo as recomendou, mas porque genuinamente as valorizou.",
             "Essa forma de descoberta é mais lenta, mas mais rica. As músicas que você encontra pelo ChartFM tendem a ser escolhas com mais contexto e significado por trás.",
           ],
         },
         {
           title: "Usando a página Discover",
           body: [
-            "A página Discover é o ponto central de descoberta do ChartFM. Acesse pelo menu lateral para ver curadores em destaque da semana, rankings de artistas e músicas mais chartadas, e atalhos para explorar por gênero musical.",
+            "A página Discover é o ponto central de descoberta do ChartFM. Acesse pelo menu lateral para ver fãs de música em destaque da semana, rankings de artistas e músicas mais chartadas, e atalhos para explorar por gênero musical.",
             "Os rankings exibidos no Discover são atualizados semanalmente e refletem as paradas publicadas pela comunidade naquele período. Artistas que aparecem em múltiplas charts de usuários diferentes sobem naturalmente no ranking.",
             "Explore as abas disponíveis: a aba de Artistas mostra quem está crescendo mais rápido dentro da plataforma. A aba de Músicas mostra as faixas com mais presença nas charts da semana.",
           ],
         },
         {
-          title: "Seguindo curadores",
+          title: "Seguindo fãs de música",
           body: [
-            "A forma mais eficiente de descobrir música no ChartFM é seguir curadores cujo gosto você já admira. Quando eles publicam novas paradas semanais, você recebe essas atualizações no seu feed.",
-            "Para encontrar bons curadores, explore o Discover e veja quem está em destaque. Clique no perfil de um curador para ver seu histórico de charts, que artistas ele mais defende e como seu gosto se compara ao seu.",
-            "Também é possível descobrir curadores através das comunidades. Membros ativos de comunidades que você frequenta costumam ter gostos alinhados com o seu, tornando-os candidatos naturais para seguir.",
+            "A forma mais eficiente de descobrir música no ChartFM é seguir fãs de música cujo gosto você já admira. Quando eles publicam novas paradas semanais, você recebe essas atualizações no seu feed.",
+            "Para encontrar bons fãs de música, explore o Discover e veja quem está em destaque. Clique no perfil de um fã de música para ver seu histórico de charts, que artistas ele mais defende e como seu gosto se compara ao seu.",
+            "Também é possível descobrir fãs de música através das comunidades. Membros ativos de comunidades que você frequenta costumam ter gostos alinhados com o seu, tornando-os candidatos naturais para seguir.",
           ],
         },
         {
@@ -58,7 +58,7 @@ export default function GuideDescobrir() {
           title: "Dica: explore o perfil dos artistas",
           body: [
             "Cada artista no ChartFM tem uma página de perfil com informações sobre sua discografia, histórico de aparições no ranking global e avaliações de álbuns feitas pela comunidade. Visitar o perfil de um artista que você acabou de descobrir é um bom jeito de entender rapidamente como a comunidade o percebe.",
-            "A página de perfil também mostra quais usuários mais chartaram aquele artista — o que pode ajudar a encontrar curadores com gosto parecido com o seu para seguir.",
+            "A página de perfil também mostra quais usuários mais chartaram aquele artista — o que pode ajudar a encontrar fãs de música com gosto parecido com o seu para seguir.",
           ],
         },
       ]}

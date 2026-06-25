@@ -53,7 +53,7 @@ export default async function CuratorsRankingPage() {
     .slice(0, 20);
 
   return (
-    <Shell title="Top 20 curadores" subtitle={`Ranking semanal · ${rankingWeek.weekLabel}`}>
+    <Shell title="Top 20 fãs de música" subtitle={`Ranking semanal · ${rankingWeek.weekLabel}`}>
       <div style={{ maxWidth: 860 }}>
         <div style={{ marginBottom: 14 }}>
           <Link href="/discover" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 13 }}>

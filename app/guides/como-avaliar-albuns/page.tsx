@@ -43,7 +43,7 @@ export default function GuideAvaliarAlbuns() {
           body: [
             "No CriticsFM, você pode ver a nota média de cada álbum calculada a partir de todas as avaliações enviadas pela comunidade. Isso cria um consenso coletivo que muitas vezes difere das notas de críticos profissionais — e isso é parte do valor da plataforma.",
             "Você pode navegar pelos álbuns mais bem avaliados, pelos mais controversos (onde as notas ficam muito divididas) e pelos mais recentes. Isso ajuda a descobrir projetos que a comunidade considera imperdíveis, mesmo que não tenham recebido atenção da mídia especializada.",
-            "Também é possível ver o histórico de avaliações de outros usuários, o que ajuda a identificar curadores cujo gosto musical se parece com o seu — e potencialmente seguir essas pessoas para descobrir novos álbuns.",
+            "Também é possível ver o histórico de avaliações de outros usuários, o que ajuda a identificar fãs de música cujo gosto musical se parece com o seu — e potencialmente seguir essas pessoas para descobrir novos álbuns.",
           ],
         },
         {

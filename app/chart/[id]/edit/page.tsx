@@ -354,6 +354,7 @@ export default function EditChartPage() {
             album: e.album,
             spotifyId: e.spotifyId ?? null,
             songId: e.id ?? null,
+            imageUrl: e.imageUrl ?? null,
           })),
         }),
       });
