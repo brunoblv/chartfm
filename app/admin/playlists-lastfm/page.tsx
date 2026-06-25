@@ -1,4 +1,8 @@
+import Link from "next/link";
+import { getServerSession } from "next-auth";
 import { Shell } from "@/components/layout/Shell";
+import { authOptions } from "@/lib/auth-options";
+import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { requireMyTrlSession } from "@/lib/mytrl-access-server";
 import {
   getMyTrlOwnerUser,
@@ -21,9 +25,27 @@ function brtMonthStartUnix(year: number, monthIdx0: number): number {
 export default async function AdminLastfmPlaylistsPage() {
   const session = await requireMyTrlSession();
   if (!session?.user?.id) {
+    const raw = await getServerSession(authOptions);
+    let message = `Acesso restrito ao @${MYTRL_OWNER_HANDLE}.`;
+    if (!raw?.user?.id) {
+      message = `Faça login como @${MYTRL_OWNER_HANDLE} para gerenciar as playlists.`;
+    } else if (raw.user.handle && raw.user.handle !== MYTRL_OWNER_HANDLE) {
+      message = `Acesso restrito ao @${MYTRL_OWNER_HANDLE} (você está logado como @${raw.user.handle}).`;
+    }
+
     return (
       <Shell title="Playlists Last.fm" subtitle="Mais ouvidas por mês">
-        <div style={{ color: "var(--text-muted)" }}>Acesso restrito ao @bruno.</div>
+        <div style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6 }}>
+          {message}
+          {!raw?.user?.id && (
+            <>
+              {" "}
+              <Link href="/login?from=/admin/playlists-lastfm" style={{ color: "var(--accent)", fontWeight: 600 }}>
+                Entrar
+              </Link>
+            </>
+          )}
+        </div>
       </Shell>
     );
   }

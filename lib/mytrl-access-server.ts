@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
-import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
 import { getToken } from "next-auth/jwt";
+import { authOptions } from "@/lib/auth-options";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 
 export type MyTrlSession = {
@@ -11,39 +12,38 @@ export type MyTrlSession = {
   };
 };
 
-async function readMyTrlToken(req?: NextRequest) {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) return null;
-
-  if (req) {
-    return getToken({ req, secret });
-  }
-
-  const jar = await cookies();
-  const cookieHeader = jar
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
-  if (!cookieHeader) return null;
-
-  return getToken({
-    req: { headers: { cookie: cookieHeader } } as unknown as NextRequest,
-    secret,
-  });
+function sessionFromToken(token: {
+  prismaUserId?: string;
+  handle?: string;
+  name?: string | null;
+} | null): MyTrlSession | null {
+  if (!token?.prismaUserId || token.handle !== MYTRL_OWNER_HANDLE) return null;
+  return {
+    user: {
+      id: token.prismaUserId,
+      handle: token.handle,
+      name: token.name ?? null,
+    },
+  };
 }
 
-/** Sessão @bruno via JWT — preferir passar `req` em Route Handlers. */
+/** Sessão @bruno — em Route Handlers passar `req`; em Server Components usa getServerSession. */
 export async function requireMyTrlSession(req?: NextRequest): Promise<MyTrlSession | null> {
-  const token = await readMyTrlToken(req);
-  if (!token?.prismaUserId || token.handle !== MYTRL_OWNER_HANDLE) {
-    return null;
+  if (req) {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) return null;
+    const token = await getToken({ req, secret });
+    return sessionFromToken(token);
   }
+
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id || session.user.handle !== MYTRL_OWNER_HANDLE) return null;
 
   return {
     user: {
-      id: token.prismaUserId as string,
-      handle: token.handle as string,
-      name: (token.name as string) ?? null,
+      id: session.user.id,
+      handle: session.user.handle,
+      name: session.user.name ?? null,
     },
   };
 }
