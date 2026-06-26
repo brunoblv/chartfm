@@ -279,9 +279,11 @@ async function loadPageData(
                 <div style={{ fontSize: 13, color: "var(--text-muted)" }}>@{row.handle}</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", marginTop: 4 }}>{row.score} pts</div>
                 <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.bio ?? t("discover.featuredBioFallback")}</div>
-                <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
-                  {t("discover.viewChart")}
-                </Link>
+                {row.chartId ? (
+                  <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
+                    {t("discover.viewChart")}
+                  </Link>
+                ) : null}
               </div>
               <FollowButton targetId={row.userId} initialFollowing={followingIds.has(row.userId)} variant="dark" size="sm" />
             </div>

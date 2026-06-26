@@ -198,7 +198,7 @@ export const pagesPtBR = {
     curatorsScoringTitle: "Como funciona a pontuação",
     curatorsScoringIntro:
       "O ranking reflete a atividade dos fãs de música na {weekLabel}. Quanto mais alguém publica paradas e interage com a comunidade, maior a pontuação.",
-    curatorsScoringChart: "Publicar parada na semana: +{points} pontos",
+    curatorsScoringChart: "Publicar parada principal na semana: +{points} pontos",
     curatorsScoringLike: "Cada curtida dada em paradas da semana: +{points} pontos",
     curatorsScoringComment: "Cada comentário escrito em paradas da semana: +{points} pontos",
     curatorsScoringFrozen:

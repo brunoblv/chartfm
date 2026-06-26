@@ -43,8 +43,10 @@ function chartPublishedBeforeFilter(publishedBefore: Date) {
 }
 
 async function loadCuratorScoresForWeek(weekIndex: number, publishedBefore: Date) {
-  const charts = await prisma.chart.findMany({
-    where: { weekIndex, ...chartPublishedBeforeFilter(publishedBefore) },
+  const weekChartFilter = { weekIndex, ...chartPublishedBeforeFilter(publishedBefore) };
+
+  const primaryCharts = await prisma.chart.findMany({
+    where: { ...weekChartFilter, parada: { isPrimary: true } },
     orderBy: [{ publishedAt: "asc" }],
     select: {
       id: true,
@@ -62,58 +64,76 @@ async function loadCuratorScoresForWeek(weekIndex: number, publishedBefore: Date
     },
   });
 
-  const candidateUserIds = [...new Set(charts.map((c) => c.userId))];
   const [likesGivenRows, commentsWrittenRows] = await Promise.all([
-    candidateUserIds.length
-      ? prisma.chartLike.groupBy({
-          by: ["userId"],
-          where: {
-            userId: { in: candidateUserIds },
-            chart: { weekIndex, ...chartPublishedBeforeFilter(publishedBefore) },
-          },
-          _count: { _all: true },
-        })
-      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
-    candidateUserIds.length
-      ? prisma.comment.groupBy({
-          by: ["userId"],
-          where: {
-            userId: { in: candidateUserIds },
-            chart: { weekIndex, ...chartPublishedBeforeFilter(publishedBefore) },
-          },
-          _count: { _all: true },
-        })
-      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
+    prisma.chartLike.groupBy({
+      by: ["userId"],
+      where: { chart: weekChartFilter },
+      _count: { _all: true },
+    }),
+    prisma.comment.groupBy({
+      by: ["userId"],
+      where: { chart: weekChartFilter },
+      _count: { _all: true },
+    }),
   ]);
 
+  const primaryByUser = new Map(primaryCharts.map((chart) => [chart.userId, chart]));
   const likesGivenByUser = new Map(likesGivenRows.map((r) => [r.userId, r._count._all]));
   const commentsWrittenByUser = new Map(commentsWrittenRows.map((r) => [r.userId, r._count._all]));
 
-  const byUser = new Map<string, { chartId: string; chartCount: number; user: (typeof charts)[number]["user"] }>();
-  for (const chart of charts) {
-    const existing = byUser.get(chart.userId);
-    if (existing) existing.chartCount += 1;
-    else byUser.set(chart.userId, { chartId: chart.id, chartCount: 1, user: chart.user });
-  }
+  const allUserIds = [
+    ...new Set([
+      ...primaryCharts.map((c) => c.userId),
+      ...likesGivenRows.map((r) => r.userId),
+      ...commentsWrittenRows.map((r) => r.userId),
+    ]),
+  ];
 
-  return [...byUser.values()]
-    .map((row) => {
-      const likesGiven = likesGivenByUser.get(row.user.id) ?? 0;
-      const commentsWritten = commentsWrittenByUser.get(row.user.id) ?? 0;
+  const usersWithoutPrimaryChart = allUserIds.filter((userId) => !primaryByUser.has(userId));
+  const extraUsers = usersWithoutPrimaryChart.length
+    ? await prisma.user.findMany({
+        where: { id: { in: usersWithoutPrimaryChart } },
+        select: {
+          id: true,
+          handle: true,
+          name: true,
+          avatarColor: true,
+          image: true,
+          bio: true,
+        },
+      })
+    : [];
+
+  const userById = new Map([
+    ...primaryCharts.map((chart) => [chart.userId, chart.user] as const),
+    ...extraUsers.map((user) => [user.id, user] as const),
+  ]);
+
+  return allUserIds
+    .map((userId) => {
+      const primaryChart = primaryByUser.get(userId);
+      const user = userById.get(userId);
+      if (!user) return null;
+
+      const chartCount = primaryChart ? 1 : 0;
+      const likesGiven = likesGivenByUser.get(userId) ?? 0;
+      const commentsWritten = commentsWrittenByUser.get(userId) ?? 0;
+
       return {
-        userId: row.user.id,
-        handle: row.user.handle,
-        name: row.user.name,
-        avatarColor: row.user.avatarColor,
-        image: row.user.image,
-        bio: row.user.bio,
-        chartId: row.chartId,
-        chartCount: row.chartCount,
+        userId: user.id,
+        handle: user.handle,
+        name: user.name,
+        avatarColor: user.avatarColor,
+        image: user.image,
+        bio: user.bio,
+        chartId: primaryChart?.id ?? "",
+        chartCount,
         likesGiven,
         commentsWritten,
-        score: computeCuratorScore(row.chartCount, likesGiven, commentsWritten),
+        score: computeCuratorScore(chartCount, likesGiven, commentsWritten),
       };
     })
+    .filter((row): row is NonNullable<typeof row> => row !== null)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (b.commentsWritten !== a.commentsWritten) return b.commentsWritten - a.commentsWritten;

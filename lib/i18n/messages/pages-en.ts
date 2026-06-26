@@ -198,7 +198,7 @@ export const pagesEn = {
     curatorsScoringTitle: "How scoring works",
     curatorsScoringIntro:
       "The ranking reflects music fan activity during {weekLabel}. The more someone publishes charts and engages with the community, the higher their score.",
-    curatorsScoringChart: "Publish a chart during the week: +{points} points",
+    curatorsScoringChart: "Publish your primary chart during the week: +{points} points",
     curatorsScoringLike: "Each like given on weekly charts: +{points} points",
     curatorsScoringComment: "Each comment written on weekly charts: +{points} points",
     curatorsScoringFrozen:

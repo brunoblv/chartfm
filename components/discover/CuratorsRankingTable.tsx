@@ -155,9 +155,11 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
               <StatPill compact label={t("discover.colScore")} value={entry.score} accent="var(--accent)" />
             </div>
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
-              <Link href={`/chart/${entry.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-                {t("discover.viewChart")}
-              </Link>
+              {entry.chartId ? (
+                <Link href={`/chart/${entry.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
+                  {t("discover.viewChart")}
+                </Link>
+              ) : null}
               <FollowButton targetId={entry.userId} initialFollowing={followingSet.has(entry.userId)} variant="outline" size="sm" />
             </div>
           </div>
@@ -267,9 +269,11 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
             {entry.score}
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "0 8px" }}>
-            <Link href={`/chart/${entry.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-              {t("discover.viewChart")}
-            </Link>
+            {entry.chartId ? (
+              <Link href={`/chart/${entry.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
+                {t("discover.viewChart")}
+              </Link>
+            ) : null}
             <FollowButton targetId={entry.userId} initialFollowing={followingSet.has(entry.userId)} variant="outline" size="sm" />
           </div>
         </div>
