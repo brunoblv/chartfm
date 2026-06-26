@@ -516,6 +516,20 @@ model GlobalAlbumsSnapshot {
   @@map("global_albums_snapshots")
 }
 
+model CuratorsSnapshot {
+  id        String   @id @default(cuid())
+  weekIndex Int      @unique @map("week_index")
+  weekLabel String   @map("week_label")
+  dateRange String   @map("date_range")
+  entries   Json
+  frozenAt  DateTime @default(now()) @map("frozen_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([weekIndex], map: "idx_curators_snapshots_week_index")
+  @@map("curators_snapshots")
+}
+
 enum EntityPageKind {
   ARTIST
   ALBUM

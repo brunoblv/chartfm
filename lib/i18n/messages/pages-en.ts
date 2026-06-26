@@ -195,6 +195,18 @@ export const pagesEn = {
     weeklyRanking: "Weekly ranking · {label}",
     backToDiscover: "← Back to discover",
     viewChart: "View chart",
+    curatorsScoringTitle: "How scoring works",
+    curatorsScoringIntro:
+      "The ranking reflects music fan activity during {weekLabel}. The more someone publishes charts and engages with the community, the higher their score.",
+    curatorsScoringChart: "Publish a chart during the week: +{points} points",
+    curatorsScoringLike: "Each like given on weekly charts: +{points} points",
+    curatorsScoringComment: "Each comment written on weekly charts: +{points} points",
+    curatorsScoringFrozen:
+      "The ranking is consolidated every Tuesday at 6:00 AM (BRT), along with the Global Chart. Rise, weeks on chart, peak, and #1 stats accumulate week over week.",
+    curatorsEmpty:
+      "Ranking not generated for this week yet. The snapshot is created by the weekly cron; in dev, call GET /api/cron/publish-weekly-globals.",
+    colCurator: "Fan",
+    colScore: "Pts",
     genreSongs: "Songs in genre • {genre}",
     genreList: "Song list for {genre}",
     noGenreSongs: "No songs from this genre in this week's charts yet.",

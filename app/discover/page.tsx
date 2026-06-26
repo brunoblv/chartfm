@@ -12,6 +12,7 @@ import { BookOpen } from "lucide-react";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { formatWeekLabel } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/config";
+import { getLatestCuratorsSnapshot } from "@/lib/curators-snapshot";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -85,26 +86,8 @@ async function loadPageData(
 ) {
   const weekLabelDisplay = formatWeekLabel(locale, weekLabel);
   const session = await getServerSession(authOptions);
-  const [curatorCharts, followRows, weeklyEntries, previousEntries] = await Promise.all([
-    prisma.chart.findMany({
-      where: { weekIndex, isPublished: true },
-      orderBy: [{ publishedAt: "asc" }],
-      select: {
-        id: true,
-        userId: true,
-        user: {
-          select: {
-            id: true,
-            handle: true,
-            name: true,
-            bio: true,
-            image: true,
-            avatarColor: true,
-            streak: true,
-          },
-        },
-      },
-    }),
+  const [curatorsSnapshot, followRows, weeklyEntries, previousEntries] = await Promise.all([
+    getLatestCuratorsSnapshot(weekIndex),
     session?.user?.id
       ? prisma.userFollow.findMany({
           where: { followerId: session.user.id },
@@ -153,54 +136,8 @@ async function loadPageData(
 
   const followingIds = new Set(followRows.map((r) => r.followingId));
 
-  // Pontuação por atividade da pessoa na semana: criar parada = 100,
-  // cada like dado em paradas = 5, cada comentário escrito = 25.
-  const candidateUserIds = [...new Set(curatorCharts.map((c) => c.userId))];
-  const [likesGivenRows, commentsWrittenRows] = await Promise.all([
-    candidateUserIds.length
-      ? prisma.chartLike.groupBy({
-          by: ["userId"],
-          where: { userId: { in: candidateUserIds }, chart: { weekIndex, isPublished: true } },
-          _count: { _all: true },
-        })
-      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
-    candidateUserIds.length
-      ? prisma.comment.groupBy({
-          by: ["userId"],
-          where: { userId: { in: candidateUserIds }, chart: { weekIndex, isPublished: true } },
-          _count: { _all: true },
-        })
-      : Promise.resolve([] as Array<{ userId: string; _count: { _all: number } }>),
-  ]);
-  const likesGivenByUser = new Map(likesGivenRows.map((r) => [r.userId, r._count._all]));
-  const commentsWrittenByUser = new Map(commentsWrittenRows.map((r) => [r.userId, r._count._all]));
-
-  const curatorByUser = new Map<string, { chartId: string; chartCount: number; user: (typeof curatorCharts)[number]["user"] }>();
-  for (const c of curatorCharts) {
-    const existing = curatorByUser.get(c.userId);
-    if (existing) existing.chartCount += 1;
-    else curatorByUser.set(c.userId, { chartId: c.id, chartCount: 1, user: c.user });
-  }
-
-  const rankedCurators = [...curatorByUser.values()]
-    .map((row) => {
-      const likesGiven = likesGivenByUser.get(row.user.id) ?? 0;
-      const commentsWritten = commentsWrittenByUser.get(row.user.id) ?? 0;
-      return {
-        id: row.chartId,
-        user: row.user,
-        chartCount: row.chartCount,
-        likesGiven,
-        commentsWritten,
-        score: row.chartCount * 100 + likesGiven * 5 + commentsWritten * 25,
-      };
-    })
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      if (b.commentsWritten !== a.commentsWritten) return b.commentsWritten - a.commentsWritten;
-      return b.likesGiven - a.likesGiven;
-    })
-    .slice(0, 5);
+  const rankedCurators = (curatorsSnapshot?.entries ?? []).slice(0, 5);
+  const curatorsWeekLabelDisplay = formatWeekLabel(locale, curatorsSnapshot?.weekLabel ?? weekLabel);
 
   const aggregateArtists = (rows: typeof weeklyEntries) => {
     const map = new Map<string, { points: number; chartIds: Set<string>; userIds: Set<string>; spotifyId: string | null; imageUrl: string | null }>();
@@ -321,31 +258,32 @@ async function loadPageData(
           </Link>
         </div>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          {t("discover.featuredCuratorsIntro", { weekLabel: weekLabelDisplay })}
+          {t("discover.featuredCuratorsIntro", { weekLabel: curatorsWeekLabelDisplay })}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16 }}>
           {rankedCurators.map((row) => (
-            <div key={row.user.id} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <div key={row.userId} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
               <div style={{ position: "relative" }}>
-                <Avatar user={{ name: row.user.name, avatar: row.user.avatarColor }} imageUrl={row.user.image} size={72} />
+                <Avatar user={{ name: row.name, avatar: row.avatarColor }} imageUrl={row.image} size={72} />
                 <div style={{
                   position: "absolute", bottom: -4, right: -4,
                   background: "var(--accent)", color: "white", fontSize: 11, fontWeight: 700,
                   padding: "2px 6px", borderRadius: 8, border: "2px solid var(--surface)",
                   display: "flex", alignItems: "center", gap: 2,
                 }}>
-                  {t("discover.featuredBadge")}
+                  #{row.position}
                 </div>
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{row.user.name}</div>
-                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>@{row.user.handle}</div>
-                <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.user.bio ?? t("discover.featuredBioFallback")}</div>
-                <Link href={`/chart/${row.id}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{row.name}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>@{row.handle}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", marginTop: 4 }}>{row.score} pts</div>
+                <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 6, lineHeight: 1.5, height: "2.8em", overflow: "hidden" }}>{row.bio ?? t("discover.featuredBioFallback")}</div>
+                <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
                   {t("discover.viewChart")}
                 </Link>
               </div>
-              <FollowButton targetId={row.user.id} initialFollowing={followingIds.has(row.user.id)} variant="dark" size="sm" />
+              <FollowButton targetId={row.userId} initialFollowing={followingIds.has(row.userId)} variant="dark" size="sm" />
             </div>
           ))}
         </div>

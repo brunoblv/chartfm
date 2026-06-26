@@ -2,18 +2,20 @@ import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import {
   getOrCreateGlobalLastfmSnapshot,
 } from "@/lib/global-lastfm-snapshot";
+import { getOrCreateCuratorsSnapshot } from "@/lib/curators-snapshot";
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
 
 /**
- * Publica rankings semanais congelados (Global 100, Airplay, Álbuns) — só cria se ainda não existir.
+ * Publica rankings semanais congelados (Global 100, Airplay, Álbuns, Top Curadores) — só cria se ainda não existir.
  * Rodar apenas às terças; depois disso o ranking exibido em /global não muda até a próxima terça.
  */
 export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
   const global = await getOrCreateRankingWeekSnapshot(now);
-  const [airplay, albums] = await Promise.all([
+  const [airplay, albums, curators] = await Promise.all([
     getOrCreateGlobalLastfmSnapshot("airplay", now),
     getOrCreateGlobalLastfmSnapshot("albums", now),
+    getOrCreateCuratorsSnapshot(now),
   ]);
 
   syncGlobal100YouTubePlaylist(global.weekIndex, global.weekLabel).catch((e) =>
@@ -61,6 +63,12 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
       weekIndex: albums.weekIndex,
       weekLabel: albums.weekLabel,
       created: albums.created,
+    },
+    curators: {
+      weekIndex: curators.weekIndex,
+      weekLabel: curators.weekLabel,
+      created: curators.created,
+      count: curators.entries.length,
     },
     notificationsSent,
   };

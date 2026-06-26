@@ -195,6 +195,18 @@ export const pagesPtBR = {
     weeklyRanking: "Ranking semanal · {label}",
     backToDiscover: "← Voltar para descobrir",
     viewChart: "Ver parada",
+    curatorsScoringTitle: "Como funciona a pontuação",
+    curatorsScoringIntro:
+      "O ranking reflete a atividade dos fãs de música na {weekLabel}. Quanto mais alguém publica paradas e interage com a comunidade, maior a pontuação.",
+    curatorsScoringChart: "Publicar parada na semana: +{points} pontos",
+    curatorsScoringLike: "Cada curtida dada em paradas da semana: +{points} pontos",
+    curatorsScoringComment: "Cada comentário escrito em paradas da semana: +{points} pontos",
+    curatorsScoringFrozen:
+      "O ranking é consolidado toda terça-feira às 6h00 (BRT), junto com a Parada Global. As estatísticas de subida, semanas no top, pico e #1s são acumuladas semana a semana.",
+    curatorsEmpty:
+      "Ranking ainda não gerado para esta semana. O snapshot é criado pelo cron semanal; em dev, chame GET /api/cron/publish-weekly-globals.",
+    colCurator: "Fã",
+    colScore: "Pts",
     genreSongs: "Músicas do gênero • {genre}",
     genreList: "Lista de músicas de {genre}",
     noGenreSongs: "Ainda não há músicas desse gênero nas paradas da semana.",
