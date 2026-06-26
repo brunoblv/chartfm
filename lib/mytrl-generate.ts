@@ -120,7 +120,7 @@ export type MyTrlGenerateResult =
   | { ok: false; error: string; skipped?: boolean };
 export async function generateMyTrlSnapshot(
   referenceDay: Date = new Date(),
-  options?: { skipRecompute?: boolean },
+  options?: { skipRecompute?: boolean; playlistId?: string },
 ): Promise<MyTrlGenerateResult> {
   const weekday = brtWeekday(referenceDay);
   if (weekday === 0) {
@@ -132,8 +132,9 @@ export async function generateMyTrlSnapshot(
     return { ok: false, error: "Usuário @bruno não encontrado." };
   }
 
-  if (!owner.spotifyNewHitsPlaylistId || !owner.spotifyRefreshToken) {
-    return { ok: false, error: "Spotify não conectado ou playlist new hits não encontrada." };
+  const playlistId = options?.playlistId ?? owner.spotifyNewHitsPlaylistId;
+  if (!playlistId || !owner.spotifyRefreshToken) {
+    return { ok: false, error: "Spotify não conectado ou playlist do mês não configurada." };
   }
 
   const lastfmUser = owner.lastfmUser ?? process.env.LASTFM_USERNAME;
@@ -141,12 +142,12 @@ export async function generateMyTrlSnapshot(
     return { ok: false, error: "Last.fm não configurado." };
   }
 
-  const allowedIds = await getNewHitsSpotifyIds(owner.id);
+  const allowedIds = await getNewHitsSpotifyIds(owner.id, playlistId);
   if (allowedIds.size === 0) {
-    return { ok: false, error: "Playlist new hits vazia ou inacessível." };
+    return { ok: false, error: "Playlist vazia ou inacessível." };
   }
 
-  const playlistTracks = await getNewHitsTracksForUser(owner.id);
+  const playlistTracks = await getNewHitsTracksForUser(owner.id, playlistId);
 
   const { fromUnix, toUnix } = myTrlFetchWindow(referenceDay);
   const rawPlays = await fetchTracksBetweenUnix(fromUnix, toUnix, lastfmUser, brtDateKeyFromUnix);

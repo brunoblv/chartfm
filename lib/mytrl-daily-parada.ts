@@ -160,10 +160,11 @@ export type RunDailyMyTrlJobResult =
 /** Calcula snapshot MyTRL e publica top 10 na UMS Request Live. */
 export async function runDailyMyTrlJob(
   referenceDay: Date = new Date(),
-  options?: { skipSnapshotRecompute?: boolean },
+  options?: { skipSnapshotRecompute?: boolean; playlistId?: string },
 ): Promise<RunDailyMyTrlJobResult> {
   const snapshot = await generateMyTrlSnapshot(referenceDay, {
     skipRecompute: options?.skipSnapshotRecompute,
+    playlistId: options?.playlistId,
   });
   if (!snapshot.ok) {
     return { ok: false, error: snapshot.error, skipped: snapshot.skipped, stage: "snapshot" };

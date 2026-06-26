@@ -308,31 +308,45 @@ export async function saveSpotifyConnection(
   return { playlistId, playlistFound: Boolean(playlistId) };
 }
 
-export async function getNewHitsSpotifyIds(userId: string): Promise<Set<string>> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { spotifyNewHitsPlaylistId: true },
-  });
-  if (!user?.spotifyNewHitsPlaylistId) return new Set();
+/** Extrai o ID de uma playlist a partir de URL ou ID puro (22 chars base62). */
+export function parseSpotifyPlaylistId(input: string): string | null {
+  const trimmed = input.trim();
+  if (/^[A-Za-z0-9]{22}$/.test(trimmed)) return trimmed;
+  const match = trimmed.match(/playlist\/([A-Za-z0-9]{22})/);
+  return match?.[1] ?? null;
+}
 
+export async function getPlaylistSpotifyIds(userId: string, playlistId: string): Promise<Set<string>> {
   const token = await getSpotifyUserAccessToken(userId);
   if (!token) return new Set();
-
-  const tracks = await fetchNewHitsTracks(token, user.spotifyNewHitsPlaylistId);
+  const tracks = await fetchNewHitsTracks(token, playlistId);
   return new Set(tracks.map((t) => t.spotifyId));
 }
 
-export async function getNewHitsTracksForUser(userId: string): Promise<NewHitsTrack[]> {
+export async function getPlaylistTracksForUser(userId: string, playlistId: string): Promise<NewHitsTrack[]> {
+  const token = await getSpotifyUserAccessToken(userId);
+  if (!token) return [];
+  return fetchNewHitsTracks(token, playlistId);
+}
+
+export async function getNewHitsSpotifyIds(userId: string, playlistId?: string): Promise<Set<string>> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { spotifyNewHitsPlaylistId: true },
   });
-  if (!user?.spotifyNewHitsPlaylistId) return [];
+  const resolvedId = playlistId ?? user?.spotifyNewHitsPlaylistId;
+  if (!resolvedId) return new Set();
+  return getPlaylistSpotifyIds(userId, resolvedId);
+}
 
-  const token = await getSpotifyUserAccessToken(userId);
-  if (!token) return [];
-
-  return fetchNewHitsTracks(token, user.spotifyNewHitsPlaylistId);
+export async function getNewHitsTracksForUser(userId: string, playlistId?: string): Promise<NewHitsTrack[]> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { spotifyNewHitsPlaylistId: true },
+  });
+  const resolvedId = playlistId ?? user?.spotifyNewHitsPlaylistId;
+  if (!resolvedId) return [];
+  return getPlaylistTracksForUser(userId, resolvedId);
 }
 
 export function mapNewHitsToLookup(tracks: NewHitsTrack[]): Map<string, NewHitsTrack> {

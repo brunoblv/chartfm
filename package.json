@@ -19,6 +19,7 @@
     "fix:boofrnds": "tsx scripts/fix-boofrnds-charts.ts",
     "rebuild:global-2026": "tsx scripts/rebuild-global-snapshots-2026.ts",
     "refresh:entity-snapshots": "tsx scripts/refresh-entity-page-snapshots.ts",
+    "mytrl:month": "tsx scripts/run-mytrl-month.ts",
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down"
