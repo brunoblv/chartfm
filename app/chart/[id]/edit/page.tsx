@@ -9,7 +9,13 @@ import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useMobileReorder } from "@/hooks/useMobileReorder";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
+import {
+  MobileReorderPositionSheet,
+  MobileReorderRowControls,
+  MobileReorderToolbar,
+} from "@/components/mobile-reorder";
 import type { Song, Cover as CoverModel, Chart } from "@/lib/types";
 
 
@@ -60,6 +66,11 @@ export default function EditChartPage() {
   const [entries, setEntries] = useState<Song[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
+  const mobileReorder = useMobileReorder({
+    items: entries,
+    onChange: setEntries,
+    getItemLabel: (song) => song.title,
+  });
   const [dbQuery, setDbQuery] = useState("");
   const [lastfmQuery, setLastfmQuery] = useState("");
   const [spotifyQuery, setSpotifyQuery] = useState("");
@@ -76,9 +87,6 @@ export default function EditChartPage() {
   const [lastfmConfigured, setLastfmConfigured] = useState(true);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
-  const touchDragIdx = useRef<number | null>(null);
-  const touchStartY = useRef(0);
-  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!chartId) return;
@@ -236,49 +244,6 @@ export default function EditChartPage() {
     const [item] = arr.splice(dragIndex, 1);
     arr.splice(i, 0, item);
     setEntries(arr);
-    setDragIndex(null);
-    setDragOver(null);
-  };
-
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    const prevent = (e: TouchEvent) => {
-      if (touchDragIdx.current !== null) e.preventDefault();
-    };
-    el.addEventListener("touchmove", prevent, { passive: false });
-    return () => el.removeEventListener("touchmove", prevent);
-  }, []);
-
-  const handleTouchStart = (e: React.TouchEvent, i: number) => {
-    touchDragIdx.current = i;
-    touchStartY.current = e.touches[0].clientY;
-    setDragIndex(i);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchDragIdx.current === null) return;
-    const dy = e.touches[0].clientY - touchStartY.current;
-    const itemH = 57;
-    const steps = Math.round(dy / itemH);
-    if (steps === 0) return;
-    const fromIdx = touchDragIdx.current;
-    const toIdx = Math.max(0, Math.min(entries.length - 1, fromIdx + steps));
-    if (toIdx === fromIdx) return;
-    setEntries((prev) => {
-      const arr = [...prev];
-      const [item] = arr.splice(fromIdx, 1);
-      arr.splice(toIdx, 0, item);
-      return arr;
-    });
-    touchDragIdx.current = toIdx;
-    touchStartY.current = e.touches[0].clientY;
-    setDragOver(toIdx);
-    setDragIndex(toIdx);
-  };
-
-  const handleTouchEnd = () => {
-    touchDragIdx.current = null;
     setDragIndex(null);
     setDragOver(null);
   };
@@ -590,7 +555,7 @@ export default function EditChartPage() {
   );
 
   const chartList = (
-    <div ref={listRef} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden", position: "relative" }}>
       <div
         style={{
           padding: "18px 20px",
@@ -666,44 +631,80 @@ export default function EditChartPage() {
           </button>
         </div>
       </div>
+      {isMobile && entries.length > 0 && (
+        <MobileReorderToolbar
+          mode={mobileReorder.mode}
+          onModeChange={mobileReorder.setMode}
+          hint={mobileReorder.hint}
+          showSwapBanner={mobileReorder.showSwapBanner}
+          swapBannerTitle={mobileReorder.selectedTitle ?? undefined}
+          onCancelSwap={mobileReorder.cancelSelection}
+        />
+      )}
       {entries.map((song, i) => {
         const cover = coverForSong(song);
+        const rowProps = isMobile ? mobileReorder.getRowProps(i) : null;
         return (
           <div
             key={`${song.id ?? ""}-${song.title}-${song.artist}-${i}`}
-            draggable
-            onDragStart={() => setDragIndex(i)}
-            onDragOver={(e) => {
+            draggable={!isMobile}
+            onDragStart={!isMobile ? () => setDragIndex(i) : undefined}
+            onDragOver={!isMobile ? (e) => {
               e.preventDefault();
               setDragOver(i);
-            }}
-            onDrop={() => handleDrop(i)}
-            onTouchStart={(e) => handleTouchStart(e, i)}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            } : undefined}
+            onDrop={!isMobile ? () => handleDrop(i) : undefined}
+            onClick={rowProps?.onRowClick}
             style={{
               display: "grid",
-              gridTemplateColumns: isMobile ? "32px 36px 52px 1fr 32px" : "38px 44px 56px 1fr 36px",
+              gridTemplateColumns: isMobile ? "32px 52px 1fr auto 32px" : "38px 44px 56px 1fr 36px",
               alignItems: "center",
               padding: isMobile ? "10px 12px" : "10px 16px",
               borderBottom: "1px solid var(--divider-soft)",
-              background: dragOver === i ? "var(--accent-tint)" : "var(--surface)",
-              cursor: "grab",
+              background: isMobile
+                ? rowProps?.rowStyle.background ?? "var(--surface)"
+                : dragOver === i
+                  ? "var(--accent-tint)"
+                  : "var(--surface)",
+              cursor: isMobile ? rowProps?.rowStyle.cursor : "grab",
+              borderLeft: isMobile ? rowProps?.rowStyle.borderLeft : undefined,
+              transition: isMobile ? rowProps?.rowStyle.transition : undefined,
+              WebkitTapHighlightColor: isMobile ? rowProps?.rowStyle.WebkitTapHighlightColor : undefined,
+              userSelect: isMobile ? rowProps?.rowStyle.userSelect : undefined,
             }}
           >
-            <div style={{ color: "var(--text-disabled)", display: "flex", justifyContent: "center" }}>
-              <GripVertical size={16} />
-            </div>
+            {!isMobile ? (
+              <div style={{ color: "var(--text-disabled)", display: "flex", justifyContent: "center" }}>
+                <GripVertical size={16} />
+              </div>
+            ) : (
+              <div />
+            )}
             <div style={{ fontSize: isMobile ? 16 : 19, fontWeight: 700, textAlign: "right" }}>{i + 1}</div>
-            <div style={{ padding: "0 8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
               <Cover cover={cover} song={song} size={isMobile ? 36 : 42} rounded={8} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
+              </div>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
-            </div>
+            {isMobile && rowProps ? (
+              <MobileReorderRowControls
+                mode={mobileReorder.mode}
+                canMoveUp={rowProps.canMoveUp}
+                canMoveDown={rowProps.canMoveDown}
+                onMoveUp={rowProps.onMoveUp}
+                onMoveDown={rowProps.onMoveDown}
+                isSelected={rowProps.isSelected}
+                isSwapTarget={rowProps.isSwapTarget}
+              />
+            ) : null}
             <button
-              onClick={() => removeSong(i)}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeSong(i);
+              }}
               style={{ background: "none", border: "none", color: "var(--text-disabled)", cursor: "pointer", display: "flex", justifyContent: "center" }}
             >
               <X size={18} />
@@ -711,6 +712,13 @@ export default function EditChartPage() {
           </div>
         );
       })}
+      {isMobile && mobileReorder.showPositionSheet && mobileReorder.editTargetTitle ? (
+        <MobileReorderPositionSheet
+          title={mobileReorder.editTargetTitle}
+          buttons={mobileReorder.positionButtons}
+          onClose={mobileReorder.closePositionSheet}
+        />
+      ) : null}
       {entries.length === 0 && !loading && (
         <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
           {isMobile ? "Use a busca abaixo e adicione à parada" : "Adicione músicas na busca ao lado →"}

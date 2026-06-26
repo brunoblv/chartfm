@@ -9,6 +9,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
+import { AdSlot } from "@/components/ui/AdSlot";
 import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
 import { globalStatsForSingleSong, songKey } from "@/lib/chart-page-common";
 import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
@@ -288,12 +289,12 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
 
   return (
     <Shell title="" noPadding>
-      <div style={{ padding: "48px 40px 40px 40px" }}>
-        <Link href="/discover" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#86868B", fontSize: 14, fontWeight: 500, textDecoration: "none", marginBottom: 24 }}>
+      <div className="song-page-outer">
+        <Link href="/discover" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, fontWeight: 500, textDecoration: "none", marginBottom: 24 }}>
           <ChevronLeft size={16} />
           Voltar
         </Link>
-        <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="song-page-hero">
           <Cover
             cover={{
               palette: [paletteA, paletteB],
@@ -310,8 +311,8 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             size={180}
             rounded={14}
           />
-          <div style={{ minWidth: 280 }}>
-            <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.05 }}>{title}</div>
+          <div className="song-page-meta">
+            <div className="song-page-title">{title}</div>
             <div style={{ marginTop: 10, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
               <Link href={buildArtistPath(artist, artistSpotifyId, artistDbId)} style={{ display: "block", fontSize: 16, fontWeight: 600, color: "var(--text)", textDecoration: "none", lineHeight: 1.35 }}>
                 {artist}
@@ -319,7 +320,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
               {album.trim() ? (
                 <Link
                   href={buildAlbumPath(album.trim(), artist, { artistId: artistDbId, albumId: albumDbId })}
-                  style={{ display: "block", fontSize: 14, color: "#86868B", textDecoration: "none", lineHeight: 1.35 }}
+                  style={{ display: "block", fontSize: 14, color: "var(--text-muted)", textDecoration: "none", lineHeight: 1.35 }}
                 >
                   {album}
                 </Link>
@@ -345,12 +346,14 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           initialClips={initialClips}
         />
 
+        <AdSlot slotId="COLE_AQUI_SLOT_ID_1" format="rectangle" style={{ margin: "28px 0" }} />
+
         {!hasChartPresence && (
           <div style={{ marginTop: 20, padding: 14, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)" }}>
             Esta faixa ainda não aparece em nenhuma parada publicada. Os números abaixo ficam zerados até alguém votar com ela.
           </div>
         )}
-        <div style={{ marginTop: 24, fontSize: 13, color: "#86868B" }}>
+        <div style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
           Entradas em paradas de usuários: {chartEntries}
         </div>
       </div>

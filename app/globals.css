@@ -250,6 +250,40 @@ button {
   }
 }
 
+/* Song page — responsive layout */
+.song-page-outer {
+  padding: 48px 40px 40px 40px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.song-page-hero {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.song-page-title {
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+.song-page-meta {
+  min-width: 0;
+  flex: 1;
+}
+@media (max-width: 640px) {
+  .song-page-outer {
+    padding: 20px 16px 80px 16px;
+  }
+  .song-page-title {
+    font-size: 28px;
+  }
+  .song-page-hero {
+    align-items: flex-start;
+  }
+}
+
 /* Line clamp utilities */
 .line-clamp-1 {
   overflow: hidden;

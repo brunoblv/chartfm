@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ChevronLeft, Flame, Trophy, BadgeCheck } from "lucide-react";
+import { AdSlot } from "@/components/ui/AdSlot";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartCard } from "@/components/chart/ChartCard";
@@ -1054,6 +1055,8 @@ export default function ProfilePage() {
             ))}
           </div>
         </div>
+
+        <AdSlot slotId="COLE_AQUI_SLOT_ID_4" format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
         {(source === "db" ? paradas : [{ id: "mock", name: paradaNome ?? "Parada", isPrimary: true }]).length > 0 && (
           <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 16, flexWrap: "wrap", gap: 4 }}>

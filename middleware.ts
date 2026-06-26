@@ -67,6 +67,6 @@ export const config = {
   matcher: [
     "/api/spotify/:path*",
     "/api/youtube/:path*",
-    "/((?!api|_next/static|_next/image|favicon\\.ico|login|onboarding|public).*)",
+    "/((?!api|_next/static|_next/image|favicon\\.ico|login|signup|forgot-password|reset-password|onboarding|public).*)",
   ],
 };

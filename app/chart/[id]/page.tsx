@@ -8,6 +8,7 @@ import {
   ChevronLeft, Heart, Repeat2, Share, Play, Star, MessageCircle,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
+import { AdSlot } from "@/components/ui/AdSlot";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { VideoClipCover } from "@/components/ui/VideoClipCover";
@@ -617,7 +618,9 @@ export default function ChartDetailPage() {
         )}
       </div>
 
-<div style={{ padding: isMobile ? "0 0 80px 0" : "0 40px 80px 40px" }}>
+      <AdSlot slotId="COLE_AQUI_SLOT_ID_2" format="leaderboard" style={{ margin: "0 0 4px 0" }} />
+
+<div style={{ padding: isMobile ? "0 16px 80px 16px" : "0 40px 80px 40px" }}>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--divider)", marginBottom: 24, overflowX: "auto", padding: isMobile ? "0 16px" : 0 }}>
         {([["chart", "Parada"], ["saidas", `Saídas${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`], ["comments", "Comentários"], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (

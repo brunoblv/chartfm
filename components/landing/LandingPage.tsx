@@ -13,22 +13,22 @@ import { useTranslations } from "@/hooks/useTranslations";
 
 function StatusBadge({ status, delta, newLabel }: { status: string; delta?: number | null; newLabel: string }) {
   if (status === "new") return (
-    <span style={{ background: "#1D1D1F", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, letterSpacing: "0.04em", textTransform: "uppercase" as const }}>
+    <span style={{ background: "var(--new-bg)", color: "var(--new-fg)", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 100, letterSpacing: "0.04em", textTransform: "uppercase" as const }}>
       {newLabel}
     </span>
   );
   if (status === "up") return (
-    <span style={{ background: "#E8F8EE", color: "#1B873F", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 100 }}>
+    <span style={{ background: "var(--up-bg)", color: "var(--up-fg)", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 100 }}>
       ▲ {delta}
     </span>
   );
   if (status === "down") return (
-    <span style={{ background: "#FDECEC", color: "#C5291C", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 100 }}>
+    <span style={{ background: "var(--down-bg)", color: "var(--down-fg)", fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 100 }}>
       ▼ {Math.abs(delta ?? 0)}
     </span>
   );
   return (
-    <span style={{ background: "#F2F2F7", color: "#86868B", fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 100 }}>
+    <span style={{ background: "var(--same-bg)", color: "var(--same-fg)", fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 100 }}>
       —
     </span>
   );
@@ -102,22 +102,22 @@ export function LandingPage({
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FBFBFD", color: "#1D1D1F", fontFamily: "inherit" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: "inherit" }}>
 
       {/* NAVBAR */}
       <nav style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(251,251,253,0.85)", backdropFilter: "blur(20px)",
+        background: "var(--bg-topbar)", backdropFilter: "blur(20px) saturate(160%)",
         borderBottom: "1px solid rgba(0,0,0,0.06)",
         padding: isMobile ? "0 20px" : "0 56px",
         height: 60, display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <ChartFMLogo size={32} style={{ boxShadow: "0 2px 6px rgba(250,36,60,0.3)", borderRadius: 9 }} />
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>ChartFM</span>
+          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--text)" }}>ChartFM</span>
         </div>
         {!isMobile && (
-          <div style={{ display: "flex", gap: 28, fontSize: 14, color: "#1D1D1F", fontWeight: 500 }}>
+          <div style={{ display: "flex", gap: 28, fontSize: 14, color: "var(--text)", fontWeight: 500 }}>
             <Link href="#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.howItWorks")}</Link>
             <Link href="#comunidades" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.communities")}</Link>
             <Link href="#parada-global" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.globalChart")}</Link>
@@ -127,7 +127,7 @@ export function LandingPage({
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <LanguageSwitcher />
           {!isMobile && (
-            <button onClick={handleSignIn} disabled={signingIn} style={{ background: "none", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "#1D1D1F" }}>
+            <button onClick={handleSignIn} disabled={signingIn} style={{ background: "none", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "var(--text)" }}>
               {t("landing.signIn")}
             </button>
           )}
@@ -136,7 +136,7 @@ export function LandingPage({
             disabled={signingIn}
             style={{
               padding: "8px 20px", borderRadius: 100,
-              background: "#1D1D1F", color: "white",
+              background: "var(--btn-dark-bg)", color: "var(--btn-dark-fg)",
               border: "none", fontSize: 13, fontWeight: 700,
               letterSpacing: "-0.01em", cursor: signingIn ? "not-allowed" : "pointer",
               opacity: signingIn ? 0.6 : 1,
@@ -186,7 +186,7 @@ export function LandingPage({
             <h1 style={{
               fontSize: isMobile ? 52 : 72,
               fontWeight: 800, letterSpacing: "-0.045em",
-              lineHeight: 1.0, color: "#1D1D1F",
+              lineHeight: 1.0, color: "var(--text)",
               margin: "0 0 22px 0",
             }}>
               {t("landing.heroTitle1")}<br />
@@ -201,7 +201,7 @@ export function LandingPage({
 
             <p style={{
               fontSize: isMobile ? 16 : 19,
-              color: "#6B6B70", lineHeight: 1.6,
+              color: "var(--text-subtle)", lineHeight: 1.6,
               margin: "0 0 36px 0", maxWidth: 520,
             }}>
               {t("landing.heroBody")}
@@ -234,17 +234,17 @@ export function LandingPage({
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 32 }}>
               <div style={{ display: "flex" }}>
                 {recentUsers.map((u, i) => (
-                  <div key={u.id} style={{ marginLeft: i === 0 ? 0 : -10, border: "2px solid #FBFBFD", borderRadius: "50%" }}>
+                  <div key={u.id} style={{ marginLeft: i === 0 ? 0 : -10, border: "2px solid var(--bg)", borderRadius: "50%" }}>
                     <Avatar user={{ name: u.name, avatar: u.avatarColor }} imageUrl={u.image} size={32} />
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize: 13, color: "#6B6B70" }}>
+              <div style={{ fontSize: 13, color: "var(--text-subtle)" }}>
                 <div style={{ display: "flex", gap: 1, color: "#FFB000", marginBottom: 2 }}>
                   {"★★★★★".split("").map((s, i) => <span key={i}>{s}</span>)}
                 </div>
                 <div>
-                  <b style={{ color: "#1D1D1F", fontWeight: 600 }}>
+                  <b style={{ color: "var(--text)", fontWeight: 600 }}>
                     {userCount >= 1000 ? `+${(Math.floor(userCount / 100) * 100).toLocaleString(locale)}` : `+${userCount}`}
                   </b>{" "}
                   {t("landing.curatorsOn")}
@@ -255,7 +255,7 @@ export function LandingPage({
             {isMobile && (
               <div style={{
                 marginTop: 36,
-                background: "white",
+                background: "var(--surface)",
                 borderRadius: 20,
                 boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)",
                 padding: 20,
@@ -264,8 +264,8 @@ export function LandingPage({
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
                   <Avatar user={previewUser} size={36} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>{previewUser.name}</div>
-                    <div style={{ fontSize: 11, color: "#86868B" }}>{t("landing.top10Week", { week: t("landing.thisWeek"), year })}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{previewUser.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("landing.top10Week", { week: t("landing.thisWeek"), year })}</div>
                   </div>
                   <div style={{ padding: "4px 10px", background: "rgba(250,36,60,0.08)", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#FA243C" }}>NOVA</div>
                 </div>
@@ -277,13 +277,13 @@ export function LandingPage({
                     padding: "9px 0",
                     borderTop: "1px solid rgba(0,0,0,0.04)",
                   }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: entry.position <= 3 ? "#FA243C" : "#86868B", textAlign: "center" as const }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: entry.position <= 3 ? "var(--accent)" : "var(--text-muted)", textAlign: "center" as const }}>
                       {entry.position}
                     </div>
                     <div style={{ width: 40, height: 40, borderRadius: 8, background: `linear-gradient(135deg, ${entry.palette[0]}, ${entry.palette[1]})` }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.title}</div>
-                      <div style={{ fontSize: 11, color: "#86868B", marginTop: 1 }}>{entry.artist}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.title}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{entry.artist}</div>
                     </div>
                     <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                   </div>
@@ -314,7 +314,7 @@ export function LandingPage({
               {/* Floating chart card */}
               <div style={{
                 position: "absolute", top: 60, left: 30, right: 30,
-                background: "white", borderRadius: 20,
+                background: "var(--surface)", borderRadius: 20,
                 boxShadow: "0 30px 80px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.08)",
                 padding: 22, border: "1px solid rgba(0,0,0,0.04)",
                 zIndex: 1,
@@ -322,8 +322,8 @@ export function LandingPage({
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
                   <Avatar user={previewUser} size={36} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F" }}>{previewUser.name}</div>
-                    <div style={{ fontSize: 11, color: "#86868B" }}>{t("landing.top10Week", { week: t("landing.thisWeek"), year })}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{previewUser.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("landing.top10Week", { week: t("landing.thisWeek"), year })}</div>
                   </div>
                   <div style={{ padding: "4px 10px", background: "rgba(250,36,60,0.08)", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#FA243C" }}>NOVA</div>
                 </div>
@@ -335,7 +335,7 @@ export function LandingPage({
                     padding: "9px 0",
                     borderTop: "1px solid rgba(0,0,0,0.04)",
                   }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: entry.position <= 3 ? "#FA243C" : "#86868B", textAlign: "center" as const }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: entry.position <= 3 ? "var(--accent)" : "var(--text-muted)", textAlign: "center" as const }}>
                       {entry.position}
                     </div>
                     <div style={{
@@ -343,10 +343,10 @@ export function LandingPage({
                       background: `linear-gradient(135deg, ${entry.palette[0]}, ${entry.palette[1]})`,
                     }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1D1D1F", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>
                         {entry.title}
                       </div>
-                      <div style={{ fontSize: 11, color: "#86868B", marginTop: 1 }}>{entry.artist}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{entry.artist}</div>
                     </div>
                     <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                   </div>
@@ -361,14 +361,14 @@ export function LandingPage({
       {children}
 
 {/* COMO FUNCIONA — 3 steps */}
-      <section id="como-funciona" style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>
+      <section id="como-funciona" style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "var(--surface)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center" as const, marginBottom: 60 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Como funciona</div>
-            <h2 style={{ fontSize: isMobile ? 32 : 48, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.1, color: "#1D1D1F" }}>
+            <h2 style={{ fontSize: isMobile ? 32 : 48, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.1, color: "var(--text)" }}>
             Toda semana, uma nova parada.
             </h2>
-            <p style={{ fontSize: 17, color: "#6B6B70", maxWidth: 560, margin: "0 auto", lineHeight: 1.5 }}>
+            <p style={{ fontSize: 17, color: "var(--text-subtle)", maxWidth: 560, margin: "0 auto", lineHeight: 1.5 }}>
             Monte seu ranking, compartilhe com a comunidade e ajude a definir as paradas globais.
             </p>
           </div>
@@ -378,10 +378,10 @@ export function LandingPage({
               { n: "02", title: "Compartilhe seu gosto", desc: "Publique sua parada, siga outros usuários e interaja com fãs de música como você.", accent: "#8338EC" },
               { n: "03", title: "Influencie as paradas", desc: "Cada posição do seu ranking gera pontos para as músicas e ajuda a formar as paradas globais do ChartFM.", accent: "#06D6A0" },
             ].map((s) => (
-              <div key={s.n} style={{ background: "#FBFBFD", borderRadius: 20, padding: 30, border: "1px solid rgba(0,0,0,0.05)" }}>
+              <div key={s.n} style={{ background: "var(--fill-subtle)", borderRadius: 20, padding: 30, border: "1px solid var(--divider)" }}>
                 <div style={{ fontSize: 54, fontWeight: 800, letterSpacing: "-0.04em", color: s.accent, lineHeight: 1, marginBottom: 14 }}>{s.n}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>{s.title}</div>
-                <div style={{ fontSize: 14, color: "#6B6B70", lineHeight: 1.55 }}>{s.desc}</div>
+                <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.55 }}>{s.desc}</div>
               </div>
             ))}
           </div>
@@ -411,7 +411,7 @@ export function LandingPage({
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FA243C", boxShadow: "0 0 0 3px rgba(250,36,60,0.2)" }} />
                 <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, opacity: 0.7 }}>Parada global · ao vivo</div>
                 <div style={{ flex: 1 }} />
-                <div style={{ fontSize: 11, opacity: 0.6 }}>{top10[0]?.voters ?? 0}+ fãs de música</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>{top10[0]?.voters ?? 0}+ fãs de música</div>
               </div>
               {top10.map((entry, i) => {
                 return (
@@ -440,7 +440,7 @@ export function LandingPage({
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.title}</div>
-                      <div style={{ fontSize: 11, opacity: 0.6, whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.artist}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.artist}</div>
                     </div>
                     <div style={{ flexShrink: 0 }}>
                       <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
@@ -458,7 +458,7 @@ export function LandingPage({
             <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 18px 0", lineHeight: 1.1 }}>
               O que o mundo<br />está ouvindo.
             </h2>
-            <p style={{ fontSize: 16, opacity: 0.75, lineHeight: 1.55, marginBottom: 30, margin: "0 0 30px 0" }}>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.55, margin: "0 0 30px 0" }}>
             Toda semana, os rankings dos usuários se transformam nas paradas globais do ChartFM. Quanto mais alta uma música aparece, mais pontos ela recebe.
             </p>
             <button
@@ -480,11 +480,11 @@ export function LandingPage({
       </section>
 
       {/* FEATURE GRID — 4 recursos */}
-      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "white" }}>
+      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "var(--surface)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center" as const, marginBottom: 50 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Recursos</div>
-            <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.1, color: "#1D1D1F" }}>
+            <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.1, color: "var(--text)" }}>
               Tudo para acompanhar<br />seu gosto musical.
             </h2>
           </div>
@@ -499,9 +499,9 @@ export function LandingPage({
               { title: "A trajetória das músicas", desc: "Veja como cada faixa subiu, caiu ou permaneceu na sua parada ao longo das semanas." },
               { title: "Importe suas músicas", desc: "Conecte seu last.fm para montar suas paradas a partir do seu histórico de reprodução." },
             ].map((f) => (
-              <div key={f.title} style={{ padding: 24, borderRadius: 16, border: "1px solid rgba(0,0,0,0.06)", background: "#FBFBFD" }}>
-                <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6, color: "#1D1D1F" }}>{f.title}</div>
-                <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>{f.desc}</div>
+              <div key={f.title} style={{ padding: 24, borderRadius: 16, border: "1px solid var(--divider)", background: "var(--fill-subtle)" }}>
+                <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6, color: "var(--text)" }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.5 }}>{f.desc}</div>
               </div>
             ))}
           </div>
@@ -511,7 +511,7 @@ export function LandingPage({
       {/* FOOTER */}
       <footer style={{
         padding: isMobile ? "40px 24px 28px" : "56px 56px 36px",
-        background: "white",
+        background: "var(--surface)",
         borderTop: "1px solid rgba(0,0,0,0.05)",
       }}>
         <div style={{
@@ -523,20 +523,20 @@ export function LandingPage({
           <div style={{ gridColumn: isMobile ? "1 / -1" : undefined }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
               <ChartFMLogo size={28} />
-              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "#1D1D1F" }}>ChartFM</div>
+              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--text)" }}>ChartFM</div>
             </div>
-            <div style={{ fontSize: 13, color: "#86868B", lineHeight: 1.5, maxWidth: 280 }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, maxWidth: 280 }}>
               {t("landing.footerTagline")}
             </div>
           </div>
           {footerGroups.map(({ title, items }) => (
             <div key={title}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "#1D1D1F" }}>{title}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14, color: "var(--text)" }}>{title}</div>
               {items.map((it) => (
                 <Link
                   key={it.label}
                   href={it.href}
-                  style={{ display: "block", fontSize: 13, color: "#86868B", marginBottom: 8, textDecoration: "none" }}
+                  style={{ display: "block", fontSize: 13, color: "var(--text-muted)", marginBottom: 8, textDecoration: "none" }}
                 >
                   {it.label}
                 </Link>
@@ -549,7 +549,7 @@ export function LandingPage({
           paddingTop: 24, borderTop: "1px solid rgba(0,0,0,0.05)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           flexWrap: "wrap" as const, gap: 8,
-          fontSize: 12, color: "#86868B",
+          fontSize: 12, color: "var(--text-muted)",
         }}>
           <div>{t("landing.rights", { year })}</div>
           <LanguageSwitcher />
