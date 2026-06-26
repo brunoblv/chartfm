@@ -11,10 +11,10 @@ export function MobileReorderHintBar({ hint }: Props) {
         padding: "8px 16px",
         background: "var(--fill-subtle)",
         borderBottom: "1px solid var(--divider-soft)",
-        textAlign: "center",
+        textAlign: "left",
       }}
     >
-      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{hint}</span>
+      <span style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "left", display: "block" }}>{hint}</span>
     </div>
   );
 }

@@ -124,7 +124,7 @@ export function useMobileReorder<T>({
             : isSwapTarget
               ? "var(--fill-inset)"
               : undefined,
-        borderLeft: isSelected ? "3px solid var(--accent)" : "3px solid transparent",
+        boxShadow: isSelected ? "inset 3px 0 0 var(--accent)" : undefined,
         transition: "background 150ms",
         WebkitTapHighlightColor: "transparent",
         userSelect: "none",

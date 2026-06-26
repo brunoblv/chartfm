@@ -13,8 +13,8 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useMobileReorder } from "@/hooks/useMobileReorder";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
 import {
+  MobileReorderListRow,
   MobileReorderPositionSheet,
-  MobileReorderRowControls,
   MobileReorderToolbar,
 } from "@/components/mobile-reorder";
 import type { Cover as CoverModel, Song } from "@/lib/types";
@@ -361,6 +361,11 @@ export default function CreatePage() {
     const [item] = arr.splice(dragIndex, 1);
     arr.splice(i, 0, item);
     setEntries(arr);
+    setDragIndex(null);
+    setDragOver(null);
+  };
+
+  const clearDrag = () => {
     setDragIndex(null);
     setDragOver(null);
   };
@@ -961,7 +966,6 @@ export default function CreatePage() {
         {entries.map((song, i) => {
           const cover = coverForSong(song);
           const isBeyondCut = userChartSize !== null && i >= userChartSize;
-          const rowProps = isMobile ? mobileReorder.getRowProps(i) : null;
           return (
             <div key={`${song.title}-${song.artist}-${i}`}>
               {userChartSize !== null && i === userChartSize && (
@@ -973,84 +977,62 @@ export default function CreatePage() {
                   <div style={{ flex: 1, height: 1, background: "rgba(250,36,60,0.25)" }} />
                 </div>
               )}
-              <div
-                draggable={!isMobile}
-                onDragStart={!isMobile ? () => handleDragStart(i) : undefined}
-                onDragOver={!isMobile ? (e) => handleDragOver(e, i) : undefined}
-                onDrop={!isMobile ? () => handleDrop(i) : undefined}
-                onClick={rowProps?.onRowClick}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile ? "32px 1fr auto 32px" : "40px 44px 64px 1fr 40px 40px",
-                  alignItems: "center",
-                  padding: isMobile ? "10px 12px" : "10px 20px",
-                  borderBottom: "1px solid var(--divider-soft)",
-                  background: isMobile
-                    ? rowProps?.rowStyle.background ?? (isBeyondCut ? "var(--fill-inset)" : "var(--surface)")
-                    : dragOver === i
-                      ? "var(--accent-tint)"
-                      : isBeyondCut
-                        ? "var(--fill-inset)"
-                        : "var(--surface)",
-                  cursor: isMobile ? rowProps?.rowStyle.cursor : "grab",
-                  gap: 0,
-                  opacity: isBeyondCut ? 0.45 : 1,
-                  borderLeft: isMobile ? rowProps?.rowStyle.borderLeft : undefined,
-                  transition: isMobile ? rowProps?.rowStyle.transition : undefined,
-                  WebkitTapHighlightColor: isMobile ? rowProps?.rowStyle.WebkitTapHighlightColor : undefined,
-                  userSelect: isMobile ? rowProps?.rowStyle.userSelect : undefined,
-                }}
-              >
-                {!isMobile ? (
+              {!isMobile ? (
+                <div
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragOver={(e) => handleDragOver(e, i)}
+                  onDrop={() => handleDrop(i)}
+                  onDragEnd={clearDrag}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "40px 44px 64px 1fr 40px 40px",
+                    alignItems: "center",
+                    padding: "10px 20px",
+                    borderBottom: "1px solid var(--divider-soft)",
+                    background: dragOver === i ? "var(--accent-tint)" : isBeyondCut ? "var(--fill-inset)" : "var(--surface)",
+                    cursor: "grab",
+                    gap: 0,
+                    opacity: isBeyondCut ? 0.45 : 1,
+                  }}
+                >
                   <div style={{ color: "var(--text-disabled)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <GripVertical size={16} />
                   </div>
-                ) : (
-                  <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 4 }}>
-                    {i + 1}
-                  </div>
-                )}
-                {!isMobile && (
                   <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", textAlign: "right", paddingRight: 8 }}>
                     {i + 1}
                   </div>
-                )}
-                {!isMobile && (
                   <div style={{ padding: "0 8px" }}>
                     <Cover cover={cover} song={song} size={48} rounded={8} />
                   </div>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, padding: isMobile ? 0 : "0 8px" }}>
-                  {isMobile && <Cover cover={cover} song={song} size={36} rounded={8} />}
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
+                  <div style={{ minWidth: 0, padding: "0 8px" }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
                   </div>
-                </div>
-                {isMobile && rowProps ? (
-                  <MobileReorderRowControls
-                    mode={mobileReorder.mode}
-                    canMoveUp={rowProps.canMoveUp}
-                    canMoveDown={rowProps.canMoveDown}
-                    onMoveUp={rowProps.onMoveUp}
-                    onMoveDown={rowProps.onMoveDown}
-                    isSelected={rowProps.isSelected}
-                    isSwapTarget={rowProps.isSwapTarget}
-                  />
-                ) : !isMobile ? (
                   <div />
-                ) : null}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeSong(i);
-                  }}
-                  style={{ background: "none", border: "none", color: "var(--text-disabled)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => removeSong(i)}
+                    style={{ background: "none", border: "none", color: "var(--text-disabled)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              ) : (
+                <MobileReorderListRow
+                  position={i + 1}
+                  cover={<Cover cover={cover} song={song} size={36} rounded={8} />}
+                  title={song.title}
+                  artist={song.artist}
+                  mode={mobileReorder.mode}
+                  rowProps={mobileReorder.getRowProps(i)}
+                  onRemove={() => removeSong(i)}
+                  opacity={isBeyondCut ? 0.45 : 1}
+                  rowStyleOverride={
+                    isBeyondCut ? { background: "var(--fill-inset)" } : undefined
+                  }
+                />
+              )}
             </div>
           );
         })}

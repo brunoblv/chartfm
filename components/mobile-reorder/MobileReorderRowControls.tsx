@@ -79,7 +79,8 @@ export function MobileReorderRowControls({
           color: "var(--text-muted)",
           flexShrink: 0,
           lineHeight: 1,
-          alignSelf: "center",
+          width: 30,
+          textAlign: "left",
         }}
         aria-hidden
       >

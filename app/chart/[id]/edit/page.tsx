@@ -12,8 +12,8 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useMobileReorder } from "@/hooks/useMobileReorder";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
 import {
+  MobileReorderListRow,
   MobileReorderPositionSheet,
-  MobileReorderRowControls,
   MobileReorderToolbar,
 } from "@/components/mobile-reorder";
 import type { Song, Cover as CoverModel, Chart } from "@/lib/types";
@@ -244,6 +244,11 @@ export default function EditChartPage() {
     const [item] = arr.splice(dragIndex, 1);
     arr.splice(i, 0, item);
     setEntries(arr);
+    setDragIndex(null);
+    setDragOver(null);
+  };
+
+  const clearDrag = () => {
     setDragIndex(null);
     setDragOver(null);
   };
@@ -643,73 +648,62 @@ export default function EditChartPage() {
       )}
       {entries.map((song, i) => {
         const cover = coverForSong(song);
-        const rowProps = isMobile ? mobileReorder.getRowProps(i) : null;
-        return (
-          <div
-            key={`${song.id ?? ""}-${song.title}-${song.artist}-${i}`}
-            draggable={!isMobile}
-            onDragStart={!isMobile ? () => setDragIndex(i) : undefined}
-            onDragOver={!isMobile ? (e) => {
-              e.preventDefault();
-              setDragOver(i);
-            } : undefined}
-            onDrop={!isMobile ? () => handleDrop(i) : undefined}
-            onClick={rowProps?.onRowClick}
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "32px 52px 1fr auto 32px" : "38px 44px 56px 1fr 36px",
-              alignItems: "center",
-              padding: isMobile ? "10px 12px" : "10px 16px",
-              borderBottom: "1px solid var(--divider-soft)",
-              background: isMobile
-                ? rowProps?.rowStyle.background ?? "var(--surface)"
-                : dragOver === i
-                  ? "var(--accent-tint)"
-                  : "var(--surface)",
-              cursor: isMobile ? rowProps?.rowStyle.cursor : "grab",
-              borderLeft: isMobile ? rowProps?.rowStyle.borderLeft : undefined,
-              transition: isMobile ? rowProps?.rowStyle.transition : undefined,
-              WebkitTapHighlightColor: isMobile ? rowProps?.rowStyle.WebkitTapHighlightColor : undefined,
-              userSelect: isMobile ? rowProps?.rowStyle.userSelect : undefined,
-            }}
-          >
-            {!isMobile ? (
+        if (!isMobile) {
+          return (
+            <div
+              key={`${song.id ?? ""}-${song.title}-${song.artist}-${i}`}
+              draggable
+              onDragStart={() => setDragIndex(i)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(i);
+              }}
+              onDrop={() => handleDrop(i)}
+              onDragEnd={clearDrag}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "38px 44px 56px 1fr 36px",
+                alignItems: "center",
+                padding: "10px 16px",
+                borderBottom: "1px solid var(--divider-soft)",
+                background: dragOver === i ? "var(--accent-tint)" : "var(--surface)",
+                cursor: "grab",
+              }}
+            >
               <div style={{ color: "var(--text-disabled)", display: "flex", justifyContent: "center" }}>
                 <GripVertical size={16} />
               </div>
-            ) : (
-              <div />
-            )}
-            <div style={{ fontSize: isMobile ? 16 : 19, fontWeight: 700, textAlign: "right" }}>{i + 1}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <Cover cover={cover} song={song} size={isMobile ? 36 : 42} rounded={8} />
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
+              <div style={{ fontSize: 19, fontWeight: 700, textAlign: "right" }}>{i + 1}</div>
+              <div style={{ padding: "0 8px" }}>
+                <Cover cover={cover} song={song} size={42} rounded={8} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
               </div>
+              <button
+                type="button"
+                onClick={() => removeSong(i)}
+                style={{ background: "none", border: "none", color: "var(--text-disabled)", cursor: "pointer", display: "flex", justifyContent: "center" }}
+              >
+                <X size={18} />
+              </button>
             </div>
-            {isMobile && rowProps ? (
-              <MobileReorderRowControls
-                mode={mobileReorder.mode}
-                canMoveUp={rowProps.canMoveUp}
-                canMoveDown={rowProps.canMoveDown}
-                onMoveUp={rowProps.onMoveUp}
-                onMoveDown={rowProps.onMoveDown}
-                isSelected={rowProps.isSelected}
-                isSwapTarget={rowProps.isSwapTarget}
-              />
-            ) : null}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeSong(i);
-              }}
-              style={{ background: "none", border: "none", color: "var(--text-disabled)", cursor: "pointer", display: "flex", justifyContent: "center" }}
-            >
-              <X size={18} />
-            </button>
-          </div>
+          );
+        }
+
+        const rowProps = mobileReorder.getRowProps(i);
+        return (
+          <MobileReorderListRow
+            key={`${song.id ?? ""}-${song.title}-${song.artist}-${i}`}
+            position={i + 1}
+            cover={<Cover cover={cover} song={song} size={36} rounded={8} />}
+            title={song.title}
+            artist={song.artist}
+            mode={mobileReorder.mode}
+            rowProps={rowProps}
+            onRemove={() => removeSong(i)}
+          />
         );
       })}
       {isMobile && mobileReorder.showPositionSheet && mobileReorder.editTargetTitle ? (
