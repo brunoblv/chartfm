@@ -136,28 +136,28 @@ const SORT_OPTIONS = [
 ] as const;
 type SortId = (typeof SORT_OPTIONS)[number]["id"];
 
-type ScoreFilter = "all" | "acclaimed" | "excellent" | "good" | "mixed" | "weak" | "unrated";
+type ScoreFilter = "all" | "acclaimed" | "recommended" | "mixed" | "unfavorable" | "rejected" | "unrated";
 
 const SCORE_FILTERS: { id: ScoreFilter; label: string }[] = [
-  { id: "all",       label: "Todos"          },
-  { id: "acclaimed", label: "Aclamado 90+"   },
-  { id: "excellent", label: "Excelente 75+"  },
-  { id: "good",      label: "Bom 60+"        },
-  { id: "mixed",     label: "Misto 50+"      },
-  { id: "weak",      label: "Fraco"          },
-  { id: "unrated",   label: "Sem nota"       },
+  { id: "all",          label: "Todos"                    },
+  { id: "acclaimed",    label: "Aclamação universal 90+"  },
+  { id: "recommended",  label: "Muito recomendado 70+"    },
+  { id: "mixed",        label: "Recepção mista 50+"       },
+  { id: "unfavorable",  label: "Desfavorável 30+"         },
+  { id: "rejected",     label: "Repúdio generalizado"     },
+  { id: "unrated",      label: "Sem nota"                 },
 ];
 
 const PAGE_SIZE = 16;
 
 function matchesScoreFilter(a: CriticsFMAlbum, f: ScoreFilter): boolean {
-  if (f === "all")       return true;
-  if (f === "unrated")   return a.reviewCount === 0;
-  if (f === "acclaimed") return a.score >= 90  && a.reviewCount > 0;
-  if (f === "excellent") return a.score >= 75  && a.score < 90  && a.reviewCount > 0;
-  if (f === "good")      return a.score >= 60  && a.score < 75  && a.reviewCount > 0;
-  if (f === "mixed")     return a.score >= 50  && a.score < 60  && a.reviewCount > 0;
-  if (f === "weak")      return a.score < 50   && a.reviewCount > 0;
+  if (f === "all")         return true;
+  if (f === "unrated")     return a.reviewCount === 0;
+  if (f === "acclaimed")   return a.score >= 90 && a.reviewCount > 0;
+  if (f === "recommended") return a.score >= 70 && a.score < 90 && a.reviewCount > 0;
+  if (f === "mixed")       return a.score >= 50 && a.score < 70 && a.reviewCount > 0;
+  if (f === "unfavorable") return a.score >= 30 && a.score < 50 && a.reviewCount > 0;
+  if (f === "rejected")    return a.score < 30 && a.reviewCount > 0;
   return true;
 }
 

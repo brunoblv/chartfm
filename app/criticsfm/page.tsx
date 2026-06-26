@@ -6,6 +6,7 @@ import { getActiveClubeRound } from "@/lib/clube-album";
 import { getCriticsFMAlbums } from "@/lib/criticsfm-data";
 import { getActiveWeeklyRelease } from "@/lib/weekly-releases";
 import { CriticsFMClient } from "./CriticsFMClient";
+import { ScoreScaleCard } from "./ScoreScaleCard";
 import type { ClubeRoundData } from "@/lib/clube-album";
 import type { WeeklyReleaseData, WeeklyReleaseAlbumInfo } from "@/lib/weekly-releases";
 
@@ -405,6 +406,7 @@ export default async function CriticsFMPage() {
 
       <LancamentosSection release={weeklyRelease} />
       <ClubeSection round={round} />
+      <ScoreScaleCard />
 
       <section style={{ marginTop: 8 }}>
         <CriticsFMClient albums={albums} />

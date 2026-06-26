@@ -19,7 +19,9 @@ import { formatSongArtist } from "@/lib/song-artist";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { chartStatsLabels } from "@/lib/chart-cadence";
 import { pointsForChartPosition, type ParadaScoringTier } from "@/lib/parada-points";
+import { ProfileReviewsTab } from "@/components/profile/ProfileReviewsTab";
 
+type ProfileSection = "parada" | "reviews";
 type ParadaTab = "charts" | "artists" | "songs" | "numberOnes";
 type StatsScope = "overall" | "year";
 const STATS_TABS = new Set<ParadaTab>(["artists", "songs", "numberOnes"]);
@@ -454,6 +456,7 @@ export default function ProfilePage() {
   const handle = decodeURIComponent(typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "");
 
   const { data: session, status } = useSession();
+  const [profileSection, setProfileSection] = useState<ProfileSection>("parada");
   const [activeParadaId, setActiveParadaId] = useState<string | null>(null);
   const [paradaTab, setParadaTab] = useState<ParadaTab>("charts");
   const [statsScope, setStatsScope] = useState<StatsScope>("overall");
@@ -486,6 +489,7 @@ export default function ProfilePage() {
     }
     let cancelled = false;
     setPhase("loading");
+    setProfileSection("parada");
     setActiveParadaId(null);
     setChartPage(1);
     setChartsYearFilter(null);
@@ -1058,17 +1062,18 @@ export default function ProfilePage() {
 
         <AdSlot slotId="COLE_AQUI_SLOT_ID_4" format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
-        {(source === "db" ? paradas : [{ id: "mock", name: paradaNome ?? "Parada", isPrimary: true }]).length > 0 && (
+        {source === "db" && (
           <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 16, flexWrap: "wrap", gap: 4 }}>
-            {(source === "db"
+            {(paradas.length > 0
               ? paradas
-              : [{ id: "mock", name: paradaNome ?? "Parada", isPrimary: true, sortOrder: 0, logo: null, genres: [] }]
+              : [{ id: "fallback", name: paradaNome ?? "Parada", isPrimary: true, sortOrder: 0, logo: null, genres: [] as string[] }]
             ).map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => {
-                  setActiveParadaId(p.id);
+                  setProfileSection("parada");
+                  setActiveParadaId(p.id === "fallback" ? activeParadaId : p.id);
                   setParadaTab("charts");
                   setChartPage(1);
                   setStatsPage(1);
@@ -1080,9 +1085,9 @@ export default function ProfilePage() {
                   background: "none",
                   border: "none",
                   fontSize: isMobile ? 14 : 15,
-                  fontWeight: activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0) ? 700 : 500,
-                  color: activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0) ? "var(--text)" : "var(--text-muted)",
-                  borderBottom: `2px solid ${activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0) ? "#FA243C" : "transparent"}`,
+                  fontWeight: profileSection === "parada" && (activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0)) ? 700 : 500,
+                  color: profileSection === "parada" && (activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0)) ? "var(--text)" : "var(--text-muted)",
+                  borderBottom: `2px solid ${profileSection === "parada" && (activeParadaId === p.id || (!activeParadaId && p.sortOrder === 0)) ? "#FA243C" : "transparent"}`,
                   marginBottom: -1,
                   cursor: "pointer",
                   whiteSpace: "nowrap",
@@ -1092,9 +1097,53 @@ export default function ProfilePage() {
                 {"isPrimary" in p && p.isPrimary ? " ★" : ""}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setProfileSection("reviews")}
+              style={{
+                padding: isMobile ? "10px 12px" : "12px 16px",
+                background: "none",
+                border: "none",
+                fontSize: isMobile ? 14 : 15,
+                fontWeight: profileSection === "reviews" ? 700 : 500,
+                color: profileSection === "reviews" ? "var(--text)" : "var(--text-muted)",
+                borderBottom: `2px solid ${profileSection === "reviews" ? "#FA243C" : "transparent"}`,
+                marginBottom: -1,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Reviews
+            </button>
           </div>
         )}
 
+        {source === "mock" && (paradaNome || paradas.length > 0) && (
+          <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 16, flexWrap: "wrap", gap: 4 }}>
+            <button
+              type="button"
+              style={{
+                padding: isMobile ? "10px 12px" : "12px 16px",
+                background: "none",
+                border: "none",
+                fontSize: isMobile ? 14 : 15,
+                fontWeight: 700,
+                color: "var(--text)",
+                borderBottom: "2px solid #FA243C",
+                marginBottom: -1,
+                cursor: "default",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {paradaNome ?? "Parada"} ★
+            </button>
+          </div>
+        )}
+
+        {profileSection === "reviews" && source === "db" ? (
+          <ProfileReviewsTab handle={handle} isOwn={isOwn} userName={user.name} isMobile={isMobile} />
+        ) : (
+        <>
         <div style={{ display: "flex", borderBottom: "1px solid var(--divider)", marginBottom: 24, flexWrap: isMobile ? "wrap" : "nowrap", overflowX: isMobile ? "auto" : "visible" }}>
           {(
             [
@@ -1269,6 +1318,8 @@ export default function ProfilePage() {
             <SongStatsTable rows={songRowsForTab.slice((statsPage - 1) * STATS_PER_PAGE, statsPage * STATS_PER_PAGE)} tenureLabel={statsLabels.tenureShort} isMobile={isMobile} />
             <StatsPagination page={statsPage} total={songRowsForTab.length} perPage={STATS_PER_PAGE} onChange={setStatsPage} />
           </>
+        )}
+        </>
         )}
       </div>
     </Shell>

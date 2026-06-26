@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
+import { scoreBadgeColor, scoreLabel } from "@/lib/album-score";
 
 export type GeradorData = {
   theme: string;
   round: number;
+  clubThemes: { number: number; theme: string }[];
   nominationsDeadline: string;
   pollDeadline: string;
   nominations: { title: string; artist: string; coverUrl?: string | null }[];
@@ -14,13 +16,15 @@ export type GeradorData = {
   posts: { album: string; artist: string; score: number; reviewer: string; excerpt: string; coverUrl?: string | null }[];
 };
 
-type SocialFmt = { id: string; label: string; ratio: string; w: number; h: number; sub: string };
+export type GeradorAlbum = GeradorData["ratable"][number];
+
+type SocialFmt = { id: string; label: string; ratio: string; w: number; h: number; sub: string; bgImage?: string };
 
 const SOCIAL_FORMATS: SocialFmt[] = [
-  { id: "square",    label: "Quadrado",  ratio: "1:1",  w: 1080, h: 1080, sub: "Feed · Twitter" },
+  { id: "square",    label: "Quadrado",  ratio: "1:1",  w: 1254, h: 1254, sub: "Feed · Instagram", bgImage: "/quadrada.png" },
   { id: "portrait",  label: "Retrato",   ratio: "4:5",  w: 1080, h: 1350, sub: "Instagram" },
-  { id: "story",     label: "Story",     ratio: "9:16", w: 1080, h: 1920, sub: "Stories" },
-  { id: "landscape", label: "Paisagem",  ratio: "16:9", w: 1200, h: 675,  sub: "Twitter card" },
+  { id: "story",     label: "Story",     ratio: "9:16", w: 768,  h: 1376, sub: "Stories", bgImage: "/story.png" },
+  { id: "landscape", label: "Paisagem",  ratio: "16:9", w: 1672, h: 941,  sub: "Twitter · X", bgImage: "/retangular.png" },
 ];
 
 const TYPES = [
@@ -50,14 +54,6 @@ type TemplateData = {
 
 function sHue(t: string): number {
   return Math.abs((t || "?").split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
-}
-
-function sScoreColor(s: number): string {
-  if (s >= 90) return "#2EB550";
-  if (s >= 75) return "#5BD16A";
-  if (s >= 60) return "#A8D14A";
-  if (s >= 50) return "#FFC542";
-  return "#FF6B5C";
 }
 
 // ── Shared template components ────────────────────────────────────────────────
@@ -206,6 +202,51 @@ function LightBg({ fmt, children }: { fmt: SocialFmt; children: React.ReactNode 
   );
 }
 
+/** Fundo oficial (PNG) ou fallback CSS desenhado (LightBg). */
+function ChartBg({ fmt, children }: { fmt: SocialFmt; children: React.ReactNode }) {
+  if (fmt.bgImage) {
+    return (
+      <div
+        style={{
+          width: fmt.w,
+          height: fmt.h,
+          position: "relative",
+          overflow: "hidden",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif",
+          color: "#1D1D1F",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={fmt.bgImage}
+          alt=""
+          width={fmt.w}
+          height={fmt.h}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none" }}
+        />
+        <div style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>{children}</div>
+      </div>
+    );
+  }
+  return <LightBg fmt={fmt}>{children}</LightBg>;
+}
+
+function ChartHeader({ fmt, u, right }: { fmt: SocialFmt; u: number; right?: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: fmt.bgImage ? "flex-end" : "space-between",
+        minHeight: fmt.bgImage ? Math.round(52 * u) : undefined,
+      }}
+    >
+      {!fmt.bgImage && <SLogo u={u} />}
+      {right}
+    </div>
+  );
+}
+
 // ── Template 1: Inscrição ─────────────────────────────────────────────────────
 
 function TplInscricao({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
@@ -213,12 +254,13 @@ function TplInscricao({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   const landscape = fmt.w > fmt.h;
   const pad = Math.round((landscape ? 56 : 72) * u);
   return (
-    <LightBg fmt={fmt}>
+    <ChartBg fmt={fmt}>
       <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <SLogo u={u} />
-          <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em" }}>Clube do Álbum</span>
-        </div>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={<span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em" }}>Clube do Álbum</span>}
+        />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: Math.round(22 * u) }}>
           <SEyebrow u={u}>📀 Inscrições abertas · Rodada {d.round}</SEyebrow>
@@ -240,7 +282,7 @@ function TplInscricao({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
           </div>
         </div>
       </div>
-    </LightBg>
+    </ChartBg>
   );
 }
 
@@ -253,12 +295,13 @@ function TplVotacao({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   const noms = d.nominations.slice(0, 6);
   const coverSize = Math.min(Math.round(140 * u), Math.round((fmt.w - pad * 2 - Math.round(50 * u) * 5) / 6));
   return (
-    <LightBg fmt={fmt}>
+    <ChartBg fmt={fmt}>
       <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <SLogo u={u} />
-          <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B" }}>Clube do Álbum · Rodada {d.round}</span>
-        </div>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={<span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B" }}>Clube do Álbum · Rodada {d.round}</span>}
+        />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: Math.round(24 * u) }}>
           <SEyebrow u={u} color="#C47500" bg="rgba(255,165,0,0.12)">🗳️ Enquete aberta</SEyebrow>
@@ -284,7 +327,7 @@ function TplVotacao({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
           <div style={{ fontSize: Math.round(24 * u), fontWeight: 700, color: "#86868B" }}>chartfm.com.br/criticsfm</div>
         </div>
       </div>
-    </LightBg>
+    </ChartBg>
   );
 }
 
@@ -300,12 +343,13 @@ function TplEscolhidos({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
     : Math.min(Math.round(400 * u), Math.round((fmt.w - pad * 2 - Math.round(60 * u)) / 2));
 
   return (
-    <LightBg fmt={fmt}>
+    <ChartBg fmt={fmt}>
       <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <SLogo u={u} />
-          <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B" }}>Rodada {d.round}</span>
-        </div>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={<span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B" }}>Rodada {d.round}</span>}
+        />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: Math.round(18 * u), textAlign: "center" }}>
           <SEyebrow u={u}>⭐ Escolhidos da semana</SEyebrow>
@@ -345,7 +389,7 @@ function TplEscolhidos({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
           chartfm.com.br/criticsfm
         </div>
       </div>
-    </LightBg>
+    </ChartBg>
   );
 }
 
@@ -358,27 +402,30 @@ function TplNota({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   const pad = Math.round((landscape ? 56 : 72) * u);
   const coverSize = landscape ? Math.round(340 * m) : Math.round(460 * u);
   const a = d.album;
-  const sc = sScoreColor(a?.score ?? 0);
+  const sc = scoreBadgeColor(a?.score ?? 0);
 
   return (
-    <LightBg fmt={fmt}>
+    <ChartBg fmt={fmt}>
       <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <SLogo u={u} />
-          <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-            Nota da comunidade
-          </span>
-        </div>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={
+            <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Nota da comunidade
+            </span>
+          }
+        />
 
         <div style={{ flex: 1, display: "flex", flexDirection: landscape ? "row" : "column", alignItems: "center", justifyContent: "center", gap: landscape ? Math.round(64 * u) : Math.round(40 * u) }}>
           <div style={{ position: "relative", flexShrink: 0 }}>
             <SCover title={a?.title ?? "?"} size={coverSize} radius={Math.round(26 * u)} fontScale={0.4} imageUrl={a?.coverUrl} />
             <div style={{
               position: "absolute", bottom: Math.round(-28 * u), right: Math.round(-28 * u),
-              width: Math.round(158 * m), height: Math.round(158 * m), borderRadius: "50%",
+              width: Math.round(158 * m), height: Math.round(158 * m), borderRadius: Math.round(26 * m),
               background: sc, display: "grid", placeItems: "center",
-              boxShadow: `0 16px 40px ${sc}55`,
-              border: `${Math.round(5 * u)}px solid #FCFCFD`,
+              boxShadow: `0 ${Math.round(16 * m)}px ${Math.round(40 * m)}px ${sc}55`,
+              border: `${Math.max(4, Math.round(5 * u))}px solid #FCFCFD`,
             }}>
               <span style={{ fontSize: Math.round(70 * m), fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                 {a?.score}
@@ -395,7 +442,7 @@ function TplNota({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
             </div>
             <div style={{ display: "flex", gap: Math.round(12 * u), marginTop: Math.round(26 * u), justifyContent: landscape ? "flex-start" : "center", flexWrap: "wrap" }}>
               <span style={{ display: "inline-flex", alignItems: "center", background: `${sc}22`, color: sc, borderRadius: 9999, padding: `${Math.round(10 * u)}px ${Math.round(22 * u)}px`, fontSize: Math.round(24 * u), fontWeight: 700 }}>
-                {(a?.score ?? 0) >= 75 ? "Aclamado" : (a?.score ?? 0) >= 50 ? "Bem avaliado" : "Dividiu opiniões"}
+                {scoreLabel(a?.score ?? 0)}
               </span>
               <span style={{ display: "inline-flex", alignItems: "center", background: "rgba(0,0,0,0.06)", borderRadius: 9999, padding: `${Math.round(10 * u)}px ${Math.round(22 * u)}px`, fontSize: Math.round(24 * u), fontWeight: 700, color: "#3A3A3C" }}>
                 {a?.reviewCount} reviews
@@ -405,11 +452,13 @@ function TplNota({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1.5px solid rgba(0,0,0,0.08)", paddingTop: Math.round(30 * u) }}>
-          <span style={{ fontSize: Math.round(24 * u), fontWeight: 600, color: "#86868B" }}>CriticsFM · {d.theme}</span>
+          <span style={{ fontSize: Math.round(24 * u), fontWeight: 600, color: "#86868B" }}>
+            CriticsFM{d.theme.trim() ? ` · ${d.theme.trim()}` : ""}
+          </span>
           <span style={{ fontSize: Math.round(24 * u), fontWeight: 700, color: "#86868B" }}>chartfm.com.br/criticsfm</span>
         </div>
       </div>
-    </LightBg>
+    </ChartBg>
   );
 }
 
@@ -430,12 +479,13 @@ function TplTop5({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   const rowH = (fmt.h - pad * 2 - Math.round(220 * u)) / 5;
 
   return (
-    <LightBg fmt={fmt}>
+    <ChartBg fmt={fmt}>
       <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <SLogo u={u} />
-          <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B" }}>{d.week}</span>
-        </div>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={<span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B" }}>{d.week}</span>}
+        />
 
         <div style={{ margin: `${Math.round(26 * u)}px 0 ${Math.round(18 * u)}px` }}>
           <SEyebrow u={u} color="#7B5EDB" bg="rgba(123,94,219,0.12)">🌎 Parada Global</SEyebrow>
@@ -474,7 +524,7 @@ function TplTop5({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
           chartfm.com.br/global
         </div>
       </div>
-    </LightBg>
+    </ChartBg>
   );
 }
 
@@ -491,12 +541,13 @@ function TplPosts({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   const pad = Math.round((landscape ? 56 : 72) * u);
 
   return (
-    <LightBg fmt={fmt}>
+    <ChartBg fmt={fmt}>
       <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <SLogo u={u} />
-          <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em" }}>CriticsFM</span>
-        </div>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={<span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em" }}>CriticsFM</span>}
+        />
 
         <div style={{ marginTop: Math.round((landscape ? 28 : 40) * u), marginBottom: Math.round((landscape ? 16 : 22) * u) }}>
           <SEyebrow u={u}>✍️ Últimas reviews</SEyebrow>
@@ -512,7 +563,7 @@ function TplPosts({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
 
         <div style={{ flex: 1, display: "flex", flexDirection: landscape ? "row" : "column", gap: Math.round(11 * u), overflow: "hidden", minHeight: 0 }}>
           {visible.map((p, i) => {
-            const sc = sScoreColor(p.score ?? 0);
+            const sc = scoreBadgeColor(p.score ?? 0);
             return (
               <div key={i} style={{
                 flex: 1,
@@ -576,7 +627,7 @@ function TplPosts({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
           chartfm.com.br/criticsfm
         </div>
       </div>
-    </LightBg>
+    </ChartBg>
   );
 }
 
@@ -599,16 +650,19 @@ function TplTwitter({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   const coverSize = Math.round((landscape ? 88 : 110) * u);
 
   return (
-    <LightBg fmt={fmt}>
+    <ChartBg fmt={fmt}>
       <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
         {/* Top bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <SLogo u={u} />
-          <div style={{ display: "flex", alignItems: "center", gap: Math.round(8 * u), color: "#536471" }}>
-            <XLogo size={Math.round(20 * u)} color="#536471" />
-            <span style={{ fontSize: Math.round(17 * u), fontWeight: 600, letterSpacing: "-0.01em" }}>twitter.com/chartfm</span>
-          </div>
-        </div>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={
+            <div style={{ display: "flex", alignItems: "center", gap: Math.round(8 * u), color: "#536471" }}>
+              <XLogo size={Math.round(20 * u)} color="#536471" />
+              <span style={{ fontSize: Math.round(17 * u), fontWeight: 600, letterSpacing: "-0.01em" }}>twitter.com/chartfm</span>
+            </div>
+          }
+        />
 
         {/* Tweet card */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -710,7 +764,7 @@ function TplTwitter({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
           </div>
         </div>
       </div>
-    </LightBg>
+    </ChartBg>
   );
 }
 
@@ -739,6 +793,257 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function NotaThemeField({
+  clubThemes,
+  pick,
+  custom,
+  onPickChange,
+  onCustomChange,
+  inputStyle,
+  selectStyle,
+}: {
+  clubThemes: GeradorData["clubThemes"];
+  pick: string;
+  custom: string;
+  onPickChange: (v: string) => void;
+  onCustomChange: (v: string) => void;
+  inputStyle: React.CSSProperties;
+  selectStyle: React.CSSProperties;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <select value={pick} onChange={(e) => onPickChange(e.target.value)} style={selectStyle}>
+        <option value="">Sem tema</option>
+        {clubThemes.map((t) => (
+          <option key={t.number} value={t.theme} style={{ background: "#222" }}>
+            Rodada {t.number} — {t.theme}
+          </option>
+        ))}
+        <option value="__custom__" style={{ background: "#222" }}>Personalizado…</option>
+      </select>
+      {pick === "__custom__" && (
+        <input
+          style={inputStyle}
+          value={custom}
+          onChange={(e) => onCustomChange(e.target.value)}
+          placeholder="Texto do tema (opcional)"
+        />
+      )}
+      <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.45 }}>
+        Deixe em <b style={{ color: "var(--text)" }}>Sem tema</b> para exportar qualquer álbum sem vínculo com o Clube do Álbum.
+      </div>
+    </div>
+  );
+}
+
+function AlbumNotaPicker({
+  suggestions,
+  selected,
+  onSelect,
+  inputStyle,
+}: {
+  suggestions: GeradorAlbum[];
+  selected: GeradorAlbum | null;
+  onSelect: (album: GeradorAlbum | null) => void;
+  inputStyle: React.CSSProperties;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<GeradorAlbum[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 1) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const t = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/gerador/albums/search?q=${encodeURIComponent(q)}`);
+        if (!res.ok) {
+          setResults([]);
+          return;
+        }
+        const data = (await res.json()) as { items: GeradorAlbum[] };
+        setResults(data.items ?? []);
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 280);
+    return () => window.clearTimeout(t);
+  }, [query]);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  const pick = (album: GeradorAlbum) => {
+    onSelect(album);
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+  };
+
+  return (
+    <div ref={wrapRef}>
+      {selected ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "10px 12px",
+            borderRadius: 11,
+            border: "1px solid var(--divider-strong)",
+            background: "var(--fill-2)",
+            marginBottom: 10,
+          }}
+        >
+          {selected.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={selected.coverUrl} alt="" width={44} height={44} style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: 44, height: 44, borderRadius: 8, background: "var(--fill)", flexShrink: 0 }} />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {selected.title}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+              {selected.artist} · {selected.score > 0 ? `${selected.score} · ` : ""}{selected.reviewCount} review{selected.reviewCount === 1 ? "" : "s"}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSelect(null)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-muted)",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            Trocar
+          </button>
+        </div>
+      ) : null}
+
+      <input
+        style={inputStyle}
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder="Buscar álbum ou artista…"
+      />
+
+      {open && query.trim().length > 0 && (
+        <div
+          style={{
+            marginTop: 6,
+            maxHeight: 220,
+            overflowY: "auto",
+            borderRadius: 11,
+            border: "1px solid var(--divider)",
+            background: "var(--panel-2)",
+          }}
+        >
+          {searching ? (
+            <div style={{ padding: "12px 14px", fontSize: 12, color: "var(--text-muted)" }}>Buscando…</div>
+          ) : results.length === 0 ? (
+            <div style={{ padding: "12px 14px", fontSize: 12, color: "var(--text-muted)" }}>Nenhum álbum encontrado.</div>
+          ) : (
+            results.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => pick(a)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "none",
+                  borderBottom: "1px solid var(--divider)",
+                  background: selected?.id === a.id ? "var(--fill-2)" : "transparent",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                {a.coverUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.coverUrl} alt="" width={36} height={36} style={{ borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 36, height: 36, borderRadius: 6, background: "var(--fill)", flexShrink: 0 }} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {a.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    {a.artist}
+                    {a.reviewCount > 0 ? ` · ${a.score} (${a.reviewCount} reviews)` : " · sem reviews"}
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+
+      {!selected && suggestions.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>
+            Destaques (2+ reviews)
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {suggestions.slice(0, 8).map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => pick(a)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: "1px solid var(--divider)",
+                  background: "var(--fill)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {a.title}
+                </span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>{a.score}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function GeradorClient({ data }: { data: GeradorData }) {
@@ -749,10 +1054,12 @@ export function GeradorClient({ data }: { data: GeradorData }) {
 
   // Editable fields
   const [theme, setTheme]           = useState(data.theme);
+  const [notaThemePick, setNotaThemePick] = useState("");
+  const [notaThemeCustom, setNotaThemeCustom] = useState("");
   const [round, setRound]           = useState(String(data.round));
   const [dInscr, setDInscr]         = useState(data.nominationsDeadline);
   const [dPoll, setDPoll]           = useState(data.pollDeadline);
-  const [albumIdx, setAlbumIdx]     = useState(0);
+  const [selectedAlbum, setSelectedAlbum] = useState<GeradorAlbum | null>(data.ratable[0] ?? null);
   const [week, setWeek]             = useState(() => {
     const now = new Date();
     const m = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
@@ -774,13 +1081,16 @@ export function GeradorClient({ data }: { data: GeradorData }) {
 
   const scale = Math.min(wrapW / fmt.w, 620 / fmt.h);
 
+  const notaTheme =
+    notaThemePick === "__custom__" ? notaThemeCustom.trim() : notaThemePick.trim();
+
   const d: TemplateData = {
-    theme,
+    theme: type === "nota" ? notaTheme : theme,
     round,
     deadline: type === "votacao" ? dPoll : dInscr,
     nominations: data.nominations,
     winners: data.winners,
-    album: data.ratable[albumIdx] ?? null,
+    album: selectedAlbum,
     tracks: data.top5,
     week,
     posts: data.posts,
@@ -870,9 +1180,23 @@ export function GeradorClient({ data }: { data: GeradorData }) {
               <span>{cur.emoji}</span> Conteúdo
             </div>
 
-            {(type === "inscricao" || type === "votacao" || type === "escolhidos" || type === "nota" || type === "twitter") && (
+            {(type === "inscricao" || type === "votacao" || type === "escolhidos" || type === "twitter") && (
               <Field label="Tema da semana">
                 <input style={inputStyle} value={theme} onChange={(e) => setTheme(e.target.value)} />
+              </Field>
+            )}
+
+            {type === "nota" && (
+              <Field label="Tema (opcional)">
+                <NotaThemeField
+                  clubThemes={data.clubThemes}
+                  pick={notaThemePick}
+                  custom={notaThemeCustom}
+                  onPickChange={setNotaThemePick}
+                  onCustomChange={setNotaThemeCustom}
+                  inputStyle={inputStyle}
+                  selectStyle={selectStyle}
+                />
               </Field>
             )}
 
@@ -901,24 +1225,13 @@ export function GeradorClient({ data }: { data: GeradorData }) {
             )}
 
             {type === "nota" && (
-              <Field label="Álbum (mín. 2 reviews)">
-                {data.ratable.length > 0 ? (
-                  <select
-                    value={albumIdx}
-                    onChange={(e) => setAlbumIdx(Number(e.target.value))}
-                    style={selectStyle}
-                  >
-                    {data.ratable.map((a, i) => (
-                      <option key={a.id} value={i} style={{ background: "#222" }}>
-                        {a.title} — {a.artist} ({a.score})
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div style={{ background: "var(--fill)", borderRadius: 11, padding: "12px 14px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                    Nenhum álbum com 2+ reviews ainda.
-                  </div>
-                )}
+              <Field label="Álbum">
+                <AlbumNotaPicker
+                  suggestions={data.ratable}
+                  selected={selectedAlbum}
+                  onSelect={setSelectedAlbum}
+                  inputStyle={inputStyle}
+                />
               </Field>
             )}
 

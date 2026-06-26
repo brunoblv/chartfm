@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
+import { Instagram, Pencil, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
-import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution } from "@/lib/album-score";
+import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution, SCORE_BANDS } from "@/lib/album-score";
+import { downloadReviewStory, downloadReviewTwitter } from "@/lib/review-story-export";
 
 type ReviewUser = { id: string; handle: string; name: string; avatarColor: string; image: string | null };
 
@@ -30,21 +32,31 @@ type Props = {
   albumDbId: number;
   albumTitle: string;
   albumArtist: string;
+  albumCoverUrl: string | null;
   initialAvgScore: number;
   initialReviewCount: number;
   initialReviews: Review[];
   albumDetails: AlbumDetails;
 };
 
+function recomputeStats(allReviews: Review[]) {
+  const count = allReviews.length;
+  const avg = count > 0 ? Math.round(allReviews.reduce((s, r) => s + r.rating, 0) / count) : 0;
+  const dist = count > 0 ? buildScoreDistribution(allReviews.map((r) => r.rating)) : new Array(10).fill(0);
+  return { count, avg, dist };
+}
+
 export function AlbumReviewsClient({
   albumDbId,
   albumTitle,
   albumArtist,
+  albumCoverUrl,
   initialAvgScore,
   initialReviewCount,
   initialReviews,
   albumDetails,
 }: Props) {
+  const { data: session } = useSession();
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [sort, setSort] = useState<"helpful" | "recent">("helpful");
   const [avgScore, setAvgScore] = useState(initialAvgScore);
@@ -54,27 +66,43 @@ export function AlbumReviewsClient({
       ? buildScoreDistribution(initialReviews.map((r) => r.rating))
       : new Array(10).fill(0),
   );
+  const [editing, setEditing] = useState(false);
   const isMobile = useIsMobile();
+
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  const myReview = userId ? (reviews.find((r) => r.user.id === userId) ?? null) : null;
 
   const sorted =
     sort === "helpful"
       ? [...reviews].sort((a, b) => b.helpful - a.helpful)
       : [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const othersReviews = userId ? sorted.filter((r) => r.user.id !== userId) : sorted;
+
+  const applyReviews = (next: Review[]) => {
+    const stats = recomputeStats(next);
+    setReviews(next);
+    setReviewCount(stats.count);
+    setAvgScore(stats.avg);
+    setScoreDistribution(stats.dist);
+  };
+
   const onReviewSubmitted = (newReview: Review) => {
     setReviews((prev) => {
       const idx = prev.findIndex((r) => r.user.id === newReview.user.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = newReview;
-        return copy;
-      }
-      return [newReview, ...prev];
+      const next = idx >= 0 ? prev.map((r, i) => (i === idx ? newReview : r)) : [newReview, ...prev];
+      const stats = recomputeStats(next);
+      setReviewCount(stats.count);
+      setAvgScore(stats.avg);
+      setScoreDistribution(stats.dist);
+      return next;
     });
-    setReviewCount((c) => {
-      const alreadyExists = reviews.some((r) => r.user.id === newReview.user.id);
-      return alreadyExists ? c : c + 1;
-    });
+    setEditing(false);
+  };
+
+  const onReviewDeleted = (id: string) => {
+    applyReviews(reviews.filter((r) => r.id !== id));
+    setEditing(false);
   };
 
   const maxDist = Math.max(...scoreDistribution, 1);
@@ -121,25 +149,46 @@ export function AlbumReviewsClient({
           )}
         </div>
 
-        <InlineReviewForm albumDbId={albumDbId} albumTitle={albumTitle} onSubmitted={onReviewSubmitted} />
+        {myReview && !editing ? (
+          <MyReviewCard
+            review={myReview}
+            albumDbId={albumDbId}
+            albumTitle={albumTitle}
+            albumArtist={albumArtist}
+            albumCoverUrl={albumCoverUrl}
+            onEdit={() => setEditing(true)}
+            onDeleted={onReviewDeleted}
+          />
+        ) : (
+          <InlineReviewForm
+            albumDbId={albumDbId}
+            albumTitle={albumTitle}
+            initialRating={myReview?.rating}
+            initialBody={myReview?.body ?? ""}
+            onCancel={myReview ? () => setEditing(false) : undefined}
+            onSubmitted={onReviewSubmitted}
+          />
+        )}
 
-        {sorted.length === 0 ? (
-          <div
-            style={{
-              background: "var(--surface)",
-              borderRadius: 18,
-              border: "1px solid var(--divider)",
-              padding: 48,
-              textAlign: "center",
-              color: "var(--text-muted)",
-            }}
-          >
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-              Seja o primeiro a escrever uma review
+        {othersReviews.length === 0 ? (
+          !myReview ? (
+            <div
+              style={{
+                background: "var(--surface)",
+                borderRadius: 18,
+                border: "1px solid var(--divider)",
+                padding: 48,
+                textAlign: "center",
+                color: "var(--text-muted)",
+              }}
+            >
+              <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
+              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+                Seja o primeiro a escrever uma review
+              </div>
+              <div style={{ fontSize: 14 }}>Compartilhe sua opinião sobre {albumTitle}</div>
             </div>
-            <div style={{ fontSize: 14 }}>Compartilhe sua opinião sobre {albumTitle}</div>
-          </div>
+          ) : null
         ) : (
           <div
             style={{
@@ -149,15 +198,12 @@ export function AlbumReviewsClient({
               padding: "4px 24px",
             }}
           >
-            {sorted.map((rev) => (
+            {othersReviews.map((rev) => (
               <ReviewCard
                 key={rev.id}
                 review={rev}
                 albumDbId={albumDbId}
-                onDeleted={(id) => {
-                  setReviews((prev) => prev.filter((r) => r.id !== id));
-                  setReviewCount((c) => Math.max(0, c - 1));
-                }}
+                onDeleted={onReviewDeleted}
               />
             ))}
           </div>
@@ -258,27 +304,28 @@ export function AlbumReviewsClient({
               </div>
 
               {/* Category breakdown */}
-              {[
-                ["Positivas (75–100)", reviews.filter((r) => r.rating >= 75).length, "#1B873F"],
-                ["Mistas (50–74)", reviews.filter((r) => r.rating >= 50 && r.rating < 75).length, "#E09F00"],
-                ["Negativas (0–49)", reviews.filter((r) => r.rating < 50).length, "#C5291C"],
-              ].map(([label, count, color]) => (
-                <div key={label as string} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
-                  <div
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 2,
-                      background: color as string,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <div style={{ flex: 1, fontSize: 11, color: "var(--text)" }}>{label as string}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--text)" }}>
-                    {count as number}
+              {SCORE_BANDS.map((band) => {
+                const count = reviews.filter((r) => r.rating >= band.min && r.rating <= band.max).length;
+                return (
+                  <div key={band.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
+                    <div
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 2,
+                        background: band.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1, fontSize: 11, color: "var(--text)" }}>
+                      {band.label} ({band.min}–{band.max})
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--text)" }}>
+                      {count}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -307,6 +354,193 @@ export function AlbumReviewsClient({
         <AlbumDetailsCard details={albumDetails} />
       </div>
     </div>
+  );
+}
+
+// ——— My Review Card ———
+function MyReviewCard({
+  review,
+  albumDbId,
+  albumTitle,
+  albumArtist,
+  albumCoverUrl,
+  onEdit,
+  onDeleted,
+}: {
+  review: Review;
+  albumDbId: number;
+  albumTitle: string;
+  albumArtist: string;
+  albumCoverUrl: string | null;
+  onEdit: () => void;
+  onDeleted: (id: string) => void;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState<"story" | "twitter" | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  const deleteReview = async () => {
+    if (!confirm("Excluir sua review?")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/albums/${albumDbId}/reviews/${review.id}`, { method: "DELETE" });
+      if (res.ok) onDeleted(review.id);
+      else setDeleting(false);
+    } catch {
+      setDeleting(false);
+    }
+  };
+
+  const exportImage = async (type: "story" | "twitter") => {
+    setExporting(type);
+    try {
+      const payload = {
+        albumTitle,
+        albumArtist,
+        albumCoverUrl,
+        rating: review.rating,
+        body: review.body,
+        userName: review.user.name,
+        userHandle: review.user.handle,
+      };
+      if (type === "story") await downloadReviewStory(payload);
+      else await downloadReviewTwitter(payload);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const isLong = (review.body?.length ?? 0) > 280;
+
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 16,
+        border: "1px solid var(--divider)",
+        padding: "16px 20px",
+        marginBottom: 20,
+      }}
+    >
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>
+        Sua avaliação
+      </div>
+
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: review.body ? 12 : 0 }}>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 12,
+            background: scoreBg(review.rating),
+            color: scoreColor(review.rating),
+            display: "grid",
+            placeItems: "center",
+            fontSize: 18,
+            fontWeight: 800,
+            fontVariantNumeric: "tabular-nums",
+            border: `2px solid ${scoreColor(review.rating)}25`,
+            flexShrink: 0,
+          }}
+        >
+          {review.rating}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <Avatar
+              user={{ name: review.user.name, avatar: review.user.avatarColor }}
+              imageUrl={review.user.image}
+              size={20}
+            />
+            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{review.user.name}</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>@{review.user.handle}</span>
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: scoreColor(review.rating) }}>
+            {scoreLabel(review.rating)}
+          </div>
+        </div>
+      </div>
+
+      {review.body ? (
+        <div style={{ marginBottom: 14 }}>
+          {isLong && !expanded ? (
+            <>
+              <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.55 }}>
+                {review.body.slice(0, 280)}…
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "var(--accent)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  marginTop: 4,
+                }}
+              >
+                Ler mais
+              </button>
+            </>
+          ) : (
+            <div style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.55 }}>{review.body}</div>
+          )}
+        </div>
+      ) : (
+        <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 14 }}>
+          Você deu nota sem escrever texto.
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingTop: 12, borderTop: "1px solid var(--divider-soft)" }}>
+        <button type="button" onClick={onEdit} style={actionBtnStyle}>
+          <Pencil size={14} />
+          Editar
+        </button>
+        <button type="button" onClick={() => exportImage("story")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem para story do Instagram">
+          <Instagram size={14} />
+          {exporting === "story" ? "Baixando…" : "Story"}
+        </button>
+        <button type="button" onClick={() => exportImage("twitter")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem para post no X (Twitter)">
+          <IconX size={13} />
+          {exporting === "twitter" ? "Baixando…" : "X"}
+        </button>
+        <button
+          type="button"
+          onClick={deleteReview}
+          disabled={deleting}
+          style={{ ...actionBtnStyle, color: "#C5291C" }}
+        >
+          <Trash2 size={14} />
+          {deleting ? "…" : "Excluir"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const actionBtnStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 12px",
+  borderRadius: 100,
+  border: "1px solid var(--divider-strong)",
+  background: "var(--fill-subtle)",
+  fontSize: 12,
+  fontWeight: 600,
+  color: "var(--text)",
+  cursor: "pointer",
+};
+
+function IconX({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.259 5.63 5.905-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
   );
 }
 
@@ -443,8 +677,9 @@ function ReviewCard({
     if (!confirm("Excluir sua review?")) return;
     setDeleting(true);
     try {
-      await fetch(`/api/albums/${albumDbId}/reviews/${review.id}`, { method: "DELETE" });
-      onDeleted?.(review.id);
+      const res = await fetch(`/api/albums/${albumDbId}/reviews/${review.id}`, { method: "DELETE" });
+      if (res.ok) onDeleted?.(review.id);
+      else setDeleting(false);
     } catch {
       setDeleting(false);
     }
@@ -573,17 +808,24 @@ function ReviewCard({
 function InlineReviewForm({
   albumDbId,
   albumTitle,
+  initialRating,
+  initialBody,
+  onCancel,
   onSubmitted,
 }: {
   albumDbId: number;
   albumTitle: string;
+  initialRating?: number;
+  initialBody?: string;
+  onCancel?: () => void;
   onSubmitted: (r: Review) => void;
 }) {
   const { data: session } = useSession();
-  const [rating, setRating] = useState(70);
-  const [body, setBody] = useState("");
+  const [rating, setRating] = useState(initialRating ?? 70);
+  const [body, setBody] = useState(initialBody ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const isEditing = initialRating != null;
 
   if (!session?.user) {
     return (
@@ -637,6 +879,7 @@ function InlineReviewForm({
       };
       const fullReview: Review = {
         ...apiReview,
+        createdAt: apiReview.createdAt ?? new Date().toISOString(),
         user: {
           id: user.id ?? "",
           handle: user.handle ?? "",
@@ -645,9 +888,6 @@ function InlineReviewForm({
           image: user.image ?? null,
         },
       };
-      setBody("");
-      setRating(70);
-      setError("");
       onSubmitted(fullReview);
     } catch {
       setError("Erro de rede. Tente novamente.");
@@ -668,6 +908,12 @@ function InlineReviewForm({
         marginBottom: 20,
       }}
     >
+      {isEditing && (
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>
+          Editando sua avaliação
+        </div>
+      )}
+
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
         <Avatar
           user={{ name: user?.name ?? "", avatar: user?.avatarColor ?? "#ccc" }}
@@ -734,30 +980,52 @@ function InlineReviewForm({
         }}
       />
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, gap: 8, flexWrap: "wrap" }}>
         <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
           {body.trim().length > 0
             ? `${body.length}/2000 · mínimo 50 caracteres`
             : "Review opcional"}
         </div>
-        <button
-          onClick={submit}
-          disabled={submitting || (body.trim().length > 0 && body.trim().length < 50)}
-          style={{
-            background: "var(--accent)",
-            color: "white",
-            border: "none",
-            padding: "8px 20px",
-            borderRadius: 100,
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: submitting || (body.trim().length > 0 && body.trim().length < 50) ? "not-allowed" : "pointer",
-            opacity: body.trim().length > 0 && body.trim().length < 50 ? 0.45 : 1,
-            transition: "opacity 0.15s",
-          }}
-        >
-          {submitting ? "Publicando…" : "Publicar"}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={submitting}
+              style={{
+                background: "var(--fill-subtle)",
+                color: "var(--text)",
+                border: "1px solid var(--divider)",
+                padding: "8px 16px",
+                borderRadius: 100,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: submitting ? "not-allowed" : "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={submit}
+            disabled={submitting || (body.trim().length > 0 && body.trim().length < 50)}
+            style={{
+              background: "var(--accent)",
+              color: "white",
+              border: "none",
+              padding: "8px 20px",
+              borderRadius: 100,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: submitting || (body.trim().length > 0 && body.trim().length < 50) ? "not-allowed" : "pointer",
+              opacity: body.trim().length > 0 && body.trim().length < 50 ? 0.45 : 1,
+              transition: "opacity 0.15s",
+            }}
+          >
+            {submitting ? "Salvando…" : isEditing ? "Salvar" : "Publicar"}
+          </button>
+        </div>
       </div>
 
       {error && (

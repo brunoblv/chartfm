@@ -27,7 +27,7 @@ function fmtDeadline(d: Date): string {
 }
 
 async function fetchGeradorData(): Promise<GeradorData> {
-  const [activeRound, reviewGroups, recentReviews, weekSnapshot] = await Promise.all([
+  const [activeRound, clubThemesRows, reviewGroups, recentReviews, weekSnapshot] = await Promise.all([
     prisma.albumClubRound.findFirst({
       where: { phase: { not: AlbumClubPhase.COMPLETED } },
       orderBy: { number: "desc" },
@@ -64,6 +64,12 @@ async function fetchGeradorData(): Promise<GeradorData> {
           orderBy: { rank: "asc" },
         },
       },
+    }),
+
+    prisma.albumClubRound.findMany({
+      orderBy: { number: "desc" },
+      select: { number: true, theme: true },
+      take: 40,
     }),
 
     prisma.albumReview.groupBy({
@@ -170,6 +176,7 @@ async function fetchGeradorData(): Promise<GeradorData> {
   return {
     theme: activeRound?.theme ?? "Tema da semana",
     round: activeRound?.number ?? 1,
+    clubThemes: clubThemesRows.map((r) => ({ number: r.number, theme: r.theme })),
     nominationsDeadline: activeRound ? fmtDeadline(activeRound.nominationsCloseAt) : "—",
     pollDeadline: activeRound ? fmtDeadline(activeRound.pollCloseAt) : "—",
     nominations: (activeRound?.nominations ?? []).map((n) => ({

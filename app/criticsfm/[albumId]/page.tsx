@@ -229,6 +229,7 @@ export default async function CriticsFMAlbumPage({
           albumDbId={albumId}
           albumTitle={albumTitle}
           albumArtist={artistName}
+          albumCoverUrl={album.coverUrl ?? null}
           initialAvgScore={avgScore}
           initialReviewCount={reviewCount}
           initialReviews={initialReviews.map((r) => ({

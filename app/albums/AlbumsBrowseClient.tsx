@@ -73,7 +73,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const featured = filtered[0];
-  const bestRated = filtered.filter((a) => a.score >= 75).sort((a, b) => b.score - a.score);
+  const bestRated = filtered.filter((a) => a.score >= 70).sort((a, b) => b.score - a.score);
 
   return (
     <div>
