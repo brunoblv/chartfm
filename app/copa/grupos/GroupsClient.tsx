@@ -26,6 +26,8 @@ type FixtureRow = {
   artistBId: string;
   singleAName: string;
   singleBName: string;
+  singleACover: string | null;
+  singleBCover: string | null;
   votesA: number;
   votesB: number;
   goalsA: number;
@@ -183,7 +185,7 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                     cursor: canClick ? "pointer" : "default",
                   }}
                 >
-                  {artA && <CopaArtistAvatar {...artA} size={26} />}
+                  {artA && <CopaArtistAvatar {...artA} coverUrl={f.singleACover} size={26} />}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{artA?.artistName}</div>
                     {singleA && <div style={{ fontSize: 10, color: "var(--text-disabled)" }}>"{singleA}"</div>}
@@ -195,7 +197,7 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{artB?.artistName}</div>
                     {singleB && <div style={{ fontSize: 10, color: "var(--text-disabled)" }}>"{singleB}"</div>}
                   </div>
-                  {artB && <CopaArtistAvatar {...artB} size={26} />}
+                  {artB && <CopaArtistAvatar {...artB} coverUrl={f.singleBCover} size={26} />}
                   <StatusBadge status={f.status} round={f.round} />
                 </div>
               );

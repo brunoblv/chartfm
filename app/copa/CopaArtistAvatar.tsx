@@ -1,4 +1,6 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
 
 type Props = {
   artistName: string;
@@ -6,6 +8,8 @@ type Props = {
   artistColor: string;
   artistInitials: string;
   size?: number;
+  /** Capa do single em disputa; tem prioridade sobre a foto do artista. */
+  coverUrl?: string | null;
 };
 
 export function CopaArtistAvatar({
@@ -14,9 +18,17 @@ export function CopaArtistAvatar({
   artistColor,
   artistInitials,
   size = 44,
+  coverUrl,
 }: Props) {
+  const [imgError, setImgError] = useState(false);
   const r = Math.round(size * 0.26);
-  if (artistImage) {
+  const src = (coverUrl?.trim() || artistImage?.trim() || null);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [src]);
+
+  if (src && !imgError) {
     return (
       <div
         style={{
@@ -28,16 +40,19 @@ export function CopaArtistAvatar({
           position: "relative",
         }}
       >
-        <Image
-          src={artistImage}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
           alt={artistName}
-          fill
-          style={{ objectFit: "cover" }}
-          sizes={`${size}px`}
+          width={size}
+          height={size}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          onError={() => setImgError(true)}
         />
       </div>
     );
   }
+
   return (
     <div
       style={{

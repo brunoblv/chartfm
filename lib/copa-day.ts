@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { fixtureBatchOrder } from "@/lib/copa";
 import { advanceKnockout } from "@/lib/copa-knockout";
 import { generateCopaDayPlaylistsSafely } from "@/lib/copa-playlist-sync";
+import { notifyCopaBatchOpened } from "@/lib/copa-notifications";
 
 const DAY_MS = 86_400_000;
 
@@ -54,6 +55,7 @@ export async function syncCopaToSchedule(
       where: { id: { in: toOpen.map((f) => f.id) } },
       data: { status: "LIVE" },
     });
+    await notifyCopaBatchOpened(copaId, dayIndex);
   }
 
   // Gera (ou completa) as playlists do dia. Idempotente: a cada hora retoma o
@@ -79,6 +81,7 @@ export async function openNextBatch(copaId: string): Promise<number> {
     data: { status: "LIVE" },
   });
   await generateCopaDayPlaylistsSafely(copaId, minOrder);
+  await notifyCopaBatchOpened(copaId, minOrder);
   return batch.length;
 }
 

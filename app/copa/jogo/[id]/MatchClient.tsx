@@ -29,6 +29,8 @@ type FixtureInfo = {
   singleBIdx: number;
   singleAName: string;
   singleBName: string;
+  singleACover: string | null;
+  singleBCover: string | null;
   votesA: number;
   votesB: number;
   goalsA: number;
@@ -214,7 +216,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {/* Artist A */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
-              <CopaArtistAvatar {...data.artistA} size={68} />
+              <CopaArtistAvatar {...data.artistA} coverUrl={data.singleACover} size={68} />
               <div style={{ fontSize: 16, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{data.artistA.artistName}</div>
               {data.singleAName && <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>"{data.singleAName}"</div>}
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{data.artistA.ownerName}</div>
@@ -233,7 +235,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
 
             {/* Artist B */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
-              <CopaArtistAvatar {...data.artistB} size={68} />
+              <CopaArtistAvatar {...data.artistB} coverUrl={data.singleBCover} size={68} />
               <div style={{ fontSize: 16, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{data.artistB.artistName}</div>
               {data.singleBName && <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>"{data.singleBName}"</div>}
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{data.artistB.ownerName}</div>
@@ -299,7 +301,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
                     onMouseOver={(e) => { if (!voting) { e.currentTarget.style.borderColor = "#FFD426"; e.currentTarget.style.background = "rgba(255,212,38,.08)"; } }}
                     onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--divider)"; e.currentTarget.style.background = "var(--fill-inset)"; }}
                   >
-                    <CopaArtistAvatar {...art} size={36} />
+                    <CopaArtistAvatar {...art} coverUrl={side === "A" ? data.singleACover : data.singleBCover} size={36} />
                     <span>Votar em {art.artistName.split(" ")[0]}</span>
                     <span style={{ fontSize: 11, color: "var(--text-disabled)" }}>"{singleName}"</span>
                   </button>

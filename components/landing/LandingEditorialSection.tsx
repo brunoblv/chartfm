@@ -10,14 +10,13 @@ type Props = {
   weekIndex: number;
 };
 
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
 function formatPoints(locale: string, points: number): string {
   return points.toLocaleString(locale === "en" ? "en-US" : "pt-BR");
 }
 
-function movementLabel(
-  t: (key: string, params?: Record<string, string | number>) => string,
-  entry: GlobalChartEntry,
-): string {
+function movementLabel(t: TFn, entry: GlobalChartEntry): string {
   switch (entry.status) {
     case "new":
       return t("landingEditorial.statusNew");
@@ -32,33 +31,134 @@ function movementLabel(
   }
 }
 
-function buildMoversSentence(
-  t: (key: string, params?: Record<string, string | number>) => string,
-  entries: GlobalChartEntry[],
-): string | null {
+function buildLeaderParagraph(t: TFn, leader: GlobalChartEntry, formattedWeek: string): string {
+  if ((leader.numberOnes ?? 0) >= 2) {
+    return t("landingEditorial.leaderHolds", {
+      week: formattedWeek,
+      title: leader.song.title,
+      artist: leader.song.artist,
+      numberOnes: leader.numberOnes ?? 2,
+    });
+  }
+  if (leader.status === "new" || leader.weeks <= 1) {
+    return t("landingEditorial.leaderDebut", {
+      week: formattedWeek,
+      title: leader.song.title,
+      artist: leader.song.artist,
+    });
+  }
+  return t("landingEditorial.leaderDefault", {
+    week: formattedWeek,
+    title: leader.song.title,
+    artist: leader.song.artist,
+  });
+}
+
+function formatTrackList(entries: GlobalChartEntry[]): string {
+  return entries
+    .map((e) => `"${e.song.title}" (${e.song.artist})`)
+    .join(", ");
+}
+
+function buildEditorialHighlights(t: TFn, entries: GlobalChartEntry[]): string[] {
+  const candidates: { priority: number; text: string }[] = [];
+
   const risers = entries
     .filter((e) => e.status === "up" && e.delta != null && e.delta > 0)
     .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
-  const debuts = entries.filter((e) => e.status === "new");
-
-  if (risers.length > 0) {
-    const top = risers[0];
-    return t("landingEditorial.moversUp", {
-      title: top.song.title,
-      artist: top.song.artist,
-      delta: top.delta ?? 0,
+  const topRiser = risers[0];
+  if (topRiser && (topRiser.delta ?? 0) >= 2) {
+    candidates.push({
+      priority: 100 + (topRiser.delta ?? 0),
+      text: t("landingEditorial.moversUp", {
+        title: topRiser.song.title,
+        artist: topRiser.song.artist,
+        delta: topRiser.delta ?? 0,
+      }),
     });
   }
 
-  if (debuts.length > 0) {
-    const names = debuts
-      .slice(0, 3)
-      .map((e) => `"${e.song.title}" (${e.song.artist})`)
-      .join(", ");
-    return t("landingEditorial.moversNew", { names, count: debuts.length });
+  const debuts = entries.filter((e) => e.status === "new" && e.position !== 1);
+  if (debuts.length === 1) {
+    candidates.push({
+      priority: 80,
+      text: t("landingEditorial.debutSingle", {
+        title: debuts[0].song.title,
+        artist: debuts[0].song.artist,
+      }),
+    });
+  } else if (debuts.length > 1) {
+    candidates.push({
+      priority: 70 + debuts.length,
+      text: t("landingEditorial.moversNew", {
+        names: formatTrackList(debuts.slice(0, 3)),
+        count: debuts.length,
+      }),
+    });
   }
 
-  return null;
+  const returns = entries.filter((e) => e.status === "return");
+  if (returns.length > 0) {
+    const names = formatTrackList(returns.slice(0, 3));
+    candidates.push({
+      priority: 60 + returns.length,
+      text: t("landingEditorial.returnsHighlight", {
+        names,
+        verb:
+          returns.length === 1
+            ? t("landingEditorial.returnsVerbSingular")
+            : t("landingEditorial.returnsVerbPlural"),
+      }),
+    });
+  }
+
+  const artistCounts = new Map<string, number>();
+  for (const e of entries) {
+    artistCounts.set(e.song.artist, (artistCounts.get(e.song.artist) ?? 0) + 1);
+  }
+  const multiArtist = [...artistCounts.entries()]
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])[0];
+  if (multiArtist) {
+    candidates.push({
+      priority: 55 + multiArtist[1] * 5,
+      text: t("landingEditorial.artistMultiple", {
+        artist: multiArtist[0],
+        count: multiArtist[1],
+      }),
+    });
+  }
+
+  const newPeak = entries
+    .filter((e) => e.status === "up" && e.position === e.peak && (e.delta ?? 0) >= 3)
+    .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0))[0];
+  if (newPeak) {
+    candidates.push({
+      priority: 50 + (newPeak.delta ?? 0),
+      text: t("landingEditorial.newPeak", {
+        title: newPeak.song.title,
+        artist: newPeak.song.artist,
+        position: newPeak.position,
+      }),
+    });
+  }
+
+  const veteran = [...entries].sort((a, b) => b.weeks - a.weeks)[0];
+  if (veteran && veteran.weeks >= 4) {
+    candidates.push({
+      priority: 40 + veteran.weeks,
+      text: t("landingEditorial.longestRun", {
+        title: veteran.song.title,
+        artist: veteran.song.artist,
+        weeks: veteran.weeks,
+      }),
+    });
+  }
+
+  return candidates
+    .sort((a, b) => b.priority - a.priority)
+    .slice(0, 2)
+    .map((c) => c.text);
 }
 
 export async function LandingEditorialSection({ globalChart, weekLabel, weekIndex }: Props) {
@@ -66,8 +166,7 @@ export async function LandingEditorialSection({ globalChart, weekLabel, weekInde
   const formattedWeek = formatWeekLabel(locale, weekLabel);
   const top10 = globalChart.slice(0, 10);
   const leader = top10[0];
-  const voters = top10[0]?.voters ?? 0;
-  const moversSentence = buildMoversSentence(t, top10);
+  const highlightParagraphs = leader ? buildEditorialHighlights(t, top10) : [];
 
   return (
     <section
@@ -112,22 +211,16 @@ export async function LandingEditorialSection({ globalChart, weekLabel, weekInde
           {leader ? (
             <>
               <p style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 16px 0" }}>
-                {t("landingEditorial.introLeader", {
-                  week: formattedWeek,
-                  title: leader.song.title,
-                  artist: leader.song.artist,
-                  points: formatPoints(locale, leader.points),
-                  voters,
-                })}
+                {buildLeaderParagraph(t, leader, formattedWeek)}
               </p>
-              <p style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 16px 0" }}>
-                {t("landingEditorial.introHow")}
-              </p>
-              {moversSentence && (
-                <p style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 28px 0" }}>
-                  {moversSentence}
+              {highlightParagraphs.map((paragraph) => (
+                <p
+                  key={paragraph}
+                  style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 16px 0" }}
+                >
+                  {paragraph}
                 </p>
-              )}
+              ))}
             </>
           ) : (
             <p style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 28px 0" }}>
@@ -143,7 +236,7 @@ export async function LandingEditorialSection({ globalChart, weekLabel, weekInde
                   fontWeight: 700,
                   letterSpacing: "-0.02em",
                   color: "#1D1D1F",
-                  margin: "0 0 16px 0",
+                  margin: highlightParagraphs.length > 0 ? "12px 0 16px 0" : "0 0 16px 0",
                 }}
               >
                 {t("landingEditorial.listHeading", { week: formattedWeek })}

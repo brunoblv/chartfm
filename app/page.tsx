@@ -335,12 +335,13 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, timelineFeeds, publishedToday, reviewsFeed, recommendationsFeed] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, recommendationsFeed] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
       getSuggestedUsers(session.user.id, userGenres, 3),
+      getNewUsers(session.user.id, 3),
       getTimelineFeed(session.user.id, currentWeekIdx, followingIds, locale),
       getPublishedThisWeek(session.user.id, followingIds),
       getReviewsFeed(session.user.id, locale),
@@ -364,7 +365,10 @@ export default async function HomePage() {
   const sidebar = (
     <>
       <GlobalTeaser topSongs={globalTopSongs} weekLabel={rankingWeek.weekLabel} />
-      <SuggestedUsers users={suggestedUsers.map((u) => ({ ...u, isFollowing: followingIds.has(u.id) }))} />
+      <SuggestedUsers
+        users={suggestedUsers.map((u) => ({ ...u, isFollowing: followingIds.has(u.id) }))}
+        newUsers={newUsers.map((u) => ({ ...u, isFollowing: followingIds.has(u.id) }))}
+      />
       <TrendingArtists artists={trendingArtists} weekLabel={rankingWeek.weekLabel} />
     </>
   );
@@ -430,6 +434,23 @@ async function getSuggestedUsers(userId: string, genres: string[], limit = 3): P
       commonGenres: genres.length ? u.genres.filter((g) => genres.includes(g)).length : 0,
     })),
   ];
+}
+
+async function getNewUsers(userId: string, limit = 3): Promise<SuggestedUserRow[]> {
+  const users = await prisma.user.findMany({
+    where: { id: { not: userId } },
+    select: { id: true, handle: true, name: true, followers: true, avatarColor: true },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+  return users.map((u) => ({
+    id: u.id,
+    handle: u.handle,
+    name: u.name,
+    followers: u.followers,
+    avatarColor: u.avatarColor,
+    commonGenres: 0,
+  }));
 }
 
 async function getTrendingArtists(weekIdx: number, limit = 4) {

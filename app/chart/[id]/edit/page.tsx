@@ -709,7 +709,9 @@ export default function EditChartPage() {
       {isMobile && mobileReorder.showPositionSheet && mobileReorder.editTargetTitle ? (
         <MobileReorderPositionSheet
           title={mobileReorder.editTargetTitle}
-          buttons={mobileReorder.positionButtons}
+          currentPosition={(mobileReorder.editTargetIndex ?? 0) + 1}
+          maxPosition={mobileReorder.itemCount}
+          onConfirm={mobileReorder.confirmPosition}
           onClose={mobileReorder.closePositionSheet}
         />
       ) : null}

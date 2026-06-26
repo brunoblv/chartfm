@@ -1,4 +1,6 @@
 import type { CopaArtist, CopaFixture, CopaSingle, CopaVote, CopaEdition, CopaParticipant, User } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
 
 export const COPA_GROUP_LETTERS = "ABCDEFGHIJKLMNOP".split("") as string[];
 
@@ -205,6 +207,46 @@ export function getArtistInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** Resolve capas de álbum a partir dos songId dos singles da Copa. */
+export async function resolveSongCoverUrls(
+  songIds: (string | null | undefined)[],
+): Promise<Map<string, string | null>> {
+  const ids = [...new Set(songIds.filter((id): id is string => Boolean(id)))];
+  const out = new Map<string, string | null>();
+  if (ids.length === 0) return out;
+
+  const songs = await prisma.song.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, spotifyId: true, albumRef: { select: { coverUrl: true } } },
+  });
+
+  const needSpotify: string[] = [];
+  for (const s of songs) {
+    const cover = s.albumRef?.coverUrl?.trim() || null;
+    out.set(s.id, cover);
+    if (!cover && s.spotifyId) needSpotify.push(s.spotifyId);
+  }
+
+  if (needSpotify.length > 0) {
+    const spotifyCovers = await fetchSpotifyTrackCovers(needSpotify);
+    for (const s of songs) {
+      if (!out.get(s.id) && s.spotifyId) {
+        out.set(s.id, spotifyCovers.get(s.spotifyId) ?? null);
+      }
+    }
+  }
+
+  return out;
+}
+
+export function pickSingleCover(
+  songId: string | null | undefined,
+  covers: Map<string, string | null>,
+): string | null {
+  if (!songId) return null;
+  return covers.get(songId) ?? null;
 }
 
 // ── Serializable types for API responses ─────────────────────────────────────

@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { getVoteCounts, fixtureBatchOrder } from "@/lib/copa";
+import { getVoteCounts, fixtureBatchOrder, pickSingleCover, resolveSongCoverUrls } from "@/lib/copa";
 import { youtubePlaylistUrl } from "@/lib/youtube-user";
 import { LiveClient } from "./LiveClient";
 
@@ -28,24 +28,34 @@ export default async function CopaAoVivoPage() {
     where: { copaId: copa.id, status: "LIVE" },
     include: {
       votes: true,
-      artistA: { include: { singles: { select: { slotIndex: true, songName: true } } } },
-      artistB: { include: { singles: { select: { slotIndex: true, songName: true } } } },
+      artistA: { include: { singles: { select: { slotIndex: true, songName: true, songId: true } } } },
+      artistB: { include: { singles: { select: { slotIndex: true, songName: true, songId: true } } } },
     },
     orderBy: [{ phase: "asc" }, { groupLetter: "asc" }, { matchIndex: "asc" }],
   });
 
+  const coverMap = await resolveSongCoverUrls(
+    fixtures.flatMap((f) => {
+      const sA = f.artistA.singles.find((s) => s.slotIndex === f.singleAIdx);
+      const sB = f.artistB.singles.find((s) => s.slotIndex === f.singleBIdx);
+      return [sA?.songId, sB?.songId];
+    }),
+  );
+
   const games = fixtures.map((f) => {
     const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
     // Jogo Ao vivo → single em disputa é revelado.
-    const sA = f.artistA.singles.find((s) => s.slotIndex === f.singleAIdx)?.songName ?? "";
-    const sB = f.artistB.singles.find((s) => s.slotIndex === f.singleBIdx)?.songName ?? "";
+    const sA = f.artistA.singles.find((s) => s.slotIndex === f.singleAIdx);
+    const sB = f.artistB.singles.find((s) => s.slotIndex === f.singleBIdx);
     return {
       id: f.id,
       phase: f.phase as string,
       groupLetter: f.groupLetter,
       round: f.round,
-      singleAName: sA,
-      singleBName: sB,
+      singleAName: sA?.songName ?? "",
+      singleBName: sB?.songName ?? "",
+      singleACover: pickSingleCover(sA?.songId, coverMap),
+      singleBCover: pickSingleCover(sB?.songId, coverMap),
       votesA,
       votesB,
       goalsA,

@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { getArtistColor, getArtistInitials, COPA_UNASSIGNED_GROUP } from "@/lib/copa";
+import { getSpotifyArtistById } from "@/lib/spotify-server";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -60,6 +61,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const color = getArtistColor(artistSpotifyId);
   const initials = getArtistInitials(artistName);
 
+  let resolvedImage = artistImage?.trim() || null;
+  if (!resolvedImage && artistSpotifyId) {
+    const profile = await getSpotifyArtistById(artistSpotifyId);
+    resolvedImage = profile?.imageUrl ?? null;
+  }
+
   let artist = null;
   for (let attempt = 0; attempt < 10 && !artist; attempt++) {
     const count = await prisma.copaArtist.count({ where: { copaId: id } });
@@ -72,7 +79,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           slotInGroup: count + attempt,
           artistSpotifyId: artistSpotifyId ?? null,
           artistName: artistName.trim(),
-          artistImage: artistImage ?? null,
+          artistImage: resolvedImage,
           artistColor: color,
           artistInitials: initials,
         },

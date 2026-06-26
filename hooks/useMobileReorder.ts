@@ -92,6 +92,16 @@ export function useMobileReorder<T>({
     [editTargetIndex, items, onChange],
   );
 
+  const confirmPosition = useCallback(
+    (position: number) => {
+      if (editTargetIndex === null) return;
+      const targetIndex = position - 1;
+      if (targetIndex < 0 || targetIndex >= items.length) return;
+      handleMoveToPosition(targetIndex);
+    },
+    [editTargetIndex, handleMoveToPosition, items.length],
+  );
+
   const selectedTitle =
     selectedIndex !== null && items[selectedIndex] != null
       ? getItemLabel(items[selectedIndex], selectedIndex)
@@ -145,16 +155,6 @@ export function useMobileReorder<T>({
     [editTargetIndex, handleMoveDown, handleMoveUp, handleRowTap, items.length, mode, selectedIndex],
   );
 
-  const positionButtons = useMemo(
-    () =>
-      items.map((_, i) => ({
-        position: i + 1,
-        isCurrent: editTargetIndex === i,
-        onSelect: () => handleMoveToPosition(i),
-      })),
-    [editTargetIndex, handleMoveToPosition, items],
-  );
-
   return {
     mode,
     setMode,
@@ -165,11 +165,12 @@ export function useMobileReorder<T>({
     selectedTitle,
     editTargetIndex,
     editTargetTitle,
+    itemCount: items.length,
     cancelSelection: () => setSelectedIndex(null),
     closePositionSheet: () => setEditTargetIndex(null),
+    confirmPosition,
     resetInteraction,
     getRowProps,
-    positionButtons,
     showSwapBanner: mode === "swap" && selectedIndex !== null,
     showPositionSheet: mode === "position" && editTargetIndex !== null,
   };

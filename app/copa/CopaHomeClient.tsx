@@ -17,6 +17,8 @@ type SimpleFixture = {
   myVote: "A" | "B" | null;
   singleAName: string;
   singleBName: string;
+  singleACover?: string | null;
+  singleBCover?: string | null;
   artistA: { id: string; artistName: string; artistImage: string | null; artistColor: string; artistInitials: string; ownerId: string; groupLetter: string };
   artistB: { id: string; artistName: string; artistImage: string | null; artistColor: string; artistInitials: string; ownerId: string; groupLetter: string };
 };
@@ -89,13 +91,13 @@ function ScoreRow({ f }: { f: SimpleFixture }) {
         marginBottom: 6,
       }}
     >
-      <CopaArtistAvatar {...f.artistA} size={26} />
+      <CopaArtistAvatar {...f.artistA} coverUrl={f.singleACover} size={26} />
       <span style={{ flex: 1, fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.artistA.artistName}</span>
       <span style={{ fontSize: 14, fontWeight: 800, padding: "0 8px", flexShrink: 0 }}>
         {f.goalsA}–{f.goalsB}
       </span>
       <span style={{ flex: 1, fontSize: 13, fontWeight: 700, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.artistB.artistName}</span>
-      <CopaArtistAvatar {...f.artistB} size={26} />
+      <CopaArtistAvatar {...f.artistB} coverUrl={f.singleBCover} size={26} />
       {f.status === "LIVE" ? <Badge variant="live">Ao vivo</Badge> : <Badge variant="done">R{f.round}</Badge>}
     </div>
   );
@@ -173,7 +175,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <CopaArtistAvatar {...liveFixture.artistA} size={56} />
+                <CopaArtistAvatar {...liveFixture.artistA} coverUrl={liveFixture.singleACover} size={56} />
                 <div style={{ fontSize: 14, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{liveFixture.artistA.artistName}</div>
                 <div style={{ fontSize: 11, color: "var(--text-disabled)", textAlign: "center" }}>"{liveFixture.singleAName}"</div>
               </div>
@@ -186,7 +188,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
                 <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{liveFixture.votesA} × {liveFixture.votesB} votos</div>
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <CopaArtistAvatar {...liveFixture.artistB} size={56} />
+                <CopaArtistAvatar {...liveFixture.artistB} coverUrl={liveFixture.singleBCover} size={56} />
                 <div style={{ fontSize: 14, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{liveFixture.artistB.artistName}</div>
                 <div style={{ fontSize: 11, color: "var(--text-disabled)", textAlign: "center" }}>"{liveFixture.singleBName}"</div>
               </div>
@@ -316,11 +318,11 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
               marginBottom: 20,
             }}
           >
-            <CopaArtistAvatar {...upcoming.artistA} size={32} />
+            <CopaArtistAvatar {...upcoming.artistA} coverUrl={upcoming.singleACover} size={32} />
             <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{upcoming.artistA.artistName}</span>
             <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>vs</span>
             <span style={{ flex: 1, fontSize: 13, fontWeight: 700, textAlign: "right" }}>{upcoming.artistB.artistName}</span>
-            <CopaArtistAvatar {...upcoming.artistB} size={32} />
+            <CopaArtistAvatar {...upcoming.artistB} coverUrl={upcoming.singleBCover} size={32} />
             <Badge variant="next">GRP {upcoming.groupLetter} R{upcoming.round}</Badge>
           </div>
         </>

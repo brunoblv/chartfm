@@ -18,6 +18,8 @@ type Game = {
   round: number | null;
   singleAName: string;
   singleBName: string;
+  singleACover: string | null;
+  singleBCover: string | null;
   votesA: number;
   votesB: number;
   goalsA: number;
@@ -185,7 +187,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
         {/* VS */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-            <CopaArtistAvatar {...game.artistA} size={64} />
+            <CopaArtistAvatar {...game.artistA} coverUrl={game.singleACover} size={64} />
             <div style={{ fontSize: 15, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{game.artistA.artistName}</div>
             {game.singleAName && <div style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>&quot;{game.singleAName}&quot;</div>}
           </div>
@@ -200,7 +202,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
           </div>
 
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-            <CopaArtistAvatar {...game.artistB} size={64} />
+            <CopaArtistAvatar {...game.artistB} coverUrl={game.singleBCover} size={64} />
             <div style={{ fontSize: 15, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{game.artistB.artistName}</div>
             {game.singleBName && <div style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>&quot;{game.singleBName}&quot;</div>}
           </div>
@@ -246,7 +248,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
                   onMouseOver={(e) => { if (!voting) { e.currentTarget.style.borderColor = "#FFD426"; e.currentTarget.style.background = "rgba(255,212,38,.08)"; } }}
                   onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--divider)"; e.currentTarget.style.background = "var(--fill-inset)"; }}
                 >
-                  <CopaArtistAvatar {...art} size={34} />
+                  <CopaArtistAvatar {...art} coverUrl={side === "A" ? game.singleACover : game.singleBCover} size={34} />
                   <span>Votar em {art.artistName.split(" ")[0]}</span>
                 </button>
               );
@@ -307,7 +309,7 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <CopaArtistAvatar {...g.artistA} size={48} />
+          <CopaArtistAvatar {...g.artistA} coverUrl={g.singleACover} size={48} />
           <div style={{ fontSize: 14, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{g.artistA.artistName}</div>
           {g.singleAName && <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>&quot;{g.singleAName}&quot;</div>}
         </div>
@@ -322,7 +324,7 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
         </div>
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <CopaArtistAvatar {...g.artistB} size={48} />
+          <CopaArtistAvatar {...g.artistB} coverUrl={g.singleBCover} size={48} />
           <div style={{ fontSize: 14, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{g.artistB.artistName}</div>
           {g.singleBName && <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.25 }}>&quot;{g.singleBName}&quot;</div>}
         </div>

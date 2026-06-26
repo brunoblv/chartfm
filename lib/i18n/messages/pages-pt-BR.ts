@@ -21,6 +21,10 @@ export const pagesPtBR = {
     globalChart: "Parada Global",
     viewFullChart: "Ver parada completa →",
     whoToFollow: "Quem seguir",
+    whoToFollowForYou: "Para você",
+    whoToFollowNewUsers: "Novos usuários",
+    noSuggestedUsers: "Nenhuma sugestão por aqui ainda.",
+    noNewUsers: "Nenhum usuário novo por aqui ainda.",
     followers: "seguidores",
     trendingArtists: "Artistas em alta",
     chartsPoints: "{charts} paradas · {points}pts",
@@ -417,16 +421,30 @@ export const pagesPtBR = {
   landingEditorial: {
     eyebrow: "Parada Global · ChartFM",
     title: "Global 100 — {week}",
-    introLeader:
-      "Na {week}, o Global 100 do ChartFM é liderado por \"{title}\", de {artist}, com {points} pontos acumulados a partir de {voters} paradas pessoais publicadas pela comunidade. Esse ranking coletivo mostra, em tempo real, quais faixas os fãs de música mais valorizaram na semana — não por reproduções passivas, mas por escolhas deliberadas em suas paradas semanais.",
-    introHow:
-      "Cada posição numa parada pessoal gera pontos: a faixa em 1º vale 100 pontos, a de 2º vale 99, e assim por diante até a 20ª posição. O ChartFM soma esses pontos de todas as paradas publicadas e consolida o ranking toda segunda-feira às 01h (horário de Brasília). O resultado é uma parada feita por curadores reais, não por algoritmos de streaming.",
+    leaderHolds:
+      "Na {week}, {artist} mantém \"{title}\" no topo do Global 100 — a {numberOnes}ª semana consecutiva no #1.",
+    leaderDebut:
+      "Na {week}, \"{title}\", de {artist}, estreia no Global 100 já na liderança.",
+    leaderDefault:
+      "Na {week}, \"{title}\", de {artist}, lidera o Global 100 — a faixa que mais fãs colocaram em destaque nas paradas da comunidade.",
     introEmpty:
-      "O Global 100 é a parada musical coletiva do ChartFM: um ranking semanal construído a partir das paradas pessoais publicadas por fãs de música. Cada posição numa chart individual gera pontos que se acumulam ao longo da semana. Quando a comunidade publicar novas paradas, esta página exibirá automaticamente o top 10 atualizado.",
+      "O Global 100 é a parada musical coletiva do ChartFM: um ranking semanal construído a partir das paradas pessoais publicadas por fãs de música. Quando a comunidade publicar novas paradas, esta página exibirá automaticamente o top 10 atualizado.",
     moversUp:
       "Entre as maiores subidas desta semana, \"{title}\" ({artist}) avançou {delta} posições — sinal de que mais fãs estão colocando essa faixa em destaque nas suas paradas.",
     moversNew:
-      "{count} faixa(s) estreiam no ranking esta semana, incluindo {names}. Estreias indicam descobertas recentes que a comunidade começou a valorizar coletivamente.",
+      "{count} faixa(s) estreiam no top 10 esta semana, incluindo {names}.",
+    debutSingle:
+      "\"{title}\" ({artist}) estreia no top 10 do Global 100 nesta semana.",
+    returnsHighlight:
+      "{names} {verb} ao top 10 após ausência nas paradas recentes.",
+    returnsVerbSingular: "retorna",
+    returnsVerbPlural: "retornam",
+    artistMultiple:
+      "{artist} aparece com {count} faixas no top 10 desta semana — um domínio raro no ranking.",
+    longestRun:
+      "\"{title}\" ({artist}) completa {weeks} semanas no Global 100, entre as permanências mais longas do top 10 atual.",
+    newPeak:
+      "\"{title}\" ({artist}) alcança a #{position}, sua melhor posição histórica no chart.",
     listHeading: "Top 10 do Global 100 — {week}",
     pts: "pts",
     statusNew: "estreia",

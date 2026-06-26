@@ -21,6 +21,10 @@ export const pagesEn = {
     globalChart: "Global Chart",
     viewFullChart: "View full chart →",
     whoToFollow: "Who to follow",
+    whoToFollowForYou: "For you",
+    whoToFollowNewUsers: "New users",
+    noSuggestedUsers: "No suggestions here yet.",
+    noNewUsers: "No new users here yet.",
     followers: "followers",
     trendingArtists: "Trending artists",
     chartsPoints: "{charts} charts · {points}pts",
@@ -417,16 +421,30 @@ export const pagesEn = {
   landingEditorial: {
     eyebrow: "Global Chart · ChartFM",
     title: "Global 100 — {week}",
-    introLeader:
-      "For {week}, the ChartFM Global 100 is led by \"{title}\" by {artist}, with {points} points accumulated from {voters} personal charts published by the community. This collective ranking shows, in real time, which tracks music fans valued most that week — not through passive plays, but through deliberate choices in their weekly charts.",
-    introHow:
-      "Each position on a personal chart earns points: #1 is worth 100 points, #2 is worth 99, and so on down to #20. ChartFM adds up these points from every published chart and consolidates the ranking every Monday at 1:00 AM (Brasília time). The result is a chart built by real curators, not streaming algorithms.",
+    leaderHolds:
+      "For {week}, {artist} keeps \"{title}\" at #1 on the Global 100 — its {numberOnes} consecutive week on top.",
+    leaderDebut:
+      "For {week}, \"{title}\" by {artist} debuts on the Global 100 already at #1.",
+    leaderDefault:
+      "For {week}, \"{title}\" by {artist} leads the Global 100 — the track fans highlighted most on their community charts.",
     introEmpty:
-      "The Global 100 is ChartFM's collective music chart: a weekly ranking built from personal charts published by music fans. Each position on an individual chart earns points that accumulate throughout the week. When the community publishes new charts, this page will automatically show the updated top 10.",
+      "The Global 100 is ChartFM's collective music chart: a weekly ranking built from personal charts published by music fans. When the community publishes new charts, this page will automatically show the updated top 10.",
     moversUp:
       "Among this week's biggest climbers, \"{title}\" ({artist}) moved up {delta} spots — a sign that more fans are highlighting this track on their charts.",
     moversNew:
-      "{count} track(s) debut on the chart this week, including {names}. Debuts highlight recent discoveries the community is starting to value collectively.",
+      "{count} track(s) debut in the top 10 this week, including {names}.",
+    debutSingle:
+      "\"{title}\" ({artist}) debuts in the Global 100 top 10 this week.",
+    returnsHighlight:
+      "{names} {verb} the top 10 after missing recent charts.",
+    returnsVerbSingular: "re-enters",
+    returnsVerbPlural: "re-enter",
+    artistMultiple:
+      "{artist} lands {count} tracks in this week's top 10 — a rare showing on the chart.",
+    longestRun:
+      "\"{title}\" ({artist}) reaches {weeks} weeks on the Global 100, among the longest runs in the current top 10.",
+    newPeak:
+      "\"{title}\" ({artist}) hits #{position}, its best position ever on the chart.",
     listHeading: "Global 100 top 10 — {week}",
     pts: "pts",
     statusNew: "debut",

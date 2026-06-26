@@ -19,7 +19,9 @@
     "fix:boofrnds": "tsx scripts/fix-boofrnds-charts.ts",
     "rebuild:global-2026": "tsx scripts/rebuild-global-snapshots-2026.ts",
     "refresh:entity-snapshots": "tsx scripts/refresh-entity-page-snapshots.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.5",
@@ -31,6 +33,9 @@
     "next-auth": "^4.24.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

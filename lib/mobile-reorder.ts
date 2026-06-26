@@ -70,8 +70,8 @@ export const MOBILE_REORDER_MODE_META: Record<MobileReorderMode, ModeMeta> = {
     tab: "#  Posição",
     label: "#  Edição direta de posição",
     description:
-      "Perfeito para saltos grandes. Toque na faixa para escolher a posição exata no grid.",
-    hint: () => "Toque em uma faixa para escolher a posição exata",
+      "Perfeito para saltos grandes. Toque na faixa e digite a posição ou use as setas.",
+    hint: () => "Toque em uma faixa para definir a posição",
   },
   swap: {
     tab: "✦  Selecionar",

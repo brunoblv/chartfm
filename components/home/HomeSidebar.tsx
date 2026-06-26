@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
@@ -127,31 +128,80 @@ type SuggestedUserRow = {
   isFollowing?: boolean;
 };
 
-export function SuggestedUsers({ users }: { users: SuggestedUserRow[] }) {
+type SuggestedTab = "forYou" | "newUsers";
+
+function SuggestedUserList({ users, emptyMessage }: { users: SuggestedUserRow[]; emptyMessage: string }) {
   const { t } = useTranslations();
   const { locale } = useLocale();
   const numberLocale = locale === "en" ? "en-US" : "pt-BR";
+
+  if (users.length === 0) {
+    return (
+      <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "8px 0" }}>
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {users.map((u) => (
+        <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Link href={`/profile/${u.handle}`}>
+            <Avatar user={{ name: u.name, avatar: u.avatarColor }} size={40} />
+          </Link>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                @{u.handle} · {u.followers.toLocaleString(numberLocale)} {t("home.followers")}
+              </div>
+            </Link>
+          </div>
+          <FollowButton targetId={u.id} initialFollowing={u.isFollowing} variant="dark" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function SuggestedUsers({ users, newUsers }: { users: SuggestedUserRow[]; newUsers: SuggestedUserRow[] }) {
+  const [activeTab, setActiveTab] = useState<SuggestedTab>("forYou");
+  const { t } = useTranslations();
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    padding: "5px 12px",
+    borderRadius: 8,
+    border: "none",
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    background: active ? "var(--surface)" : "transparent",
+    color: active ? "var(--text)" : "var(--text-muted)",
+    boxShadow: active ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+    transition: "all 150ms",
+    whiteSpace: "nowrap" as const,
+  });
+
+  const tabs: { key: SuggestedTab; label: string }[] = [
+    { key: "forYou", label: t("home.whoToFollowForYou") },
+    { key: "newUsers", label: t("home.whoToFollowNewUsers") },
+  ];
+
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 14 }}>{t("home.whoToFollow")}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {users.map((u) => (
-          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Link href={`/profile/${u.handle}`}>
-              <Avatar user={{ name: u.name, avatar: u.avatarColor }} size={40} />
-            </Link>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{u.name}</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  @{u.handle} · {u.followers.toLocaleString(numberLocale)} {t("home.followers")}
-                </div>
-              </Link>
-            </div>
-            <FollowButton targetId={u.id} initialFollowing={u.isFollowing} variant="dark" />
-          </div>
+      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.015em", marginBottom: 12 }}>{t("home.whoToFollow")}</div>
+      <div style={{ display: "inline-flex", gap: 3, background: "var(--fill-subtle)", borderRadius: 11, padding: 3, marginBottom: 14 }}>
+        {tabs.map((tab) => (
+          <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} style={tabStyle(activeTab === tab.key)}>
+            {tab.label}
+          </button>
         ))}
       </div>
+      <SuggestedUserList
+        users={activeTab === "forYou" ? users : newUsers}
+        emptyMessage={activeTab === "forYou" ? t("home.noSuggestedUsers") : t("home.noNewUsers")}
+      />
     </div>
   );
 }

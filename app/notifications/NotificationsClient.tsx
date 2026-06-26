@@ -155,6 +155,22 @@ export function NotificationsClient({ initial }: { initial: NotifRow[] }) {
                 >
                   💿
                 </div>
+              ) : n.type === "copa_stage" || n.type === "copa_fixture" ? (
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: "linear-gradient(135deg, #FA243C, #FFD166)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                  }}
+                >
+                  ⚽
+                </div>
               ) : n.type === "milestone" || !actor ? (
                 <div
                   style={{

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { MatchClient } from "./MatchClient";
-import { getVoteCounts } from "@/lib/copa";
+import { getVoteCounts, pickSingleCover, resolveSongCoverUrls } from "@/lib/copa";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,9 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
   const myVote = userId ? (f.votes.find((v) => v.userId === userId)?.side ?? null) : null;
   const singlesA = [...f.artistA.singles].sort((a, b) => a.slotIndex - b.slotIndex);
   const singlesB = [...f.artistB.singles].sort((a, b) => a.slotIndex - b.slotIndex);
+  const singleASongId = singlesA[f.singleAIdx]?.songId ?? null;
+  const singleBSongId = singlesB[f.singleBIdx]?.songId ?? null;
+  const coverMap = await resolveSongCoverUrls([singleASongId, singleBSongId]);
 
   // A música em disputa só é revelada no momento do jogo (Ao vivo ou Encerrado).
   // A escalação completa de singles nunca é exposta aos usuários.
@@ -57,6 +60,8 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
         singleBIdx: f.singleBIdx,
         singleAName: revealed ? singlesA[f.singleAIdx]?.songName ?? "" : "",
         singleBName: revealed ? singlesB[f.singleBIdx]?.songName ?? "" : "",
+        singleACover: revealed ? pickSingleCover(singleASongId, coverMap) : null,
+        singleBCover: revealed ? pickSingleCover(singleBSongId, coverMap) : null,
         votesA,
         votesB,
         goalsA,

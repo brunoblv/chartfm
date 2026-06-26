@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { advanceKnockout } from "@/lib/copa-knockout";
+import { notifyCopaFixtureOpened } from "@/lib/copa-notifications";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -26,6 +27,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const wasLive = fixture.status === "LIVE";
+
   const updated = await prisma.copaFixture.update({
     where: { id: fid },
     data: {
@@ -33,6 +36,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       endedAt: status === "DONE" ? new Date() : undefined,
     },
   });
+
+  if (status === "LIVE" && !wasLive) {
+    await notifyCopaFixtureOpened(fid);
+  }
 
   // Ao encerrar um jogo, tenta avançar o chaveamento (grupos → R16 → QF → SF →
   // Final/3º lugar). Idempotente: só gera a fase seguinte quando a atual termina.

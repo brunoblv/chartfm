@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { CopaHomeClient } from "./CopaHomeClient";
-import { computeStandings, getVoteCounts } from "@/lib/copa";
+import { computeStandings, getVoteCounts, pickSingleCover, resolveSongCoverUrls } from "@/lib/copa";
 
 export const revalidate = 10;
 
@@ -87,12 +87,26 @@ export default async function CopaPage() {
     );
   }
 
+  function collectSongIds(f: NonNullable<typeof liveFixture>) {
+    const singlesA = [...f.artistA.singles].sort((a, b) => a.slotIndex - b.slotIndex);
+    const singlesB = [...f.artistB.singles].sort((a, b) => a.slotIndex - b.slotIndex);
+    return [singlesA[f.singleAIdx]?.songId, singlesB[f.singleBIdx]?.songId];
+  }
+
+  const coverMap = await resolveSongCoverUrls([
+    ...(liveFixture ? collectSongIds(liveFixture) : []),
+    ...recentDone.flatMap((f) => collectSongIds(f)),
+    ...(upcoming ? collectSongIds({ ...upcoming, votes: [] }) : []),
+  ]);
+
   function serializeFixture(f: typeof liveFixture) {
     if (!f) return null;
     const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
     const myVote = userId ? (f.votes.find((v) => v.userId === userId)?.side ?? null) : null;
     const singlesA = [...f.artistA.singles].sort((a, b) => a.slotIndex - b.slotIndex);
     const singlesB = [...f.artistB.singles].sort((a, b) => a.slotIndex - b.slotIndex);
+    const singleASongId = singlesA[f.singleAIdx]?.songId ?? null;
+    const singleBSongId = singlesB[f.singleBIdx]?.songId ?? null;
     return {
       id: f.id,
       copaId: f.copaId,
@@ -110,6 +124,8 @@ export default async function CopaPage() {
       singleBIdx: f.singleBIdx,
       singleAName: singlesA[f.singleAIdx]?.songName ?? "",
       singleBName: singlesB[f.singleBIdx]?.songName ?? "",
+      singleACover: pickSingleCover(singleASongId, coverMap),
+      singleBCover: pickSingleCover(singleBSongId, coverMap),
       artistA: {
         id: f.artistA.id,
         artistName: f.artistA.artistName,
