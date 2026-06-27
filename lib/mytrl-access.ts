@@ -25,7 +25,7 @@ export const SPOTIFY_FEATURE_HANDLES = new Set([
   MYTRL_OWNER_HANDLE,
   "boofrnds",
   "whatthelucas",
-  "romisk",
+  "romulolima22",
 ]);
 
 export function canUseSpotifyFeatures(handle: string | null | undefined): boolean {
