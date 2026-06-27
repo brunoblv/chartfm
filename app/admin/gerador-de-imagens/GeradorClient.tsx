@@ -1049,6 +1049,8 @@ function AlbumNotaPicker({
 export function GeradorClient({ data }: { data: GeradorData }) {
   const [type, setType]       = useState("inscricao");
   const [fmtId, setFmtId]     = useState("square");
+  const [busy, setBusy]       = useState(false);
+  const stageRef  = useRef<HTMLDivElement>(null);
   const previewCol = useRef<HTMLDivElement>(null);
   const [wrapW, setWrapW]     = useState(560);
 
@@ -1098,6 +1100,36 @@ export function GeradorClient({ data }: { data: GeradorData }) {
   };
 
   const Tpl = TEMPLATE_MAP[type];
+
+  async function exportPNG() {
+    if (!stageRef.current || busy) return;
+    setBusy(true);
+    const node = stageRef.current;
+    const prev = node.style.transform;
+    node.style.transform = "none";
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        backgroundColor: null,
+        logging: false,
+        useCORS: true,
+        width: fmt.w,
+        height: fmt.h,
+        windowWidth: fmt.w,
+        windowHeight: fmt.h,
+      });
+      node.style.transform = prev;
+      const link = document.createElement("a");
+      link.download = `chartfm-${type}-${fmtId}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (e) {
+      node.style.transform = prev;
+      alert("Erro ao gerar: " + (e as Error).message);
+    }
+    setBusy(false);
+  }
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
@@ -1293,12 +1325,36 @@ export function GeradorClient({ data }: { data: GeradorData }) {
           <div style={{ fontSize: 12, color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>
             {fmt.w} × {fmt.h}px
           </div>
+          <button
+            type="button"
+            onClick={exportPNG}
+            disabled={busy}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "10px 20px", borderRadius: 10, border: "none",
+              background: busy ? "var(--fill-2)" : "var(--accent)",
+              color: "#fff", fontSize: 13.5, fontWeight: 700,
+              cursor: busy ? "default" : "pointer",
+              boxShadow: busy ? "none" : "0 2px 12px rgba(250,36,60,0.35)",
+            }}
+          >
+            {busy ? "Gerando…" : (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Baixar PNG @2x
+              </>
+            )}
+          </button>
         </div>
 
         {/* Stage */}
         <div style={{ flex: 1, overflow: "auto", display: "grid", placeItems: "center", padding: 40, backgroundImage: "radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px)", backgroundSize: "22px 22px" }}>
           <div style={{ width: fmt.w * scale, height: fmt.h * scale, borderRadius: Math.max(6, 24 * scale), overflow: "hidden", boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)" }}>
-            <div style={{ width: fmt.w, height: fmt.h, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+            <div ref={stageRef} style={{ width: fmt.w, height: fmt.h, transform: `scale(${scale})`, transformOrigin: "top left" }}>
               <Tpl fmt={fmt} d={d} />
             </div>
           </div>
