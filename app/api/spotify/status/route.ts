@@ -1,23 +1,28 @@
 import { NextResponse } from "next/server";
-import { requireMyTrlSession } from "@/lib/mytrl-access-server";
-import {
-  getMyTrlOwnerUser,
-  getSpotifyRedirectUri,
-  spotifyUserOAuthConfigured,
-} from "@/lib/spotify-user";
+import { requireSpotifySession } from "@/lib/mytrl-access-server";
+import { prisma } from "@/lib/prisma";
+import { getSpotifyRedirectUri, spotifyUserOAuthConfigured } from "@/lib/spotify-user";
 
 export const runtime = "nodejs";
 
-// GET /api/spotify/status — status da conexão Spotify (somente @bruno)
+// GET /api/spotify/status — status da conexão Spotify do usuário autenticado
 export async function GET() {
-  const session = await requireMyTrlSession();
+  const session = await requireSpotifySession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const owner = await getMyTrlOwnerUser();
-  const connected = Boolean(owner?.spotifyRefreshToken);
-  const playlistId = owner?.spotifyNewHitsPlaylistId ?? null;
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      spotifyRefreshToken: true,
+      spotifyNewHitsPlaylistId: true,
+      spotifyUserId: true,
+    },
+  });
+
+  const connected = Boolean(user?.spotifyRefreshToken);
+  const playlistId = user?.spotifyNewHitsPlaylistId ?? null;
 
   return NextResponse.json({
     configured: spotifyUserOAuthConfigured(),
@@ -25,6 +30,6 @@ export async function GET() {
     connected,
     playlistFound: Boolean(playlistId),
     playlistId,
-    spotifyUserId: owner?.spotifyUserId ?? null,
+    spotifyUserId: user?.spotifyUserId ?? null,
   });
 }

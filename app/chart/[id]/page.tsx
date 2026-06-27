@@ -32,7 +32,7 @@ import {
 } from "@/lib/chart-list-layout";
 import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
-import { isMyTrlOwner } from "@/lib/mytrl-access";
+import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
 import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, PersonalDropoutEntry, TimelineItem, User } from "@/lib/types";
 
@@ -198,7 +198,7 @@ export default function ChartDetailPage() {
   const dropouts: PersonalDropoutEntry[] = dbPayload?.dropouts ?? [];
   const isDbChart = !!dbPayload;
   const isOwner = !!session?.user?.id && !!user?.id && session.user.id === user.id;
-  const canUseSpotifyImport = isMyTrlOwner(session?.user?.handle);
+  const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
 
   useEffect(() => {
     if (!user?.handle) return;

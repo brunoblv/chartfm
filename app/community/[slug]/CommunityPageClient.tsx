@@ -729,25 +729,39 @@ export function CommunityPageClient({
 
         {tab === "members" && (
           <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            {(() => {
+              const memberGrid = "40px 48px 1fr 100px 100px 110px";
+              const memberHeaders = ["#", "", "Membro", "Posts", "Curtidas", ""] as const;
+              const memberCellStyle = (col: number, row: "header" | "body"): React.CSSProperties => {
+                const pad = row === "header" ? "6px 8px" : "0 8px";
+                if (col === 0) return { padding: pad, textAlign: "center" };
+                if (col === 3 || col === 4) return { padding: pad, textAlign: "center", fontVariantNumeric: "tabular-nums" };
+                if (col === 5) return { padding: pad, textAlign: "right" };
+                return { padding: pad, minWidth: col === 2 ? 0 : undefined };
+              };
+
+              return (
+                <>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "40px 48px 1fr 120px 120px 110px",
+                gridTemplateColumns: memberGrid,
+                alignItems: "center",
                 padding: "10px 20px",
                 background: "rgba(0,0,0,0.02)",
                 borderBottom: "1px solid rgba(0,0,0,0.06)",
               }}
             >
-              {["#", "", "Membro", "Posts", "Curtidas", ""].map((h, i) => (
+              {memberHeaders.map((h, i) => (
                 <div
                   key={i}
                   style={{
+                    ...memberCellStyle(i, "header"),
                     fontSize: 11,
                     fontWeight: 600,
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
                     color: "#86868B",
-                    padding: "4px 8px",
                   }}
                 >
                   {h}
@@ -759,25 +773,25 @@ export function CommunityPageClient({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "40px 48px 1fr 120px 120px 110px",
+                  gridTemplateColumns: memberGrid,
                   alignItems: "center",
                   padding: "12px 20px",
                   borderBottom: "1px solid rgba(0,0,0,0.04)",
                 }}
               >
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>1</div>
-                <div style={{ padding: "0 6px" }}>
+                <div style={{ ...memberCellStyle(0, "body"), fontSize: 14, fontWeight: 700, color: "#86868B" }}>1</div>
+                <div style={memberCellStyle(1, "body")}>
                   <Avatar user={{ name: dbCommunity.ownerName ?? "Fundador", avatar: "#FA243C" }} size={36} />
                 </div>
-                <div style={{ padding: "0 10px" }}>
+                <div style={memberCellStyle(2, "body")}>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{dbCommunity.ownerName ?? "Fundador"}</div>
                   <Link href={`/profile/${dbCommunity.ownerHandle}`} style={{ fontSize: 12, color: "#86868B", textDecoration: "none" }}>
                     @{dbCommunity.ownerHandle}
                   </Link>
                 </div>
-                <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>—</div>
-                <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>—</div>
-                <div style={{ padding: "0 8px" }}>
+                <div style={{ ...memberCellStyle(3, "body"), fontSize: 14 }}>—</div>
+                <div style={{ ...memberCellStyle(4, "body"), fontSize: 14 }}>—</div>
+                <div style={memberCellStyle(5, "body")}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Dono</span>
                 </div>
               </div>
@@ -790,23 +804,23 @@ export function CommunityPageClient({
                   key={u.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "40px 48px 1fr 120px 120px 110px",
+                    gridTemplateColumns: memberGrid,
                     alignItems: "center",
                     padding: "12px 20px",
                     borderBottom: "1px solid rgba(0,0,0,0.04)",
                   }}
                 >
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{i + 1}</div>
-                  <div style={{ padding: "0 6px" }}>
+                  <div style={{ ...memberCellStyle(0, "body"), fontSize: 14, fontWeight: 700, color: "#86868B" }}>{i + 1}</div>
+                  <div style={memberCellStyle(1, "body")}>
                     <Avatar user={u} size={36} />
                   </div>
-                  <div style={{ padding: "0 10px" }}>
+                  <div style={memberCellStyle(2, "body")}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{u.name}</div>
                     <div style={{ fontSize: 12, color: "#86868B" }}>@{u.handle}</div>
                   </div>
-                  <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{[42, 38, 31, 27, 19, 12][i]}</div>
-                  <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{[1204, 987, 823, 654, 432, 287][i]}</div>
-                  <div style={{ padding: "0 8px" }}>
+                  <div style={{ ...memberCellStyle(3, "body"), fontSize: 14 }}>{[42, 38, 31, 27, 19, 12][i]}</div>
+                  <div style={{ ...memberCellStyle(4, "body"), fontSize: 14 }}>{[1204, 987, 823, 654, 432, 287][i]}</div>
+                  <div style={memberCellStyle(5, "body")}>
                     <button
                       type="button"
                       style={{ background: "#1D1D1F", color: "white", border: "none", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}
@@ -817,6 +831,9 @@ export function CommunityPageClient({
                 </div>
               ))
             )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>

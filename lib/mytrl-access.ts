@@ -20,6 +20,19 @@ export function isMyTrlOwner(handle: string | null | undefined): boolean {
   return handle === MYTRL_OWNER_HANDLE;
 }
 
+/** Handles com acesso a conectar Spotify, importar faixas e criar playlists de parada. */
+export const SPOTIFY_FEATURE_HANDLES = new Set([
+  MYTRL_OWNER_HANDLE,
+  "boofrnds",
+  "whatthelucas",
+  "romisk",
+]);
+
+export function canUseSpotifyFeatures(handle: string | null | undefined): boolean {
+  if (!handle) return false;
+  return SPOTIFY_FEATURE_HANDLES.has(handle.toLowerCase());
+}
+
 export function authorizeMyTrlCron(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return true;

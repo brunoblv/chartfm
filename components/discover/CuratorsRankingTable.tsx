@@ -81,8 +81,28 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
   const avatarSize = DESKTOP_COVER_SIZE;
   const gridColumns = desktopListGrid(
     desktopCoverGridColumn(avatarSize),
-    "64px 72px 88px 90px minmax(120px, auto)",
+    "56px 64px 96px 72px minmax(120px, auto)",
   );
+
+  const headerLabels = [
+    t("discover.colPos"),
+    "",
+    t("discover.colCurator"),
+    t("discover.colCuratorChart"),
+    t("discover.colCuratorLikes"),
+    t("discover.colCuratorComments"),
+    t("discover.colScore"),
+    "",
+  ] as const;
+
+  function cellStyle(col: number, row: "header" | "body"): React.CSSProperties {
+    const pad = row === "header" ? "6px 8px" : "0 8px";
+    if (col === 0) return { padding: pad, textAlign: "center" };
+    if (col === 2) return { padding: row === "header" ? "6px 8px" : "0 8px", minWidth: 0 };
+    if (col >= 3 && col <= 6) return { padding: pad, textAlign: "center" };
+    if (col === 7) return { padding: pad, textAlign: "right" };
+    return { padding: pad };
+  }
 
   if (isMobile) {
     return (
@@ -173,26 +193,17 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
         style={{
           display: "grid",
           gridTemplateColumns: gridColumns,
-          gap: 0,
-          padding: "0 20px",
+          alignItems: "center",
+          padding: "10px 20px",
           background: "var(--fill-inset)",
           borderBottom: "1px solid var(--divider)",
         }}
       >
-        {[
-          t("discover.colPos"),
-          "",
-          t("discover.colCurator"),
-          t("discover.colCuratorChart"),
-          t("discover.colCuratorLikes"),
-          t("discover.colCuratorComments"),
-          t("discover.colScore"),
-          "",
-        ].map((header, index) => (
+        {headerLabels.map((header, index) => (
           <div
             key={index}
             style={{
-              padding: "10px 8px",
+              ...cellStyle(index, "header"),
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.04em",
@@ -216,13 +227,15 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
             gap: 0,
           }}
         >
-          <DesktopPosCell position={entry.position}>
-            <MovementBadge status={entry.status} delta={entry.delta} compact />
-          </DesktopPosCell>
-          <Link href={`/profile/${entry.handle}`} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
+          <div style={cellStyle(0, "body")}>
+            <DesktopPosCell position={entry.position}>
+              <MovementBadge status={entry.status} delta={entry.delta} compact />
+            </DesktopPosCell>
+          </div>
+          <Link href={`/profile/${entry.handle}`} style={{ ...cellStyle(1, "body"), lineHeight: 0 }}>
             <Avatar user={{ name: entry.name, avatar: entry.avatarColor }} imageUrl={entry.image} size={avatarSize} />
           </Link>
-          <div style={{ minWidth: 0, padding: "0 12px" }}>
+          <div style={cellStyle(2, "body")}>
             <Link
               href={`/profile/${entry.handle}`}
               style={{
@@ -240,23 +253,23 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
             </Link>
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>@{entry.handle}</div>
           </div>
-          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", textAlign: "center" }}>
+          <div style={{ ...cellStyle(3, "body"), fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
             {entry.chartCount > 0 ? (
               <span style={{ fontWeight: 700, color: "var(--accent)" }}>✓</span>
             ) : (
               <span style={{ color: "var(--text-disabled)" }}>—</span>
             )}
           </div>
-          <div style={{ fontSize: 13, color: "var(--text)", fontVariantNumeric: "tabular-nums", padding: "0 8px", textAlign: "center" }}>
+          <div style={{ ...cellStyle(4, "body"), fontSize: 13, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
             {entry.likesGiven}
           </div>
-          <div style={{ fontSize: 13, color: "var(--text)", fontVariantNumeric: "tabular-nums", padding: "0 8px", textAlign: "center" }}>
+          <div style={{ ...cellStyle(5, "body"), fontSize: 13, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
             {entry.commentsWritten}
           </div>
-          <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px", textAlign: "center" }}>
+          <div style={{ ...cellStyle(6, "body"), fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)" }}>
             {entry.score}
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "0 8px" }}>
+          <div style={{ ...cellStyle(7, "body"), display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
             {entry.chartId ? (
               <Link href={`/chart/${entry.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
                 {t("discover.viewChart")}

@@ -22,7 +22,7 @@ import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
 import { describeLastfmImportOrder, describeLastfmImportPeriod } from "@/lib/lastfm-import";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
-import { isMyTrlOwner } from "@/lib/mytrl-access";
+import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -99,7 +99,7 @@ export default function CreatePage() {
   const paradaIdFromUrl = searchParams.get("paradaId");
   const isMobile = useIsMobile();
   const { data: session } = useSession();
-  const canUseSpotifyImport = isMyTrlOwner(session?.user?.handle);
+  const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [dbQuery, setDbQuery] = useState("");

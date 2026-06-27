@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appPathUrl, ensureCanonicalAppOrigin, getAppOrigin } from "@/lib/app-url";
-import { requireMyTrlSession } from "@/lib/mytrl-access-server";
+import { requireSpotifySession } from "@/lib/mytrl-access-server";
 import { prisma } from "@/lib/prisma";
 import { createSpotifyConnectState } from "@/lib/spotify-connect-oauth";
 import {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const canonicalRedirect = ensureCanonicalAppOrigin(req);
   if (canonicalRedirect) return canonicalRedirect;
 
-  const session = await requireMyTrlSession(req);
+  const session = await requireSpotifySession(req);
   if (!session?.user?.id) {
     const from = sanitizeFrom(new URL(req.url).searchParams.get("from")) ?? "/settings";
     const login = appPathUrl("/login");

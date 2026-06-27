@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appPathUrl, ensureCanonicalAppOrigin } from "@/lib/app-url";
-import { isMyTrlOwner } from "@/lib/mytrl-access";
+import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
 import { prisma } from "@/lib/prisma";
 import { parseSpotifyConnectState } from "@/lib/spotify-connect-oauth";
 import {
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
     where: { id: verified.userId },
     select: { id: true, handle: true, spotifyRefreshToken: true },
   });
-  if (!owner || !isMyTrlOwner(owner.handle)) {
+  if (!owner || !canUseSpotifyFeatures(owner.handle)) {
     return NextResponse.redirect(withSpotifyParam(returnTo, "invalid_state"));
   }
 

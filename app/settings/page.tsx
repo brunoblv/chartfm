@@ -11,7 +11,7 @@ import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
 import { youtubeConnectErrorMessage } from "@/lib/youtube-connect-oauth";
-import { isMyTrlOwner } from "@/lib/mytrl-access";
+import { canUseSpotifyFeatures, isMyTrlOwner } from "@/lib/mytrl-access";
 import { normalizeAvatarFile } from "@/lib/normalize-avatar-file";
 
 async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
@@ -79,7 +79,8 @@ type Tab = "perfil" | "parada" | "conta";
 export default function SettingsPage() {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
-  const canUseSpotifyImport = isMyTrlOwner(session?.user?.handle);
+  const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
+  const canUseYoutubePush = isMyTrlOwner(session?.user?.handle);
 
   function startOAuthConnect(path: string) {
     if (sessionStatus !== "authenticated" || !session?.user) {
@@ -791,7 +792,7 @@ export default function SettingsPage() {
                   </div>
                   )}
 
-                  {canUseSpotifyImport && (
+                  {canUseYoutubePush && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>YouTube @chartFM</span>
                     {youtubeConnected ? (

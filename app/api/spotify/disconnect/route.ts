@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireMyTrlSession } from "@/lib/mytrl-access-server";
+import { requireSpotifySession } from "@/lib/mytrl-access-server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
 // POST /api/spotify/disconnect — remove a conexão Spotify (somente @bruno)
 export async function POST() {
-  const session = await requireMyTrlSession();
+  const session = await requireSpotifySession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   }

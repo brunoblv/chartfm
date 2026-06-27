@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { getToken } from "next-auth/jwt";
 import { authOptions } from "@/lib/auth-options";
-import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
+import { MYTRL_OWNER_HANDLE, canUseSpotifyFeatures } from "@/lib/mytrl-access";
 
 export type MyTrlSession = {
   user: {
@@ -38,6 +38,42 @@ export async function requireMyTrlSession(req?: NextRequest): Promise<MyTrlSessi
 
   const session = await getServerSession(authOptions);
   if (!session?.user?.id || session.user.handle !== MYTRL_OWNER_HANDLE) return null;
+
+  return {
+    user: {
+      id: session.user.id,
+      handle: session.user.handle,
+      name: session.user.name ?? null,
+    },
+  };
+}
+
+function sessionFromTokenSpotify(token: {
+  prismaUserId?: string;
+  handle?: string;
+  name?: string | null;
+} | null): MyTrlSession | null {
+  if (!token?.prismaUserId || !canUseSpotifyFeatures(token.handle)) return null;
+  return {
+    user: {
+      id: token.prismaUserId,
+      handle: token.handle!,
+      name: token.name ?? null,
+    },
+  };
+}
+
+/** Sessão com acesso aos recursos Spotify (importação, playlists de parada, etc.). */
+export async function requireSpotifySession(req?: NextRequest): Promise<MyTrlSession | null> {
+  if (req) {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) return null;
+    const token = await getToken({ req, secret });
+    return sessionFromTokenSpotify(token);
+  }
+
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id || !canUseSpotifyFeatures(session.user.handle)) return null;
 
   return {
     user: {
