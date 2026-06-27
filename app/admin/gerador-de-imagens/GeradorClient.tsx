@@ -475,9 +475,37 @@ function MoveIcon({ move, u }: { move: string; u: number }) {
 function TplTop5({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   const u = fmt.w / 1080;
   const landscape = fmt.w > fmt.h;
-  const pad = Math.round((landscape ? 56 : 72) * u);
-  const tracks = d.tracks;
-  const rowH = (fmt.h - pad * 2 - Math.round(220 * u)) / 5;
+  const story = fmt.h > fmt.w * 1.4;
+  const trackCount = story ? 10 : 5;
+  const tracks = d.tracks.slice(0, trackCount);
+
+  const pad = Math.round((landscape ? 40 : story ? 52 : 72) * u);
+  const headerReserved = Math.round((landscape ? 44 : story ? 44 : 60) * u);
+  const titleReserved = Math.round((landscape ? 68 : story ? 72 : 130) * u);
+  const footerReserved = Math.round((landscape ? 28 : story ? 28 : 50) * u);
+  const listH = fmt.h - pad * 2 - headerReserved - titleReserved - footerReserved;
+  const rowH = listH / Math.max(tracks.length, 1);
+
+  const rankSize = landscape ? Math.round(40 * u) : story ? Math.round(34 * u) : Math.round(58 * u);
+  const rankW = landscape ? Math.round(46 * u) : story ? Math.round(40 * u) : Math.round(68 * u);
+  const coverSize = Math.min(
+    landscape ? Math.round(64 * u) : story ? Math.round(54 * u) : Math.round(90 * u),
+    Math.round(rowH * 0.82),
+  );
+  const titleSize = landscape ? Math.round(28 * u) : story ? Math.round(24 * u) : Math.round(36 * u);
+  const artistSize = landscape ? Math.round(20 * u) : story ? Math.round(17 * u) : Math.round(25 * u);
+  const playsSize = landscape ? Math.round(22 * u) : story ? Math.round(19 * u) : Math.round(28 * u);
+  const ptsSize = landscape ? Math.round(15 * u) : story ? Math.round(13 * u) : Math.round(18 * u);
+  const rowPadY = landscape ? Math.round(5 * u) : story ? Math.round(3 * u) : Math.round(16 * u);
+  const rowGap = landscape ? Math.round(14 * u) : story ? Math.round(10 * u) : Math.round(22 * u);
+  const moveW = landscape ? Math.round(36 * u) : story ? Math.round(30 * u) : Math.round(44 * u);
+  const moveU = landscape ? u * 0.82 : story ? u * 0.78 : u;
+  const coverRadius = Math.round((landscape ? 10 : story ? 9 : 12) * u);
+  const titleMargin = landscape
+    ? `${Math.round(10 * u)}px 0 ${Math.round(8 * u)}px`
+    : story
+      ? `${Math.round(12 * u)}px 0 ${Math.round(8 * u)}px`
+      : `${Math.round(26 * u)}px 0 ${Math.round(18 * u)}px`;
 
   return (
     <ChartBg fmt={fmt}>
@@ -485,43 +513,51 @@ function TplTop5({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
         <ChartHeader
           fmt={fmt}
           u={u}
-          right={<span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B" }}>{d.week}</span>}
+          right={<span style={{ fontSize: Math.round((landscape || story ? 17 : 20) * u), fontWeight: 700, color: "#86868B" }}>{d.week}</span>}
         />
 
-        <div style={{ margin: `${Math.round(26 * u)}px 0 ${Math.round(18 * u)}px` }}>
-          <SEyebrow u={u} color="#7B5EDB" bg="rgba(123,94,219,0.12)">🌎 Parada Global</SEyebrow>
-          <div style={{ fontSize: Math.round((landscape ? 58 : 72) * u), fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.0, marginTop: Math.round(16 * u) }}>
-            Top 5 da semana
+        <div style={{ margin: titleMargin }}>
+          <SEyebrow u={landscape || story ? u * 0.82 : u} color="#7B5EDB" bg="rgba(123,94,219,0.12)">🌎 Parada Global</SEyebrow>
+          <div style={{
+            fontSize: Math.round((landscape ? 44 : story ? 52 : 72) * u),
+            fontWeight: 800,
+            letterSpacing: "-0.04em",
+            lineHeight: 1.0,
+            marginTop: Math.round((landscape || story ? 8 : 16) * u),
+          }}>
+            {story ? "Top 10 da semana" : "Top 5 da semana"}
           </div>
         </div>
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: landscape || story ? "flex-start" : "center", minHeight: 0 }}>
           {tracks.map((t, i) => (
             <div key={i} style={{
-              display: "flex", alignItems: "center", gap: Math.round(22 * u),
-              padding: `${Math.round(16 * u)}px 0`,
+              display: "flex", alignItems: "center", gap: rowGap,
+              height: Math.round(rowH),
+              boxSizing: "border-box",
+              padding: `${rowPadY}px 0`,
               borderBottom: i < tracks.length - 1 ? "1.5px solid rgba(0,0,0,0.07)" : "none",
             }}>
-              <span style={{ fontSize: Math.round(58 * u), fontWeight: 800, width: Math.round(68 * u), textAlign: "center", flexShrink: 0, color: i === 0 ? "#FA243C" : "rgba(0,0,0,0.75)", fontVariantNumeric: "tabular-nums" }}>
+              <span style={{ fontSize: rankSize, fontWeight: 800, width: rankW, textAlign: "center", flexShrink: 0, color: i === 0 ? "#FA243C" : "rgba(0,0,0,0.75)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                 {t.rank}
               </span>
-              <SCover title={t.title} size={Math.min(Math.round(90 * u), rowH * 0.88)} radius={Math.round(12 * u)} fontScale={0.42} imageUrl={t.coverUrl} />
+              <SCover title={t.title} size={coverSize} radius={coverRadius} fontScale={0.42} imageUrl={t.coverUrl} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: Math.round(36 * u), fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</div>
-                <div style={{ fontSize: Math.round(25 * u), fontWeight: 500, color: "#86868B", marginTop: Math.round(3 * u) }}>{t.artist}</div>
+                <div style={{ fontSize: titleSize, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.1 }}>{t.title}</div>
+                <div style={{ fontSize: artistSize, fontWeight: 500, color: "#86868B", marginTop: Math.round((landscape || story ? 2 : 3) * u), lineHeight: 1.1 }}>{t.artist}</div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontSize: Math.round(28 * u), fontWeight: 700, color: "#1D1D1F", fontVariantNumeric: "tabular-nums" }}>{t.plays}</div>
-                <div style={{ fontSize: Math.round(18 * u), color: "#86868B", marginTop: Math.round(2 * u) }}>pts</div>
+                <div style={{ fontSize: playsSize, fontWeight: 700, color: "#1D1D1F", fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{t.plays}</div>
+                <div style={{ fontSize: ptsSize, color: "#86868B", marginTop: Math.round(1 * u), lineHeight: 1.1 }}>pts</div>
               </div>
-              <div style={{ width: Math.round(44 * u), display: "flex", justifyContent: "center", flexShrink: 0 }}>
-                <MoveIcon move={t.move} u={u} />
+              <div style={{ width: moveW, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                <MoveIcon move={t.move} u={moveU} />
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ textAlign: "center", fontSize: Math.round(24 * u), fontWeight: 700, color: "#86868B", marginTop: Math.round(18 * u) }}>
+        <div style={{ textAlign: "center", fontSize: Math.round((landscape || story ? 20 : 24) * u), fontWeight: 700, color: "#86868B", marginTop: Math.round((landscape ? 6 : story ? 8 : 18) * u) }}>
           chartfm.com.br/global
         </div>
       </div>
@@ -1259,7 +1295,7 @@ export function GeradorClient({ data }: { data: GeradorData }) {
                   <input style={inputStyle} value={week} onChange={(e) => setWeek(e.target.value)} />
                 </Field>
                 <div style={{ background: "var(--fill)", borderRadius: 11, padding: "12px 14px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  Mostra o Top 5 da Parada Global atual. As músicas vêm do ranking ao vivo.
+                  Mostra o <b style={{ color: "var(--text)" }}>Top 5</b> da Parada Global (ou <b style={{ color: "var(--text)" }}>Top 10</b> no formato Story). As músicas vêm do ranking ao vivo.
                 </div>
               </>
             )}

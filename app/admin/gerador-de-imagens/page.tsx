@@ -159,8 +159,8 @@ async function fetchGeradorData(): Promise<GeradorData> {
     });
   }
 
-  // Build top 5 global from weekly snapshot
-  const top5: GeradorData["top5"] = weekSnapshot.payload.weeklySongs.slice(0, 5).map((e) => {
+  // Build top 10 global from weekly snapshot (story uses 10; other formats use 5)
+  const top5: GeradorData["top5"] = weekSnapshot.payload.weeklySongs.slice(0, 10).map((e) => {
     const move =
       e.status === "up" ? "up"
       : e.status === "down" ? "down"
