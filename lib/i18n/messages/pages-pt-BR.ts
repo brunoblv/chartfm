@@ -204,7 +204,7 @@ export const pagesPtBR = {
     curatorsScoringFrozen:
       "O ranking é consolidado toda terça-feira às 6h00 (BRT), junto com a Parada Global. As estatísticas de subida, semanas no top, pico e #1s são acumuladas semana a semana.",
     curatorsEmpty:
-      "O ranking desta semana ainda não está disponível. Ele é publicado toda terça-feira às 6h (horário de Brasília).",
+      "O ranking de pontos de interação desta semana ainda não está disponível. Participe publicando paradas, curtindo e comentando — a consolidação é toda terça às 6h (horário de Brasília).",
     colCurator: "Fã",
     colScore: "Pts",
     genreSongs: "Músicas do gênero • {genre}",

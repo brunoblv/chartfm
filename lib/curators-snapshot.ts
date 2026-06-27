@@ -238,6 +238,32 @@ async function resolveWeekMeta(weekIndex: number): Promise<{ weekLabel: string; 
   };
 }
 
+export async function saveCuratorsSnapshotForWeek(weekIndex: number) {
+  const { weekLabel, dateRange } = await resolveWeekMeta(weekIndex);
+  const entries = await computeCuratorsSnapshotData(weekIndex);
+  const saved = await prisma.curatorsSnapshot.upsert({
+    where: { weekIndex },
+    update: {
+      weekLabel,
+      dateRange,
+      entries: entries as unknown as object,
+      frozenAt: new Date(),
+    },
+    create: {
+      weekIndex,
+      weekLabel,
+      dateRange,
+      entries: entries as unknown as object,
+    },
+  });
+  return {
+    weekIndex,
+    weekLabel: saved.weekLabel,
+    dateRange: saved.dateRange,
+    entries: saved.entries as CuratorRankingEntry[],
+  };
+}
+
 export async function getOrCreateCuratorsSnapshot(now: Date = new Date()) {
   const rankingWeek = getRankingWeekReference(now);
   const existing = await prisma.curatorsSnapshot.findUnique({
@@ -253,24 +279,8 @@ export async function getOrCreateCuratorsSnapshot(now: Date = new Date()) {
     };
   }
 
-  const { weekLabel, dateRange } = await resolveWeekMeta(rankingWeek.weekIndex);
-  const entries = await computeCuratorsSnapshotData(rankingWeek.weekIndex);
-  const created = await prisma.curatorsSnapshot.create({
-    data: {
-      weekIndex: rankingWeek.weekIndex,
-      weekLabel,
-      dateRange,
-      entries: entries as unknown as object,
-    },
-  });
-
-  return {
-    weekIndex: rankingWeek.weekIndex,
-    weekLabel: created.weekLabel,
-    dateRange: created.dateRange,
-    entries: created.entries as CuratorRankingEntry[],
-    created: true,
-  };
+  const saved = await saveCuratorsSnapshotForWeek(rankingWeek.weekIndex);
+  return { ...saved, created: true };
 }
 
 export async function getLatestCuratorsSnapshot(maxWeekIndex?: number) {
