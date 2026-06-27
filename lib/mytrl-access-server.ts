@@ -37,12 +37,13 @@ export async function requireMyTrlSession(req?: NextRequest): Promise<MyTrlSessi
   }
 
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id || session.user.handle !== MYTRL_OWNER_HANDLE) return null;
+  const handle = session?.user?.handle;
+  if (!session?.user?.id || handle !== MYTRL_OWNER_HANDLE) return null;
 
   return {
     user: {
       id: session.user.id,
-      handle: session.user.handle,
+      handle,
       name: session.user.name ?? null,
     },
   };
@@ -73,12 +74,13 @@ export async function requireSpotifySession(req?: NextRequest): Promise<MyTrlSes
   }
 
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id || !canUseSpotifyFeatures(session.user.handle)) return null;
+  const handle = session?.user?.handle;
+  if (!session?.user?.id || !handle || !canUseSpotifyFeatures(handle)) return null;
 
   return {
     user: {
       id: session.user.id,
-      handle: session.user.handle,
+      handle,
       name: session.user.name ?? null,
     },
   };
