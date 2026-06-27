@@ -202,10 +202,13 @@ export const pagesEn = {
     curatorsScoringLike: "Each like given on weekly charts: +{points} points",
     curatorsScoringComment: "Each comment written on weekly charts: +{points} points",
     curatorsScoringFrozen:
-      "The ranking is consolidated every Tuesday at 6:00 AM (BRT), along with the Global Chart. Rise, weeks on chart, peak, and #1 stats accumulate week over week.",
+      "The ranking is consolidated every Tuesday at 6:00 AM (BRT), along with the Global Chart.",
     curatorsEmpty:
       "This week's interaction points ranking is not available yet. Participate by publishing charts, liking and commenting — consolidated every Tuesday at 6:00 AM (Brasília time).",
     colCurator: "Fan",
+    colCuratorChart: "Chart",
+    colCuratorLikes: "Likes",
+    colCuratorComments: "Comments",
     colScore: "Pts",
     genreSongs: "Songs in genre • {genre}",
     genreList: "Song list for {genre}",

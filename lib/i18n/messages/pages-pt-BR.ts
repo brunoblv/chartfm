@@ -202,10 +202,13 @@ export const pagesPtBR = {
     curatorsScoringLike: "Cada curtida dada em paradas da semana: +{points} pontos",
     curatorsScoringComment: "Cada comentário escrito em paradas da semana: +{points} pontos",
     curatorsScoringFrozen:
-      "O ranking é consolidado toda terça-feira às 6h00 (BRT), junto com a Parada Global. As estatísticas de subida, semanas no top, pico e #1s são acumuladas semana a semana.",
+      "O ranking é consolidado toda terça-feira às 6h00 (BRT), junto com a Parada Global.",
     curatorsEmpty:
       "O ranking de pontos de interação desta semana ainda não está disponível. Participe publicando paradas, curtindo e comentando — a consolidação é toda terça às 6h (horário de Brasília).",
     colCurator: "Fã",
+    colCuratorChart: "Parada",
+    colCuratorLikes: "Curtidas",
+    colCuratorComments: "Comentários",
     colScore: "Pts",
     genreSongs: "Músicas do gênero • {genre}",
     genreList: "Lista de músicas de {genre}",

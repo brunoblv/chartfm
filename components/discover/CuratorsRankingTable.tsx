@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Star } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { MovementBadge } from "@/components/ui/MovementBadge";
@@ -14,7 +13,6 @@ import {
   desktopCoverGridColumn,
   desktopListGrid,
 } from "@/lib/chart-list-layout";
-import { chartStatsLabels } from "@/lib/chart-cadence";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { CuratorRankingEntry } from "@/lib/curators-snapshot";
@@ -60,7 +58,6 @@ type Props = {
 export function CuratorsRankingTable({ entries, followingIds }: Props) {
   const { t } = useTranslations();
   const isMobile = useIsMobile();
-  const statsLabels = chartStatsLabels(false);
   const followingSet = new Set(followingIds);
 
   if (entries.length === 0) {
@@ -82,7 +79,10 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
   }
 
   const avatarSize = DESKTOP_COVER_SIZE;
-  const gridColumns = desktopListGrid(desktopCoverGridColumn(avatarSize), "80px 80px 60px 90px 72px minmax(120px, auto)");
+  const gridColumns = desktopListGrid(
+    desktopCoverGridColumn(avatarSize),
+    "64px 72px 88px 90px minmax(120px, auto)",
+  );
 
   if (isMobile) {
     return (
@@ -148,10 +148,9 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" }}>
-              <StatPill compact label={statsLabels.prevPeriodShort} value={entry.prevPos ?? "—"} />
-              <StatPill compact label={statsLabels.tenurePill} value={entry.weeks} />
-              <StatPill compact label="PICO" value={entry.peak} accent={entry.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill compact label="#1s" value={entry.numberOnes > 0 ? `${entry.numberOnes}x` : "—"} />
+              <StatPill compact label={t("discover.colCuratorChart")} value={entry.chartCount > 0 ? "✓" : "—"} />
+              <StatPill compact label={t("discover.colCuratorLikes")} value={entry.likesGiven} />
+              <StatPill compact label={t("discover.colCuratorComments")} value={entry.commentsWritten} />
               <StatPill compact label={t("discover.colScore")} value={entry.score} accent="var(--accent)" />
             </div>
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
@@ -184,10 +183,9 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
           t("discover.colPos"),
           "",
           t("discover.colCurator"),
-          statsLabels.prevPeriodShort,
-          statsLabels.tenureShort,
-          "Pico",
-          "#1s",
+          t("discover.colCuratorChart"),
+          t("discover.colCuratorLikes"),
+          t("discover.colCuratorComments"),
           t("discover.colScore"),
           "",
         ].map((header, index) => (
@@ -242,30 +240,20 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
             </Link>
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>@{entry.handle}</div>
           </div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-            {entry.prevPos ?? "—"}
-          </div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-            {entry.weeks}
-          </div>
-          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3 }}>
-            {entry.peak === 1 && (
-              <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}>
-                <Star size={12} color="currentColor" fill="currentColor" />
-              </span>
-            )}
-            {entry.peak}
-          </div>
-          <div style={{ padding: "0 8px" }}>
-            {entry.numberOnes > 0 ? (
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
-                {entry.numberOnes}x
-              </div>
+          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", textAlign: "center" }}>
+            {entry.chartCount > 0 ? (
+              <span style={{ fontWeight: 700, color: "var(--accent)" }}>✓</span>
             ) : (
-              <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>—</div>
+              <span style={{ color: "var(--text-disabled)" }}>—</span>
             )}
           </div>
-          <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
+          <div style={{ fontSize: 13, color: "var(--text)", fontVariantNumeric: "tabular-nums", padding: "0 8px", textAlign: "center" }}>
+            {entry.likesGiven}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--text)", fontVariantNumeric: "tabular-nums", padding: "0 8px", textAlign: "center" }}>
+            {entry.commentsWritten}
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px", textAlign: "center" }}>
             {entry.score}
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, padding: "0 8px" }}>
