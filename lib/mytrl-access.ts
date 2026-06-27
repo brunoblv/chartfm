@@ -26,6 +26,7 @@ export const SPOTIFY_FEATURE_HANDLES = new Set([
   "boofrnds",
   "whatthelucas",
   "romulolima22",
+  "leoxavier",
 ]);
 
 export function canUseSpotifyFeatures(handle: string | null | undefined): boolean {

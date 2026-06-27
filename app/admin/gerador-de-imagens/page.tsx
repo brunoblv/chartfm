@@ -1,5 +1,6 @@
 import { AlbumClubPhase } from "@prisma/client";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
+import { COPA_DAY_LABELS } from "@/lib/copa";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { Shell } from "@/components/layout/Shell";
@@ -32,7 +33,7 @@ function fmtDeadline(d: Date): string {
 }
 
 async function fetchGeradorData(): Promise<GeradorData> {
-  const [activeRound, clubThemesRows, reviewGroups, recentReviews, weekSnapshot] = await Promise.all([
+  const [activeRound, clubThemesRows, reviewGroups, recentReviews, weekSnapshot, copaEdition] = await Promise.all([
     prisma.albumClubRound.findFirst({
       where: { phase: { not: AlbumClubPhase.COMPLETED } },
       orderBy: { number: "desc" },
@@ -105,6 +106,11 @@ async function fetchGeradorData(): Promise<GeradorData> {
     }),
 
     getOrCreateRankingWeekSnapshot(),
+
+    prisma.copaEdition.findFirst({
+      orderBy: [{ year: "desc" }, { createdAt: "desc" }],
+      select: { name: true, year: true },
+    }),
   ]);
 
   // Build ratable albums (>= 2 reviews)
@@ -201,5 +207,8 @@ async function fetchGeradorData(): Promise<GeradorData> {
     ratable,
     top5,
     posts,
+    copaName: copaEdition?.name ?? "Copa ChartFM",
+    copaYear: copaEdition?.year ?? new Date().getFullYear(),
+    copaStages: [...COPA_DAY_LABELS],
   };
 }

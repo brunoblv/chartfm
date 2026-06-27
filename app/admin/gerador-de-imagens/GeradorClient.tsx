@@ -15,6 +15,9 @@ export type GeradorData = {
   ratable: { id: number; title: string; artist: string; year: string; score: number; reviewCount: number; coverUrl?: string | null }[];
   top5: { rank: number; title: string; artist: string; plays: string; move: string; coverUrl?: string | null }[];
   posts: { album: string; artist: string; score: number; reviewer: string; excerpt: string; coverUrl?: string | null }[];
+  copaName: string;
+  copaYear: number;
+  copaStages: string[];
 };
 
 export type GeradorAlbum = GeradorData["ratable"][number];
@@ -36,6 +39,7 @@ const TYPES = [
   { id: "top5",       label: "Top 5 Global",       desc: "Parada da semana",                  emoji: "🌎", accent: "#B89CFF" },
   { id: "posts",      label: "Posts",              desc: "Reviews em destaque da comunidade", emoji: "📝", accent: "#FA243C" },
   { id: "twitter",    label: "Twitter / X",        desc: "Post formato tweet",                emoji: "🐦", accent: "#1D9BF0" },
+  { id: "copa-etapa", label: "Copa · Etapa",       desc: "Início de etapa — convite para votar", emoji: "🏆", accent: "#2EB550" },
 ];
 
 type TemplateData = {
@@ -49,6 +53,9 @@ type TemplateData = {
   week: string;
   posts: GeradorData["posts"];
   postsTitle: string;
+  copaName: string;
+  copaYear: string;
+  copaStage: string;
 };
 
 // ── Utility functions ─────────────────────────────────────────────────────────
@@ -668,7 +675,106 @@ function TplPosts({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   );
 }
 
-// ── Template 7: Twitter / X ──────────────────────────────────────────────────
+// ── Template 7: Copa · Início de etapa ───────────────────────────────────────
+
+function CopaTrophyIcon({ u }: { u: number }) {
+  const s = Math.round(120 * u);
+  return (
+    <svg width={s} height={s} viewBox="0 0 120 120" fill="none" style={{ flexShrink: 0 }}>
+      <circle cx="60" cy="60" r="56" fill="rgba(46,181,80,0.12)" />
+      <path
+        d="M38 28h44v8c0 14-6 26-16 32v14h-12V68c-10-6-16-18-16-32v-8Z"
+        fill="url(#copaTrophy)"
+        stroke="#2EB550"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      <path d="M32 32H28c0 10 4 18 12 22M88 32h4c0 10-4 18-12 22" stroke="#2EB550" strokeWidth="2.5" strokeLinecap="round" />
+      <rect x="42" y="86" width="36" height="8" rx="4" fill="#2EB550" opacity="0.85" />
+      <defs>
+        <linearGradient id="copaTrophy" x1="38" y1="28" x2="82" y2="68">
+          <stop offset="0%" stopColor="#FFD426" />
+          <stop offset="100%" stopColor="#E8A800" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function TplCopaEtapa({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
+  const u = fmt.w / 1080;
+  const landscape = fmt.w > fmt.h;
+  const pad = Math.round((landscape ? 56 : 72) * u);
+
+  return (
+    <ChartBg fmt={fmt}>
+      <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={
+            <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em" }}>
+              {d.copaName}{d.copaYear ? ` ${d.copaYear}` : ""}
+            </span>
+          }
+        />
+
+        <div style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: landscape ? "row" : "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: landscape ? Math.round(48 * u) : Math.round(28 * u),
+        }}>
+          {!landscape && <CopaTrophyIcon u={u} />}
+
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: Math.round(22 * u), textAlign: landscape ? "left" : "center", alignItems: landscape ? "flex-start" : "center" }}>
+            <SEyebrow u={u} color="#1A7A34" bg="rgba(46,181,80,0.14)">🏆 Etapa aberta · Vote agora</SEyebrow>
+
+            <div style={{ fontSize: Math.round((landscape ? 58 : 68) * u), fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 0.98, color: "#1D1D1F" }}>
+              Começou!
+            </div>
+
+            <div style={{
+              fontSize: Math.round((landscape ? 44 : 52) * u),
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.05,
+              color: "#FA243C",
+              maxWidth: landscape ? Math.round(620 * u) : undefined,
+            }}>
+              {d.copaStage}
+            </div>
+
+            <div style={{
+              fontSize: Math.round((landscape ? 28 : 32) * u),
+              fontWeight: 500,
+              color: "#3A3A3C",
+              lineHeight: 1.4,
+              maxWidth: Math.round(820 * u),
+            }}>
+              Os jogos estão <b style={{ color: "#1D1D1F" }}>ao vivo</b>. Entre na Copa, vote nos confrontos e ajude seu time a avançar no torneio!
+            </div>
+          </div>
+
+          {landscape && <CopaTrophyIcon u={u * 0.9} />}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1.5px solid rgba(0,0,0,0.08)", paddingTop: Math.round(32 * u) }}>
+          <div style={{ display: "flex", alignItems: "center", gap: Math.round(10 * u), fontSize: Math.round(26 * u), fontWeight: 700, color: "#1D1D1F" }}>
+            <span style={{ fontSize: Math.round(28 * u) }}>⚽</span> Jogos ao vivo agora
+          </div>
+          <div style={{ fontSize: Math.round(26 * u), fontWeight: 800, background: "#2EB550", color: "#fff", borderRadius: 9999, padding: `${Math.round(14 * u)}px ${Math.round(30 * u)}px` }}>
+            chartfm.com.br/copa
+          </div>
+        </div>
+      </div>
+    </ChartBg>
+  );
+}
+
+// ── Template 8: Twitter / X ──────────────────────────────────────────────────
 
 function XLogo({ size, color = "currentColor" }: { size: number; color?: string }) {
   return (
@@ -815,6 +921,7 @@ const TEMPLATE_MAP: Record<string, (props: { fmt: SocialFmt; d: TemplateData }) 
   top5:       TplTop5,
   posts:      TplPosts,
   twitter:    TplTwitter,
+  "copa-etapa": TplCopaEtapa,
 };
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
@@ -1105,6 +1212,9 @@ export function GeradorClient({ data }: { data: GeradorData }) {
     return `Semana 1–7 ${m[now.getMonth()]} ${now.getFullYear()}`;
   });
   const [postsTitle, setPostsTitle] = useState("O que a\ncomunidade\nestá curtindo");
+  const [copaName, setCopaName] = useState(data.copaName);
+  const [copaYear, setCopaYear] = useState(String(data.copaYear));
+  const [copaStage, setCopaStage] = useState(data.copaStages[0] ?? "Grupos · Rodada 1 (A–H)");
   const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
   const isMobile = useIsMobile();
 
@@ -1136,6 +1246,9 @@ export function GeradorClient({ data }: { data: GeradorData }) {
     week,
     posts: data.posts,
     postsTitle,
+    copaName,
+    copaYear,
+    copaStage,
   };
 
   const Tpl = TEMPLATE_MAP[type];
@@ -1320,6 +1433,27 @@ export function GeradorClient({ data }: { data: GeradorData }) {
               <div style={{ background: "var(--fill)", borderRadius: 11, padding: "12px 14px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
                 Exibe os <b style={{ color: "var(--text)" }}>2 vencedores</b> da rodada num card estilo tweet. Use o formato <b style={{ color: "var(--text)" }}>Paisagem 16:9</b> para melhor resultado.
               </div>
+            )}
+
+            {type === "copa-etapa" && (
+              <>
+                <Field label="Nome da copa">
+                  <input style={inputStyle} value={copaName} onChange={(e) => setCopaName(e.target.value)} placeholder="Copa ChartFM" />
+                </Field>
+                <Field label="Ano">
+                  <input style={inputStyle} value={copaYear} onChange={(e) => setCopaYear(e.target.value)} placeholder="2026" />
+                </Field>
+                <Field label="Etapa">
+                  <select value={copaStage} onChange={(e) => setCopaStage(e.target.value)} style={selectStyle}>
+                    {data.copaStages.map((s) => (
+                      <option key={s} value={s} style={{ background: "#222" }}>{s}</option>
+                    ))}
+                  </select>
+                </Field>
+                <div style={{ background: "var(--fill)", borderRadius: 11, padding: "12px 14px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                  Anuncia o <b style={{ color: "var(--text)" }}>início de uma etapa</b> da Copa e convida a votar nos jogos ao vivo. Ideal para Story ou Quadrado.
+                </div>
+              </>
             )}
           </div>
         </div>
