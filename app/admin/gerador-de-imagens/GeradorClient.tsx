@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { scoreBadgeColor, scoreLabel } from "@/lib/album-score";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export type GeradorData = {
   theme: string;
@@ -1068,18 +1069,20 @@ export function GeradorClient({ data }: { data: GeradorData }) {
     return `Semana 1–7 ${m[now.getMonth()]} ${now.getFullYear()}`;
   });
   const [postsTitle, setPostsTitle] = useState("O que a\ncomunidade\nestá curtindo");
+  const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
+  const isMobile = useIsMobile();
 
   const fmt = SOCIAL_FORMATS.find((f) => f.id === fmtId)!;
   const cur = TYPES.find((t) => t.id === type)!;
 
   useEffect(() => {
     function fit() {
-      if (previewCol.current) setWrapW(previewCol.current.clientWidth - 80);
+      if (previewCol.current) setWrapW(previewCol.current.clientWidth - (isMobile ? 32 : 80));
     }
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, []);
+  }, [isMobile, mobileTab]);
 
   const scale = Math.min(wrapW / fmt.w, 620 / fmt.h);
 
@@ -1164,25 +1167,8 @@ export function GeradorClient({ data }: { data: GeradorData }) {
     "--accent":         "#FA243C",
   } as React.CSSProperties;
 
-  return (
-    <div style={{ ...vars, display: "flex", minHeight: "100vh", background: "#0C0C0E" }}>
-      {/* LEFT: controls */}
-      <div style={{ width: 380, flexShrink: 0, background: "var(--panel)", borderRight: "1px solid var(--divider)", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0 }}>
-        <div style={{ padding: "22px 24px", borderBottom: "1px solid var(--divider)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: "var(--accent)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff">
-                <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em" }}>Gerador de Imagens</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Admin · CriticsFM</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+  const controlsContent = (
+        <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px" : "20px 24px" }}>
           {/* Type picker */}
           <label style={{ display: "block", fontSize: 11, fontWeight: 600, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 7 }}>
             Tipo de imagem
@@ -1301,58 +1287,76 @@ export function GeradorClient({ data }: { data: GeradorData }) {
             )}
           </div>
         </div>
-      </div>
+  );
 
-      {/* RIGHT: preview */}
-      <div ref={previewCol} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: "100vh" }}>
+  const previewContent = (
+      <div ref={previewCol} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", minHeight: isMobile ? 420 : 560 }}>
         {/* Toolbar */}
-        <div style={{ padding: "16px 28px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 16, background: "rgba(12,12,14,0.8)", backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 10 }}>
-          <div style={{ display: "flex", gap: 5, background: "var(--fill)", padding: 4, borderRadius: 11 }}>
+        <div style={{
+          padding: isMobile ? "12px 14px" : "16px 28px",
+          borderBottom: "1px solid var(--divider)",
+          display: "flex",
+          alignItems: isMobile ? "stretch" : "center",
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? 10 : 16,
+          background: "rgba(12,12,14,0.8)",
+          backdropFilter: "blur(12px)",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}>
+          <div style={{ display: "flex", gap: 5, background: "var(--fill)", padding: 4, borderRadius: 11, flexWrap: "wrap" }}>
             {SOCIAL_FORMATS.map((f) => (
               <button key={f.id} onClick={() => setFmtId(f.id)} title={f.sub} style={{
-                padding: "8px 14px", borderRadius: 8, border: "none",
+                padding: isMobile ? "7px 10px" : "8px 14px", borderRadius: 8, border: "none",
                 background: fmtId === f.id ? "var(--panel-2)" : "transparent",
                 color: fmtId === f.id ? "var(--text)" : "var(--text-muted)",
                 cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
                 boxShadow: fmtId === f.id ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
+                flex: isMobile ? "1 1 calc(50% - 4px)" : undefined,
+                minWidth: isMobile ? 0 : undefined,
               }}>
-                <span style={{ fontSize: 12.5, fontWeight: 700 }}>{f.label}</span>
+                <span style={{ fontSize: isMobile ? 11.5 : 12.5, fontWeight: 700 }}>{f.label}</span>
                 <span style={{ fontSize: 10, opacity: 0.7 }}>{f.ratio}</span>
               </button>
             ))}
           </div>
-          <div style={{ flex: 1 }} />
-          <div style={{ fontSize: 12, color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>
-            {fmt.w} × {fmt.h}px
+          <div style={{ display: "flex", alignItems: "center", gap: 12, width: isMobile ? "100%" : undefined }}>
+            {!isMobile && <div style={{ flex: 1 }} />}
+            <div style={{ fontSize: 12, color: "var(--text-dim)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+              {fmt.w} × {fmt.h}px
+            </div>
+            <button
+              type="button"
+              onClick={exportPNG}
+              disabled={busy}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "10px 20px", borderRadius: 10, border: "none",
+                background: busy ? "var(--fill-2)" : "var(--accent)",
+                color: "#fff", fontSize: 13.5, fontWeight: 700,
+                cursor: busy ? "default" : "pointer",
+                boxShadow: busy ? "none" : "0 2px 12px rgba(250,36,60,0.35)",
+                flex: isMobile ? 1 : undefined,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {busy ? "Gerando…" : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Baixar PNG @2x
+                </>
+              )}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={exportPNG}
-            disabled={busy}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "10px 20px", borderRadius: 10, border: "none",
-              background: busy ? "var(--fill-2)" : "var(--accent)",
-              color: "#fff", fontSize: 13.5, fontWeight: 700,
-              cursor: busy ? "default" : "pointer",
-              boxShadow: busy ? "none" : "0 2px 12px rgba(250,36,60,0.35)",
-            }}
-          >
-            {busy ? "Gerando…" : (
-              <>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Baixar PNG @2x
-              </>
-            )}
-          </button>
         </div>
 
         {/* Stage */}
-        <div style={{ flex: 1, overflow: "auto", display: "grid", placeItems: "center", padding: 40, backgroundImage: "radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px)", backgroundSize: "22px 22px" }}>
+        <div style={{ flex: 1, overflow: "auto", display: "grid", placeItems: "center", padding: isMobile ? 16 : 40, backgroundImage: "radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px)", backgroundSize: "22px 22px" }}>
           <div style={{ width: fmt.w * scale, height: fmt.h * scale, borderRadius: Math.max(6, 24 * scale), overflow: "hidden", boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)" }}>
             <div ref={stageRef} style={{ width: fmt.w, height: fmt.h, transform: `scale(${scale})`, transformOrigin: "top left" }}>
               <Tpl fmt={fmt} d={d} />
@@ -1360,6 +1364,71 @@ export function GeradorClient({ data }: { data: GeradorData }) {
           </div>
         </div>
       </div>
+  );
+
+  const mobileTabs = (
+    <div style={{ display: "flex", gap: 6, padding: "12px 12px 0", background: "var(--panel)" }}>
+      {(["controls", "preview"] as const).map((tab) => (
+        <button
+          key={tab}
+          type="button"
+          onClick={() => setMobileTab(tab)}
+          style={{
+            flex: 1,
+            padding: "10px 12px",
+            borderRadius: 10,
+            border: "none",
+            background: mobileTab === tab ? "var(--fill-2)" : "var(--fill)",
+            color: mobileTab === tab ? "var(--text)" : "var(--text-muted)",
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          {tab === "controls" ? "Controles" : "Preview"}
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      ...vars,
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      minHeight: isMobile ? undefined : 640,
+      background: "#0C0C0E",
+      borderRadius: 16,
+      border: "1px solid var(--divider)",
+      overflow: "hidden",
+    }}>
+      {isMobile ? (
+        <>
+          {mobileTabs}
+          {mobileTab === "controls" ? (
+            <div style={{ background: "var(--panel)", display: "flex", flexDirection: "column" }}>
+              {controlsContent}
+            </div>
+          ) : (
+            previewContent
+          )}
+        </>
+      ) : (
+        <>
+          <div style={{
+            width: 340,
+            flexShrink: 0,
+            background: "var(--panel)",
+            borderRight: "1px solid var(--divider)",
+            display: "flex",
+            flexDirection: "column",
+            alignSelf: "stretch",
+          }}>
+            {controlsContent}
+          </div>
+          {previewContent}
+        </>
+      )}
     </div>
   );
 }

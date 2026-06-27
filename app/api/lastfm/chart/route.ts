@@ -7,8 +7,8 @@ import { fetchRecentTracks } from "@/lib/lastfm";
 import { computeLastfmChart, getSundayKey } from "@/lib/lastfm-chart-engine";
 import type { LastfmSnapshotHistory } from "@/lib/lastfm-chart-engine";
 
-// Note: file-based snapshots work in development and Node.js servers.
-// On Vercel serverless, migrate this to a database table.
+// Snapshots em arquivo — funciona na VPS com Node.js persistente.
+// Migrar para tabela no banco se precisar de histórico distribuído.
 const SNAPSHOTS_PATH = path.join(process.cwd(), "data", "lastfm-snapshots.json");
 
 function readHistory(): LastfmSnapshotHistory {

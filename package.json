@@ -27,7 +27,6 @@
   "dependencies": {
     "@next/third-parties": "^16.2.5",
     "@prisma/client": "^5.22.0",
-    "@vercel/blob": "^2.3.3",
     "bcryptjs": "^3.0.3",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.468.0",

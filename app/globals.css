@@ -158,6 +158,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Admin tables — scroll horizontal no mobile */
+.admin-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-table-scroll table {
+  min-width: 520px;
+}
+
 /* Overline style */
 .overline {
   font-size: 11px;

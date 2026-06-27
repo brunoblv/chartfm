@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { CSSProperties } from "react";
+import { AdminPanel } from "@/components/admin/AdminPanel";
+import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
 
 type UserRow = {
   id: string;
@@ -30,26 +31,26 @@ export function UsersAdminClient({ users }: { users: UserRow[] }) {
   }
 
   return (
-    <div style={{ maxWidth: 980, background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <AdminPanel>
+      <table style={{ width: "100%", minWidth: 480, borderCollapse: "collapse" }}>
         <thead>
-          <tr style={{ background: "rgba(0,0,0,0.03)" }}>
-            <th style={thStyle}>Nome</th>
-            <th style={thStyle}>Nome de Usuário</th>
-            <th style={thStyle}>Role</th>
+          <tr style={{ background: "var(--fill-inset)" }}>
+            <th style={adminThStyle}>Nome</th>
+            <th style={adminThStyle}>Nome de Usuário</th>
+            <th style={adminThStyle}>Role</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((u) => (
             <tr key={u.id}>
-              <td style={tdStyle}>{u.name}</td>
-              <td style={tdStyle}>@{u.handle}</td>
-              <td style={tdStyle}>
+              <td style={adminTdStyle}>{u.name}</td>
+              <td style={adminTdStyle}>@{u.handle}</td>
+              <td style={adminTdStyle}>
                 <select
                   value={u.role}
                   onChange={(e) => changeRole(u.id, e.target.value as UserRow["role"])}
                   disabled={savingId === u.id}
-                  style={{ borderRadius: 8, border: "1px solid rgba(0,0,0,0.15)", padding: "6px 8px" }}
+                  style={{ borderRadius: 8, border: "1px solid var(--divider-strong)", padding: "6px 8px", background: "var(--surface)", color: "var(--text)" }}
                 >
                   <option value="USER">USER</option>
                   <option value="ADMIN">ADMIN</option>
@@ -60,9 +61,6 @@ export function UsersAdminClient({ users }: { users: UserRow[] }) {
           ))}
         </tbody>
       </table>
-    </div>
+    </AdminPanel>
   );
 }
-
-const thStyle: CSSProperties = { textAlign: "left", padding: "10px 12px", fontSize: 12, color: "#6B6B70", fontWeight: 700 };
-const tdStyle: CSSProperties = { padding: "10px 12px", borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#1D1D1F" };

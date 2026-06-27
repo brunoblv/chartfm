@@ -1,10 +1,11 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
+import { AdminPanel } from "@/components/admin/AdminPanel";
+import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
 import { ArtistCreatePanel } from "./ArtistCreatePanel";
 import { ArtistRefreshImageButton } from "./ArtistRefreshImageButton";
 
@@ -46,7 +47,7 @@ export default async function AdminArtistsPage({
 
   return (
     <Shell title="Admin" subtitle="Artistas">
-      <div style={{ maxWidth: 980 }}>
+      <div style={{ maxWidth: 980, width: "100%" }}>
         <ArtistCreatePanel />
 
         <form method="GET" style={{ marginBottom: 12 }}>
@@ -59,35 +60,30 @@ export default async function AdminArtistsPage({
               maxWidth: 520,
               padding: "10px 12px",
               borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.15)",
+              border: "1px solid var(--divider-strong)",
+              background: "var(--surface)",
+              color: "var(--text)",
               fontSize: 14,
             }}
           />
         </form>
 
-        <div
-          style={{
-            background: "white",
-            borderRadius: 14,
-            border: "1px solid rgba(0,0,0,0.08)",
-            overflow: "hidden",
-          }}
-        >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <AdminPanel>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(0,0,0,0.03)" }}>
-                <th style={thStyle}>ID</th>
-                <th style={thStyle}>Nome</th>
-                <th style={thStyle}>Romanização</th>
-                <th style={thStyle}>Spotify ID</th>
-                <th style={thStyle}>Ações</th>
+              <tr style={{ background: "var(--fill-inset)" }}>
+                <th style={adminThStyle}>ID</th>
+                <th style={adminThStyle}>Nome</th>
+                <th style={adminThStyle}>Romanização</th>
+                <th style={adminThStyle}>Spotify ID</th>
+                <th style={adminThStyle}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {artists.map((a) => (
                 <tr key={a.id}>
-                  <td style={{ ...tdStyle, color: "#86868B", fontSize: 12 }}>{a.id}</td>
-                  <td style={tdStyle}>
+                  <td style={{ ...adminTdStyle, color: "var(--text-muted)", fontSize: 12 }}>{a.id}</td>
+                  <td style={adminTdStyle}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {a.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -104,7 +100,7 @@ export default async function AdminArtistsPage({
                             width: 28,
                             height: 28,
                             borderRadius: 6,
-                            border: "1.5px dashed #C7C7CC",
+                            border: "1.5px dashed var(--text-disabled)",
                             flexShrink: 0,
                           }}
                         />
@@ -112,11 +108,11 @@ export default async function AdminArtistsPage({
                       {a.name}
                     </div>
                   </td>
-                  <td style={{ ...tdStyle, color: "#6B6B70" }}>{a.exhibitionName ?? "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: 12, color: "#86868B", fontFamily: "monospace" }}>
+                  <td style={{ ...adminTdStyle, color: "var(--text-subtle)" }}>{a.exhibitionName ?? "—"}</td>
+                  <td style={{ ...adminTdStyle, fontSize: 12, color: "var(--text-muted)", fontFamily: "monospace" }}>
                     {a.spotifyId}
                   </td>
-                  <td style={tdStyle}>
+                  <td style={adminTdStyle}>
                     <Link
                       href={`/artist/${a.id}/edit`}
                       style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700, fontSize: 13 }}
@@ -130,31 +126,17 @@ export default async function AdminArtistsPage({
             </tbody>
           </table>
           {query && artists.length === 0 && (
-            <div style={{ padding: 14, color: "#86868B", fontSize: 14 }}>
+            <div style={{ padding: 14, color: "var(--text-muted)", fontSize: 14 }}>
               Nenhum artista encontrado para &ldquo;{query}&rdquo;.
             </div>
           )}
           {!query && (
-            <div style={{ padding: 14, color: "#86868B", fontSize: 14 }}>
+            <div style={{ padding: 14, color: "var(--text-muted)", fontSize: 14 }}>
               Digite no campo acima para buscar artistas.
             </div>
           )}
-        </div>
+        </AdminPanel>
       </div>
     </Shell>
   );
 }
-
-const thStyle: CSSProperties = {
-  textAlign: "left",
-  padding: "10px 12px",
-  fontSize: 12,
-  color: "#6B6B70",
-  fontWeight: 700,
-};
-const tdStyle: CSSProperties = {
-  padding: "10px 12px",
-  borderTop: "1px solid rgba(0,0,0,0.06)",
-  fontSize: 14,
-  color: "#1D1D1F",
-};

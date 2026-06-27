@@ -12,6 +12,7 @@ import { useTranslations } from "@/hooks/useTranslations";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
 import { youtubeConnectErrorMessage } from "@/lib/youtube-connect-oauth";
 import { isMyTrlOwner } from "@/lib/mytrl-access";
+import { normalizeAvatarFile } from "@/lib/normalize-avatar-file";
 
 async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
@@ -381,17 +382,24 @@ export default function SettingsPage() {
     setUploadingAvatar(true);
     setAvatarError(null);
     try {
+      const prepared = await normalizeAvatarFile(file);
       const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/user/avatar", { method: "POST", body: fd });
-      const data = await res.json();
+      fd.append("file", prepared);
+      const res = await fetch("/api/user/avatar", { method: "POST", body: fd, credentials: "include" });
+      let data: { url?: string; error?: string } = {};
+      try {
+        data = (await res.json()) as { url?: string; error?: string };
+      } catch {
+        setAvatarError("Erro ao enviar foto.");
+        return;
+      }
       if (!res.ok) {
         setAvatarError(data.error ?? "Erro ao enviar foto.");
         return;
       }
-      setForm((f) => ({ ...f, image: data.url }));
-    } catch {
-      setAvatarError("Erro de conexão.");
+      setForm((f) => ({ ...f, image: data.url ?? f.image }));
+    } catch (e) {
+      setAvatarError(e instanceof Error ? e.message : "Erro de conexão.");
     } finally {
       setUploadingAvatar(false);
     }

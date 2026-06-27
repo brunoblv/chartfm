@@ -1,11 +1,12 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
+import { AdminPanel } from "@/components/admin/AdminPanel";
+import { adminNavChipStyle, adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
 
 export default async function AdminMusicPage({
   searchParams,
@@ -36,19 +37,19 @@ export default async function AdminMusicPage({
 
   return (
     <Shell title="Admin" subtitle="Editar músicas">
-      <div style={{ maxWidth: 980 }}>
+      <div style={{ maxWidth: 980, width: "100%" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-          <Link href="/admin/music/versions" style={navChipStyle}>Versões (live, remix, acoustic…)</Link>
-          <Link href="/admin/music/no-album" style={navChipStyle}>Sem álbum</Link>
+          <Link href="/admin/music/versions" style={adminNavChipStyle}>Versões (live, remix, acoustic…)</Link>
+          <Link href="/admin/music/no-album" style={adminNavChipStyle}>Sem álbum</Link>
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <form method="GET" style={{ flex: "1 1 240px", minWidth: 200 }}>
+          <form method="GET" style={{ flex: "1 1 240px", minWidth: 0 }}>
             <input
               name="q"
               defaultValue={query}
               placeholder="Buscar por música ou artista"
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.15)" }}
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)", background: "var(--surface)", color: "var(--text)" }}
             />
           </form>
           <Link
@@ -65,30 +66,31 @@ export default async function AdminMusicPage({
               fontSize: 14,
               textDecoration: "none",
               whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             + Adicionar música
           </Link>
         </div>
-        <div style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <AdminPanel maxWidth={980}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(0,0,0,0.03)" }}>
-                <th style={thStyle}>Música</th>
-                <th style={thStyle}>Artista</th>
-                <th style={thStyle}>Álbum</th>
-                <th style={thStyle}>Spotify ID</th>
-                <th style={thStyle}>Ações</th>
+              <tr style={{ background: "var(--fill-inset)" }}>
+                <th style={adminThStyle}>Música</th>
+                <th style={adminThStyle}>Artista</th>
+                <th style={adminThStyle}>Álbum</th>
+                <th style={adminThStyle}>Spotify ID</th>
+                <th style={adminThStyle}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {songs.map((s) => (
                 <tr key={s.id}>
-                  <td style={tdStyle}>{s.title}</td>
-                  <td style={tdStyle}>{s.artist}</td>
-                  <td style={tdStyle}>{s.album?.trim() ? s.album : "—"}</td>
-                  <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12 }}>{s.spotifyId ?? "—"}</td>
-                  <td style={tdStyle}>
+                  <td style={adminTdStyle}>{s.title}</td>
+                  <td style={adminTdStyle}>{s.artist}</td>
+                  <td style={adminTdStyle}>{s.album?.trim() ? s.album : "—"}</td>
+                  <td style={{ ...adminTdStyle, fontFamily: "monospace", fontSize: 12 }}>{s.spotifyId ?? "—"}</td>
+                  <td style={adminTdStyle}>
                     <Link
                       href={`${buildSongPath({ id: s.id, title: s.title, artist: s.artist, spotifyId: s.spotifyId })}/edit`}
                       style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}
@@ -100,24 +102,10 @@ export default async function AdminMusicPage({
               ))}
             </tbody>
           </table>
-          {query && songs.length === 0 && <div style={{ padding: 14, color: "#86868B" }}>Nenhuma música encontrada.</div>}
-          {!query && <div style={{ padding: 14, color: "#86868B" }}>Digite no campo acima para buscar músicas.</div>}
-        </div>
+          {query && songs.length === 0 && <div style={{ padding: 14, color: "var(--text-muted)" }}>Nenhuma música encontrada.</div>}
+          {!query && <div style={{ padding: 14, color: "var(--text-muted)" }}>Digite no campo acima para buscar músicas.</div>}
+        </AdminPanel>
       </div>
     </Shell>
   );
 }
-
-const thStyle: CSSProperties = { textAlign: "left", padding: "10px 12px", fontSize: 12, color: "#6B6B70", fontWeight: 700 };
-const tdStyle: CSSProperties = { padding: "10px 12px", borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#1D1D1F" };
-const navChipStyle: CSSProperties = {
-  display: "inline-block",
-  padding: "7px 12px",
-  borderRadius: 999,
-  border: "1px solid rgba(0,0,0,0.12)",
-  fontSize: 13,
-  fontWeight: 600,
-  textDecoration: "none",
-  color: "#1D1D1F",
-  background: "white",
-};

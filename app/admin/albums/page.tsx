@@ -1,10 +1,11 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
+import { AdminPanel } from "@/components/admin/AdminPanel";
+import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
 import { CreateAlbumClient } from "./CreateAlbumClient";
 
 export default async function AdminAlbumsPage({
@@ -30,7 +31,7 @@ export default async function AdminAlbumsPage({
 
   return (
     <Shell title="Admin" subtitle="Editar álbuns">
-      <div style={{ maxWidth: 980 }}>
+      <div style={{ maxWidth: 980, width: "100%" }}>
         <div style={{ marginBottom: 16 }}>
           <Link
             href="/admin/duplicates/albums"
@@ -45,37 +46,37 @@ export default async function AdminAlbumsPage({
             name="q"
             defaultValue={query}
             placeholder="Buscar álbum"
-            style={{ width: "100%", maxWidth: 520, padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.15)" }}
+            style={{ width: "100%", maxWidth: 520, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--divider-strong)", background: "var(--surface)", color: "var(--text)" }}
           />
         </form>
-        <div style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <AdminPanel>
+          <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(0,0,0,0.03)" }}>
-                <th style={thStyle}>Álbum</th>
-                <th style={thStyle}>Artista</th>
-                <th style={thStyle}>Músicas</th>
-                <th style={thStyle}>Ações</th>
+              <tr style={{ background: "var(--fill-inset)" }}>
+                <th style={adminThStyle}>Álbum</th>
+                <th style={adminThStyle}>Artista</th>
+                <th style={adminThStyle}>Músicas</th>
+                <th style={adminThStyle}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {albums.map((a) => (
                 <tr key={a.id}>
-                  <td style={tdStyle}>{a.title}</td>
-                  <td style={tdStyle}>
-                    {a.artist.name} <span style={{ color: "#86868B", fontSize: 12 }}>({a.artist.id})</span>
+                  <td style={adminTdStyle}>{a.title}</td>
+                  <td style={adminTdStyle}>
+                    {a.artist.name} <span style={{ color: "var(--text-muted)", fontSize: 12 }}>({a.artist.id})</span>
                   </td>
-                  <td style={{ ...tdStyle, maxWidth: 320 }}>
+                  <td style={{ ...adminTdStyle, maxWidth: 320 }}>
                     {a.songs.length === 0
-                      ? <span style={{ color: "#86868B", fontSize: 13 }}>Nenhuma</span>
+                      ? <span style={{ color: "var(--text-muted)", fontSize: 13 }}>Nenhuma</span>
                       : <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>
                           {a.songs.map((s) => (
-                            <li key={s.id} style={{ fontSize: 12, color: "#1D1D1F" }}>{s.title}</li>
+                            <li key={s.id} style={{ fontSize: 12, color: "var(--text)" }}>{s.title}</li>
                           ))}
                         </ul>
                     }
                   </td>
-                  <td style={tdStyle}>
+                  <td style={adminTdStyle}>
                     <Link href={`/album/${a.artist.id}_${a.id}/edit`} style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}>
                       Editar
                     </Link>
@@ -84,13 +85,10 @@ export default async function AdminAlbumsPage({
               ))}
             </tbody>
           </table>
-          {query && albums.length === 0 && <div style={{ padding: 14, color: "#86868B" }}>Nenhum álbum encontrado.</div>}
-          {!query && <div style={{ padding: 14, color: "#86868B" }}>Digite no campo acima para buscar álbuns.</div>}
-        </div>
+          {query && albums.length === 0 && <div style={{ padding: 14, color: "var(--text-muted)" }}>Nenhum álbum encontrado.</div>}
+          {!query && <div style={{ padding: 14, color: "var(--text-muted)" }}>Digite no campo acima para buscar álbuns.</div>}
+        </AdminPanel>
       </div>
     </Shell>
   );
 }
-
-const thStyle: CSSProperties = { textAlign: "left", padding: "10px 12px", fontSize: 12, color: "#6B6B70", fontWeight: 700 };
-const tdStyle: CSSProperties = { padding: "10px 12px", borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#1D1D1F" };

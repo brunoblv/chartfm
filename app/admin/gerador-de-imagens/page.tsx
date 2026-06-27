@@ -2,6 +2,7 @@ import { AlbumClubPhase } from "@prisma/client";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
+import { Shell } from "@/components/layout/Shell";
 import { GeradorClient } from "./GeradorClient";
 import type { GeradorData } from "./GeradorClient";
 
@@ -11,14 +12,18 @@ export default async function GeradorDeImagensPage() {
   const auth = await requirePrivilegedSession();
   if (!auth) {
     return (
-      <div style={{ padding: 40, color: "var(--text-muted)", fontFamily: "system-ui" }}>
-        Acesso negado. Apenas ADMIN e DEV.
-      </div>
+      <Shell title="Admin" subtitle="Acesso">
+        <div>Acesso negado. Apenas ADMIN e DEV.</div>
+      </Shell>
     );
   }
 
   const data = await fetchGeradorData();
-  return <GeradorClient data={data} />;
+  return (
+    <Shell title="Gerador de Imagens" subtitle="Templates para redes sociais">
+      <GeradorClient data={data} />
+    </Shell>
+  );
 }
 
 function fmtDeadline(d: Date): string {

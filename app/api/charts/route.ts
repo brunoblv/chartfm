@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Upsert songs/artists/albums — publicação rápida evita Spotify (timeout 504 na Vercel)
+  // Upsert songs/artists/albums — publicação rápida evita timeout do Spotify
   let songs: ResolvedSongRow[];
 
   if (fastPublish) {

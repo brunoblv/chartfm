@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { resolveUploadImage } from "@/lib/image-upload";
 import { writeFile, unlink, readdir } from "fs/promises";
 import { join } from "path";
 import { existsSync, mkdirSync } from "fs";
 
 export const runtime = "nodejs";
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_BYTES = 5 * 1024 * 1024;
 const UPLOAD_DIR = join(process.cwd(), "uploads", "avatars");
 
 function ensureDir() {
-  if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
+  if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true, mode: 0o755 });
 }
 
 async function deleteOldAvatars(userId: string) {
@@ -46,24 +46,36 @@ export async function POST(req: NextRequest) {
   if (!file) {
     return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 });
   }
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return NextResponse.json({ error: "Formato inválido. Use JPG, PNG ou WebP." }, { status: 400 });
+
+  const resolved = resolveUploadImage(file);
+  if ("error" in resolved) {
+    return NextResponse.json({ error: resolved.error }, { status: 400 });
   }
+
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: "Arquivo muito grande (máx. 5 MB)" }, { status: 400 });
   }
 
-  const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const filename = `${session.user.id}.${ext}`;
+  const filename = `${session.user.id}.${resolved.ext}`;
 
-  ensureDir();
-  await deleteOldAvatars(session.user.id);
-
-  const bytes = await file.arrayBuffer();
-  await writeFile(join(UPLOAD_DIR, filename), Buffer.from(bytes));
+  try {
+    ensureDir();
+    await deleteOldAvatars(session.user.id);
+    const bytes = await file.arrayBuffer();
+    await writeFile(join(UPLOAD_DIR, filename), Buffer.from(bytes));
+  } catch (e) {
+    console.error("[avatar] Erro ao salvar arquivo:", e);
+    return NextResponse.json({ error: "Erro ao salvar o arquivo no servidor." }, { status: 500 });
+  }
 
   const url = `/api/uploads/avatars/${filename}?v=${Date.now()}`;
-  await prisma.user.update({ where: { id: session.user.id }, data: { image: url } });
+
+  try {
+    await prisma.user.update({ where: { id: session.user.id }, data: { image: url } });
+  } catch (e) {
+    console.error("[avatar] Erro ao atualizar banco:", e);
+    return NextResponse.json({ error: "Erro ao atualizar perfil." }, { status: 500 });
+  }
 
   return NextResponse.json({ url });
 }
