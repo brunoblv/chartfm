@@ -164,6 +164,11 @@ model Song {
   previewUrl      String?      @map("preview_url")
   spotifyUrl      String?      @map("spotify_url")
   trackNumber     Int?         @map("track_number")
+  genres          String[]     @default([])
+  genreSource     String?      @map("genre_source")
+  recordingMbid   String?      @map("recording_mbid")
+  isrc            String?      @map("isrc")
+  genresFetchedAt DateTime?    @map("genres_fetched_at")
   artistRef       Artist?      @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
   albumRef        Album?       @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])
   feats           SongFeat[]

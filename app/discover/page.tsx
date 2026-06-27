@@ -23,16 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const GENRES = [
-  { slug: "pop", name: "Pop", color: ["#FA243C", "#FF5858"], letter: "P", tags: ["pop"] },
-  { slug: "hip-hop-rap", name: "Hip-Hop/Rap", color: ["#1D1D1F", "#4A4A4F"], letter: "H", tags: ["hip hop", "rap", "trap"] },
-  { slug: "sertanejo", name: "Sertanejo", color: ["#E36414", "#FFD166"], letter: "S", tags: ["sertanejo"] },
-  { slug: "rnb-soul", name: "R&B/Soul", color: ["#6A0572", "#AB83A1"], letter: "R", tags: ["r&b", "soul", "neo soul"] },
-  { slug: "indie-alt", name: "Indie/Alt", color: ["#06D6A0", "#073B4C"], letter: "I", tags: ["indie", "alternative", "alt"] },
-  { slug: "funk", name: "Funk", color: ["#EF476F", "#FFD166"], letter: "F", tags: ["funk"] },
-  { slug: "eletronica", name: "Eletrônica", color: ["#8338EC", "#3A86FF"], letter: "E", tags: ["electronic", "dance", "house", "techno", "edm", "eletronica", "eletronic"] },
-  { slug: "k-pop", name: "K-Pop", color: ["#FB5607", "#FFBE0B"], letter: "K", tags: ["k-pop", "kpop"] },
-];
+import { DISCOVER_CHART_GENRES } from "@/lib/genre-taxonomy";
 
 function buildFaq(t: (key: string) => string) {
   return [
@@ -298,7 +289,7 @@ async function loadPageData(
           {t("discover.exploreGenresIntro")}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          {GENRES.map((g) => (
+          {DISCOVER_CHART_GENRES.map((g) => (
             <Link
               key={g.name}
               href={`/discover/genre/${encodeURIComponent(g.slug)}`}

@@ -28,6 +28,7 @@ type SpotifyTrackApi = {
   preview_url: string | null;
   duration_ms?: number;
   track_number?: number;
+  external_ids?: { isrc?: string };
 };
 
 type SpotifySearchJson = {
@@ -339,6 +340,7 @@ export type SpotifyTrackMetadata = {
   spotifyUrl: string | null;
   durationMs: number | null;
   trackNumber: number | null;
+  isrc: string | null;
 };
 
 function mapAlbumType(input: string | undefined): SpotifyTrackMetadata["album"]["albumType"] {
@@ -554,6 +556,7 @@ function mapTrackApiToMetadata(track: SpotifyTrackApi): SpotifyTrackMetadata {
     spotifyUrl: track.external_urls?.spotify ?? null,
     durationMs: track.duration_ms ?? null,
     trackNumber: track.track_number ?? null,
+    isrc: track.external_ids?.isrc?.trim() || null,
   };
 }
 

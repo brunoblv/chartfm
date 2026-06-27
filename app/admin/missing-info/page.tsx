@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
+import { adminNavChipStyle } from "@/components/admin/admin-styles";
 import { MissingInfoBackfillClient } from "./MissingInfoBackfillClient";
 
 const PAGE_SIZE = 30;
@@ -102,6 +103,12 @@ export default async function AdminMissingInfoPage() {
   return (
     <Shell title="Admin" subtitle="Informações incompletas">
       <div style={{ maxWidth: 1120 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <Link href="/admin/song-genres" style={adminNavChipStyle}>
+            Tags de gênero (músicas)
+          </Link>
+        </div>
+
         <MissingInfoBackfillClient initialTotal={total} />
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 18 }}>

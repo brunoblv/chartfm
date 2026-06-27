@@ -102,6 +102,7 @@ export async function applySpotifyMetadataToSong(
       previewUrl: meta.previewUrl ?? undefined,
       spotifyUrl: meta.spotifyUrl ?? undefined,
       trackNumber: meta.trackNumber ?? undefined,
+      isrc: meta.isrc ?? undefined,
     },
   });
 

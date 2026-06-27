@@ -7,6 +7,7 @@ import {
   searchSpotifyTracks,
 } from "@/lib/spotify-server";
 import { COVER_PALETTES } from "@/lib/data";
+import { canonicalAlbumTitle, canonicalArtistName } from "@/lib/duplicate-utils";
 import { brtDateKey, buildMyTrlScoringWindow, myTrlFetchWindow } from "@/lib/mytrl-chart-engine";
 
 export const GLOBAL_AIRPLAY_PLAY_CAP = 10;
@@ -198,13 +199,24 @@ export async function isFullAlbumType(albumSpotifyId: string | null | undefined)
   return ok;
 }
 
+function albumCanonicalKey(album: string, artist: string): string {
+  return `album_canonical:${canonicalAlbumTitle(album)}|||${canonicalArtistName(artist)}`;
+}
+
 function aggregationKey(mode: GlobalLastfmMode, meta: EnrichedTrack): string {
   if (mode === "albums") {
-    if (meta.albumSpotifyId) return `album_spotify:${meta.albumSpotifyId}`;
-    return `album_local:${normalizeKey(meta.album)}|||${normalizeKey(meta.artist)}`;
+    const album = meta.album.trim() || meta.track.trim();
+    return albumCanonicalKey(album, meta.artist);
   }
   if (meta.spotifyId) return `song_spotify:${meta.spotifyId}`;
   return `song_local:${normalizeKey(meta.track)}|||${normalizeKey(meta.artist)}`;
+}
+
+function mergeBucketMeta(existing: EnrichedTrack, incoming: EnrichedTrack): EnrichedTrack {
+  if (!existing.albumSpotifyId && incoming.albumSpotifyId) return incoming;
+  if (existing.albumSpotifyId && !incoming.albumSpotifyId) return existing;
+  if (!existing.imageUrl && incoming.imageUrl) return { ...existing, imageUrl: incoming.imageUrl };
+  return existing;
 }
 
 function coverFor(meta: EnrichedTrack, seed: number) {
@@ -223,24 +235,28 @@ type ScoreBucket = {
   meta: EnrichedTrack;
 };
 
-function entryKey(entry: GlobalLastfmEntry): string {
-  if (entry.song.albumSpotifyId) return `album_spotify:${entry.song.albumSpotifyId}`;
+function entryKey(mode: GlobalLastfmMode, entry: GlobalLastfmEntry): string {
+  if (mode === "albums") {
+    const album = entry.song.album?.trim() || entry.song.title;
+    return albumCanonicalKey(album, entry.song.artist);
+  }
   if (entry.song.spotifyId) return `song_spotify:${entry.song.spotifyId}`;
-  return `local:${normalizeKey(entry.song.title)}|||${normalizeKey(entry.song.artist)}`;
+  return `song_local:${normalizeKey(entry.song.title)}|||${normalizeKey(entry.song.artist)}`;
 }
 
 function buildMovementStats(
+  mode: GlobalLastfmMode,
   ranked: Array<{ key: string; points: number; contributors: number; meta: EnrichedTrack }>,
   prevEntries: GlobalLastfmEntry[],
 ): GlobalLastfmEntry[] {
   const prevMap = new Map<string, GlobalLastfmEntry>();
-  for (const e of prevEntries) prevMap.set(entryKey(e), e);
+  for (const e of prevEntries) prevMap.set(entryKey(mode, e), e);
 
   const histPeak = new Map<string, number>();
   const histWeeks = new Map<string, number>();
   const histOnes = new Map<string, number>();
   for (const e of prevEntries) {
-    const k = entryKey(e);
+    const k = entryKey(mode, e);
     histPeak.set(k, Math.min(histPeak.get(k) ?? 999, e.peak));
     histWeeks.set(k, (histWeeks.get(k) ?? 0) + 1);
     if (e.position === 1) histOnes.set(k, (histOnes.get(k) ?? 0) + 1);
@@ -529,18 +545,23 @@ export async function computeGlobalLastfmRanking(
         if (!enriched) continue;
         const aggKey = aggregationKey("airplay", enriched);
         const contribution = Math.min(plays, playCap) * GLOBAL_LASTFM_POINTS_MULTIPLIER;
-        const bucket = globalScores.get(aggKey) ?? {
-          points: 0,
-          contributors: new Set<string>(),
-          contributorPoints: new Map<string, number>(),
-          meta: enriched,
-        };
+        let bucket = globalScores.get(aggKey);
+        if (!bucket) {
+          bucket = {
+            points: 0,
+            contributors: new Set<string>(),
+            contributorPoints: new Map<string, number>(),
+            meta: enriched,
+          };
+          globalScores.set(aggKey, bucket);
+        } else {
+          bucket.meta = mergeBucketMeta(bucket.meta, enriched);
+        }
         bucket.points += contribution;
         const isNewAirplay = !bucket.contributors.has(userId);
         bucket.contributors.add(userId);
         if (isNewAirplay) bucket.points += 10;
         bucket.contributorPoints.set(userId, (bucket.contributorPoints.get(userId) ?? 0) + contribution + (isNewAirplay ? 10 : 0));
-        globalScores.set(aggKey, bucket);
       }
       continue;
     }
@@ -552,23 +573,29 @@ export async function computeGlobalLastfmRanking(
       const aggKey = aggregationKey("albums", enriched);
       const cur = albumPlays.get(aggKey) ?? { plays: 0, meta: enriched };
       cur.plays += plays;
+      cur.meta = mergeBucketMeta(cur.meta, enriched);
       albumPlays.set(aggKey, cur);
     }
 
     for (const [aggKey, { plays, meta }] of albumPlays) {
       const contribution = Math.min(plays, playCap) * GLOBAL_LASTFM_POINTS_MULTIPLIER;
-      const bucket = globalScores.get(aggKey) ?? {
-        points: 0,
-        contributors: new Set<string>(),
-        contributorPoints: new Map<string, number>(),
-        meta,
-      };
+      let bucket = globalScores.get(aggKey);
+      if (!bucket) {
+        bucket = {
+          points: 0,
+          contributors: new Set<string>(),
+          contributorPoints: new Map<string, number>(),
+          meta,
+        };
+        globalScores.set(aggKey, bucket);
+      } else {
+        bucket.meta = mergeBucketMeta(bucket.meta, meta);
+      }
       bucket.points += contribution;
       const isNewAlbum = !bucket.contributors.has(userId);
       bucket.contributors.add(userId);
       if (isNewAlbum) bucket.points += 10;
       bucket.contributorPoints.set(userId, (bucket.contributorPoints.get(userId) ?? 0) + contribution + (isNewAlbum ? 10 : 0));
-      globalScores.set(aggKey, bucket);
     }
   }
 
@@ -598,6 +625,6 @@ export async function computeGlobalLastfmRanking(
   console.log("");
 
   const ranked = rankedWithBreakdown.map(({ contributorPoints: _cp, ...rest }) => rest);
-  const entries = buildMovementStats(ranked, prevEntries);
+  const entries = buildMovementStats(mode, ranked, prevEntries);
   return { entries, contributorCount, scoringWindow };
 }

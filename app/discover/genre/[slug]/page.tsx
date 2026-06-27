@@ -4,43 +4,19 @@ import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { getRankingWeekReference } from "@/lib/chart-week";
-
-const GENRES = [
-  { slug: "pop", name: "Pop", tags: ["pop"] },
-  { slug: "hip-hop-rap", name: "Hip-Hop/Rap", tags: ["hip hop", "rap", "trap"] },
-  { slug: "sertanejo", name: "Sertanejo", tags: ["sertanejo"] },
-  { slug: "rnb-soul", name: "R&B/Soul", tags: ["r&b", "soul", "neo soul"] },
-  { slug: "indie-alt", name: "Indie/Alt", tags: ["indie", "alternative", "alt"] },
-  { slug: "funk", name: "Funk", tags: ["funk"] },
-  { slug: "eletronica", name: "Eletronica", tags: ["electronic", "dance", "house", "techno", "edm", "eletronica", "eletronic"] },
-  { slug: "k-pop", name: "K-Pop", tags: ["k-pop", "kpop"] },
-] as const;
-
 import { calcularPontosPrimary } from "@/lib/parada-points";
+import {
+  effectiveSongGenreTags,
+  getChartGenreBySlug,
+  matchesChartGenre,
+} from "@/lib/genre-taxonomy";
 
 function pointsForPosition(position: number) {
   return calcularPontosPrimary(position);
 }
 
-function normalizeText(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function normalizeArtistName(raw: string): string {
   return raw.trim().replace(/\s+/g, " ");
-}
-
-function matchesGenre(artistGenres: string[], artistName: string, genreTags: readonly string[]) {
-  const normalizedTags = genreTags.map((tag) => normalizeText(tag));
-  const normalizedArtistGenres = artistGenres.map((genre) => normalizeText(genre));
-  if (normalizedArtistGenres.some((genre) => normalizedTags.some((tag) => genre.includes(tag)))) return true;
-  const normalizedName = normalizeText(artistName);
-  return normalizedTags.some((tag) => normalizedName.includes(tag));
 }
 
 export default async function DiscoverGenrePage({
@@ -49,7 +25,7 @@ export default async function DiscoverGenrePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const selectedGenre = GENRES.find((genre) => genre.slug === slug);
+  const selectedGenre = getChartGenreBySlug(slug);
   if (!selectedGenre) notFound();
 
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
@@ -66,6 +42,8 @@ export default async function DiscoverGenrePage({
           artist: true,
           spotifyId: true,
           artistSpotifyId: true,
+          genres: true,
+          genreSource: true,
           artistRef: { select: { id: true, spotifyId: true, name: true, genres: true } },
         },
       },
@@ -88,8 +66,8 @@ export default async function DiscoverGenrePage({
 
   for (const row of weeklyEntries) {
     const artistName = normalizeArtistName(row.song.artistRef?.name || row.song.artist);
-    const artistGenres = row.song.artistRef?.genres ?? [];
-    if (!matchesGenre(artistGenres, artistName, selectedGenre.tags)) continue;
+    const tags = effectiveSongGenreTags(row.song.genres, row.song.artistRef?.genres);
+    if (!matchesChartGenre(tags, selectedGenre.slug)) continue;
 
     const title = row.song.title.trim();
     const key = `${title.toLowerCase()}|${artistName.toLowerCase()}`;
