@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
-import { COPA_DAY_LABELS, SLOT_LABELS } from "@/lib/copa";
+import { COPA_DAY_LABELS, COPA_SINGLES_COUNT, SLOT_LABELS } from "@/lib/copa";
 
 type Edition = {
   id: string;
@@ -67,6 +67,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const PHASE_LABELS: Record<string, string> = {
   GROUP: "GRP",
+  R32: "R32",
   R16: "R16",
   QF: "QF",
   SF: "SF",
@@ -155,6 +156,37 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
         alert(err.error ?? "Erro");
         return;
       }
+      if (action === "realign_live") {
+        const json = await res.json();
+        alert(
+          `Fase ao vivo alinhada.\n\n` +
+            `Oitavas prematuras removidas: ${json.removedPrematureFixtures}\n` +
+            `Jogos 1/16 abertos ao vivo: ${json.openedLiveFixtures}\n` +
+            (json.closedPrematureR32Batch
+              ? `2ª rodada 1/16 fechada (mantida p/ próximo dia): ${json.closedPrematureR32Batch}\n`
+              : ""),
+        );
+      }
+      if (action === "repair_knockout") {
+        const json = await res.json();
+        alert(
+          `Mata-mata atualizado.\n\n` +
+            (json.fixedGroupPhases ? `Grupos corrigidos: ${json.fixedGroupPhases}\n` : "") +
+            (json.migratedR16Fixtures ? `Oitavas migradas p/ slot 4: ${json.migratedR16Fixtures}\n` : "") +
+            (json.revertedLiveR16Fixtures ? `Oitavas ao vivo corrigidas (slot 3): ${json.revertedLiveR16Fixtures}\n` : "") +
+            `Oitavas preservadas: ${json.preservedR16Fixtures}\n` +
+            `Novos jogos 1/16 (32 avos): ${json.r32Fixtures}\n\n` +
+            `Peça aos participantes que definam a música do slot 1/16 de Final em Meu Time.`,
+        );
+      }
+      if (action === "fix_group_phases") {
+        const json = await res.json();
+        alert(
+          json.fixedGroupPhases
+            ? `${json.fixedGroupPhases} jogo(s) de grupos corrigidos de R16 → GROUP.`
+            : "Nenhum jogo de grupos com phase errada.",
+        );
+      }
       router.refresh();
     } finally {
       setActioning(null);
@@ -162,7 +194,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
   }
 
   async function seedTestArtists(copaId: string) {
-    if (!confirm("Cadastrar 7 artistas aleatórios (Global 100, >7 singles) para o bot de teste?")) return;
+    if (!confirm("Cadastrar 7 artistas aleatórios (Global 100, ≥8 singles) para o bot de teste?")) return;
     setActioning("seed-test-artists");
     try {
       const res = await fetch(`/api/admin/copa/${copaId}/seed-test-artists`, {
@@ -363,7 +395,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                   Nenhum participante inscrito.
                 </div>
               ) : squadsData.squads.map((p) => {
-                const expectedSingles = p.artistCount * 7;
+                const expectedSingles = p.artistCount * COPA_SINGLES_COUNT;
                 return (
                   <div key={p.userId} style={{ background: "var(--fill-inset)", borderRadius: 12, overflow: "hidden" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--divider)" }}>
@@ -390,7 +422,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                               </div>
                             </div>
                           </div>
-                          {Array.from({ length: 7 }, (_, i) => {
+                          {Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => {
                             const single = art.singles.find((s) => s.slotIndex === i);
                             const isLocked = art.lockedSlots.includes(i);
                             const isEmpty = !single || single.songName.startsWith("Single ");
@@ -484,7 +516,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                 Salvar
               </button>
               <span style={{ fontSize: 11, color: "var(--text-disabled)", width: "100%" }}>
-                A partir dessa data/hora os jogos abrem e avançam 1 dia por vez automaticamente (Dia 1 → grupos · … · Dia 10 → final). Deixe vazio para controle manual (botão Avançar Dia).
+                A partir dessa data/hora os jogos abrem e avançam 1 dia por vez automaticamente (Dia 1 → grupos · … · Dia 12 → final). Deixe vazio para controle manual (botão Avançar Dia).
               </span>
             </div>
           )}
@@ -525,6 +557,51 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                 ⏭️ Avançar Dia
               </button>
             )}
+            {(e.status === "GROUP_STAGE" || e.status === "KNOCKOUT") && (
+              <button
+                onClick={() => {
+                  if (!confirm("Corrigir jogos de grupos marcados como R16 (ou outra fase)?\n\nSó altera linhas com group_letter + rodada 1–3 para phase = GROUP.")) return;
+                  editionAction(e.id, "fix_group_phases");
+                }}
+                disabled={!!actioning}
+                style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--divider)", background: "var(--fill-inset)", color: "var(--text)", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+              >
+                Corrigir phase dos grupos
+              </button>
+            )}
+            {e.status === "KNOCKOUT" && (
+              <button
+                onClick={() => {
+                  if (!confirm(
+                    "Corrigir fase ao vivo?\n\n" +
+                    "Remove oitavas fora de ordem e garante só a 1ª rodada do 1/16 (8 jogos) ao vivo.\n" +
+                    "A 2ª rodada abre no Avançar Dia, após encerrar a 1ª.",
+                  )) return;
+                  editionAction(e.id, "realign_live");
+                }}
+                disabled={!!actioning}
+                style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--divider)", background: "var(--fill-inset)", color: "var(--text)", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+              >
+                Corrigir fase ao vivo
+              </button>
+            )}
+            {e.status === "KNOCKOUT" && (
+              <button
+                onClick={() => {
+                  if (!confirm(
+                    "Atualizar mata-mata?\n\n" +
+                    "• Recria os 16 jogos de 1/16 de Final (32 avos) se faltando\n" +
+                    "• Remove oitavas/quartas fora de ordem\n\n" +
+                    "Participantes precisam escolher a música do slot 1/16 de Final em Meu Time.",
+                  )) return;
+                  editionAction(e.id, "repair_knockout");
+                }}
+                disabled={!!actioning}
+                style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid rgba(250,36,60,.4)", background: "rgba(250,36,60,.08)", color: "#FA243C", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+              >
+                🔧 Inserir 32 avos
+              </button>
+            )}
             {e.status === "GROUP_STAGE" && (
               <button
                 onClick={() => editionAction(e.id, "start_knockout")}
@@ -554,7 +631,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
 
           {/* Filter */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-            {["ALL", "LIVE", "UPCOMING", "GROUP", "R16", "QF", "SF", "FINAL"].map((f) => (
+            {["ALL", "LIVE", "UPCOMING", "GROUP", "R32", "R16", "QF", "SF", "FINAL"].map((f) => (
               <button
                 key={f}
                 onClick={() => setFixtureFilter(f)}

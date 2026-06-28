@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { getLockedSingleSlots } from "@/lib/copa";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -33,17 +34,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }),
     prisma.copaFixture.findMany({
       where: { copaId: id, status: { in: ["LIVE", "DONE"] } },
-      select: { artistAId: true, artistBId: true, singleAIdx: true, singleBIdx: true },
+      select: { artistAId: true, artistBId: true, singleAIdx: true, singleBIdx: true, status: true, phase: true },
     }),
   ]);
 
   function lockedSlots(artistId: string): number[] {
-    const locked = new Set<number>();
-    for (const f of fixtures) {
-      if (f.artistAId === artistId) locked.add(f.singleAIdx);
-      if (f.artistBId === artistId) locked.add(f.singleBIdx);
-    }
-    return [...locked];
+    return getLockedSingleSlots(
+      artistId,
+      fixtures.filter((f) => f.artistAId === artistId || f.artistBId === artistId),
+    ).map((l) => l.slotIndex);
   }
 
   const artistsByOwner = new Map<string, typeof artists>();

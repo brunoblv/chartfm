@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { MySquadClient } from "./MySquadClient";
-import { computeStandings } from "@/lib/copa";
+import { computeStandings, getCopaSinglesEditWindow, getLockedSingleSlots } from "@/lib/copa";
 
 export const dynamic = "force-dynamic";
 
@@ -72,23 +72,29 @@ export default async function MeuTimePage() {
 
   // Active fixtures for my artists (to know which slots are locked)
   const myArtistIds = myArtists.map((a) => a.id);
-  const activeFixtures = myArtistIds.length > 0
-    ? await prisma.copaFixture.findMany({
-        where: {
-          OR: [{ artistAId: { in: myArtistIds } }, { artistBId: { in: myArtistIds } }],
-          status: { in: ["LIVE", "DONE"] },
-        },
-        select: { artistAId: true, artistBId: true, singleAIdx: true, singleBIdx: true, status: true },
-      })
-    : [];
+  const [activeFixtures, allFixtures] = await Promise.all([
+    myArtistIds.length > 0
+      ? prisma.copaFixture.findMany({
+          where: {
+            OR: [{ artistAId: { in: myArtistIds } }, { artistBId: { in: myArtistIds } }],
+            status: { in: ["LIVE", "DONE"] },
+          },
+          select: { artistAId: true, artistBId: true, singleAIdx: true, singleBIdx: true, status: true, phase: true },
+        })
+      : Promise.resolve([]),
+    prisma.copaFixture.findMany({
+      where: { copaId: copa.id },
+      select: { phase: true, status: true, matchIndex: true },
+    }),
+  ]);
 
-  function getLockedSlots(artistId: string): Set<number> {
-    const locked = new Set<number>();
-    for (const f of activeFixtures) {
-      if (f.artistAId === artistId) locked.add(f.singleAIdx);
-      if (f.artistBId === artistId) locked.add(f.singleBIdx);
-    }
-    return locked;
+  const editWindow = getCopaSinglesEditWindow(copa.status, allFixtures);
+
+  function getSlotLocks(artistId: string) {
+    const artistFixtures = activeFixtures.filter(
+      (f) => f.artistAId === artistId || f.artistBId === artistId,
+    );
+    return getLockedSingleSlots(artistId, artistFixtures);
   }
 
   return (
@@ -96,6 +102,7 @@ export default async function MeuTimePage() {
       copaId={copa.id}
       copaStatus={copa.status as string}
       maxArtists={copa.artistsPerUser}
+      editWindow={editWindow}
       myArtists={myArtists.map((a) => ({
         id: a.id,
         artistSpotifyId: a.artistSpotifyId,
@@ -106,7 +113,7 @@ export default async function MeuTimePage() {
         groupLetter: a.groupLetter,
         standings: standingsByArtist[a.id] ?? { rank: -1, pts: 0, pj: 0 },
         singles: a.singles.map((s) => ({ slotIndex: s.slotIndex, songName: s.songName, songId: s.songId })),
-        lockedSlots: [...getLockedSlots(a.id)],
+        slotLocks: getSlotLocks(a.id),
       }))}
       takenSpotifyIds={allArtists
         .filter((a) => a.ownerId !== session.user.id && a.artistSpotifyId)

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
+import { knockoutPendingMatchLabels } from "@/lib/copa";
 
 type ArtistSlot = {
   id: string;
@@ -33,13 +34,23 @@ type Props = {
   fixtures: BracketFixture[];
 };
 
-const PHASE_ORDER = ["R16", "QF", "SF", "FINAL", "THIRD_PLACE"];
+const PHASE_ORDER = ["R32", "R16", "QF", "SF", "FINAL", "THIRD_PLACE"];
 const PHASE_LABELS: Record<string, string> = {
+  R32: "1/16 de Final",
   R16: "Oitavas de Final",
   QF: "Quartas de Final",
   SF: "Semi-Finais",
   FINAL: "Final",
   THIRD_PLACE: "Disputa pelo 3º Lugar",
+};
+
+const PHASE_PLACEHOLDER_MATCHES: Record<string, number> = {
+  R32: 16,
+  R16: 8,
+  QF: 4,
+  SF: 2,
+  FINAL: 1,
+  THIRD_PLACE: 1,
 };
 
 function TBDSlot() {
@@ -131,14 +142,49 @@ function BracketMatch({ f, userId, onClick }: { f: BracketFixture; userId: strin
 
 export function BracketClient({ copaId, userId, fixtures }: Props) {
   const router = useRouter();
-  const [phase, setPhase] = useState("R16");
+  const initialPhase =
+    fixtures.find((f) => f.status === "LIVE")?.phase ??
+    fixtures.find((f) => f.status === "UPCOMING")?.phase ??
+    "R32";
+  const [phase, setPhase] = useState(initialPhase);
   const tabs = PHASE_ORDER.filter(
-    (p) => p === "R16" || fixtures.some((f) => f.phase === p),
+    (p) => p === "R32" || fixtures.some((f) => f.phase === p),
   );
   // Also show all tabs for navigation even if no fixtures yet
   const allTabs = PHASE_ORDER;
 
   const phaseFixtures = fixtures.filter((f) => f.phase === phase);
+
+  function pendingPhaseMessage(p: string): string {
+    if (p === "R16") {
+      const r32 = fixtures.filter((f) => f.phase === "R32");
+      if (r32.length === 0) return "Aguardando o fim da fase de grupos.";
+      if (!r32.every((f) => f.status === "DONE")) {
+        return "As oitavas serão montadas automaticamente quando o 1/16 de Final encerrar. Os confrontos abaixo dependem dos vencedores de J1 a J16.";
+      }
+    }
+    if (p === "QF") {
+      const r16 = fixtures.filter((f) => f.phase === "R16");
+      if (r16.length === 0 || !r16.every((f) => f.status === "DONE")) {
+        return "As quartas serão formadas pelos vencedores das oitavas.";
+      }
+    }
+    if (p === "SF") {
+      const qf = fixtures.filter((f) => f.phase === "QF");
+      if (qf.length === 0 || !qf.every((f) => f.status === "DONE")) {
+        return "As semifinais serão formadas pelos vencedores das quartas.";
+      }
+    }
+    if (p === "FINAL") {
+      const sf = fixtures.filter((f) => f.phase === "SF");
+      if (sf.length === 0 || !sf.every((f) => f.status === "DONE")) {
+        return "A final será formada pelos vencedores das semifinais.";
+      }
+    }
+    return "Esta fase começa após a conclusão das fases anteriores.";
+  }
+
+  const pendingLabels = knockoutPendingMatchLabels(phase);
 
   return (
     <div>
@@ -176,12 +222,16 @@ export function BracketClient({ copaId, userId, fixtures }: Props) {
         {phaseFixtures.length === 0 ? (
           <div>
             <div style={{ fontSize: 13, color: "var(--text-muted)", background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, padding: "16px", marginBottom: 12 }}>
-              ⏳ Esta fase começa após a conclusão das fases anteriores
+              ⏳ {pendingPhaseMessage(phase)}
             </div>
-            {/* Show placeholder bracket */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {Array.from({ length: phase === "R16" ? 16 : phase === "QF" ? 8 : phase === "SF" ? 4 : 2 }).map((_, i) => (
-                <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 10, overflow: "hidden", opacity: 0.4 }}>
+              {(pendingLabels.length > 0 ? pendingLabels : Array.from({ length: PHASE_PLACEHOLDER_MATCHES[phase] ?? 2 }).map(() => null)).map((label, i) => (
+                <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 10, overflow: "hidden", opacity: 0.55 }}>
+                  {label && (
+                    <div style={{ padding: "8px 12px", fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-disabled)", borderBottom: "1px solid var(--divider)" }}>
+                      {label}
+                    </div>
+                  )}
                   <TBDSlot /><div style={{ height: 1, background: "var(--divider)" }} /><TBDSlot />
                 </div>
               ))}

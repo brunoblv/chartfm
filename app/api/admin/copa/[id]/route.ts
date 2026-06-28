@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { GROUP_PAIRS, COPA_GROUP_LETTERS, COPA_UNASSIGNED_GROUP, drawGroups } from "@/lib/copa";
 import { openNextBatch, advanceCopaDay, syncCopaToSchedule } from "@/lib/copa-day";
+import { repairCopaKnockout, fixMislabeledGroupFixtures, realignCopaLivePhase } from "@/lib/copa-repair";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -162,6 +163,36 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (action === "advance_day") {
     const { closed, opened } = await advanceCopaDay(id);
     return NextResponse.json({ ok: true, closed, opened, done: opened === 0 });
+  }
+
+  if (action === "repair_knockout") {
+    try {
+      const result = await repairCopaKnockout(id);
+      return NextResponse.json({ ok: true, ...result });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Falha ao reparar mata-mata";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "fix_group_phases") {
+    try {
+      const fixedGroupPhases = await fixMislabeledGroupFixtures(id);
+      return NextResponse.json({ ok: true, fixedGroupPhases });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Falha ao corrigir fases de grupos";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "realign_live") {
+    try {
+      const result = await realignCopaLivePhase(id);
+      return NextResponse.json({ ok: true, ...result });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Falha ao alinhar fase ao vivo";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
   }
 
   if (action === "finish") {

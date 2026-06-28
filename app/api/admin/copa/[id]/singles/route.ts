@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import {
+  COPA_SINGLES_COUNT,
+  mergeArtistSingles,
+  validateArtistSingleAssignment,
+} from "@/lib/copa";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -29,13 +34,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!artistId || slotIndex == null || !songName?.trim()) {
     return NextResponse.json({ error: "artistId, slotIndex e songName são obrigatórios" }, { status: 400 });
   }
-  if (slotIndex < 0 || slotIndex > 6) {
+  if (slotIndex < 0 || slotIndex >= COPA_SINGLES_COUNT) {
     return NextResponse.json({ error: "slotIndex inválido" }, { status: 400 });
   }
 
   const artist = await prisma.copaArtist.findUnique({ where: { id: artistId } });
   if (!artist || artist.copaId !== id) {
     return NextResponse.json({ error: "Artista não encontrado" }, { status: 404 });
+  }
+
+  const existing = await prisma.copaSingle.findMany({ where: { copaArtistId: artistId } });
+  const merged = mergeArtistSingles(
+    existing.map((e) => ({ slotIndex: e.slotIndex, songName: e.songName, songId: e.songId })),
+    [{ slotIndex, songName: songName.trim(), songId: songId ?? null }],
+  );
+
+  const dupErr = validateArtistSingleAssignment(slotIndex, songName.trim(), songId ?? null, merged);
+  if (dupErr) {
+    return NextResponse.json({ error: dupErr }, { status: 400 });
   }
 
   const single = await prisma.copaSingle.upsert({

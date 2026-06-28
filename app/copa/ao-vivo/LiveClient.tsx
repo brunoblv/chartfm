@@ -30,6 +30,7 @@ type Game = {
 };
 
 const PHASE_LABELS: Record<string, string> = {
+  R32: "1/16 de Final",
   R16: "Oitavas de Final",
   QF: "Quartas de Final",
   SF: "Semifinal",

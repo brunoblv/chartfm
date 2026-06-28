@@ -3,16 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
-
-const SLOT_LABELS = [
-  "Grupo · Jogo 1",
-  "Grupo · Jogo 2",
-  "Grupo · Jogo 3",
-  "Oitavas de Final",
-  "Quartas de Final",
-  "Semi-Final",
-  "Final / 3º Lugar",
-];
+import { COPA_SINGLES_COUNT, SLOT_LABELS, getArtistUsedSongKeys, isSingleSlotEditableInWindow, mergeArtistSingles, songPickKey, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
 
@@ -26,13 +17,14 @@ type MyArtist = {
   groupLetter: string;
   standings: { rank: number; pts: number; pj: number };
   singles: SingleData[];
-  lockedSlots: number[];
+  slotLocks: LockedSingleSlot[];
 };
 
 type Props = {
   copaId: string;
   copaStatus: string;
   maxArtists: number;
+  editWindow: CopaSinglesEditWindow;
   myArtists: MyArtist[];
   takenSpotifyIds: string[];
 };
@@ -45,7 +37,7 @@ type SpotifyArtist = {
   genres: string[];
 };
 
-export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initArtists, takenSpotifyIds }: Props) {
+export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myArtists: initArtists, takenSpotifyIds }: Props) {
   const router = useRouter();
   const [artists, setArtists] = useState(initArtists);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -119,7 +111,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
           groupLetter: artist.groupLetter,
           standings: { rank: -1, pts: 0, pj: 0 },
           singles: [],
-          lockedSlots: [],
+          slotLocks: [],
         },
       ]);
       setShowAddModal(false);
@@ -168,21 +160,33 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
 
   async function saveSingle(songName: string, songId: string | null) {
     if (!editSingle || savingSingle) return;
+    const art = artists.find((a) => a.id === editSingle.artistId);
+    if (!art) return;
+
+    const merged = mergeArtistSingles(art.singles, [{
+      slotIndex: editSingle.slotIndex,
+      songName,
+      songId,
+    }]);
+    const dupErr = validateArtistSingleAssignment(editSingle.slotIndex, songName, songId, merged);
+    if (dupErr) {
+      alert(dupErr);
+      return;
+    }
+
     setSavingSingle(true);
     try {
-      const art = artists.find((a) => a.id === editSingle.artistId);
-      if (!art) return;
-      const newSingles = Array.from({ length: 7 }, (_, i) => {
-        const existing = art.singles.find((s) => s.slotIndex === i);
-        if (i === editSingle.slotIndex) return { slotIndex: i, songName, songId };
-        return existing ?? { slotIndex: i, songName: `Single ${i + 1}`, songId: null };
-      });
+      const newSingles = merged;
       const res = await fetch(`/api/copa/${copaId}/singles`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ artistId: editSingle.artistId, singles: newSingles }),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error ?? "Não foi possível salvar a música");
+        return;
+      }
       setArtists((prev) =>
         prev.map((a) =>
           a.id === editSingle.artistId ? { ...a, singles: newSingles } : a,
@@ -197,6 +201,20 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
   }
 
   const editArt = editSingle ? artists.find((a) => a.id === editSingle.artistId) : null;
+  const usedSongsForEdit = editArt && editSingle
+    ? getArtistUsedSongKeys(editArt.singles, editSingle.slotIndex)
+    : new Map<string, { slotIndex: number; label: string }>();
+
+  function isSongAlreadyUsed(title: string, id: string | null) {
+    const key = songPickKey(id, title);
+    return key ? usedSongsForEdit.has(key) : false;
+  }
+
+  function usedInLabel(title: string, id: string | null) {
+    const key = songPickKey(id, title);
+    if (!key) return null;
+    return usedSongsForEdit.get(key)?.label ?? null;
+  }
 
   const rosterComplete = artists.length >= maxArtists;
   // Registration phase 1: still picking artists. Phase 2 (singles) only opens once
@@ -212,7 +230,9 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
             ? `${artists.length}/${maxArtists} artistas · escolha seu time, depois você define as músicas`
             : isRegistration
               ? "Time completo! Agora escolha as músicas de cada artista"
-              : `${artists.length}/${maxArtists} artistas · Defina os singles para cada fase`}
+              : editWindow.open
+                ? "Janela de edição aberta — ajuste as músicas permitidas"
+                : "Visualize suas músicas · edição só entre fases"}
         </div>
       </div>
 
@@ -294,7 +314,33 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
             }}
           >
             <span style={{ fontSize: 18 }}>🎵</span>
-            Time completo! Defina as músicas de cada artista. O sorteio dos grupos acontece quando todos terminarem.
+            Time completo! Defina as músicas de cada artista — uma música diferente por fase. O sorteio dos grupos acontece quando todos terminarem.
+          </div>
+        )}
+        {!isRegistration && (
+          <div
+            style={{
+              padding: "12px 14px",
+              background: editWindow.open ? "rgba(52,199,89,.1)" : "rgba(255,212,38,.08)",
+              border: `1px solid ${editWindow.open ? "rgba(52,199,89,.35)" : "rgba(255,212,38,.3)"}`,
+              borderRadius: 12,
+              marginBottom: 14,
+              fontSize: 12,
+              lineHeight: 1.5,
+              color: "var(--text-muted)",
+            }}
+          >
+            {editWindow.open ? (
+              <>
+                <strong style={{ color: "#34C759" }}>Janela de edição aberta.</strong>{" "}
+                {editWindow.message} Cada música só pode ser usada uma vez por artista.
+              </>
+            ) : (
+              <>
+                <strong style={{ color: "var(--text)" }}>Edição fechada.</strong>{" "}
+                {editWindow.message}
+              </>
+            )}
           </div>
         )}
         {artists.map((art) => {
@@ -333,9 +379,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
               </div>
 
               {/* Singles */}
-              {Array.from({ length: 7 }, (_, i) => {
+              {Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => {
                 const single = art.singles.find((s) => s.slotIndex === i);
-                const isLocked = art.lockedSlots.includes(i);
+                const lock = art.slotLocks.find((l) => l.slotIndex === i);
+                const canEdit = isSingleSlotEditableInWindow(i, editWindow, art.slotLocks);
+                const isEmpty = !single || single.songName.startsWith("Single ");
                 return (
                   <div
                     key={i}
@@ -356,18 +404,18 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
                         style={{
                           fontSize: 13,
                           fontWeight: 600,
-                          color: isLocked ? "var(--text-muted)" : "var(--text)",
-                          cursor: isLocked ? "default" : "pointer",
+                          color: lock || !canEdit ? "var(--text-muted)" : isEmpty ? "var(--text-disabled)" : "var(--text)",
+                          cursor: canEdit ? "pointer" : "default",
                         }}
                         onClick={() => {
-                          if (isLocked) return;
+                          if (!canEdit) return;
                           setEditSingle({ artistId: art.id, slotIndex: i });
                           setSingleSearch("");
                           setSingleResults([]);
                         }}
                       >
-                        {single?.songName ?? "—"}
-                        {!isLocked && (
+                        {isEmpty ? (canEdit ? "Escolher música…" : "—") : single!.songName}
+                        {canEdit && (
                           <span style={{ color: "var(--text-disabled)", marginLeft: 4, fontSize: 10 }}>✏</span>
                         )}
                       </div>
@@ -380,11 +428,29 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
                         borderRadius: 99,
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
-                        background: isLocked ? "var(--fill-inset)" : "transparent",
-                        color: isLocked ? "var(--text-muted)" : "var(--text-disabled)",
+                        background: lock
+                          ? lock.status === "LIVE"
+                            ? "rgba(250,36,60,.12)"
+                            : "var(--fill-inset)"
+                          : canEdit
+                            ? "rgba(52,199,89,.1)"
+                            : "var(--fill-inset)",
+                        color: lock
+                          ? lock.status === "LIVE"
+                            ? "#FA243C"
+                            : "var(--text-muted)"
+                          : canEdit
+                            ? "#34C759"
+                            : "var(--text-disabled)",
                       }}
                     >
-                      {isLocked ? "Disputado" : "Próximo"}
+                      {lock
+                        ? lock.status === "LIVE"
+                          ? "Em jogo"
+                          : "Disputado"
+                        : canEdit
+                          ? "Editável"
+                          : "Fechado"}
                     </span>
                   </div>
                 );
@@ -523,7 +589,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
                 }}
               />
               {/* Manual entry option */}
-              {singleSearch.length > 0 && (
+              {singleSearch.length > 0 && !isSongAlreadyUsed(singleSearch, null) && (
                 <div
                   onClick={() => saveSingle(singleSearch, null)}
                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: "1px dashed var(--divider)", marginBottom: 8 }}
@@ -535,18 +601,36 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, myArtists: initA
                   </div>
                 </div>
               )}
-              {singleResults.map((song) => (
+              {singleSearch.length > 0 && isSongAlreadyUsed(singleSearch, null) && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0", marginBottom: 8 }}>
+                  "{singleSearch}" já foi usada em {usedInLabel(singleSearch, null)}.
+                </div>
+              )}
+              {singleResults.map((song) => {
+                const taken = isSongAlreadyUsed(song.title, song.id);
+                const takenLabel = usedInLabel(song.title, song.id);
+                return (
                 <div
                   key={song.id ?? song.title}
-                  onClick={() => saveSingle(song.title, song.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer" }}
+                  onClick={() => !taken && saveSingle(song.title, song.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    cursor: taken ? "not-allowed" : "pointer",
+                    opacity: taken ? 0.45 : 1,
+                  }}
                 >
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{song.title}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{song.artist}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      {taken ? `Já usada em ${takenLabel}` : song.artist}
+                    </div>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           </div>
         </div>

@@ -921,6 +921,7 @@ enum CopaPhase {
   SF
   THIRD_PLACE
   FINAL
+  R32
 }
 
 enum CopaFixtureStatus {
@@ -948,7 +949,7 @@ model CopaEdition {
 }
 
 // Playlists (Spotify + YouTube) geradas automaticamente para cada "dia de jogos"
-// (batchOrder 0..9). Uma linha por dia da Copa; idempotente via @@unique.
+// (batchOrder 0..12). Uma linha por dia da Copa; idempotente via @@unique.
 model CopaDayPlaylist {
   id                String      @id @default(cuid())
   copaId            String      @map("copa_id")

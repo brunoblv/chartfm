@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { BracketClient } from "./BracketClient";
-import { getVoteCounts } from "@/lib/copa";
+import { getVoteCounts, knockoutPendingMatchLabels } from "@/lib/copa";
+import { removePrematureKnockoutFixtures } from "@/lib/copa-knockout";
 
 export const revalidate = 30;
 
@@ -22,6 +23,8 @@ export default async function ChaveamentoPage() {
       </div>
     );
   }
+
+  await removePrematureKnockoutFixtures(copa.id);
 
   const allFixtures = await prisma.copaFixture.findMany({
     where: { copaId: copa.id, phase: { not: "GROUP" } },

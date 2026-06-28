@@ -159,6 +159,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
   const pctA = (data.votesA / total) * 100;
   const phaseLabels: Record<string, string> = {
     GROUP: `GRUPO ${data.groupLetter} · RODADA ${data.round} de 3`,
+    R32: "1/16 DE FINAL",
     R16: "OITAVAS DE FINAL",
     QF: "QUARTAS DE FINAL",
     SF: "SEMI-FINAL",

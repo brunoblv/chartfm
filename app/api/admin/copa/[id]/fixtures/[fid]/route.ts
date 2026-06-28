@@ -41,7 +41,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     await notifyCopaFixtureOpened(fid);
   }
 
-  // Ao encerrar um jogo, tenta avançar o chaveamento (grupos → R16 → QF → SF →
+  // Ao encerrar um jogo, tenta avançar o chaveamento (grupos → R32 → R16 → QF → SF →
   // Final/3º lugar). Idempotente: só gera a fase seguinte quando a atual termina.
   if (status === "DONE") {
     await advanceKnockout(id);

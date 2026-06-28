@@ -12,8 +12,8 @@ import { GLOBAL_RANKING_FIRST_WEEK_INDEX } from "@/lib/global-ranking-config";
 
 export const COPA_TEST_BOT_HANDLE = "copa-test-bot";
 export const DEFAULT_ARTIST_COUNT = 7;
-export const MIN_CHARTED_SINGLES = 8; // > 7
-export const SINGLES_PER_ARTIST = 7;
+export const MIN_CHARTED_SINGLES = 8;
+export const SINGLES_PER_ARTIST = 8;
 
 export type ChartedArtistPick = {
   spotifyId: string;
@@ -67,7 +67,7 @@ function globalEraBuckets(buckets: Map<number, Map<string, number>>) {
 }
 
 /**
- * Artistas com mais de 7 singles distintos que já entraram no top 100 do Global 100.
+ * Artistas com pelo menos 8 singles distintos que já entraram no top 100 do Global 100.
  * Usa daily_chart_song_stats + tabela songs (mesma lógica da página do artista),
  * não o JSON dos snapshots — que muitas vezes não traz artistSpotifyId.
  */
@@ -212,7 +212,7 @@ export async function seedCopaTestArtists(
   const qualifying = await findQualifyingCopaArtists(prisma, takenIds);
   if (qualifying.length < count) {
     throw new Error(
-      `Só ${qualifying.length} artista(s) com mais de 7 singles no Global 100 (precisa ${count}).`,
+      `Só ${qualifying.length} artista(s) com pelo menos 8 singles no Global 100 (precisa ${count}).`,
     );
   }
 

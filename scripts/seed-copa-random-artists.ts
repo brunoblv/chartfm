@@ -1,6 +1,6 @@
 /**
  * Preenche uma copa em inscrições com artistas ALEATÓRIOS (qualquer artista com
- * ≥7 músicas no banco — não exige Global 100), 7 singles cada, distribuídos por
+ * ≥8 músicas no banco — não exige Global 100), 8 singles cada, distribuídos por
  * donos-bot até a copa ficar completa e pronta para o sorteio.
  *
  * Uso:

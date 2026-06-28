@@ -9,6 +9,7 @@ type SimpleFixture = {
   phase: string;
   groupLetter: string | null;
   round: number | null;
+  matchIndex?: number;
   status: string;
   votesA: number;
   votesB: number;
@@ -27,10 +28,32 @@ type Props = {
   copa: { id: string; name: string; year: number; status: string; maxParticipants: number; isParticipant: boolean; participants: { userId: string; name: string; handle: string; avatarColor: string }[] };
   userId: string | null;
   liveFixture: SimpleFixture | null;
+  liveCount: number;
   recentDone: SimpleFixture[];
   upcoming: SimpleFixture | null;
   myArtists: { id: string; artistName: string; artistImage: string | null; artistColor: string; artistInitials: string; groupLetter: string; standingRank: number }[];
 };
+
+const FIXTURE_PHASE_LABELS: Record<string, string> = {
+  R32: "1/16 de Final",
+  R16: "Oitavas de Final",
+  QF: "Quartas de Final",
+  SF: "Semifinal",
+  FINAL: "Final",
+  THIRD_PLACE: "Disputa pelo 3º Lugar",
+};
+
+function fixtureContextLabel(f: SimpleFixture): string {
+  if (f.phase === "GROUP") return `Grupo ${f.groupLetter} · Rodada ${f.round} de 3`;
+  return FIXTURE_PHASE_LABELS[f.phase] ?? f.phase;
+}
+
+function livePhaseSummary(liveFixture: SimpleFixture | null, liveCount: number): string | null {
+  if (!liveFixture || liveCount === 0) return null;
+  const phase = FIXTURE_PHASE_LABELS[liveFixture.phase] ?? liveFixture.phase;
+  if (liveCount === 1) return `${phase} ao vivo agora`;
+  return `${liveCount} jogos ao vivo · ${phase}`;
+}
 
 function LiveDot() {
   return (
@@ -103,7 +126,7 @@ function ScoreRow({ f }: { f: SimpleFixture }) {
   );
 }
 
-export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming, myArtists }: Props) {
+export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDone, upcoming, myArtists }: Props) {
   const router = useRouter();
   const [joining, setJoining] = useState(false);
 
@@ -145,7 +168,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
         </h1>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
           🏆 {phaseLabel[copa.status] ?? copa.status}
-          {liveFixture && ` · Grupo ${liveFixture.groupLetter} ao vivo agora`}
+          {livePhaseSummary(liveFixture, liveCount) && ` · ${livePhaseSummary(liveFixture, liveCount)}`}
         </div>
       </div>
 
@@ -170,7 +193,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <Badge variant="live">Ao vivo</Badge>
               <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-disabled)" }}>
-                GRUPO {liveFixture.groupLetter} · RODADA {liveFixture.round}
+                {fixtureContextLabel(liveFixture).toUpperCase()}
+                {liveCount > 1 ? ` · +${liveCount - 1} jogos` : ""}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -194,7 +218,13 @@ export function CopaHomeClient({ copa, userId, liveFixture, recentDone, upcoming
               </div>
             </div>
             <div style={{ marginTop: 14, fontSize: 12, fontWeight: 700, color: "#FA243C", textAlign: "center" }}>
-              Toque para votar →
+              {liveCount > 1 ? (
+                <span onClick={(e) => { e.stopPropagation(); router.push("/copa/ao-vivo"); }}>
+                  Ver todos os {liveCount} jogos →
+                </span>
+              ) : (
+                "Toque para votar →"
+              )}
             </div>
           </div>
         </>

@@ -1,5 +1,5 @@
 /**
- * Cadastra 7 artistas aleatórios na copa em inscrições (Global 100, >7 singles).
+ * Cadastra 7 artistas aleatórios na copa em inscrições (Global 100, ≥8 singles).
  *
  * Uso:
  *   npx tsx scripts/seed-copa-test-artists.ts

@@ -65,10 +65,13 @@ export const GROUP_PAIRS: [number, number][] = [
   [0, 3], [1, 2], // Round 3
 ];
 
+export const COPA_SINGLES_COUNT = 8;
+
 export const SLOT_LABELS = [
   "Grupo · Jogo 1",
   "Grupo · Jogo 2",
   "Grupo · Jogo 3",
+  "1/16 de Final",
   "Oitavas de Final",
   "Quartas de Final",
   "Semi-Final",
@@ -79,12 +82,320 @@ export const PHASE_SLOT_INDEX: Record<string, number> = {
   GROUP_1: 0,
   GROUP_2: 1,
   GROUP_3: 2,
-  R16: 3,
-  QF: 4,
-  SF: 5,
-  THIRD_PLACE: 6,
-  FINAL: 6,
+  R32: 3,
+  R16: 4,
+  QF: 5,
+  SF: 6,
+  THIRD_PLACE: 7,
+  FINAL: 7,
 };
+
+const FIXTURE_PHASE_LABELS: Record<string, string> = {
+  GROUP: "Grupos",
+  R32: "1/16 de Final",
+  R16: "Oitavas",
+  QF: "Quartas",
+  SF: "Semi",
+  FINAL: "Final",
+  THIRD_PLACE: "3º lugar",
+};
+
+export type LockedSingleSlot = {
+  slotIndex: number;
+  status: "LIVE" | "DONE";
+  phase: string;
+  label: string;
+};
+
+/** Slots já usados em jogos LIVE ou DONE — não podem trocar a música. */
+export function getLockedSingleSlots(
+  artistId: string,
+  fixtures: Array<{
+    artistAId: string;
+    artistBId: string;
+    singleAIdx: number;
+    singleBIdx: number;
+    status: string;
+    phase: string;
+  }>,
+): LockedSingleSlot[] {
+  const bySlot = new Map<number, LockedSingleSlot>();
+  for (const f of fixtures) {
+    if (f.status !== "LIVE" && f.status !== "DONE") continue;
+    const pairs: [string, number][] = [
+      [f.artistAId, f.singleAIdx],
+      [f.artistBId, f.singleBIdx],
+    ];
+    for (const [id, idx] of pairs) {
+      if (id !== artistId) continue;
+      const next: LockedSingleSlot = {
+        slotIndex: idx,
+        status: f.status as "LIVE" | "DONE",
+        phase: f.phase,
+        label: FIXTURE_PHASE_LABELS[f.phase] ?? f.phase,
+      };
+      const prev = bySlot.get(idx);
+      if (!prev || (prev.status === "LIVE" && next.status === "DONE")) {
+        bySlot.set(idx, next);
+      }
+    }
+  }
+  return [...bySlot.values()].sort((a, b) => a.slotIndex - b.slotIndex);
+}
+
+export function isSingleSlotEditable(slotIndex: number, locked: LockedSingleSlot[]): boolean {
+  return !locked.some((l) => l.slotIndex === slotIndex);
+}
+
+export type ArtistSinglePick = {
+  slotIndex: number;
+  songName: string;
+  songId: string | null;
+};
+
+/** Chave estável para comparar se duas escolhas são a mesma música. */
+export function songPickKey(songId: string | null | undefined, songName: string): string | null {
+  const name = songName.trim();
+  if (!name || /^Single \d+$/i.test(name)) return null;
+  if (songId) return `id:${songId}`;
+  return `name:${name.toLowerCase()}`;
+}
+
+/** Músicas já atribuídas a outros slots do mesmo artista (slotIndex → fase). */
+export function getArtistUsedSongKeys(
+  singles: ArtistSinglePick[],
+  excludeSlotIndex?: number,
+): Map<string, { slotIndex: number; label: string }> {
+  const used = new Map<string, { slotIndex: number; label: string }>();
+  for (const s of singles) {
+    if (excludeSlotIndex != null && s.slotIndex === excludeSlotIndex) continue;
+    const key = songPickKey(s.songId, s.songName);
+    if (!key) continue;
+    used.set(key, {
+      slotIndex: s.slotIndex,
+      label: SLOT_LABELS[s.slotIndex] ?? `Fase ${s.slotIndex + 1}`,
+    });
+  }
+  return used;
+}
+
+/** Retorna mensagem de erro se a música já foi usada em outro jogo/fase do artista. */
+export function validateArtistSingleAssignment(
+  slotIndex: number,
+  songName: string,
+  songId: string | null,
+  allSingles: ArtistSinglePick[],
+): string | null {
+  const key = songPickKey(songId, songName);
+  if (!key) return null;
+
+  const used = getArtistUsedSongKeys(allSingles, slotIndex);
+  const conflict = used.get(key);
+  if (!conflict) return null;
+
+  return `"${songName.trim()}" já foi usada em ${conflict.label}. Cada música só pode ser usada uma vez por artista.`;
+}
+
+/** Valida o elenco completo após aplicar alterações (sem duplicatas). */
+export function findDuplicateSongInSingles(singles: ArtistSinglePick[]): string | null {
+  const seen = new Map<string, number>();
+  for (const s of singles) {
+    const key = songPickKey(s.songId, s.songName);
+    if (!key) continue;
+    const prev = seen.get(key);
+    if (prev != null) {
+      return `"${s.songName.trim()}" está em ${SLOT_LABELS[prev]} e ${SLOT_LABELS[s.slotIndex]}. Cada música só pode ser usada uma vez por artista.`;
+    }
+    seen.set(key, s.slotIndex);
+  }
+  return null;
+}
+
+export function mergeArtistSingles(
+  existing: ArtistSinglePick[],
+  updates: ArtistSinglePick[],
+): ArtistSinglePick[] {
+  const bySlot = new Map<number, ArtistSinglePick>();
+  for (const s of existing) bySlot.set(s.slotIndex, s);
+  for (const u of updates) {
+    bySlot.set(u.slotIndex, {
+      slotIndex: u.slotIndex,
+      songName: u.songName.trim(),
+      songId: u.songId ?? null,
+    });
+  }
+  return Array.from({ length: COPA_SINGLES_COUNT }, (_, i) =>
+    bySlot.get(i) ?? { slotIndex: i, songName: `Single ${i + 1}`, songId: null },
+  );
+}
+
+/** Fases eliminatórias em ordem (slot de música de cada uma). */
+export const KNOCKOUT_PHASE_SLOTS = [
+  { phase: "R32", slotIndex: 3, label: "1/16 de Final" },
+  { phase: "R16", slotIndex: 4, label: "Oitavas de Final" },
+  { phase: "QF", slotIndex: 5, label: "Quartas de Final" },
+  { phase: "SF", slotIndex: 6, label: "Semi-Final" },
+  { phase: "FINAL", slotIndex: 7, label: "Final / 3º Lugar" },
+] as const;
+
+/**
+ * Oitavas (O1–O8) a partir dos vencedores do 1/16 de final (J1–J16 = matchIndex 0–15).
+ * O1: J1×J3, O2: J2×J4, … — quartas/semis/final pareiam vencedores consecutivos.
+ */
+export const R16_FROM_R32_PAIRING: ReadonlyArray<readonly [number, number]> = [
+  [0, 2],
+  [1, 3],
+  [4, 6],
+  [5, 7],
+  [8, 10],
+  [9, 11],
+  [12, 14],
+  [13, 15],
+];
+
+export function knockoutPendingMatchLabels(phase: string): string[] {
+  switch (phase) {
+    case "R16":
+      return R16_FROM_R32_PAIRING.map(
+        ([a, b], i) => `O${i + 1}: Vencedor J${a + 1} × Vencedor J${b + 1}`,
+      );
+    case "QF":
+      return Array.from({ length: 4 }, (_, i) => `Q${i + 1}: Vencedor O${i * 2 + 1} × Vencedor O${i * 2 + 2}`);
+    case "SF":
+      return ["S1: Vencedor Q1 × Vencedor Q2", "S2: Vencedor Q3 × Vencedor Q4"];
+    case "FINAL":
+      return ["Final: Vencedor S1 × Vencedor S2"];
+    case "THIRD_PLACE":
+      return ["3º lugar: Perdedor S1 × Perdedor S2"];
+    default:
+      return [];
+  }
+}
+
+export type CopaSinglesEditWindow = {
+  open: boolean;
+  completedPhase: string | null;
+  completedLabel: string | null;
+  nextPhase: string | null;
+  nextLabel: string | null;
+  editableSlots: number[];
+  message: string;
+};
+
+function fixturesOfPhase(
+  all: Array<{ phase: string; status: string; matchIndex?: number }>,
+  phase: string,
+) {
+  return all.filter((f) => f.phase === phase);
+}
+
+function phaseIsComplete(all: Array<{ phase: string; status: string; matchIndex?: number }>, phase: string) {
+  const fs = fixturesOfPhase(all, phase);
+  return fs.length > 0 && fs.every((f) => f.status === "DONE");
+}
+
+function phaseHasStarted(all: Array<{ phase: string; status: string; matchIndex?: number }>, phase: string) {
+  return fixturesOfPhase(all, phase).some((f) => f.status === "LIVE" || f.status === "DONE");
+}
+
+/**
+ * Janelas de edição: abre após o 1/16 de Final (R32) encerrar e antes das oitavas (R16).
+ */
+export function getCopaSinglesEditWindow(
+  copaStatus: string,
+  allFixtures: Array<{ phase: string; status: string; matchIndex?: number }>,
+): CopaSinglesEditWindow {
+  const closed = (message: string): CopaSinglesEditWindow => ({
+    open: false,
+    completedPhase: null,
+    completedLabel: null,
+    nextPhase: null,
+    nextLabel: null,
+    editableSlots: [],
+    message,
+  });
+
+  if (copaStatus === "REGISTRATION") {
+    return {
+      open: true,
+      completedPhase: null,
+      completedLabel: null,
+      nextPhase: null,
+      nextLabel: null,
+      editableSlots: Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => i),
+      message: "Inscrições abertas — defina as 8 músicas de cada artista.",
+    };
+  }
+
+  // Após R32 encerrado → antes das oitavas iniciarem (R16 só é gerada nesse momento)
+  if (phaseIsComplete(allFixtures, "R32") && !phaseHasStarted(allFixtures, "R16")) {
+    return {
+      open: true,
+      completedPhase: "R32",
+      completedLabel: "1/16 de Final",
+      nextPhase: "R16",
+      nextLabel: "Oitavas de Final",
+      editableSlots: KNOCKOUT_PHASE_SLOTS.filter((p) => p.slotIndex >= 4).map((p) => p.slotIndex),
+      message: "1/16 de Final encerrado. Ajuste as músicas antes das oitavas de final.",
+    };
+  }
+
+  // Demais janelas entre fases (oitavas→quartas, etc.)
+  for (let i = 1; i < KNOCKOUT_PHASE_SLOTS.length - 1; i++) {
+    const cur = KNOCKOUT_PHASE_SLOTS[i];
+    const nxt = KNOCKOUT_PHASE_SLOTS[i + 1];
+    if (
+      phaseIsComplete(allFixtures, cur.phase) &&
+      fixturesOfPhase(allFixtures, nxt.phase).length > 0 &&
+      !phaseHasStarted(allFixtures, nxt.phase)
+    ) {
+      const editableSlots = [...new Set(KNOCKOUT_PHASE_SLOTS.slice(i + 1).map((p) => p.slotIndex))];
+      return {
+        open: true,
+        completedPhase: cur.phase,
+        completedLabel: cur.label,
+        nextPhase: nxt.phase,
+        nextLabel: nxt.label,
+        editableSlots,
+        message: `${cur.label} encerrada. Edite as músicas antes de ${nxt.label.toLowerCase()}.`,
+      };
+    }
+  }
+
+  if (phaseIsComplete(allFixtures, "SF")) {
+    const finalFixtures = [
+      ...fixturesOfPhase(allFixtures, "FINAL"),
+      ...fixturesOfPhase(allFixtures, "THIRD_PLACE"),
+    ];
+    if (finalFixtures.length > 0 && !finalFixtures.some((f) => f.status === "LIVE" || f.status === "DONE")) {
+      return {
+        open: true,
+        completedPhase: "SF",
+        completedLabel: "Semi-Final",
+        nextPhase: "FINAL",
+        nextLabel: "Final / 3º Lugar",
+        editableSlots: [7],
+        message: "Semifinais encerradas. Ajuste a música da final antes dos jogos.",
+      };
+    }
+  }
+
+  if (phaseHasStarted(allFixtures, "R32") || phaseHasStarted(allFixtures, "R16")) {
+    return closed("Edição fechada enquanto houver jogos em andamento. Aguarde o fim do 1/16 de Final.");
+  }
+
+  return closed("Edição fechada. A janela abre após o 1/16 de Final (R32) encerrar.");
+}
+
+export function isSingleSlotEditableInWindow(
+  slotIndex: number,
+  window: CopaSinglesEditWindow,
+  locked: LockedSingleSlot[],
+): boolean {
+  if (!window.open) return false;
+  if (!window.editableSlots.includes(slotIndex)) return false;
+  return isSingleSlotEditable(slotIndex, locked);
+}
 
 export type StandingRow = {
   artistId: string;
@@ -167,7 +478,7 @@ export function resolveKnockoutWinner(input: {
   return { winner: "A", decidedBy: "COIN" };
 }
 
-// Rótulos dos 10 dias da Copa, indexados por batchOrder (0..9).
+// Rótulos dos 12 dias da Copa, indexados por batchOrder (0..11).
 export const COPA_DAY_LABELS = [
   "Grupos · Rodada 1 (A–H)",
   "Grupos · Rodada 1 (I–P)",
@@ -175,24 +486,36 @@ export const COPA_DAY_LABELS = [
   "Grupos · Rodada 2 (I–P)",
   "Grupos · Rodada 3 (A–H)",
   "Grupos · Rodada 3 (I–P)",
-  "Oitavas de Final",
+  "1/16 de Final · 1ª rodada (8 jogos)",
+  "1/16 de Final · 2ª rodada (8 jogos)",
+  "Oitavas de Final (8 jogos)",
   "Quartas de Final",
   "Semifinais",
   "Final + 3º Lugar",
 ];
 
-export const COPA_LAST_BATCH_ORDER = COPA_DAY_LABELS.length - 1; // 9
+export const COPA_LAST_BATCH_ORDER = COPA_DAY_LABELS.length - 1; // 11
 
-// Ordem do "lote do dia" usada pelo botão Avançar Dia do admin (0 = primeiro a
-// abrir). Grupos: meia rodada por dia (A–H = 0, I–P = 1). Depois R16 → QF → SF →
-// Final/3º lugar.
-export function fixtureBatchOrder(f: { phase: string; round: number | null; groupLetter: string | null }): number {
+export type FixtureBatchInput = {
+  phase: string;
+  round: number | null;
+  groupLetter: string | null;
+  matchIndex: number;
+};
+
+// Ordem do "lote do dia" (Avançar Dia / cron). R32: 16 jogos em 2 dias; oitavas: 8 jogos.
+export function fixtureBatchOrder(f: FixtureBatchInput): number {
   if (f.phase === "GROUP") {
     const half = COPA_GROUP_LETTERS.indexOf(f.groupLetter ?? "") < 8 ? 0 : 1;
     return ((f.round ?? 1) - 1) * 2 + half; // 0..5
   }
-  const order: Record<string, number> = { R16: 6, QF: 7, SF: 8, FINAL: 9, THIRD_PLACE: 9 };
-  return order[f.phase] ?? 99;
+  const mi = f.matchIndex ?? 0;
+  if (f.phase === "R32") return mi < 8 ? 6 : 7;
+  if (f.phase === "R16") return 8;
+  if (f.phase === "QF") return 9;
+  if (f.phase === "SF") return 10;
+  if (f.phase === "FINAL" || f.phase === "THIRD_PLACE") return 11;
+  return 99;
 }
 
 export function getArtistColor(spotifyId: string | null | undefined): string {

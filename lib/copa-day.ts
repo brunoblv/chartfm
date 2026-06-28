@@ -3,6 +3,7 @@ import { fixtureBatchOrder } from "@/lib/copa";
 import { advanceKnockout } from "@/lib/copa-knockout";
 import { generateCopaDayPlaylistsSafely } from "@/lib/copa-playlist-sync";
 import { notifyCopaBatchOpened } from "@/lib/copa-notifications";
+import { removePrematureKnockoutFixtures, ensureR32SecondBatchClosed } from "@/lib/copa-knockout";
 
 const DAY_MS = 86_400_000;
 
@@ -32,7 +33,7 @@ export async function syncCopaToSchedule(
   // 1) Encerra os lotes de dias já passados que ainda não terminaram.
   const all = await prisma.copaFixture.findMany({
     where: { copaId },
-    select: { id: true, phase: true, round: true, groupLetter: true, status: true },
+    select: { id: true, phase: true, round: true, groupLetter: true, matchIndex: true, status: true },
   });
   const toClose = all.filter((f) => fixtureBatchOrder(f) < dayIndex && f.status !== "DONE");
   if (toClose.length > 0) {
@@ -47,7 +48,7 @@ export async function syncCopaToSchedule(
   // 2) Abre o lote do dia atual (refetch: advanceKnockout pode ter criado jogos).
   const upcoming = await prisma.copaFixture.findMany({
     where: { copaId, status: "UPCOMING" },
-    select: { id: true, phase: true, round: true, groupLetter: true },
+    select: { id: true, phase: true, round: true, groupLetter: true, matchIndex: true },
   });
   const toOpen = upcoming.filter((f) => fixtureBatchOrder(f) === dayIndex);
   if (toOpen.length > 0) {
@@ -68,9 +69,12 @@ export async function syncCopaToSchedule(
 // Abre o próximo "lote do dia": os jogos UPCOMING com o menor batchOrder viram
 // LIVE. Retorna quantos foram abertos (0 = não há mais lotes pendentes).
 export async function openNextBatch(copaId: string): Promise<number> {
+  await removePrematureKnockoutFixtures(copaId);
+  await ensureR32SecondBatchClosed(copaId);
+
   const upcoming = await prisma.copaFixture.findMany({
     where: { copaId, status: "UPCOMING" },
-    select: { id: true, phase: true, round: true, groupLetter: true },
+    select: { id: true, phase: true, round: true, groupLetter: true, matchIndex: true },
   });
   if (upcoming.length === 0) return 0;
 
@@ -89,6 +93,8 @@ export async function openNextBatch(copaId: string): Promise<number> {
 // chaveamento se a fase acabou e abre o próximo lote. Usado tanto pelo botão
 // Avançar Dia do admin quanto pelo cron diário (no prazo de votação).
 export async function advanceCopaDay(copaId: string): Promise<{ closed: number; opened: number }> {
+  await removePrematureKnockoutFixtures(copaId);
+
   const live = await prisma.copaFixture.findMany({
     where: { copaId, status: "LIVE" },
     select: { id: true },

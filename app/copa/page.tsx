@@ -31,15 +31,21 @@ export default async function CopaPage() {
   }
 
   // Fetch live and recent fixtures
-  const liveFixture = await prisma.copaFixture.findFirst({
+  const liveFixtures = await prisma.copaFixture.findMany({
     where: { copaId: copa.id, status: "LIVE" },
     include: {
       votes: true,
       artistA: { include: { singles: true } },
       artistB: { include: { singles: true } },
     },
-    orderBy: { matchIndex: "asc" },
+    orderBy: [{ matchIndex: "asc" }],
   });
+  const liveFixture =
+    liveFixtures.find((f) => f.phase === "R32") ??
+    liveFixtures.find((f) => f.phase !== "GROUP") ??
+    liveFixtures[0] ??
+    null;
+  const liveCount = liveFixtures.length;
 
   const recentDone = await prisma.copaFixture.findMany({
     where: { copaId: copa.id, status: "DONE" },
@@ -165,6 +171,7 @@ export default async function CopaPage() {
       }}
       userId={userId}
       liveFixture={serializeFixture(liveFixture)}
+      liveCount={liveCount}
       recentDone={recentDone.map((f) => serializeFixture(f)!)}
       upcoming={upcoming ? serializeFixture({ ...upcoming, votes: [] })! : null}
       myArtists={myArtists.map((a) => ({

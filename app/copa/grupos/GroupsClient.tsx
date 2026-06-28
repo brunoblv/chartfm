@@ -155,7 +155,7 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
             </table>
           </div>
           <div style={{ fontSize: 11, color: "var(--text-disabled)", marginBottom: 20 }}>
-            ● 1º e 2º classificados avançam para as Oitavas de Final
+            ● 1º e 2º classificados avançam para o 1/16 de Final
           </div>
 
           {/* Fixtures */}

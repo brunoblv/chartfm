@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { getArtistColor, getArtistInitials, COPA_UNASSIGNED_GROUP } from "@/lib/copa";
 
-const SINGLES_PER_ARTIST = 7;
+const SINGLES_PER_ARTIST = 8;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -36,7 +36,7 @@ export type SeedRandomResult = {
 };
 
 // Preenche uma copa em inscrições com artistas ALEATÓRIOS (qualquer artista com
-// ≥7 músicas no banco — sem exigir Global 100), 7 singles cada, distribuídos por
+// ≥8 músicas no banco — sem exigir Global 100), 8 singles cada, distribuídos por
 // donos-bot até a copa ficar completa e sorteável.
 export async function seedCopaRandomArtists(
   prisma: PrismaClient,
@@ -60,7 +60,7 @@ export async function seedCopaRandomArtists(
   const countByOwner = new Map<string, number>();
   for (const a of existing) countByOwner.set(a.ownerId, (countByOwner.get(a.ownerId) ?? 0) + 1);
 
-  // Pool: artistas com ≥7 músicas, ainda não usados nesta copa, embaralhados.
+  // Pool: artistas com ≥8 músicas, ainda não usados nesta copa, embaralhados.
   const grouped = await prisma.song.groupBy({ by: ["artistSpotifyId"], _count: { _all: true } });
   const pool = shuffle(
     grouped

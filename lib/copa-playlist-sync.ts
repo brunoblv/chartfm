@@ -1,7 +1,7 @@
 /**
  * Geração automática das playlists "do dia" da Copa ChartFM (Spotify + YouTube).
  *
- * Cada dia de jogos (batchOrder 0..9) vira uma playlist com os singles em
+ * Cada dia de jogos (batchOrder 0..12) vira uma playlist com os singles em
  * disputa naquele dia. É chamada quando o lote do dia é aberto (cron de
  * agendamento ou botão Avançar Dia do admin). Idempotente: persiste o que
  * conseguir e completa o que faltar em execuções seguintes.

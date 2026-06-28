@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "CopaPhase" ADD VALUE IF NOT EXISTS 'R32';
