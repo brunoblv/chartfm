@@ -96,7 +96,7 @@ function BracketMatch({ f, userId, onClick }: { f: BracketFixture; userId: strin
             color: isMe ? "#FFD426" : isWinner ? "var(--text)" : "var(--text-muted)",
           }}
         >
-          {art ? art.artistName.split(" ")[0] : "A definir"}
+          {art ? art.artistName : "A definir"}
         </span>
         <span style={{ fontSize: 13, fontWeight: 800, color: isWinner ? "var(--text)" : "var(--text-muted)" }}>
           {isDone ? goals : "—"}

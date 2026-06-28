@@ -158,7 +158,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     artistSpotifyId = p.artistSpotifyId;
     artistDbId = p.artistDbId;
     albumDbId = p.albumDbId;
-    coverImageUrl = p.coverImageUrl;
+    coverImageUrl = coverImageUrl || p.coverImageUrl;
     paletteA = p.paletteA;
     paletteB = p.paletteB;
     coverSeed = p.coverSeed;

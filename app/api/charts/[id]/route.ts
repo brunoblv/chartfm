@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { inferCadenceFromWeekIndex, prevPeriodIndex } from "@/lib/chart-cadence";
 import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
+import { hydrateChartEntryCoverUrls, hydrateDropoutCoverUrls, resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
 import { recomputePersistedChartEntryStatsForParada } from "@/lib/chart-entry-stats";
 import type { PersonalDropoutEntry } from "@/lib/types";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
@@ -102,6 +103,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       entries: {
         orderBy: { position: "asc" },
         include: {
+          albumBySpotify: { select: { coverUrl: true } },
           song: {
             include: {
               albumRef: {
@@ -138,6 +140,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
         entries: {
           orderBy: { position: "asc" },
           include: {
+            albumBySpotify: { select: { coverUrl: true } },
             song: {
               include: {
                 albumRef: { select: { id: true, coverUrl: true } },
@@ -246,7 +249,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     .sort((a, b) => a.position - b.position)
     .map((e) => {
       const song = e.song!;
-      const img = song.albumRef?.coverUrl?.trim() || null;
+      const img = resolveChartEntryCoverUrl(e);
       return {
         lastPos: e.position,
         song: {
@@ -291,6 +294,8 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   }
 
   const mapped = mapPrismaChartDetail({ ...row, entries: entriesWithComputedStats });
+  mapped.chart.entries = await hydrateChartEntryCoverUrls(prisma, mapped.chart.entries);
+  const hydratedDropouts = await hydrateDropoutCoverUrls(prisma, dropouts);
   const lastfmImportWeekDate = lastfmWeekPickerValueFromChart(mapped.chart);
 
   return NextResponse.json(
@@ -303,7 +308,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       globalNumberOnes,
       liked,
       reposted,
-      dropouts,
+      dropouts: hydratedDropouts,
     },
     { headers: NO_CACHE_HEADERS },
   );

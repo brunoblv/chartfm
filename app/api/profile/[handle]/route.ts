@@ -98,6 +98,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         coverPaletteA: true,
         coverPaletteB: true,
         coverSeed: true,
+        albumBySpotify: { select: { coverUrl: true } },
         song: {
           select: {
             id: true,

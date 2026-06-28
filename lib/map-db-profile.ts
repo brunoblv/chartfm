@@ -1,5 +1,6 @@
 import type { Chart, ChartEntry, PersonalDropoutEntry, User, UserWithCharts } from "@/lib/types";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
 
 type PrismaProfileUser = {
   id: string;
@@ -38,6 +39,7 @@ type PrismaProfileUser = {
       coverPaletteA: string;
       coverPaletteB: string;
       coverSeed: number;
+      albumBySpotify?: { coverUrl?: string | null } | null;
       song: {
         id: string;
         title: string;
@@ -78,6 +80,7 @@ type PrismaChartRow = {
     coverPaletteA: string;
     coverPaletteB: string;
     coverSeed: number;
+    albumBySpotify?: { coverUrl?: string | null } | null;
     song: {
       id: string;
       title: string;
@@ -103,7 +106,7 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
     comments: c.comments,
     reposts: c.reposts,
     entries: c.entries.map((e) => {
-      const img = e.song.albumRef?.coverUrl?.trim() || null;
+      const img = resolveChartEntryCoverUrl(e);
       return {
       position: e.position,
       song: {

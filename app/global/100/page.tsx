@@ -6,6 +6,7 @@ import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { AdSlot } from "@/components/ui/AdSlot";
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
+import { loadCoverUrlsForSongIds } from "@/lib/chart-entry-cover";
 import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft, Youtube } from "lucide-react";
 import { GlobalHero } from "@/components/global/GlobalHero";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
@@ -67,23 +68,19 @@ async function resolveArtistImages(artists: ArtistImageKey[]): Promise<Map<strin
 
 async function hydrateSongCovers(entries: GlobalSongLike[]): Promise<GlobalSongLike[]> {
   if (!entries.length) return entries;
-  const ids = [...new Set(entries.map((e) => e.song.id).filter((id): id is string => Boolean(id)))];
-  const rows = await prisma.song.findMany({
-    where: { id: { in: ids } },
-    select: {
-      id: true,
-      spotifyId: true,
-      albumRef: { select: { coverUrl: true } },
-    },
-  });
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  const bySpotifyId = new Map(rows.filter((r) => r.spotifyId).map((r) => [r.spotifyId as string, r]));
+
+  const songIds = [
+    ...new Set(entries.map((e) => e.song.id).filter((id): id is string => Boolean(id))),
+  ];
+  const coverBySongId = songIds.length > 0 ? await loadCoverUrlsForSongIds(prisma, songIds) : new Map();
 
   return entries.map((entry) => {
-    const refById = entry.song.id ? byId.get(entry.song.id) : undefined;
-    const refBySpotifyId = entry.song.spotifyId ? bySpotifyId.get(entry.song.spotifyId) : undefined;
-    const ref = refById ?? refBySpotifyId;
-    const imageUrl = ref?.albumRef?.coverUrl?.trim() || null;
+    const id = entry.song.id;
+    const imageUrl =
+      (id ? coverBySongId.get(id) ?? null : null) ||
+      entry.song.imageUrl?.trim() ||
+      entry.cover.imageUrl?.trim() ||
+      null;
     return {
       ...entry,
       song: { ...entry.song, imageUrl },
