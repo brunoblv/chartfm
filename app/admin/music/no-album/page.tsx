@@ -5,8 +5,8 @@ import type { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
+import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 
 const PAGE_SIZE = 120;
 
@@ -134,7 +134,8 @@ export default async function AdminSongsNoAlbumPage({
               {songs.map((s) => (
                 <tr key={s.id}>
                   <td style={tdStyle}>
-                    {s.title} <span style={{ color: "#86868B", fontSize: 11 }}>({s.id})</span>
+                    <AdminSongNameLink song={s} />{" "}
+                    <span style={{ color: "#86868B", fontSize: 11 }}>({s.id})</span>
                   </td>
                   <td style={tdStyle}>{s.artist}</td>
                   <td style={tdStyle}>
@@ -149,12 +150,7 @@ export default async function AdminSongsNoAlbumPage({
                   </td>
                   <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 11 }}>{s.spotifyId ?? "—"}</td>
                   <td style={tdStyle}>
-                    <Link
-                      href={`${buildSongPath({ id: s.id, title: s.title, artist: s.artist, spotifyId: s.spotifyId })}/edit`}
-                      style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}
-                    >
-                      Editar
-                    </Link>
+                    <AdminSongLinks song={s} />
                   </td>
                 </tr>
               ))}

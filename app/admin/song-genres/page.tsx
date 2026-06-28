@@ -4,9 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
 import { adminNavChipStyle } from "@/components/admin/admin-styles";
+import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 import { songMissingGenresWhere } from "@/lib/resolve-song-genres";
 import { SongGenresBackfillClient } from "./SongGenresBackfillClient";
 
@@ -96,23 +96,14 @@ export default async function AdminSongGenresPage() {
                 <th style={thStyle}>Artista</th>
                 <th style={thStyle}>Spotify</th>
                 <th style={thStyle}>Status</th>
+                <th style={thStyle}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {songs.map((song) => (
                 <tr key={song.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
                   <td style={tdStyle}>
-                    <Link
-                      href={buildSongPath({
-                        title: song.title,
-                        artist: song.artist,
-                        slugArtist: song.artist,
-                        spotifyId: song.spotifyId,
-                      })}
-                      style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}
-                    >
-                      {song.title}
-                    </Link>
+                    <AdminSongNameLink song={song} />
                   </td>
                   <td style={tdStyle}>{song.artist}</td>
                   <td style={tdStyle}>
@@ -130,6 +121,9 @@ export default async function AdminSongGenresPage() {
                           ? "Buscado, sem tags"
                           : "Nunca buscado"}
                     </span>
+                  </td>
+                  <td style={tdStyle}>
+                    <AdminSongLinks song={song} />
                   </td>
                 </tr>
               ))}

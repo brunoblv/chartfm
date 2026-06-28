@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { RefreshCw, CheckCircle2, AlertCircle, Loader2, ImageOff } from "lucide-react";
-import { buildSongPath } from "@/lib/music-routes";
+import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 
 type FailedItem = {
   id: string;
@@ -222,18 +221,14 @@ export function SongCoversBackfillClient({ initialTotal, spotifyConfigured }: Pr
                 >
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
-                      {item.artist} — {item.title}
+                      <AdminSongNameLink song={{ id: item.id, title: item.title, artist: item.artist, spotifyId: item.spotifyId }} />
                     </div>
+                    <div style={{ marginTop: 2, fontSize: 12, color: "#86868B" }}>{item.artist}</div>
                     <div style={{ marginTop: 2, fontSize: 12, color: "#86868B" }}>
                       {item.invalidSpotifyId ? "ID Spotify inválido no banco" : "Spotify não retornou capa confiável"}
                     </div>
                   </div>
-                  <Link
-                    href={`${buildSongPath({ id: item.id, title: item.title, artist: item.artist, spotifyId: item.spotifyId })}/edit`}
-                    style={{ color: "#FA243C", textDecoration: "none", fontSize: 13, fontWeight: 750, flexShrink: 0 }}
-                  >
-                    Editar
-                  </Link>
+                  <AdminSongLinks song={{ id: item.id, title: item.title, artist: item.artist, spotifyId: item.spotifyId }} />
                 </div>
               ))}
             </div>

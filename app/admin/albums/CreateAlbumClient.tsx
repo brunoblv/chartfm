@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import type { CSSProperties } from "react";
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 import { DuplicateConflictNotice } from "@/components/admin/DuplicateConflictNotice";
+import { AdminAlbumLinks } from "@/components/admin/AdminEntityLinks";
 import type { DuplicateAlbumConflict } from "@/lib/duplicate-conflict-payload";
 
 type ArtistOption = { spotifyId: string; name: string };
@@ -186,9 +187,7 @@ export function CreateAlbumClient() {
           {created && (
             <div style={{ fontSize: 13, color: "#0F9D58" }}>
               Álbum <strong>{created.title}</strong> criado com sucesso para <strong>{created.artist.name}</strong>.{" "}
-              <a href={`/album/${created.artist.id}_${created.id}/edit`} style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}>
-                Editar
-              </a>
+              <AdminAlbumLinks album={created} />
             </div>
           )}
         </div>

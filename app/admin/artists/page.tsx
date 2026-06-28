@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +5,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
+import { AdminArtistLinks, AdminArtistNameLink } from "@/components/admin/AdminEntityLinks";
 import { ArtistCreatePanel } from "./ArtistCreatePanel";
 import { ArtistRefreshImageButton } from "./ArtistRefreshImageButton";
 
@@ -105,7 +105,7 @@ export default async function AdminArtistsPage({
                           }}
                         />
                       )}
-                      {a.name}
+                      <AdminArtistNameLink artist={a} />
                     </div>
                   </td>
                   <td style={{ ...adminTdStyle, color: "var(--text-subtle)" }}>{a.exhibitionName ?? "—"}</td>
@@ -113,12 +113,7 @@ export default async function AdminArtistsPage({
                     {a.spotifyId}
                   </td>
                   <td style={adminTdStyle}>
-                    <Link
-                      href={`/artist/${a.id}/edit`}
-                      style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700, fontSize: 13 }}
-                    >
-                      Editar
-                    </Link>
+                    <AdminArtistLinks artist={a} />
                     <ArtistRefreshImageButton artistId={a.id} />
                   </td>
                 </tr>

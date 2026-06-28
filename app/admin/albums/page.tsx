@@ -6,6 +6,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
+import { AdminAlbumLinks, AdminAlbumNameLink, AdminArtistNameLink, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 import { CreateAlbumClient } from "./CreateAlbumClient";
 
 export default async function AdminAlbumsPage({
@@ -62,24 +63,27 @@ export default async function AdminAlbumsPage({
             <tbody>
               {albums.map((a) => (
                 <tr key={a.id}>
-                  <td style={adminTdStyle}>{a.title}</td>
                   <td style={adminTdStyle}>
-                    {a.artist.name} <span style={{ color: "var(--text-muted)", fontSize: 12 }}>({a.artist.id})</span>
+                    <AdminAlbumNameLink album={a} />
+                  </td>
+                  <td style={adminTdStyle}>
+                    <AdminArtistNameLink artist={a.artist} />{" "}
+                    <span style={{ color: "var(--text-muted)", fontSize: 12 }}>({a.artist.id})</span>
                   </td>
                   <td style={{ ...adminTdStyle, maxWidth: 320 }}>
                     {a.songs.length === 0
                       ? <span style={{ color: "var(--text-muted)", fontSize: 13 }}>Nenhuma</span>
                       : <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 2 }}>
                           {a.songs.map((s) => (
-                            <li key={s.id} style={{ fontSize: 12, color: "var(--text)" }}>{s.title}</li>
+                            <li key={s.id} style={{ fontSize: 12, color: "var(--text)" }}>
+                              <AdminSongNameLink song={{ id: s.id, title: s.title, artist: s.artist }} />
+                            </li>
                           ))}
                         </ul>
                     }
                   </td>
                   <td style={adminTdStyle}>
-                    <Link href={`/album/${a.artist.id}_${a.id}/edit`} style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}>
-                      Editar
-                    </Link>
+                    <AdminAlbumLinks album={a} />
                   </td>
                 </tr>
               ))}

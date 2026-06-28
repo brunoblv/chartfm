@@ -4,8 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
+import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 import { SpotifyFixButton } from "./SpotifyFixButton";
 import { CleanRemasterButton } from "./CleanRemasterButton";
 
@@ -253,19 +253,18 @@ export default async function AdminMusicVersionsPage({
               {songs.map((s) => {
                 const artist = s.artistRef?.name ?? s.artist;
                 const badge = detectBadge(s.title);
-                const songPath = buildSongPath({
-                  id: s.id,
-                  title: s.title,
-                  artist,
-                  artistId: s.artistRef?.id,
-                  spotifyId: s.spotifyId,
-                });
                 return (
                   <tr key={s.id}>
                     <td style={tdStyle}>
-                      <Link href={songPath} style={songLinkStyle}>
-                        {s.title}
-                      </Link>
+                      <AdminSongNameLink
+                        song={{
+                          id: s.id,
+                          title: s.title,
+                          artist,
+                          artistId: s.artistRef?.id,
+                          spotifyId: s.spotifyId,
+                        }}
+                      />
                     </td>
                     <td style={tdStyle}>
                       <span
@@ -291,13 +290,16 @@ export default async function AdminMusicVersionsPage({
                       {s._count.entries}
                     </td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-                        <Link
-                          href={`${songPath}/edit`}
-                          style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700, fontSize: 13 }}
-                        >
-                          Editar
-                        </Link>
+                      <div style={{ display: "flex", gap: 12, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
+                        <AdminSongLinks
+                          song={{
+                            id: s.id,
+                            title: s.title,
+                            artist,
+                            artistId: s.artistRef?.id,
+                            spotifyId: s.spotifyId,
+                          }}
+                        />
                         <SpotifyFixButton songId={s.id} songTitle={s.title} />
                       </div>
                     </td>
@@ -366,11 +368,6 @@ const tdStyle: CSSProperties = {
   borderTop: "1px solid rgba(0,0,0,0.06)",
   fontSize: 14,
   color: "#1D1D1F",
-};
-const songLinkStyle: CSSProperties = {
-  color: "#1D1D1F",
-  fontWeight: 700,
-  textDecoration: "none",
 };
 const pageLinkStyle: CSSProperties = {
   padding: "10px 16px",

@@ -5,9 +5,9 @@ import type { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
 import { adminNavChipStyle } from "@/components/admin/admin-styles";
+import { AdminAlbumLinks, AdminAlbumNameLink, AdminArtistLinks, AdminArtistNameLink, AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 import { MissingInfoBackfillClient } from "./MissingInfoBackfillClient";
 
 const PAGE_SIZE = 30;
@@ -131,7 +131,9 @@ export default async function AdminMissingInfoPage() {
               {songs.map((s) => (
                 <tr key={s.id}>
                   <td style={tdStyle}>
-                    <div style={{ fontWeight: 650 }}>{s.title}</div>
+                    <div style={{ fontWeight: 650 }}>
+                      <AdminSongNameLink song={s} />
+                    </div>
                     <div style={mutedStyle}>{s.album?.trim() || "Sem álbum"}</div>
                   </td>
                   <td style={tdStyle}>{s.artist}</td>
@@ -149,9 +151,7 @@ export default async function AdminMissingInfoPage() {
                     />
                   </td>
                   <td style={tdStyle}>
-                    <Link href={`${buildSongPath({ id: s.id, title: s.title, artist: s.artist, spotifyId: s.spotifyId })}/edit`} style={linkStyle}>
-                      Editar
-                    </Link>
+                    <AdminSongLinks song={s} />
                   </td>
                 </tr>
               ))}
@@ -173,13 +173,15 @@ export default async function AdminMissingInfoPage() {
             <tbody>
               {artists.map((a) => (
                 <tr key={a.id}>
-                  <td style={tdStyle}>{a.name}</td>
+                  <td style={tdStyle}>
+                    <AdminArtistNameLink artist={a} />
+                  </td>
                   <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12 }}>{a.spotifyId}</td>
                   <td style={tdStyle}>
                     <Pills items={missingLabels([[!a.imageUrl, "imagem"], [!a.spotifyUrl, "link"], [a.genres.length === 0, "gêneros"]])} />
                   </td>
                   <td style={tdStyle}>
-                    <Link href={`/artist/${a.id}/edit`} style={linkStyle}>Editar</Link>
+                    <AdminArtistLinks artist={a} />
                   </td>
                 </tr>
               ))}
@@ -202,10 +204,14 @@ export default async function AdminMissingInfoPage() {
               {albums.map((a) => (
                 <tr key={a.id}>
                   <td style={tdStyle}>
-                    <div style={{ fontWeight: 650 }}>{a.title}</div>
+                    <div style={{ fontWeight: 650 }}>
+                      <AdminAlbumNameLink album={a} />
+                    </div>
                     <div style={mutedStyle}>{a.spotifyId}</div>
                   </td>
-                  <td style={tdStyle}>{a.artist.name}</td>
+                  <td style={tdStyle}>
+                    <AdminArtistNameLink artist={a.artist} />
+                  </td>
                   <td style={tdStyle}>
                     <Pills
                       items={missingLabels([
@@ -218,7 +224,7 @@ export default async function AdminMissingInfoPage() {
                     />
                   </td>
                   <td style={tdStyle}>
-                    <Link href={`/album/${a.artist.id}_${a.id}/edit`} style={linkStyle}>Editar</Link>
+                    <AdminAlbumLinks album={a} />
                   </td>
                 </tr>
               ))}
@@ -273,7 +279,6 @@ const headRowStyle: CSSProperties = { background: "rgba(0,0,0,0.03)" };
 const thStyle: CSSProperties = { textAlign: "left", padding: "10px 12px", fontSize: 12, color: "#6B6B70", fontWeight: 700 };
 const tdStyle: CSSProperties = { padding: "10px 12px", borderTop: "1px solid rgba(0,0,0,0.06)", fontSize: 14, color: "#1D1D1F", verticalAlign: "top" };
 const mutedStyle: CSSProperties = { marginTop: 3, fontSize: 12, color: "#86868B" };
-const linkStyle: CSSProperties = { color: "#FA243C", textDecoration: "none", fontWeight: 700 };
 const pillStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",

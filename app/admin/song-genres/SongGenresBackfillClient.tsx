@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { RefreshCw, CheckCircle2, AlertCircle, Loader2, Tags } from "lucide-react";
-import { buildSongPath } from "@/lib/music-routes";
+import { AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 
 type BackfillResult = {
   songId: string;
@@ -217,12 +216,7 @@ export function SongGenresBackfillClient({ initialMissing, initialWithTags, tota
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                     <div style={{ minWidth: 0 }}>
-                      <Link
-                        href={buildSongPath({ title: r.title, artist: r.artist, slugArtist: r.artist })}
-                        style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F", textDecoration: "none" }}
-                      >
-                        {r.title}
-                      </Link>
+                      <AdminSongNameLink song={{ id: r.songId, title: r.title, artist: r.artist }} />
                       <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>{r.artist}</div>
                     </div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: r.error ? "#C41E3A" : "#2D7A32" }}>

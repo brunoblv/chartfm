@@ -1,13 +1,12 @@
-import Link from "next/link";
 import type { CSSProperties } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { buildSongPath } from "@/lib/music-routes";
 import { countSongsMissingCovers, findSongsMissingCovers } from "@/lib/resolve-publish-songs";
 import { isSpotifyTrackId, spotifyConfigured } from "@/lib/spotify-server";
 import { Shell } from "@/components/layout/Shell";
+import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 import { SongCoversBackfillClient } from "./SongCoversBackfillClient";
 
 const PAGE_SIZE = 40;
@@ -48,7 +47,9 @@ export default async function AdminSongsNoCoverPage() {
             <tbody>
               {songs.map((s) => (
                 <tr key={s.id}>
-                  <td style={tdStyle}>{s.title}</td>
+                  <td style={tdStyle}>
+                    <AdminSongNameLink song={s} />
+                  </td>
                   <td style={tdStyle}>{s.artist}</td>
                   <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12, color: "#6B6B70" }}>
                     {s.spotifyId ? (
@@ -63,12 +64,7 @@ export default async function AdminSongsNoCoverPage() {
                     )}
                   </td>
                   <td style={tdStyle}>
-                    <Link
-                      href={`${buildSongPath({ id: s.id, title: s.title, artist: s.artist, spotifyId: s.spotifyId })}/edit`}
-                      style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}
-                    >
-                      Editar
-                    </Link>
+                    <AdminSongLinks song={s} />
                   </td>
                 </tr>
               ))}

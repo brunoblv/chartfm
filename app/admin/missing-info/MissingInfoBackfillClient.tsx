@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { RefreshCw, CheckCircle2, AlertCircle, Loader2, Wrench } from "lucide-react";
+import { adminEntityLinkStyle } from "@/components/admin/AdminEntityLinks";
 
 type ManualItem = {
   type: "song" | "artist" | "album";
@@ -241,6 +242,9 @@ export function MissingInfoBackfillClient({ initialTotal }: Props) {
                         Ver conflito
                       </Link>
                     )}
+                    <Link href={item.href.replace(/\/edit$/, "")} style={adminEntityLinkStyle}>
+                      Ver
+                    </Link>
                     <Link href={item.href} style={primaryLinkStyle}>
                       Editar
                     </Link>

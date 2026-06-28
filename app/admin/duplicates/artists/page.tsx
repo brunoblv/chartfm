@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { normalizeLoose } from "@/lib/duplicate-utils";
+import { AdminArtistLinks, AdminArtistNameLink } from "@/components/admin/AdminEntityLinks";
 
 type ArtistRow = {
   id: number;
@@ -137,9 +138,14 @@ export default async function AdminDuplicateArtistsPage({
                 return (
                   <div key={artist.id} style={rowStyle}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700 }}>{artist.name}</div>
+                      <div style={{ fontWeight: 700 }}>
+                        <AdminArtistNameLink artist={artist} />
+                      </div>
                       <div style={{ fontSize: 13, color: "#6B6B70" }}>
                         songs: {artist._count.songs} • albums: {artist._count.albums} • feats: {artist._count.feats} • spotify: {artist.spotifyId}
+                      </div>
+                      <div style={{ marginTop: 4 }}>
+                        <AdminArtistLinks artist={artist} />
                       </div>
                     </div>
                     {!isMain ? (

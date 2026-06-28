@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { canonicalArtistName, canonicalSongTitle } from "@/lib/duplicate-utils";
+import { AdminArtistLinks, AdminArtistNameLink, AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 
 type SongRow = {
   id: string;
@@ -162,9 +163,14 @@ export default async function AdminDuplicateSongsPage({
                 return (
                   <div key={song.id} style={rowStyle}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700 }}>{song.title}</div>
+                      <div style={{ fontWeight: 700 }}>
+                        <AdminSongNameLink song={song} />
+                      </div>
                       <div style={{ fontSize: 13, color: "#6B6B70" }}>
                         {song.artist} • {song.album || "sem álbum"} • entries: {song._count.entries} • spotify: {song.spotifyId ?? "—"}
+                      </div>
+                      <div style={{ marginTop: 4 }}>
+                        <AdminSongLinks song={song} />
                       </div>
                     </div>
                     {!isMain ? (

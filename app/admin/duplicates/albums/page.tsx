@@ -8,6 +8,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { canonicalAlbumTitle, canonicalArtistName } from "@/lib/duplicate-utils";
 import { mergeAlbums } from "@/lib/merge-albums";
+import { AdminAlbumLinks, AdminAlbumNameLink } from "@/components/admin/AdminEntityLinks";
 
 type AlbumRow = {
   id: number;
@@ -17,7 +18,7 @@ type AlbumRow = {
   coverUrl: string | null;
   releaseDate: Date | null;
   totalTracks: number | null;
-  artist: { name: string };
+  artist: { id: number; name: string };
   _count: { songs: number; chartEntries: number; reviews: number };
 };
 
@@ -80,7 +81,7 @@ export default async function AdminDuplicateAlbumsPage({
       coverUrl: true,
       releaseDate: true,
       totalTracks: true,
-      artist: { select: { name: true } },
+      artist: { select: { id: true, name: true } },
       _count: { select: { songs: true, chartEntries: true, reviews: true } },
     },
     orderBy: [{ artist: { name: "asc" } }, { title: "asc" }],
@@ -174,7 +175,7 @@ export default async function AdminDuplicateAlbumsPage({
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {album.title}
+                          <AdminAlbumNameLink album={album} />
                         </div>
                         <div style={{ fontSize: 12, color: "#86868B", marginTop: 3, display: "flex", gap: 10, flexWrap: "wrap" }}>
                           {year && <span>{year}</span>}
@@ -182,6 +183,9 @@ export default async function AdminDuplicateAlbumsPage({
                           <span>{album._count.songs} músicas vinculadas</span>
                           {album._count.chartEntries > 0 && <span>{album._count.chartEntries} chart entries</span>}
                           {album._count.reviews > 0 && <span>{album._count.reviews} reviews</span>}
+                        </div>
+                        <div style={{ marginTop: 4 }}>
+                          <AdminAlbumLinks album={album} />
                         </div>
                       </div>
 

@@ -3,10 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { buildSongPath } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import { adminNavChipStyle, adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
+import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 
 export default async function AdminMusicPage({
   searchParams,
@@ -86,17 +86,14 @@ export default async function AdminMusicPage({
             <tbody>
               {songs.map((s) => (
                 <tr key={s.id}>
-                  <td style={adminTdStyle}>{s.title}</td>
+                  <td style={adminTdStyle}>
+                    <AdminSongNameLink song={s} />
+                  </td>
                   <td style={adminTdStyle}>{s.artist}</td>
                   <td style={adminTdStyle}>{s.album?.trim() ? s.album : "—"}</td>
                   <td style={{ ...adminTdStyle, fontFamily: "monospace", fontSize: 12 }}>{s.spotifyId ?? "—"}</td>
                   <td style={adminTdStyle}>
-                    <Link
-                      href={`${buildSongPath({ id: s.id, title: s.title, artist: s.artist, spotifyId: s.spotifyId })}/edit`}
-                      style={{ color: "#FA243C", textDecoration: "none", fontWeight: 700 }}
-                    >
-                      Editar
-                    </Link>
+                    <AdminSongLinks song={s} />
                   </td>
                 </tr>
               ))}
