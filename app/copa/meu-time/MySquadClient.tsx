@@ -2,8 +2,11 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { GripVertical } from "lucide-react";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
-import { COPA_SINGLES_COUNT, SLOT_LABELS, getArtistUsedSongKeys, isSingleSlotEditableInWindow, mergeArtistSingles, songPickKey, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
+import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
+import { COPA_SINGLES_COUNT, SLOT_LABELS, findDuplicateSongInSingles, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
+import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
 
@@ -47,10 +50,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
   const [adding, setAdding] = useState(false);
 
   // Single editing
-  const [editSingle, setEditSingle] = useState<{ artistId: string; slotIndex: number } | null>(null);
+  const [editArtist, setEditArtist] = useState<{ artistId: string; focusSlotIndex: number } | null>(null);
   const [singleSearch, setSingleSearch] = useState("");
   const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string }[]>([]);
   const [savingSingle, setSavingSingle] = useState(false);
+  const [slotDropOver, setSlotDropOver] = useState<string | null>(null);
 
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const isRegistration = copaStatus === "REGISTRATION";
@@ -158,62 +162,109 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
     } catch {}
   }
 
-  async function saveSingle(songName: string, songId: string | null) {
-    if (!editSingle || savingSingle) return;
-    const art = artists.find((a) => a.id === editSingle.artistId);
-    if (!art) return;
+  async function persistSingles(artistId: string, newSingles: SingleData[]) {
+    const res = await fetch(`/api/copa/${copaId}/singles`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artistId, singles: newSingles }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error ?? "Não foi possível salvar a música");
+      return false;
+    }
+    setArtists((prev) =>
+      prev.map((a) => (a.id === artistId ? { ...a, singles: newSingles } : a)),
+    );
+    return true;
+  }
 
-    const merged = mergeArtistSingles(art.singles, [{
-      slotIndex: editSingle.slotIndex,
-      songName,
-      songId,
-    }]);
-    const dupErr = validateArtistSingleAssignment(editSingle.slotIndex, songName, songId, merged);
+  async function assignSingle(artistId: string, slotIndex: number, songName: string, songId: string | null) {
+    if (savingSingle) return false;
+    const art = artists.find((a) => a.id === artistId);
+    if (!art) return false;
+    if (!isSingleSlotEditableInWindow(slotIndex, editWindow, art.slotLocks, artistId)) {
+      alert("Este slot não pode ser alterado agora.");
+      return false;
+    }
+
+    const merged = mergeArtistSingles(art.singles, [{ slotIndex, songName, songId }]);
+    const dupErr = validateArtistSingleAssignment(slotIndex, songName, songId, merged);
     if (dupErr) {
       alert(dupErr);
-      return;
+      return false;
     }
 
     setSavingSingle(true);
     try {
-      const newSingles = merged;
-      const res = await fetch(`/api/copa/${copaId}/singles`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ artistId: editSingle.artistId, singles: newSingles }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error ?? "Não foi possível salvar a música");
-        return;
-      }
-      setArtists((prev) =>
-        prev.map((a) =>
-          a.id === editSingle.artistId ? { ...a, singles: newSingles } : a,
-        ),
-      );
-      setEditSingle(null);
-      setSingleSearch("");
-      setSingleResults([]);
+      return await persistSingles(artistId, merged);
     } finally {
       setSavingSingle(false);
     }
   }
 
-  const editArt = editSingle ? artists.find((a) => a.id === editSingle.artistId) : null;
-  const usedSongsForEdit = editArt && editSingle
-    ? getArtistUsedSongKeys(editArt.singles, editSingle.slotIndex)
-    : new Map<string, { slotIndex: number; label: string }>();
+  async function swapSingles(artistId: string, fromSlotIndex: number, toSlotIndex: number) {
+    if (savingSingle || fromSlotIndex === toSlotIndex) return false;
+    const art = artists.find((a) => a.id === artistId);
+    if (!art) return false;
+    if (
+      !isSingleSlotEditableInWindow(fromSlotIndex, editWindow, art.slotLocks, artistId) ||
+      !isSingleSlotEditableInWindow(toSlotIndex, editWindow, art.slotLocks, artistId)
+    ) {
+      alert("Um ou mais slots não podem ser alterados agora.");
+      return false;
+    }
 
-  function isSongAlreadyUsed(title: string, id: string | null) {
-    const key = songPickKey(id, title);
-    return key ? usedSongsForEdit.has(key) : false;
+    const pick = (slotIndex: number) => {
+      const s = art.singles.find((x) => x.slotIndex === slotIndex);
+      return s ?? { slotIndex, songName: `Single ${slotIndex + 1}`, songId: null };
+    };
+    const from = pick(fromSlotIndex);
+    const to = pick(toSlotIndex);
+    const merged = mergeArtistSingles(art.singles, [
+      { slotIndex: fromSlotIndex, songName: to.songName, songId: to.songId },
+      { slotIndex: toSlotIndex, songName: from.songName, songId: from.songId },
+    ]);
+    const dupErr = findDuplicateSongInSingles(merged);
+    if (dupErr) {
+      alert(dupErr);
+      return false;
+    }
+
+    setSavingSingle(true);
+    try {
+      return await persistSingles(artistId, merged);
+    } finally {
+      setSavingSingle(false);
+    }
   }
 
-  function usedInLabel(title: string, id: string | null) {
-    const key = songPickKey(id, title);
-    if (!key) return null;
-    return usedSongsForEdit.get(key)?.label ?? null;
+  async function handleSlotDrop(artistId: string, slotIndex: number, e: React.DragEvent) {
+    e.preventDefault();
+    setSlotDropOver(null);
+    const payload = readCopaSongDrag(e);
+    if (!payload) return;
+
+    if (payload.fromArtistId === artistId && payload.fromSlotIndex != null && payload.fromSlotIndex !== slotIndex) {
+      await swapSingles(artistId, payload.fromSlotIndex, slotIndex);
+      return;
+    }
+    await assignSingle(artistId, slotIndex, payload.title, payload.songId);
+  }
+
+  function openArtistEditor(artistId: string, focusSlotIndex: number) {
+    const art = artists.find((a) => a.id === artistId);
+    if (!art) return;
+    if (!isSingleSlotEditableInWindow(focusSlotIndex, editWindow, art.slotLocks, artistId)) return;
+    setEditArtist({ artistId, focusSlotIndex });
+    setSingleSearch("");
+    setSingleResults([]);
+  }
+
+  function closeArtistEditor() {
+    setEditArtist(null);
+    setSingleSearch("");
+    setSingleResults([]);
   }
 
   const rosterComplete = artists.length >= maxArtists;
@@ -231,7 +282,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
             : isRegistration
               ? "Time completo! Agora escolha as músicas de cada artista"
               : editWindow.open
-                ? "Toque em ✏ nos slots Editáveis para trocar a música"
+                ? "Toque em ✏ ou arraste músicas entre slots editáveis"
                 : "Visualize suas músicas · edição indisponível agora"}
         </div>
       </div>
@@ -384,17 +435,46 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                 const lock = art.slotLocks.find((l) => l.slotIndex === i);
                 const canEdit = isSingleSlotEditableInWindow(i, editWindow, art.slotLocks, art.id);
                 const isEmpty = !single || single.songName.startsWith("Single ");
+                const dropKey = slotDropKey(art.id, i);
+                const dropHighlight = slotDropOver === dropKey;
+                const canDrag = canEdit && !isEmpty && !savingSingle;
                 return (
                   <div
                     key={i}
+                    draggable={canDrag}
+                    onDragStart={(e) => {
+                      if (!canDrag || !single) {
+                        e.preventDefault();
+                        return;
+                      }
+                      writeCopaSongDrag(e, {
+                        title: single.songName,
+                        songId: single.songId,
+                        fromArtistId: art.id,
+                        fromSlotIndex: i,
+                      });
+                    }}
+                    onDragEnd={() => setSlotDropOver(null)}
+                    onDragOver={(e) => {
+                      if (!canEdit) return;
+                      e.preventDefault();
+                      setSlotDropOver(dropKey);
+                    }}
+                    onDragLeave={() => setSlotDropOver((prev) => (prev === dropKey ? null : prev))}
+                    onDrop={(e) => handleSlotDrop(art.id, i, e)}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: 9,
                       padding: "8px 16px",
                       borderTop: "1px solid var(--divider)",
+                      background: dropHighlight ? "rgba(52,199,89,.08)" : undefined,
+                      cursor: canDrag ? "grab" : canEdit ? "copy" : "default",
                     }}
                   >
+                    {canDrag ? (
+                      <GripVertical size={14} color="var(--text-disabled)" style={{ flexShrink: 0, marginLeft: -4 }} />
+                    ) : null}
                     <span style={{ width: 20, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>{i + 1}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 2 }}>
@@ -409,9 +489,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                         }}
                         onClick={() => {
                           if (!canEdit) return;
-                          setEditSingle({ artistId: art.id, slotIndex: i });
-                          setSingleSearch("");
-                          setSingleResults([]);
+                          openArtistEditor(art.id, i);
                         }}
                       >
                         {isEmpty ? (canEdit ? "Escolher música…" : "—") : single!.songName}
@@ -551,92 +629,30 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
         </div>
       )}
 
-      {/* Edit single modal */}
-      {editSingle && editArt && (
-        <div
-          style={{ position: "fixed", inset: 0, height: "100dvh", background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box" }}
-          onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }}
-        >
-          <div
-            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "calc(100dvh - 32px)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>Definir single</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-                  {SLOT_LABELS[editSingle.slotIndex]} · {editArt.artistName}
-                </div>
-              </div>
-              <button onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
-            </div>
-            <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
-              <input
-                autoFocus
-                placeholder={`Buscar música de ${editArt.artistName}…`}
-                value={singleSearch}
-                onChange={(e) => searchSongs(e.target.value, editArt.artistName)}
-                style={{
-                  width: "100%",
-                  background: "var(--fill-inset)",
-                  border: "1.5px solid var(--divider)",
-                  borderRadius: 10,
-                  padding: "11px 14px",
-                  color: "var(--text)",
-                  fontSize: 15,
-                  fontWeight: 600,
-                  outline: "none",
-                  marginBottom: 10,
-                  boxSizing: "border-box",
-                }}
-              />
-              {/* Manual entry option */}
-              {singleSearch.length > 0 && !isSongAlreadyUsed(singleSearch, null) && (
-                <div
-                  onClick={() => saveSingle(singleSearch, null)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: "1px dashed var(--divider)", marginBottom: 8 }}
-                >
-                  <span style={{ fontSize: 18 }}>✏️</span>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>Usar "{singleSearch}"</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Entrada manual</div>
-                  </div>
-                </div>
-              )}
-              {singleSearch.length > 0 && isSongAlreadyUsed(singleSearch, null) && (
-                <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0", marginBottom: 8 }}>
-                  "{singleSearch}" já foi usada em {usedInLabel(singleSearch, null)}.
-                </div>
-              )}
-              {singleResults.map((song) => {
-                const taken = isSongAlreadyUsed(song.title, song.id);
-                const takenLabel = usedInLabel(song.title, song.id);
-                return (
-                <div
-                  key={song.id ?? song.title}
-                  onClick={() => !taken && saveSingle(song.title, song.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    cursor: taken ? "not-allowed" : "pointer",
-                    opacity: taken ? 0.45 : 1,
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{song.title}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      {taken ? `Já usada em ${takenLabel}` : song.artist}
-                    </div>
-                  </div>
-                </div>
-              );})}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Edit singles modal with drag and drop */}
+      {editArtist && (() => {
+        const art = artists.find((a) => a.id === editArtist.artistId);
+        if (!art) return null;
+        return (
+          <CopaArtistSinglesEditor
+            open
+            onClose={closeArtistEditor}
+            artistId={art.id}
+            artistName={art.artistName}
+            singles={art.singles}
+            slotLocks={art.slotLocks}
+            editWindow={editWindow}
+            focusSlotIndex={editArtist.focusSlotIndex}
+            canEditSlot={(slotIndex) => isSingleSlotEditableInWindow(slotIndex, editWindow, art.slotLocks, art.id)}
+            search={singleSearch}
+            onSearchChange={(q) => searchSongs(q, art.artistName)}
+            results={singleResults}
+            saving={savingSingle}
+            onAssign={(slotIndex, songName, songId) => assignSingle(art.id, slotIndex, songName, songId)}
+            onSwap={(fromSlotIndex, toSlotIndex) => swapSingles(art.id, fromSlotIndex, toSlotIndex)}
+          />
+        );
+      })()}
     </div>
   );
 }

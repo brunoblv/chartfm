@@ -3,7 +3,10 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
-import { COPA_DAY_LABELS, COPA_SINGLES_COUNT, SLOT_LABELS } from "@/lib/copa";
+import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
+import { COPA_DAY_LABELS, COPA_SINGLES_COUNT, SLOT_LABELS, findDuplicateSongInSingles, mergeArtistSingles } from "@/lib/copa";
+import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
+import { GripVertical } from "lucide-react";
 
 type Edition = {
   id: string;
@@ -89,7 +92,8 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
   const [squadsEditionId, setSquadsEditionId] = useState<string | null>(null);
   const [squadsData, setSquadsData] = useState<{ artistsPerUser: number; squads: SquadParticipant[] } | null>(null);
   const [loadingSquads, setLoadingSquads] = useState(false);
-  const [editSingle, setEditSingle] = useState<{ artistId: string; artistName: string; slotIndex: number } | null>(null);
+  const [editArtist, setEditArtist] = useState<{ artistId: string; artistName: string; focusSlotIndex: number } | null>(null);
+  const [slotDropOver, setSlotDropOver] = useState<string | null>(null);
   const [singleSearch, setSingleSearch] = useState("");
   const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string }[]>([]);
   const [savingSingle, setSavingSingle] = useState(false);
@@ -271,16 +275,21 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
     } catch {}
   }
 
-  async function saveAdminSingle(songName: string, songId: string | null) {
-    if (!editSingle || !squadsEditionId || savingSingle) return;
+  async function saveAdminSingle(
+    artistId: string,
+    slotIndex: number,
+    songName: string,
+    songId: string | null,
+  ): Promise<boolean> {
+    if (!squadsEditionId || savingSingle) return false;
     setSavingSingle(true);
     try {
       const res = await fetch(`/api/admin/copa/${squadsEditionId}/singles`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          artistId: editSingle.artistId,
-          slotIndex: editSingle.slotIndex,
+          artistId,
+          slotIndex,
           songName,
           songId,
         }),
@@ -288,7 +297,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         alert(err.error ?? "Erro ao salvar");
-        return;
+        return false;
       }
       setSquadsData((prev) => {
         if (!prev) return prev;
@@ -296,11 +305,11 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
           ...prev,
           squads: prev.squads.map((p) => {
             const artists = p.artists.map((a) => {
-              if (a.id !== editSingle.artistId) return a;
-              const others = a.singles.filter((s) => s.slotIndex !== editSingle.slotIndex);
+              if (a.id !== artistId) return a;
+              const others = a.singles.filter((s) => s.slotIndex !== slotIndex);
               return {
                 ...a,
-                singles: [...others, { slotIndex: editSingle.slotIndex, songName, songId }].sort(
+                singles: [...others, { slotIndex, songName, songId }].sort(
                   (x, y) => x.slotIndex - y.slotIndex,
                 ),
               };
@@ -310,12 +319,76 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
           }),
         };
       });
-      setEditSingle(null);
-      setSingleSearch("");
-      setSingleResults([]);
+      return true;
     } finally {
       setSavingSingle(false);
     }
+  }
+
+  function getSquadArtist(artistId: string) {
+    if (!squadsData) return null;
+    for (const p of squadsData.squads) {
+      const art = p.artists.find((a) => a.id === artistId);
+      if (art) return art;
+    }
+    return null;
+  }
+
+  async function assignAdminSingle(artistId: string, slotIndex: number, songName: string, songId: string | null) {
+    const art = getSquadArtist(artistId);
+    if (!art || art.lockedSlots.includes(slotIndex)) return false;
+    const merged = mergeArtistSingles(art.singles, [{ slotIndex, songName, songId }]);
+    const dupErr = findDuplicateSongInSingles(merged);
+    if (dupErr) {
+      alert(dupErr);
+      return false;
+    }
+    return saveAdminSingle(artistId, slotIndex, songName, songId);
+  }
+
+  async function swapAdminSingles(artistId: string, fromSlotIndex: number, toSlotIndex: number) {
+    const art = getSquadArtist(artistId);
+    if (!art) return false;
+    if (art.lockedSlots.includes(fromSlotIndex) || art.lockedSlots.includes(toSlotIndex)) {
+      alert("Um ou mais slots estão disputados.");
+      return false;
+    }
+    const pick = (slotIndex: number) => {
+      const s = art.singles.find((x) => x.slotIndex === slotIndex);
+      return s ?? { slotIndex, songName: `Single ${slotIndex + 1}`, songId: null };
+    };
+    const from = pick(fromSlotIndex);
+    const to = pick(toSlotIndex);
+    const merged = mergeArtistSingles(art.singles, [
+      { slotIndex: fromSlotIndex, songName: to.songName, songId: to.songId },
+      { slotIndex: toSlotIndex, songName: from.songName, songId: from.songId },
+    ]);
+    const dupErr = findDuplicateSongInSingles(merged);
+    if (dupErr) {
+      alert(dupErr);
+      return false;
+    }
+    const ok1 = await saveAdminSingle(artistId, fromSlotIndex, to.songName, to.songId);
+    if (!ok1) return false;
+    return saveAdminSingle(artistId, toSlotIndex, from.songName, from.songId);
+  }
+
+  async function handleAdminSlotDrop(artistId: string, slotIndex: number, e: React.DragEvent) {
+    e.preventDefault();
+    setSlotDropOver(null);
+    const payload = readCopaSongDrag(e);
+    if (!payload) return;
+    if (payload.fromArtistId === artistId && payload.fromSlotIndex != null && payload.fromSlotIndex !== slotIndex) {
+      await swapAdminSingles(artistId, payload.fromSlotIndex, slotIndex);
+      return;
+    }
+    await assignAdminSingle(artistId, slotIndex, payload.title, payload.songId);
+  }
+
+  function closeAdminEditor() {
+    setEditArtist(null);
+    setSingleSearch("");
+    setSingleResults([]);
   }
 
   async function setFixtureStatus(fixtureId: string, status: "UPCOMING" | "LIVE" | "DONE") {
@@ -446,14 +519,45 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
                             const single = art.singles.find((s) => s.slotIndex === i);
                             const isLocked = art.lockedSlots.includes(i);
                             const isEmpty = !single || single.songName.startsWith("Single ");
+                            const dropKey = slotDropKey(art.id, i);
+                            const dropHighlight = slotDropOver === dropKey;
+                            const canDrag = !isLocked && !isEmpty && !savingSingle;
                             return (
                               <div
                                 key={i}
+                                draggable={canDrag}
+                                onDragStart={(e) => {
+                                  if (!canDrag || !single) {
+                                    e.preventDefault();
+                                    return;
+                                  }
+                                  writeCopaSongDrag(e, {
+                                    title: single.songName,
+                                    songId: single.songId,
+                                    fromArtistId: art.id,
+                                    fromSlotIndex: i,
+                                  });
+                                }}
+                                onDragEnd={() => setSlotDropOver(null)}
+                                onDragOver={(e) => {
+                                  if (isLocked) return;
+                                  e.preventDefault();
+                                  setSlotDropOver(dropKey);
+                                }}
+                                onDragLeave={() => setSlotDropOver((prev) => (prev === dropKey ? null : prev))}
+                                onDrop={(e) => handleAdminSlotDrop(art.id, i, e)}
                                 style={{
                                   display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
                                   borderTop: "1px solid var(--divider)", fontSize: 12,
+                                  background: dropHighlight ? "rgba(52,199,89,.08)" : undefined,
+                                  cursor: canDrag ? "grab" : isLocked ? "default" : "copy",
                                 }}
                               >
+                                {canDrag ? (
+                                  <GripVertical size={12} color="var(--text-disabled)" style={{ flexShrink: 0 }} />
+                                ) : (
+                                  <span style={{ width: 12, flexShrink: 0 }} />
+                                )}
                                 <span style={{ width: 16, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>
                                   {i + 1}
                                 </span>
@@ -479,7 +583,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setEditSingle({ artistId: art.id, artistName: art.artistName, slotIndex: i });
+                                    setEditArtist({ artistId: art.id, artistName: art.artistName, focusSlotIndex: i });
                                     setSingleSearch(single && !isEmpty ? single.songName : "");
                                     setSingleResults([]);
                                   }}
@@ -847,64 +951,48 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
         </div>
       )}
 
-      {/* Admin edit single modal */}
-      {editSingle && (
-        <div
-          style={{ position: "fixed", inset: 0, height: "100dvh", background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box" }}
-          onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }}
-        >
-          <div
-            style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "calc(100dvh - 32px)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}
-            onClick={(ev) => ev.stopPropagation()}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>Corrigir música</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-                  {SLOT_LABELS[editSingle.slotIndex]} · {editSingle.artistName}
-                </div>
-              </div>
-              <button onClick={() => { setEditSingle(null); setSingleSearch(""); setSingleResults([]); }} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
-            </div>
-            <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
-              <input
-                autoFocus
-                placeholder={`Buscar música de ${editSingle.artistName}…`}
-                value={singleSearch}
-                onChange={(ev) => searchSongs(ev.target.value, editSingle.artistName)}
-                style={{
-                  width: "100%", background: "var(--fill-inset)", border: "1.5px solid var(--divider)", borderRadius: 10,
-                  padding: "11px 14px", color: "var(--text)", fontSize: 15, fontWeight: 600, outline: "none", marginBottom: 10, boxSizing: "border-box",
-                }}
-              />
-              {singleSearch.length > 0 && (
-                <div
-                  onClick={() => saveAdminSingle(singleSearch, null)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: "1px dashed var(--divider)", marginBottom: 8 }}
-                >
-                  <span style={{ fontSize: 18 }}>✏️</span>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>Usar &quot;{singleSearch}&quot;</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Entrada manual</div>
-                  </div>
-                </div>
-              )}
-              {singleResults.map((song) => (
-                <div
-                  key={song.id ?? song.title}
-                  onClick={() => saveAdminSingle(song.title, song.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer" }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{song.title}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{song.artist}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {editArtist && squadsEditionId && (() => {
+        const art = getSquadArtist(editArtist.artistId);
+        if (!art) return null;
+        const adminEditWindow = {
+          open: true,
+          completedPhase: null,
+          completedLabel: null,
+          nextPhase: null,
+          nextLabel: null,
+          editableSlots: Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => i),
+          message: "Edição admin",
+        };
+        return (
+          <CopaArtistSinglesEditor
+            open
+            onClose={closeAdminEditor}
+            title="Corrigir músicas"
+            artistId={art.id}
+            artistName={editArtist.artistName}
+            singles={art.singles}
+            slotLocks={art.lockedSlots.map((slotIndex) => ({
+              slotIndex,
+              status: "DONE" as const,
+              phase: "ADMIN",
+              label: SLOT_LABELS[slotIndex] ?? "",
+            }))}
+            editWindow={adminEditWindow}
+            focusSlotIndex={editArtist.focusSlotIndex}
+            canEditSlot={(slotIndex) => !art.lockedSlots.includes(slotIndex)}
+            search={singleSearch}
+            onSearchChange={(q) => searchSongs(q, editArtist.artistName)}
+            results={singleResults}
+            saving={savingSingle}
+            onAssign={(slotIndex, songName, songId) =>
+              assignAdminSingle(editArtist.artistId, slotIndex, songName, songId)
+            }
+            onSwap={(fromSlotIndex, toSlotIndex) =>
+              swapAdminSingles(editArtist.artistId, fromSlotIndex, toSlotIndex)
+            }
+          />
+        );
+      })()}
 
       {/* Create Copa modal */}
       {showCreate && (
