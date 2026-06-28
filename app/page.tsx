@@ -340,8 +340,8 @@ export default async function HomePage() {
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
-      getSuggestedUsers(session.user.id, userGenres, 3),
-      getNewUsers(session.user.id, 3),
+      getSuggestedUsers(session.user.id, userGenres, followingIds, 3),
+      getNewUsers(session.user.id, followingIds, 3),
       getTimelineFeed(session.user.id, currentWeekIdx, followingIds, locale),
       getPublishedThisWeek(session.user.id, followingIds),
       getReviewsFeed(session.user.id, locale),
@@ -386,17 +386,24 @@ type SuggestedUserRow = {
   name: string;
   followers: number;
   avatarColor: string;
+  image: string | null;
   commonGenres: number;
   isFollowing?: boolean;
 };
 
-async function getSuggestedUsers(userId: string, genres: string[], limit = 3): Promise<SuggestedUserRow[]> {
+async function getSuggestedUsers(
+  userId: string,
+  genres: string[],
+  followingIds: Set<string>,
+  limit = 3,
+): Promise<SuggestedUserRow[]> {
+  const excludeIds = [userId, ...followingIds];
   const where = genres.length
-    ? { id: { not: userId }, genres: { hasSome: genres } }
-    : { id: { not: userId } };
+    ? { id: { notIn: excludeIds }, genres: { hasSome: genres } }
+    : { id: { notIn: excludeIds } };
   const candidates = await prisma.user.findMany({
     where,
-    select: { id: true, handle: true, name: true, followers: true, avatarColor: true, genres: true },
+    select: { id: true, handle: true, name: true, followers: true, avatarColor: true, image: true, genres: true },
     orderBy: { followers: "desc" },
     take: 20,
   });
@@ -407,6 +414,7 @@ async function getSuggestedUsers(userId: string, genres: string[], limit = 3): P
       name: u.name,
       followers: u.followers,
       avatarColor: u.avatarColor,
+      image: u.image,
       commonGenres: genres.length ? u.genres.filter((g) => genres.includes(g)).length : 0,
     }))
     .sort((a, b) => {
@@ -418,8 +426,8 @@ async function getSuggestedUsers(userId: string, genres: string[], limit = 3): P
   if (ranked.length >= limit || genres.length === 0) return ranked;
 
   const fallback = await prisma.user.findMany({
-    where: { id: { notIn: [userId, ...ranked.map((r) => r.id)] } },
-    select: { id: true, handle: true, name: true, followers: true, avatarColor: true, genres: true },
+    where: { id: { notIn: [...excludeIds, ...ranked.map((r) => r.id)] } },
+    select: { id: true, handle: true, name: true, followers: true, avatarColor: true, image: true, genres: true },
     orderBy: { followers: "desc" },
     take: limit - ranked.length,
   });
@@ -431,15 +439,16 @@ async function getSuggestedUsers(userId: string, genres: string[], limit = 3): P
       name: u.name,
       followers: u.followers,
       avatarColor: u.avatarColor,
+      image: u.image,
       commonGenres: genres.length ? u.genres.filter((g) => genres.includes(g)).length : 0,
     })),
   ];
 }
 
-async function getNewUsers(userId: string, limit = 3): Promise<SuggestedUserRow[]> {
+async function getNewUsers(userId: string, followingIds: Set<string>, limit = 3): Promise<SuggestedUserRow[]> {
   const users = await prisma.user.findMany({
-    where: { id: { not: userId } },
-    select: { id: true, handle: true, name: true, followers: true, avatarColor: true },
+    where: { id: { notIn: [userId, ...followingIds] } },
+    select: { id: true, handle: true, name: true, followers: true, avatarColor: true, image: true },
     orderBy: { createdAt: "desc" },
     take: limit,
   });
@@ -449,6 +458,7 @@ async function getNewUsers(userId: string, limit = 3): Promise<SuggestedUserRow[
     name: u.name,
     followers: u.followers,
     avatarColor: u.avatarColor,
+    image: u.image,
     commonGenres: 0,
   }));
 }

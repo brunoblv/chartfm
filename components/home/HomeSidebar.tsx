@@ -124,6 +124,7 @@ type SuggestedUserRow = {
   name: string;
   followers: number;
   avatarColor: string;
+  image: string | null;
   commonGenres: number;
   isFollowing?: boolean;
 };
@@ -148,7 +149,7 @@ function SuggestedUserList({ users, emptyMessage }: { users: SuggestedUserRow[];
       {users.map((u) => (
         <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link href={`/profile/${u.handle}`}>
-            <Avatar user={{ name: u.name, avatar: u.avatarColor }} size={40} />
+            <Avatar user={{ name: u.name, avatar: u.avatarColor }} imageUrl={u.image} size={40} />
           </Link>
           <div style={{ minWidth: 0, flex: 1 }}>
             <Link href={`/profile/${u.handle}`} style={{ textDecoration: "none", color: "inherit" }}>

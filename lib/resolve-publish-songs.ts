@@ -718,7 +718,9 @@ export async function finalizeSongsForChartPublish(
   songs: ResolvedPublishSong[],
 ): Promise<ResolvedPublishSong[]> {
   let resolved = await promoteEntrySpotifyIds(db, entries, songs);
-  resolved = await enrichResolvedSongsWithSpotifyMetadata(db, resolved, { searchFallback: true });
+  // Só lote Spotify (até 50 IDs por request). searchFallback faz buscas sequenciais por faixa
+  // e estoura maxDuration na publicação — capas faltantes podem ser corrigidas depois no admin.
+  resolved = await enrichResolvedSongsWithSpotifyMetadata(db, resolved, { searchFallback: false });
   await applyEntryCoverHints(db, entries, resolved);
   return reloadResolvedSongs(db, resolved);
 }
