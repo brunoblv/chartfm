@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { COPA_UNASSIGNED_GROUP, songPickKey } from "@/lib/copa";
-import { maybeGenerateR32Only, removePrematureKnockoutFixtures, ensureR32SecondBatchClosed } from "@/lib/copa-knockout";
+import { maybeGenerateR32Only, removePrematureKnockoutFixtures, ensureR32SecondBatchClosed, deleteKnockoutFromR16, generateR16FromR32, getR32WinnerArtistIds } from "@/lib/copa-knockout";
 import { openNextBatch } from "@/lib/copa-day";
 
 const DELETABLE_KNOCKOUT = ["R32", "QF", "SF", "FINAL", "THIRD_PLACE"] as const;
@@ -164,6 +164,82 @@ export async function realignCopaLivePhase(copaId: string): Promise<{
   const openedLiveFixtures = hasLive > 0 ? 0 : await openNextBatch(copaId);
 
   return { removedPrematureFixtures, openedLiveFixtures, closedPrematureR32Batch };
+}
+
+export type ResetR16Result = {
+  deletedFixtures: number;
+  deletedVotes: number;
+  competingArtists: number;
+};
+
+/** Apaga oitavas+ e reabre janela de edição (R32 encerrado, sem R16). */
+export async function resetR16ForEditing(copaId: string): Promise<ResetR16Result> {
+  const r32Total = await prisma.copaFixture.count({ where: { copaId, phase: "R32" } });
+  const r32Done = await prisma.copaFixture.count({ where: { copaId, phase: "R32", status: "DONE" } });
+  if (r32Total === 0 || r32Done < r32Total) {
+    throw new Error("Encerre todos os jogos do 1/16 de Final antes de refazer as oitavas.");
+  }
+
+  const winners = await getR32WinnerArtistIds(copaId);
+  if (!winners || winners.length < 16) {
+    throw new Error("Não foi possível identificar os 16 classificados do 1/16 de Final.");
+  }
+
+  const { deletedFixtures, deletedVotes } = await deleteKnockoutFromR16(copaId);
+  return { deletedFixtures, deletedVotes, competingArtists: winners.length };
+}
+
+export type StartR16Result = {
+  created: number;
+  opened: number;
+  missingSingles?: string[];
+};
+
+async function findArtistsMissingR16Single(artistIds: string[]): Promise<string[]> {
+  const singles = await prisma.copaSingle.findMany({
+    where: { copaArtistId: { in: artistIds }, slotIndex: 4 },
+    select: { copaArtistId: true, songName: true },
+  });
+  const missingIds = artistIds.filter((id) => {
+    const s = singles.find((x) => x.copaArtistId === id);
+    return !s || s.songName.startsWith("Single ");
+  });
+  if (missingIds.length === 0) return [];
+  const names = await prisma.copaArtist.findMany({
+    where: { id: { in: missingIds } },
+    select: { artistName: true },
+    orderBy: { artistName: "asc" },
+  });
+  return names.map((n) => n.artistName);
+}
+
+/** Gera 8 oitavas a partir dos vencedores do R32 (O1=J1×J3…) e abre ao vivo. */
+export async function startR16Round(copaId: string, opts?: { skipSingleCheck?: boolean }): Promise<StartR16Result> {
+  const existing = await prisma.copaFixture.count({ where: { copaId, phase: "R16" } });
+  if (existing > 0) {
+    throw new Error("Já existem jogos de oitavas. Use \"Reabrir edição das oitavas\" primeiro.");
+  }
+
+  const winners = await getR32WinnerArtistIds(copaId);
+  if (!winners || winners.length < 16) {
+    throw new Error("O 1/16 de Final precisa estar encerrado com 16 vencedores definidos.");
+  }
+
+  if (!opts?.skipSingleCheck) {
+    const missingSingles = await findArtistsMissingR16Single(winners);
+    if (missingSingles.length > 0) {
+      throw new Error(
+        `Faltam músicas de oitavas (slot 4) para: ${missingSingles.join(", ")}. ` +
+          `Peça aos participantes que ajustem em Meu Time.`,
+      );
+    }
+  }
+
+  const created = await generateR16FromR32(copaId);
+  const hasLive = await prisma.copaFixture.count({ where: { copaId, status: "LIVE" } });
+  const opened = hasLive > 0 ? 0 : await openNextBatch(copaId);
+
+  return { created, opened };
 }
 
 /**

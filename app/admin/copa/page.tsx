@@ -38,6 +38,19 @@ export default async function CopaAdminPage() {
   }
 
   // Active copa fixtures list for admin controls
+  let knockoutControls: { r32Complete: boolean; hasR16: boolean } | null = null;
+  if (activeEdition) {
+    const [r32Total, r32Done, r16Count] = await Promise.all([
+      prisma.copaFixture.count({ where: { copaId: activeEdition.id, phase: "R32" } }),
+      prisma.copaFixture.count({ where: { copaId: activeEdition.id, phase: "R32", status: "DONE" } }),
+      prisma.copaFixture.count({ where: { copaId: activeEdition.id, phase: "R16" } }),
+    ]);
+    knockoutControls = {
+      r32Complete: r32Total >= 16 && r32Done >= r32Total,
+      hasR16: r16Count > 0,
+    };
+  }
+
   const activeFixtures = activeEdition
     ? await prisma.copaFixture.findMany({
         where: { copaId: activeEdition.id },
@@ -71,6 +84,7 @@ export default async function CopaAdminPage() {
       }))}
       activeEditionId={activeEdition?.id ?? null}
       fixturesByStatus={fixturesByStatus}
+      knockoutControls={knockoutControls}
       activeFixtures={activeFixtures.map((f) => ({
         id: f.id,
         phase: f.phase as string,

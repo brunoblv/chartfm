@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { GROUP_PAIRS, COPA_GROUP_LETTERS, COPA_UNASSIGNED_GROUP, drawGroups } from "@/lib/copa";
 import { openNextBatch, advanceCopaDay, syncCopaToSchedule } from "@/lib/copa-day";
-import { repairCopaKnockout, fixMislabeledGroupFixtures, realignCopaLivePhase } from "@/lib/copa-repair";
+import { repairCopaKnockout, fixMislabeledGroupFixtures, realignCopaLivePhase, resetR16ForEditing, startR16Round } from "@/lib/copa-repair";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -191,6 +191,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ ok: true, ...result });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Falha ao alinhar fase ao vivo";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "reset_r16") {
+    try {
+      const result = await resetR16ForEditing(id);
+      return NextResponse.json({ ok: true, ...result });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Falha ao reabrir edição das oitavas";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "start_r16") {
+    try {
+      const { force } = body as { force?: boolean };
+      const result = await startR16Round(id, { skipSingleCheck: force === true });
+      return NextResponse.json({ ok: true, ...result });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Falha ao iniciar oitavas";
       return NextResponse.json({ error: message }, { status: 400 });
     }
   }

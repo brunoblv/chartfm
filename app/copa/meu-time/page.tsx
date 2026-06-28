@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { MySquadClient } from "./MySquadClient";
 import { computeStandings, getCopaSinglesEditWindow, getLockedSingleSlots } from "@/lib/copa";
+import { getR32WinnerArtistIds } from "@/lib/copa-knockout";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,15 @@ export default async function MeuTimePage() {
     }),
   ]);
 
-  const editWindow = getCopaSinglesEditWindow(copa.status, allFixtures);
+  const editWindowBase = getCopaSinglesEditWindow(copa.status, allFixtures);
+  const r32Winners =
+    editWindowBase.nextPhase === "R16" && editWindowBase.open
+      ? await getR32WinnerArtistIds(copa.id)
+      : null;
+  const editWindow =
+    r32Winners && r32Winners.length > 0
+      ? { ...editWindowBase, competingArtistIds: r32Winners }
+      : editWindowBase;
 
   function getSlotLocks(artistId: string) {
     const artistFixtures = activeFixtures.filter(

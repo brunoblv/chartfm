@@ -231,8 +231,8 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
             : isRegistration
               ? "Time completo! Agora escolha as músicas de cada artista"
               : editWindow.open
-                ? "Janela de edição aberta — ajuste as músicas permitidas"
-                : "Visualize suas músicas · edição só entre fases"}
+                ? "Toque em ✏ nos slots Editáveis para trocar a música"
+                : "Visualize suas músicas · edição indisponível agora"}
         </div>
       </div>
 
@@ -382,7 +382,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
               {Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => {
                 const single = art.singles.find((s) => s.slotIndex === i);
                 const lock = art.slotLocks.find((l) => l.slotIndex === i);
-                const canEdit = isSingleSlotEditableInWindow(i, editWindow, art.slotLocks);
+                const canEdit = isSingleSlotEditableInWindow(i, editWindow, art.slotLocks, art.id);
                 const isEmpty = !single || single.songName.startsWith("Single ");
                 return (
                   <div
@@ -450,7 +450,9 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                           : "Disputado"
                         : canEdit
                           ? "Editável"
-                          : "Fechado"}
+                          : editWindow.competingArtistIds?.length
+                            ? "Eliminado"
+                            : "Fechado"}
                     </span>
                   </div>
                 );

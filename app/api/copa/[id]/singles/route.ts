@@ -12,6 +12,7 @@ import {
   mergeArtistSingles,
   validateArtistSingleAssignment,
 } from "@/lib/copa";
+import { getR32WinnerArtistIds } from "@/lib/copa-knockout";
 
 // PUT /api/copa/[id]/singles
 // body: { artistId, singles: [{slotIndex, songName, songId?}] }
@@ -73,7 +74,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   ]);
 
   const locked = getLockedSingleSlots(artistId, artistFixtures);
-  const editWindow = getCopaSinglesEditWindow(copa.status, allFixtures);
+  const editWindowBase = getCopaSinglesEditWindow(copa.status, allFixtures);
+  const r32Winners =
+    editWindowBase.nextPhase === "R16" && editWindowBase.open
+      ? await getR32WinnerArtistIds(id)
+      : null;
+  const editWindow =
+    r32Winners && r32Winners.length > 0
+      ? { ...editWindowBase, competingArtistIds: r32Winners }
+      : editWindowBase;
 
   const existingPicks = existing.map((e) => ({
     slotIndex: e.slotIndex,

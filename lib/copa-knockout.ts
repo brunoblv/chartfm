@@ -324,7 +324,61 @@ export async function maybeGenerateR32Only(copaId: string): Promise<void> {
 
 
 
+const KNOCKOUT_FROM_R16 = ["R16", "QF", "SF", "FINAL", "THIRD_PLACE"] as const;
+
+async function assertR32Complete(copaId: string): Promise<void> {
+  const r32Total = await prisma.copaFixture.count({ where: { copaId, phase: "R32" } });
+  const r32Done = await prisma.copaFixture.count({ where: { copaId, phase: "R32", status: "DONE" } });
+  if (r32Total === 0 || r32Done < r32Total) {
+    throw new Error("O 1/16 de Final (R32) precisa estar 100% encerrado.");
+  }
+}
+
+/** IDs dos 16 classificados (vencedores do R32). Null se a fase não estiver encerrada. */
+export async function getR32WinnerArtistIds(copaId: string): Promise<string[] | null> {
+  const results = await resolvePhase(copaId, "R32");
+  if (!results || results.length < 16) return null;
+  return results.map((r) => r.winnerId);
+}
+
+/**
+ * Apaga oitavas e fases seguintes (votos em cascade). Use antes de reabrir edição.
+ */
+export async function deleteKnockoutFromR16(copaId: string): Promise<{ deletedFixtures: number; deletedVotes: number }> {
+  const fixtures = await prisma.copaFixture.findMany({
+    where: { copaId, phase: { in: [...KNOCKOUT_FROM_R16] } },
+    select: { id: true },
+  });
+  if (fixtures.length === 0) return { deletedFixtures: 0, deletedVotes: 0 };
+
+  const ids = fixtures.map((f) => f.id);
+  const deletedVotes = await prisma.copaVote.count({ where: { fixtureId: { in: ids } } });
+  const deleted = await prisma.copaFixture.deleteMany({ where: { id: { in: ids } } });
+  return { deletedFixtures: deleted.count, deletedVotes };
+}
+
 // Oitavas (8 jogos): O1 = J1×J3, O2 = J2×J4, … (J = vencedor do R32 matchIndex 0..15).
+
+export async function generateR16FromR32(copaId: string): Promise<number> {
+  if ((await prisma.copaFixture.count({ where: { copaId, phase: "R16" } })) > 0) {
+    throw new Error("Já existem jogos de oitavas. Apague-as antes de gerar de novo.");
+  }
+
+  await assertR32Complete(copaId);
+
+  const results = await resolvePhase(copaId, "R32");
+  if (!results || results.length < 16) {
+    throw new Error("Não foi possível resolver os 16 vencedores do 1/16 de Final.");
+  }
+
+  const data = buildRoundFixtures(copaId, "R16", winnerMapFromPhase(results), R16_FROM_R32_PAIRING, 4);
+  if (data.length !== 8) {
+    throw new Error(`Esperados 8 jogos de oitavas, obtidos ${data.length}. Verifique o chaveamento R32.`);
+  }
+
+  await prisma.copaFixture.createMany({ data });
+  return data.length;
+}
 
 async function maybeGenerateR16FromR32(copaId: string): Promise<void> {
   if ((await prisma.copaFixture.count({ where: { copaId, phase: "R16" } })) > 0) return;
@@ -334,15 +388,10 @@ async function maybeGenerateR16FromR32(copaId: string): Promise<void> {
   if (r32Total === 0 || r32Done < r32Total) return;
 
   const results = await resolvePhase(copaId, "R32");
-
   if (!results || results.length < 16) return;
 
-
-
   const data = buildRoundFixtures(copaId, "R16", winnerMapFromPhase(results), R16_FROM_R32_PAIRING, 4);
-
   if (data.length === 8) await prisma.copaFixture.createMany({ data });
-
 }
 
 

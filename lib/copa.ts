@@ -279,6 +279,8 @@ export type CopaSinglesEditWindow = {
   nextPhase: string | null;
   nextLabel: string | null;
   editableSlots: number[];
+  /** Quando definido, só estes artistas (classificados) podem editar os slots liberados. */
+  competingArtistIds?: string[];
   message: string;
 };
 
@@ -299,7 +301,8 @@ function phaseHasStarted(all: Array<{ phase: string; status: string; matchIndex?
 }
 
 /**
- * Janelas de edição: abre após o 1/16 de Final (R32) encerrar e antes das oitavas (R16).
+ * Janelas de edição de músicas. Slots em jogo (LIVE/DONE) ficam bloqueados por artista
+ * via getLockedSingleSlots — a janela global não fecha a edição inteira durante o torneio.
  */
 export function getCopaSinglesEditWindow(
   copaStatus: string,
@@ -315,6 +318,8 @@ export function getCopaSinglesEditWindow(
     message,
   });
 
+  const allSlots = Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => i);
+
   if (copaStatus === "REGISTRATION") {
     return {
       open: true,
@@ -322,9 +327,13 @@ export function getCopaSinglesEditWindow(
       completedLabel: null,
       nextPhase: null,
       nextLabel: null,
-      editableSlots: Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => i),
+      editableSlots: allSlots,
       message: "Inscrições abertas — defina as 8 músicas de cada artista.",
     };
+  }
+
+  if (copaStatus === "FINISHED") {
+    return closed("Copa encerrada — músicas não podem mais ser alteradas.");
   }
 
   // Após R32 encerrado → antes das oitavas iniciarem (R16 só é gerada nesse momento)
@@ -336,7 +345,8 @@ export function getCopaSinglesEditWindow(
       nextPhase: "R16",
       nextLabel: "Oitavas de Final",
       editableSlots: KNOCKOUT_PHASE_SLOTS.filter((p) => p.slotIndex >= 4).map((p) => p.slotIndex),
-      message: "1/16 de Final encerrado. Ajuste as músicas antes das oitavas de final.",
+      message:
+        "1/16 de Final encerrado. Classificados podem ajustar as músicas das oitavas e fases seguintes em Meu Time.",
     };
   }
 
@@ -380,20 +390,36 @@ export function getCopaSinglesEditWindow(
     }
   }
 
-  if (phaseHasStarted(allFixtures, "R32") || phaseHasStarted(allFixtures, "R16")) {
-    return closed("Edição fechada enquanto houver jogos em andamento. Aguarde o fim do 1/16 de Final.");
+  // Durante grupos ou mata-mata: edição aberta nos slots não bloqueados (Em jogo / Disputado).
+  if (copaStatus === "GROUP_STAGE" || copaStatus === "KNOCKOUT") {
+    const r32Live = phaseHasStarted(allFixtures, "R32") && !phaseIsComplete(allFixtures, "R32");
+    return {
+      open: true,
+      completedPhase: null,
+      completedLabel: null,
+      nextPhase: null,
+      nextLabel: null,
+      editableSlots: allSlots,
+      message: r32Live
+        ? "Edite músicas das próximas fases. Slots em jogo ou já disputados estão bloqueados."
+        : "Edite as músicas liberadas. Slots em jogo ou já disputados estão bloqueados.",
+    };
   }
 
-  return closed("Edição fechada. A janela abre após o 1/16 de Final (R32) encerrar.");
+  return closed("Edição indisponível no momento.");
 }
 
 export function isSingleSlotEditableInWindow(
   slotIndex: number,
   window: CopaSinglesEditWindow,
   locked: LockedSingleSlot[],
+  artistId?: string,
 ): boolean {
   if (!window.open) return false;
   if (!window.editableSlots.includes(slotIndex)) return false;
+  if (window.competingArtistIds?.length && artistId && !window.competingArtistIds.includes(artistId)) {
+    return false;
+  }
   return isSingleSlotEditable(slotIndex, locked);
 }
 

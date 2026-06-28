@@ -55,6 +55,7 @@ type Props = {
   editions: Edition[];
   activeEditionId: string | null;
   fixturesByStatus: { UPCOMING: number; LIVE: number; DONE: number } | null;
+  knockoutControls: { r32Complete: boolean; hasR16: boolean } | null;
   activeFixtures: Fixture[];
 };
 
@@ -75,7 +76,7 @@ const PHASE_LABELS: Record<string, string> = {
   FINAL: "FIN",
 };
 
-export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, activeFixtures }: Props) {
+export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, knockoutControls, activeFixtures }: Props) {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("Copa ChartFM");
@@ -143,13 +144,13 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
     }
   }
 
-  async function editionAction(copaId: string, action: string) {
+  async function editionAction(copaId: string, action: string, extra?: Record<string, unknown>) {
     setActioning(action);
     try {
       const res = await fetch(`/api/admin/copa/${copaId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...extra }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -185,6 +186,25 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
           json.fixedGroupPhases
             ? `${json.fixedGroupPhases} jogo(s) de grupos corrigidos de R16 → GROUP.`
             : "Nenhum jogo de grupos com phase errada.",
+        );
+      }
+      if (action === "reset_r16") {
+        const json = await res.json();
+        alert(
+          `Oitavas removidas.\n\n` +
+            `Jogos apagados: ${json.deletedFixtures}\n` +
+            `Votos removidos: ${json.deletedVotes}\n` +
+            `Classificados (podem editar): ${json.competingArtists}\n\n` +
+            `Peça aos participantes que ajustem a música das oitavas (slot 4) em Meu Time.`,
+        );
+      }
+      if (action === "start_r16") {
+        const json = await res.json();
+        alert(
+          `Oitavas iniciadas.\n\n` +
+            `Jogos criados: ${json.created}\n` +
+            `Abertos ao vivo: ${json.opened}\n\n` +
+            `Chaveamento: O1=J1×J3, O2=J2×J4, … (vencedores do 1/16).`,
         );
       }
       router.refresh();
@@ -569,6 +589,84 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, a
                 Corrigir phase dos grupos
               </button>
             )}
+            {e.status === "KNOCKOUT" && activeEditionId === e.id && knockoutControls && (() => {
+              const { r32Complete, hasR16 } = knockoutControls;
+              const canResetR16 = r32Complete && hasR16;
+              const canStartR16 = r32Complete && !hasR16;
+              return (
+                <>
+                  {canResetR16 && (
+                    <button
+                      onClick={() => {
+                        if (
+                          !confirm(
+                            "Reabrir edição das oitavas?\n\n" +
+                              "• Apaga TODOS os jogos de oitavas (e quartas/semis/final se existirem)\n" +
+                              "• Apaga os votos desses jogos\n" +
+                              "• Classificados do 1/16 podem editar músicas (slot 4+) em Meu Time\n\n" +
+                              "O 1/16 de Final (R32) e os votos de grupos NÃO são alterados.",
+                          )
+                        ) {
+                          return;
+                        }
+                        editionAction(e.id, "reset_r16");
+                      }}
+                      disabled={!!actioning}
+                      style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid rgba(255,212,38,.45)", background: "rgba(255,212,38,.1)", color: "#FFD426", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+                    >
+                      ↩ Reabrir edição (oitavas)
+                    </button>
+                  )}
+                  {canStartR16 && (
+                    <button
+                      onClick={async () => {
+                        if (
+                          !confirm(
+                            "Iniciar oitavas de final?\n\n" +
+                              "• Gera 8 jogos: O1=J1×J3, O2=J2×J4, …\n" +
+                              "• Exige música do slot 4 (oitavas) para os 16 classificados\n" +
+                              "• Abre os 8 jogos ao vivo",
+                          )
+                        ) {
+                          return;
+                        }
+                        setActioning("start_r16");
+                        try {
+                          const res = await fetch(`/api/admin/copa/${e.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ action: "start_r16" }),
+                          });
+                          if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            if (
+                              err.error &&
+                              confirm(`${err.error}\n\nIniciar mesmo assim (sem validar músicas)?`)
+                            ) {
+                              await editionAction(e.id, "start_r16", { force: true });
+                            }
+                            return;
+                          }
+                          const json = await res.json();
+                          alert(
+                            `Oitavas iniciadas.\n\n` +
+                              `Jogos criados: ${json.created}\n` +
+                              `Abertos ao vivo: ${json.opened}`,
+                          );
+                          router.refresh();
+                        } finally {
+                          setActioning(null);
+                        }
+                      }}
+                      disabled={!!actioning}
+                      style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#34C759", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+                    >
+                      ▶ Iniciar oitavas
+                    </button>
+                  )}
+                </>
+              );
+            })()}
             {e.status === "KNOCKOUT" && (
               <button
                 onClick={() => {
