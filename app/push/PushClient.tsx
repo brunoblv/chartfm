@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { RoundData } from "@/components/push/push-types";
@@ -9,12 +9,36 @@ import { RoundHeader, StatsSidebar } from "@/components/push/PushRoundHeader";
 import { SubmissionView } from "@/components/push/PushSubmissionView";
 import { ListenAndRankView } from "@/components/push/PushListenRankView";
 import { ResultView, NoRoundView } from "@/components/push/PushResultView";
+import { PushIntroView, dismissPushIntro, getPushIntroDismissed } from "@/components/push/PushIntroView";
 
 export type { RoundData, SongData } from "@/components/push/push-types";
 
+function shouldSkipIntro(round: RoundData): boolean {
+  if (round.mySubmission) return true;
+  if (round.myVotes && round.myVotes.length > 0) return true;
+  return getPushIntroDismissed(round.id);
+}
+
 export default function PushClient({ initialRound }: { initialRound: RoundData | null }) {
   const [round, setRound] = useState<RoundData | null>(initialRound);
+  const [showIntro, setShowIntro] = useState(false);
+  const [introReady, setIntroReady] = useState(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (!round) {
+      setShowIntro(false);
+      setIntroReady(true);
+      return;
+    }
+    setShowIntro(!shouldSkipIntro(round));
+    setIntroReady(true);
+  }, [round?.id]);
+
+  const handleParticipate = useCallback(() => {
+    if (round) dismissPushIntro(round.id);
+    setShowIntro(false);
+  }, [round]);
 
   const refresh = useCallback(async () => {
     try {
@@ -30,6 +54,16 @@ export default function PushClient({ initialRound }: { initialRound: RoundData |
 
   if (!round) {
     return <NoRoundView />;
+  }
+
+  if (!introReady) return null;
+
+  if (showIntro) {
+    return (
+      <div style={{ padding: isMobile ? "0 0 88px" : 0 }}>
+        <PushIntroView round={round} isMobile={isMobile} onParticipate={handleParticipate} />
+      </div>
+    );
   }
 
   const content = (
