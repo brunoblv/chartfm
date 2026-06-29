@@ -12,7 +12,8 @@ type BackfillResult = {
   source: string;
   recordingMbid: string | null;
   singleReleaseDate: string | null;
-  releaseDateSource: string | null;
+  musicVideoReleaseDate: string | null;
+  youtubeReleaseDate: string | null;
   error?: string;
 };
 
@@ -141,7 +142,7 @@ export function SongGenresBackfillClient({ initialMissing, initialWithTags, tota
           </div>
           <div style={{ marginTop: 5, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
             Prioriza músicas cadastradas mais recentemente. Tags: MusicBrainz → Last.fm → artista.
-            Datas: videoclipe se existir, senão single (lyric video ignorado).
+            Datas: YouTube (clipe oficial, sem lyric), single e videoclipe no MusicBrainz.
             Lotes de 2 músicas com pausa para respeitar rate limits.
           </div>
         </div>
@@ -229,10 +230,11 @@ export function SongGenresBackfillClient({ initialMissing, initialWithTags, tota
                   {r.genres.length > 0 && (
                     <div style={{ marginTop: 6, fontSize: 12, color: "#6B6B70" }}>{r.genres.join(" · ")}</div>
                   )}
-                  {r.singleReleaseDate && (
-                    <div style={{ marginTop: 4, fontSize: 12, color: "#86868B" }}>
-                      Lançamento: {r.singleReleaseDate}
-                      {r.releaseDateSource === "music-video" ? " (videoclipe)" : r.releaseDateSource === "single" ? " (single)" : ""}
+                  {(r.singleReleaseDate || r.musicVideoReleaseDate || r.youtubeReleaseDate) && (
+                    <div style={{ marginTop: 4, fontSize: 12, color: "#86868B", display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      {r.youtubeReleaseDate && <span>YouTube: {r.youtubeReleaseDate}</span>}
+                      {r.musicVideoReleaseDate && <span>Clipe MB: {r.musicVideoReleaseDate}</span>}
+                      {r.singleReleaseDate && <span>Single MB: {r.singleReleaseDate}</span>}
                     </div>
                   )}
                 </div>

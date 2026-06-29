@@ -1,80 +1,195 @@
 import type { Metadata } from "next";
-import { LegalPage } from "@/components/legal/LegalPage";
+import Link from "next/link";
+import { InstitutionalLayout } from "@/components/institutional/InstitutionalLayout";
+import {
+  InstitutionalDivider,
+  InstitutionalList,
+  InstitutionalParagraph,
+  InstitutionalSection,
+  InstitutionalTitle,
+} from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade | ChartFM",
-  description: "Saiba como o ChartFM coleta, usa e protege seus dados pessoais. Inclui cookies, direitos pela LGPD, compartilhamento e retenção de dados.",
+  description:
+    "Saiba como o ChartFM coleta, usa e protege seus dados pessoais, incluindo cookies e direitos pela LGPD.",
   alternates: { canonical: "/privacy-policy" },
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalPage
-      title="Política de Privacidade"
-      subtitle="Como coletamos, usamos e protegemos seus dados pessoais."
-      updatedAt="03/05/2026"
-      sections={[
-        {
-          title: "1. Dados que coletamos",
-          body: [
-            "Ao criar uma conta ou usar o ChartFM, coletamos informações que você nos fornece diretamente: nome, endereço de e-mail, imagem de perfil, identificador de conta Google (quando o login é feito via Google), nome de usuário (handle), biografia, gêneros musicais preferidos e qualquer outra informação que você adicione ao seu perfil.",
-            "Também coletamos o conteúdo que você cria na plataforma: paradas semanais e suas faixas, avaliações e notas de álbuns, comentários, reposts, curtidas, participações em comunidades, posts em comunidades e interações com outros usuários.",
-            "Além disso, coletamos automaticamente dados técnicos necessários para o funcionamento seguro do serviço: cookies de sessão, registros de acesso (endereço IP, horário, recurso acessado), tipo e versão do navegador, sistema operacional e informações básicas do dispositivo. Esses dados são usados para monitoramento de segurança, prevenção de abuso, gerenciamento de login e melhoria do serviço.",
-          ],
-        },
-        {
-          title: "2. Como usamos seus dados",
-          body: [
-            "Seus dados de conta são usados para criar e manter seu perfil, autenticar suas sessões de login, exibir seu perfil público para outros usuários e enviar notificações sobre atividade nas suas paradas, seguidores e comunidades.",
-            "Seu conteúdo de paradas e reviews é usado para calcular rankings globais e de comunidades, exibir suas paradas públicas no seu perfil e nas superfícies de descoberta, e gerar dados agregados de tendências (artistas e músicas em alta) visíveis a todos os usuários.",
-            "Dados técnicos são usados para manter a segurança da plataforma, detectar e prevenir abusos, diagnosticar problemas técnicos e melhorar a confiabilidade e o desempenho do serviço. Também podemos usar dados técnicos agregados e anonimizados para entender padrões de uso.",
-            "Quando a publicidade estiver ativa na plataforma, poderemos usar cookies e tecnologias semelhantes para medir o desempenho de anúncios, limitar a frequência com que você vê o mesmo anúncio e — se você tiver dado consentimento — exibir anúncios baseados em interesses. O uso de dados para publicidade está sempre sujeito às suas escolhas de consentimento de cookies.",
-          ],
-        },
-        {
-          title: "3. Cookies e consentimento",
-          body: [
-            "O ChartFM usa duas categorias de cookies. Cookies essenciais são estritamente necessários para o funcionamento da plataforma: mantêm sua sessão de login, protegem contra ataques CSRF e habilitam recursos de segurança básicos. Esses cookies são definidos sempre que você usa o site e não podem ser desativados sem comprometer funcionalidades fundamentais.",
-            "Cookies não essenciais — incluindo cookies de analytics e publicidade — são definidos apenas se você der consentimento. Na sua primeira visita ao ChartFM, um banner de consentimento explica suas opções. Você pode aceitar todos os cookies, aceitar apenas os essenciais ou ajustar suas preferências a qualquer momento. Sua escolha é armazenada e respeitada nas visitas seguintes.",
-            "Você também pode gerenciar cookies diretamente pelas configurações do seu navegador. Limpar cookies ou bloquear cookies de terceiros pode afetar alguns recursos da plataforma.",
-          ],
-        },
-        {
-          title: "4. Compartilhamento de dados",
-          body: [
-            "Compartilhamos seus dados com fornecedores terceiros apenas na medida necessária para operar o ChartFM. Esses fornecedores incluem: Google (autenticação via OAuth), provedores de hospedagem e banco de dados, serviços de segurança e detecção de bots, serviços de envio de e-mail, plataformas de analytics e redes de publicidade.",
-            "Cada fornecedor recebe apenas os dados necessários para sua função específica e está vinculado a acordos de processamento de dados que restringem uso ou divulgação adicionais. Não vendemos seus dados pessoais a terceiros.",
-            "Conteúdo que você marca como público — paradas, reviews, comentários, posts em comunidades e seu perfil público — é acessível a todos os visitantes do ChartFM, incluindo usuários não logados e rastreadores de mecanismos de busca. Se você tornar uma parada privada, ela é removida das superfícies públicas.",
-          ],
-        },
-        {
-          title: "5. Seus direitos pela LGPD",
-          body: [
-            "A Lei Geral de Proteção de Dados (Lei 13.709/2018) garante os seguintes direitos em relação aos seus dados pessoais mantidos pelo ChartFM: confirmação de que tratamos seus dados, acesso a uma cópia dos seus dados, correção de dados incorretos ou incompletos, anonimização ou exclusão de dados desnecessários ou excessivos, portabilidade de dados, informações sobre terceiros com quem compartilhamos seus dados e retirada de consentimento para tratamentos baseados em consentimento.",
-            "Para exercer qualquer desses direitos, entre em contato pelo contato@chartfm.com.br com o assunto 'Pedido de Privacidade — LGPD'. Podemos solicitar confirmação de identidade antes de atender pedidos que envolvam acesso ou modificação de dados sensíveis da conta. Responderemos dentro dos prazos exigidos pela legislação aplicável.",
-          ],
-        },
-        {
-          title: "6. Retenção e segurança",
-          body: [
-            "Mantemos seus dados pessoais pelo tempo em que sua conta estiver ativa e por um período razoável após o encerramento, para cumprir obrigações legais, resolver disputas, fazer cumprir nossos acordos e preservar a integridade dos registros da plataforma. Quando os dados não são mais necessários para esses fins, os excluímos ou anonimizamos.",
-            "Conteúdo público publicado — como paradas que contribuíram para rankings globais — pode ser mantido de forma agregada ou anonimizada mesmo após a exclusão de uma conta, pois remover dados históricos de ranking afetaria os registros de outros usuários.",
-            "Adotamos medidas técnicas e organizacionais de segurança para proteger seus dados: conexões criptografadas (HTTPS), controles de acesso, armazenamento seguro de credenciais e revisão periódica de nossa postura de segurança. Nenhum sistema baseado na internet é completamente imune a incidentes. Em caso de violação que afete seus direitos, notificaremos você conforme exigido por lei.",
-          ],
-        },
-        {
-          title: "7. Crianças",
-          body: [
-            "O ChartFM não é direcionado a crianças menores de 13 anos. Não coletamos conscientemente dados pessoais de crianças menores de 13 anos. Se você acredita que uma criança menor de 13 anos criou uma conta, entre em contato e investigaremos e removeremos a conta se confirmado.",
-          ],
-        },
-        {
-          title: "8. Alterações nesta política",
-          body: [
-            "Podemos atualizar esta Política de Privacidade para refletir mudanças na plataforma, novos requisitos legais ou práticas de dados atualizadas. Quando fizermos alterações significativas, atualizaremos a data exibida no topo desta página. Recomendamos que você revise esta página periodicamente. O uso continuado do ChartFM após uma atualização constitui aceitação da política revisada.",
-          ],
-        },
-      ]}
-    />
+    <InstitutionalLayout>
+      <InstitutionalTitle updatedAt="junho de 2025">Política de Privacidade</InstitutionalTitle>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 28, fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
+        <InstitutionalSection title="1. Quem somos">
+          <InstitutionalParagraph>
+            O ChartFM é uma plataforma de paradas musicais criadas por usuários. Esta política explica como coletamos,
+            usamos e protegemos os seus dados pessoais.
+          </InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="2. Dados que coletamos">
+          <InstitutionalParagraph>Coletamos apenas os dados necessários para o funcionamento da plataforma:</InstitutionalParagraph>
+          <div style={{ marginTop: 10 }}>
+            <ul style={{ paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6, margin: 0 }}>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Dados de cadastro:</strong> nome, e-mail e senha (armazenada de
+                forma criptografada)
+              </li>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Dados de uso:</strong> paradas criadas, músicas votadas e
+                interações com outros usuários
+              </li>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Dados técnicos:</strong> endereço IP, tipo de dispositivo e
+                navegador, para segurança e diagnóstico
+              </li>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Cookies:</strong> utilizamos cookies para manter sua sessão
+                ativa e para exibir anúncios relevantes por meio do Google AdSense
+              </li>
+            </ul>
+          </div>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="3. Como usamos seus dados">
+          <InstitutionalList
+            items={[
+              "Para criar e manter sua conta",
+              "Para exibir seu conteúdo e o de outros usuários",
+              "Para enviar notificações sobre atividades na plataforma (se você optar por receber)",
+              "Para melhorar o funcionamento do serviço com base em dados de uso",
+              "Para exibir anúncios por meio do Google AdSense, que pode usar cookies para personalizar os anúncios exibidos",
+            ]}
+          />
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="4. Google AdSense e anúncios">
+          <InstitutionalParagraph>
+            Usamos o Google AdSense para exibir anúncios no ChartFM. O Google pode usar cookies para exibir anúncios com
+            base em suas visitas anteriores a este e a outros sites. Você pode optar por não receber anúncios
+            personalizados acessando as{" "}
+            <Link href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>
+              configurações de anúncios do Google
+            </Link>
+            .
+          </InstitutionalParagraph>
+          <div style={{ marginTop: 10 }}>
+            <InstitutionalParagraph>
+              Para saber mais sobre como o Google usa dados em parceiros que utilizam seus serviços, acesse{" "}
+              <Link
+                href="https://policies.google.com/technologies/partner-sites"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--accent)" }}
+              >
+                policies.google.com/technologies/partner-sites
+              </Link>
+              .
+            </InstitutionalParagraph>
+          </div>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="5. Cookies">
+          <InstitutionalParagraph>Utilizamos dois tipos de cookies:</InstitutionalParagraph>
+          <div style={{ marginTop: 10 }}>
+            <ul style={{ paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6, margin: 0 }}>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Cookies funcionais:</strong> necessários para manter sua sessão
+                ativa e lembrar suas preferências
+              </li>
+              <li>
+                <strong style={{ color: "var(--text)" }}>Cookies de publicidade:</strong> usados pelo Google AdSense
+                para exibir anúncios relevantes
+              </li>
+            </ul>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <InstitutionalParagraph>
+              Você pode desativar cookies nas configurações do seu navegador, mas isso pode afetar algumas
+              funcionalidades da plataforma.
+            </InstitutionalParagraph>
+          </div>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="6. Compartilhamento de dados">
+          <InstitutionalParagraph>
+            Não vendemos seus dados pessoais. Compartilhamos informações apenas com:
+          </InstitutionalParagraph>
+          <div style={{ marginTop: 10 }}>
+            <InstitutionalList
+              items={[
+                "Provedores de serviço que nos ajudam a operar a plataforma (como hospedagem e autenticação)",
+                "O Google, para fins de exibição de anúncios via AdSense",
+                "Autoridades competentes, quando exigido por lei",
+              ]}
+            />
+          </div>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="7. Seus direitos">
+          <InstitutionalParagraph>
+            De acordo com a Lei Geral de Proteção de Dados (LGPD), você tem direito a:
+          </InstitutionalParagraph>
+          <div style={{ marginTop: 10 }}>
+            <InstitutionalList
+              items={[
+                "Saber quais dados temos sobre você",
+                "Corrigir dados incorretos",
+                "Solicitar a exclusão dos seus dados",
+                "Revogar o consentimento para uso dos seus dados",
+              ]}
+            />
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <InstitutionalParagraph>
+              Para exercer esses direitos, entre em contato pelo e-mail{" "}
+              <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span>.
+            </InstitutionalParagraph>
+          </div>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="8. Segurança">
+          <InstitutionalParagraph>
+            Utilizamos práticas de segurança padrão do mercado para proteger seus dados, incluindo criptografia de senha
+            e conexões HTTPS. Nenhum sistema é 100% seguro, mas fazemos o possível para manter seus dados protegidos.
+          </InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="9. Alterações nesta política">
+          <InstitutionalParagraph>
+            Podemos atualizar esta política quando necessário. Publicaremos sempre a data da última atualização no topo
+            desta página. Em caso de mudanças significativas, comunicaremos os usuários por e-mail ou por aviso dentro
+            da plataforma.
+          </InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="10. Contato">
+          <InstitutionalParagraph>
+            Dúvidas sobre privacidade:{" "}
+            <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span>
+          </InstitutionalParagraph>
+        </InstitutionalSection>
+      </div>
+    </InstitutionalLayout>
   );
 }

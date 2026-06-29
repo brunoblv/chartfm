@@ -170,6 +170,8 @@ model Song {
   isrc            String?      @map("isrc")
   genresFetchedAt DateTime?    @map("genres_fetched_at")
   singleReleaseDate         DateTime? @map("single_release_date") @db.Date
+  musicVideoReleaseDate     DateTime? @map("music_video_release_date") @db.Date
+  youtubeReleaseDate        DateTime? @map("youtube_release_date") @db.Date
   singleReleaseDateFetchedAt DateTime? @map("single_release_date_fetched_at")
   releaseDatesVersion       Int       @default(0) @map("release_dates_version")
   createdAt       DateTime     @default(now()) @map("created_at")

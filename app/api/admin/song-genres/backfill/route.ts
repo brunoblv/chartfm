@@ -33,21 +33,31 @@ function formatMbDate(d: Date | null | undefined): string | null {
   return d ? d.toISOString().slice(0, 10) : null;
 }
 
-function releaseDatePayload(resolved: {
+function releaseDatesPayload(resolved: {
   singleReleaseDate: Date | null;
-  releaseDateSource: "music-video" | "single" | null;
+  musicVideoReleaseDate: Date | null;
+  youtubeReleaseDate: Date | null;
 }) {
   return {
     singleReleaseDate: formatMbDate(resolved.singleReleaseDate),
-    releaseDateSource: resolved.releaseDateSource,
+    musicVideoReleaseDate: formatMbDate(resolved.musicVideoReleaseDate),
+    youtubeReleaseDate: formatMbDate(resolved.youtubeReleaseDate),
   };
 }
 
-function releaseDateUpdate(resolved: { singleReleaseDate: Date | null }) {
+function releaseDatesUpdate(resolved: {
+  singleReleaseDate: Date | null;
+  musicVideoReleaseDate: Date | null;
+  youtubeReleaseDate: Date | null;
+}) {
   return {
     ...(resolved.singleReleaseDate != null ? { singleReleaseDate: resolved.singleReleaseDate } : {}),
+    ...(resolved.musicVideoReleaseDate != null
+      ? { musicVideoReleaseDate: resolved.musicVideoReleaseDate }
+      : {}),
+    ...(resolved.youtubeReleaseDate != null ? { youtubeReleaseDate: resolved.youtubeReleaseDate } : {}),
     singleReleaseDateFetchedAt: new Date(),
-    releaseDatesVersion: 2,
+    releaseDatesVersion: 4,
   };
 }
 
@@ -107,7 +117,7 @@ export async function POST(req: NextRequest) {
           genres: resolved.genres,
           source: resolved.source,
           recordingMbid: resolved.recordingMbid,
-          ...releaseDatePayload(resolved),
+          ...releaseDatesPayload(resolved),
         },
       ],
     });
@@ -164,7 +174,8 @@ export async function POST(req: NextRequest) {
     source: string;
     recordingMbid: string | null;
     singleReleaseDate: string | null;
-    releaseDateSource: string | null;
+    musicVideoReleaseDate: string | null;
+    youtubeReleaseDate: string | null;
     error?: string;
   }> = [];
 
@@ -192,7 +203,7 @@ export async function POST(req: NextRequest) {
           genreSource: resolved.source,
           recordingMbid: resolved.recordingMbid,
           genresFetchedAt: new Date(),
-          ...releaseDateUpdate(resolved),
+          ...releaseDatesUpdate(resolved),
         },
       });
 
@@ -204,7 +215,7 @@ export async function POST(req: NextRequest) {
         genres: resolved.genres,
         source: resolved.source,
         recordingMbid: resolved.recordingMbid,
-        ...releaseDatePayload(resolved),
+        ...releaseDatesPayload(resolved),
       });
     } catch (err) {
       failed++;
@@ -216,7 +227,8 @@ export async function POST(req: NextRequest) {
         source: "error",
         recordingMbid: null,
         singleReleaseDate: null,
-        releaseDateSource: null,
+        musicVideoReleaseDate: null,
+        youtubeReleaseDate: null,
         error: err instanceof Error ? err.message : "Erro desconhecido",
       });
     }
