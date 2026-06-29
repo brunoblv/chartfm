@@ -1,5 +1,4 @@
 import { getServerSession } from "next-auth";
-import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
@@ -124,9 +123,5 @@ export default async function PushPage() {
   const session = await getServerSession(authOptions);
   const round = await getCurrentRound(session?.user?.id ?? null);
 
-  return (
-    <Shell noPadding>
-      <PushClient initialRound={round as RoundData | null} />
-    </Shell>
-  );
+  return <PushClient initialRound={round as RoundData | null} />;
 }

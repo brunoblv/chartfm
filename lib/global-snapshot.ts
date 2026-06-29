@@ -171,6 +171,58 @@ export async function loadSongGlobalStatsFromSnapshots(): Promise<Map<string, Hi
   return stats;
 }
 
+/** Semanas, pico e #1s no Global 100 oficial (snapshots congelados). */
+export function lookupSongGlobal100Stats(
+  song: { spotifyId?: string | null; title: string; artist: string },
+  stats: Map<string, HistoricalStat>,
+): { weeks: number; peak: number; numberOnes: number } {
+  const gs = stats.get(
+    songSnapshotAggKey({
+      spotifyId: song.spotifyId,
+      title: song.title,
+      artist: song.artist,
+      slugArtist: song.artist,
+    }),
+  );
+  return {
+    weeks: gs?.weeks ?? 0,
+    peak: gs?.peak ?? 0,
+    numberOnes: gs?.numberOnes ?? 0,
+  };
+}
+
+/** Posição na última semana congelada do Global 100 (por faixa). */
+export async function loadLatestGlobalWeeklySongPositions(): Promise<Map<string, number>> {
+  const snap = await prisma.globalSnapshot.findFirst({
+    where: { weekIndex: { gte: GLOBAL_RANKING_FIRST_WEEK_INDEX } },
+    orderBy: { weekIndex: "desc" },
+    select: { weeklySongs: true },
+  });
+  if (!snap) return new Map();
+  const weekly = snap.weeklySongs as GlobalSnapshotPayload["weeklySongs"];
+  return new Map(weekly.map((s) => [songSnapshotAggKey(s.song), s.position]));
+}
+
+export function resolveSongGlobal100Stats(
+  song: { spotifyId?: string | null; title: string; artist: string },
+  historical: Map<string, HistoricalStat>,
+  currentWeekPositions: Map<string, number>,
+): { weeks: number; peak: number; number1s: number; currentWeekPos: number } {
+  const base = lookupSongGlobal100Stats(song, historical);
+  const key = songSnapshotAggKey({
+    spotifyId: song.spotifyId,
+    title: song.title,
+    artist: song.artist,
+    slugArtist: song.artist,
+  });
+  return {
+    weeks: base.weeks,
+    peak: base.peak,
+    number1s: base.numberOnes,
+    currentWeekPos: currentWeekPositions.get(key) ?? 9999,
+  };
+}
+
 const chartEntrySelect = {
   position: true,
   points: true,

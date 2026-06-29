@@ -36,6 +36,7 @@ export async function refreshAllEntityPageSnapshots(
       ? ((await getLatestDailyChartSongStats()) ?? (await buildAndSaveDailyChartSongStats(now)))
       : await buildAndSaveDailyChartSongStats(now));
   const songGlobalStats = await loadSongGlobalStatsFromSnapshots();
+  const currentWeekPositions = await loadLatestGlobalWeeklySongPositions();
   let artists = 0;
   let albums = 0;
   let songs = 0;
@@ -47,7 +48,7 @@ export async function refreshAllEntityPageSnapshots(
 
   for (const a of artistRows) {
     try {
-      const payload = await computeArtistPageSnapshot(String(a.id), dailyStats);
+      const payload = await computeArtistPageSnapshot(String(a.id), songGlobalStats, currentWeekPositions);
       if (!payload) continue;
       const keys = [`db:${a.id}`, `spotify:${a.spotifyId}`, `name:${slugify(a.name)}`];
       for (const key of keys) {
@@ -109,7 +110,7 @@ export async function refreshAllEntityPageSnapshots(
         slug = song.id;
       }
 
-      const payload = await computeSongPageSnapshot(slug, dailyStats);
+      const payload = await computeSongPageSnapshot(slug, songGlobalStats);
       if (!payload) continue;
       await saveEntityPageSnapshot("SONG", `id:${songId}`, payload);
       songs += 1;

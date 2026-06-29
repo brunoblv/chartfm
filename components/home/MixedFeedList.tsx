@@ -1,0 +1,32 @@
+"use client";
+
+import { ChartCard } from "@/components/chart/ChartCard";
+import { FeedReviewCard } from "@/components/home/FeedReviewCard";
+import { FeedRecommendationCard } from "@/components/home/FeedRecommendationCard";
+import type { HomeFeedItem } from "@/lib/home-mixed-feed";
+
+export function MixedFeedList({ items }: { items: HomeFeedItem[] }) {
+  return (
+    <>
+      {items.map((entry) => {
+        if (entry.kind === "chart") {
+          const { item } = entry;
+          return (
+            <ChartCard
+              key={entry.id}
+              user={item.user}
+              chart={item.chart}
+              postedAgo={item.postedAgo}
+              isFollowing={item.isFollowing}
+              initialLiked={item.isLiked}
+            />
+          );
+        }
+        if (entry.kind === "review") {
+          return <FeedReviewCard key={entry.id} review={entry.item} />;
+        }
+        return <FeedRecommendationCard key={entry.id} item={entry.item} />;
+      })}
+    </>
+  );
+}

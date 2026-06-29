@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { Avatar } from "@/components/ui/Avatar";
 import type { RoundData } from "./push-types";
 import { isListenAndRankPhase, pushPoints, useTimeRemaining } from "./push-helpers";
 
@@ -32,6 +34,66 @@ const SCORE_ROWS = [
   { rank: "#10", label: "10º no ranking de alguém", pts: pushPoints(10, 20), variant: "muted" as const },
   { rank: "#20", label: "Último no ranking (20º)", pts: 1, variant: "dim" as const },
 ];
+
+function BackIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+export function PushIntroTopbar() {
+  const { data: session } = useSession();
+  const user = session?.user;
+
+  return (
+    <div style={{
+      height: 52,
+      background: "var(--bg-topbar)",
+      borderBottom: "1px solid var(--divider)",
+      display: "flex",
+      alignItems: "center",
+      padding: "0 16px",
+      position: "sticky",
+      top: 0,
+      zIndex: 20,
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+    }}>
+      <Link
+        href="/"
+        style={{
+          display: "flex", alignItems: "center", gap: 3,
+          color: "var(--accent)", fontSize: 15, fontWeight: 600,
+          textDecoration: "none", letterSpacing: "-.01em",
+        }}
+      >
+        <BackIcon />
+        Início
+      </Link>
+      <div style={{ flex: 1, textAlign: "center", fontSize: 17, fontWeight: 800, letterSpacing: "-.03em", color: "var(--text)" }}>
+        Push
+      </div>
+      {user?.handle ? (
+        <Link href={`/profile/${user.handle}`} style={{ flexShrink: 0, textDecoration: "none" }}>
+          <Avatar
+            user={{ name: user.name ?? user.handle, avatar: "#FA243C" }}
+            imageUrl={user.image}
+            size={32}
+          />
+        </Link>
+      ) : (
+        <Link href="/login" style={{ flexShrink: 0, textDecoration: "none" }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: "linear-gradient(135deg, #FA243C, #FF8C69)",
+          }} />
+        </Link>
+      )}
+    </div>
+  );
+}
 
 function ArrowIcon() {
   return (
@@ -259,6 +321,7 @@ export function PushIntroView({
   if (isMobile) {
     return (
       <div style={{ padding: "0 0 48px", position: "relative" }}>
+        <PushIntroTopbar />
         <div style={{
           position: "absolute", top: -60, left: -60, width: 280, height: 280,
           background: "radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent) 0%, transparent 70%)",
@@ -315,7 +378,8 @@ export function PushIntroView({
   }
 
   return (
-    <div style={{ margin: "-28px -40px 0", overflow: "hidden" }}>
+    <div style={{ overflow: "hidden" }}>
+      <PushIntroTopbar />
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr",
         borderBottom: "1px solid var(--divider)", position: "relative",

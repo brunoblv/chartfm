@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
 import { buildAlbumPath } from "@/lib/music-routes";
@@ -18,6 +20,8 @@ export default async function CriticsFMAlbumPage({
   const { albumId: rawId } = await params;
   const albumId = parseInt(rawId, 10);
   if (isNaN(albumId)) notFound();
+
+  const session = await getServerSession(authOptions);
 
   const [album, reviewStats, initialReviews] = await Promise.all([
     prisma.album.findUnique({
@@ -58,6 +62,20 @@ export default async function CriticsFMAlbumPage({
   ]);
 
   if (!album) notFound();
+
+  const likedReviewIds = new Set(
+    session?.user?.id && initialReviews.length > 0
+      ? (
+          await prisma.albumReviewHelpful.findMany({
+            where: {
+              userId: session.user.id,
+              reviewId: { in: initialReviews.map((r) => r.id) },
+            },
+            select: { reviewId: true },
+          })
+        ).map((v) => v.reviewId)
+      : [],
+  );
 
   const albumTitle = album.exhibitionName || album.title;
   const artistName = album.artist.exhibitionName || album.artist.name;
@@ -235,6 +253,7 @@ export default async function CriticsFMAlbumPage({
           initialReviews={initialReviews.map((r) => ({
             ...r,
             createdAt: r.createdAt.toISOString(),
+            likedByMe: likedReviewIds.has(r.id),
           }))}
           albumDetails={{
             releaseDate: album.releaseDate?.toISOString().slice(0, 10) ?? null,

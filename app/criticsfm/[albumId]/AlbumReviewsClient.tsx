@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
-import { Instagram, Pencil, Trash2 } from "lucide-react";
+import { Instagram, Pencil, Trash2, Heart } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
 import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution, SCORE_BANDS } from "@/lib/album-score";
@@ -15,6 +15,7 @@ type Review = {
   rating: number;
   body: string | null;
   helpful: number;
+  likedByMe?: boolean;
   createdAt: string;
   user: ReviewUser;
 };
@@ -58,7 +59,7 @@ export function AlbumReviewsClient({
 }: Props) {
   const { data: session } = useSession();
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
-  const [sort, setSort] = useState<"helpful" | "recent">("helpful");
+  const [sort, setSort] = useState<"likes" | "recent">("likes");
   const [avgScore, setAvgScore] = useState(initialAvgScore);
   const [reviewCount, setReviewCount] = useState(initialReviewCount);
   const [scoreDistribution, setScoreDistribution] = useState<number[]>(
@@ -73,7 +74,7 @@ export function AlbumReviewsClient({
   const myReview = userId ? (reviews.find((r) => r.user.id === userId) ?? null) : null;
 
   const sorted =
-    sort === "helpful"
+    sort === "likes"
       ? [...reviews].sort((a, b) => b.helpful - a.helpful)
       : [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -126,7 +127,7 @@ export function AlbumReviewsClient({
                 borderRadius: 10,
               }}
             >
-              {(["helpful", "recent"] as const).map((id) => (
+              {(["likes", "recent"] as const).map((id) => (
                 <button
                   key={id}
                   onClick={() => setSort(id)}
@@ -142,7 +143,7 @@ export function AlbumReviewsClient({
                     boxShadow: sort === id ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
                   }}
                 >
-                  {id === "helpful" ? "Mais úteis" : "Recentes"}
+                  {id === "likes" ? "Mais curtidas" : "Recentes"}
                 </button>
               ))}
             </div>
@@ -721,21 +722,31 @@ function ReviewCard({
   onDeleted?: (id: string) => void;
 }) {
   const { data: session } = useSession();
-  const [helpful, setHelpful] = useState(review.helpful);
-  const [voted, setVoted] = useState(false);
+  const [likes, setLikes] = useState(review.helpful);
+  const [liked, setLiked] = useState(review.likedByMe ?? false);
+  const [liking, setLiking] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const isOwner = (session?.user as { id?: string } | undefined)?.id === review.user.id;
 
-  const toggleHelpful = async () => {
+  const toggleLike = async () => {
+    if (liking) return;
+    const prevLiked = liked;
+    const prevCount = likes;
+    setLiking(true);
+    setLiked(!prevLiked);
+    setLikes((c) => c + (prevLiked ? -1 : 1));
     try {
       const res = await fetch(`/api/albums/${albumDbId}/reviews/${review.id}/helpful`, { method: "POST" });
-      const data = (await res.json()) as { helpful: boolean };
-      setHelpful((h) => h + (data.helpful ? 1 : -1));
-      setVoted(data.helpful);
+      if (!res.ok) throw new Error("like_failed");
+      const data = (await res.json()) as { helpful?: boolean };
+      if (typeof data.helpful === "boolean") setLiked(data.helpful);
     } catch {
-      // ignore
+      setLiked(prevLiked);
+      setLikes(prevCount);
+    } finally {
+      setLiking(false);
     }
   };
 
@@ -849,21 +860,24 @@ function ReviewCard({
 
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10, marginLeft: 52 }}>
         <button
-          onClick={toggleHelpful}
+          type="button"
+          onClick={toggleLike}
+          disabled={liking}
           style={{
             background: "none",
             border: "none",
             padding: 0,
-            color: voted ? "var(--accent)" : "var(--text-muted)",
+            color: liked ? "var(--accent)" : "var(--text-muted)",
             fontSize: 12,
             fontWeight: 500,
             display: "flex",
             alignItems: "center",
-            gap: 4,
-            cursor: "pointer",
+            gap: 6,
+            cursor: liking ? "default" : "pointer",
           }}
         >
-          👍 <span>Útil ({helpful})</span>
+          <Heart size={16} fill={liked ? "currentColor" : "none"} />
+          {likes > 0 && <span>{likes}</span>}
         </button>
       </div>
     </div>

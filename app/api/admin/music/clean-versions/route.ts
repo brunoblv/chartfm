@@ -3,7 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { cleanRemasterTag } from "@/lib/clean-version-tag";
+import {
+  cleanVersionTag,
+  VERSION_TAG_CLEANERS,
+  type VersionTagType,
+} from "@/lib/clean-version-tag";
 import { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -17,14 +21,19 @@ type Candidate = {
   conflict: boolean;
 };
 
-/** Busca todas as músicas com tag de remaster e calcula o título limpo. */
-async function buildCandidates(): Promise<Candidate[]> {
+function parseTagType(raw: unknown): VersionTagType | null {
+  if (typeof raw !== "string") return null;
+  return raw in VERSION_TAG_CLEANERS ? (raw as VersionTagType) : null;
+}
+
+/** Busca músicas com tag do tipo indicado e calcula o título limpo. */
+async function buildCandidates(type: VersionTagType): Promise<Candidate[]> {
+  const { searchTerms } = VERSION_TAG_CLEANERS[type];
   const songs = await prisma.song.findMany({
     where: {
-      OR: [
-        { title: { contains: "remaster", mode: "insensitive" } },
-        { title: { contains: "remastered", mode: "insensitive" } },
-      ],
+      OR: searchTerms.map((term) => ({
+        title: { contains: term, mode: "insensitive" as const },
+      })),
     },
     select: {
       id: true,
@@ -37,13 +46,10 @@ async function buildCandidates(): Promise<Candidate[]> {
   });
 
   const changed = songs
-    .map((s) => ({ s, after: cleanRemasterTag(s.title) }))
+    .map((s) => ({ s, after: cleanVersionTag(s.title, type) }))
     .filter(({ s, after }) => after && after !== s.title);
 
-  // Detecta colisões com o índice único (title, artist).
-  // Há conflito se já existe outra música com o mesmo (after, artist),
-  // ou se duas candidatas convergem para o mesmo (after, artist).
-  const seen = new Map<string, string>(); // chave -> id da primeira candidata
+  const seen = new Map<string, string>();
   const candidates: Candidate[] = [];
   for (const { s, after } of changed) {
     const key = `${after.toLowerCase()}|||${s.artist.toLowerCase()}`;
@@ -77,14 +83,15 @@ export async function POST(req: NextRequest) {
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } });
   if (!isPrivilegedRole(me?.role)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  let body: { preview?: unknown } = {};
+  let body: { preview?: unknown; type?: unknown } = {};
   try {
     body = await req.json();
   } catch {
     // corpo vazio = aplicar
   }
 
-  const candidates = await buildCandidates();
+  const type = parseTagType(body.type) ?? "remaster";
+  const candidates = await buildCandidates(type);
   const applicable = candidates.filter((c) => !c.conflict);
 
   if (body.preview === true) {
@@ -93,6 +100,7 @@ export async function POST(req: NextRequest) {
       total: candidates.length,
       applicable: applicable.length,
       conflicts: candidates.length - applicable.length,
+      type,
     });
   }
 
@@ -119,5 +127,6 @@ export async function POST(req: NextRequest) {
     ok: true,
     updated,
     skippedConflicts: candidates.length - applicable.length + skipped.length,
+    type,
   });
 }

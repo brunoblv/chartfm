@@ -300,3 +300,26 @@ export function formatChartPeriod(chart: Pick<Chart, "weekLabel" | "dateRange">)
   return `${dateRange} - ${weekText}`;
 }
 
+/** Gradiente de header visível mesmo com cores de avatar claras. */
+export function safeHeaderBg(hex: string): string {
+  const raw = hex.replace("#", "");
+  if (raw.length !== 6) {
+    return "linear-gradient(180deg, rgba(250,36,60,0.16) 0%, transparent 100%)";
+  }
+
+  const r = parseInt(raw.slice(0, 2), 16);
+  const g = parseInt(raw.slice(2, 4), 16);
+  const b = parseInt(raw.slice(4, 6), 16);
+  if ([r, g, b].some((n) => Number.isNaN(n))) {
+    return "linear-gradient(180deg, rgba(250,36,60,0.16) 0%, transparent 100%)";
+  }
+
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  const scale = lum > 0.55 ? 0.45 : 1;
+  const fr = Math.round(r * scale);
+  const fg = Math.round(g * scale);
+  const fb = Math.round(b * scale);
+
+  return `linear-gradient(180deg, rgba(${fr},${fg},${fb},0.16) 0%, transparent 100%)`;
+}
+

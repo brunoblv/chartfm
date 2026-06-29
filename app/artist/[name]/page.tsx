@@ -4,8 +4,12 @@ import type { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
-import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
-import { globalStatsForSongKeys, pointsForPosition, songKey } from "@/lib/chart-page-common";
+import {
+  loadLatestGlobalWeeklySongPositions,
+  loadSongGlobalStatsFromSnapshots,
+  resolveSongGlobal100Stats,
+} from "@/lib/global-snapshot";
+import { pointsForPosition, songKey } from "@/lib/chart-page-common";
 import { artistEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { ArtistPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
@@ -16,6 +20,7 @@ import { buildSongPath, parseArtistSlug, buildAlbumPath } from "@/lib/music-rout
 import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { getSpotifyArtistById } from "@/lib/spotify-server";
+import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
 
 function artistColor(name: string): [string, string] {
   let hash = 0;
@@ -24,8 +29,15 @@ function artistColor(name: string): [string, string] {
 }
 
 const PAGE_SIZE = 10;
+const ALBUM_PAGE_SIZE = 12;
 const VALID_TABS = ["songs", "albums", "user-songs", "user-albums"] as const;
 type Tab = typeof VALID_TABS[number];
+
+function artistPageHref(artistSlug: string, tab: Tab, page = 1): string {
+  const q = new URLSearchParams({ tab });
+  if (page > 1) q.set("page", String(page));
+  return `/artist/${artistSlug}?${q.toString()}`;
+}
 
 function catalogSongCover(songId: string, manual: string | null | undefined): SongRow["cover"] {
   let hash = 0;
@@ -54,6 +66,93 @@ function buildPageNumbers(current: number, total: number): (number | "...")[] {
   if (current < total - 2) pages.push("...");
   pages.push(total);
   return pages;
+}
+
+function PaginationBar({
+  artistSlug,
+  tab,
+  palette,
+  safePage,
+  totalPages,
+  totalItems,
+  pageSize,
+  inCard = true,
+}: {
+  artistSlug: string;
+  tab: Tab;
+  palette: [string, string];
+  safePage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  inCard?: boolean;
+}) {
+  if (totalItems <= pageSize) return null;
+
+  return (
+    <div
+      style={{
+        padding: inCard ? "16px 24px" : "16px 0 0",
+        borderTop: inCard ? "1px solid var(--divider)" : undefined,
+        marginTop: inCard ? undefined : 16,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 12,
+      }}
+    >
+      <span style={{ fontSize: 13, color: "#86868B" }}>
+        {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, totalItems)} de {totalItems}
+        {" · "}
+        Página {safePage} de {totalPages}
+      </span>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        {safePage > 1 ? (
+          <Link
+            href={artistPageHref(artistSlug, tab, safePage - 1)}
+            style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--divider-strong)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "var(--text)" }}
+          >
+            ←
+          </Link>
+        ) : (
+          <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, color: "#C7C7CC" }}>←</span>
+        )}
+        {buildPageNumbers(safePage, totalPages).map((p, idx) =>
+          p === "..." ? (
+            <span key={`e-${idx}`} style={{ padding: "6px 4px", fontSize: 13, color: "#86868B" }}>…</span>
+          ) : (
+            <Link
+              key={p}
+              href={artistPageHref(artistSlug, tab, p)}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                textDecoration: "none",
+                background: p === safePage ? palette[0] : "transparent",
+                color: p === safePage ? "white" : "var(--text)",
+                border: p === safePage ? "none" : "1px solid var(--divider-strong)",
+              }}
+            >
+              {p}
+            </Link>
+          ),
+        )}
+        {safePage < totalPages ? (
+          <Link
+            href={artistPageHref(artistSlug, tab, safePage + 1)}
+            style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--divider-strong)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "var(--text)" }}
+          >
+            →
+          </Link>
+        ) : (
+          <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, color: "#C7C7CC" }}>→</span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 type SongRow = {
@@ -105,7 +204,7 @@ export default async function ArtistPage({
 }) {
   const [{ name }, sp] = await Promise.all([params, searchParams]);
   const tab: Tab = VALID_TABS.includes(sp.tab as Tab) ? (sp.tab as Tab) : "songs";
-  const currentPage = Math.max(1, parseInt(sp.page ?? "1", 10));
+  const currentPage = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
 
   const session = await getServerSession(authOptions);
   const currentUserId = session?.user?.id ?? null;
@@ -199,7 +298,7 @@ export default async function ArtistPage({
 
   const allEntries = await prisma.chartEntry.findMany({
     where: {
-      chart: { isPublished: true },
+      chart: publishedPrimaryParadaChartWhere,
       OR: entryOrFilters,
     },
     select: {
@@ -318,95 +417,17 @@ export default async function ArtistPage({
     songsMap.set(key, cur);
   }
 
-  let songs: SongRow[];
-  let allAlbums: AlbumRow[];
-  let bigFans: { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }[];
-  let listenersCount: number;
-  let number1sTotal: number;
-  let totalPointsCached: number;
-
-  if (cachedSnapshot) {
-    const p = cachedSnapshot.payload;
-    songs = p.songs as SongRow[];
-    allAlbums = p.allAlbums as AlbumRow[];
-    bigFans = p.bigFans;
-    listenersCount = p.listenersCount;
-    number1sTotal = p.number1s;
-    totalPointsCached = p.totalPoints;
-  } else {
-  const dailyStats = await getDailyChartSongStatsForPages();
-  const artistSongKeys = new Set(songsMap.keys());
-  for (const s of allRegisteredSongs) {
-    artistSongKeys.add(songKey(s.title, s.artist));
-  }
-  const globalStatsBySong = globalStatsForSongKeys(
-    artistSongKeys,
-    dailyStats.weeklyBuckets,
-    dailyStats.currentWeekIdx,
-  );
-
-  const mergedSongsById = new Map<string, SongRow>();
-  const registeredSongIds = new Set(allRegisteredSongs.map((s) => s.id));
-
-  for (const db of allRegisteredSongs) {
-    const key = songKey(db.title, db.artist);
-    const fromChart = songsMap.get(key);
-    const gs = globalStatsBySong.get(key)!;
-    const manual = db.albumRef?.coverUrl?.trim() || null;
-    const row: SongRow = fromChart
-      ? {
-          ...fromChart,
-          songId: db.id,
-          spotifyId: db.spotifyId ?? fromChart.spotifyId,
-          dbArtist: db.artist,
-          title: db.title,
-          album: db.album ?? fromChart.album,
-          albumRefId: db.albumRef?.id ?? fromChart.albumRefId,
-          cover: manual ? { ...fromChart.cover, imageUrl: manual } : fromChart.cover,
-          weeks: gs.weeks,
-          peak: gs.peak === 9999 ? 0 : gs.peak,
-          number1s: gs.number1s,
-          currentWeekPos: gs.currentWeekPos,
-        }
-      : {
-          key,
-          songId: db.id,
-          spotifyId: db.spotifyId,
-          dbArtist: db.artist,
-          title: db.title,
-          album: db.album ?? "",
-          albumRefId: db.albumRef?.id ?? null,
-          points: 0,
-          isFeat: !(
-            (db.artistSpotifyId != null && spotifyIdsForSong.has(db.artistSpotifyId)) ||
-            [...nameCandidates].some((n) => n.toLowerCase() === db.artist.trim().toLowerCase())
-          ),
-          cover: catalogSongCover(db.id, manual),
-          weeks: gs.weeks,
-          peak: gs.peak === 9999 ? 0 : gs.peak,
-          number1s: gs.number1s,
-          currentWeekPos: gs.currentWeekPos,
-        };
-    mergedSongsById.set(db.id, row);
+  const fanMap = new Map<string, { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }>();
+  for (const e of allEntries) {
+    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
+    const existing = fanMap.get(e.chart.user.id) ?? {
+      user: { id: e.chart.user.id, handle: e.chart.user.handle, name: e.chart.user.name, avatar: e.chart.user.avatarColor, image: e.chart.user.image },
+      points: 0,
+    };
+    existing.points += pts;
+    fanMap.set(e.chart.user.id, existing);
   }
 
-  for (const row of songsMap.values()) {
-    if (registeredSongIds.has(row.songId)) continue;
-    const gs = globalStatsBySong.get(row.key)!;
-    mergedSongsById.set(row.songId, {
-      ...row,
-      weeks: gs.weeks,
-      peak: gs.peak === 9999 ? 0 : gs.peak,
-      number1s: gs.number1s,
-      currentWeekPos: gs.currentWeekPos,
-    });
-  }
-
-  songs = [...mergedSongsById.values()].sort(
-    (a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points || a.title.localeCompare(b.title),
-  );
-
-  // ── Pontos por álbum (paradas) ───────────────────────────────────────────
   const pointsByAlbumDbId = new Map<number, number>();
   const chartPaletteByAlbumDbId = new Map<number, { a: string; b: string; seed: number }>();
   const albumsMapRaw = new Map<string, { albumId: number | null; name: string; songTitles: Set<string>; points: number; cover: AlbumRow["cover"] }>();
@@ -438,6 +459,71 @@ export default async function ArtistPage({
       if (manual && !existing.cover.imageUrl) existing.cover = { ...existing.cover, imageUrl: manual };
     }
   }
+
+  let songs: SongRow[];
+  let allAlbums: AlbumRow[];
+  let bigFans: { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }[];
+  let listenersCount: number;
+  let number1sTotal: number;
+  let totalPointsCached: number;
+
+  if (cachedSnapshot) {
+    const p = cachedSnapshot.payload;
+    songs = p.songs as SongRow[];
+    allAlbums = p.allAlbums as AlbumRow[];
+    bigFans = p.bigFans;
+    listenersCount = p.listenersCount;
+    number1sTotal = p.number1s;
+    totalPointsCached = p.totalPoints;
+  } else {
+  const mergedSongsById = new Map<string, SongRow>();
+  const registeredSongIds = new Set(allRegisteredSongs.map((s) => s.id));
+
+  for (const db of allRegisteredSongs) {
+    const key = songKey(db.title, db.artist);
+    const fromChart = songsMap.get(key);
+    const manual = db.albumRef?.coverUrl?.trim() || null;
+    const row: SongRow = fromChart
+      ? {
+          ...fromChart,
+          songId: db.id,
+          spotifyId: db.spotifyId ?? fromChart.spotifyId,
+          dbArtist: db.artist,
+          title: db.title,
+          album: db.album ?? fromChart.album,
+          albumRefId: db.albumRef?.id ?? fromChart.albumRefId,
+          cover: manual ? { ...fromChart.cover, imageUrl: manual } : fromChart.cover,
+        }
+      : {
+          key,
+          songId: db.id,
+          spotifyId: db.spotifyId,
+          dbArtist: db.artist,
+          title: db.title,
+          album: db.album ?? "",
+          albumRefId: db.albumRef?.id ?? null,
+          points: 0,
+          isFeat: !(
+            (db.artistSpotifyId != null && spotifyIdsForSong.has(db.artistSpotifyId)) ||
+            [...nameCandidates].some((n) => n.toLowerCase() === db.artist.trim().toLowerCase())
+          ),
+          cover: catalogSongCover(db.id, manual),
+          weeks: 0,
+          peak: 0,
+          number1s: 0,
+          currentWeekPos: 9999,
+        };
+    mergedSongsById.set(db.id, row);
+  }
+
+  for (const row of songsMap.values()) {
+    if (registeredSongIds.has(row.songId)) continue;
+    mergedSongsById.set(row.songId, { ...row });
+  }
+
+  songs = [...mergedSongsById.values()].sort(
+    (a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points || a.title.localeCompare(b.title),
+  );
 
   const spotifyIdsArr = [...spotifyIdsForSong];
   const dbAlbumRows =
@@ -535,20 +621,42 @@ export default async function ArtistPage({
       .map((a) => ({ albumId: a.albumId, name: a.name, songs: a.songTitles.size, points: a.points, cover: a.cover }));
   })();
 
-  const fanMap = new Map<string, { user: { id: string; handle: string; name: string; avatar: string; image: string | null }; points: number }>();
-  for (const e of allEntries) {
-    const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
-    const existing = fanMap.get(e.chart.user.id) ?? {
-      user: { id: e.chart.user.id, handle: e.chart.user.handle, name: e.chart.user.name, avatar: e.chart.user.avatarColor, image: e.chart.user.image },
-      points: 0,
-    };
-    existing.points += pts;
-    fanMap.set(e.chart.user.id, existing);
-  }
-  bigFans = [...fanMap.values()].sort((a, b) => b.points - a.points).slice(0, 4);
   listenersCount = listenersSet.size;
   number1sTotal = number1s;
   totalPointsCached = totalPoints;
+  bigFans = [...fanMap.values()].sort((a, b) => b.points - a.points).slice(0, 4);
+  }
+
+  {
+    const globalRank = await loadSongGlobalStatsFromSnapshots();
+    const latestPositions = await loadLatestGlobalWeeklySongPositions();
+    songs = songs
+      .map((s) => {
+        const gs = resolveSongGlobal100Stats(
+          { spotifyId: s.spotifyId, title: s.title, artist: s.dbArtist },
+          globalRank,
+          latestPositions,
+        );
+        return { ...s, ...gs };
+      })
+      .sort(
+        (a, b) => a.currentWeekPos - b.currentWeekPos || b.points - a.points || a.title.localeCompare(b.title),
+      );
+    number1sTotal = songs.reduce((sum, s) => sum + s.number1s, 0);
+  }
+
+  if (cachedSnapshot) {
+    listenersCount = listenersSet.size;
+    totalPointsCached = totalPoints;
+    bigFans = [...fanMap.values()].sort((a, b) => b.points - a.points).slice(0, 4);
+    songs = songs.map((s) => ({ ...s, points: songsMap.get(s.key)?.points ?? 0 }));
+    allAlbums = allAlbums.map((a) => ({
+      ...a,
+      points:
+        a.albumId != null
+          ? (pointsByAlbumDbId.get(a.albumId) ?? 0)
+          : (albumsMapRaw.get(a.name)?.points ?? 0),
+    }));
   }
 
   // ── User-specific data ────────────────────────────────────────────────────
@@ -618,11 +726,17 @@ export default async function ArtistPage({
 
   // ── Pagination ────────────────────────────────────────────────────────────
   const activeSongs = tab === "user-songs" ? userSongs : songs;
-  const totalPages = Math.ceil(activeSongs.length / PAGE_SIZE);
-  const safePage = Math.min(currentPage, totalPages || 1);
-  const paginatedSongs = activeSongs.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const songTotalPages = Math.max(1, Math.ceil(activeSongs.length / PAGE_SIZE));
+  const safeSongPage = Math.min(currentPage, songTotalPages);
+  const paginatedSongs = activeSongs.slice((safeSongPage - 1) * PAGE_SIZE, safeSongPage * PAGE_SIZE);
+
+  const activeAlbums = tab === "user-albums" ? userAlbums : allAlbums;
+  const albumTotalPages = Math.max(1, Math.ceil(activeAlbums.length / ALBUM_PAGE_SIZE));
+  const safeAlbumPage = Math.min(currentPage, albumTotalPages);
+  const paginatedAlbums = activeAlbums.slice((safeAlbumPage - 1) * ALBUM_PAGE_SIZE, safeAlbumPage * ALBUM_PAGE_SIZE);
 
   const isUserTab = tab === "user-songs" || tab === "user-albums";
+  const showUserStats = isUserTab && Boolean(currentUserId);
 
   const heroImageUrl =
     artistRef?.imageUrl ?? spotifyProfile?.imageUrl ?? cachedSnapshot?.payload.heroImageUrl ?? null;
@@ -642,7 +756,7 @@ export default async function ArtistPage({
     { label: "Seus pontos", value: userTotalPoints, icon: "⭐", color: "#FB5607" },
   ];
 
-  const activeStats = isUserTab && currentUserId ? userStatsCards : globalStats;
+  const activeStats = showUserStats ? userStatsCards : isUserTab ? [] : globalStats;
 
   const globalSubTabs: { id: Tab; label: string }[] = [
     { id: "songs", label: "Músicas" },
@@ -680,10 +794,21 @@ export default async function ArtistPage({
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>Artista</div>
             <h1 style={{ fontSize: 72, fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1, marginBottom: 16 }}>{canonicalName}</h1>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 14, opacity: 0.9, marginBottom: 24 }}>
-              <span><strong>{listenersCount}</strong> ouvintes</span>
-              <span><strong>{songs.length}</strong> músicas cadastradas</span>
-              <span><strong>{number1sTotal}</strong> #1s</span>
-              <span><strong>{totalPointsCached}</strong> pontos</span>
+              {showUserStats ? (
+                <>
+                  <span><strong>{userSongs.length}</strong> músicas votadas</span>
+                  <span><strong>{userTotalAppearances}</strong> semanas nas paradas</span>
+                  <span><strong>{userNumber1s}</strong> #1s seus</span>
+                  <span><strong>{userTotalPoints}</strong> seus pontos</span>
+                </>
+              ) : (
+                <>
+                  <span><strong>{listenersCount}</strong> ouvintes</span>
+                  <span><strong>{songs.length}</strong> músicas cadastradas</span>
+                  <span><strong>{number1sTotal}</strong> #1s</span>
+                  <span><strong>{totalPointsCached}</strong> pontos</span>
+                </>
+              )}
             </div>
             <a
               href={heroSpotifyUrl ?? `https://open.spotify.com/search/${encodeURIComponent(canonicalName)}`}
@@ -718,7 +843,7 @@ export default async function ArtistPage({
             return (
               <Link
                 key={superTab}
-                href={`?tab=${isActive ? tab : targetTab}`}
+                href={artistPageHref(name, isActive ? tab : targetTab)}
                 style={{
                   padding: "10px 20px",
                   fontSize: 14,
@@ -776,22 +901,24 @@ export default async function ArtistPage({
         )}
 
         {/* Stats cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 28, marginBottom: 28 }}>
-          {activeStats.map((s) => (
-            <div key={s.label} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.color + "18", display: "grid", placeItems: "center", marginBottom: 12, fontSize: 22 }}>{s.icon}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
-            </div>
-          ))}
-        </div>
+        {activeStats.length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 28, marginBottom: 28 }}>
+            {activeStats.map((s) => (
+              <div key={s.label} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.color + "18", display: "grid", placeItems: "center", marginBottom: 12, fontSize: 22 }}>{s.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {/* Sub-tab nav: Músicas | Álbuns */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 0 }}>
           {subTabs.map((t) => (
             <Link
               key={t.id}
-              href={`?tab=${t.id}`}
+              href={artistPageHref(name, t.id)}
               style={{
                 padding: "10px 18px",
                 fontSize: 14,
@@ -812,7 +939,7 @@ export default async function ArtistPage({
 
         {/* Tab: Músicas / Músicas na parada */}
         {(tab === "songs" || tab === "user-songs") && (
-          <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden", marginBottom: 40 }}>
+          <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", marginBottom: 40 }}>
             {tab === "user-songs" && !currentUserId ? (
               <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
@@ -862,7 +989,7 @@ export default async function ArtistPage({
                   {tab === "songs"
                     ? (paginatedSongs as SongRow[]).map((s, i) => (
                         <div key={s.key} style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", alignItems: "center", padding: "4px 16px", borderRadius: 8, gap: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{(safePage - 1) * PAGE_SIZE + i + 1}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{(safeSongPage - 1) * PAGE_SIZE + i + 1}</div>
                           <div style={{ padding: "6px 6px" }}>
                             <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
                           </div>
@@ -896,7 +1023,7 @@ export default async function ArtistPage({
                       ))
                     : (paginatedSongs as UserSongRow[]).map((s, i) => (
                         <div key={s.key} style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 80px 110px", alignItems: "center", padding: "4px 16px", borderRadius: 8, gap: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{(safePage - 1) * PAGE_SIZE + i + 1}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{(safeSongPage - 1) * PAGE_SIZE + i + 1}</div>
                           <div style={{ padding: "6px 6px" }}>
                             <Cover cover={s.cover} song={{ title: s.title, artist: canonicalName, album: s.album, spotifyId: s.spotifyId ?? undefined }} size={44} rounded={8} />
                           </div>
@@ -925,35 +1052,15 @@ export default async function ArtistPage({
                   }
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div style={{ padding: "16px 24px", borderTop: "1px solid var(--divider)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 13, color: "#86868B" }}>
-                      {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, activeSongs.length)} de {activeSongs.length}
-                    </span>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      {safePage > 1 ? (
-                        <Link href={`?tab=${tab}&page=${safePage - 1}`} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--divider-strong)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "var(--text)" }}>←</Link>
-                      ) : (
-                        <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, color: "#C7C7CC" }}>←</span>
-                      )}
-                      {buildPageNumbers(safePage, totalPages).map((p, idx) =>
-                        p === "..." ? (
-                          <span key={`e-${idx}`} style={{ padding: "6px 4px", fontSize: 13, color: "#86868B" }}>…</span>
-                        ) : (
-                          <Link key={p} href={`?tab=${tab}&page=${p}`} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none", background: p === safePage ? palette[0] : "transparent", color: p === safePage ? "white" : "var(--text)", border: p === safePage ? "none" : "1px solid var(--divider-strong)" }}>
-                            {p}
-                          </Link>
-                        )
-                      )}
-                      {safePage < totalPages ? (
-                        <Link href={`?tab=${tab}&page=${safePage + 1}`} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--divider-strong)", fontSize: 13, fontWeight: 600, textDecoration: "none", color: "var(--text)" }}>→</Link>
-                      ) : (
-                        <span style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)", fontSize: 13, color: "#C7C7CC" }}>→</span>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <PaginationBar
+                  artistSlug={name}
+                  tab={tab}
+                  palette={palette}
+                  safePage={safeSongPage}
+                  totalPages={songTotalPages}
+                  totalItems={activeSongs.length}
+                  pageSize={PAGE_SIZE}
+                />
               </>
             )}
           </div>
@@ -990,11 +1097,11 @@ export default async function ArtistPage({
                     {tab === "user-albums" ? "Seus álbuns favoritos" : "Álbuns"}
                   </h2>
                   <span style={{ fontSize: 13, color: "#86868B" }}>
-                    {(tab === "albums" ? allAlbums : userAlbums).length} álbuns
+                    {activeAlbums.length} álbuns
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
-                  {(tab === "albums" ? allAlbums : userAlbums).map((album) => (
+                  {paginatedAlbums.map((album) => (
                     <Link key={album.name} href={buildAlbumPath(album.name, canonicalName, { artistId: artistRef?.id, albumId: album.albumId })} style={{ textDecoration: "none" }}>
                       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 16 }}>
                         <Cover cover={album.cover} song={{ title: album.name, artist: canonicalName, album: album.name }} size={128} rounded={10} />
@@ -1005,13 +1112,23 @@ export default async function ArtistPage({
                     </Link>
                   ))}
                 </div>
+                <PaginationBar
+                  artistSlug={name}
+                  tab={tab}
+                  palette={palette}
+                  safePage={safeAlbumPage}
+                  totalPages={albumTotalPages}
+                  totalItems={activeAlbums.length}
+                  pageSize={ALBUM_PAGE_SIZE}
+                  inCard={false}
+                />
               </>
             )}
           </div>
         )}
 
-        {/* Top fans */}
-        {allEntries.length > 0 ? (
+        {/* Top fans — só na visão Global 100 */}
+        {!isUserTab && allEntries.length > 0 ? (
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>

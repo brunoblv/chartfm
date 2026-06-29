@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { Shell } from "@/components/layout/Shell";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { RoundData } from "@/components/push/push-types";
 import { isListenAndRankPhase } from "@/components/push/push-helpers";
@@ -53,16 +54,28 @@ export default function PushClient({ initialRound }: { initialRound: RoundData |
   }
 
   if (!round) {
-    return <NoRoundView />;
+    return (
+      <Shell noPadding>
+        <NoRoundView />
+      </Shell>
+    );
   }
 
-  if (!introReady) return null;
+  if (!introReady) {
+    return (
+      <Shell noPadding hideTopBar>
+        {null}
+      </Shell>
+    );
+  }
 
   if (showIntro) {
     return (
-      <div style={{ padding: isMobile ? "0 0 88px" : 0 }}>
-        <PushIntroView round={round} isMobile={isMobile} onParticipate={handleParticipate} />
-      </div>
+      <Shell noPadding hideTopBar>
+        <div style={{ padding: isMobile ? "0 0 88px" : 0 }}>
+          <PushIntroView round={round} isMobile={isMobile} onParticipate={handleParticipate} />
+        </div>
+      </Shell>
     );
   }
 
@@ -87,18 +100,20 @@ export default function PushClient({ initialRound }: { initialRound: RoundData |
   );
 
   return (
-    <div style={{ padding: isMobile ? "16px 16px 88px" : "28px 40px 60px" }}>
-      <RoundHeader round={round} isMobile={isMobile} />
-      {isMobile ? (
-        content
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 28, alignItems: "flex-start" }}>
-          <div style={{ minWidth: 0 }}>{content}</div>
-          <div style={{ position: "sticky", top: 76 }}>
-            <StatsSidebar round={round} />
+    <Shell noPadding>
+      <div style={{ padding: isMobile ? "16px 16px 88px" : "28px 40px 60px" }}>
+        <RoundHeader round={round} isMobile={isMobile} />
+        {isMobile ? (
+          content
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 28, alignItems: "flex-start" }}>
+            <div style={{ minWidth: 0 }}>{content}</div>
+            <div style={{ position: "sticky", top: 76 }}>
+              <StatsSidebar round={round} />
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Shell>
   );
 }

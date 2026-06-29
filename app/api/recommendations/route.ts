@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
 import { getServerLocale } from "@/lib/i18n/server";
 import { upsertSongFromSpotify } from "@/lib/mytrl-weekly-chart";
+import { extractYouTubeId } from "@/lib/youtube-id";
+import { fetchYouTubeOEmbed } from "@/lib/youtube-oembed";
 
 export const runtime = "nodejs";
 
@@ -27,6 +29,7 @@ export async function POST(req: NextRequest) {
     title?: string;
     artist?: string;
     album?: string;
+    youtubeUrl?: string;
     text?: string;
   };
 
@@ -35,33 +38,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "too_long" }, { status: 400 });
   }
 
+  const youtubeId = body.youtubeUrl?.trim() ? extractYouTubeId(body.youtubeUrl.trim()) : null;
   let songId = body.songId?.trim() || null;
 
-  if (!songId && body.spotifyId?.trim()) {
-    const resolved = await upsertSongFromSpotify(body.spotifyId.trim(), {
-      track: body.title?.trim() || "Música",
-      artist: body.artist?.trim() || "Artista",
-      album: body.album?.trim() || "",
+  if (youtubeId) {
+    if (songId || body.spotifyId?.trim()) {
+      return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+    }
+  } else {
+    if (!songId && body.spotifyId?.trim()) {
+      const resolved = await upsertSongFromSpotify(body.spotifyId.trim(), {
+        track: body.title?.trim() || "Música",
+        artist: body.artist?.trim() || "Artista",
+        album: body.album?.trim() || "",
+      });
+      songId = resolved.id;
+    }
+
+    if (!songId) {
+      return NextResponse.json({ error: "missing_song" }, { status: 400 });
+    }
+
+    const song = await prisma.song.findUnique({
+      where: { id: songId },
+      select: { id: true },
     });
-    songId = resolved.id;
+    if (!song) {
+      return NextResponse.json({ error: "song_not_found" }, { status: 404 });
+    }
   }
 
-  if (!songId) {
-    return NextResponse.json({ error: "missing_song" }, { status: 400 });
-  }
-
-  const song = await prisma.song.findUnique({
-    where: { id: songId },
-    select: { id: true },
-  });
-  if (!song) {
-    return NextResponse.json({ error: "song_not_found" }, { status: 404 });
-  }
+  const ytMeta = youtubeId ? await fetchYouTubeOEmbed(youtubeId) : null;
 
   const rec = await prisma.songRecommendation.create({
     data: {
       userId: session.user.id,
-      songId,
+      songId: youtubeId ? null : songId,
+      youtubeId,
+      ytTitle: ytMeta?.title ?? (youtubeId ? "Vídeo do YouTube" : null),
+      ytChannel: ytMeta?.channel ?? (youtubeId ? "YouTube" : null),
       text,
     },
     include: {
@@ -106,6 +121,7 @@ export async function POST(req: NextRequest) {
       liked: false,
       postedAgo: "agora",
       createdAt: rec.createdAt.toISOString(),
+      kind: rec.youtubeId ? "youtube" : "song",
       user: {
         id: rec.user.id,
         handle: rec.user.handle,
@@ -114,16 +130,28 @@ export async function POST(req: NextRequest) {
         imageUrl: rec.user.image ?? null,
         verified: rec.user.verified,
       },
-      song: {
-        id: rec.song.id,
-        title: rec.song.exhibitionName?.trim() || rec.song.title,
-        artist: rec.song.artistRef?.exhibitionName?.trim() || rec.song.artistRef?.name?.trim() || rec.song.artist,
-        album: rec.song.album ?? null,
-        spotifyId: rec.song.spotifyId ?? null,
-        artistSpotifyId: rec.song.artistSpotifyId ?? null,
-        artistRefId: rec.song.artistRef?.id ?? null,
-        coverUrl: rec.song.albumRef?.coverUrl?.trim() || null,
-      },
+      song: rec.song
+        ? {
+            id: rec.song.id,
+            title: rec.song.exhibitionName?.trim() || rec.song.title,
+            artist:
+              rec.song.artistRef?.exhibitionName?.trim() ||
+              rec.song.artistRef?.name?.trim() ||
+              rec.song.artist,
+            album: rec.song.album ?? null,
+            spotifyId: rec.song.spotifyId ?? null,
+            artistSpotifyId: rec.song.artistSpotifyId ?? null,
+            artistRefId: rec.song.artistRef?.id ?? null,
+            coverUrl: rec.song.albumRef?.coverUrl?.trim() || null,
+          }
+        : null,
+      youtube: rec.youtubeId
+        ? {
+            id: rec.youtubeId,
+            title: rec.ytTitle,
+            channel: rec.ytChannel,
+          }
+        : null,
     },
     { status: 201 },
   );

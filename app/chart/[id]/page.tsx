@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  ChevronLeft, ChevronRight, Heart, Repeat2, Share, Play, Star, MessageCircle,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Repeat2,
+  Share,
+  Play,
+  Star,
+  MessageCircle,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { AdSlot } from "@/components/ui/AdSlot";
@@ -19,10 +26,14 @@ import {
   formatTenureProse,
   isDailyChartIndex,
 } from "@/lib/chart-cadence";
-import { formatChartPeriod } from "@/lib/chart-week";
+import { formatChartPeriod, safeHeaderBg } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
-import { buildAlbumPath, buildArtistPath, buildSongPath } from "@/lib/music-routes";
+import {
+  buildAlbumPath,
+  buildArtistPath,
+  buildSongPath,
+} from "@/lib/music-routes";
 import { lookupNumberOnes } from "@/lib/song-stats-key";
 import {
   DESKTOP_COVER_SIZE,
@@ -40,7 +51,12 @@ import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
 import { TIMELINE } from "@/lib/data";
-import type { ChartEntry, PersonalDropoutEntry, TimelineItem, User } from "@/lib/types";
+import type {
+  ChartEntry,
+  PersonalDropoutEntry,
+  TimelineItem,
+  User,
+} from "@/lib/types";
 
 type Variant = "list" | "grid" | "podium" | "video_clip";
 type VideoClipLayout = "table" | "stacked";
@@ -128,13 +144,16 @@ export default function ChartDetailPage() {
   const id = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
 
   const { data: session } = useSession();
-  const [phase, setPhase] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  const [phase, setPhase] = useState<"loading" | "ready" | "missing" | "error">(
+    "loading",
+  );
   const [dbPayload, setDbPayload] = useState<ChartDetailExtended | null>(null);
   const [mockItem, setMockItem] = useState<TimelineItem | null>(null);
   const [ownerParadaNome, setOwnerParadaNome] = useState<string | null>(null);
 
   const [variant, setVariant] = useState<Variant>("list");
-  const [videoClipLayout, setVideoClipLayout] = useState<VideoClipLayout>("table");
+  const [videoClipLayout, setVideoClipLayout] =
+    useState<VideoClipLayout>("table");
   const initialTab = (searchParams?.get("tab") as Tab | null) ?? "chart";
   const [tab, setTab] = useState<Tab>(initialTab);
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
@@ -180,7 +199,9 @@ export default function ChartDetailPage() {
     setMockItem(null);
     (async () => {
       try {
-        const res = await fetch(`/api/charts/${encodeURIComponent(id)}`, { cache: "no-store" });
+        const res = await fetch(`/api/charts/${encodeURIComponent(id)}`, {
+          cache: "no-store",
+        });
         if (cancelled) return;
         if (res.ok) {
           const data = (await res.json()) as ChartDetailExtended;
@@ -235,7 +256,8 @@ export default function ChartDetailPage() {
   const previousChart = dbPayload?.previousChart ?? null;
   const nextChart = dbPayload?.nextChart ?? null;
   const hasParadaNav = !!(previousChart || nextChart);
-  const isOwner = !!session?.user?.id && !!user?.id && session.user.id === user.id;
+  const isOwner =
+    !!session?.user?.id && !!user?.id && session.user.id === user.id;
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
 
   useEffect(() => {
@@ -244,10 +266,15 @@ export default function ChartDetailPage() {
     const profileHandle = user.handle;
     (async () => {
       try {
-        const res = await fetch(`/api/profile/${encodeURIComponent(profileHandle)}`);
+        const res = await fetch(
+          `/api/profile/${encodeURIComponent(profileHandle)}`,
+        );
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as ParadaNomeResponse;
-        const nome = typeof data.paradaNome === "string" && data.paradaNome.trim() ? data.paradaNome.trim() : null;
+        const nome =
+          typeof data.paradaNome === "string" && data.paradaNome.trim()
+            ? data.paradaNome.trim()
+            : null;
         if (!cancelled) setOwnerParadaNome(nome);
       } catch {
         if (!cancelled) setOwnerParadaNome(null);
@@ -264,7 +291,9 @@ export default function ChartDetailPage() {
     setLoadingClips(true);
     (async () => {
       try {
-        const res = await fetch(`/api/charts/${encodeURIComponent(id)}/video-clips`);
+        const res = await fetch(
+          `/api/charts/${encodeURIComponent(id)}/video-clips`,
+        );
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as Record<string, string>;
         if (!cancelled) setVideoClips(data);
@@ -274,7 +303,9 @@ export default function ChartDetailPage() {
         if (!cancelled) setLoadingClips(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [variant, id, isDbChart]);
 
   useEffect(() => {
@@ -295,7 +326,9 @@ export default function ChartDetailPage() {
     const status = searchParams?.get("spotify");
     if (status === "connected") {
       setSpotifyConnected(true);
-      setSpotifyExportMsg("Spotify conectado! Toque em \"Salvar no Spotify\" para criar a playlist.");
+      setSpotifyExportMsg(
+        'Spotify conectado! Toque em "Salvar no Spotify" para criar a playlist.',
+      );
       window.history.replaceState({}, "", `/chart/${id}`);
     }
   }, [searchParams, id]);
@@ -324,7 +357,14 @@ export default function ChartDetailPage() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [phase, hasParadaNav, previousChart, nextChart, goToPreviousChart, goToNextChart]);
+  }, [
+    phase,
+    hasParadaNav,
+    previousChart,
+    nextChart,
+    goToPreviousChart,
+    goToNextChart,
+  ]);
 
   async function exportChartToSpotify() {
     if (!id || !isDbChart || !isOwner || exportingSpotify) return;
@@ -354,15 +394,20 @@ export default function ChartDetailPage() {
       };
       if (!res.ok) {
         if (data.needsReconnect) setSpotifyConnected(false);
-        setSpotifyExportMsg(data.error ?? "Não foi possível criar a playlist no Spotify.");
+        setSpotifyExportMsg(
+          data.error ?? "Não foi possível criar a playlist no Spotify.",
+        );
         return;
       }
       const skipped =
         typeof data.skippedCount === "number" && data.skippedCount > 0
           ? ` (${data.skippedCount} sem link Spotify foram ignoradas)`
           : "";
-      setSpotifyExportMsg(`Playlist criada com ${data.trackCount ?? 0} músicas${skipped}.`);
-      if (data.playlistUrl) window.open(data.playlistUrl, "_blank", "noopener,noreferrer");
+      setSpotifyExportMsg(
+        `Playlist criada com ${data.trackCount ?? 0} músicas${skipped}.`,
+      );
+      if (data.playlistUrl)
+        window.open(data.playlistUrl, "_blank", "noopener,noreferrer");
     } catch {
       setSpotifyExportMsg("Erro de conexão ao criar playlist no Spotify.");
     } finally {
@@ -370,31 +415,36 @@ export default function ChartDetailPage() {
     }
   }
 
-  const spotifyExportButton = isOwner && isDbChart && canUseSpotifyImport ? (
-    <button
-      type="button"
-      onClick={exportChartToSpotify}
-      disabled={exportingSpotify}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        background: "#1DB954",
-        color: "white",
-        border: "none",
-        padding: isMobile ? "10px 16px" : "10px 20px",
-        borderRadius: 100,
-        fontSize: isMobile ? 13 : 14,
-        fontWeight: 700,
-        boxShadow: "0 2px 8px rgba(30,215,96,0.35)",
-        cursor: exportingSpotify ? "not-allowed" : "pointer",
-        opacity: exportingSpotify ? 0.7 : 1,
-      }}
-    >
-      <Play size={isMobile ? 13 : 14} fill="white" />
-      {exportingSpotify ? "Criando playlist…" : spotifyConnected ? "Salvar no Spotify" : "Conectar Spotify"}
-    </button>
-  ) : null;
+  const spotifyExportButton =
+    isOwner && isDbChart && canUseSpotifyImport ? (
+      <button
+        type="button"
+        onClick={exportChartToSpotify}
+        disabled={exportingSpotify}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          background: "#1DB954",
+          color: "white",
+          border: "none",
+          padding: isMobile ? "10px 16px" : "10px 20px",
+          borderRadius: 100,
+          fontSize: isMobile ? 13 : 14,
+          fontWeight: 700,
+          boxShadow: "0 2px 8px rgba(30,215,96,0.35)",
+          cursor: exportingSpotify ? "not-allowed" : "pointer",
+          opacity: exportingSpotify ? 0.7 : 1,
+        }}
+      >
+        <Play size={isMobile ? 13 : 14} fill="white" />
+        {exportingSpotify
+          ? "Criando playlist…"
+          : spotifyConnected
+            ? "Salvar no Spotify"
+            : "Conectar Spotify"}
+      </button>
+    ) : null;
 
   const composeUser = useMemo((): Pick<User, "name" | "avatar"> => {
     if (session?.user?.name) {
@@ -433,7 +483,9 @@ export default function ChartDetailPage() {
 
   async function deleteChart() {
     if (!isDbChart || !isOwner || deletingChart || !id) return;
-    const confirmed = window.confirm("Tem certeza que deseja excluir esta parada? Essa ação não pode ser desfeita.");
+    const confirmed = window.confirm(
+      "Tem certeza que deseja excluir esta parada? Essa ação não pode ser desfeita.",
+    );
     if (!confirmed) return;
     setDeletingChart(true);
     try {
@@ -453,7 +505,9 @@ export default function ChartDetailPage() {
   if (phase === "loading") {
     return (
       <Shell title="" noPadding>
-        <div style={{ padding: 48, color: "var(--text-muted)", fontSize: 15 }}>Carregando parada…</div>
+        <div style={{ padding: 48, color: "var(--text-muted)", fontSize: 15 }}>
+          Carregando parada…
+        </div>
       </Shell>
     );
   }
@@ -461,11 +515,26 @@ export default function ChartDetailPage() {
   if (phase === "error") {
     return (
       <Shell title="Parada" subtitle="Erro ao carregar">
-        <div style={{ maxWidth: 480, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
+        <div
+          style={{
+            maxWidth: 480,
+            margin: "48px auto",
+            textAlign: "center",
+            color: "var(--text-muted)",
+          }}
+        >
           <p style={{ fontSize: 16, marginBottom: 20 }}>
-            Não foi possível carregar esta parada agora. Tente recarregar a página em instantes.
+            Não foi possível carregar esta parada agora. Tente recarregar a
+            página em instantes.
           </p>
-          <Link href="/" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+          <Link
+            href="/"
+            style={{
+              color: "var(--accent)",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
             ← Voltar ao início
           </Link>
         </div>
@@ -476,9 +545,25 @@ export default function ChartDetailPage() {
   if (phase === "missing" || !chart || !user) {
     return (
       <Shell title="Parada" subtitle="Não encontrada">
-        <div style={{ maxWidth: 480, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>Esta parada não existe ou foi removida.</p>
-          <Link href="/" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+        <div
+          style={{
+            maxWidth: 480,
+            margin: "48px auto",
+            textAlign: "center",
+            color: "var(--text-muted)",
+          }}
+        >
+          <p style={{ fontSize: 16, marginBottom: 20 }}>
+            Esta parada não existe ou foi removida.
+          </p>
+          <Link
+            href="/"
+            style={{
+              color: "var(--accent)",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
             ← Voltar ao início
           </Link>
         </div>
@@ -492,260 +577,805 @@ export default function ChartDetailPage() {
   return (
     <Shell title="" noPadding>
       <div className="chart-page-outer">
-      {/* Hero */}
-      <div style={{
-        background: `linear-gradient(180deg, ${user.avatar}22 0%, transparent 100%)`,
-        padding: isMobile ? "24px 16px 16px 16px" : "48px 40px 24px 40px",
-      }}>
-        <Link href={`/profile/${encodeURIComponent(user.handle)}`} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, fontWeight: 500, textDecoration: "none", marginBottom: isMobile ? 16 : 24 }}>
-          <ChevronLeft size={16} />
-          Voltar para o perfil
-        </Link>
+        {/* Hero */}
+        <div
+          style={{
+            background: safeHeaderBg(user.avatar),
+            padding: isMobile ? "24px 16px 16px 16px" : "48px 40px 24px 40px",
+          }}
+        >
+          <Link
+            href={`/profile/${encodeURIComponent(user.handle)}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: "var(--text-muted)",
+              fontSize: 14,
+              fontWeight: 500,
+              textDecoration: "none",
+              marginBottom: isMobile ? 16 : 24,
+            }}
+          >
+            <ChevronLeft size={16} />
+            Voltar para o perfil
+          </Link>
 
-        {isMobile ? (
-          /* ── MOBILE HERO ── */
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {/* Mosaic + title side-by-side */}
-            <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 16 }}>
-              {ownerParadaLogo ? (
-                <div style={{ width: 88, height: 88, borderRadius: 14, overflow: "hidden", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
-                  <img src={ownerParadaLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                </div>
-              ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, width: 88, height: 88, borderRadius: 14, overflow: "hidden", flexShrink: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.15)" }}>
-                  {chart.entries.slice(0, 4).map((e, i) => (
-                    <Cover key={i} cover={e.cover} song={e.song} size={43} rounded={0} />
-                  ))}
-                </div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2, marginBottom: 4 }}>
-                  {tituloDetalheParada}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                  {formatChartPeriod(chart)}
-                </div>
-              </div>
-            </div>
-
-            {/* User info */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <Avatar user={user} imageUrl={ownerImageUrl ?? undefined} size={24} />
-              <Link href={`/profile/${user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>
-                {user.name}
-              </Link>
-              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>@{user.handle}</span>
-            </div>
-
-            {/* Prev / next navigation */}
-            {(previousChart || nextChart) && (
-              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                {previousChart && (
-                  <Link href={`/chart/${previousChart.id}`} style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "9px 0", display: "block" }}>
-                    ← Anterior
-                  </Link>
+          {isMobile ? (
+            /* ── MOBILE HERO ── */
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {/* Mosaic + title side-by-side */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 14,
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                {ownerParadaLogo ? (
+                  <div
+                    style={{
+                      width: 88,
+                      height: 88,
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                    }}
+                  >
+                    <img
+                      src={ownerParadaLogo}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 3,
+                      width: 88,
+                      height: 88,
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                    }}
+                  >
+                    {chart.entries.slice(0, 4).map((e, i) => (
+                      <Cover
+                        key={i}
+                        cover={e.cover}
+                        song={e.song}
+                        size={43}
+                        rounded={0}
+                      />
+                    ))}
+                  </div>
                 )}
-                {nextChart && (
-                  <Link href={`/chart/${nextChart.id}`} style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "9px 0", display: "block" }}>
-                    Próxima →
-                  </Link>
-                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 800,
+                      letterSpacing: "-0.03em",
+                      lineHeight: 1.2,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {tituloDetalheParada}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                    {formatChartPeriod(chart)}
+                  </div>
+                </div>
               </div>
-            )}
 
-            {/* Edit / delete */}
-            {isOwner && (
-              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                <Link href={`/chart/${chart.id}/edit`} style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "9px 0", display: "block" }}>
-                  Editar parada
-                </Link>
-                <button type="button" onClick={deleteChart} disabled={deletingChart} style={{ flex: 1, border: "1px solid rgba(250,36,60,0.25)", background: "rgba(250,36,60,0.08)", color: "var(--accent)", borderRadius: 10, padding: "9px 0", fontSize: 13, fontWeight: 700, cursor: deletingChart ? "not-allowed" : "pointer", opacity: deletingChart ? 0.6 : 1 }}>
-                  {deletingChart ? "Excluindo..." : "Excluir"}
-                </button>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-              {spotifyExportButton}
-              <button onClick={toggleLike} style={{ display: "flex", alignItems: "center", gap: 6, background: liked ? "var(--accent-tint)" : "var(--fill-subtle)", color: liked ? "var(--accent)" : "var(--text-subtle)", border: "none", padding: "10px 14px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: isDbChart ? "pointer" : "default" }}>
-                <Heart size={15} fill={liked ? "currentColor" : "none"} />
-                {liked ? "Curtido" : "Curtir"}
-              </button>
-              <button onClick={toggleRepost} style={{ display: "flex", alignItems: "center", gap: 6, background: reposted ? "var(--fill-subtle)" : "var(--fill-subtle)", color: reposted ? "var(--text)" : "var(--text-subtle)", border: "none", padding: "10px 14px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: isDbChart ? "pointer" : "default" }}>
-                <Repeat2 size={15} />
-                {reposted ? "Repostado" : "Repostar"}
-              </button>
-              <button style={{ background: "var(--fill-subtle)", border: "none", padding: "10px 14px", borderRadius: 100, color: "var(--text-subtle)", display: "flex", alignItems: "center" }}>
-                <Share size={15} />
-              </button>
-            </div>
-            {spotifyExportMsg && (
-              <div style={{ fontSize: 12, color: spotifyExportMsg.startsWith("Playlist criada") ? "#15803D" : "#B91C1C", marginBottom: 10, lineHeight: 1.5 }}>
-                {spotifyExportMsg}
-              </div>
-            )}
-
-            {/* Variant toggle full-width */}
-            <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 8, padding: 3, gap: 2 }}>
-              {(["list", "grid", "podium", "video_clip"] as Variant[]).map((v) => (
-                <button key={v} onClick={() => setVariant(v)} style={{ flex: 1, padding: "8px 0", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, background: variant === v ? "var(--surface)" : "transparent", color: variant === v ? "var(--text)" : "var(--text-muted)", boxShadow: variant === v ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition: "background 120ms" }}>
-                  {v === "list" ? "Lista" : v === "grid" ? "Grade" : v === "podium" ? "Pódio" : "Clipe"}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          /* ── DESKTOP HERO ── */
-          <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-            {/* Mosaic cover / logo */}
-            {ownerParadaLogo ? (
-              <div style={{ width: 200, height: 200, borderRadius: 18, overflow: "hidden", flexShrink: 0, boxShadow: "0 16px 40px rgba(0,0,0,0.15)" }}>
-                <img src={ownerParadaLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, width: 200, height: 200, borderRadius: 18, overflow: "hidden", flexShrink: 0, boxShadow: "0 16px 40px rgba(0,0,0,0.15)" }}>
-                {chart.entries.slice(0, 4).map((e, i) => (
-                  <Cover key={i} cover={e.cover} song={e.song} size={98} rounded={0} />
-                ))}
-              </div>
-            )}
-
-            {/* Info block */}
-            <div style={{ flex: 1, minWidth: 280 }}>
-              <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.1, marginBottom: 8 }}>
-                {tituloDetalheParada}
-              </div>
-              <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 12 }}>
-                {formatChartPeriod(chart)}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <Avatar user={user} imageUrl={ownerImageUrl ?? undefined} size={28} />
-                <Link href={`/profile/${user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>
+              {/* User info */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 14,
+                }}
+              >
+                <Avatar
+                  user={user}
+                  imageUrl={ownerImageUrl ?? undefined}
+                  size={24}
+                />
+                <Link
+                  href={`/profile/${user.handle}`}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "var(--text)",
+                    textDecoration: "none",
+                  }}
+                >
                   {user.name}
                 </Link>
-                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>@{user.handle}</span>
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  @{user.handle}
+                </span>
               </div>
+
+              {/* Prev / next navigation */}
               {(previousChart || nextChart) && (
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   {previousChart && (
-                    <Link href={`/chart/${previousChart.id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px" }}>
+                    <Link
+                      href={`/chart/${previousChart.id}`}
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        textDecoration: "none",
+                        border: "1px solid var(--divider-strong)",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        display: "block",
+                      }}
+                    >
                       ← Anterior
                     </Link>
                   )}
                   {nextChart && (
-                    <Link href={`/chart/${nextChart.id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px" }}>
-                      Próxima parada →
+                    <Link
+                      href={`/chart/${nextChart.id}`}
+                      style={{
+                        flex: 1,
+                        textAlign: "center",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        textDecoration: "none",
+                        border: "1px solid var(--divider-strong)",
+                        borderRadius: 10,
+                        padding: "9px 0",
+                        display: "block",
+                      }}
+                    >
+                      Próxima →
                     </Link>
                   )}
                 </div>
               )}
+
+              {/* Edit / delete */}
               {isOwner && (
-                <div style={{ marginBottom: 14, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <Link href={`/chart/${chart.id}/edit`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px", display: "inline-flex", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                  <Link
+                    href={`/chart/${chart.id}/edit`}
+                    style={{
+                      flex: 1,
+                      textAlign: "center",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--text)",
+                      textDecoration: "none",
+                      border: "1px solid var(--divider-strong)",
+                      borderRadius: 10,
+                      padding: "9px 0",
+                      display: "block",
+                    }}
+                  >
                     Editar parada
                   </Link>
-                  <button type="button" onClick={deleteChart} disabled={deletingChart} style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid rgba(250,36,60,0.25)", background: "rgba(250,36,60,0.08)", color: "var(--accent)", borderRadius: 10, padding: "7px 12px", fontSize: 13, fontWeight: 700, cursor: deletingChart ? "not-allowed" : "pointer", opacity: deletingChart ? 0.6 : 1 }}>
-                    {deletingChart ? "Excluindo..." : "Excluir parada"}
+                  <button
+                    type="button"
+                    onClick={deleteChart}
+                    disabled={deletingChart}
+                    style={{
+                      flex: 1,
+                      border: "1px solid rgba(250,36,60,0.25)",
+                      background: "rgba(250,36,60,0.08)",
+                      color: "var(--accent)",
+                      borderRadius: 10,
+                      padding: "9px 0",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: deletingChart ? "not-allowed" : "pointer",
+                      opacity: deletingChart ? 0.6 : 1,
+                    }}
+                  >
+                    {deletingChart ? "Excluindo..." : "Excluir"}
                   </button>
                 </div>
               )}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  {spotifyExportButton}
-                  <button onClick={toggleLike} style={{ display: "flex", alignItems: "center", gap: 6, background: liked ? "var(--accent-tint)" : "var(--fill-subtle)", color: liked ? "var(--accent)" : "var(--text-subtle)", border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: isDbChart ? "pointer" : "default" }}>
-                    <Heart size={16} fill={liked ? "currentColor" : "none"} />
-                    {liked ? "Curtido" : "Curtir"}
-                  </button>
-                  <button onClick={toggleRepost} style={{ display: "flex", alignItems: "center", gap: 6, background: reposted ? "var(--fill-subtle)" : "var(--fill-subtle)", color: reposted ? "var(--text)" : "var(--text-subtle)", border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: isDbChart ? "pointer" : "default" }}>
-                    <Repeat2 size={16} />
-                    {reposted ? "Repostado" : "Repostar"}
-                  </button>
-                  <button style={{ background: "var(--fill-subtle)", border: "none", padding: "10px 16px", borderRadius: 100, fontSize: 14, fontWeight: 600, color: "var(--text-subtle)", display: "flex", gap: 6, alignItems: "center" }}>
-                    <Share size={16} />
-                  </button>
+
+              {/* Action buttons */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  marginBottom: 10,
+                  flexWrap: "wrap",
+                }}
+              >
+                {spotifyExportButton}
+                <button
+                  onClick={toggleLike}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: liked
+                      ? "var(--accent-tint)"
+                      : "var(--fill-subtle)",
+                    color: liked ? "var(--accent)" : "var(--text-subtle)",
+                    border: "none",
+                    padding: "10px 14px",
+                    borderRadius: 100,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: isDbChart ? "pointer" : "default",
+                  }}
+                >
+                  <Heart size={15} fill={liked ? "currentColor" : "none"} />
+                  {liked ? "Curtido" : "Curtir"}
+                </button>
+                <button
+                  onClick={toggleRepost}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: reposted
+                      ? "var(--fill-subtle)"
+                      : "var(--fill-subtle)",
+                    color: reposted ? "var(--text)" : "var(--text-subtle)",
+                    border: "none",
+                    padding: "10px 14px",
+                    borderRadius: 100,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: isDbChart ? "pointer" : "default",
+                  }}
+                >
+                  <Repeat2 size={15} />
+                  {reposted ? "Repostado" : "Repostar"}
+                </button>
+                <button
+                  style={{
+                    background: "var(--fill-subtle)",
+                    border: "none",
+                    padding: "10px 14px",
+                    borderRadius: 100,
+                    color: "var(--text-subtle)",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <Share size={15} />
+                </button>
+              </div>
+              {spotifyExportMsg && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: spotifyExportMsg.startsWith("Playlist criada")
+                      ? "#15803D"
+                      : "#B91C1C",
+                    marginBottom: 10,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {spotifyExportMsg}
                 </div>
-                {spotifyExportMsg && (
-                  <div style={{ fontSize: 13, color: spotifyExportMsg.startsWith("Playlist criada") ? "#15803D" : "#B91C1C", lineHeight: 1.5 }}>
-                    {spotifyExportMsg}
+              )}
+
+              {/* Variant toggle full-width */}
+              <div
+                style={{
+                  display: "flex",
+                  background: "var(--fill-subtle)",
+                  borderRadius: 8,
+                  padding: 3,
+                  gap: 2,
+                }}
+              >
+                {(["list", "grid", "podium", "video_clip"] as Variant[]).map(
+                  (v) => (
+                    <button
+                      key={v}
+                      onClick={() => setVariant(v)}
+                      style={{
+                        flex: 1,
+                        padding: "8px 0",
+                        borderRadius: 6,
+                        border: "none",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background:
+                          variant === v ? "var(--surface)" : "transparent",
+                        color:
+                          variant === v ? "var(--text)" : "var(--text-muted)",
+                        boxShadow:
+                          variant === v ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        transition: "background 120ms",
+                      }}
+                    >
+                      {v === "list"
+                        ? "Lista"
+                        : v === "grid"
+                          ? "Grade"
+                          : v === "podium"
+                            ? "Pódio"
+                            : "Clipe"}
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+          ) : (
+            /* ── DESKTOP HERO ── */
+            <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+              {/* Mosaic cover / logo */}
+              {ownerParadaLogo ? (
+                <div
+                  style={{
+                    width: 200,
+                    height: 200,
+                    borderRadius: 18,
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    boxShadow: "0 16px 40px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <img
+                    src={ownerParadaLogo}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 4,
+                    width: 200,
+                    height: 200,
+                    borderRadius: 18,
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    boxShadow: "0 16px 40px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {chart.entries.slice(0, 4).map((e, i) => (
+                    <Cover
+                      key={i}
+                      cover={e.cover}
+                      song={e.song}
+                      size={98}
+                      rounded={0}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Info block */}
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <div
+                  style={{
+                    fontSize: 56,
+                    fontWeight: 800,
+                    letterSpacing: "-0.04em",
+                    lineHeight: 1.1,
+                    marginBottom: 8,
+                  }}
+                >
+                  {tituloDetalheParada}
+                </div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: "var(--text-muted)",
+                    marginBottom: 12,
+                  }}
+                >
+                  {formatChartPeriod(chart)}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 16,
+                  }}
+                >
+                  <Avatar
+                    user={user}
+                    imageUrl={ownerImageUrl ?? undefined}
+                    size={28}
+                  />
+                  <Link
+                    href={`/profile/${user.handle}`}
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "var(--text)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {user.name}
+                  </Link>
+                  <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                    @{user.handle}
+                  </span>
+                </div>
+                {(previousChart || nextChart) && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginBottom: 14,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {previousChart && (
+                      <Link
+                        href={`/chart/${previousChart.id}`}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--text)",
+                          textDecoration: "none",
+                          border: "1px solid var(--divider-strong)",
+                          borderRadius: 10,
+                          padding: "7px 12px",
+                        }}
+                      >
+                        ← Anterior
+                      </Link>
+                    )}
+                    {nextChart && (
+                      <Link
+                        href={`/chart/${nextChart.id}`}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--text)",
+                          textDecoration: "none",
+                          border: "1px solid var(--divider-strong)",
+                          borderRadius: 10,
+                          padding: "7px 12px",
+                        }}
+                      >
+                        Próxima parada →
+                      </Link>
+                    )}
                   </div>
                 )}
-                <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 8, padding: 3, gap: 2, alignSelf: "flex-start" }}>
-                  {(["list", "grid", "podium", "video_clip"] as Variant[]).map((v) => (
-                    <button key={v} onClick={() => setVariant(v)} style={{ padding: "6px 12px", borderRadius: 6, border: "none", fontSize: 12, fontWeight: 600, background: variant === v ? "var(--surface)" : "transparent", color: variant === v ? "var(--text)" : "var(--text-muted)", boxShadow: variant === v ? "0 1px 3px rgba(0,0,0,0.1)" : "none", transition: "background 120ms" }}>
-                      {v === "list" ? "Lista" : v === "grid" ? "Grade" : v === "podium" ? "Pódio" : "Vídeo Clipe"}
+                {isOwner && (
+                  <div
+                    style={{
+                      marginBottom: 14,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Link
+                      href={`/chart/${chart.id}/edit`}
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text)",
+                        textDecoration: "none",
+                        border: "1px solid var(--divider-strong)",
+                        borderRadius: 10,
+                        padding: "7px 12px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      Editar parada
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={deleteChart}
+                      disabled={deletingChart}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        border: "1px solid rgba(250,36,60,0.25)",
+                        background: "rgba(250,36,60,0.08)",
+                        color: "var(--accent)",
+                        borderRadius: 10,
+                        padding: "7px 12px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: deletingChart ? "not-allowed" : "pointer",
+                        opacity: deletingChart ? 0.6 : 1,
+                      }}
+                    >
+                      {deletingChart ? "Excluindo..." : "Excluir parada"}
                     </button>
-                  ))}
+                  </div>
+                )}
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 10 }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {spotifyExportButton}
+                    <button
+                      onClick={toggleLike}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: liked
+                          ? "var(--accent-tint)"
+                          : "var(--fill-subtle)",
+                        color: liked ? "var(--accent)" : "var(--text-subtle)",
+                        border: "none",
+                        padding: "10px 16px",
+                        borderRadius: 100,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: isDbChart ? "pointer" : "default",
+                      }}
+                    >
+                      <Heart size={16} fill={liked ? "currentColor" : "none"} />
+                      {liked ? "Curtido" : "Curtir"}
+                    </button>
+                    <button
+                      onClick={toggleRepost}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: reposted
+                          ? "var(--fill-subtle)"
+                          : "var(--fill-subtle)",
+                        color: reposted ? "var(--text)" : "var(--text-subtle)",
+                        border: "none",
+                        padding: "10px 16px",
+                        borderRadius: 100,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: isDbChart ? "pointer" : "default",
+                      }}
+                    >
+                      <Repeat2 size={16} />
+                      {reposted ? "Repostado" : "Repostar"}
+                    </button>
+                    <button
+                      style={{
+                        background: "var(--fill-subtle)",
+                        border: "none",
+                        padding: "10px 16px",
+                        borderRadius: 100,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "var(--text-subtle)",
+                        display: "flex",
+                        gap: 6,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Share size={16} />
+                    </button>
+                  </div>
+                  {spotifyExportMsg && (
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: spotifyExportMsg.startsWith("Playlist criada")
+                          ? "#15803D"
+                          : "#B91C1C",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {spotifyExportMsg}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      background: "var(--fill-subtle)",
+                      borderRadius: 8,
+                      padding: 3,
+                      gap: 2,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    {(
+                      ["list", "grid", "podium", "video_clip"] as Variant[]
+                    ).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setVariant(v)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          border: "none",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          background:
+                            variant === v ? "var(--surface)" : "transparent",
+                          color:
+                            variant === v ? "var(--text)" : "var(--text-muted)",
+                          boxShadow:
+                            variant === v
+                              ? "0 1px 3px rgba(0,0,0,0.1)"
+                              : "none",
+                          transition: "background 120ms",
+                        }}
+                      >
+                        {v === "list"
+                          ? "Lista"
+                          : v === "grid"
+                            ? "Grade"
+                            : v === "podium"
+                              ? "Pódio"
+                              : "Vídeo Clipe"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      <AdSlot slotId={ADSENSE_SLOTS.chart} format="leaderboard" style={{ margin: "0 0 4px 0" }} />
+        <AdSlot
+          slotId={ADSENSE_SLOTS.chart}
+          format="leaderboard"
+          style={{ margin: "0 0 4px 0" }}
+        />
 
-<div style={{ padding: isMobile ? "0 16px 80px 16px" : "0 40px 80px 40px" }}>
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--divider)", marginBottom: 24, overflowX: "auto" }}>
-        {([["chart", "Parada"], ["saidas", `Saídas${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`], ["comments", "Comentários"], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
+        <div
+          style={{
+            padding: isMobile ? "0 16px 80px 16px" : "0 40px 80px 40px",
+          }}
+        >
+          {/* Tabs */}
+          <div
             style={{
-              padding: "12px 20px",
-              background: "none",
-              border: "none",
-              fontSize: 15,
-              fontWeight: tab === t ? 600 : 500,
-              color: tab === t ? "var(--text)" : "var(--text-muted)",
-              borderBottom: `2px solid ${tab === t ? "var(--accent)" : "transparent"}`,
-              marginBottom: -1,
-              cursor: "pointer",
+              display: "flex",
+              gap: 0,
+              borderBottom: "1px solid var(--divider)",
+              marginBottom: 24,
+              overflowX: "auto",
             }}
           >
-            {label}
-          </button>
-        ))}
-      </div>
+            {(
+              [
+                ["chart", "Parada"],
+                [
+                  "saidas",
+                  `Saídas${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`,
+                ],
+                ["comments", "Comentários"],
+                ["overlap", "Quem tem em comum"],
+              ] as [Tab, string][]
+            ).map(([t, label]) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                style={{
+                  padding: "12px 20px",
+                  background: "none",
+                  border: "none",
+                  fontSize: 15,
+                  fontWeight: tab === t ? 600 : 500,
+                  color: tab === t ? "var(--text)" : "var(--text-muted)",
+                  borderBottom: `2px solid ${tab === t ? "var(--accent)" : "transparent"}`,
+                  marginBottom: -1,
+                  cursor: "pointer",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-      {/* Tab content */}
-      {tab === "chart" && (
-        <>
-          {variant === "list" && <ClassicList entries={chart.entries} personalNumberOnes={personalNumberOnes} globalNumberOnes={globalNumberOnes} statsLabels={statsLabels} />}
-          {variant === "grid" && <GridVariant entries={chart.entries} statsLabels={statsLabels} />}
-          {variant === "podium" && <PodiumVariant entries={chart.entries} statsLabels={statsLabels} />}
-          {variant === "video_clip" && (
+          {/* Tab content */}
+          {tab === "chart" && (
             <>
-              <VideoClipLayoutToggle layout={videoClipLayout} onChange={selectVideoClipLayout} isMobile={isMobile} />
-              {loadingClips
-                ? <div style={{ padding: 40, color: "var(--text-muted)", fontSize: 15 }}>Carregando capturas…</div>
-                : (
-                  <VideoClipVariant
-                    entries={chart.entries}
-                    videoClips={videoClips}
-                    personalNumberOnes={personalNumberOnes}
-                    statsLabels={statsLabels}
+              {variant === "list" && (
+                <ClassicList
+                  entries={chart.entries}
+                  personalNumberOnes={personalNumberOnes}
+                  globalNumberOnes={globalNumberOnes}
+                  statsLabels={statsLabels}
+                />
+              )}
+              {variant === "grid" && (
+                <GridVariant
+                  entries={chart.entries}
+                  statsLabels={statsLabels}
+                />
+              )}
+              {variant === "podium" && (
+                <PodiumVariant
+                  entries={chart.entries}
+                  statsLabels={statsLabels}
+                />
+              )}
+              {variant === "video_clip" && (
+                <>
+                  <VideoClipLayoutToggle
                     layout={videoClipLayout}
-                    isDaily={isDailyParada}
+                    onChange={selectVideoClipLayout}
+                    isMobile={isMobile}
                   />
-                )}
+                  {loadingClips ? (
+                    <div
+                      style={{
+                        padding: 40,
+                        color: "var(--text-muted)",
+                        fontSize: 15,
+                      }}
+                    >
+                      Carregando capturas…
+                    </div>
+                  ) : (
+                    <VideoClipVariant
+                      entries={chart.entries}
+                      videoClips={videoClips}
+                      personalNumberOnes={personalNumberOnes}
+                      statsLabels={statsLabels}
+                      layout={videoClipLayout}
+                      isDaily={isDailyParada}
+                    />
+                  )}
+                </>
+              )}
             </>
           )}
-        </>
-      )}
-      {tab === "saidas" && <PersonalDropoutsTab dropouts={dropouts} isDbChart={isDbChart} statsLabels={statsLabels} />}
-      {tab === "comments" && (
-        <CommentsTab
-          chartId={chart.id}
-          isDbChart={isDbChart}
-          composeUser={composeUser}
-          composeImageUrl={composeImageUrl}
-          onCommentAdded={() => setCommentCount((c) => c + 1)}
-        />
-      )}
-      {tab === "overlap" && <OverlapTab chartId={chart.id} isDbChart={isDbChart} statsLabels={statsLabels} />}
-      </div>
+          {tab === "saidas" && (
+            <PersonalDropoutsTab
+              dropouts={dropouts}
+              isDbChart={isDbChart}
+              statsLabels={statsLabels}
+            />
+          )}
+          {tab === "comments" && (
+            <CommentsTab
+              chartId={chart.id}
+              isDbChart={isDbChart}
+              composeUser={composeUser}
+              composeImageUrl={composeImageUrl}
+              onCommentAdded={() => setCommentCount((c) => c + 1)}
+            />
+          )}
+          {tab === "overlap" && (
+            <OverlapTab
+              chartId={chart.id}
+              isDbChart={isDbChart}
+              statsLabels={statsLabels}
+            />
+          )}
+        </div>
       </div>
       {hasParadaNav && (
         <ChartParadaFloatingNav
@@ -759,7 +1389,6 @@ export default function ChartDetailPage() {
     </Shell>
   );
 }
-
 
 function chartParadaNavBtnStyle(enabled: boolean): React.CSSProperties {
   return {
@@ -819,25 +1448,54 @@ function ChartParadaFloatingNav({
         type="button"
         onClick={onPrev}
         disabled={!previousChart}
-        aria-label={previousChart ? `Parada anterior: ${previousChart.weekLabel}` : "Sem parada anterior"}
+        aria-label={
+          previousChart
+            ? `Parada anterior: ${previousChart.weekLabel}`
+            : "Sem parada anterior"
+        }
         style={chartParadaNavBtnStyle(!!previousChart)}
       >
         <ChevronLeft size={20} />
       </button>
 
-      <div style={{ flex: 1, minWidth: 0, textAlign: "center", padding: "0 4px" }}>
+      <div
+        style={{ flex: 1, minWidth: 0, textAlign: "center", padding: "0 4px" }}
+      >
         {previousChart && (
-          <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "var(--text-muted)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             ← {previousChart.weekLabel}
           </div>
         )}
         {!isMobile && (
-          <div style={{ fontSize: 10, color: "var(--text-disabled)", marginTop: previousChart || nextChart ? 2 : 0 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "var(--text-disabled)",
+              marginTop: previousChart || nextChart ? 2 : 0,
+            }}
+          >
             ← → teclado
           </div>
         )}
         {nextChart && (
-          <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "var(--text-muted)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              marginTop: 2,
+            }}
+          >
             {nextChart.weekLabel} →
           </div>
         )}
@@ -847,7 +1505,11 @@ function ChartParadaFloatingNav({
         type="button"
         onClick={onNext}
         disabled={!nextChart}
-        aria-label={nextChart ? `Próxima parada: ${nextChart.weekLabel}` : "Sem próxima parada"}
+        aria-label={
+          nextChart
+            ? `Próxima parada: ${nextChart.weekLabel}`
+            : "Sem próxima parada"
+        }
         style={chartParadaNavBtnStyle(!!nextChart)}
       >
         <ChevronRight size={20} />
@@ -856,24 +1518,76 @@ function ChartParadaFloatingNav({
   );
 }
 
-function StatPill({ label, value, accent, compact }: { label: string; value: number | string; accent?: string; compact?: boolean }) {
+function StatPill({
+  label,
+  value,
+  accent,
+  compact,
+}: {
+  label: string;
+  value: number | string;
+  accent?: string;
+  compact?: boolean;
+}) {
   return (
     <div style={{ textAlign: "right" }}>
-      <div style={{ fontSize: compact ? 8 : 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>{label}</div>
-      <div style={{ fontSize: compact ? 12 : 14, fontWeight: 700, color: accent ?? "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{value}</div>
+      <div
+        style={{
+          fontSize: compact ? 8 : 9,
+          fontWeight: 700,
+          color: "var(--text-muted)",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          lineHeight: 1.2,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: compact ? 12 : 14,
+          fontWeight: 700,
+          color: accent ?? "var(--text)",
+          fontVariantNumeric: "tabular-nums",
+          lineHeight: 1.2,
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
 
 type ChartStatsLabels = ReturnType<typeof chartStatsLabels>;
 
-function ClassicList({ entries, personalNumberOnes, globalNumberOnes, statsLabels }: { entries: ChartEntry[]; personalNumberOnes?: Record<string, number>; globalNumberOnes?: Record<string, number>; statsLabels: ChartStatsLabels }) {
+function ClassicList({
+  entries,
+  personalNumberOnes,
+  globalNumberOnes,
+  statsLabels,
+}: {
+  entries: ChartEntry[];
+  personalNumberOnes?: Record<string, number>;
+  globalNumberOnes?: Record<string, number>;
+  statsLabels: ChartStatsLabels;
+}) {
   const isMobile = useIsMobile();
   const coverSize = DESKTOP_COVER_SIZE;
-  const gridColumns = desktopListGrid(desktopCoverGridColumn(coverSize), "80px 80px 60px 90px");
+  const gridColumns = desktopListGrid(
+    desktopCoverGridColumn(coverSize),
+    "80px 80px 60px 90px",
+  );
   if (isMobile) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 0,
+          borderTop: "1px solid var(--divider)",
+          borderBottom: "1px solid var(--divider)",
+          overflow: "hidden",
+        }}
+      >
         {entries.map((e) => (
           <div
             key={e.position}
@@ -885,31 +1599,113 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes, statsLabel
               borderBottom: "1px solid var(--divider-soft)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", gap: MOBILE_ROW_GAP, minWidth: 0 }}>
-              <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
-                <div style={{ fontSize: e.position <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: MOBILE_ROW_GAP,
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  width: MOBILE_POS_WIDTH,
+                  textAlign: "center",
+                  flexShrink: 0,
+                  alignSelf: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: e.position <= 3 ? 20 : 16,
+                    fontWeight: 800,
+                    letterSpacing: "-0.04em",
+                    color: "var(--text)",
+                    fontVariantNumeric: "tabular-nums",
+                    lineHeight: 1,
+                  }}
+                >
                   {e.position}
                 </div>
-                <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                <div
+                  style={{
+                    marginTop: 4,
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
                   <MovementBadge status={e.status} delta={e.delta} compact />
                 </div>
               </div>
-              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-                <Cover cover={e.cover} song={e.song} size={MOBILE_COVER_SIZE} rounded={6} />
+              <Link
+                href={buildSongPath(e.song)}
+                style={{ lineHeight: 0, flexShrink: 0 }}
+              >
+                <Cover
+                  cover={e.cover}
+                  song={e.song}
+                  size={MOBILE_COVER_SIZE}
+                  rounded={6}
+                />
               </Link>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: MOBILE_TITLE_SIZE, fontWeight: 700, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                <Link
+                  href={buildSongPath(e.song)}
+                  style={{
+                    display: "block",
+                    fontSize: MOBILE_TITLE_SIZE,
+                    fontWeight: 700,
+                    lineHeight: 1.25,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    textDecoration: "none",
+                    color: "var(--text)",
+                  }}
+                >
                   {e.song.title}
                 </Link>
-                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: MOBILE_ARTIST_SIZE, lineHeight: 1.25, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                <Link
+                  href={buildArtistPath(
+                    e.song.artist,
+                    e.song.artistSpotifyId,
+                    e.song.artistRefId,
+                  )}
+                  style={{
+                    display: "block",
+                    fontSize: MOBILE_ARTIST_SIZE,
+                    lineHeight: 1.25,
+                    color: "var(--text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    textDecoration: "none",
+                    marginTop: 2,
+                  }}
+                >
                   {formatSongArtist(e.song)}
                 </Link>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                paddingLeft: MOBILE_STATS_INDENT,
+              }}
+            >
               <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
-              <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill compact label={statsLabels.tenurePill} value={e.weeks} />
+              <StatPill
+                compact
+                label="PICO"
+                value={e.peak}
+                accent={e.peak === 1 ? "var(--accent)" : undefined}
+              />
+              <StatPill
+                compact
+                label={statsLabels.tenurePill}
+                value={e.weeks}
+              />
             </div>
           </div>
         ))}
@@ -918,17 +1714,46 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes, statsLabel
   }
 
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: gridColumns,
-        gap: 0,
-        padding: "0 20px",
-        background: "var(--fill-inset)",
-        borderBottom: "1px solid var(--divider)",
-      }}>
-        {["Pos", "", "Música", statsLabels.prevPeriodShort, statsLabels.tenureShort, "Pico", "#1s"].map((h, i) => (
-          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 18,
+        border: "1px solid var(--divider)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: gridColumns,
+          gap: 0,
+          padding: "0 20px",
+          background: "var(--fill-inset)",
+          borderBottom: "1px solid var(--divider)",
+        }}
+      >
+        {[
+          "Pos",
+          "",
+          "Música",
+          statsLabels.prevPeriodShort,
+          statsLabels.tenureShort,
+          "Pico",
+          "#1s",
+        ].map((h, i) => (
+          <div
+            key={i}
+            style={{
+              padding: "10px 8px",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+            }}
+          >
+            {h}
+          </div>
         ))}
       </div>
       {entries.map((e) => {
@@ -948,31 +1773,131 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes, statsLabel
             <DesktopPosCell position={e.position}>
               <MovementBadge status={e.status} delta={e.delta} compact />
             </DesktopPosCell>
-            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
-              <Cover cover={e.cover} song={e.song} size={coverSize} rounded={8} />
+            <Link
+              href={buildSongPath(e.song)}
+              style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}
+            >
+              <Cover
+                cover={e.cover}
+                song={e.song}
+                size={coverSize}
+                rounded={8}
+              />
             </Link>
             <div style={{ minWidth: 0, padding: "0 12px" }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+              <Link
+                href={buildSongPath(e.song)}
+                style={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {e.song.title}
+              </Link>
+              <Link
+                href={buildArtistPath(
+                  e.song.artist,
+                  e.song.artistSpotifyId,
+                  e.song.artistRefId,
+                )}
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  color: "var(--text-muted)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                }}
+              >
+                {formatSongArtist(e.song)}
+              </Link>
               {e.song.album?.trim() ? (
-                <Link href={buildAlbumPath(e.song.album.trim(), e.song.artist, { artistId: e.song.artistRefId, albumId: e.song.albumRefId })} style={{ display: "block", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                <Link
+                  href={buildAlbumPath(e.song.album.trim(), e.song.artist, {
+                    artistId: e.song.artistRefId,
+                    albumId: e.song.albumRefId,
+                  })}
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    textDecoration: "none",
+                    marginTop: 2,
+                  }}
+                >
                   {e.song.album}
                 </Link>
               ) : null}
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                fontVariantNumeric: "tabular-nums",
+                padding: "0 8px",
+              }}
+            >
               {e.prevPos ?? "—"}
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{e.weeks}</div>
-            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3 }}>
-              {e.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                fontVariantNumeric: "tabular-nums",
+                padding: "0 8px",
+              }}
+            >
+              {e.weeks}
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                fontVariantNumeric: "tabular-nums",
+                padding: "0 8px",
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              {e.peak === 1 && (
+                <span
+                  style={{
+                    color: "var(--accent)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <Star size={12} color="currentColor" fill="currentColor" />
+                </span>
+              )}
               {e.peak}
             </div>
             <div style={{ padding: "0 8px" }}>
               {personal > 0 ? (
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{personal}x</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "var(--text)",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {personal}x
+                </div>
               ) : (
-                <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>—</div>
+                <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>
+                  —
+                </div>
               )}
             </div>
           </div>
@@ -982,16 +1907,59 @@ function ClassicList({ entries, personalNumberOnes, globalNumberOnes, statsLabel
   );
 }
 
-function GridVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsLabels: ChartStatsLabels }) {
+function GridVariant({
+  entries,
+  statsLabels,
+}: {
+  entries: ChartEntry[];
+  statsLabels: ChartStatsLabels;
+}) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 20 }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+        gap: 20,
+      }}
+    >
       {entries.map((e) => (
-        <div key={e.position} style={{ borderRadius: 14, overflow: "hidden", background: "var(--surface)", border: "1px solid var(--divider)" }}>
+        <div
+          key={e.position}
+          style={{
+            borderRadius: 14,
+            overflow: "hidden",
+            background: "var(--surface)",
+            border: "1px solid var(--divider)",
+          }}
+        >
           <div style={{ position: "relative", aspectRatio: "1" }}>
-            <Link href={buildSongPath(e.song)} style={{ display: "block", lineHeight: 0 }}>
-              <Cover cover={e.cover} song={e.song} size={0} rounded={0} style={{ width: "100%", minHeight: 180 }} />
+            <Link
+              href={buildSongPath(e.song)}
+              style={{ display: "block", lineHeight: 0 }}
+            >
+              <Cover
+                cover={e.cover}
+                song={e.song}
+                size={0}
+                rounded={0}
+                style={{ width: "100%", minHeight: 180 }}
+              />
             </Link>
-            <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", color: "white", fontSize: 14, fontWeight: 700, padding: "3px 8px", borderRadius: 6, fontVariantNumeric: "tabular-nums" }}>
+            <div
+              style={{
+                position: "absolute",
+                top: 8,
+                left: 8,
+                background: "rgba(0,0,0,0.7)",
+                backdropFilter: "blur(4px)",
+                color: "white",
+                fontSize: 14,
+                fontWeight: 700,
+                padding: "3px 8px",
+                borderRadius: 6,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
               #{e.position}
             </div>
             <div style={{ position: "absolute", top: 8, right: 8 }}>
@@ -999,9 +1967,44 @@ function GridVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsLab
             </div>
           </div>
           <div style={{ padding: "10px 12px" }}>
-            <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Pico #{e.peak} · {e.weeks} {statsLabels.tenureSuffix}</div>
+            <Link
+              href={buildSongPath(e.song)}
+              style={{
+                display: "block",
+                fontSize: 13,
+                fontWeight: 600,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              {e.song.title}
+            </Link>
+            <Link
+              href={buildArtistPath(
+                e.song.artist,
+                e.song.artistSpotifyId,
+                e.song.artistRefId,
+              )}
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "var(--text-muted)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
+              }}
+            >
+              {formatSongArtist(e.song)}
+            </Link>
+            <div
+              style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}
+            >
+              Pico #{e.peak} · {e.weeks} {statsLabels.tenureSuffix}
+            </div>
           </div>
         </div>
       ))}
@@ -1009,7 +2012,13 @@ function GridVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsLab
   );
 }
 
-function PodiumVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsLabels: ChartStatsLabels }) {
+function PodiumVariant({
+  entries,
+  statsLabels,
+}: {
+  entries: ChartEntry[];
+  statsLabels: ChartStatsLabels;
+}) {
   if (entries.length < 3) {
     return <ClassicList entries={entries} statsLabels={statsLabels} />;
   }
@@ -1017,38 +2026,106 @@ function PodiumVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsL
   const rest = entries.slice(3);
   // Podium order: 2nd | 1st | 3rd
   const podiumOrder = [top3[1], top3[0], top3[2]];
-  const medalColors: Record<number, string> = { 1: "#FFD700", 2: "#C0C0C0", 3: "#CD7F32" };
+  const medalColors: Record<number, string> = {
+    1: "#FFD700",
+    2: "#C0C0C0",
+    3: "#CD7F32",
+  };
   const podiumOffsets: Record<number, number> = { 1: 0, 2: 40, 3: 60 };
 
   return (
     <>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 24, padding: "60px 0 60px 0" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+          gap: 24,
+          padding: "60px 0 60px 0",
+        }}
+      >
         {podiumOrder.map((e) => (
           <div
             key={e.position}
             style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
               transform: `translateY(${podiumOffsets[e.position] ?? 0}px)`,
             }}
           >
             <div style={{ position: "relative" }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", lineHeight: 0 }}>
-                <Cover cover={e.cover} song={e.song} size={160} rounded={16} style={{ boxShadow: "0 12px 30px rgba(0,0,0,0.18)" }} />
+              <Link
+                href={buildSongPath(e.song)}
+                style={{ display: "block", lineHeight: 0 }}
+              >
+                <Cover
+                  cover={e.cover}
+                  song={e.song}
+                  size={160}
+                  rounded={16}
+                  style={{ boxShadow: "0 12px 30px rgba(0,0,0,0.18)" }}
+                />
               </Link>
-              <div style={{
-                position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)",
-                width: 36, height: 36, borderRadius: "50%",
-                background: medalColors[e.position] ?? "var(--surface-elevated)",
-                color: e.position === 1 ? "#7A5000" : e.position === 2 ? "#555" : "#fff",
-                display: "grid", placeItems: "center", fontSize: 15, fontWeight: 800,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-              }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: -16,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  background:
+                    medalColors[e.position] ?? "var(--surface-elevated)",
+                  color:
+                    e.position === 1
+                      ? "#7A5000"
+                      : e.position === 2
+                        ? "#555"
+                        : "#fff",
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 15,
+                  fontWeight: 800,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                }}
+              >
                 {e.position}
               </div>
             </div>
             <div style={{ textAlign: "center", maxWidth: 160 }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+              <Link
+                href={buildSongPath(e.song)}
+                style={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {e.song.title}
+              </Link>
+              <Link
+                href={buildArtistPath(
+                  e.song.artist,
+                  e.song.artistSpotifyId,
+                  e.song.artistRefId,
+                )}
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  color: "var(--text-muted)",
+                  textDecoration: "none",
+                }}
+              >
+                {formatSongArtist(e.song)}
+              </Link>
             </div>
           </div>
         ))}
@@ -1080,10 +2157,12 @@ function VideoClipLayoutToggle({
         width: isMobile ? "100%" : "auto",
       }}
     >
-      {([
-        ["table", "Tabela"],
-        ["stacked", "Detalhado"],
-      ] as const).map(([value, label]) => (
+      {(
+        [
+          ["table", "Tabela"],
+          ["stacked", "Detalhado"],
+        ] as const
+      ).map(([value, label]) => (
         <button
           key={value}
           type="button"
@@ -1115,7 +2194,8 @@ function formatChartStatsProse(
   isDaily: boolean,
 ): string {
   const tenure = formatTenureProse(entry.weeks, isDaily);
-  const peakPart = personal > 0 ? `Pico: ${entry.peak}x${personal}` : `Pico: ${entry.peak}`;
+  const peakPart =
+    personal > 0 ? `Pico: ${entry.peak}x${personal}` : `Pico: ${entry.peak}`;
   return `${tenure} / ${peakPart}`;
 }
 
@@ -1148,7 +2228,11 @@ function VideoClipSongInfo({
         {entry.song.title}
       </Link>
       <Link
-        href={buildArtistPath(entry.song.artist, entry.song.artistSpotifyId, entry.song.artistRefId)}
+        href={buildArtistPath(
+          entry.song.artist,
+          entry.song.artistSpotifyId,
+          entry.song.artistRefId,
+        )}
         style={{
           display: "block",
           fontSize: artistSize,
@@ -1247,7 +2331,15 @@ function VideoClipStackedVariant({
 
   if (isMobile) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 0,
+          borderTop: "1px solid var(--divider)",
+          borderBottom: "1px solid var(--divider)",
+          overflow: "hidden",
+        }}
+      >
         {entries.map((e) => {
           const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
           const personal = lookupNumberOnes(personalNumberOnes, e.song);
@@ -1263,15 +2355,40 @@ function VideoClipStackedVariant({
                 borderBottom: "1px solid var(--divider-soft)",
               }}
             >
-              <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
-                <div style={{ fontSize: e.position <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              <div
+                style={{
+                  width: MOBILE_POS_WIDTH,
+                  textAlign: "center",
+                  flexShrink: 0,
+                  alignSelf: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: e.position <= 3 ? 20 : 16,
+                    fontWeight: 800,
+                    letterSpacing: "-0.04em",
+                    color: "var(--text)",
+                    fontVariantNumeric: "tabular-nums",
+                    lineHeight: 1,
+                  }}
+                >
                   {e.position}
                 </div>
-                <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                <div
+                  style={{
+                    marginTop: 4,
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
                   <MovementBadge status={e.status} delta={e.delta} compact />
                 </div>
               </div>
-              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+              <Link
+                href={buildSongPath(e.song)}
+                style={{ lineHeight: 0, flexShrink: 0 }}
+              >
                 <VideoClipCover
                   imageUrl={clipUrl}
                   paletteA={e.cover.palette[0]}
@@ -1295,17 +2412,38 @@ function VideoClipStackedVariant({
   }
 
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: gridColumns,
-        gap: 0,
-        padding: "0 20px",
-        background: "var(--fill-inset)",
-        borderBottom: "1px solid var(--divider)",
-      }}>
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 18,
+        border: "1px solid var(--divider)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: gridColumns,
+          gap: 0,
+          padding: "0 20px",
+          background: "var(--fill-inset)",
+          borderBottom: "1px solid var(--divider)",
+        }}
+      >
         {["Pos", "", "Música"].map((h, i) => (
-          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
+          <div
+            key={i}
+            style={{
+              padding: "10px 8px",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+            }}
+          >
+            {h}
+          </div>
         ))}
       </div>
       {entries.map((e) => {
@@ -1327,7 +2465,14 @@ function VideoClipStackedVariant({
             <DesktopPosCell position={e.position} alignSelf="center">
               <MovementBadge status={e.status} delta={e.delta} compact />
             </DesktopPosCell>
-            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0, alignSelf: "center" }}>
+            <Link
+              href={buildSongPath(e.song)}
+              style={{
+                padding: "4px 8px 4px 0",
+                lineHeight: 0,
+                alignSelf: "center",
+              }}
+            >
               <VideoClipCover
                 imageUrl={clipUrl}
                 paletteA={e.cover.palette[0]}
@@ -1336,7 +2481,9 @@ function VideoClipStackedVariant({
                 height={clipHeight}
               />
             </Link>
-            <div style={{ minWidth: 0, padding: "0 12px", alignSelf: "center" }}>
+            <div
+              style={{ minWidth: 0, padding: "0 12px", alignSelf: "center" }}
+            >
               <VideoClipSongInfo
                 entry={e}
                 titleSize={14}
@@ -1368,11 +2515,22 @@ function VideoClipTableVariant({
   const clipWidth = Math.round(clipHeight * (16 / 9));
   const mobileClipIndent =
     MOBILE_POS_WIDTH + MOBILE_ROW_GAP + clipWidth + MOBILE_ROW_GAP;
-  const gridColumns = desktopListGrid(`${clipWidth + 16}px`, "80px 80px 60px 90px");
+  const gridColumns = desktopListGrid(
+    `${clipWidth + 16}px`,
+    "80px 80px 60px 90px",
+  );
 
   if (isMobile) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 0,
+          borderTop: "1px solid var(--divider)",
+          borderBottom: "1px solid var(--divider)",
+          overflow: "hidden",
+        }}
+      >
         {entries.map((e) => {
           const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
           return (
@@ -1386,16 +2544,48 @@ function VideoClipTableVariant({
                 borderBottom: "1px solid var(--divider-soft)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: MOBILE_ROW_GAP, minWidth: 0 }}>
-                <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
-                  <div style={{ fontSize: e.position <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: MOBILE_ROW_GAP,
+                  minWidth: 0,
+                }}
+              >
+                <div
+                  style={{
+                    width: MOBILE_POS_WIDTH,
+                    textAlign: "center",
+                    flexShrink: 0,
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: e.position <= 3 ? 20 : 16,
+                      fontWeight: 800,
+                      letterSpacing: "-0.04em",
+                      color: "var(--text)",
+                      fontVariantNumeric: "tabular-nums",
+                      lineHeight: 1,
+                    }}
+                  >
                     {e.position}
                   </div>
-                  <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                  <div
+                    style={{
+                      marginTop: 4,
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
                     <MovementBadge status={e.status} delta={e.delta} compact />
                   </div>
                 </div>
-                <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+                <Link
+                  href={buildSongPath(e.song)}
+                  style={{ lineHeight: 0, flexShrink: 0 }}
+                >
                   <VideoClipCover
                     imageUrl={clipUrl}
                     paletteA={e.cover.palette[0]}
@@ -1405,18 +2595,63 @@ function VideoClipTableVariant({
                   />
                 </Link>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: MOBILE_TITLE_SIZE, fontWeight: 700, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                  <Link
+                    href={buildSongPath(e.song)}
+                    style={{
+                      display: "block",
+                      fontSize: MOBILE_TITLE_SIZE,
+                      fontWeight: 700,
+                      lineHeight: 1.25,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      textDecoration: "none",
+                      color: "var(--text)",
+                    }}
+                  >
                     {e.song.title}
                   </Link>
-                  <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: MOBILE_ARTIST_SIZE, lineHeight: 1.25, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                  <Link
+                    href={buildArtistPath(
+                      e.song.artist,
+                      e.song.artistSpotifyId,
+                      e.song.artistRefId,
+                    )}
+                    style={{
+                      display: "block",
+                      fontSize: MOBILE_ARTIST_SIZE,
+                      lineHeight: 1.25,
+                      color: "var(--text-muted)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      textDecoration: "none",
+                      marginTop: 2,
+                    }}
+                  >
                     {formatSongArtist(e.song)}
                   </Link>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, paddingLeft: mobileClipIndent }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  paddingLeft: mobileClipIndent,
+                }}
+              >
                 <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
-                <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-                <StatPill compact label={statsLabels.tenurePill} value={e.weeks} />
+                <StatPill
+                  compact
+                  label="PICO"
+                  value={e.peak}
+                  accent={e.peak === 1 ? "var(--accent)" : undefined}
+                />
+                <StatPill
+                  compact
+                  label={statsLabels.tenurePill}
+                  value={e.weeks}
+                />
               </div>
             </div>
           );
@@ -1426,17 +2661,46 @@ function VideoClipTableVariant({
   }
 
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: gridColumns,
-        gap: 0,
-        padding: "0 20px",
-        background: "var(--fill-inset)",
-        borderBottom: "1px solid var(--divider)",
-      }}>
-        {["Pos", "", "Música", statsLabels.prevPeriodShort, statsLabels.tenureShort, "Pico", "#1s"].map((h, i) => (
-          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 18,
+        border: "1px solid var(--divider)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: gridColumns,
+          gap: 0,
+          padding: "0 20px",
+          background: "var(--fill-inset)",
+          borderBottom: "1px solid var(--divider)",
+        }}
+      >
+        {[
+          "Pos",
+          "",
+          "Música",
+          statsLabels.prevPeriodShort,
+          statsLabels.tenureShort,
+          "Pico",
+          "#1s",
+        ].map((h, i) => (
+          <div
+            key={i}
+            style={{
+              padding: "10px 8px",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+            }}
+          >
+            {h}
+          </div>
         ))}
       </div>
       {entries.map((e) => {
@@ -1457,7 +2721,14 @@ function VideoClipTableVariant({
             <DesktopPosCell position={e.position} alignSelf="center">
               <MovementBadge status={e.status} delta={e.delta} compact />
             </DesktopPosCell>
-            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0, alignSelf: "center" }}>
+            <Link
+              href={buildSongPath(e.song)}
+              style={{
+                padding: "4px 8px 4px 0",
+                lineHeight: 0,
+                alignSelf: "center",
+              }}
+            >
               <VideoClipCover
                 imageUrl={clipUrl}
                 paletteA={e.cover.palette[0]}
@@ -1466,28 +2737,125 @@ function VideoClipTableVariant({
                 height={clipHeight}
               />
             </Link>
-            <div style={{ minWidth: 0, padding: "0 12px", alignSelf: "center" }}>
-              <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-              <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+            <div
+              style={{ minWidth: 0, padding: "0 12px", alignSelf: "center" }}
+            >
+              <Link
+                href={buildSongPath(e.song)}
+                style={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {e.song.title}
+              </Link>
+              <Link
+                href={buildArtistPath(
+                  e.song.artist,
+                  e.song.artistSpotifyId,
+                  e.song.artistRefId,
+                )}
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  color: "var(--text-muted)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                }}
+              >
+                {formatSongArtist(e.song)}
+              </Link>
               {e.song.album?.trim() ? (
-                <Link href={buildAlbumPath(e.song.album.trim(), e.song.artist, { artistId: e.song.artistRefId, albumId: e.song.albumRefId })} style={{ display: "block", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                <Link
+                  href={buildAlbumPath(e.song.album.trim(), e.song.artist, {
+                    artistId: e.song.artistRefId,
+                    albumId: e.song.albumRefId,
+                  })}
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    textDecoration: "none",
+                    marginTop: 2,
+                  }}
+                >
                   {e.song.album}
                 </Link>
               ) : null}
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px", alignSelf: "center" }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                fontVariantNumeric: "tabular-nums",
+                padding: "0 8px",
+                alignSelf: "center",
+              }}
+            >
               {e.prevPos ?? "—"}
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px", alignSelf: "center" }}>{e.weeks}</div>
-            <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3, alignSelf: "center" }}>
-              {e.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                fontVariantNumeric: "tabular-nums",
+                padding: "0 8px",
+                alignSelf: "center",
+              }}
+            >
+              {e.weeks}
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                fontVariantNumeric: "tabular-nums",
+                padding: "0 8px",
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+                alignSelf: "center",
+              }}
+            >
+              {e.peak === 1 && (
+                <span
+                  style={{
+                    color: "var(--accent)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <Star size={12} color="currentColor" fill="currentColor" />
+                </span>
+              )}
               {e.peak}
             </div>
             <div style={{ padding: "0 8px", alignSelf: "center" }}>
               {personal > 0 ? (
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{personal}x</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: "var(--text)",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {personal}x
+                </div>
               ) : (
-                <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>—</div>
+                <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>
+                  —
+                </div>
               )}
             </div>
           </div>
@@ -1499,18 +2867,49 @@ function VideoClipTableVariant({
 
 function PersonalExitBadge() {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 700, letterSpacing: "-0.01em", padding: "2px 7px", borderRadius: 6, background: "#1C1C1E", color: "#fff", whiteSpace: "nowrap", flexShrink: 0 }}>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "-0.01em",
+        padding: "2px 7px",
+        borderRadius: 6,
+        background: "#1C1C1E",
+        color: "#fff",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
       SAIU
     </span>
   );
 }
 
-function PersonalDropoutsTab({ dropouts, isDbChart, statsLabels }: { dropouts: PersonalDropoutEntry[]; isDbChart: boolean; statsLabels: ChartStatsLabels }) {
+function PersonalDropoutsTab({
+  dropouts,
+  isDbChart,
+  statsLabels,
+}: {
+  dropouts: PersonalDropoutEntry[];
+  isDbChart: boolean;
+  statsLabels: ChartStatsLabels;
+}) {
   const isMobile = useIsMobile();
 
   if (!isDbChart) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, color: "var(--text-muted)", fontSize: 14 }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 18,
+          border: "1px solid var(--divider)",
+          padding: 24,
+          color: "var(--text-muted)",
+          fontSize: 14,
+        }}
+      >
         Recurso disponível apenas para paradas salvas no banco.
       </div>
     );
@@ -1518,7 +2917,17 @@ function PersonalDropoutsTab({ dropouts, isDbChart, statsLabels }: { dropouts: P
 
   if (dropouts.length === 0) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 18,
+          border: "1px solid var(--divider)",
+          padding: 40,
+          textAlign: "center",
+          color: "var(--text-muted)",
+          fontSize: 14,
+        }}
+      >
         {statsLabels.noDropouts}
       </div>
     );
@@ -1526,33 +2935,132 @@ function PersonalDropoutsTab({ dropouts, isDbChart, statsLabels }: { dropouts: P
 
   if (isMobile) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 0,
+          borderTop: "1px solid var(--divider)",
+          borderBottom: "1px solid var(--divider)",
+          overflow: "hidden",
+        }}
+      >
         {dropouts.map((e) => (
-          <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", borderBottom: "1px solid var(--divider-soft)" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: MOBILE_ROW_GAP, minWidth: 0 }}>
-              <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
-                <div style={{ fontSize: e.lastPos <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+          <div
+            key={`${e.song.title}\0${e.song.artist}`}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              padding: "10px 12px",
+              borderBottom: "1px solid var(--divider-soft)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: MOBILE_ROW_GAP,
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  width: MOBILE_POS_WIDTH,
+                  textAlign: "center",
+                  flexShrink: 0,
+                  alignSelf: "flex-start",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: e.lastPos <= 3 ? 20 : 16,
+                    fontWeight: 800,
+                    letterSpacing: "-0.04em",
+                    color: "var(--text-muted)",
+                    fontVariantNumeric: "tabular-nums",
+                    lineHeight: 1,
+                  }}
+                >
                   {e.lastPos}
                 </div>
-                <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                <div
+                  style={{
+                    marginTop: 4,
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
                   <PersonalExitBadge />
                 </div>
               </div>
-              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
-                <Cover cover={e.cover} song={e.song} size={MOBILE_COVER_SIZE} rounded={6} />
+              <Link
+                href={buildSongPath(e.song)}
+                style={{ lineHeight: 0, flexShrink: 0 }}
+              >
+                <Cover
+                  cover={e.cover}
+                  song={e.song}
+                  size={MOBILE_COVER_SIZE}
+                  rounded={6}
+                />
               </Link>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: MOBILE_TITLE_SIZE, fontWeight: 700, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "var(--text)" }}>
+                <Link
+                  href={buildSongPath(e.song)}
+                  style={{
+                    display: "block",
+                    fontSize: MOBILE_TITLE_SIZE,
+                    fontWeight: 700,
+                    lineHeight: 1.25,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    textDecoration: "none",
+                    color: "var(--text)",
+                  }}
+                >
                   {e.song.title}
                 </Link>
-                <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: MOBILE_ARTIST_SIZE, lineHeight: 1.25, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+                <Link
+                  href={buildArtistPath(
+                    e.song.artist,
+                    e.song.artistSpotifyId,
+                    e.song.artistRefId,
+                  )}
+                  style={{
+                    display: "block",
+                    fontSize: MOBILE_ARTIST_SIZE,
+                    lineHeight: 1.25,
+                    color: "var(--text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    textDecoration: "none",
+                    marginTop: 2,
+                  }}
+                >
                   {formatSongArtist(e.song)}
                 </Link>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT }}>
-              <StatPill compact label="PICO" value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
-              <StatPill compact label={statsLabels.tenurePill} value={e.weeks} />
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                paddingLeft: MOBILE_STATS_INDENT,
+              }}
+            >
+              <StatPill
+                compact
+                label="PICO"
+                value={e.peak}
+                accent={e.peak === 1 ? "var(--accent)" : undefined}
+              />
+              <StatPill
+                compact
+                label={statsLabels.tenurePill}
+                value={e.weeks}
+              />
             </div>
           </div>
         ))}
@@ -1560,44 +3068,173 @@ function PersonalDropoutsTab({ dropouts, isDbChart, statsLabels }: { dropouts: P
     );
   }
 
-  const dropoutGrid = desktopListGrid(desktopCoverGridColumn(DESKTOP_COVER_SIZE), "80px 60px");
+  const dropoutGrid = desktopListGrid(
+    desktopCoverGridColumn(DESKTOP_COVER_SIZE),
+    "80px 60px",
+  );
 
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
-      <div style={{ display: "grid", gridTemplateColumns: dropoutGrid, gap: 0, padding: "0 20px", background: "var(--fill-inset)", borderBottom: "1px solid var(--divider)" }}>
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 18,
+        border: "1px solid var(--divider)",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: dropoutGrid,
+          gap: 0,
+          padding: "0 20px",
+          background: "var(--fill-inset)",
+          borderBottom: "1px solid var(--divider)",
+        }}
+      >
         {["Últ.", "", "Música", "Pico", statsLabels.tenureShort].map((h, i) => (
-          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
+          <div
+            key={i}
+            style={{
+              padding: "10px 8px",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "var(--text-muted)",
+            }}
+          >
+            {h}
+          </div>
         ))}
       </div>
       {dropouts.map((e) => (
-        <div key={`${e.song.title}\0${e.song.artist}`} style={{ display: "grid", gridTemplateColumns: dropoutGrid, alignItems: "center", padding: "8px 20px", borderBottom: "1px solid var(--divider-soft)", gap: 0 }}>
+        <div
+          key={`${e.song.title}\0${e.song.artist}`}
+          style={{
+            display: "grid",
+            gridTemplateColumns: dropoutGrid,
+            alignItems: "center",
+            padding: "8px 20px",
+            borderBottom: "1px solid var(--divider-soft)",
+            gap: 0,
+          }}
+        >
           <DesktopPosCell position={e.lastPos} muted>
             <PersonalExitBadge />
           </DesktopPosCell>
-          <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}>
-            <Cover cover={e.cover} song={e.song} size={DESKTOP_COVER_SIZE} rounded={8} />
+          <Link
+            href={buildSongPath(e.song)}
+            style={{ padding: "4px 8px 4px 0", lineHeight: 0 }}
+          >
+            <Cover
+              cover={e.cover}
+              song={e.song}
+              size={DESKTOP_COVER_SIZE}
+              rounded={8}
+            />
           </Link>
           <div style={{ minWidth: 0, padding: "0 12px" }}>
-            <Link href={buildSongPath(e.song)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", color: "inherit" }}>{e.song.title}</Link>
-            <Link href={buildArtistPath(e.song.artist, e.song.artistSpotifyId, e.song.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>{formatSongArtist(e.song)}</Link>
+            <Link
+              href={buildSongPath(e.song)}
+              style={{
+                display: "block",
+                fontSize: 14,
+                fontWeight: 600,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              {e.song.title}
+            </Link>
+            <Link
+              href={buildArtistPath(
+                e.song.artist,
+                e.song.artistSpotifyId,
+                e.song.artistRefId,
+              )}
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "var(--text-muted)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                textDecoration: "none",
+              }}
+            >
+              {formatSongArtist(e.song)}
+            </Link>
             {e.song.album?.trim() ? (
-              <Link href={buildAlbumPath(e.song.album.trim(), e.song.artist, { artistId: e.song.artistRefId, albumId: e.song.albumRefId })} style={{ display: "block", fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none", marginTop: 2 }}>
+              <Link
+                href={buildAlbumPath(e.song.album.trim(), e.song.artist, {
+                  artistId: e.song.artistRefId,
+                  albumId: e.song.albumRefId,
+                })}
+                style={{
+                  display: "block",
+                  fontSize: 11,
+                  color: "var(--text-muted)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                  marginTop: 2,
+                }}
+              >
                 {e.song.album}
               </Link>
             ) : null}
           </div>
-          <div style={{ fontSize: 13, fontVariantNumeric: "tabular-nums", padding: "0 8px", display: "flex", alignItems: "center", gap: 3 }}>
-            {e.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
+          <div
+            style={{
+              fontSize: 13,
+              fontVariantNumeric: "tabular-nums",
+              padding: "0 8px",
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            {e.peak === 1 && (
+              <span
+                style={{
+                  color: "var(--accent)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                <Star size={12} color="currentColor" fill="currentColor" />
+              </span>
+            )}
             {e.peak}
           </div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{e.weeks}</div>
+          <div
+            style={{
+              fontSize: 13,
+              color: "var(--text-muted)",
+              fontVariantNumeric: "tabular-nums",
+              padding: "0 8px",
+            }}
+          >
+            {e.weeks}
+          </div>
         </div>
       ))}
     </div>
   );
 }
 
-function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: string }) {
+function CommentItem({
+  comment,
+  chartId,
+}: {
+  comment: CommentRow;
+  chartId: string;
+}) {
   const { data: session } = useSession();
   const [repliesOpen, setRepliesOpen] = useState(false);
   const [replies, setReplies] = useState<CommentReplyRow[]>([]);
@@ -1614,7 +3251,10 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
     if (!session?.user || togglingLike) return;
     setTogglingLike(true);
     try {
-      const res = await fetch(`/api/charts/${chartId}/comment/${comment.id}/like`, { method: "POST" });
+      const res = await fetch(
+        `/api/charts/${chartId}/comment/${comment.id}/like`,
+        { method: "POST" },
+      );
       if (res.status === 401) {
         alert("Você precisa estar logado para curtir.");
         return;
@@ -1632,7 +3272,9 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
   async function loadReplies() {
     setLoadingReplies(true);
     try {
-      const res = await fetch(`/api/charts/${chartId}/comment/${comment.id}/replies`);
+      const res = await fetch(
+        `/api/charts/${chartId}/comment/${comment.id}/replies`,
+      );
       if (res.ok) {
         const data = (await res.json()) as CommentReplyRow[];
         setReplies(data);
@@ -1657,11 +3299,14 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
     if (!text || submittingReply) return;
     setSubmittingReply(true);
     try {
-      const res = await fetch(`/api/charts/${chartId}/comment/${comment.id}/replies`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
+      const res = await fetch(
+        `/api/charts/${chartId}/comment/${comment.id}/replies`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        },
+      );
       if (res.ok) {
         const newReply = (await res.json()) as CommentReplyRow;
         setReplies((prev) => [...prev, newReply]);
@@ -1676,16 +3321,63 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
   }
 
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 18,
+        border: "1px solid var(--divider)",
+        padding: 20,
+      }}
+    >
       <div style={{ display: "flex", gap: 12 }}>
-        <Avatar user={{ name: comment.user.name, avatar: comment.user.avatarColor }} imageUrl={comment.user.image} size={36} />
+        <Avatar
+          user={{ name: comment.user.name, avatar: comment.user.avatarColor }}
+          imageUrl={comment.user.image}
+          size={36}
+        />
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-            <Link href={`/profile/${comment.user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>{comment.user.name}</Link>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>@{comment.user.handle}</span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: "auto" }}>{timeAgo(comment.createdAt)}</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 8,
+              marginBottom: 6,
+            }}
+          >
+            <Link
+              href={`/profile/${comment.user.handle}`}
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: "var(--text)",
+                textDecoration: "none",
+              }}
+            >
+              {comment.user.name}
+            </Link>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              @{comment.user.handle}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                marginLeft: "auto",
+              }}
+            >
+              {timeAgo(comment.createdAt)}
+            </span>
           </div>
-          <p style={{ fontSize: 14, lineHeight: 1.5, color: "var(--text)", marginBottom: 10 }}>{comment.text}</p>
+          <p
+            style={{
+              fontSize: 14,
+              lineHeight: 1.5,
+              color: "var(--text)",
+              marginBottom: 10,
+            }}
+          >
+            {comment.text}
+          </p>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
               onClick={toggleLike}
@@ -1709,15 +3401,37 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
             </button>
             <button
               onClick={toggleReplies}
-              style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: repliesOpen ? "var(--accent)" : "var(--text-muted)", fontSize: 13, fontWeight: repliesOpen ? 600 : 400, cursor: "pointer" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                background: "none",
+                border: "none",
+                color: repliesOpen ? "var(--accent)" : "var(--text-muted)",
+                fontSize: 13,
+                fontWeight: repliesOpen ? 600 : 400,
+                cursor: "pointer",
+              }}
             >
               <MessageCircle size={14} />
-              {replyCount > 0 ? `${replyCount} resposta${replyCount !== 1 ? "s" : ""}` : "Responder"}
+              {replyCount > 0
+                ? `${replyCount} resposta${replyCount !== 1 ? "s" : ""}`
+                : "Responder"}
             </button>
             {comment.reactions.length > 0 && (
               <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
                 {comment.reactions.map((r, i) => (
-                  <span key={i} style={{ background: "rgba(0,0,0,0.04)", borderRadius: 12, padding: "2px 8px", fontSize: 12 }}>{r}</span>
+                  <span
+                    key={i}
+                    style={{
+                      background: "rgba(0,0,0,0.04)",
+                      borderRadius: 12,
+                      padding: "2px 8px",
+                      fontSize: 12,
+                    }}
+                  >
+                    {r}
+                  </span>
                 ))}
               </div>
             )}
@@ -1726,27 +3440,85 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
       </div>
 
       {repliesOpen && (
-        <div style={{ marginTop: 16, marginLeft: 48, borderLeft: "2px solid var(--divider)", paddingLeft: 16 }}>
+        <div
+          style={{
+            marginTop: 16,
+            marginLeft: 48,
+            borderLeft: "2px solid var(--divider)",
+            paddingLeft: 16,
+          }}
+        >
           {session?.user && (
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 12 }}>
-              <Avatar user={{ name: session.user.name ?? "", avatar: "#FA243C" }} imageUrl={session.user.image ?? null} size={28} />
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "flex-start",
+                marginBottom: 12,
+              }}
+            >
+              <Avatar
+                user={{ name: session.user.name ?? "", avatar: "#FA243C" }}
+                imageUrl={session.user.image ?? null}
+                size={28}
+              />
               <div style={{ flex: 1 }}>
                 <input
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitReply(); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      submitReply();
+                    }
+                  }}
                   placeholder="Escreva uma resposta..."
-                  style={{ width: "100%", border: "none", outline: "none", fontSize: 13, color: "var(--text)", padding: "6px 0", background: "transparent", borderBottom: "1px solid var(--divider)" }}
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    outline: "none",
+                    fontSize: 13,
+                    color: "var(--text)",
+                    padding: "6px 0",
+                    background: "transparent",
+                    borderBottom: "1px solid var(--divider)",
+                  }}
                 />
                 {replyText.trim() && (
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
-                    <button onClick={() => setReplyText("")} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 8,
+                      marginTop: 8,
+                    }}
+                  >
+                    <button
+                      onClick={() => setReplyText("")}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--text-muted)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
                       Cancelar
                     </button>
                     <button
                       onClick={submitReply}
                       disabled={submittingReply}
-                      style={{ background: "var(--accent)", color: "white", border: "none", padding: "5px 14px", borderRadius: 100, fontSize: 12, fontWeight: 700, cursor: submittingReply ? "default" : "pointer", opacity: submittingReply ? 0.6 : 1 }}
+                      style={{
+                        background: "var(--accent)",
+                        color: "white",
+                        border: "none",
+                        padding: "5px 14px",
+                        borderRadius: 100,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: submittingReply ? "default" : "pointer",
+                        opacity: submittingReply ? 0.6 : 1,
+                      }}
                     >
                       {submittingReply ? "Enviando…" : "Responder"}
                     </button>
@@ -1757,23 +3529,82 @@ function CommentItem({ comment, chartId }: { comment: CommentRow; chartId: strin
           )}
 
           {loadingReplies && (
-            <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "8px 0" }}>Carregando respostas…</div>
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                padding: "8px 0",
+              }}
+            >
+              Carregando respostas…
+            </div>
           )}
 
           {repliesLoaded && replies.length === 0 && !loadingReplies && (
-            <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "4px 0" }}>Sem respostas ainda.</div>
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                padding: "4px 0",
+              }}
+            >
+              Sem respostas ainda.
+            </div>
           )}
 
           {replies.map((r) => (
-            <div key={r.id} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-              <Avatar user={{ name: r.user.name, avatar: r.user.avatarColor }} imageUrl={r.user.image} size={28} />
+            <div
+              key={r.id}
+              style={{ display: "flex", gap: 10, marginBottom: 12 }}
+            >
+              <Avatar
+                user={{ name: r.user.name, avatar: r.user.avatarColor }}
+                imageUrl={r.user.image}
+                size={28}
+              />
               <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-                  <Link href={`/profile/${r.user.handle}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>{r.user.name}</Link>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>@{r.user.handle}</span>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: "auto" }}>{timeAgo(r.createdAt)}</span>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 6,
+                    marginBottom: 4,
+                  }}
+                >
+                  <Link
+                    href={`/profile/${r.user.handle}`}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--text)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {r.user.name}
+                  </Link>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    @{r.user.handle}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: "var(--text-muted)",
+                      marginLeft: "auto",
+                    }}
+                  >
+                    {timeAgo(r.createdAt)}
+                  </span>
                 </div>
-                <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text)", margin: 0 }}>{r.text}</p>
+                <p
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: "var(--text)",
+                    margin: 0,
+                  }}
+                >
+                  {r.text}
+                </p>
               </div>
             </div>
           ))}
@@ -1807,7 +3638,10 @@ function CommentsTab({
     setLoading(true);
     fetch(`/api/charts/${chartId}/comment`)
       .then((r) => r.json())
-      .then((data: CommentRow[]) => { setComments(data); setLoading(false); })
+      .then((data: CommentRow[]) => {
+        setComments(data);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [chartId, isDbChart]);
 
@@ -1841,32 +3675,77 @@ function CommentsTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Compose */}
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 18,
+          border: "1px solid var(--divider)",
+          padding: 20,
+        }}
+      >
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <Avatar user={composeUser} imageUrl={composeImageUrl ?? undefined} size={36} />
+          <Avatar
+            user={composeUser}
+            imageUrl={composeImageUrl ?? undefined}
+            size={36}
+          />
           <div style={{ flex: 1 }}>
             <input
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submitComment();
+                }
+              }}
               placeholder="Escreva um comentário..."
               style={{
-                width: "100%", border: "none", outline: "none", fontSize: 14,
-                color: "var(--text)", resize: "none", padding: "8px 0",
+                width: "100%",
+                border: "none",
+                outline: "none",
+                fontSize: 14,
+                color: "var(--text)",
+                resize: "none",
+                padding: "8px 0",
                 background: "transparent",
               }}
             />
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 8,
+              }}
+            >
               {reactions.map((r) => (
-                <button key={r} onClick={() => setComment((c) => c + r)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 2 }}>{r}</button>
+                <button
+                  key={r}
+                  onClick={() => setComment((c) => c + r)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    fontSize: 18,
+                    cursor: "pointer",
+                    padding: 2,
+                  }}
+                >
+                  {r}
+                </button>
               ))}
               <button
                 onClick={submitComment}
                 disabled={!comment.trim() || submitting}
                 style={{
                   marginLeft: "auto",
-                  background: "var(--accent)", color: "white", border: "none",
-                  padding: "8px 18px", borderRadius: 100, fontSize: 13, fontWeight: 700,
+                  background: "var(--accent)",
+                  color: "white",
+                  border: "none",
+                  padding: "8px 18px",
+                  borderRadius: 100,
+                  fontSize: 13,
+                  fontWeight: 700,
                   boxShadow: "0 2px 8px rgba(250,36,60,0.25)",
                   opacity: !comment.trim() || submitting ? 0.5 : 1,
                   cursor: !comment.trim() || submitting ? "default" : "pointer",
@@ -1880,10 +3759,26 @@ function CommentsTab({
       </div>
 
       {loading && (
-        <div style={{ color: "var(--text-muted)", fontSize: 14, padding: "12px 0" }}>Carregando comentários…</div>
+        <div
+          style={{
+            color: "var(--text-muted)",
+            fontSize: 14,
+            padding: "12px 0",
+          }}
+        >
+          Carregando comentários…
+        </div>
       )}
       {!loading && comments.length === 0 && (
-        <div style={{ color: "var(--text-muted)", fontSize: 14, padding: "12px 0" }}>Nenhum comentário ainda. Seja o primeiro!</div>
+        <div
+          style={{
+            color: "var(--text-muted)",
+            fontSize: 14,
+            padding: "12px 0",
+          }}
+        >
+          Nenhum comentário ainda. Seja o primeiro!
+        </div>
       )}
       {comments.map((c) => (
         <CommentItem key={c.id} comment={c} chartId={chartId} />
@@ -1892,7 +3787,15 @@ function CommentsTab({
   );
 }
 
-function OverlapTab({ chartId, isDbChart, statsLabels }: { chartId: string; isDbChart: boolean; statsLabels: ChartStatsLabels }) {
+function OverlapTab({
+  chartId,
+  isDbChart,
+  statsLabels,
+}: {
+  chartId: string;
+  isDbChart: boolean;
+  statsLabels: ChartStatsLabels;
+}) {
   const [rows, setRows] = useState<OverlapRow[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -1910,7 +3813,16 @@ function OverlapTab({ chartId, isDbChart, statsLabels }: { chartId: string; isDb
 
   if (!isDbChart) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, color: "var(--text-muted)", fontSize: 14 }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 18,
+          border: "1px solid var(--divider)",
+          padding: 24,
+          color: "var(--text-muted)",
+          fontSize: 14,
+        }}
+      >
         Recurso disponível apenas para paradas salvas no banco.
       </div>
     );
@@ -1918,7 +3830,16 @@ function OverlapTab({ chartId, isDbChart, statsLabels }: { chartId: string; isDb
 
   if (loading) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, color: "var(--text-muted)", fontSize: 14 }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 18,
+          border: "1px solid var(--divider)",
+          padding: 24,
+          color: "var(--text-muted)",
+          fontSize: 14,
+        }}
+      >
         {statsLabels.overlapLoading}
       </div>
     );
@@ -1926,28 +3847,87 @@ function OverlapTab({ chartId, isDbChart, statsLabels }: { chartId: string; isDb
 
   if (rows.length === 0) {
     return (
-      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 24, color: "var(--text-muted)", fontSize: 14 }}>
+      <div
+        style={{
+          background: "var(--surface)",
+          borderRadius: 18,
+          border: "1px solid var(--divider)",
+          padding: 24,
+          color: "var(--text-muted)",
+          fontSize: 14,
+        }}
+      >
         {statsLabels.overlapEmpty}
       </div>
     );
   }
 
   return (
-    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+    <div
+      style={{
+        background: "var(--surface)",
+        borderRadius: 18,
+        border: "1px solid var(--divider)",
+        overflow: "hidden",
+      }}
+    >
       {rows.map((row, i) => {
         return (
-          <div key={row.userId} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderBottom: i < rows.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none" }}>
-            <Link href={`/profile/${row.user.handle}`} style={{ textDecoration: "none" }}>
-              <Avatar user={{ name: row.user.name, avatar: row.user.avatarColor }} imageUrl={row.user.image} size={40} />
+          <div
+            key={row.userId}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              padding: "16px 20px",
+              borderBottom:
+                i < rows.length - 1 ? "1px solid rgba(0,0,0,0.04)" : "none",
+            }}
+          >
+            <Link
+              href={`/profile/${row.user.handle}`}
+              style={{ textDecoration: "none" }}
+            >
+              <Avatar
+                user={{ name: row.user.name, avatar: row.user.avatarColor }}
+                imageUrl={row.user.image}
+                size={40}
+              />
             </Link>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <Link href={`/profile/${row.user.handle}`} style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 6,
+                }}
+              >
+                <Link
+                  href={`/profile/${row.user.handle}`}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "var(--text)",
+                    textDecoration: "none",
+                  }}
+                >
                   {row.user.name}
                 </Link>
               </div>
             </div>
-            <Link href={`/chart/${row.chartId}`} style={{ background: "var(--btn-dark-bg)", color: "var(--btn-dark-fg)", border: "none", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
+            <Link
+              href={`/chart/${row.chartId}`}
+              style={{
+                background: "var(--btn-dark-bg)",
+                color: "var(--btn-dark-fg)",
+                border: "none",
+                padding: "6px 14px",
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
               Visualizar
             </Link>
           </div>

@@ -791,13 +791,16 @@ enum PushPhase {
 model SongRecommendation {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
-  songId    String   @map("song_id")
+  songId    String?  @map("song_id")
+  youtubeId String?  @map("youtube_id")
+  ytTitle   String?  @map("yt_title")
+  ytChannel String?  @map("yt_channel")
   text      String?
   likes     Int      @default(0)
   comments  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  song      Song     @relation(fields: [songId], references: [id])
+  song      Song?    @relation(fields: [songId], references: [id])
   recLikes  SongRecommendationLike[]
   recComments SongRecommendationComment[]
 

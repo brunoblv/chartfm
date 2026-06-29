@@ -27,8 +27,6 @@ export function FriendsRow({ publishers }: { publishers: PublisherRow[] }) {
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
         <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>{t("home.latestCharts")}</div>
-        <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("home.peopleCount", { count: publishers.length })}</div>
       </div>
       <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingTop: 4, paddingBottom: 4, paddingLeft: 4 }}>
         {publishers.map((p) => (

@@ -6,8 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
+import { VERSION_TAG_CLEANERS, type VersionTagType } from "@/lib/clean-version-tag";
 import { SpotifyFixButton } from "./SpotifyFixButton";
-import { CleanRemasterButton } from "./CleanRemasterButton";
+import { CleanVersionTagButton } from "./CleanVersionTagButton";
 
 const PAGE_SIZE = 100;
 
@@ -188,7 +189,19 @@ export default async function AdminMusicVersionsPage({
           }}
         >
           <Link href="/admin/music" style={backStyle}>← Voltar a editar músicas</Link>
-          <CleanRemasterButton />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
+            {(Object.keys(VERSION_TAG_CLEANERS) as VersionTagType[]).map((key) => {
+              const cfg = VERSION_TAG_CLEANERS[key];
+              return (
+                <CleanVersionTagButton
+                  key={key}
+                  type={key}
+                  label={cfg.label}
+                  description={cfg.description}
+                />
+              );
+            })}
+          </div>
         </div>
 
         <p style={{ margin: "0 0 14px", fontSize: 14, color: "#6B6B70", lineHeight: 1.45 }}>

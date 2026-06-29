@@ -1,17 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import {
-  globalStatsForSingleSong,
-  songKey,
-} from "@/lib/chart-page-common";
+import { loadSongGlobalStatsFromSnapshots, lookupSongGlobal100Stats, type HistoricalStat } from "@/lib/global-snapshot";
 import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
-import type { DailyChartSongStatsData } from "@/lib/daily-chart-song-stats";
+import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { parseSongSlug } from "@/lib/music-routes";
 import type { SongPageSnapshotPayload } from "./types";
 
 export async function computeSongPageSnapshot(
   slug: string,
-  dailyStats: DailyChartSongStatsData,
+  songGlobalStats?: Map<string, HistoricalStat>,
 ): Promise<SongPageSnapshotPayload | null> {
   const parsed = parseSongSlug(slug);
   if (!parsed) return null;
@@ -20,7 +17,7 @@ export async function computeSongPageSnapshot(
   if (!songId) return null;
 
   const entries = await prisma.chartEntry.findMany({
-    where: { chart: { isPublished: true }, songId },
+    where: { chart: publishedPrimaryParadaChartWhere, songId },
     select: {
       position: true,
       points: true,
@@ -69,8 +66,11 @@ export async function computeSongPageSnapshot(
   const first = entries[0];
   const title = songRow.title;
   const artist = songRow.artist;
-  const targetKey = songKey(title, artist);
-  const gs = globalStatsForSingleSong(targetKey, dailyStats.weeklyBuckets);
+  const globalRank = songGlobalStats ?? (await loadSongGlobalStatsFromSnapshots());
+  const gs = lookupSongGlobal100Stats(
+    { spotifyId: songRow.spotifyId, title, artist },
+    globalRank,
+  );
 
   const topUsersMap = new Map<string, { points: number }>();
   for (const e of entries) {
@@ -140,7 +140,7 @@ export async function computeSongPageSnapshot(
       totalPoints,
       uniqueUsers: new Set(entries.map((e) => e.chart.userId)).size,
       weeksTop100: gs.weeks,
-      number1s: gs.number1s,
+      number1s: gs.numberOnes,
       peak: gs.peak,
     },
     topUsers,

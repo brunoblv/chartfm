@@ -349,6 +349,21 @@ export async function getNewHitsTracksForUser(userId: string, playlistId?: strin
   return getPlaylistTracksForUser(userId, resolvedId);
 }
 
+/**
+ * Playlist permanente "new hits" no Spotify (import Last.fm @bruno).
+ * Diferente de `spotifyNewHitsPlaylistId`, que é a playlist mensal do MyTRL.
+ */
+export async function getNamedNewHitsPlaylistTracks(
+  userId: string,
+): Promise<{ playlistId: string; tracks: NewHitsTrack[] } | null> {
+  const token = await getSpotifyUserAccessToken(userId);
+  if (!token) return null;
+  const playlistId = await findNewHitsPlaylistId(token);
+  if (!playlistId) return null;
+  const tracks = await fetchNewHitsTracks(token, playlistId);
+  return { playlistId, tracks };
+}
+
 export function mapNewHitsToLookup(tracks: NewHitsTrack[]): Map<string, NewHitsTrack> {
   return new Map(tracks.map((t) => [t.spotifyId, t]));
 }

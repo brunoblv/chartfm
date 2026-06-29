@@ -73,6 +73,8 @@ export interface Chart {
   weekLabel: string;
   dateRange: string;
   entries: ChartEntry[];
+  /** Total de faixas na parada (pode ser maior que `entries.length` em previews do feed). */
+  entryCount?: number;
   likes: number;
   comments: number;
   reposts: number;

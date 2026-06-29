@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
-import { scoreColor, scoreBg } from "@/lib/album-score";
+import { ScoreSquare } from "@/components/ui/ScoreSquare";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { AdSlot } from "@/components/ui/AdSlot";
 import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
@@ -190,9 +190,13 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
           : <div style={{ position: "absolute", inset: 0, background: `hsl(${Math.abs(album.title.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360},50%,60%)`, display: "grid", placeItems: "center", color: "white", fontSize: 48, fontWeight: 800 }}>{album.title[0]?.toUpperCase()}</div>
         }
         <div style={{ position: "absolute", bottom: 10, left: 10 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: album.reviewCount > 0 ? scoreColor(album.score) : "rgba(0,0,0,0.55)", color: "white", display: "grid", placeItems: "center", fontSize: 15, fontWeight: 800, fontVariantNumeric: "tabular-nums", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
-            {album.reviewCount > 0 ? album.score : "—"}
-          </div>
+          {album.reviewCount > 0 ? (
+            <ScoreSquare score={album.score} size={40} overlay />
+          ) : (
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(0,0,0,0.55)", color: "white", display: "grid", placeItems: "center", fontSize: 15, fontWeight: 800, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+              —
+            </div>
+          )}
         </div>
         {album.reviewCount > 0 && (
           <div style={{ position: "absolute", bottom: 12, right: 10, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", color: "white", padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600 }}>
@@ -235,16 +239,20 @@ function CriticsFMListRow({ album }: { album: CriticsFMAlbum }) {
           </div>
         </div>
         {/* Score badge */}
-        <div style={{
-          width: 40, height: 40, borderRadius: 9, flexShrink: 0,
-          background: album.reviewCount > 0 ? scoreBg(album.score) : "var(--fill-inset)",
-          color: album.reviewCount > 0 ? scoreColor(album.score) : "var(--text-disabled)",
-          display: "grid", placeItems: "center",
-          fontSize: 15, fontWeight: 800, fontVariantNumeric: "tabular-nums",
-          border: `1.5px solid ${album.reviewCount > 0 ? scoreColor(album.score) : "var(--text-disabled)"}30`,
-        }}>
-          {album.reviewCount > 0 ? album.score : "—"}
-        </div>
+        {album.reviewCount > 0 ? (
+          <ScoreSquare score={album.score} size={40} />
+        ) : (
+          <div style={{
+            width: 40, height: 40, borderRadius: 9, flexShrink: 0,
+            background: "var(--fill-inset)",
+            color: "var(--text-disabled)",
+            display: "grid", placeItems: "center",
+            fontSize: 15, fontWeight: 800, fontVariantNumeric: "tabular-nums",
+            border: "1.5px solid var(--text-disabled)30",
+          }}>
+            —
+          </div>
+        )}
       </div>
     </Link>
   );
@@ -412,15 +420,8 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
                       : a.title[0]?.toUpperCase()
                     }
                     {/* Score pip */}
-                    <div style={{
-                      position: "absolute", bottom: 7, left: 7,
-                      width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, borderRadius: isMobile ? 6 : 7,
-                      background: scoreColor(a.score), color: "white",
-                      display: "grid", placeItems: "center",
-                      fontSize: isMobile ? 10 : 12, fontWeight: 800,
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-                    }}>
-                      {a.score}
+                    <div style={{ position: "absolute", bottom: 7, left: 7 }}>
+                      <ScoreSquare score={a.score} size={isMobile ? 26 : 30} overlay />
                     </div>
                   </div>
                   {/* Info */}

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { recommendationDisplayTitle } from "@/lib/recommendations-feed";
 
 export const runtime = "nodejs";
 
@@ -75,6 +76,8 @@ export async function POST(
     select: {
       id: true,
       userId: true,
+      youtubeId: true,
+      ytTitle: true,
       song: { select: { title: true, exhibitionName: true } },
     },
   });
@@ -96,7 +99,7 @@ export async function POST(
   ]);
 
   if (rec.userId !== session.user.id) {
-    const title = rec.song.exhibitionName?.trim() || rec.song.title;
+    const title = recommendationDisplayTitle(rec);
     await createNotification({
       recipientId: rec.userId,
       actorId: session.user.id,

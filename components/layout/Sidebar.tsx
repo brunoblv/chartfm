@@ -1,17 +1,117 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic } from "lucide-react";
+import { Home, Search, Globe, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
+
+type SidebarParada = {
+  id: string;
+  name: string;
+  logo: string | null;
+};
+
+function ParadaLogoSquare({ name, logo }: { name: string; logo: string | null }) {
+  if (logo) {
+    return (
+      <img
+        src={logo}
+        alt=""
+        width={32}
+        height={32}
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 9,
+          objectFit: "cover",
+          flexShrink: 0,
+          boxShadow: "inset 0 0 0 0.5px rgba(0,0,0,0.08)",
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 9,
+        background: "linear-gradient(135deg, #FA243C, #FF8C69)",
+        display: "grid",
+        placeItems: "center",
+        fontSize: 13,
+        fontWeight: 800,
+        color: "#fff",
+        flexShrink: 0,
+      }}
+    >
+      {name.trim()[0]?.toUpperCase() ?? "P"}
+    </div>
+  );
+}
+
+function MyParadasList({
+  paradas,
+  activeParadaId,
+  onNavClick,
+}: {
+  paradas: SidebarParada[];
+  activeParadaId: string | null;
+  onNavClick: () => void;
+}) {
+  if (paradas.length === 0) return null;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "0 4px 8px" }}>
+      {paradas.map((p) => {
+        const active = activeParadaId === p.id;
+        return (
+          <Link
+            key={p.id}
+            href={`/create?paradaId=${encodeURIComponent(p.id)}`}
+            onClick={onNavClick}
+            title={p.name}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px",
+              borderRadius: 10,
+              textDecoration: "none",
+              color: active ? "var(--accent)" : "var(--text)",
+              background: active ? "var(--accent-tint)" : "transparent",
+              transition: "background 120ms",
+            }}
+          >
+            <ParadaLogoSquare name={p.name} logo={p.logo} />
+            <span
+              style={{
+                flex: 1,
+                minWidth: 0,
+                fontSize: 13,
+                fontWeight: active ? 700 : 600,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {p.name}
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -23,13 +123,7 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const authed = status === "authenticated" && !!session?.user?.handle;
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const profileHandle = authed ? session!.user.handle! : null;
   const isAdmin = authed && (session?.user?.role === "ADMIN" || session?.user?.role === "DEV");
-  const profilePath = profileHandle ? `/profile/${profileHandle}` : "/login";
-  const profileActive =
-    !!profileHandle &&
-    (pathname === `/profile/${profileHandle}` || pathname.startsWith(`/profile/${profileHandle}/`));
 
   const { t } = useTranslations();
   const displayName = authed ? (session!.user.name ?? t("common.user")) : "";
@@ -41,43 +135,6 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
   const handleNavClick = () => {
     if (isMobile && onClose) onClose();
   };
-
-  useEffect(() => {
-    if (!authed) {
-      setUnreadNotifications(0);
-      return;
-    }
-    if (pathname === "/notifications") {
-      setUnreadNotifications(0);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/notifications", { cache: "no-store" });
-        if (!res.ok || cancelled) return;
-        const rows = (await res.json()) as Array<{ read: boolean }>;
-        if (!cancelled) {
-          setUnreadNotifications(rows.filter((r) => !r.read).length);
-        }
-      } catch {
-        if (!cancelled) setUnreadNotifications(0);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authed, pathname]);
-
-  useEffect(() => {
-    if (!authed) return;
-    function onNotificationsRead() {
-      setUnreadNotifications(0);
-    }
-    window.addEventListener("notifications-read", onNotificationsRead);
-    return () => window.removeEventListener("notifications-read", onNotificationsRead);
-  }, [authed]);
 
   if (isMobile) {
     return (
@@ -118,9 +175,6 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
           </div>
           <SidebarContent
             pathname={pathname}
-            profilePath={profilePath}
-            profileActive={profileActive}
-            unreadNotifications={unreadNotifications}
             displayName={displayName}
             displayStreak={displayStreak}
             avatarUser={avatarUser}
@@ -158,9 +212,6 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
       </div>
       <SidebarContent
         pathname={pathname}
-        profilePath={profilePath}
-        profileActive={profileActive}
-        unreadNotifications={unreadNotifications}
         displayName={displayName}
         displayStreak={displayStreak}
         avatarUser={avatarUser}
@@ -176,9 +227,6 @@ export function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarPr
 
 function SidebarContent({
   pathname,
-  profilePath,
-  profileActive,
-  unreadNotifications,
   displayName,
   displayStreak,
   avatarUser,
@@ -189,9 +237,6 @@ function SidebarContent({
   t,
 }: {
   pathname: string;
-  profilePath: string;
-  profileActive: boolean;
-  unreadNotifications: number;
   displayName: string;
   displayStreak: number;
   avatarUser: { name: string; avatar: string };
@@ -202,6 +247,10 @@ function SidebarContent({
   t: (key: string) => string;
 }) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [myParadas, setMyParadas] = useState<SidebarParada[]>([]);
+  const searchParams = useSearchParams();
+  const activeParadaId =
+    pathname === "/create" ? searchParams.get("paradaId") : null;
   const [criticsfmMenuOpen, setCriticsfmMenuOpen] = useState(
     () => pathname === "/criticsfm" || pathname.startsWith("/criticsfm/"),
   );
@@ -212,10 +261,34 @@ function SidebarContent({
     }
   }, [pathname]);
 
+  useEffect(() => {
+    if (!authed) {
+      setMyParadas([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/user/paradas", { cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { paradas?: SidebarParada[] };
+        if (!cancelled) setMyParadas(data.paradas ?? []);
+      } catch {
+        if (!cancelled) setMyParadas([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authed, pathname]);
+
   const criticsfmSubLinks = [
     { href: "/criticsfm/clube", label: t("nav.criticsfmClube"), icon: Award },
     { href: "/criticsfm/lancamentos", label: t("nav.criticsfmNewAlbums"), icon: Disc3 },
   ];
+
+  const profileHref =
+    authed && session?.user?.handle ? `/profile/${session.user.handle}` : "/login";
 
   const NAV: { href: string; label: string; icon: React.ElementType; requiresAuth?: boolean; badge?: string }[] = [
     { href: "/", label: t("nav.home"), icon: Home },
@@ -224,7 +297,7 @@ function SidebarContent({
     { href: "/push", label: "Push", icon: Zap },
     { href: "/copa", label: "Copa ChartFM", icon: Flame },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
-    { href: "/notifications", label: t("nav.notifications"), icon: Bell, requiresAuth: true },
+    { href: profileHref, label: t("nav.profile"), icon: User, requiresAuth: true },
   ];
 
   const footerLinks = [
@@ -239,11 +312,12 @@ function SidebarContent({
   return (
     <>
       {NAV.map(({ href, label, icon: Icon, requiresAuth, badge }) => {
-        const active = pathname === href || (href === "/criticsfm" && pathname.startsWith("/criticsfm"));
+        const active =
+          pathname === href ||
+          (href === "/criticsfm" && pathname.startsWith("/criticsfm")) ||
+          (href.startsWith("/profile/") && (pathname === href || pathname.startsWith(`${href}/`)));
         const locked = requiresAuth && !authed;
-        const isNotifications = href === "/notifications";
         const isCriticsFM = href === "/criticsfm";
-        const showUnreadBadge = isNotifications && authed && unreadNotifications > 0;
         const link = (
           <Link
             key={href}
@@ -264,23 +338,7 @@ function SidebarContent({
               transition: "background 120ms",
             }}
           >
-            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-              <Icon size={20} />
-              {showUnreadBadge && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -4,
-                    right: -6,
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "var(--accent)",
-                    boxShadow: "0 0 0 2px var(--sidebar-bg)",
-                  }}
-                />
-              )}
-            </div>
+            <Icon size={20} />
             <span style={{ flex: 1 }}>{label}</span>
             {badge && !active && (
               <span
@@ -298,7 +356,6 @@ function SidebarContent({
                 {badge}
               </span>
             )}
-            {showUnreadBadge && <span style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />}
           </Link>
         );
 
@@ -385,96 +442,91 @@ function SidebarContent({
           );
         }
 
-        if (isNotifications && isAdmin) {
-          return (
-            <Fragment key={href}>
-              {link}
-              <div style={{ margin: "2px 0 4px" }}>
-                <button
-                  type="button"
-                  onClick={() => setAdminMenuOpen((o) => !o)}
-                  aria-expanded={adminMenuOpen}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "9px 10px",
-                    borderRadius: 8,
-                    border: "none",
-                    background: adminMenuOpen ? "var(--accent-tint)" : "transparent",
-                    color: "var(--text)",
-                    fontWeight: adminMenuOpen ? 600 : 500,
-                    fontSize: 15,
-                    letterSpacing: "-0.01em",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <Shield size={20} />
-                  <span style={{ flex: 1 }}>{t("nav.admin")}</span>
-                  <ChevronDown
-                    size={18}
-                    color="var(--text-muted)"
-                    style={{ transform: adminMenuOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms ease" }}
-                  />
-                </button>
-                {adminMenuOpen && (
-                  <div
-                    style={{
-                      marginLeft: 8,
-                      marginTop: 4,
-                      marginBottom: 6,
-                      padding: "8px 8px 10px",
-                      borderLeft: "2px solid var(--accent-tint)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
-                    <Link href="/admin/edicao-de-dados" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/edicao-de-dados")}>
-                      <Database size={14} />
-                      <span>{t("nav.adminDataEdit")}</span>
-                    </Link>
-                    <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
-                      <UserCog size={14} />
-                      <span>{t("nav.adminEditUsers")}</span>
-                    </Link>
-                    <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
-                      <Award size={14} />
-                      <span>{t("nav.adminClube")}</span>
-                    </Link>
-                    <Link href="/admin/copa" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/copa")}>
-                      <Flame size={14} />
-                      <span>Copa ChartFM</span>
-                    </Link>
-                    <Link href="/admin/push" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/push")}>
-                      <Zap size={14} />
-                      <span>Push</span>
-                    </Link>
-                    <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
-                      <Sparkles size={14} />
-                      <span>Lançamentos</span>
-                    </Link>
-                    <Link href="/admin/gerador-de-imagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/gerador-de-imagens")}>
-                      <ImagePlay size={14} />
-                      <span>Gerador de Imagens</span>
-                    </Link>
-                    {session?.user?.handle === MYTRL_OWNER_HANDLE && (
-                      <Link href="/admin/playlists-lastfm" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/playlists-lastfm")}>
-                        <ListMusic size={14} />
-                        <span>Playlists Last.fm</span>
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Fragment>
-          );
-        }
-
         return link;
       })}
+
+      {isAdmin && (
+        <div style={{ margin: "2px 0 4px" }}>
+          <button
+            type="button"
+            onClick={() => setAdminMenuOpen((o) => !o)}
+            aria-expanded={adminMenuOpen}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "9px 10px",
+              borderRadius: 8,
+              border: "none",
+              background: adminMenuOpen ? "var(--accent-tint)" : "transparent",
+              color: "var(--text)",
+              fontWeight: adminMenuOpen ? 600 : 500,
+              fontSize: 15,
+              letterSpacing: "-0.01em",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            <Shield size={20} />
+            <span style={{ flex: 1 }}>{t("nav.admin")}</span>
+            <ChevronDown
+              size={18}
+              color="var(--text-muted)"
+              style={{ transform: adminMenuOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 160ms ease" }}
+            />
+          </button>
+          {adminMenuOpen && (
+            <div
+              style={{
+                marginLeft: 8,
+                marginTop: 4,
+                marginBottom: 6,
+                padding: "8px 8px 10px",
+                borderLeft: "2px solid var(--accent-tint)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <Link href="/admin/edicao-de-dados" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/edicao-de-dados")}>
+                <Database size={14} />
+                <span>{t("nav.adminDataEdit")}</span>
+              </Link>
+              <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
+                <UserCog size={14} />
+                <span>{t("nav.adminEditUsers")}</span>
+              </Link>
+              <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
+                <Award size={14} />
+                <span>{t("nav.adminClube")}</span>
+              </Link>
+              <Link href="/admin/copa" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/copa")}>
+                <Flame size={14} />
+                <span>Copa ChartFM</span>
+              </Link>
+              <Link href="/admin/push" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/push")}>
+                <Zap size={14} />
+                <span>Push</span>
+              </Link>
+              <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
+                <Sparkles size={14} />
+                <span>Lançamentos</span>
+              </Link>
+              <Link href="/admin/gerador-de-imagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/gerador-de-imagens")}>
+                <ImagePlay size={14} />
+                <span>Gerador de Imagens</span>
+              </Link>
+              {session?.user?.handle === MYTRL_OWNER_HANDLE && (
+                <Link href="/admin/playlists-lastfm" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/playlists-lastfm")}>
+                  <ListMusic size={14} />
+                  <span>Playlists Last.fm</span>
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ padding: "14px 10px 6px 10px" }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>
@@ -482,52 +534,18 @@ function SidebarContent({
         </div>
       </div>
 
-      <Link
-        href={authed ? "/create" : "/login"}
-        onClick={onNavClick}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "9px 10px",
-          borderRadius: 8,
-          textDecoration: "none",
-          color: authed ? "var(--text)" : "var(--text-disabled)",
-          fontWeight: 500,
-          fontSize: 15,
-          letterSpacing: "-0.01em",
-        }}
-      >
-        <Plus size={20} />
-        {t("nav.newChart")}
-      </Link>
-
-      <Link
-        href={profilePath}
-        onClick={onNavClick}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "9px 10px",
-          borderRadius: 8,
-          textDecoration: "none",
-          color: !authed ? "var(--text-disabled)" : profileActive ? "var(--accent)" : "var(--text)",
-          background: profileActive ? "var(--accent-tint)" : "transparent",
-          fontWeight: profileActive ? 600 : 500,
-          fontSize: 15,
-          letterSpacing: "-0.01em",
-        }}
-      >
-        <User size={20} />
-        {t("nav.myProfile")}
-      </Link>
+      {authed && (
+        <MyParadasList
+          paradas={myParadas}
+          activeParadaId={activeParadaId}
+          onNavClick={onNavClick}
+        />
+      )}
 
       <div style={{ flex: 1 }} />
 
-      <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ padding: "8px 10px" }}>
         <LanguageSwitcher />
-        <ThemeToggle />
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "6px 10px 10px" }}>

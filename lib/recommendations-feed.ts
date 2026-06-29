@@ -2,6 +2,23 @@ import { prisma } from "@/lib/prisma";
 import { formatRelativeTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/config";
 
+export type RecommendationSong = {
+  id: string;
+  title: string;
+  artist: string;
+  album: string | null;
+  spotifyId: string | null;
+  artistSpotifyId: string | null;
+  artistRefId: number | null;
+  coverUrl: string | null;
+};
+
+export type RecommendationYoutube = {
+  id: string;
+  title: string | null;
+  channel: string | null;
+};
+
 export type RecommendationItem = {
   id: string;
   text: string | null;
@@ -10,6 +27,7 @@ export type RecommendationItem = {
   liked: boolean;
   postedAgo: string;
   createdAt: string;
+  kind: "song" | "youtube";
   user: {
     id: string;
     handle: string;
@@ -18,17 +36,41 @@ export type RecommendationItem = {
     imageUrl: string | null;
     verified: boolean;
   };
-  song: {
-    id: string;
-    title: string;
-    artist: string;
-    album: string | null;
-    spotifyId: string | null;
-    artistSpotifyId: string | null;
-    artistRefId: number | null;
-    coverUrl: string | null;
-  };
+  song: RecommendationSong | null;
+  youtube: RecommendationYoutube | null;
 };
+
+export function recommendationDisplayTitle(rec: {
+  song: { title: string; exhibitionName: string | null } | null;
+  youtubeId: string | null;
+  ytTitle: string | null;
+}): string {
+  if (rec.youtubeId) return rec.ytTitle?.trim() || "Vídeo do YouTube";
+  return rec.song?.exhibitionName?.trim() || rec.song?.title || "Música";
+}
+
+function mapSong(song: {
+  id: string;
+  title: string;
+  exhibitionName: string | null;
+  artist: string;
+  album: string | null;
+  spotifyId: string | null;
+  artistSpotifyId: string | null;
+  artistRef: { id: number; name: string; exhibitionName: string | null } | null;
+  albumRef: { coverUrl: string | null } | null;
+}): RecommendationSong {
+  return {
+    id: song.id,
+    title: song.exhibitionName?.trim() || song.title,
+    artist: song.artistRef?.exhibitionName?.trim() || song.artistRef?.name?.trim() || song.artist,
+    album: song.album ?? null,
+    spotifyId: song.spotifyId ?? null,
+    artistSpotifyId: song.artistSpotifyId ?? null,
+    artistRefId: song.artistRef?.id ?? null,
+    coverUrl: song.albumRef?.coverUrl?.trim() || null,
+  };
+}
 
 export async function getRecommendationsFeed(
   viewerId: string | null,
@@ -85,6 +127,7 @@ export async function getRecommendationsFeed(
     liked: likedSet.has(r.id),
     postedAgo: formatRelativeTime(locale, r.createdAt),
     createdAt: r.createdAt.toISOString(),
+    kind: r.youtubeId ? ("youtube" as const) : ("song" as const),
     user: {
       id: r.user.id,
       handle: r.user.handle,
@@ -93,15 +136,13 @@ export async function getRecommendationsFeed(
       imageUrl: r.user.image ?? null,
       verified: r.user.verified,
     },
-    song: {
-      id: r.song.id,
-      title: r.song.exhibitionName?.trim() || r.song.title,
-      artist: r.song.artistRef?.exhibitionName?.trim() || r.song.artistRef?.name?.trim() || r.song.artist,
-      album: r.song.album ?? null,
-      spotifyId: r.song.spotifyId ?? null,
-      artistSpotifyId: r.song.artistSpotifyId ?? null,
-      artistRefId: r.song.artistRef?.id ?? null,
-      coverUrl: r.song.albumRef?.coverUrl?.trim() || null,
-    },
+    song: r.song ? mapSong(r.song) : null,
+    youtube: r.youtubeId
+      ? {
+          id: r.youtubeId,
+          title: r.ytTitle,
+          channel: r.ytChannel,
+        }
+      : null,
   }));
 }

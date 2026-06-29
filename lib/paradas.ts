@@ -17,6 +17,18 @@ export type ParadaRow = {
   cadence: ParadaCadence;
 };
 
+/** Charts publicados da parada principal de cada usuário (elegíveis ao Global 100). */
+export const publishedPrimaryParadaChartWhere = {
+  isPublished: true,
+  parada: { isPrimary: true },
+} as const;
+
+export function isPrimaryParadaChartEntry(entry: {
+  chart: { parada: { isPrimary: boolean } };
+}): boolean {
+  return entry.chart.parada.isPrimary;
+}
+
 /** Garante parada principal (migra `User.paradaNome` / `genres` / `paradaLogo` se necessário). */
 export async function ensureUserParadas(db: Db, userId: string): Promise<ParadaRow[]> {
   const existing = await db.parada.findMany({

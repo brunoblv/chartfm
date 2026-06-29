@@ -50,9 +50,10 @@ export const messagesPtBR = {
     dark: "Escuro",
   },
   search: {
-    placeholder: "Buscar músicas, artistas, usuários",
+    placeholder: "Buscar músicas, artistas, álbuns, usuários",
     noResults: 'Nenhum resultado para "{query}"',
     artists: "Artistas",
+    albums: "Álbuns",
     songs: "Músicas",
     users: "Usuários",
   },

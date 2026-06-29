@@ -14,9 +14,10 @@ interface ShellProps {
   headerRight?: React.ReactNode;
   noPadding?: boolean;
   hideGlobalFooter?: boolean;
+  hideTopBar?: boolean;
 }
 
-export function Shell({ children, title, subtitle, headerRight, noPadding, hideGlobalFooter }: ShellProps) {
+export function Shell({ children, title, subtitle, headerRight, noPadding, hideGlobalFooter, hideTopBar }: ShellProps) {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -35,7 +36,9 @@ export function Shell({ children, title, subtitle, headerRight, noPadding, hideG
         <Sidebar isMobile isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       )}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <TopBar isMobile={isMobile} onMenuToggle={isMobile ? () => setSidebarOpen((o) => !o) : undefined} />
+        {!hideTopBar && (
+          <TopBar isMobile={isMobile} onMenuToggle={isMobile ? () => setSidebarOpen((o) => !o) : undefined} />
+        )}
         <main style={mainPadding}>
           {!noPadding && title && (
             <header style={{ marginBottom: 28, display: "flex", alignItems: "flex-end", gap: 24 }}>

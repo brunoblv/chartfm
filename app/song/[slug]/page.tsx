@@ -11,10 +11,10 @@ import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
 import { AdSlot } from "@/components/ui/AdSlot";
 import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
-import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
-import { globalStatsForSingleSong, songKey } from "@/lib/chart-page-common";
+import { loadSongGlobalStatsFromSnapshots, lookupSongGlobal100Stats } from "@/lib/global-snapshot";
 import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
 import { buildSongParadaAppearanceGroups } from "@/lib/song-parada-appearances";
+import { isPrimaryParadaChartEntry } from "@/lib/paradas";
 import { songEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
@@ -148,9 +148,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   let paletteB = first?.coverPaletteB ?? "#FFE66D";
   let coverSeed = first?.coverSeed ?? 0;
   let hasChartPresence = entries.length > 0;
-  let chartEntries = entries.length;
+  let chartEntries = 0;
   let topUsers: SongPageSnapshotPayload["topUsers"] = [];
   let globalStats: SongPageSnapshotPayload["globalStats"];
+
+  const primaryEntries = entries.filter(isPrimaryParadaChartEntry);
 
   if (cachedSnapshot) {
     const p = cachedSnapshot.payload;
@@ -165,12 +167,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     paletteA = p.paletteA;
     paletteB = p.paletteB;
     coverSeed = p.coverSeed;
-    hasChartPresence = p.hasChartPresence;
-    chartEntries = p.chartEntries;
-    topUsers = p.topUsers;
-    globalStats = p.globalStats;
-  } else {
-    const totalPoints = entries.reduce(
+    hasChartPresence = entries.length > 0;
+  }
+
+  {
+    const totalPoints = primaryEntries.reduce(
       (sum, e) =>
         sum +
         resolvedChartEntryPoints({
@@ -184,9 +185,9 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         }),
       0,
     );
-    const users = new Set(entries.map((e) => e.chart.userId)).size;
+    const users = new Set(primaryEntries.map((e) => e.chart.userId)).size;
     const topUsersMap = new Map<string, { points: number }>();
-    for (const e of entries) {
+    for (const e of primaryEntries) {
       const pts = resolvedChartEntryPoints({
         position: e.position,
         points: e.points,
@@ -218,13 +219,27 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
       .sort((a, b) => b.points - a.points)
       .slice(0, 5);
 
-    const dailyStats = await getDailyChartSongStatsForPages();
-    const gs = globalStatsForSingleSong(songKey(title, artist), dailyStats.weeklyBuckets);
+    chartEntries = primaryEntries.length;
     globalStats = {
       totalPoints,
       uniqueUsers: users,
+      weeksTop100: 0,
+      number1s: 0,
+      peak: 0,
+    };
+  }
+
+  {
+    const globalRank = await loadSongGlobalStatsFromSnapshots();
+    const gs = lookupSongGlobal100Stats(
+      { spotifyId: spotifyId ?? songRow.spotifyId, title, artist },
+      globalRank,
+    );
+    const base = globalStats ?? { totalPoints: 0, uniqueUsers: 0, weeksTop100: 0, number1s: 0, peak: 0 };
+    globalStats = {
+      ...base,
       weeksTop100: gs.weeks,
-      number1s: gs.number1s,
+      number1s: gs.numberOnes,
       peak: gs.peak,
     };
   }
@@ -396,7 +411,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           </div>
         )}
         <div style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
-          Entradas em paradas de usuários: {chartEntries}
+          Entradas em paradas principais: {chartEntries}
         </div>
       </div>
     </Shell>

@@ -850,13 +850,45 @@ export default function CreatePage() {
 
   const chartList = (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden", position: "relative" }}>
-      <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 16 }}>
+      <div
+        style={{
+          padding: isMobile ? "16px" : "20px 24px",
+          borderBottom: "1px solid var(--divider)",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "stretch" : "center",
+          gap: isMobile ? 12 : 16,
+        }}
+      >
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{tituloParadaPeriodo}</div>
+          {isMobile ? (
+            <>
+              <div
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.35,
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {nomeParadaCard}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>
+                {activeParadaCadence === "daily"
+                  ? buildDayLabelFromDate(weekDateObj)
+                  : `Semana ${semanaAtual} · ${anoSemanaIso}`}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{tituloParadaPeriodo}</div>
+          )}
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             {entries.length === 0 ? "Nenhuma música ainda" : `${entries.length} música${entries.length === 1 ? "" : "s"}`}
           </div>
         </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
         {session?.user && (
           <>
             <button
@@ -949,6 +981,7 @@ export default function CreatePage() {
             Limpar lista
           </button>
         )}
+        </div>
       </div>
 
       {isMobile && entries.length > 0 && (
@@ -1054,7 +1087,7 @@ export default function CreatePage() {
         )}
         {entries.length === 0 && (
           <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-            {isMobile ? "Use a busca de músicas re adicione à parada" : "Adicione músicas da busca ao lado →"}
+            {isMobile ? "Use a busca de músicas e adicione à parada" : "Adicione músicas da busca ao lado →"}
           </div>
         )}
       </div>
@@ -1198,7 +1231,7 @@ export default function CreatePage() {
                 <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Last.fm</span>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                {describeLastfmImportPeriod(weekDate)}
+                {describeLastfmImportPeriod(weekDate, session?.user?.handle)}
               </p>
             </div>
 
@@ -1264,7 +1297,7 @@ export default function CreatePage() {
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {describeLastfmImportOrder(weekDate)}
+                {describeLastfmImportOrder(weekDate, session?.user?.handle)}
               </div>
             </div>
 

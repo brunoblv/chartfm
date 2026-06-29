@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const rawQ = req.nextUrl.searchParams.get("q")?.slice(0, 100) ?? "";
   const q = rawQ.replace(/\s+/g, " ").trim();
   if (q.length < 2) {
-    return NextResponse.json({ songs: [], artists: [], users: [] }, { headers: NO_CACHE });
+    return NextResponse.json({ songs: [], artists: [], albums: [], users: [] }, { headers: NO_CACHE });
   }
   const terms = (q.match(/[\p{L}\p{N}]+/gu) ?? [])
     .map((t) => t.trim())
@@ -32,8 +32,14 @@ export async function GET(req: NextRequest) {
       { handle: { contains: term, mode: "insensitive" as const } },
     ],
   }));
+  const albumTermFilters = terms.map((term) => ({
+    OR: [
+      { title: { contains: term, mode: "insensitive" as const } },
+      { artist: { name: { contains: term, mode: "insensitive" as const } } },
+    ],
+  }));
 
-  const [songs, artists, users] = await Promise.all([
+  const [songs, artists, albums, users] = await Promise.all([
     prisma.song.findMany({
       where: {
         OR: [
@@ -66,6 +72,24 @@ export async function GET(req: NextRequest) {
       take: 4,
       orderBy: { name: "asc" },
     }),
+    prisma.album.findMany({
+      where: {
+        OR: [
+          { title: { contains: q, mode: "insensitive" as const } },
+          { artist: { name: { contains: q, mode: "insensitive" as const } } },
+          ...(albumTermFilters.length > 0 ? [{ AND: albumTermFilters }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        exhibitionName: true,
+        coverUrl: true,
+        artist: { select: { id: true, name: true } },
+      },
+      take: 4,
+      orderBy: { title: "asc" },
+    }),
     prisma.user.findMany({
       where: {
         OR: [
@@ -92,6 +116,13 @@ export async function GET(req: NextRequest) {
         coverUrl: s.albumRef?.coverUrl ?? null,
       })),
       artists,
+      albums: albums.map((a) => ({
+        id: a.id,
+        title: a.exhibitionName?.trim() || a.title,
+        artist: a.artist.name,
+        artistId: a.artist.id,
+        coverUrl: a.coverUrl,
+      })),
       users,
     },
     { headers: NO_CACHE },

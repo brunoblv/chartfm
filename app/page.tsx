@@ -5,7 +5,6 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { HomeGrid } from "@/components/layout/HomeGrid";
-import { YourWeekCard } from "@/components/home/YourWeekCard";
 import { FriendsRow, GlobalTeaser, SuggestedUsers, TrendingArtists } from "@/components/home/HomeSidebar";
 import { formatRelativeTime } from "@/lib/i18n/format";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -20,8 +19,9 @@ import { LandingPage } from "@/components/landing/LandingPage";
 import { LandingEditorialSection } from "@/components/landing/LandingEditorialSection";
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
-import { TimelineTabs, type ReviewItem } from "@/components/home/TimelineTabs";
+import { TimelineTabs } from "@/components/home/TimelineTabs";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
+import { mergeHomeFeed, filterFollowingRecommendations } from "@/lib/home-mixed-feed";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import type { UserWithCharts } from "@/lib/types";
 
@@ -33,13 +33,6 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: "/" },
   };
 }
-
-function daysUntilSundayBRT(): number {
-  const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  const day = nowBRT.getUTCDay();
-  return day === 0 ? 0 : 7 - day;
-}
-
 
 type PublisherRow = {
   userId: string;
@@ -77,7 +70,7 @@ async function getPublishedThisWeek(
   });
 
   const seen = new Set<string>();
-  return sorted.reduce<PublisherRow[]>((acc, c) => {
+  const publishers = sorted.reduce<PublisherRow[]>((acc, c) => {
     if (seen.has(c.user.id)) return acc;
     seen.add(c.user.id);
     acc.push({
@@ -91,6 +84,8 @@ async function getPublishedThisWeek(
     });
     return acc;
   }, []);
+
+  return publishers.slice(0, 15);
 }
 
 async function getTimelineFeed(
@@ -171,9 +166,9 @@ async function getTimelineFeed(
   const friendsRows = visibleRows
     .filter((r) => followingIds.has(r.user.id) || r.user.id === userId)
     .sort(sortByPublished)
-    .slice(0, 15);
+    .slice(0, 30);
 
-  const allRows = visibleRows.sort(sortByPublished).slice(0, 15);
+  const allRows = visibleRows.sort(sortByPublished).slice(0, 40);
 
   const combined = [...friendsRows, ...allRows];
 
@@ -264,6 +259,7 @@ function mapChartRow(
       })),
     },
     postedAgo: formatRelativeTime(locale, c.publishedAt),
+    createdAt: c.publishedAt.toISOString(),
     isFollowing: followingIds.has(c.user.id),
     isLiked: likedSet.has(c.id),
   };
@@ -302,9 +298,6 @@ export default async function HomePage() {
     );
   }
 
-  let userStreak = 0;
-  let userParadaNome: string | null = null;
-  let thisWeekChartId: string | null = null;
   let userGenres: string[] = [];
   let followingIds = new Set<string>();
 
@@ -313,22 +306,11 @@ export default async function HomePage() {
   const rankingWeek = getRankingWeekReference();
 
   if (session?.user?.id) {
-    const [user, thisWeekChart, followRows] = await Promise.all([
+    const [user, followRows] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { streak: true, paradaNome: true, genres: true },
+        select: { genres: true },
       }),
-      (async () => {
-        const primary = await prisma.parada.findFirst({
-          where: { userId: session.user.id, isPrimary: true },
-          select: { id: true },
-        });
-        if (!primary) return null;
-        return prisma.chart.findUnique({
-          where: { paradaId_weekIndex: { paradaId: primary.id, weekIndex: currentWeekIdx } },
-          select: { id: true },
-        });
-      })(),
       prisma.userFollow.findMany({
         where: { followerId: session.user.id },
         select: { followingId: true },
@@ -337,16 +319,12 @@ export default async function HomePage() {
 
     if (user && !user.genres?.length) redirect("/onboarding");
 
-    userStreak = user?.streak ?? 0;
-    userParadaNome = user?.paradaNome ?? null;
     userGenres = user?.genres ?? [];
-    thisWeekChartId = thisWeekChart?.id ?? null;
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, recommendationsFeed] =
+  const [trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed] =
     await Promise.all([
-      Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
       getSuggestedUsers(session.user.id, userGenres, followingIds, 3),
@@ -354,6 +332,12 @@ export default async function HomePage() {
       getTimelineFeed(session.user.id, session.user.handle, currentWeekIdx, followingIds, locale),
       getPublishedThisWeek(session.user.id, session.user.handle, followingIds),
       getReviewsFeed(session.user.id, locale),
+      getReviewsFeed(session.user.id, locale, { excludeSelf: false, limit: 25 }),
+      getReviewsFeed(session.user.id, locale, {
+        onlyUserIds: [...followingIds, session.user.id],
+        excludeSelf: false,
+        limit: 20,
+      }),
       getRecommendationsFeed(session.user.id, locale).catch((err) => {
         console.error("[home] getRecommendationsFeed", err);
         return [] as Awaited<ReturnType<typeof getRecommendationsFeed>>;
@@ -361,13 +345,24 @@ export default async function HomePage() {
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
 
+  const forYouFeed = mergeHomeFeed(allFeed, reviewsForYou, recommendationsFeed, 30);
+  const followingFeed = mergeHomeFeed(
+    friendsFeed,
+    followingReviews,
+    filterFollowingRecommendations(recommendationsFeed, followingIds, session.user.id),
+    30,
+  );
+
   const feed = (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <YourWeekCard streak={userStreak} daysLeft={daysLeft} paradaNome={userParadaNome} thisWeekChartId={thisWeekChartId} />
-
       {publishedToday.length > 0 && <FriendsRow publishers={publishedToday} />}
 
-      <TimelineTabs friendsFeed={friendsFeed} allFeed={allFeed} reviewsFeed={reviewsFeed} recommendationsFeed={recommendationsFeed} />
+      <TimelineTabs
+        forYouFeed={forYouFeed}
+        followingFeed={followingFeed}
+        reviewsFeed={reviewsFeed}
+        recommendationsFeed={recommendationsFeed}
+      />
     </div>
   );
 
@@ -524,15 +519,27 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
   }));
 }
 
-async function getReviewsFeed(userId: string, locale: Awaited<ReturnType<typeof getServerLocale>>): Promise<ReviewItem[]> {
+async function getReviewsFeed(
+  userId: string,
+  locale: Awaited<ReturnType<typeof getServerLocale>>,
+  options?: {
+    onlyUserIds?: string[];
+    excludeSelf?: boolean;
+    limit?: number;
+  },
+) {
   const rows = await prisma.albumReview.findMany({
-    where: { userId: { not: userId } },
+    where: {
+      ...(options?.onlyUserIds?.length ? { userId: { in: options.onlyUserIds } } : {}),
+      ...(options?.excludeSelf !== false ? { userId: { not: userId } } : {}),
+    },
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: options?.limit ?? 20,
     select: {
       id: true,
       rating: true,
       body: true,
+      helpful: true,
       createdAt: true,
       user: {
         select: {
@@ -562,7 +569,9 @@ async function getReviewsFeed(userId: string, locale: Awaited<ReturnType<typeof 
     id: r.id,
     rating: r.rating,
     body: r.body,
+    helpful: r.helpful,
     postedAgo: formatRelativeTime(locale, r.createdAt),
+    createdAt: r.createdAt.toISOString(),
     user: {
       id: r.user.id,
       handle: r.user.handle,

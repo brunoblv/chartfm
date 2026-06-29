@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { VersionTagType } from "@/lib/clean-version-tag";
 
 type Candidate = {
   id: string;
@@ -19,7 +20,13 @@ type PreviewResponse = {
   conflicts: number;
 };
 
-export function CleanRemasterButton() {
+type Props = {
+  type: VersionTagType;
+  label: string;
+  description: string;
+};
+
+export function CleanVersionTagButton({ type, label, description }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<PreviewResponse | null>(null);
@@ -37,7 +44,7 @@ export function CleanRemasterButton() {
       const res = await fetch("/api/admin/music/clean-versions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preview: true }),
+        body: JSON.stringify({ preview: true, type }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -68,7 +75,7 @@ export function CleanRemasterButton() {
       const res = await fetch("/api/admin/music/clean-versions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ type }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -90,7 +97,7 @@ export function CleanRemasterButton() {
   return (
     <>
       <button onClick={openModal} style={triggerBtnStyle}>
-        Limpar tags de Remaster
+        Limpar {label}
       </button>
 
       {open && (
@@ -98,10 +105,8 @@ export function CleanRemasterButton() {
           <div style={modalStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1D1D1F" }}>Limpar tags de Remaster</div>
-                <div style={{ fontSize: 13, color: "#6B6B70", marginTop: 3 }}>
-                  Remove trechos como “- 2015 Remaster”, “(Remastered)”, etc. dos títulos.
-                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1D1D1F" }}>Limpar tags de {label}</div>
+                <div style={{ fontSize: 13, color: "#6B6B70", marginTop: 3 }}>{description}</div>
               </div>
               <button onClick={close} style={closeBtnStyle}>✕</button>
             </div>
@@ -149,7 +154,7 @@ export function CleanRemasterButton() {
                 <div style={listStyle}>
                   {data.preview.length === 0 && (
                     <div style={{ padding: 16, color: "#86868B", fontSize: 14 }}>
-                      Nenhuma música com tag de remaster encontrada.
+                      Nenhuma música com tag de {label.toLowerCase()} encontrada.
                     </div>
                   )}
                   {data.preview.map((c) => (

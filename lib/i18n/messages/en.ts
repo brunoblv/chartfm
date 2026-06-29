@@ -50,9 +50,10 @@ export const messagesEn = {
     dark: "Dark",
   },
   search: {
-    placeholder: "Search songs, artists, users",
+    placeholder: "Search songs, artists, albums, users",
     noResults: 'No results for "{query}"',
     artists: "Artists",
+    albums: "Albums",
     songs: "Songs",
     users: "Users",
   },

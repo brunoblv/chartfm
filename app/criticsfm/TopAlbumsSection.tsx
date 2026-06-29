@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
-import { scoreColor } from "@/lib/album-score";
+import { ScoreSquare } from "@/components/ui/ScoreSquare";
 
 function albumHue(title: string): number {
   return Math.abs(title.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
@@ -10,7 +10,6 @@ function albumHue(title: string): number {
 
 function TopAlbumCarouselCard({ album }: { album: CriticsFMAlbum }) {
   const hue = albumHue(album.title);
-  const sc = scoreColor(album.score);
 
   return (
     <Link
@@ -52,25 +51,8 @@ function TopAlbumCarouselCard({ album }: { album: CriticsFMAlbum }) {
             album.title[0]?.toUpperCase()
           )}
 
-          <div
-            style={{
-              position: "absolute",
-              bottom: 8,
-              left: 8,
-              width: 30,
-              height: 30,
-              borderRadius: 7,
-              background: sc,
-              color: "white",
-              display: "grid",
-              placeItems: "center",
-              fontSize: 12,
-              fontWeight: 800,
-              fontVariantNumeric: "tabular-nums",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.28)",
-            }}
-          >
-            {album.score}
+          <div style={{ position: "absolute", bottom: 8, left: 8 }}>
+            <ScoreSquare score={album.score} size={30} overlay />
           </div>
         </div>
 

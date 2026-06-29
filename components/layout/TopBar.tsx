@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
-import { Bell, X } from "lucide-react";
+import { X } from "lucide-react";
 import { SearchBar } from "./SearchBar";
+import { NotificationBell } from "./NotificationBell";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
@@ -23,7 +24,6 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
   const { status } = useSession();
   const authed = status === "authenticated";
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { t } = useTranslations();
   const themeLabel: Record<Theme, string> = {
@@ -51,13 +51,22 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
         }}
       >
         <div style={{ padding: "12px 16px 10px", display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Hamburger — abre sidebar mobile */}
           {onMenuToggle && (
             <button
               type="button"
               onClick={onMenuToggle}
               aria-label="Abrir menu"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text)", flexShrink: 0 }}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 4,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text)",
+                flexShrink: 0,
+              }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="3" y1="7" x2="21" y2="7" />
@@ -67,7 +76,6 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
             </button>
           )}
 
-          {/* Logo */}
           <ChartFMLogo size={28} />
 
           <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--text)" }}>
@@ -76,33 +84,49 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
 
           <div style={{ flex: 1 }} />
 
-          {/* Theme toggle */}
           <button
+            type="button"
             onClick={cycleTheme}
             title={themeLabel[theme]}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "var(--text)", fontSize: 18, lineHeight: 1 }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 4,
+              display: "flex",
+              alignItems: "center",
+              color: "var(--text)",
+              fontSize: 18,
+              lineHeight: 1,
+            }}
           >
             {THEME_ICON[theme]}
           </button>
 
-          {/* Search toggle */}
           <button
+            type="button"
             onClick={() => setMobileSearchOpen((o) => !o)}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", alignItems: "center", color: "var(--text)" }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 4,
+              display: "flex",
+              alignItems: "center",
+              color: "var(--text)",
+            }}
           >
-            {mobileSearchOpen
-              ? <X size={20} />
-              : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            }
+            {mobileSearchOpen ? (
+              <X size={20} />
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+            )}
           </button>
 
-          {/* Notification bell */}
-          <Link
-            href={authed ? "/notifications" : "/login"}
-            style={{ position: "relative", display: "flex", alignItems: "center", color: "var(--text)", textDecoration: "none", padding: 4 }}
-          >
-            <Bell size={20} strokeWidth={1.8} />
-          </Link>
+          <NotificationBell size={20} />
         </div>
 
         {mobileSearchOpen && (
@@ -139,25 +163,24 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
         <Link
           href="/login"
           style={{
-            color: "var(--text)", textDecoration: "none",
-            padding: "8px 14px", borderRadius: 8,
-            fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em",
-            whiteSpace: "nowrap", border: "1px solid var(--divider-strong)",
+            color: "var(--text)",
+            textDecoration: "none",
+            padding: "8px 14px",
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            border: "1px solid var(--divider-strong)",
           }}
         >
           {t("nav.signIn")}
         </Link>
       )}
-      <Link
-        href="/create"
-        style={{
-          background: "var(--btn-dark-bg)", color: "var(--btn-dark-fg)", textDecoration: "none",
-          padding: "8px 14px", borderRadius: 8,
-          fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap",
-        }}
-      >
-        {t("nav.newChart")}
-      </Link>
+      <div style={{ width: 220, flexShrink: 0 }}>
+        <ThemeToggle />
+      </div>
+      <NotificationBell size={20} />
     </div>
   );
 }

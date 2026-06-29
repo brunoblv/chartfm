@@ -2,11 +2,13 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { COVER_PALETTES } from "@/lib/data";
 import {
-  globalStatsForSongKeys,
-  pointsForPosition,
-  songKey,
-} from "@/lib/chart-page-common";
-import type { DailyChartSongStatsData } from "@/lib/daily-chart-song-stats";
+  loadLatestGlobalWeeklySongPositions,
+  loadSongGlobalStatsFromSnapshots,
+  resolveSongGlobal100Stats,
+  type HistoricalStat,
+} from "@/lib/global-snapshot";
+import { pointsForPosition, songKey } from "@/lib/chart-page-common";
+import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
 import { parseArtistSlug } from "@/lib/music-routes";
 import { getSpotifyArtistById } from "@/lib/spotify-server";
 import type {
@@ -41,7 +43,8 @@ function hashSeed(s: string): number {
 
 export async function computeArtistPageSnapshot(
   nameParam: string,
-  dailyStats: DailyChartSongStatsData,
+  songGlobalStats?: Map<string, HistoricalStat>,
+  currentWeekPositions?: Map<string, number>,
 ): Promise<ArtistPageSnapshotPayload | null> {
   const parsed = parseArtistSlug(nameParam);
   const artistRef = await prisma.artist.findFirst({
@@ -97,7 +100,7 @@ export async function computeArtistPageSnapshot(
   const hasArtistIdentity = Boolean(artistRef ?? spotifyProfile);
 
   const allEntries = await prisma.chartEntry.findMany({
-    where: { chart: { isPublished: true }, OR: entryOrFilters },
+    where: { chart: publishedPrimaryParadaChartWhere, OR: entryOrFilters },
     select: {
       position: true,
       points: true,
@@ -198,23 +201,24 @@ export async function computeArtistPageSnapshot(
     songsMap.set(key, cur);
   }
 
-  const artistSongKeys = new Set(songsMap.keys());
-  for (const s of allRegisteredSongs) {
-    artistSongKeys.add(songKey(s.title, s.artist));
-  }
-  const globalStatsBySong = globalStatsForSongKeys(
-    artistSongKeys,
-    dailyStats.weeklyBuckets,
-    dailyStats.currentWeekIdx,
-  );
+  const globalRank = songGlobalStats ?? (await loadSongGlobalStatsFromSnapshots());
+  const latestPositions = currentWeekPositions ?? (await loadLatestGlobalWeeklySongPositions());
 
   const mergedSongsById = new Map<string, ArtistSongSnapshot>();
   const registeredSongIds = new Set(allRegisteredSongs.map((s) => s.id));
 
+  function globalStatsFor(song: { spotifyId: string | null; title: string; artist: string }) {
+    return resolveSongGlobal100Stats(
+      { spotifyId: song.spotifyId, title: song.title, artist: song.artist },
+      globalRank,
+      latestPositions,
+    );
+  }
+
   for (const db of allRegisteredSongs) {
     const key = songKey(db.title, db.artist);
     const fromChart = songsMap.get(key);
-    const gs = globalStatsBySong.get(key)!;
+    const gs = globalStatsFor({ spotifyId: db.spotifyId, title: db.title, artist: db.artist });
     const manual = db.albumRef?.coverUrl?.trim() || null;
     const row: ArtistSongSnapshot = fromChart
       ? {
@@ -227,7 +231,7 @@ export async function computeArtistPageSnapshot(
           albumRefId: db.albumRef?.id ?? fromChart.albumRefId,
           cover: manual ? { ...fromChart.cover, imageUrl: manual } : fromChart.cover,
           weeks: gs.weeks,
-          peak: gs.peak === 9999 ? 0 : gs.peak,
+          peak: gs.peak,
           number1s: gs.number1s,
           currentWeekPos: gs.currentWeekPos,
         }
@@ -246,7 +250,7 @@ export async function computeArtistPageSnapshot(
           ),
           cover: catalogSongCover(db.id, manual),
           weeks: gs.weeks,
-          peak: gs.peak === 9999 ? 0 : gs.peak,
+          peak: gs.peak,
           number1s: gs.number1s,
           currentWeekPos: gs.currentWeekPos,
         };
@@ -255,11 +259,11 @@ export async function computeArtistPageSnapshot(
 
   for (const row of songsMap.values()) {
     if (registeredSongIds.has(row.songId)) continue;
-    const gs = globalStatsBySong.get(row.key)!;
+    const gs = globalStatsFor({ spotifyId: row.spotifyId, title: row.title, artist: row.dbArtist });
     mergedSongsById.set(row.songId, {
       ...row,
       weeks: gs.weeks,
-      peak: gs.peak === 9999 ? 0 : gs.peak,
+      peak: gs.peak,
       number1s: gs.number1s,
       currentWeekPos: gs.currentWeekPos,
     });
@@ -441,7 +445,7 @@ export async function computeArtistPageSnapshot(
     heroSpotifyUrl: artistRef?.spotifyUrl ?? spotifyProfile?.spotifyUrl ?? null,
     artistRefId: artistRef?.id ?? null,
     listenersCount: listenersSet.size,
-    number1s,
+    number1s: songs.reduce((sum, s) => sum + s.number1s, 0),
     totalPoints,
     songs,
     allAlbums,

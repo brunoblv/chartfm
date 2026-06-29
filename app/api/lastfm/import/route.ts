@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { resolveLastfmImportTracks } from "@/lib/lastfm-import";
+import { resolveLastfmImportTracks, resolveBrunoNewHitsImportTracks } from "@/lib/lastfm-import";
+import { isMyTrlOwner } from "@/lib/mytrl-access";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
+import { getNamedNewHitsPlaylistTracks } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -161,9 +163,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
   }
 
+  const filterNewHits = isMyTrlOwner(session.user.handle);
+
   const userRecord = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { lastfmUser: true },
+    select: {
+      lastfmUser: true,
+      spotifyRefreshToken: true,
+    },
   });
 
   if (!userRecord?.lastfmUser) {
@@ -177,6 +184,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Spotify não configurado" }, { status: 503, headers: NO_CACHE_HEADERS });
   }
 
+  let playlistTracks: Awaited<ReturnType<typeof getNamedNewHitsPlaylistTracks>> = null;
+  if (filterNewHits) {
+    if (!userRecord.spotifyRefreshToken) {
+      return NextResponse.json(
+        { error: "Conecte o Spotify para importar do Last.fm." },
+        { status: 400, headers: NO_CACHE_HEADERS },
+      );
+    }
+    playlistTracks = await getNamedNewHitsPlaylistTracks(session.user.id);
+    if (!playlistTracks?.tracks.length) {
+      return NextResponse.json(
+        { error: "Playlist Spotify \"new hits\" não encontrada ou vazia." },
+        { status: 400, headers: NO_CACHE_HEADERS },
+      );
+    }
+  }
+
   let body: { limit?: unknown; weekDate?: unknown } = {};
   try {
     body = (await req.json()) as typeof body;
@@ -187,19 +211,41 @@ export async function POST(req: NextRequest) {
   const lastfmUsername = userRecord.lastfmUser;
 
   try {
+    if (filterNewHits && playlistTracks) {
+      const { tracks: newHitsTracks, periodLabel } = await resolveBrunoNewHitsImportTracks(
+        body.weekDate,
+        lastfmUsername,
+        playlistTracks.tracks,
+      );
+      const enriched: EnrichedSong[] = newHitsTracks.map((t) => ({
+        title: t.track,
+        artist: t.artist,
+        album: t.album,
+        spotifyId: t.spotifyId,
+        imageUrl: t.imageUrl,
+      }));
+      const songs = (await preferExistingSongs(enriched)).slice(0, limit);
+      return NextResponse.json(
+        { songs, total: newHitsTracks.length, periodLabel, filteredNewHits: true },
+        { headers: NO_CACHE_HEADERS },
+      );
+    }
+
     const { tracks: topTracks, periodLabel } = await resolveLastfmImportTracks(body.weekDate, limit, lastfmUsername);
 
     const BATCH = 20;
     const enriched: EnrichedSong[] = [];
     for (let i = 0; i < topTracks.length; i += BATCH) {
-      const batch = await enrichBatch(
-        topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album })),
-      );
+      const slice = topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album }));
+      const batch = await enrichBatch(slice);
       enriched.push(...batch);
     }
 
     const songs = (await preferExistingSongs(enriched)).slice(0, limit);
-    return NextResponse.json({ songs, total: topTracks.length, periodLabel }, { headers: NO_CACHE_HEADERS });
+    return NextResponse.json(
+      { songs, total: topTracks.length, periodLabel, filteredNewHits: false },
+      { headers: NO_CACHE_HEADERS },
+    );
   } catch (err) {
     const msg = String(err);
     const isUserError = msg.includes("não encontrado") || msg.includes("not found") || msg.includes("HTTP 404");
