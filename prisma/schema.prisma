@@ -169,6 +169,9 @@ model Song {
   recordingMbid   String?      @map("recording_mbid")
   isrc            String?      @map("isrc")
   genresFetchedAt DateTime?    @map("genres_fetched_at")
+  singleReleaseDate         DateTime? @map("single_release_date") @db.Date
+  singleReleaseDateFetchedAt DateTime? @map("single_release_date_fetched_at")
+  releaseDatesVersion       Int       @default(0) @map("release_dates_version")
   createdAt       DateTime     @default(now()) @map("created_at")
   artistRef       Artist?      @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
   albumRef        Album?       @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])

@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { MAX_PARADAS_PER_USER } from "@/lib/parada-points";
+import { maxParadasForUser } from "@/lib/mytrl-access";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -102,8 +102,16 @@ export async function countUserParadas(db: Db, userId: string): Promise<number> 
   return db.parada.count({ where: { userId } });
 }
 
-export async function canCreateAnotherParada(db: Db, userId: string): Promise<boolean> {
-  return (await countUserParadas(db, userId)) < MAX_PARADAS_PER_USER;
+export async function canCreateAnotherParada(
+  db: Db,
+  userId: string,
+  handle?: string | null,
+): Promise<boolean> {
+  const resolvedHandle =
+    handle ??
+    (await db.user.findUnique({ where: { id: userId }, select: { handle: true } }))?.handle;
+  const limit = maxParadasForUser(resolvedHandle);
+  return (await countUserParadas(db, userId)) < limit;
 }
 
 export async function setPrimaryParada(db: Db, userId: string, paradaId: string): Promise<void> {

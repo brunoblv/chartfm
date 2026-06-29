@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { GripVertical } from "lucide-react";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
+import { CopaSinglesMobileReorder } from "@/components/copa/CopaSinglesMobileReorder";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, getLockedSlotIndexes, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 
@@ -57,6 +59,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
   const [slotDropOver, setSlotDropOver] = useState<string | null>(null);
 
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isMobile = useIsMobile();
   const isRegistration = copaStatus === "REGISTRATION";
 
   async function searchArtists(q: string) {
@@ -288,7 +291,9 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
             : isRegistration
               ? "Time completo! Agora escolha as músicas de cada artista"
               : editWindow.open
-                ? "Toque em ✏ ou arraste músicas entre slots editáveis"
+                ? isMobile
+                  ? "Use ↑↓, trocar ou posição nos slots editáveis · toque para buscar música"
+                  : "Toque em ✏ ou arraste músicas entre slots editáveis"
                 : "Visualize suas músicas · edição indisponível agora"}
         </div>
       </div>
@@ -436,7 +441,17 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
               </div>
 
               {/* Singles */}
-              {Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => {
+              {isMobile ? (
+                <CopaSinglesMobileReorder
+                  singles={art.singles}
+                  slotLocks={art.slotLocks}
+                  canEditSlot={(i) => isSingleSlotEditableInWindow(i, editWindow, art.slotLocks, art.id)}
+                  onSwap={(from, to) => swapSingles(art.id, from, to)}
+                  onEditSlot={(i) => openArtistEditor(art.id, i)}
+                  competingArtistIds={editWindow.competingArtistIds}
+                />
+              ) : (
+              Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => {
                 const single = art.singles.find((s) => s.slotIndex === i);
                 const lock = art.slotLocks.find((l) => l.slotIndex === i);
                 const canEdit = isSingleSlotEditableInWindow(i, editWindow, art.slotLocks, art.id);
@@ -540,7 +555,8 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                     </span>
                   </div>
                 );
-              })}
+              })
+              )}
             </div>
           );
         })}

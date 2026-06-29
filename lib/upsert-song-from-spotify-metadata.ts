@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { enrichSongMetadataAfterSave } from "@/lib/resolve-song-genres";
 import { getSpotifyArtistById, type SpotifyTrackMetadata } from "@/lib/spotify-server";
 
 export type UpsertedSongSummary = {
@@ -99,6 +100,7 @@ export async function upsertSongFromSpotifyMetadata(
         previewUrl: metadata.previewUrl ?? undefined,
         spotifyUrl: metadata.spotifyUrl ?? undefined,
         trackNumber: metadata.trackNumber ?? undefined,
+        isrc: metadata.isrc ?? undefined,
       },
       select: { id: true, title: true, artist: true, spotifyId: true, trackNumber: true },
     });
@@ -116,6 +118,7 @@ export async function upsertSongFromSpotifyMetadata(
         previewUrl: metadata.previewUrl ?? undefined,
         spotifyUrl: metadata.spotifyUrl ?? undefined,
         trackNumber: metadata.trackNumber ?? undefined,
+        isrc: metadata.isrc ?? undefined,
       },
       create: {
         title: resolvedTitle,
@@ -128,6 +131,7 @@ export async function upsertSongFromSpotifyMetadata(
         previewUrl: metadata.previewUrl ?? null,
         spotifyUrl: metadata.spotifyUrl ?? null,
         trackNumber: metadata.trackNumber ?? null,
+        isrc: metadata.isrc ?? null,
       },
       select: { id: true, title: true, artist: true, spotifyId: true, trackNumber: true },
     });
@@ -178,6 +182,8 @@ export async function upsertSongFromSpotifyMetadata(
       },
     });
   }
+
+  enrichSongMetadataAfterSave(song.id);
 
   return { ok: true, song };
 }

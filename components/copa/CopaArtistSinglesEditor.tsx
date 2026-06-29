@@ -18,6 +18,8 @@ import {
   writeCopaSongDrag,
   type CopaSongDragPayload,
 } from "@/lib/copa-song-dnd";
+import { CopaSinglesMobileReorder } from "@/components/copa/CopaSinglesMobileReorder";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
 
@@ -40,6 +42,7 @@ type Props = {
   onSwap: (fromSlotIndex: number, toSlotIndex: number) => Promise<boolean>;
   focusSlotIndex?: number | null;
   title?: string;
+  onEditSlot?: (slotIndex: number) => void;
 };
 
 export function CopaArtistSinglesEditor({
@@ -59,8 +62,10 @@ export function CopaArtistSinglesEditor({
   onSwap,
   focusSlotIndex = null,
   title = "Definir músicas",
+  onEditSlot,
 }: Props) {
   const [dropOver, setDropOver] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   if (!open) return null;
 
@@ -169,7 +174,10 @@ export function CopaArtistSinglesEditor({
           <div>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{title}</div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-              {artistName} · arraste músicas para os slots ou entre slots editáveis
+              {artistName}
+              {isMobile
+                ? " · use ↑↓, trocar ou posição nos slots editáveis"
+                : " · arraste músicas para os slots ou entre slots editáveis"}
             </div>
           </div>
           <button
@@ -203,7 +211,9 @@ export function CopaArtistSinglesEditor({
           />
 
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.4 }}>
-            Arraste entre slots das próximas fases. Músicas de etapas já disputadas ficam bloqueadas.
+            {isMobile
+              ? "Busque abaixo e toque para atribuir. Troque músicas entre fases futuras com os controles."
+              : "Arraste entre slots das próximas fases. Músicas de etapas já disputadas ficam bloqueadas."}
           </div>
 
           {search.length > 0 && !isSongUsed(search, null) && (
@@ -275,6 +285,16 @@ export function CopaArtistSinglesEditor({
             </div>
           )}
 
+          {isMobile ? (
+            <CopaSinglesMobileReorder
+              singles={singles}
+              slotLocks={slotLocks}
+              canEditSlot={canEditSlot}
+              onSwap={onSwap}
+              onEditSlot={onEditSlot ?? (() => {})}
+              competingArtistIds={editWindow.competingArtistIds}
+            />
+          ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => {
               const single = singles.find((s) => s.slotIndex === i);
@@ -389,6 +409,7 @@ export function CopaArtistSinglesEditor({
               );
             })}
           </div>
+          )}
         </div>
       </div>
     </div>

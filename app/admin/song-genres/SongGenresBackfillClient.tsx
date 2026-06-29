@@ -11,6 +11,8 @@ type BackfillResult = {
   genres: string[];
   source: string;
   recordingMbid: string | null;
+  singleReleaseDate: string | null;
+  releaseDateSource: string | null;
   error?: string;
 };
 
@@ -68,7 +70,7 @@ export function SongGenresBackfillClient({ initialMissing, initialWithTags, tota
     setUpdated(0);
     setFailed(0);
     setResults([]);
-    setMessage("Buscando tags (MusicBrainz → Last.fm → artista)...");
+    setMessage("Buscando tags e data do single (MusicBrainz → Last.fm → artista)...");
 
     let nextRemaining = missing;
     let processedSum = 0;
@@ -135,10 +137,11 @@ export function SongGenresBackfillClient({ initialMissing, initialWithTags, tota
         <div style={{ minWidth: 220, flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 700, color: "#1D1D1F" }}>
             {running ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : <Tags size={18} />}
-            Buscar tags por faixa
+            Buscar tags e data do single
           </div>
           <div style={{ marginTop: 5, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
-            Prioriza músicas cadastradas mais recentemente. Ordem de tags: MusicBrainz → Last.fm → artista.
+            Prioriza músicas cadastradas mais recentemente. Tags: MusicBrainz → Last.fm → artista.
+            Datas: videoclipe se existir, senão single (lyric video ignorado).
             Lotes de 2 músicas com pausa para respeitar rate limits.
           </div>
         </div>
@@ -225,6 +228,12 @@ export function SongGenresBackfillClient({ initialMissing, initialWithTags, tota
                   </div>
                   {r.genres.length > 0 && (
                     <div style={{ marginTop: 6, fontSize: 12, color: "#6B6B70" }}>{r.genres.join(" · ")}</div>
+                  )}
+                  {r.singleReleaseDate && (
+                    <div style={{ marginTop: 4, fontSize: 12, color: "#86868B" }}>
+                      Lançamento: {r.singleReleaseDate}
+                      {r.releaseDateSource === "music-video" ? " (videoclipe)" : r.releaseDateSource === "single" ? " (single)" : ""}
+                    </div>
                   )}
                 </div>
               ))}

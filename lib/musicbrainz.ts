@@ -105,10 +105,123 @@ export async function findRecordingMbidBySpotifyTrackId(spotifyTrackId: string):
 export async function findRecordingMbidByIsrc(isrc: string): Promise<string | null> {
   const code = isrc.trim().toUpperCase();
   if (!code) return null;
-  const data = (await mbFetch(`/isrc/${encodeURIComponent(code)}?inc=recordings&fmt=json`)) as {
+  const data = (await mbFetch(`/isrc/${encodeURIComponent(code)}?fmt=json`)) as {
     recordings?: Array<{ id?: string }>;
   } | null;
   return data?.recordings?.[0]?.id ?? null;
+}
+
+/** Converte datas MusicBrainz (YYYY, YYYY-MM ou YYYY-MM-DD) para Date UTC. */
+export function parseMusicBrainzDate(raw: string | undefined | null): Date | null {
+  const s = raw?.trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(`${s}T00:00:00.000Z`);
+  if (/^\d{4}-\d{2}$/.test(s)) return new Date(`${s}-01T00:00:00.000Z`);
+  if (/^\d{4}$/.test(s)) return new Date(`${s}-01-01T00:00:00.000Z`);
+  return null;
+}
+
+function earliestDate(dates: Date[]): Date | null {
+  if (!dates.length) return null;
+  return dates.reduce((min, d) => (d.getTime() < min.getTime() ? d : min));
+}
+
+type MbReleaseWithDate = {
+  date?: string;
+  disambiguation?: string;
+  "release-events"?: Array<{ date?: string }>;
+};
+
+function datesFromRelease(rel: MbReleaseWithDate): Date[] {
+  const out: Date[] = [];
+  for (const ev of rel["release-events"] ?? []) {
+    const d = parseMusicBrainzDate(ev.date);
+    if (d) out.push(d);
+  }
+  if (!out.length) {
+    const d = parseMusicBrainzDate(rel.date);
+    if (d) out.push(d);
+  }
+  return out;
+}
+
+type ReleaseDisambiguationKind = "audio-single" | "music-video" | "ignore";
+
+function releaseDisambiguationKind(disambiguation: string | undefined): ReleaseDisambiguationKind {
+  const d = disambiguation?.trim().toLowerCase() ?? "";
+  if (d.includes("lyric video") || d.includes("lyric-video")) return "ignore";
+  if (d.includes("music video") || d.includes("music-video")) return "music-video";
+  return "audio-single";
+}
+
+function resolveEffectiveReleaseDate(releases: MbReleaseWithDate[]): {
+  date: Date | null;
+  source: "music-video" | "single" | null;
+} {
+  const single: Date[] = [];
+  const musicVideo: Date[] = [];
+
+  for (const rel of releases) {
+    const dates = datesFromRelease(rel);
+    if (!dates.length) continue;
+    const kind = releaseDisambiguationKind(rel.disambiguation);
+    if (kind === "ignore") continue;
+    if (kind === "music-video") musicVideo.push(...dates);
+    else single.push(...dates);
+  }
+
+  const mv = earliestDate(musicVideo);
+  if (mv) return { date: mv, source: "music-video" };
+  const sg = earliestDate(single);
+  if (sg) return { date: sg, source: "single" };
+  return { date: null, source: null };
+}
+
+export type MusicBrainzReleaseDate = {
+  date: Date | null;
+  source: "music-video" | "single" | null;
+};
+
+/** Data de lançamento: videoclipe se existir, senão single (ignora lyric video). */
+export async function getMusicBrainzReleaseDate(mbid: string): Promise<MusicBrainzReleaseDate> {
+  const id = mbid.trim();
+  const empty: MusicBrainzReleaseDate = { date: null, source: null };
+  if (!id) return empty;
+
+  const rgData = (await mbFetch(
+    `/recording/${encodeURIComponent(id)}?inc=release-groups&type=single&fmt=json`,
+  )) as { "release-groups"?: Array<{ id?: string }> } | null;
+
+  const rgIds = (rgData?.["release-groups"] ?? []).map((rg) => rg.id).filter(Boolean) as string[];
+
+  if (rgIds.length) {
+    const allReleases: MbReleaseWithDate[] = [];
+    for (const rgId of rgIds) {
+      const relData = (await mbFetch(
+        `/release?release-group=${encodeURIComponent(rgId)}&fmt=json`,
+      )) as { releases?: MbReleaseWithDate[] } | null;
+      if (relData?.releases?.length) allReleases.push(...relData.releases);
+    }
+    if (allReleases.length) return resolveEffectiveReleaseDate(allReleases);
+  }
+
+  const data = (await mbFetch(
+    `/recording/${encodeURIComponent(id)}?inc=releases&type=single&fmt=json`,
+  )) as { releases?: MbReleaseWithDate[] } | null;
+
+  return resolveEffectiveReleaseDate(data?.releases ?? []);
+}
+
+/** @deprecated use getMusicBrainzReleaseDate */
+export async function getMusicBrainzReleaseDates(mbid: string): Promise<{ singleReleaseDate: Date | null }> {
+  const { date } = await getMusicBrainzReleaseDate(mbid);
+  return { singleReleaseDate: date };
+}
+
+/** @deprecated use getMusicBrainzReleaseDate */
+export async function getMusicBrainzSingleReleaseDate(mbid: string): Promise<Date | null> {
+  const { date } = await getMusicBrainzReleaseDate(mbid);
+  return date;
 }
 
 export async function searchRecordingMbid(title: string, artist: string): Promise<string | null> {

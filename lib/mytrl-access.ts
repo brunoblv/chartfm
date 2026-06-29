@@ -9,6 +9,44 @@ export const MYTRL_WEEKLY_PARADA_ID = "cmpn5qqi20001mly9beqx3xkt";
 /** Alias: Top 20 semanal Under My Skin Video (@bruno). */
 export const UMS_VIDEO_WEEKLY_PARADA_ID = MYTRL_WEEKLY_PARADA_ID;
 
+/** Parada semanal Hot 100 (@bruno). */
+export const UMS_HOT_100_PARADA_ID = "cmqyiop8m00012b83w8d56h7e";
+
+/** Paradas visíveis só para @bruno (não aparecem no perfil público, feed nem API). */
+export const OWNER_ONLY_PARADA_IDS = new Set<string>([UMS_REQUEST_LIVE_PARADA_ID]);
+
+export function isOwnerOnlyParada(paradaId: string): boolean {
+  return OWNER_ONLY_PARADA_IDS.has(paradaId);
+}
+
+/** @bruno pode ver paradas owner-only; demais usuários não. */
+export function canViewOwnerOnlyParada(viewerHandle: string | null | undefined): boolean {
+  return isMyTrlOwner(viewerHandle);
+}
+
+export function isParadaVisibleToViewer(
+  paradaId: string,
+  viewerHandle: string | null | undefined,
+): boolean {
+  if (!isOwnerOnlyParada(paradaId)) return true;
+  return canViewOwnerOnlyParada(viewerHandle);
+}
+
+export function filterParadasForViewer<T extends { id: string }>(
+  paradas: T[],
+  viewerHandle: string | null | undefined,
+): T[] {
+  if (canViewOwnerOnlyParada(viewerHandle)) return paradas;
+  return paradas.filter((p) => !isOwnerOnlyParada(p.id));
+}
+
+/** @bruno pode ter até 3 paradas; demais usuários seguem o limite padrão. */
+export const MYTRL_OWNER_MAX_PARADAS = 3;
+
+export function maxParadasForUser(handle: string | null | undefined): number {
+  return isMyTrlOwner(handle) ? MYTRL_OWNER_MAX_PARADAS : 2;
+}
+
 /** Publicação diária às 8h BRT (= 11:00 UTC). */
 export const MYTRL_DAILY_PUBLISH_UTC_HOUR = 11;
 

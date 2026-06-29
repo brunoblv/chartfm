@@ -29,6 +29,28 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function formatMbDate(d: Date | null | undefined): string | null {
+  return d ? d.toISOString().slice(0, 10) : null;
+}
+
+function releaseDatePayload(resolved: {
+  singleReleaseDate: Date | null;
+  releaseDateSource: "music-video" | "single" | null;
+}) {
+  return {
+    singleReleaseDate: formatMbDate(resolved.singleReleaseDate),
+    releaseDateSource: resolved.releaseDateSource,
+  };
+}
+
+function releaseDateUpdate(resolved: { singleReleaseDate: Date | null }) {
+  return {
+    ...(resolved.singleReleaseDate != null ? { singleReleaseDate: resolved.singleReleaseDate } : {}),
+    singleReleaseDateFetchedAt: new Date(),
+    releaseDatesVersion: 2,
+  };
+}
+
 type BackfillBody = {
   limit?: number;
   exclude?: { songIds?: string[] };
@@ -85,6 +107,7 @@ export async function POST(req: NextRequest) {
           genres: resolved.genres,
           source: resolved.source,
           recordingMbid: resolved.recordingMbid,
+          ...releaseDatePayload(resolved),
         },
       ],
     });
@@ -140,6 +163,8 @@ export async function POST(req: NextRequest) {
     genres: string[];
     source: string;
     recordingMbid: string | null;
+    singleReleaseDate: string | null;
+    releaseDateSource: string | null;
     error?: string;
   }> = [];
 
@@ -167,6 +192,7 @@ export async function POST(req: NextRequest) {
           genreSource: resolved.source,
           recordingMbid: resolved.recordingMbid,
           genresFetchedAt: new Date(),
+          ...releaseDateUpdate(resolved),
         },
       });
 
@@ -178,6 +204,7 @@ export async function POST(req: NextRequest) {
         genres: resolved.genres,
         source: resolved.source,
         recordingMbid: resolved.recordingMbid,
+        ...releaseDatePayload(resolved),
       });
     } catch (err) {
       failed++;
@@ -188,6 +215,8 @@ export async function POST(req: NextRequest) {
         genres: [],
         source: "error",
         recordingMbid: null,
+        singleReleaseDate: null,
+        releaseDateSource: null,
         error: err instanceof Error ? err.message : "Erro desconhecido",
       });
     }

@@ -15,6 +15,7 @@ import {
   resolveSongsForFastPublish,
   sanitizeChartEntrySpotifyRefs,
 } from "@/lib/resolve-publish-songs";
+import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -127,6 +128,10 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   });
 
   if (!row) {
+    return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_CACHE_HEADERS });
+  }
+
+  if (!isParadaVisibleToViewer(row.paradaId, session?.user?.handle)) {
     return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_CACHE_HEADERS });
   }
 

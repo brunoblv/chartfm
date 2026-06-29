@@ -22,6 +22,7 @@ import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } f
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs, type ReviewItem } from "@/components/home/TimelineTabs";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
+import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import type { UserWithCharts } from "@/lib/types";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -52,20 +53,24 @@ type PublisherRow = {
 
 async function getPublishedThisWeek(
   userId: string,
+  viewerHandle: string | null | undefined,
   followingIds: Set<string>,
 ): Promise<PublisherRow[]> {
   const charts = await prisma.chart.findMany({
     where: { userId: { not: userId }, isPublished: true },
     orderBy: { publishedAt: "desc" },
-    take: 15,
+    take: 30,
     select: {
       id: true,
+      paradaId: true,
       user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
       _count: { select: { entries: true } },
     },
   });
 
-  const sorted = charts.sort((a, b) => {
+  const visible = charts.filter((c) => isParadaVisibleToViewer(c.paradaId, viewerHandle));
+
+  const sorted = visible.sort((a, b) => {
     const aF = followingIds.has(a.user.id) ? 1 : 0;
     const bF = followingIds.has(b.user.id) ? 1 : 0;
     return bF - aF;
@@ -90,6 +95,7 @@ async function getPublishedThisWeek(
 
 async function getTimelineFeed(
   userId: string,
+  viewerHandle: string | null | undefined,
   weekIdx: number,
   followingIds: Set<string>,
   locale: Awaited<ReturnType<typeof getServerLocale>>,
@@ -100,9 +106,10 @@ async function getTimelineFeed(
       isPublished: true,
     },
     orderBy: { publishedAt: "desc" },
-    take: 60,
+    take: 80,
     select: {
       id: true,
+      paradaId: true,
       weekLabel: true,
       dateRange: true,
       weekIndex: true,
@@ -156,15 +163,17 @@ async function getTimelineFeed(
     },
   });
 
-  const sortByPublished = (a: (typeof rows)[number], b: (typeof rows)[number]) =>
+  const visibleRows = rows.filter((r) => isParadaVisibleToViewer(r.paradaId, viewerHandle));
+
+  const sortByPublished = (a: (typeof visibleRows)[number], b: (typeof visibleRows)[number]) =>
     b.publishedAt.getTime() - a.publishedAt.getTime();
 
-  const friendsRows = rows
+  const friendsRows = visibleRows
     .filter((r) => followingIds.has(r.user.id) || r.user.id === userId)
     .sort(sortByPublished)
     .slice(0, 15);
 
-  const allRows = rows.sort(sortByPublished).slice(0, 15);
+  const allRows = visibleRows.sort(sortByPublished).slice(0, 15);
 
   const combined = [...friendsRows, ...allRows];
 
@@ -342,8 +351,8 @@ export default async function HomePage() {
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
       getSuggestedUsers(session.user.id, userGenres, followingIds, 3),
       getNewUsers(session.user.id, followingIds, 3),
-      getTimelineFeed(session.user.id, currentWeekIdx, followingIds, locale),
-      getPublishedThisWeek(session.user.id, followingIds),
+      getTimelineFeed(session.user.id, session.user.handle, currentWeekIdx, followingIds, locale),
+      getPublishedThisWeek(session.user.id, session.user.handle, followingIds),
       getReviewsFeed(session.user.id, locale),
       getRecommendationsFeed(session.user.id, locale).catch((err) => {
         console.error("[home] getRecommendationsFeed", err);

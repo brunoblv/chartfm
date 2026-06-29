@@ -1,14 +1,20 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { fetchLastfmTrackTags } from "@/lib/lastfm-track-tags";
-import { resolveMusicBrainzSongGenres } from "@/lib/musicbrainz";
+import { getMusicBrainzReleaseDate, resolveMusicBrainzSongGenres } from "@/lib/musicbrainz";
+import { prisma } from "@/lib/prisma";
 
 export type SongGenreSource = "musicbrainz" | "lastfm" | "artist";
+export type SongReleaseDateSource = "music-video" | "single" | null;
 
 export type ResolvedSongGenres = {
   genres: string[];
   source: SongGenreSource;
   recordingMbid: string | null;
+  singleReleaseDate: Date | null;
+  releaseDateSource: SongReleaseDateSource;
 };
+
+const RELEASE_DATES_VERSION = 2;
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -22,9 +28,23 @@ export type SongGenreInput = {
   artistGenres?: string[];
 };
 
-/** MusicBrainz → Last.fm → gêneros do artista. */
+async function fetchReleaseDate(mbid: string): Promise<{
+  date: Date | null;
+  source: SongReleaseDateSource;
+}> {
+  try {
+    return await getMusicBrainzReleaseDate(mbid);
+  } catch {
+    return { date: null, source: null };
+  }
+}
+
+/** MusicBrainz → Last.fm → gêneros do artista. Data: videoclipe, senão single. */
 export async function resolveSongGenres(input: SongGenreInput): Promise<ResolvedSongGenres> {
   const artistFallback = (input.artistGenres ?? []).map((g) => g.trim().toLowerCase()).filter(Boolean);
+  let recordingMbid = input.recordingMbid?.trim() || null;
+  let singleReleaseDate: Date | null = null;
+  let releaseDateSource: SongReleaseDateSource = null;
 
   try {
     const mb = await resolveMusicBrainzSongGenres({
@@ -34,24 +54,40 @@ export async function resolveSongGenres(input: SongGenreInput): Promise<Resolved
       isrc: input.isrc,
       recordingMbid: input.recordingMbid,
     });
-    if (mb?.tags.length) {
-      return {
-        genres: mb.tags,
-        source: "musicbrainz",
-        recordingMbid: mb.mbid,
-      };
+    if (mb) {
+      recordingMbid = mb.mbid;
+      const release = await fetchReleaseDate(mb.mbid);
+      singleReleaseDate = release.date;
+      releaseDateSource = release.source;
+      if (mb.tags.length) {
+        return {
+          genres: mb.tags,
+          source: "musicbrainz",
+          recordingMbid: mb.mbid,
+          singleReleaseDate,
+          releaseDateSource,
+        };
+      }
     }
   } catch {
     // segue para Last.fm
   }
 
+  if (recordingMbid && !singleReleaseDate) {
+    const release = await fetchReleaseDate(recordingMbid);
+    singleReleaseDate = release.date;
+    releaseDateSource = release.source;
+  }
+
   try {
-    const lf = await fetchLastfmTrackTags(input.title, input.artist, input.recordingMbid);
+    const lf = await fetchLastfmTrackTags(input.title, input.artist, recordingMbid);
     if (lf?.tags.length) {
       return {
         genres: lf.tags,
         source: "lastfm",
-        recordingMbid: lf.mbid ?? input.recordingMbid?.trim() ?? null,
+        recordingMbid: lf.mbid ?? recordingMbid,
+        singleReleaseDate,
+        releaseDateSource,
       };
     }
   } catch {
@@ -61,7 +97,9 @@ export async function resolveSongGenres(input: SongGenreInput): Promise<Resolved
   return {
     genres: artistFallback,
     source: "artist",
-    recordingMbid: input.recordingMbid?.trim() ?? null,
+    recordingMbid,
+    singleReleaseDate,
+    releaseDateSource,
   };
 }
 
@@ -100,19 +138,32 @@ export async function fetchAndSaveSongGenres(
       genreSource: resolved.source,
       recordingMbid: resolved.recordingMbid,
       genresFetchedAt: new Date(),
+      ...(resolved.singleReleaseDate != null ? { singleReleaseDate: resolved.singleReleaseDate } : {}),
+      singleReleaseDateFetchedAt: new Date(),
+      releaseDatesVersion: RELEASE_DATES_VERSION,
     },
   });
 
   return resolved;
 }
 
-/** Ainda não passou pelo resolver MusicBrainz → Last.fm → artista. */
-export const songMissingGenresWhere: Prisma.SongWhereInput = {
-  genresFetchedAt: null,
+/** Enriquecimento pendente: tags ou datas (v2) ainda não buscadas. */
+export const songEnrichmentPendingWhere: Prisma.SongWhereInput = {
+  OR: [{ genresFetchedAt: null }, { releaseDatesVersion: { lt: RELEASE_DATES_VERSION } }],
 };
+
+/** @deprecated use songEnrichmentPendingWhere */
+export const songMissingGenresWhere: Prisma.SongWhereInput = songEnrichmentPendingWhere;
 
 /** Backfill: músicas cadastradas mais recentemente primeiro. */
 export const songGenresBackfillOrderBy: Prisma.SongOrderByWithRelationInput[] = [
   { createdAt: "desc" },
   { id: "desc" },
 ];
+
+/** Busca tags + data de lançamento em background após cadastro/atualização. */
+export function enrichSongMetadataAfterSave(songId: string): void {
+  void fetchAndSaveSongGenres(prisma, songId).catch(() => {
+    // falha silenciosa — admin pode rodar backfill depois
+  });
+}

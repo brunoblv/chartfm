@@ -7,6 +7,7 @@ import { getSpotifyTrackMetadataById } from "@/lib/spotify-server";
 import { findConflictingSong, findSongConflictByTitleArtist } from "@/lib/duplicate-registration-guards";
 import { songConflictBody } from "@/lib/duplicate-conflict-payload";
 import { upsertSongFromSpotifyMetadata } from "@/lib/upsert-song-from-spotify-metadata";
+import { enrichSongMetadataAfterSave } from "@/lib/resolve-song-genres";
 
 export const runtime = "nodejs";
 
@@ -114,6 +115,7 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, title: true, artist: true, spotifyId: true, trackNumber: true },
     });
+    enrichSongMetadataAfterSave(song.id);
     return NextResponse.json({ song });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

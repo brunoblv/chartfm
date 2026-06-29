@@ -8,7 +8,7 @@ import {
   setPrimaryParada,
   syncUserPrimaryParadaFields,
 } from "@/lib/paradas";
-import { MAX_PARADAS_PER_USER } from "@/lib/parada-points";
+import { maxParadasForUser } from "@/lib/mytrl-access";
 import { parseCadenceInput, toApiCadence } from "@/lib/chart-cadence";
 
 export const runtime = "nodejs";
@@ -28,7 +28,8 @@ export async function GET() {
     }
     throw e;
   }
-  const canCreate = paradas.length < MAX_PARADAS_PER_USER;
+  const maxParadas = maxParadasForUser(session.user.handle);
+  const canCreate = paradas.length < maxParadas;
 
   return NextResponse.json({
     paradas: paradas.map((p) => ({
@@ -42,7 +43,7 @@ export async function GET() {
       cadence: toApiCadence(p.cadence),
     })),
     canCreate,
-    maxParadas: MAX_PARADAS_PER_USER,
+    maxParadas,
   });
 }
 
@@ -72,9 +73,10 @@ export async function POST(req: Request) {
       ? Math.min(100, Math.max(1, Math.round(body.chartSize)))
       : null;
 
-  if (!(await canCreateAnotherParada(prisma, session.user.id))) {
+  if (!(await canCreateAnotherParada(prisma, session.user.id, session.user.handle))) {
+    const limit = maxParadasForUser(session.user.handle);
     return NextResponse.json(
-      { error: `Limite de ${MAX_PARADAS_PER_USER} paradas atingido` },
+      { error: `Limite de ${limit} paradas atingido` },
       { status: 409 },
     );
   }

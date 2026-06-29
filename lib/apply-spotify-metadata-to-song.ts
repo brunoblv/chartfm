@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { enrichSongMetadataAfterSave } from "@/lib/resolve-song-genres";
 import { getSpotifyArtistById, type SpotifyTrackMetadata } from "./spotify-server";
 
 export type ApplySpotifyMetadataResult =
@@ -141,6 +142,8 @@ export async function applySpotifyMetadataToSong(
       },
     });
   }
+
+  enrichSongMetadataAfterSave(localSongId);
 
   return { ok: true, reason: "updated" };
 }

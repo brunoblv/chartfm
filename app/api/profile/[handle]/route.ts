@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { toApiCadence } from "@/lib/chart-cadence";
 import { buildPublicProfilePayload } from "@/lib/map-db-profile";
 import { ensureUserParadas } from "@/lib/paradas";
+import { filterParadasForViewer, isParadaVisibleToViewer } from "@/lib/mytrl-access";
 
 export const runtime = "nodejs";
 
@@ -55,12 +56,19 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const paradas = await ensureUserParadas(prisma, dbUserBase.id);
-  const activeParada =
-    (paradaIdParam ? paradas.find((p) => p.id === paradaIdParam) : null) ??
+  const allParadas = await ensureUserParadas(prisma, dbUserBase.id);
+  const viewerHandle = session?.user?.handle ?? null;
+  const paradas = filterParadasForViewer(allParadas, viewerHandle);
+  const activeParadaCandidate =
+    (paradaIdParam ? allParadas.find((p) => p.id === paradaIdParam) : null) ??
     paradas.find((p) => p.isPrimary) ??
     paradas[0] ??
     null;
+  const activeParada =
+    activeParadaCandidate &&
+    isParadaVisibleToViewer(activeParadaCandidate.id, viewerHandle)
+      ? activeParadaCandidate
+      : (paradas.find((p) => p.isPrimary) ?? paradas[0] ?? null);
 
   const isDaily = activeParada?.cadence === "DAILY";
   const chartWhereBase = activeParada ? { paradaId: activeParada.id } : { userId: dbUserBase.id };
