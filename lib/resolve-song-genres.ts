@@ -110,3 +110,9 @@ export async function fetchAndSaveSongGenres(
 export const songMissingGenresWhere: Prisma.SongWhereInput = {
   genresFetchedAt: null,
 };
+
+/** Backfill: músicas cadastradas mais recentemente primeiro. */
+export const songGenresBackfillOrderBy: Prisma.SongOrderByWithRelationInput[] = [
+  { createdAt: "desc" },
+  { id: "desc" },
+];

@@ -138,7 +138,7 @@ export function SongGenresBackfillClient({ initialMissing, initialWithTags, tota
             Buscar tags por faixa
           </div>
           <div style={{ marginTop: 5, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
-            Ordem: MusicBrainz (recording) → Last.fm (top tags) → gêneros do artista no Spotify.
+            Prioriza músicas cadastradas mais recentemente. Ordem de tags: MusicBrainz → Last.fm → artista.
             Lotes de 2 músicas com pausa para respeitar rate limits.
           </div>
         </div>

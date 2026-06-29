@@ -7,7 +7,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
 import { adminNavChipStyle } from "@/components/admin/admin-styles";
 import { AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
-import { songMissingGenresWhere } from "@/lib/resolve-song-genres";
+import { songGenresBackfillOrderBy, songMissingGenresWhere } from "@/lib/resolve-song-genres";
 import { SongGenresBackfillClient } from "./SongGenresBackfillClient";
 
 const PAGE_SIZE = 40;
@@ -52,8 +52,9 @@ export default async function AdminSongGenresPage() {
         genreSource: true,
         recordingMbid: true,
         genresFetchedAt: true,
+        createdAt: true,
       },
-      orderBy: [{ genresFetchedAt: "asc" }, { title: "asc" }],
+      orderBy: songGenresBackfillOrderBy,
       take: PAGE_SIZE,
     }),
   ]);
@@ -83,7 +84,7 @@ export default async function AdminSongGenresPage() {
         </div>
 
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
-          Próximas na fila ({Math.min(PAGE_SIZE, missing).toLocaleString("pt-BR")} de {missing.toLocaleString("pt-BR")})
+          Próximas na fila — mais recentes primeiro ({Math.min(PAGE_SIZE, missing).toLocaleString("pt-BR")} de {missing.toLocaleString("pt-BR")})
         </h2>
 
         {songs.length === 0 ? (

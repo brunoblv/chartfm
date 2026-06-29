@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import {
   fetchAndSaveSongGenres,
   resolveSongGenres,
+  songGenresBackfillOrderBy,
   songMissingGenresWhere,
 } from "@/lib/resolve-song-genres";
 
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
       recordingMbid: true,
       artistRef: { select: { genres: true } },
     },
-    orderBy: [{ genresFetchedAt: "asc" }, { title: "asc" }],
+    orderBy: songGenresBackfillOrderBy,
     take: limit,
   });
 
