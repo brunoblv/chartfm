@@ -179,12 +179,29 @@ export function getArtistUsedSongKeys(
   return used;
 }
 
+export function getLockedSlotIndexes(locked: LockedSingleSlot[]): Set<number> {
+  return new Set(locked.map((l) => l.slotIndex));
+}
+
+export type CopaSingleValidationOpts = {
+  /** Só bloqueia reuso de música em slots já disputados (LIVE/DONE). */
+  lockedSlotIndexes?: Set<number> | number[];
+};
+
+function lockedSet(opts?: CopaSingleValidationOpts): Set<number> | null {
+  if (!opts?.lockedSlotIndexes) return null;
+  return opts.lockedSlotIndexes instanceof Set
+    ? opts.lockedSlotIndexes
+    : new Set(opts.lockedSlotIndexes);
+}
+
 /** Retorna mensagem de erro se a música já foi usada em outro jogo/fase do artista. */
 export function validateArtistSingleAssignment(
   slotIndex: number,
   songName: string,
   songId: string | null,
   allSingles: ArtistSinglePick[],
+  opts?: CopaSingleValidationOpts,
 ): string | null {
   const key = songPickKey(songId, songName);
   if (!key) return null;
@@ -193,22 +210,77 @@ export function validateArtistSingleAssignment(
   const conflict = used.get(key);
   if (!conflict) return null;
 
+  const locked = lockedSet(opts);
+  if (locked && !locked.has(conflict.slotIndex)) {
+    return null;
+  }
+
   return `"${songName.trim()}" já foi usada em ${conflict.label}. Cada música só pode ser usada uma vez por artista.`;
 }
 
-/** Valida o elenco completo após aplicar alterações (sem duplicatas). */
-export function findDuplicateSongInSingles(singles: ArtistSinglePick[]): string | null {
+/** Valida duplicatas. Com lockedSlotIndexes, só bloqueia conflito envolvendo etapa já disputada. */
+export function findDuplicateSongInSingles(
+  singles: ArtistSinglePick[],
+  opts?: CopaSingleValidationOpts,
+): string | null {
+  const locked = lockedSet(opts);
   const seen = new Map<string, number>();
   for (const s of singles) {
     const key = songPickKey(s.songId, s.songName);
     if (!key) continue;
     const prev = seen.get(key);
     if (prev != null) {
-      return `"${s.songName.trim()}" está em ${SLOT_LABELS[prev]} e ${SLOT_LABELS[s.slotIndex]}. Cada música só pode ser usada uma vez por artista.`;
+      if (!locked || locked.has(prev) || locked.has(s.slotIndex)) {
+        return `"${s.songName.trim()}" está em ${SLOT_LABELS[prev]} e ${SLOT_LABELS[s.slotIndex]}. Cada música só pode ser usada uma vez por artista.`;
+      }
     }
     seen.set(key, s.slotIndex);
   }
   return null;
+}
+
+/**
+ * Ao atribuir a um slot editável, remove a mesma música de outro slot ainda editável (move).
+ */
+export function applyCopaSingleMoveFromEditable(
+  existing: ArtistSinglePick[],
+  slotIndex: number,
+  songName: string,
+  songId: string | null,
+  lockedSlotIndexes: Set<number>,
+): ArtistSinglePick[] {
+  const key = songPickKey(songId, songName);
+  if (!key) {
+    return mergeArtistSingles(existing, [{ slotIndex, songName, songId }]);
+  }
+
+  const used = getArtistUsedSongKeys(existing, slotIndex);
+  const conflict = used.get(key);
+  const updates: ArtistSinglePick[] = [{ slotIndex, songName, songId }];
+  if (conflict && !lockedSlotIndexes.has(conflict.slotIndex)) {
+    updates.push({
+      slotIndex: conflict.slotIndex,
+      songName: `Single ${conflict.slotIndex + 1}`,
+      songId: null,
+    });
+  }
+  return mergeArtistSingles(existing, updates);
+}
+
+/** Música já usada em slot disputado (para UI de busca). */
+export function isSongUsedInLockedSlot(
+  singles: ArtistSinglePick[],
+  songName: string,
+  songId: string | null,
+  lockedSlotIndexes: Set<number>,
+  excludeSlotIndex?: number,
+): boolean {
+  const key = songPickKey(songId, songName);
+  if (!key) return false;
+  const used = getArtistUsedSongKeys(singles, excludeSlotIndex);
+  const conflict = used.get(key);
+  if (!conflict) return false;
+  return lockedSlotIndexes.has(conflict.slotIndex);
 }
 
 export function mergeArtistSingles(

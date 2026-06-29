@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
-import { COPA_DAY_LABELS, COPA_SINGLES_COUNT, SLOT_LABELS, findDuplicateSongInSingles, mergeArtistSingles } from "@/lib/copa";
+import { COPA_DAY_LABELS, COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 import { GripVertical } from "lucide-react";
 
@@ -336,14 +336,67 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
 
   async function assignAdminSingle(artistId: string, slotIndex: number, songName: string, songId: string | null) {
     const art = getSquadArtist(artistId);
-    if (!art || art.lockedSlots.includes(slotIndex)) return false;
-    const merged = mergeArtistSingles(art.singles, [{ slotIndex, songName, songId }]);
-    const dupErr = findDuplicateSongInSingles(merged);
+    if (!art || art.lockedSlots.includes(slotIndex) || !squadsEditionId || savingSingle) return false;
+    const lockedIndexes = new Set(art.lockedSlots);
+    const validationOpts = art.lockedSlots.length > 0 ? { lockedSlotIndexes: lockedIndexes } : undefined;
+    const merged = applyCopaSingleMoveFromEditable(art.singles, slotIndex, songName, songId, lockedIndexes);
+    const dupErr = findDuplicateSongInSingles(merged, validationOpts);
     if (dupErr) {
       alert(dupErr);
       return false;
     }
-    return saveAdminSingle(artistId, slotIndex, songName, songId);
+
+    const prevBySlot = new Map(art.singles.map((s) => [s.slotIndex, s]));
+    const changed = merged.filter((s) => {
+      const prev = prevBySlot.get(s.slotIndex);
+      return !prev || prev.songName !== s.songName || (prev.songId ?? null) !== s.songId;
+    });
+    if (changed.length === 0) return true;
+
+    setSavingSingle(true);
+    try {
+      for (const s of changed) {
+        const res = await fetch(`/api/admin/copa/${squadsEditionId}/singles`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            artistId,
+            slotIndex: s.slotIndex,
+            songName: s.songName,
+            songId: s.songId,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert(err.error ?? "Erro ao salvar");
+          return false;
+        }
+      }
+      setSquadsData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          squads: prev.squads.map((p) => {
+            const artists = p.artists.map((a) => {
+              if (a.id !== artistId) return a;
+              return {
+                ...a,
+                singles: merged.map((s) => ({
+                  slotIndex: s.slotIndex,
+                  songName: s.songName,
+                  songId: s.songId,
+                })),
+              };
+            });
+            const singlesFilled = artists.reduce((n, a) => n + a.singles.filter((s) => !s.songName.startsWith("Single ")).length, 0);
+            return { ...p, artists, singlesFilled };
+          }),
+        };
+      });
+      return true;
+    } finally {
+      setSavingSingle(false);
+    }
   }
 
   async function swapAdminSingles(artistId: string, fromSlotIndex: number, toSlotIndex: number) {
@@ -363,7 +416,8 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
       { slotIndex: fromSlotIndex, songName: to.songName, songId: to.songId },
       { slotIndex: toSlotIndex, songName: from.songName, songId: from.songId },
     ]);
-    const dupErr = findDuplicateSongInSingles(merged);
+    const validationOpts = art.lockedSlots.length > 0 ? { lockedSlotIndexes: new Set(art.lockedSlots) } : undefined;
+    const dupErr = findDuplicateSongInSingles(merged, validationOpts);
     if (dupErr) {
       alert(dupErr);
       return false;

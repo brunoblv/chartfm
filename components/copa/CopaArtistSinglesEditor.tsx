@@ -6,6 +6,8 @@ import {
   COPA_SINGLES_COUNT,
   SLOT_LABELS,
   getArtistUsedSongKeys,
+  getLockedSlotIndexes,
+  isSongUsedInLockedSlot,
   songPickKey,
   type CopaSinglesEditWindow,
   type LockedSingleSlot,
@@ -71,6 +73,8 @@ export function CopaArtistSinglesEditor({
     return [...Array(COPA_SINGLES_COUNT).keys()].find((i) => canEditSlot(i)) ?? 0;
   }
 
+  const lockedIndexes = getLockedSlotIndexes(slotLocks);
+
   function clearDrop() {
     setDropOver(null);
   }
@@ -105,15 +109,22 @@ export function CopaArtistSinglesEditor({
   }
 
   function isSongUsed(title: string, songId: string | null, excludeSlot?: number) {
-    const key = songPickKey(songId, title);
-    if (!key) return false;
-    return getArtistUsedSongKeys(singles, excludeSlot).has(key);
+    if (lockedIndexes.size === 0) {
+      const key = songPickKey(songId, title);
+      if (!key) return false;
+      return getArtistUsedSongKeys(singles, excludeSlot).has(key);
+    }
+    return isSongUsedInLockedSlot(singles, title, songId, lockedIndexes, excludeSlot);
   }
 
   function usedInLabel(title: string, songId: string | null, excludeSlot?: number) {
     const key = songPickKey(songId, title);
     if (!key) return null;
-    return getArtistUsedSongKeys(singles, excludeSlot).get(key)?.label ?? null;
+    const used = getArtistUsedSongKeys(singles, excludeSlot);
+    const conflict = used.get(key);
+    if (!conflict) return null;
+    if (lockedIndexes.size > 0 && !lockedIndexes.has(conflict.slotIndex)) return null;
+    return conflict.label;
   }
 
   return (
@@ -192,7 +203,7 @@ export function CopaArtistSinglesEditor({
           />
 
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.4 }}>
-            Arraste da busca para um slot abaixo, ou troque músicas entre slots editáveis.
+            Arraste entre slots das próximas fases. Músicas de etapas já disputadas ficam bloqueadas.
           </div>
 
           {search.length > 0 && !isSongUsed(search, null) && (
@@ -255,7 +266,7 @@ export function CopaArtistSinglesEditor({
                         {song.title}
                       </div>
                       <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                        {taken ? `Já usada em ${takenLabel}` : song.artist}
+                        {taken ? `Disputada em ${takenLabel}` : song.artist}
                       </div>
                     </div>
                   </div>

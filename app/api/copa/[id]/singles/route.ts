@@ -8,6 +8,8 @@ import {
   findDuplicateSongInSingles,
   getCopaSinglesEditWindow,
   getLockedSingleSlots,
+  getLockedSlotIndexes,
+  applyCopaSingleMoveFromEditable,
   isSingleSlotEditableInWindow,
   mergeArtistSingles,
   validateArtistSingleAssignment,
@@ -74,6 +76,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   ]);
 
   const locked = getLockedSingleSlots(artistId, artistFixtures);
+  const lockedIndexes = getLockedSlotIndexes(locked);
+  const validationOpts = locked.length > 0 ? { lockedSlotIndexes: lockedIndexes } : undefined;
   const editWindowBase = getCopaSinglesEditWindow(copa.status, allFixtures);
   const r32Winners =
     editWindowBase.nextPhase === "R16" && editWindowBase.open
@@ -98,13 +102,24 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const merged = mergeArtistSingles(existingPicks, updates);
 
+  // Move automático entre slots editáveis (mesma música saindo de etapa futura).
+  let normalized = merged;
+  for (const s of updates) {
+    const prev = existing.find((e) => e.slotIndex === s.slotIndex);
+    const changed =
+      !prev || prev.songName !== s.songName || (prev.songId ?? null) !== s.songId;
+    if (!changed) continue;
+    if (!isSingleSlotEditableInWindow(s.slotIndex, editWindow, locked, artistId)) continue;
+    normalized = applyCopaSingleMoveFromEditable(normalized, s.slotIndex, s.songName, s.songId, lockedIndexes);
+  }
+
   for (const s of updates) {
     const prev = existing.find((e) => e.slotIndex === s.slotIndex);
     const changed =
       !prev || prev.songName !== s.songName || (prev.songId ?? null) !== s.songId;
     if (!changed) continue;
 
-    if (!isSingleSlotEditableInWindow(s.slotIndex, editWindow, locked)) {
+    if (!isSingleSlotEditableInWindow(s.slotIndex, editWindow, locked, artistId)) {
       const label = SLOT_LABELS[s.slotIndex] ?? `Slot ${s.slotIndex + 1}`;
       return NextResponse.json(
         { error: editWindow.open ? `"${label}" não pode ser alterada agora.` : editWindow.message },
@@ -112,19 +127,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       );
     }
 
-    const dupErr = validateArtistSingleAssignment(s.slotIndex, s.songName, s.songId, merged);
+    const dupErr = validateArtistSingleAssignment(s.slotIndex, s.songName, s.songId, normalized, validationOpts);
     if (dupErr) {
       return NextResponse.json({ error: dupErr }, { status: 400 });
     }
   }
 
-  const fullDupErr = findDuplicateSongInSingles(merged);
+  const fullDupErr = findDuplicateSongInSingles(normalized, validationOpts);
   if (fullDupErr) {
     return NextResponse.json({ error: fullDupErr }, { status: 400 });
   }
 
   await Promise.all(
-    updates.map((s) => {
+    normalized.map((s) => {
       const prev = existing.find((e) => e.slotIndex === s.slotIndex);
       const changed =
         !prev || prev.songName !== s.songName || (prev.songId ?? null) !== s.songId;

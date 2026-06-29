@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { GripVertical } from "lucide-react";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
-import { COPA_SINGLES_COUNT, SLOT_LABELS, findDuplicateSongInSingles, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
+import { COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, getLockedSlotIndexes, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
@@ -188,8 +188,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
       return false;
     }
 
-    const merged = mergeArtistSingles(art.singles, [{ slotIndex, songName, songId }]);
-    const dupErr = validateArtistSingleAssignment(slotIndex, songName, songId, merged);
+    const lockedIndexes = getLockedSlotIndexes(art.slotLocks);
+    const validationOpts =
+      art.slotLocks.length > 0 ? { lockedSlotIndexes: lockedIndexes } : undefined;
+    const merged = applyCopaSingleMoveFromEditable(art.singles, slotIndex, songName, songId, lockedIndexes);
+    const dupErr = validateArtistSingleAssignment(slotIndex, songName, songId, merged, validationOpts);
     if (dupErr) {
       alert(dupErr);
       return false;
@@ -221,11 +224,14 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
     };
     const from = pick(fromSlotIndex);
     const to = pick(toSlotIndex);
+    const lockedIndexes = getLockedSlotIndexes(art.slotLocks);
+    const validationOpts =
+      art.slotLocks.length > 0 ? { lockedSlotIndexes: lockedIndexes } : undefined;
     const merged = mergeArtistSingles(art.singles, [
       { slotIndex: fromSlotIndex, songName: to.songName, songId: to.songId },
       { slotIndex: toSlotIndex, songName: from.songName, songId: from.songId },
     ]);
-    const dupErr = findDuplicateSongInSingles(merged);
+    const dupErr = findDuplicateSongInSingles(merged, validationOpts);
     if (dupErr) {
       alert(dupErr);
       return false;
