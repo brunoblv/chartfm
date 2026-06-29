@@ -6,7 +6,7 @@ import { Instagram, Pencil, Trash2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
 import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution, SCORE_BANDS } from "@/lib/album-score";
-import { downloadReviewStory, downloadReviewTwitter } from "@/lib/review-story-export";
+import { downloadReview, downloadAlbumScore, type ExportFormat } from "@/lib/review-story-export";
 
 type ReviewUser = { id: string; handle: string; name: string; avatarColor: string; image: string | null };
 
@@ -326,6 +326,14 @@ export function AlbumReviewsClient({
                   </div>
                 );
               })}
+
+              <CommunityExportButtons
+                albumTitle={albumTitle}
+                albumArtist={albumArtist}
+                albumCoverUrl={albumCoverUrl}
+                rating={avgScore}
+                reviewCount={reviewCount}
+              />
             </>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -376,7 +384,7 @@ function MyReviewCard({
   onDeleted: (id: string) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
-  const [exporting, setExporting] = useState<"story" | "twitter" | null>(null);
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [expanded, setExpanded] = useState(false);
 
   const deleteReview = async () => {
@@ -391,20 +399,21 @@ function MyReviewCard({
     }
   };
 
-  const exportImage = async (type: "story" | "twitter") => {
+  const exportImage = async (type: ExportFormat) => {
     setExporting(type);
     try {
-      const payload = {
-        albumTitle,
-        albumArtist,
-        albumCoverUrl,
-        rating: review.rating,
-        body: review.body,
-        userName: review.user.name,
-        userHandle: review.user.handle,
-      };
-      if (type === "story") await downloadReviewStory(payload);
-      else await downloadReviewTwitter(payload);
+      await downloadReview(
+        {
+          albumTitle,
+          albumArtist,
+          albumCoverUrl,
+          rating: review.rating,
+          body: review.body,
+          userName: review.user.name,
+          userHandle: review.user.handle,
+        },
+        type,
+      );
     } finally {
       setExporting(null);
     }
@@ -500,14 +509,7 @@ function MyReviewCard({
           <Pencil size={14} />
           Editar
         </button>
-        <button type="button" onClick={() => exportImage("story")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem para story do Instagram">
-          <Instagram size={14} />
-          {exporting === "story" ? "Baixando…" : "Story"}
-        </button>
-        <button type="button" onClick={() => exportImage("twitter")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem para post no X (Twitter)">
-          <IconX size={13} />
-          {exporting === "twitter" ? "Baixando…" : "X"}
-        </button>
+        <ExportFormatButtons exporting={exporting} onExport={exportImage} />
         <button
           type="button"
           onClick={deleteReview}
@@ -535,6 +537,70 @@ const actionBtnStyle: CSSProperties = {
   color: "var(--text)",
   cursor: "pointer",
 };
+
+function ExportFormatButtons({
+  exporting,
+  onExport,
+}: {
+  exporting: ExportFormat | null;
+  onExport: (type: ExportFormat) => void;
+}) {
+  return (
+    <>
+      <button type="button" onClick={() => onExport("story")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem para story do Instagram">
+        <Instagram size={14} />
+        {exporting === "story" ? "Baixando…" : "Story"}
+      </button>
+      <button type="button" onClick={() => onExport("square")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem quadrada para feed do Instagram">
+        <Instagram size={14} />
+        {exporting === "square" ? "Baixando…" : "Quadrado"}
+      </button>
+      <button type="button" onClick={() => onExport("twitter")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem retangular para post no X (Twitter)">
+        <IconX size={13} />
+        {exporting === "twitter" ? "Baixando…" : "X"}
+      </button>
+    </>
+  );
+}
+
+function CommunityExportButtons({
+  albumTitle,
+  albumArtist,
+  albumCoverUrl,
+  rating,
+  reviewCount,
+}: {
+  albumTitle: string;
+  albumArtist: string;
+  albumCoverUrl: string | null;
+  rating: number;
+  reviewCount: number;
+}) {
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
+
+  const exportImage = async (type: ExportFormat) => {
+    setExporting(type);
+    try {
+      await downloadAlbumScore(
+        { albumTitle, albumArtist, albumCoverUrl, rating, reviewCount },
+        type,
+      );
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--divider-soft)" }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>
+        Baixar nota da comunidade
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <ExportFormatButtons exporting={exporting} onExport={exportImage} />
+      </div>
+    </div>
+  );
+}
 
 function IconX({ size = 16 }: { size?: number }) {
   return (

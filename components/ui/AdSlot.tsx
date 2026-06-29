@@ -6,8 +6,9 @@
  * Publisher ID: ca-pub-4600084865044867 (já carregado em app/layout.tsx)
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isAdSlotConfigured } from "@/lib/adsense-slots";
+import { CONSENT_STORAGE_KEY, hasAdsConsent } from "@/lib/consent";
 
 export type AdFormat =
   | "leaderboard"
@@ -40,9 +41,23 @@ const WRAPPER_MAX_WIDTH: Record<AdFormat, number | string> = {
 export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
   const pushed = useRef(false);
   const active = isAdSlotConfigured(slotId);
+  const [adsAllowed, setAdsAllowed] = useState(false);
 
   useEffect(() => {
-    if (!active) return;
+    function sync() {
+      setAdsAllowed(hasAdsConsent(localStorage.getItem(CONSENT_STORAGE_KEY)));
+    }
+    sync();
+    window.addEventListener("chartfm-consent-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("chartfm-consent-change", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!active || !adsAllowed) return;
     if (pushed.current) return;
     try {
       (
@@ -53,9 +68,9 @@ export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
     } catch {
       // script ainda não carregou
     }
-  }, [active]);
+  }, [active, adsAllowed]);
 
-  if (!active) return null;
+  if (!active || !adsAllowed) return null;
 
   const isAuto = format === "auto";
 

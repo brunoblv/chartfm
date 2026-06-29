@@ -120,3 +120,28 @@ export function chartStatsLabels(isDaily: boolean) {
     overlapEmpty: isDaily ? "Nenhuma afinidade encontrada neste dia." : "Nenhuma afinidade encontrada nesta semana.",
   };
 }
+
+/** Tempo na parada por extenso (ex.: "3 semanas", "1 dia"). */
+export function formatTenureProse(weeks: number, isDaily: boolean): string {
+  if (isDaily) return weeks === 1 ? "1 dia" : `${weeks} dias`;
+  return weeks === 1 ? "1 semana" : `${weeks} semanas`;
+}
+
+/** Variação de posição por extenso (ex.: "+1", "Nova", "—"). */
+export function formatMovementProse(
+  status: "new" | "return" | "up" | "down" | "same",
+  delta?: number | null,
+): string {
+  switch (status) {
+    case "new":
+      return "Nova";
+    case "return":
+      return "Retorno";
+    case "up":
+      return `+${delta ?? 0}`;
+    case "down":
+      return `-${Math.abs(delta ?? 0)}`;
+    default:
+      return "—";
+  }
+}

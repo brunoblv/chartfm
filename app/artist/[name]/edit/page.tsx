@@ -35,7 +35,7 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
         : parsed.type === "spotify"
           ? { spotifyId: parsed.spotifyId }
           : { name: { equals: parsed.name, mode: "insensitive" } },
-    select: { id: true, name: true, exhibitionName: true, imageUrl: true, spotifyId: true },
+    select: { id: true, name: true, exhibitionName: true, imageUrl: true, spotifyId: true, bio: true },
   });
   if (!artist) {
     return (
@@ -61,6 +61,7 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
             spotifyId: artist.spotifyId,
             romanization: artist.exhibitionName ?? "",
             imageUrl: artist.imageUrl ?? "",
+            bio: artist.bio ?? "",
           }}
         />
       </div>

@@ -2,7 +2,7 @@ import type { TrackPlays } from "./lastfm";
 import { buildWeekIndexFromDate, buildWeekLabelFromDate, prevChartWeekIndex } from "./chart-week";
 
 /** Peso por idade do play (1 = ontem … 7 = há 7 dias). */
-const DAY_WEIGHTS = [20, 18, 15, 13, 12, 11, 10] as const;
+const DAY_WEIGHTS = [25, 15, 14, 13, 12, 11, 10] as const;
 
 export type MyTrlEntryStatus = "new" | "return" | "up" | "down" | "same";
 
@@ -124,10 +124,13 @@ function computeScore(dayPlays: TrackPlays["dayPlays"], referenceDayKey: string)
   return score;
 }
 
+/** Rótulo dos 7 dias BRT que entram na pontuação (ontem até há 7 dias; exclui o dia da edição). */
 export function buildMyTrlScoringWindow(referenceDayKey: string): string {
   const ref = new Date(`${referenceDayKey}T00:00:00Z`);
   const start = new Date(ref);
   start.setUTCDate(start.getUTCDate() - 7);
+  const end = new Date(ref);
+  end.setUTCDate(end.getUTCDate() - 1);
 
   const fmt = (d: Date) => {
     const dd = String(d.getUTCDate()).padStart(2, "0");
@@ -135,8 +138,8 @@ export function buildMyTrlScoringWindow(referenceDayKey: string): string {
     return `${dd}/${mm}`;
   };
 
-  const endYear = ref.getUTCFullYear();
-  return `${fmt(start)} – ${fmt(ref)}/${endYear}`;
+  const endYear = end.getUTCFullYear();
+  return `${fmt(start)} – ${fmt(end)}/${endYear}`;
 }
 
 /** Rótulo da edição diária (data da parada). */

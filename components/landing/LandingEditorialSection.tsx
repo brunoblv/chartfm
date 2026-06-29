@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buildSongPath } from "@/lib/music-routes";
 import { formatWeekLabel } from "@/lib/i18n/format";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { getWeeklyEditorialBody } from "@/lib/weekly-editorial";
 import type { GlobalChartEntry } from "@/lib/types";
 
 type Props = {
@@ -31,142 +32,11 @@ function movementLabel(t: TFn, entry: GlobalChartEntry): string {
   }
 }
 
-function buildLeaderParagraph(t: TFn, leader: GlobalChartEntry, formattedWeek: string): string {
-  if ((leader.numberOnes ?? 0) >= 2) {
-    return t("landingEditorial.leaderHolds", {
-      week: formattedWeek,
-      title: leader.song.title,
-      artist: leader.song.artist,
-      numberOnes: leader.numberOnes ?? 2,
-    });
-  }
-  if (leader.status === "new" || leader.weeks <= 1) {
-    return t("landingEditorial.leaderDebut", {
-      week: formattedWeek,
-      title: leader.song.title,
-      artist: leader.song.artist,
-    });
-  }
-  return t("landingEditorial.leaderDefault", {
-    week: formattedWeek,
-    title: leader.song.title,
-    artist: leader.song.artist,
-  });
-}
-
-function formatTrackList(entries: GlobalChartEntry[]): string {
-  return entries
-    .map((e) => `"${e.song.title}" (${e.song.artist})`)
-    .join(", ");
-}
-
-function buildEditorialHighlights(t: TFn, entries: GlobalChartEntry[]): string[] {
-  const candidates: { priority: number; text: string }[] = [];
-
-  const risers = entries
-    .filter((e) => e.status === "up" && e.delta != null && e.delta > 0)
-    .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0));
-  const topRiser = risers[0];
-  if (topRiser && (topRiser.delta ?? 0) >= 2) {
-    candidates.push({
-      priority: 100 + (topRiser.delta ?? 0),
-      text: t("landingEditorial.moversUp", {
-        title: topRiser.song.title,
-        artist: topRiser.song.artist,
-        delta: topRiser.delta ?? 0,
-      }),
-    });
-  }
-
-  const debuts = entries.filter((e) => e.status === "new" && e.position !== 1);
-  if (debuts.length === 1) {
-    candidates.push({
-      priority: 80,
-      text: t("landingEditorial.debutSingle", {
-        title: debuts[0].song.title,
-        artist: debuts[0].song.artist,
-      }),
-    });
-  } else if (debuts.length > 1) {
-    candidates.push({
-      priority: 70 + debuts.length,
-      text: t("landingEditorial.moversNew", {
-        names: formatTrackList(debuts.slice(0, 3)),
-        count: debuts.length,
-      }),
-    });
-  }
-
-  const returns = entries.filter((e) => e.status === "return");
-  if (returns.length > 0) {
-    const names = formatTrackList(returns.slice(0, 3));
-    candidates.push({
-      priority: 60 + returns.length,
-      text: t("landingEditorial.returnsHighlight", {
-        names,
-        verb:
-          returns.length === 1
-            ? t("landingEditorial.returnsVerbSingular")
-            : t("landingEditorial.returnsVerbPlural"),
-      }),
-    });
-  }
-
-  const artistCounts = new Map<string, number>();
-  for (const e of entries) {
-    artistCounts.set(e.song.artist, (artistCounts.get(e.song.artist) ?? 0) + 1);
-  }
-  const multiArtist = [...artistCounts.entries()]
-    .filter(([, count]) => count >= 2)
-    .sort((a, b) => b[1] - a[1])[0];
-  if (multiArtist) {
-    candidates.push({
-      priority: 55 + multiArtist[1] * 5,
-      text: t("landingEditorial.artistMultiple", {
-        artist: multiArtist[0],
-        count: multiArtist[1],
-      }),
-    });
-  }
-
-  const newPeak = entries
-    .filter((e) => e.status === "up" && e.position === e.peak && (e.delta ?? 0) >= 3)
-    .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0))[0];
-  if (newPeak) {
-    candidates.push({
-      priority: 50 + (newPeak.delta ?? 0),
-      text: t("landingEditorial.newPeak", {
-        title: newPeak.song.title,
-        artist: newPeak.song.artist,
-        position: newPeak.position,
-      }),
-    });
-  }
-
-  const veteran = [...entries].sort((a, b) => b.weeks - a.weeks)[0];
-  if (veteran && veteran.weeks >= 4) {
-    candidates.push({
-      priority: 40 + veteran.weeks,
-      text: t("landingEditorial.longestRun", {
-        title: veteran.song.title,
-        artist: veteran.song.artist,
-        weeks: veteran.weeks,
-      }),
-    });
-  }
-
-  return candidates
-    .sort((a, b) => b.priority - a.priority)
-    .slice(0, 2)
-    .map((c) => c.text);
-}
-
 export async function LandingEditorialSection({ globalChart, weekLabel, weekIndex }: Props) {
   const { t, locale } = await getServerTranslations();
   const formattedWeek = formatWeekLabel(locale, weekLabel);
   const top10 = globalChart.slice(0, 10);
-  const leader = top10[0];
-  const highlightParagraphs = leader ? buildEditorialHighlights(t, top10) : [];
+  const editorialBody = await getWeeklyEditorialBody(weekIndex, formattedWeek, globalChart);
 
   return (
     <section
@@ -208,25 +78,15 @@ export async function LandingEditorialSection({ globalChart, weekLabel, weekInde
             {t("landingEditorial.title", { week: formattedWeek })}
           </h2>
 
-          {leader ? (
-            <>
-              <p style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 16px 0" }}>
-                {buildLeaderParagraph(t, leader, formattedWeek)}
-              </p>
-              {highlightParagraphs.map((paragraph) => (
-                <p
-                  key={paragraph}
-                  style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 16px 0" }}
-                >
-                  {paragraph}
-                </p>
-              ))}
-            </>
-          ) : (
+          {editorialBody ? (
+            <p style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 28px 0" }}>
+              {editorialBody}
+            </p>
+          ) : top10.length === 0 ? (
             <p style={{ fontSize: 16, lineHeight: 1.75, color: "#6B6B70", margin: "0 0 28px 0" }}>
               {t("landingEditorial.introEmpty")}
             </p>
-          )}
+          ) : null}
 
           {top10.length > 0 && (
             <>
@@ -236,7 +96,7 @@ export async function LandingEditorialSection({ globalChart, weekLabel, weekInde
                   fontWeight: 700,
                   letterSpacing: "-0.02em",
                   color: "#1D1D1F",
-                  margin: highlightParagraphs.length > 0 ? "12px 0 16px 0" : "0 0 16px 0",
+                  margin: editorialBody ? "0 0 16px 0" : "0 0 16px 0",
                 }}
               >
                 {t("landingEditorial.listHeading", { week: formattedWeek })}

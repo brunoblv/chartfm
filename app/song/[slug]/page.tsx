@@ -96,6 +96,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           title: true,
           artist: true,
           album: true,
+          editorialNote: true,
           albumRef: { select: { id: true, coverUrl: true } },
           spotifyId: true,
           artistSpotifyId: true,
@@ -113,6 +114,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         title: true,
         artist: true,
         album: true,
+        editorialNote: true,
         albumRef: { select: { id: true, coverUrl: true } },
         spotifyId: true,
         artistSpotifyId: true,
@@ -336,6 +338,45 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             )}
           </div>
         </div>
+
+        {songRow?.editorialNote && (
+          <div
+            style={{
+              margin: "32px 0",
+              padding: "28px 30px",
+              background: "var(--surface)",
+              border: "1px solid var(--divider)",
+              borderRadius: 20,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                color: "var(--accent)",
+                marginBottom: 6,
+              }}
+            >
+              Contexto no ChartFM
+            </div>
+            <h2
+              style={{
+                fontSize: 20,
+                fontWeight: 800,
+                letterSpacing: "-0.03em",
+                color: "var(--text)",
+                marginBottom: 16,
+              }}
+            >
+              Desempenho da comunidade
+            </h2>
+            <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
+              {songRow.editorialNote}
+            </p>
+          </div>
+        )}
 
         <SongAppearancesTabs
           currentUserId={currentUserId}

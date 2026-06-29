@@ -29,6 +29,7 @@ export const messagesPtBR = {
     profile: "Perfil",
     active: "ativo",
     editProfile: "Editar dados",
+    adminDataEdit: "Edição de dados",
     adminEditSongs: "Editar músicas",
     adminSongsNoAlbum: "Músicas sem álbum",
     adminMissingInfo: "Informações faltando",
@@ -192,6 +193,14 @@ export const messagesPtBR = {
     rights: "© {year} ChartFM. Todos os direitos reservados.",
     footerTagline: "A rede social de paradas musicais semanais. Feita por quem ouve, pra quem ouve.",
     top10Week: "Top 10 · {week} · {year}",
+  },
+  globalFooter: {
+    tagline:
+      "Crie sua parada musical semanal e descubra o que a comunidade está ouvindo.",
+    community: "Comunidade",
+    aboutChartfm: "Sobre o ChartFM",
+    cookies: "Cookies",
+    madeWith: "Feito com ♥ pela comunidade ChartFM · chartfm.com.br",
   },
   ...pagesPtBR,
 };

@@ -16,6 +16,7 @@ type SongEditInitial = {
   album: string;
   artistSpotifyId: string;
   albumSpotifyId: string;
+  editorialNote: string;
 };
 
 type FeatEntry = { id: number; artistSpotifyId: string; artistName: string };
@@ -34,6 +35,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
   const [title, setTitle] = useState(initialSong.title);
   const [spotifyId, setSpotifyId] = useState(initialSong.spotifyId);
   const [romanization, setRomanization] = useState(initialSong.romanization);
+  const [editorialNote, setEditorialNote] = useState(initialSong.editorialNote);
 
   const [artistQuery, setArtistQuery] = useState(initialSong.artist);
   const [artistSpotifyId, setArtistSpotifyId] = useState(initialSong.artistSpotifyId);
@@ -129,6 +131,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
           romanization: romanization.trim(),
           artistSpotifyId: artistSpotifyId.trim(),
           albumSpotifyId: albumSpotifyId.trim() || null,
+          editorialNote: editorialNote.trim(),
         }),
       });
       const data = (await res.json()) as { error?: string; message?: string; conflict?: DuplicateSongConflict };
@@ -241,6 +244,16 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
           <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nota editorial (Contexto no ChartFM)</span>
+          <textarea
+            value={editorialNote}
+            onChange={(e) => setEditorialNote(e.target.value)}
+            rows={5}
+            placeholder="Contexto da música na comunidade ChartFM"
+            style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
+          />
         </label>
       </div>
 

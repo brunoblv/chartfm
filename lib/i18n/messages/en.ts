@@ -29,6 +29,7 @@ export const messagesEn = {
     profile: "Profile",
     active: "active",
     editProfile: "Edit profile",
+    adminDataEdit: "Data editing",
     adminEditSongs: "Edit songs",
     adminSongsNoAlbum: "Songs without album",
     adminMissingInfo: "Missing information",
@@ -192,6 +193,14 @@ export const messagesEn = {
     rights: "© {year} ChartFM. All rights reserved.",
     footerTagline: "The social network for weekly music charts. Built by listeners, for listeners.",
     top10Week: "Top 10 · {week} · {year}",
+  },
+  globalFooter: {
+    tagline:
+      "Build your weekly music chart and discover what the community is listening to.",
+    community: "Community",
+    aboutChartfm: "About ChartFM",
+    cookies: "Cookies",
+    madeWith: "Made with ♥ by the ChartFM community · chartfm.com.br",
   },
   ...pagesEn,
 };

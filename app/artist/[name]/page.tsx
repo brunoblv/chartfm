@@ -122,7 +122,7 @@ export default async function ArtistPage({
         : parsed.type === "spotify"
           ? { spotifyId: parsed.spotifyId }
           : { name: { equals: parsed.name, mode: "insensitive" } },
-    select: { id: true, spotifyId: true, name: true, exhibitionName: true, imageUrl: true, spotifyUrl: true },
+    select: { id: true, spotifyId: true, name: true, exhibitionName: true, imageUrl: true, spotifyUrl: true, bio: true },
   });
 
   const cachedSnapshot = await getLatestEntityPageSnapshot<ArtistPageSnapshotPayload>(
@@ -735,6 +735,45 @@ export default async function ArtistPage({
             );
           })}
         </div>
+
+        {artistRef?.bio && (
+          <div
+            style={{
+              marginBottom: 40,
+              padding: "28px 30px",
+              background: "var(--surface)",
+              border: "1px solid var(--divider)",
+              borderRadius: 20,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                color: "var(--accent)",
+                marginBottom: 6,
+              }}
+            >
+              No ChartFM
+            </div>
+            <h2
+              style={{
+                fontSize: 20,
+                fontWeight: 800,
+                letterSpacing: "-0.03em",
+                color: "var(--text)",
+                marginBottom: 16,
+              }}
+            >
+              {canonicalName} na comunidade
+            </h2>
+            <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
+              {artistRef.bio}
+            </p>
+          </div>
+        )}
 
         {/* Stats cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 28, marginBottom: 28 }}>

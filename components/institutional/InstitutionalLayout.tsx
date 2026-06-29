@@ -20,7 +20,7 @@ export function InstitutionalLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <Shell noPadding>
+    <Shell noPadding hideGlobalFooter>
       <div
         style={{
           display: "flex",

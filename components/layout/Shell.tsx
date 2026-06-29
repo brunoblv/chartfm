@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
+import { GlobalFooter } from "./GlobalFooter";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface ShellProps {
@@ -12,11 +13,20 @@ interface ShellProps {
   subtitle?: string;
   headerRight?: React.ReactNode;
   noPadding?: boolean;
+  hideGlobalFooter?: boolean;
 }
 
-export function Shell({ children, title, subtitle, headerRight, noPadding }: ShellProps) {
+export function Shell({ children, title, subtitle, headerRight, noPadding, hideGlobalFooter }: ShellProps) {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const mainPadding = noPadding
+    ? isMobile
+      ? { paddingBottom: hideGlobalFooter ? 80 : 0 }
+      : {}
+    : isMobile
+      ? { padding: hideGlobalFooter ? "20px 16px 80px 16px" : "20px 16px 20px 16px" }
+      : { padding: hideGlobalFooter ? "36px 40px 80px 40px" : "36px 40px 40px 40px" };
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)" }}>
@@ -26,13 +36,7 @@ export function Shell({ children, title, subtitle, headerRight, noPadding }: She
       )}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <TopBar isMobile={isMobile} onMenuToggle={isMobile ? () => setSidebarOpen((o) => !o) : undefined} />
-        <main
-          style={
-            noPadding
-              ? isMobile ? { paddingBottom: 80 } : {}
-              : { padding: isMobile ? "20px 16px 80px 16px" : "36px 40px 80px 40px" }
-          }
-        >
+        <main style={mainPadding}>
           {!noPadding && title && (
             <header style={{ marginBottom: 28, display: "flex", alignItems: "flex-end", gap: 24 }}>
               <div style={{ flex: 1 }}>
@@ -50,6 +54,7 @@ export function Shell({ children, title, subtitle, headerRight, noPadding }: She
           )}
           {children}
         </main>
+        {!hideGlobalFooter && <GlobalFooter isMobile={isMobile} />}
       </div>
       {isMobile && <BottomNav />}
     </div>

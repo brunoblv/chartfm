@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { Instagram, Trash2 } from "lucide-react";
 import { scoreBg, scoreColor, scoreLabel } from "@/lib/album-score";
-import { downloadReviewStory, downloadReviewTwitter } from "@/lib/review-story-export";
+import { downloadReview, type ExportFormat } from "@/lib/review-story-export";
 
 export type ProfileReview = {
   id: string;
@@ -42,7 +42,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [exporting, setExporting] = useState<{ id: string; type: "story" | "twitter" } | null>(null);
+  const [exporting, setExporting] = useState<{ id: string; type: ExportFormat } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const perPage = 12;
 
@@ -78,20 +78,21 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
     }
   };
 
-  const exportImage = async (review: ProfileReview, type: "story" | "twitter") => {
+  const exportImage = async (review: ProfileReview, type: ExportFormat) => {
     setExporting({ id: review.id, type });
     try {
-      const payload = {
-        albumTitle: review.album.title,
-        albumArtist: review.album.artistName,
-        albumCoverUrl: review.album.coverUrl,
-        rating: review.rating,
-        body: review.body,
-        userName,
-        userHandle: handle,
-      };
-      if (type === "story") await downloadReviewStory(payload);
-      else await downloadReviewTwitter(payload);
+      await downloadReview(
+        {
+          albumTitle: review.album.title,
+          albumArtist: review.album.artistName,
+          albumCoverUrl: review.album.coverUrl,
+          rating: review.rating,
+          body: review.body,
+          userName,
+          userHandle: handle,
+        },
+        type,
+      );
     } finally {
       setExporting(null);
     }
@@ -239,10 +240,20 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
                     </button>
                     <button
                       type="button"
+                      onClick={() => exportImage(review, "square")}
+                      disabled={exporting?.id === review.id}
+                      style={actionBtnStyle}
+                      title="Baixar imagem quadrada para feed do Instagram"
+                    >
+                      <Instagram size={15} />
+                      {exporting?.id === review.id && exporting.type === "square" ? "Baixando…" : "Quadrado"}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => exportImage(review, "twitter")}
                       disabled={exporting?.id === review.id}
                       style={actionBtnStyle}
-                      title="Baixar imagem para post no X (Twitter)"
+                      title="Baixar imagem retangular para post no X (Twitter)"
                     >
                       <IconX size={14} />
                       {exporting?.id === review.id && exporting.type === "twitter" ? "Baixando…" : "X"}

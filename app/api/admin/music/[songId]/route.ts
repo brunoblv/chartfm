@@ -47,6 +47,7 @@ type PatchBody = {
   romanization?: unknown;
   artistSpotifyId?: unknown;
   albumSpotifyId?: unknown;
+  editorialNote?: unknown;
 };
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ songId: string }> }) {
@@ -63,6 +64,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
   const romanization = typeof body.romanization === "string" ? body.romanization.trim() : "";
   const artistSpotifyId = typeof body.artistSpotifyId === "string" ? body.artistSpotifyId.trim() : "";
   const albumSpotifyId = typeof body.albumSpotifyId === "string" ? body.albumSpotifyId.trim() : "";
+  const editorialNote = typeof body.editorialNote === "string" ? body.editorialNote.trim() : "";
 
   if (!title) return NextResponse.json({ error: "title_required" }, { status: 400 });
   if (!artistSpotifyId) return NextResponse.json({ error: "artist_required" }, { status: 400 });
@@ -109,6 +111,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
         artistSpotifyId: artist.spotifyId,
         album: album?.title ?? null,
         albumSpotifyId: album?.spotifyId ?? null,
+        editorialNote: editorialNote || null,
       },
       select: {
         id: true,
@@ -119,6 +122,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
         album: true,
         artistSpotifyId: true,
         albumSpotifyId: true,
+        editorialNote: true,
       },
     });
     return NextResponse.json({ song: updated });

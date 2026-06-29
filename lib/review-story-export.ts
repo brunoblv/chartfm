@@ -372,12 +372,418 @@ export async function renderReviewTwitterBlob(input: ReviewExportInput): Promise
   });
 }
 
+const SQ_W = 1254;
+const SQ_H = 1254;
+
+export type ExportFormat = "story" | "square" | "twitter";
+
+export async function renderReviewSquareBlob(input: ReviewExportInput): Promise<Blob | null> {
+  const canvas = document.createElement("canvas");
+  canvas.width = SQ_W;
+  canvas.height = SQ_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const bg = await loadImage("/quadrada.png");
+  if (bg) {
+    ctx.drawImage(bg, 0, 0, SQ_W, SQ_H);
+  } else {
+    ctx.fillStyle = "#FCFCFD";
+    ctx.fillRect(0, 0, SQ_W, SQ_H);
+  }
+
+  const handle = input.userHandle.replace(/^@/, "");
+  const sc = scoreBadgeColor(input.rating);
+  const u = SQ_W / 1080;
+
+  drawEyebrow(ctx, "✍️  MINHA AVALIAÇÃO", SQ_W / 2, Math.round(200 * u));
+
+  ctx.fillStyle = "#FA243C";
+  ctx.font = `800 ${Math.round(40 * u)}px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(`@${handle}`, SQ_W / 2, Math.round(280 * u));
+
+  const coverSize = Math.round(400 * u);
+  const coverX = (SQ_W - coverSize) / 2;
+  const coverY = Math.round(310 * u);
+
+  await drawAlbumCover(ctx, input, coverX, coverY, coverSize, Math.round(24 * u));
+
+  const badgeSize = Math.round(130 * u);
+  drawSquareScoreBadge(
+    ctx,
+    input.rating,
+    sc,
+    coverX + coverSize - badgeSize + Math.round(24 * u),
+    coverY + coverSize - badgeSize + Math.round(24 * u),
+    badgeSize,
+    Math.round(22 * u),
+    Math.round(58 * u),
+  );
+
+  ctx.fillStyle = "#1D1D1F";
+  ctx.font = `800 ${Math.round(52 * u)}px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  const titleLines = wrapText(ctx, input.albumTitle, SQ_W - Math.round(140 * u), 2);
+  let y = coverY + coverSize + Math.round(52 * u);
+  for (const line of titleLines) {
+    ctx.fillText(line, SQ_W / 2, y);
+    y += Math.round(58 * u);
+  }
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `500 ${Math.round(30 * u)}px ${FONT}`;
+  ctx.fillText(input.albumArtist, SQ_W / 2, y + Math.round(6 * u));
+  y += Math.round(48 * u);
+
+  drawScorePill(ctx, scoreLabel(input.rating).toUpperCase(), sc, SQ_W / 2, y + Math.round(20 * u));
+  y += Math.round(60 * u);
+
+  if (input.body?.trim()) {
+    ctx.fillStyle = "#3A3A3C";
+    ctx.font = `500 ${Math.round(28 * u)}px ${FONT}`;
+    const bodyLines = wrapText(ctx, `"${input.body.trim()}"`, SQ_W - Math.round(120 * u), 4);
+    for (const line of bodyLines) {
+      ctx.fillText(line, SQ_W / 2, y);
+      y += Math.round(40 * u);
+    }
+  }
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `700 ${Math.round(24 * u)}px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", SQ_W / 2, SQ_H - Math.round(72 * u));
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
 export async function downloadReviewStory(input: ReviewExportInput): Promise<void> {
   const blob = await renderReviewStoryBlob(input);
   downloadReviewBlob(blob, input, "story");
 }
 
+export async function downloadReviewSquare(input: ReviewExportInput): Promise<void> {
+  const blob = await renderReviewSquareBlob(input);
+  downloadReviewBlob(blob, input, "square");
+}
+
 export async function downloadReviewTwitter(input: ReviewExportInput): Promise<void> {
   const blob = await renderReviewTwitterBlob(input);
   downloadReviewBlob(blob, input, "twitter");
+}
+
+export async function downloadReview(input: ReviewExportInput, format: ExportFormat): Promise<void> {
+  if (format === "story") await downloadReviewStory(input);
+  else if (format === "square") await downloadReviewSquare(input);
+  else await downloadReviewTwitter(input);
+}
+
+// ——— Community album score exports ———
+
+export type AlbumScoreExportInput = {
+  albumTitle: string;
+  albumArtist: string;
+  albumCoverUrl: string | null;
+  rating: number;
+  reviewCount: number;
+};
+
+function downloadAlbumScoreBlob(blob: Blob | null, input: AlbumScoreExportInput, suffix: string) {
+  if (!blob) return;
+  const slug = input.albumTitle.replace(/[^\w\s-]/g, "").trim().slice(0, 40) || "album";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `chartfm-comunidade-${suffix}-${slug}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function drawCommunityAlbumCover(
+  ctx: CanvasRenderingContext2D,
+  input: AlbumScoreExportInput,
+  x: number,
+  y: number,
+  size: number,
+  radius: number,
+) {
+  const cover = input.albumCoverUrl ? await loadImage(input.albumCoverUrl) : null;
+  if (cover) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, radius);
+    ctx.clip();
+    ctx.drawImage(cover, x, y, size, size);
+    ctx.restore();
+  } else {
+    drawCoverPlaceholder(ctx, input.albumTitle, x, y, size, radius);
+  }
+}
+
+function drawCommunityHeaderRight(ctx: CanvasRenderingContext2D, x: number, y: number, fontSize: number) {
+  ctx.font = `700 ${fontSize}px ${FONT}`;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#86868B";
+  ctx.fillText("NOTA DA COMUNIDADE", x, y);
+}
+
+function drawReviewCountPill(ctx: CanvasRenderingContext2D, count: number, x: number, y: number, fontSize: number) {
+  const text = `${count} ${count === 1 ? "review" : "reviews"}`;
+  ctx.font = `700 ${fontSize}px ${FONT}`;
+  const tw = ctx.measureText(text).width;
+  const padX = 18;
+  const padY = 10;
+  const h = fontSize + padY * 2;
+  const w = tw + padX * 2;
+  ctx.fillStyle = "rgba(0,0,0,0.06)";
+  ctx.beginPath();
+  ctx.roundRect(x - w / 2, y - h / 2, w, h, 9999);
+  ctx.fill();
+  ctx.fillStyle = "#3A3A3C";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x, y);
+}
+
+export async function renderAlbumScoreStoryBlob(input: AlbumScoreExportInput): Promise<Blob | null> {
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const bg = await loadImage("/story.png");
+  if (bg) {
+    ctx.drawImage(bg, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = "#FCFCFD";
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  const sc = scoreBadgeColor(input.rating);
+  drawCommunityHeaderRight(ctx, W - 80, 120, 22);
+
+  drawEyebrow(ctx, "⭐  AVALIAÇÃO DA COMUNIDADE", W / 2, 248);
+
+  const coverSize = 460;
+  const coverX = (W - coverSize) / 2;
+  const coverY = 340;
+
+  await drawCommunityAlbumCover(ctx, input, coverX, coverY, coverSize, 26);
+
+  const badgeSize = 158;
+  drawSquareScoreBadge(ctx, input.rating, sc, coverX + coverSize - badgeSize + 28, coverY + coverSize - badgeSize + 28, badgeSize, 26, 70);
+
+  ctx.fillStyle = "#1D1D1F";
+  ctx.font = `800 60px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  const titleLines = wrapText(ctx, input.albumTitle, W - 160, 2);
+  let y = coverY + coverSize + 64;
+  for (const line of titleLines) {
+    ctx.fillText(line, W / 2, y);
+    y += 68;
+  }
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `500 34px ${FONT}`;
+  ctx.fillText(input.albumArtist, W / 2, y + 8);
+  y += 72;
+
+  drawScorePill(ctx, scoreLabel(input.rating).toUpperCase(), sc, W / 2 - 120, y + 24);
+  drawReviewCountPill(ctx, input.reviewCount, W / 2 + 120, y + 24, 24);
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `700 26px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", W / 2, H - 120);
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
+export async function renderAlbumScoreSquareBlob(input: AlbumScoreExportInput): Promise<Blob | null> {
+  const canvas = document.createElement("canvas");
+  canvas.width = SQ_W;
+  canvas.height = SQ_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const bg = await loadImage("/quadrada.png");
+  if (bg) {
+    ctx.drawImage(bg, 0, 0, SQ_W, SQ_H);
+  } else {
+    ctx.fillStyle = "#FCFCFD";
+    ctx.fillRect(0, 0, SQ_W, SQ_H);
+  }
+
+  const sc = scoreBadgeColor(input.rating);
+  const u = SQ_W / 1080;
+  const pad = Math.round(72 * u);
+
+  drawCommunityHeaderRight(ctx, SQ_W - pad, pad + Math.round(10 * u), Math.round(20 * u));
+
+  const coverSize = Math.round(460 * u);
+  const coverX = (SQ_W - coverSize) / 2;
+  const coverY = Math.round(200 * u);
+
+  await drawCommunityAlbumCover(ctx, input, coverX, coverY, coverSize, Math.round(26 * u));
+
+  const badgeSize = Math.round(158 * u);
+  drawSquareScoreBadge(
+    ctx,
+    input.rating,
+    sc,
+    coverX + coverSize - badgeSize + Math.round(28 * u),
+    coverY + coverSize - badgeSize + Math.round(28 * u),
+    badgeSize,
+    Math.round(26 * u),
+    Math.round(70 * u),
+  );
+
+  ctx.fillStyle = "#1D1D1F";
+  ctx.font = `800 ${Math.round(60 * u)}px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  const titleLines = wrapText(ctx, input.albumTitle, SQ_W - Math.round(160 * u), 2);
+  let y = coverY + coverSize + Math.round(64 * u);
+  for (const line of titleLines) {
+    ctx.fillText(line, SQ_W / 2, y);
+    y += Math.round(68 * u);
+  }
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `500 ${Math.round(30 * u)}px ${FONT}`;
+  ctx.fillText(input.albumArtist, SQ_W / 2, y + Math.round(8 * u));
+  y += Math.round(56 * u);
+
+  drawScorePill(ctx, scoreLabel(input.rating).toUpperCase(), sc, SQ_W / 2 - Math.round(110 * u), y + Math.round(24 * u));
+  drawReviewCountPill(ctx, input.reviewCount, SQ_W / 2 + Math.round(110 * u), y + Math.round(24 * u), Math.round(24 * u));
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `700 ${Math.round(24 * u)}px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", SQ_W / 2, SQ_H - Math.round(72 * u));
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
+export async function renderAlbumScoreTwitterBlob(input: AlbumScoreExportInput): Promise<Blob | null> {
+  const canvas = document.createElement("canvas");
+  canvas.width = TW_W;
+  canvas.height = TW_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const bg = await loadImage("/retangular.png");
+  if (bg) {
+    ctx.drawImage(bg, 0, 0, TW_W, TW_H);
+  } else {
+    ctx.fillStyle = "#FCFCFD";
+    ctx.fillRect(0, 0, TW_W, TW_H);
+  }
+
+  const sc = scoreBadgeColor(input.rating);
+  const coverSize = 340;
+  const coverX = 180;
+  const coverY = Math.round((TW_H - coverSize) / 2);
+  const contentX = coverX + coverSize + 56;
+  const contentW = TW_W - contentX - 72;
+
+  await drawCommunityAlbumCover(ctx, input, coverX, coverY, coverSize, 22);
+
+  drawSquareScoreBadge(
+    ctx,
+    input.rating,
+    sc,
+    coverX + coverSize - 108 + 20,
+    coverY + coverSize - 108 + 20,
+    108,
+    20,
+    48,
+  );
+
+  drawEyebrowLeft(ctx, "⭐  AVALIAÇÃO DA COMUNIDADE", contentX, coverY + 8, 22);
+
+  ctx.fillStyle = "#1D1D1F";
+  ctx.font = `800 46px ${FONT}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  const titleLines = wrapText(ctx, input.albumTitle, contentW, 2);
+  let y = coverY + 72;
+  for (const line of titleLines) {
+    ctx.fillText(line, contentX, y);
+    y += 52;
+  }
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `500 28px ${FONT}`;
+  ctx.fillText(input.albumArtist, contentX, y + 6);
+  y += 52;
+
+  ctx.textAlign = "left";
+  ctx.font = `700 24px ${FONT}`;
+  const pillText = scoreLabel(input.rating).toUpperCase();
+  const pillTw = ctx.measureText(pillText).width;
+  const pillPadX = 18;
+  const pillH = 44;
+  ctx.fillStyle = `${sc}22`;
+  ctx.beginPath();
+  ctx.roundRect(contentX, y - pillH / 2, pillTw + pillPadX * 2, pillH, 9999);
+  ctx.fill();
+  ctx.fillStyle = sc;
+  ctx.textBaseline = "middle";
+  ctx.fillText(pillText, contentX + pillPadX, y);
+
+  const countText = `${input.reviewCount} ${input.reviewCount === 1 ? "review" : "reviews"}`;
+  ctx.font = `700 22px ${FONT}`;
+  const countTw = ctx.measureText(countText).width;
+  const countX = contentX + pillTw + pillPadX * 2 + 16;
+  ctx.fillStyle = "rgba(0,0,0,0.06)";
+  ctx.beginPath();
+  ctx.roundRect(countX, y - pillH / 2, countTw + pillPadX * 2, pillH, 9999);
+  ctx.fill();
+  ctx.fillStyle = "#3A3A3C";
+  ctx.fillText(countText, countX + pillPadX, y);
+
+  ctx.fillStyle = "#86868B";
+  ctx.font = `700 22px ${FONT}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", contentX, TW_H - 56);
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+}
+
+export async function downloadAlbumScoreStory(input: AlbumScoreExportInput): Promise<void> {
+  const blob = await renderAlbumScoreStoryBlob(input);
+  downloadAlbumScoreBlob(blob, input, "story");
+}
+
+export async function downloadAlbumScoreSquare(input: AlbumScoreExportInput): Promise<void> {
+  const blob = await renderAlbumScoreSquareBlob(input);
+  downloadAlbumScoreBlob(blob, input, "square");
+}
+
+export async function downloadAlbumScoreTwitter(input: AlbumScoreExportInput): Promise<void> {
+  const blob = await renderAlbumScoreTwitterBlob(input);
+  downloadAlbumScoreBlob(blob, input, "twitter");
+}
+
+export async function downloadAlbumScore(input: AlbumScoreExportInput, format: ExportFormat): Promise<void> {
+  if (format === "story") await downloadAlbumScoreStory(input);
+  else if (format === "square") await downloadAlbumScoreSquare(input);
+  else await downloadAlbumScoreTwitter(input);
 }

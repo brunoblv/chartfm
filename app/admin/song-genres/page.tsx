@@ -63,10 +63,10 @@ export default async function AdminSongGenresPage() {
     <Shell title="Admin" subtitle="Tags de gênero por música">
       <div style={{ maxWidth: 1120 }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-          <Link href="/admin/missing-info" style={adminNavChipStyle}>
+          <Link href="/admin/edicao-de-dados?tab=missing-info" style={adminNavChipStyle}>
             Informações incompletas
           </Link>
-          <Link href="/admin/music" style={adminNavChipStyle}>
+          <Link href="/admin/edicao-de-dados?tab=music" style={adminNavChipStyle}>
             Músicas
           </Link>
         </div>

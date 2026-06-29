@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { GoogleAnalytics } from '@next/third-parties/google'
-import Script from "next/script";
 
 import "./globals.css";
 
 import { ThemeScript } from "@/components/theme-script";
 import { Providers } from "./providers";
+import { CookieConsent } from "@/components/consent/CookieConsent";
+import { AdSenseScript } from "@/components/consent/AdSenseScript";
 import { authOptions } from "@/lib/auth-options";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -73,14 +74,11 @@ export default async function RootLayout({
         <Providers session={session} initialLocale={locale}>
           {children}
         </Providers>
+        <CookieConsent />
       </body>
 
       <GoogleAnalytics gaId="G-VKENNK522F" />
-      <Script
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4600084865044867"
-        crossOrigin="anonymous"
-        strategy="afterInteractive"
-      />
+      <AdSenseScript />
     </html>
   );
 }

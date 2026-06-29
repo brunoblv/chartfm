@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  ChevronLeft, Heart, Repeat2, Share, Play, Star, MessageCircle,
+  ChevronLeft, ChevronRight, Heart, Repeat2, Share, Play, Star, MessageCircle,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { AdSlot } from "@/components/ui/AdSlot";
@@ -14,7 +14,11 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { VideoClipCover } from "@/components/ui/VideoClipCover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
-import { chartStatsLabels, isDailyChartIndex } from "@/lib/chart-cadence";
+import {
+  chartStatsLabels,
+  formatTenureProse,
+  isDailyChartIndex,
+} from "@/lib/chart-cadence";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
@@ -30,6 +34,7 @@ import {
   MOBILE_TITLE_SIZE,
   desktopCoverGridColumn,
   desktopListGrid,
+  desktopPosCol,
 } from "@/lib/chart-list-layout";
 import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
@@ -38,7 +43,17 @@ import { TIMELINE } from "@/lib/data";
 import type { ChartEntry, PersonalDropoutEntry, TimelineItem, User } from "@/lib/types";
 
 type Variant = "list" | "grid" | "podium" | "video_clip";
+type VideoClipLayout = "table" | "stacked";
 type Tab = "chart" | "comments" | "overlap" | "saidas";
+
+const VIDEO_CLIP_LAYOUT_KEY = "chartify-video-clip-layout";
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return target.isContentEditable;
+}
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -119,6 +134,7 @@ export default function ChartDetailPage() {
   const [ownerParadaNome, setOwnerParadaNome] = useState<string | null>(null);
 
   const [variant, setVariant] = useState<Variant>("list");
+  const [videoClipLayout, setVideoClipLayout] = useState<VideoClipLayout>("table");
   const initialTab = (searchParams?.get("tab") as Tab | null) ?? "chart";
   const [tab, setTab] = useState<Tab>(initialTab);
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
@@ -134,6 +150,24 @@ export default function ChartDetailPage() {
   const [exportingSpotify, setExportingSpotify] = useState(false);
   const [spotifyExportMsg, setSpotifyExportMsg] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(VIDEO_CLIP_LAYOUT_KEY);
+      if (saved === "table" || saved === "stacked") setVideoClipLayout(saved);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function selectVideoClipLayout(layout: VideoClipLayout) {
+    setVideoClipLayout(layout);
+    try {
+      localStorage.setItem(VIDEO_CLIP_LAYOUT_KEY, layout);
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     if (!id) {
@@ -198,6 +232,9 @@ export default function ChartDetailPage() {
   const globalNumberOnes = dbPayload?.globalNumberOnes ?? {};
   const dropouts: PersonalDropoutEntry[] = dbPayload?.dropouts ?? [];
   const isDbChart = !!dbPayload;
+  const previousChart = dbPayload?.previousChart ?? null;
+  const nextChart = dbPayload?.nextChart ?? null;
+  const hasParadaNav = !!(previousChart || nextChart);
   const isOwner = !!session?.user?.id && !!user?.id && session.user.id === user.id;
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
 
@@ -262,6 +299,32 @@ export default function ChartDetailPage() {
       window.history.replaceState({}, "", `/chart/${id}`);
     }
   }, [searchParams, id]);
+
+  const goToPreviousChart = useCallback(() => {
+    if (previousChart?.id) router.push(`/chart/${previousChart.id}`);
+  }, [previousChart?.id, router]);
+
+  const goToNextChart = useCallback(() => {
+    if (nextChart?.id) router.push(`/chart/${nextChart.id}`);
+  }, [nextChart?.id, router]);
+
+  useEffect(() => {
+    if (phase !== "ready" || !hasParadaNav) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+      if (e.key === "ArrowLeft" && previousChart) {
+        e.preventDefault();
+        goToPreviousChart();
+      } else if (e.key === "ArrowRight" && nextChart) {
+        e.preventDefault();
+        goToNextChart();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [phase, hasParadaNav, previousChart, nextChart, goToPreviousChart, goToNextChart]);
 
   async function exportChartToSpotify() {
     if (!id || !isDbChart || !isOwner || exportingSpotify) return;
@@ -475,15 +538,15 @@ export default function ChartDetailPage() {
             </div>
 
             {/* Prev / next navigation */}
-            {(dbPayload?.previousChart || dbPayload?.nextChart) && (
+            {(previousChart || nextChart) && (
               <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                {dbPayload.previousChart && (
-                  <Link href={`/chart/${dbPayload.previousChart.id}`} style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "9px 0", display: "block" }}>
+                {previousChart && (
+                  <Link href={`/chart/${previousChart.id}`} style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "9px 0", display: "block" }}>
                     ← Anterior
                   </Link>
                 )}
-                {dbPayload.nextChart && (
-                  <Link href={`/chart/${dbPayload.nextChart.id}`} style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "9px 0", display: "block" }}>
+                {nextChart && (
+                  <Link href={`/chart/${nextChart.id}`} style={{ flex: 1, textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "9px 0", display: "block" }}>
                     Próxima →
                   </Link>
                 )}
@@ -563,15 +626,15 @@ export default function ChartDetailPage() {
                 </Link>
                 <span style={{ fontSize: 13, color: "var(--text-muted)" }}>@{user.handle}</span>
               </div>
-              {(dbPayload?.previousChart || dbPayload?.nextChart) && (
+              {(previousChart || nextChart) && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-                  {dbPayload.previousChart && (
-                    <Link href={`/chart/${dbPayload.previousChart.id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px" }}>
+                  {previousChart && (
+                    <Link href={`/chart/${previousChart.id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px" }}>
                       ← Anterior
                     </Link>
                   )}
-                  {dbPayload.nextChart && (
-                    <Link href={`/chart/${dbPayload.nextChart.id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px" }}>
+                  {nextChart && (
+                    <Link href={`/chart/${nextChart.id}`} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", textDecoration: "none", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "7px 12px" }}>
                       Próxima parada →
                     </Link>
                   )}
@@ -653,9 +716,21 @@ export default function ChartDetailPage() {
           {variant === "grid" && <GridVariant entries={chart.entries} statsLabels={statsLabels} />}
           {variant === "podium" && <PodiumVariant entries={chart.entries} statsLabels={statsLabels} />}
           {variant === "video_clip" && (
-            loadingClips
-              ? <div style={{ padding: 40, color: "var(--text-muted)", fontSize: 15 }}>Carregando capturas…</div>
-              : <VideoClipVariant entries={chart.entries} videoClips={videoClips} personalNumberOnes={personalNumberOnes} statsLabels={statsLabels} />
+            <>
+              <VideoClipLayoutToggle layout={videoClipLayout} onChange={selectVideoClipLayout} isMobile={isMobile} />
+              {loadingClips
+                ? <div style={{ padding: 40, color: "var(--text-muted)", fontSize: 15 }}>Carregando capturas…</div>
+                : (
+                  <VideoClipVariant
+                    entries={chart.entries}
+                    videoClips={videoClips}
+                    personalNumberOnes={personalNumberOnes}
+                    statsLabels={statsLabels}
+                    layout={videoClipLayout}
+                    isDaily={isDailyParada}
+                  />
+                )}
+            </>
           )}
         </>
       )}
@@ -672,10 +747,114 @@ export default function ChartDetailPage() {
       {tab === "overlap" && <OverlapTab chartId={chart.id} isDbChart={isDbChart} statsLabels={statsLabels} />}
       </div>
       </div>
+      {hasParadaNav && (
+        <ChartParadaFloatingNav
+          previousChart={previousChart}
+          nextChart={nextChart}
+          isMobile={isMobile}
+          onPrev={goToPreviousChart}
+          onNext={goToNextChart}
+        />
+      )}
     </Shell>
   );
 }
 
+
+function chartParadaNavBtnStyle(enabled: boolean): React.CSSProperties {
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: "50%",
+    border: "1px solid var(--divider)",
+    background: enabled ? "var(--surface)" : "var(--fill-subtle)",
+    color: enabled ? "var(--text)" : "var(--text-disabled)",
+    cursor: enabled ? "pointer" : "not-allowed",
+    flexShrink: 0,
+    padding: 0,
+    boxShadow: enabled ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+  };
+}
+
+function ChartParadaFloatingNav({
+  previousChart,
+  nextChart,
+  isMobile,
+  onPrev,
+  onNext,
+}: {
+  previousChart: { id: string; weekLabel: string } | null;
+  nextChart: { id: string; weekLabel: string } | null;
+  isMobile: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div
+      role="toolbar"
+      aria-label="Navegação entre paradas"
+      style={{
+        position: "fixed",
+        bottom: isMobile ? "calc(68px + env(safe-area-inset-bottom, 0px))" : 28,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 90,
+        display: "flex",
+        alignItems: "center",
+        gap: isMobile ? 6 : 10,
+        padding: isMobile ? "6px 8px" : "8px 12px",
+        borderRadius: 100,
+        background: "color-mix(in srgb, var(--surface) 92%, transparent)",
+        backdropFilter: "blur(16px) saturate(160%)",
+        WebkitBackdropFilter: "blur(16px) saturate(160%)",
+        border: "1px solid var(--divider)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.14)",
+        maxWidth: isMobile ? "calc(100vw - 24px)" : 420,
+      }}
+    >
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={!previousChart}
+        aria-label={previousChart ? `Parada anterior: ${previousChart.weekLabel}` : "Sem parada anterior"}
+        style={chartParadaNavBtnStyle(!!previousChart)}
+      >
+        <ChevronLeft size={20} />
+      </button>
+
+      <div style={{ flex: 1, minWidth: 0, textAlign: "center", padding: "0 4px" }}>
+        {previousChart && (
+          <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            ← {previousChart.weekLabel}
+          </div>
+        )}
+        {!isMobile && (
+          <div style={{ fontSize: 10, color: "var(--text-disabled)", marginTop: previousChart || nextChart ? 2 : 0 }}>
+            ← → teclado
+          </div>
+        )}
+        {nextChart && (
+          <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+            {nextChart.weekLabel} →
+          </div>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={!nextChart}
+        aria-label={nextChart ? `Próxima parada: ${nextChart.weekLabel}` : "Sem próxima parada"}
+        style={chartParadaNavBtnStyle(!!nextChart)}
+      >
+        <ChevronRight size={20} />
+      </button>
+    </div>
+  );
+}
 
 function StatPill({ label, value, accent, compact }: { label: string; value: number | string; accent?: string; compact?: boolean }) {
   return (
@@ -879,7 +1058,301 @@ function PodiumVariant({ entries, statsLabels }: { entries: ChartEntry[]; statsL
   );
 }
 
+function VideoClipLayoutToggle({
+  layout,
+  onChange,
+  isMobile,
+}: {
+  layout: VideoClipLayout;
+  onChange: (layout: VideoClipLayout) => void;
+  isMobile: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        background: "var(--fill-subtle)",
+        borderRadius: 8,
+        padding: 3,
+        gap: 2,
+        marginBottom: isMobile ? 12 : 16,
+        alignSelf: isMobile ? "stretch" : "flex-start",
+        width: isMobile ? "100%" : "auto",
+      }}
+    >
+      {([
+        ["table", "Tabela"],
+        ["stacked", "Detalhado"],
+      ] as const).map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => onChange(value)}
+          style={{
+            flex: isMobile ? 1 : undefined,
+            padding: isMobile ? "8px 0" : "6px 14px",
+            borderRadius: 6,
+            border: "none",
+            fontSize: 12,
+            fontWeight: 600,
+            background: layout === value ? "var(--surface)" : "transparent",
+            color: layout === value ? "var(--text)" : "var(--text-muted)",
+            boxShadow: layout === value ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+            transition: "background 120ms",
+            cursor: "pointer",
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function formatChartStatsProse(
+  entry: ChartEntry,
+  personal: number,
+  isDaily: boolean,
+): string {
+  const tenure = formatTenureProse(entry.weeks, isDaily);
+  const peakPart = personal > 0 ? `Pico: ${entry.peak}x${personal}` : `Pico: ${entry.peak}`;
+  return `${tenure} / ${peakPart}`;
+}
+
+function VideoClipSongInfo({
+  entry,
+  titleSize,
+  artistSize,
+  albumSize,
+  statsLine,
+}: {
+  entry: ChartEntry;
+  titleSize: number;
+  artistSize: number;
+  albumSize: number;
+  statsLine?: string;
+}) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <Link
+        href={buildSongPath(entry.song)}
+        style={{
+          display: "block",
+          fontSize: titleSize,
+          fontWeight: 700,
+          lineHeight: 1.25,
+          textDecoration: "none",
+          color: "var(--text)",
+        }}
+      >
+        {entry.song.title}
+      </Link>
+      <Link
+        href={buildArtistPath(entry.song.artist, entry.song.artistSpotifyId, entry.song.artistRefId)}
+        style={{
+          display: "block",
+          fontSize: artistSize,
+          lineHeight: 1.25,
+          color: "var(--text-muted)",
+          textDecoration: "none",
+          marginTop: 2,
+        }}
+      >
+        {formatSongArtist(entry.song)}
+      </Link>
+      {entry.song.album?.trim() ? (
+        <Link
+          href={buildAlbumPath(entry.song.album.trim(), entry.song.artist, {
+            artistId: entry.song.artistRefId,
+            albumId: entry.song.albumRefId,
+          })}
+          style={{
+            display: "block",
+            fontSize: albumSize,
+            color: "var(--text-muted)",
+            textDecoration: "none",
+            marginTop: 2,
+          }}
+        >
+          {entry.song.album}
+        </Link>
+      ) : null}
+      {statsLine ? (
+        <div
+          style={{
+            fontSize: albumSize,
+            color: "var(--text-muted)",
+            marginTop: 4,
+            lineHeight: 1.35,
+          }}
+        >
+          {statsLine}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function VideoClipVariant({
+  entries,
+  videoClips,
+  personalNumberOnes,
+  statsLabels,
+  layout,
+  isDaily,
+}: {
+  entries: ChartEntry[];
+  videoClips: Record<string, string>;
+  personalNumberOnes?: Record<string, number>;
+  statsLabels: ChartStatsLabels;
+  layout: VideoClipLayout;
+  isDaily: boolean;
+}) {
+  if (layout === "stacked") {
+    return (
+      <VideoClipStackedVariant
+        entries={entries}
+        videoClips={videoClips}
+        personalNumberOnes={personalNumberOnes}
+        isDaily={isDaily}
+      />
+    );
+  }
+
+  return (
+    <VideoClipTableVariant
+      entries={entries}
+      videoClips={videoClips}
+      personalNumberOnes={personalNumberOnes}
+      statsLabels={statsLabels}
+    />
+  );
+}
+
+function VideoClipStackedVariant({
+  entries,
+  videoClips,
+  personalNumberOnes,
+  isDaily,
+}: {
+  entries: ChartEntry[];
+  videoClips: Record<string, string>;
+  personalNumberOnes?: Record<string, number>;
+  isDaily: boolean;
+}) {
+  const isMobile = useIsMobile();
+  const clipHeight = isMobile ? MOBILE_COVER_SIZE : 125;
+  const clipWidth = Math.round(clipHeight * (16 / 9));
+  const gridColumns = `${desktopPosCol()} ${clipWidth + 16}px minmax(0, 1fr)`;
+
+  if (isMobile) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 0, borderTop: "1px solid var(--divider)", borderBottom: "1px solid var(--divider)", overflow: "hidden" }}>
+        {entries.map((e) => {
+          const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
+          const personal = lookupNumberOnes(personalNumberOnes, e.song);
+          const statsLine = formatChartStatsProse(e, personal, isDaily);
+          return (
+            <div
+              key={e.position}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: MOBILE_ROW_GAP,
+                padding: "10px 12px",
+                borderBottom: "1px solid var(--divider-soft)",
+              }}
+            >
+              <div style={{ width: MOBILE_POS_WIDTH, textAlign: "center", flexShrink: 0, alignSelf: "flex-start" }}>
+                <div style={{ fontSize: e.position <= 3 ? 20 : 16, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  {e.position}
+                </div>
+                <div style={{ marginTop: 4, display: "flex", justifyContent: "center" }}>
+                  <MovementBadge status={e.status} delta={e.delta} compact />
+                </div>
+              </div>
+              <Link href={buildSongPath(e.song)} style={{ lineHeight: 0, flexShrink: 0 }}>
+                <VideoClipCover
+                  imageUrl={clipUrl}
+                  paletteA={e.cover.palette[0]}
+                  paletteB={e.cover.palette[1]}
+                  seed={e.cover.seed}
+                  height={clipHeight}
+                />
+              </Link>
+              <VideoClipSongInfo
+                entry={e}
+                titleSize={MOBILE_TITLE_SIZE}
+                artistSize={MOBILE_ARTIST_SIZE}
+                albumSize={11}
+                statsLine={statsLine}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: gridColumns,
+        gap: 0,
+        padding: "0 20px",
+        background: "var(--fill-inset)",
+        borderBottom: "1px solid var(--divider)",
+      }}>
+        {["Pos", "", "Música"].map((h, i) => (
+          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</div>
+        ))}
+      </div>
+      {entries.map((e) => {
+        const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
+        const personal = lookupNumberOnes(personalNumberOnes, e.song);
+        const statsLine = formatChartStatsProse(e, personal, isDaily);
+        return (
+          <div
+            key={e.position}
+            style={{
+              display: "grid",
+              gridTemplateColumns: gridColumns,
+              alignItems: "center",
+              padding: "8px 20px",
+              borderBottom: "1px solid var(--divider-soft)",
+              gap: 0,
+            }}
+          >
+            <DesktopPosCell position={e.position} alignSelf="center">
+              <MovementBadge status={e.status} delta={e.delta} compact />
+            </DesktopPosCell>
+            <Link href={buildSongPath(e.song)} style={{ padding: "4px 8px 4px 0", lineHeight: 0, alignSelf: "center" }}>
+              <VideoClipCover
+                imageUrl={clipUrl}
+                paletteA={e.cover.palette[0]}
+                paletteB={e.cover.palette[1]}
+                seed={e.cover.seed}
+                height={clipHeight}
+              />
+            </Link>
+            <div style={{ minWidth: 0, padding: "0 12px", alignSelf: "center" }}>
+              <VideoClipSongInfo
+                entry={e}
+                titleSize={14}
+                artistSize={12}
+                albumSize={11}
+                statsLine={statsLine}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function VideoClipTableVariant({
   entries,
   videoClips,
   personalNumberOnes,

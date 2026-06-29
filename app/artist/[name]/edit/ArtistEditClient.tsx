@@ -10,6 +10,7 @@ type ArtistEditInitial = {
   spotifyId: string;
   romanization: string;
   imageUrl: string;
+  bio: string;
 };
 
 export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditInitial }) {
@@ -17,6 +18,7 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
   const [spotifyId, setSpotifyId] = useState(initialArtist.spotifyId);
   const [romanization, setRomanization] = useState(initialArtist.romanization);
   const [imageUrl, setImageUrl] = useState(initialArtist.imageUrl);
+  const [bio, setBio] = useState(initialArtist.bio);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
           spotifyId: spotifyId.trim(),
           romanization: romanization.trim(),
           imageUrl: imageUrl.trim(),
+          bio: bio.trim(),
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -70,6 +73,16 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
         <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa (URL da imagem)</span>
           <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} />
+        </label>
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Bio editorial (No ChartFM)</span>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={5}
+            placeholder="Texto editorial sobre o artista na comunidade ChartFM"
+            style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
+          />
         </label>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>

@@ -105,6 +105,7 @@ model Artist {
   genres     String[]   @default([])
   imageUrl   String?    @map("image_url")
   spotifyUrl String?    @map("spotify_url")
+  bio        String?
   createdAt  DateTime   @default(now()) @map("created_at")
   updatedAt  DateTime   @updatedAt @map("updated_at")
   albums     Album[]
@@ -174,6 +175,7 @@ model Song {
   youtubeReleaseDate        DateTime? @map("youtube_release_date") @db.Date
   singleReleaseDateFetchedAt DateTime? @map("single_release_date_fetched_at")
   releaseDatesVersion       Int       @default(0) @map("release_dates_version")
+  editorialNote             String?   @map("editorial_note")
   createdAt       DateTime     @default(now()) @map("created_at")
   artistRef       Artist?      @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
   albumRef        Album?       @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])
@@ -1053,4 +1055,14 @@ model CopaVote {
 
   @@unique([fixtureId, userId])
   @@map("copa_votes")
+}
+
+model WeeklyEditorial {
+  id        Int      @id @default(autoincrement())
+  weekIndex Int      @unique @map("week_index")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("weekly_editorials")
 }

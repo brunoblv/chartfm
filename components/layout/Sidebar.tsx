@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Music2, Disc3, Library, UserCog, ImageOff, AlertCircle, ListChecks, Sparkles, Award, ImagePlay, Zap, ListMusic } from "lucide-react";
+import { Home, Search, Globe, Users, Bell, Plus, User, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -432,29 +432,9 @@ function SidebarContent({
                       gap: 8,
                     }}
                   >
-                    <Link href="/admin/music" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music", true)}>
-                      <Music2 size={14} />
-                      <span>{t("nav.adminEditSongs")}</span>
-                    </Link>
-                    <Link href="/admin/music/no-album" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/music/no-album")}>
-                      <AlertCircle size={14} />
-                      <span>{t("nav.adminSongsNoAlbum")}</span>
-                    </Link>
-                    <Link href="/admin/missing-info" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/missing-info")}>
-                      <ListChecks size={14} />
-                      <span>{t("nav.adminMissingInfo")}</span>
-                    </Link>
-                    <Link href="/admin/artists" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/artists")}>
-                      <Library size={14} />
-                      <span>{t("nav.adminEditArtists")}</span>
-                    </Link>
-                    <Link href="/admin/albums" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/albums")}>
-                      <Disc3 size={14} />
-                      <span>{t("nav.adminEditAlbums")}</span>
-                    </Link>
-                    <Link href="/admin/albums/no-cover" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/albums/no-cover")}>
-                      <ImageOff size={14} />
-                      <span>{t("nav.adminAlbumsNoCover")}</span>
+                    <Link href="/admin/edicao-de-dados" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/edicao-de-dados")}>
+                      <Database size={14} />
+                      <span>{t("nav.adminDataEdit")}</span>
                     </Link>
                     <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
                       <UserCog size={14} />
