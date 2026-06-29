@@ -55,7 +55,7 @@ export default async function CuratorsRankingPage({ searchParams }: PageProps) {
 
   return (
     <Shell title={t("discover.topCurators")} subtitle={t("discover.weeklyRanking", { label: weekLabelDisplay })}>
-      <div style={{ maxWidth: 960 }}>
+      <div>
         <div style={{ marginBottom: 14 }}>
           <Link href="/discover" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 13 }}>
             {t("discover.backToDiscover")}

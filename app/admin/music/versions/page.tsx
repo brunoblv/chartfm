@@ -177,7 +177,7 @@ export default async function AdminMusicVersionsPage({
 
   return (
     <Shell title="Admin" subtitle="Músicas com versões">
-      <div style={{ maxWidth: 1100 }}>
+      <div>
         <div
           style={{
             display: "flex",

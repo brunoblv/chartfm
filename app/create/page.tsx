@@ -1096,7 +1096,7 @@ export default function CreatePage() {
 
   return (
     <Shell title="">
-      <div style={{ maxWidth: 1100 }}>
+      <div>
 
         {/* Cabeçalho */}
         <div style={{ marginBottom: 24 }}>

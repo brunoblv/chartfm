@@ -92,7 +92,7 @@ export async function MissingInfoSection() {
   const total = songTotal + artistTotal + albumTotal;
 
   return (
-    <div style={{ maxWidth: 1120 }}>
+    <div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
         <Link href="/admin/song-genres" style={adminNavChipStyle}>
           Tags de gênero (músicas)

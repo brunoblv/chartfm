@@ -15,7 +15,7 @@ export async function NoCoverSection() {
   const invalidCount = songs.filter((s) => s.spotifyId && !isSpotifyTrackId(s.spotifyId)).length;
 
   return (
-    <div style={{ maxWidth: 980 }}>
+    <div>
       <p style={{ margin: "0 0 14px", fontSize: 14, color: "#6B6B70" }}>
         Músicas sem capa ({total.toLocaleString("pt-BR")}).
       </p>

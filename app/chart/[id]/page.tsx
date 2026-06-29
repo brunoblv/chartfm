@@ -576,7 +576,7 @@ export default function ChartDetailPage() {
 
   return (
     <Shell title="" noPadding>
-      <div className="chart-page-outer">
+      <div>
         {/* Hero */}
         <div
           style={{

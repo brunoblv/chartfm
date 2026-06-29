@@ -396,7 +396,6 @@ export default async function CriticsFMPage() {
           color: "var(--text-muted)",
           lineHeight: 1.65,
           marginBottom: 48,
-          maxWidth: 580,
           letterSpacing: "-0.01em",
         }}
       >

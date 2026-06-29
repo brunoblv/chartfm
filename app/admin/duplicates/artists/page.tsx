@@ -117,7 +117,7 @@ export default async function AdminDuplicateArtistsPage({
 
   return (
     <Shell title="Admin" subtitle="Artistas duplicados">
-      <div style={{ maxWidth: 1100 }}>
+      <div>
         <div style={{ marginBottom: 12 }}>
           <Link href="/admin/duplicates" style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>← Voltar</Link>
         </div>

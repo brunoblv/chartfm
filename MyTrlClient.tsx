@@ -233,7 +233,7 @@ export default function MyTrlClient() {
 
   return (
     <Shell title="MyTRL" subtitle="Parada diária · top 10 new hits · seg–sex às 18h">
-      <div style={{ maxWidth: 760, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Banner */}
         {banner && (

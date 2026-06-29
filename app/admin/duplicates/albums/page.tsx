@@ -105,7 +105,7 @@ export default async function AdminDuplicateAlbumsPage({
 
   return (
     <Shell title="Admin" subtitle="Álbuns duplicados">
-      <div style={{ maxWidth: 900 }}>
+      <div>
         <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 16 }}>
           <Link href="/admin/duplicates" style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
             ← Voltar

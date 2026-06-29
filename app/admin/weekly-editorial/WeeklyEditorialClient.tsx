@@ -39,7 +39,7 @@ export function WeeklyEditorialClient({ weekIndex, weekLabel, initialBody }: Pro
   }
 
   return (
-    <div style={{ marginTop: 20, display: "grid", gap: 14, maxWidth: 720 }}>
+    <div style={{ marginTop: 20, display: "grid", gap: 14 }}>
       <p style={{ color: "var(--text-muted)", margin: 0, fontSize: 14 }}>
         Semana <strong>{weekLabel}</strong> (índice {weekIndex}). Este texto aparece na landing para visitantes não
         autenticados.

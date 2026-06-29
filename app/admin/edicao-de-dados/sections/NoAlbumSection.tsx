@@ -63,7 +63,7 @@ export async function NoAlbumSection({ filtro, page }: { filtro: FiltroKey; page
   const qBase = (p: number, f: FiltroKey) => `/admin/edicao-de-dados?tab=no-album&filtro=${f}&page=${p}`;
 
   return (
-    <div style={{ maxWidth: 980 }}>
+    <div>
       <p style={{ margin: "0 0 12px", fontSize: 14, color: "#6B6B70", lineHeight: 1.45 }}>
         {filtroLabel(filtro)} — mostrando até {PAGE_SIZE} por página ({total.toLocaleString("pt-BR")} no total).
       </p>

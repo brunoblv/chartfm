@@ -62,8 +62,6 @@ export function InstitutionalLayout({ children }: { children: React.ReactNode })
 
       <div
         style={{
-          maxWidth: 720,
-          margin: "0 auto",
           padding: "40px 24px 80px",
         }}
       >

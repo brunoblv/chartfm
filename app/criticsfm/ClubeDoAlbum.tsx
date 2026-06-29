@@ -423,7 +423,7 @@ function HowItWorks() {
 function WinnerCard({ album, idx, revealed }: { album: ClubeWinner; idx: number; revealed: boolean }) {
   const hue = albumHue(album.title);
   return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", maxWidth: 600, margin: "0 auto", width: "100%" }}>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", width: "100%" }}>
       <Link
         href={`/criticsfm/${album.albumId}`}
         title={`Avaliar ${album.title}`}

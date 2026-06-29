@@ -61,7 +61,7 @@ export default async function AdminSongGenresPage() {
 
   return (
     <Shell title="Admin" subtitle="Tags de gênero por música">
-      <div style={{ maxWidth: 1120 }}>
+      <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
           <Link href="/admin/edicao-de-dados?tab=missing-info" style={adminNavChipStyle}>
             Informações incompletas

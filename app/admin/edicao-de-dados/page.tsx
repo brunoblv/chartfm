@@ -134,7 +134,7 @@ export default async function AdminDataEditPage({
 
   return (
     <Shell title="Edição de dados" subtitle={subtitle}>
-      <div style={{ maxWidth: 980, width: "100%" }}>
+      <div style={{ width: "100%" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
           {TABS.map((tb) => (
             <Link key={tb.id} href={`/admin/edicao-de-dados?tab=${tb.id}`} style={tabStyle(tab === tb.id)}>

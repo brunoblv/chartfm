@@ -120,7 +120,7 @@ export default function MonthlyPlaylistsClient({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 720 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {banner && (
         <div
           style={{

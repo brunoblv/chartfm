@@ -218,7 +218,7 @@ async function loadPageData(
     <Shell title={t("discover.title")} subtitle={t("discover.subtitle")}>
 
       {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
-      <section style={{ marginBottom: 52, maxWidth: 820 }}>
+      <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 16 }}>
           {t("discover.editorialTitle")}
         </h2>
@@ -334,7 +334,6 @@ async function loadPageData(
           borderTop: "1px solid var(--divider)",
           paddingTop: 40,
           marginBottom: 8,
-          maxWidth: 820,
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 24, display: "flex", alignItems: "center", gap: 8 }}>

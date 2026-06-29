@@ -506,7 +506,7 @@ export default function SettingsPage() {
 
   return (
     <Shell title={t("settings.title")} subtitle={t("settings.subtitle")}>
-      <div style={{ maxWidth: 760 }}>
+      <div>
         <Link
           href="/"
           style={{

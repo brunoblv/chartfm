@@ -86,8 +86,6 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
     >
       <div
         style={{
-          maxWidth: 960,
-          margin: "0 auto",
           padding: isMobile ? "32px 16px 24px" : "40px 40px 32px",
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr",
@@ -126,12 +124,10 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
         <FooterColumn title={t("landing.footerLegal")} links={legalLinks} />
       </div>
 
-      <div style={{ height: 1, background: "var(--divider)", maxWidth: 960, margin: "0 auto" }} />
+      <div style={{ height: 1, background: "var(--divider)" }} />
 
       <div
         style={{
-          maxWidth: 960,
-          margin: "0 auto",
           padding: isMobile ? "14px 16px" : "16px 40px",
           display: "flex",
           alignItems: "center",

@@ -230,7 +230,7 @@ export default async function AdminDuplicateSongsByArtistPage({
 
   return (
     <Shell title="Admin" subtitle="Músicas homônimas por artista">
-      <div style={{ maxWidth: 1120 }}>
+      <div>
         <div style={{ marginBottom: 12 }}>
           <Link href="/admin/duplicates" style={backStyle}>Voltar</Link>
         </div>

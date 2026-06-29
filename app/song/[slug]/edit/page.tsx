@@ -93,7 +93,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
 
   return (
     <Shell title="">
-      <div style={{ maxWidth: 760, margin: "32px auto", padding: "0 20px 48px" }}>
+      <div style={{ margin: "32px 0", padding: "0 20px 48px" }}>
         <Link href={`/song/${slug}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
           ← Voltar para a música
         </Link>

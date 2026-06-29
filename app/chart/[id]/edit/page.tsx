@@ -725,7 +725,7 @@ export default function EditChartPage() {
 
   return (
     <Shell title="">
-      <div style={{ maxWidth: 1100 }}>
+      <div>
         <Link
           href={`/chart/${chartId}`}
           style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, textDecoration: "none", marginBottom: 12 }}

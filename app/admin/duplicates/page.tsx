@@ -14,7 +14,7 @@ export default async function AdminDuplicatesHomePage() {
 
   return (
     <Shell title="Admin" subtitle="Deduplicação de catálogo">
-      <div style={{ display: "grid", gap: 12, maxWidth: 720 }}>
+      <div style={{ display: "grid", gap: 12 }}>
         <Link href="/admin/duplicates/songs" style={cardStyle}>
           <strong>Músicas duplicadas</strong>
           <span style={subStyle}>Agrupa por título + artista normalizados e permite merge.</span>

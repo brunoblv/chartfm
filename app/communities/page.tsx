@@ -210,7 +210,7 @@ export default async function CommunitiesPage({
     <Shell title={t("communities.title")} subtitle={t("communities.subtitle")}>
 
       {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
-      <section style={{ marginBottom: 48, maxWidth: 820 }}>
+      <section style={{ marginBottom: 48 }}>
         <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 16 }}>
           Descubra comunidades musicais no ChartFM
         </h2>
@@ -570,7 +570,6 @@ export default async function CommunitiesPage({
         style={{
           borderTop: "1px solid var(--divider)",
           paddingTop: 40,
-          maxWidth: 820,
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 18 }}>

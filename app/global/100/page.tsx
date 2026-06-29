@@ -285,7 +285,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         />
       </section>
 
-      <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 40, maxWidth: 820 }}>
+      <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 40 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 24, display: "flex", alignItems: "center", gap: 8 }}>
           <BookOpen size={18} color="#FA243C" />
           Perguntas frequentes sobre o Global 100

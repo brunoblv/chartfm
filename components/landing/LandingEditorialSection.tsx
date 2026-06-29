@@ -49,7 +49,7 @@ export async function LandingEditorialSection({ globalChart, weekLabel, weekInde
         borderBottom: "1px solid rgba(0,0,0,0.05)",
       }}
     >
-      <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      <div>
         <article>
           <p
             style={{

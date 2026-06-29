@@ -4,7 +4,10 @@ import {
   getLatestDailyChartSongStats,
   type DailyChartSongStatsData,
 } from "@/lib/daily-chart-song-stats";
-import { loadSongGlobalStatsFromSnapshots } from "@/lib/global-snapshot";
+import {
+  loadLatestGlobalWeeklySongPositions,
+  loadSongGlobalStatsFromSnapshots,
+} from "@/lib/global-snapshot";
 import { buildAlbumPath, slugify } from "@/lib/music-routes";
 import { computeAlbumPageSnapshot } from "./compute-album";
 import { computeArtistPageSnapshot } from "./compute-artist";

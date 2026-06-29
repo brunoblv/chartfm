@@ -158,7 +158,7 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
         Todas as paradas globais
       </Link>
 
-      <section style={{ marginBottom: 32, maxWidth: 820 }}>
+      <section style={{ marginBottom: 32 }}>
         <p style={{ fontSize: 15, lineHeight: 1.75, color: "var(--text-muted)", margin: "0 0 12px" }}>
           {chart.description}
         </p>

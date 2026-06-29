@@ -76,7 +76,7 @@ export default function FollowersPage() {
 
   return (
     <Shell title="">
-      <div style={{ maxWidth: 560, margin: "0 auto" }}>
+      <div>
         {/* Header */}
         <div
           style={{

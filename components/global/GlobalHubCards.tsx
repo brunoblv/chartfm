@@ -133,7 +133,7 @@ export function GlobalHubCards() {
         <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 8 }}>
           Paradas por gênero
         </h2>
-        <p style={{ fontSize: 14, lineHeight: 1.65, color: "var(--text-muted)", marginBottom: 20, maxWidth: 720 }}>
+        <p style={{ fontSize: 14, lineHeight: 1.65, color: "var(--text-muted)", marginBottom: 20 }}>
           Rankings Top 50 filtrados pelas tags de cada faixa. Incluem todos os subgêneros mapeados de cada estilo.
         </p>
         <HubCardGrid cards={genreCards} />

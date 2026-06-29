@@ -436,7 +436,7 @@ export function ClubeAdminClient({
   }, [wednesdayDate, useCustomSchedule, active]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 720 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       <section style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 16, padding: "20px 22px" }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px", color: "var(--text)" }}>Horários pré-definidos</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

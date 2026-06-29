@@ -263,8 +263,6 @@ button {
 /* Song page — responsive layout */
 .song-page-outer {
   padding: 48px 40px 40px 40px;
-  max-width: 900px;
-  margin: 0 auto;
 }
 .song-page-hero {
   display: flex;
@@ -292,12 +290,6 @@ button {
   .song-page-hero {
     align-items: flex-start;
   }
-}
-
-/* Chart page — max-width em monitores largos */
-.chart-page-outer {
-  max-width: 900px;
-  margin: 0 auto;
 }
 
 /* Line clamp utilities */

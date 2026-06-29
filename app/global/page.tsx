@@ -21,7 +21,7 @@ export default async function GlobalHubPage() {
 
   return (
     <Shell title={t("global.hubTitle")} subtitle={t("global.hubSubtitle")}>
-      <section style={{ marginBottom: 32, maxWidth: 820 }}>
+      <section style={{ marginBottom: 32 }}>
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>
           {t("global.hubIntro")}
         </p>
@@ -31,7 +31,7 @@ export default async function GlobalHubPage() {
 
       <AdSlot slotId={ADSENSE_SLOTS.globalHub} format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
-      <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 32, maxWidth: 820 }}>
+      <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 32 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("global.hubHowTitle")}</h2>
         <ul style={{ margin: 0, paddingLeft: 20, color: "var(--text-muted)", fontSize: 14, lineHeight: 1.8 }}>
           <li>{t("global.hubHowCharts")}</li>
