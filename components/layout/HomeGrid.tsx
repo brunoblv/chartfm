@@ -2,6 +2,7 @@
 
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { AdSlot } from "@/components/ui/AdSlot";
+import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 
 interface HomeGridProps {
   feed: React.ReactNode;
@@ -15,7 +16,7 @@ export function HomeGrid({ feed, sidebar }: HomeGridProps) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {feed}
-        <AdSlot slotId="COLE_AQUI_SLOT_ID_5" format="mobile-banner" style={{ margin: "4px 0" }} />
+        <AdSlot slotId={ADSENSE_SLOTS.homeFeed} format="mobile-banner" style={{ margin: "4px 0" }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {sidebar}
         </div>

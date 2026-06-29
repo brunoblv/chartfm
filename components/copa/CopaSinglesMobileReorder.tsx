@@ -33,17 +33,17 @@ function slotStatus(
   if (lock) {
     return {
       label: lock.status === "LIVE" ? "Em jogo" : "Disputado",
-      color: lock.status === "LIVE" ? "#FA243C" : "var(--text-muted)",
-      bg: lock.status === "LIVE" ? "rgba(250,36,60,.12)" : "var(--fill-inset)",
+      color: lock.status === "LIVE" ? "var(--accent)" : "var(--text-muted)",
+      bg: lock.status === "LIVE" ? "var(--accent-tint)" : "var(--fill-inset)",
     };
   }
   if (canEdit) {
-    return { label: "Editável", color: "#34C759", bg: "rgba(52,199,89,.1)" };
+    return { label: "Editável", color: "var(--up-fg)", bg: "var(--up-bg)" };
   }
   if (hasCompetingFilter) {
-    return { label: "Eliminado", color: "var(--text-disabled)", bg: "var(--fill-inset)" };
+    return { label: "Eliminado", color: "var(--text-muted)", bg: "var(--fill-inset)" };
   }
-  return { label: "Fechado", color: "var(--text-disabled)", bg: "var(--fill-inset)" };
+  return { label: "Fechado", color: "var(--text-muted)", bg: "var(--fill-inset)" };
 }
 
 export function CopaSinglesMobileReorder({

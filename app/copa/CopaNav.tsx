@@ -95,7 +95,7 @@ export function CopaNav() {
                 fontWeight: 700,
                 textDecoration: "none",
                 whiteSpace: "nowrap",
-                borderBottom: isActive ? "2px solid #FFD426" : "2px solid transparent",
+                borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                 color: isActive ? "var(--text)" : "var(--text-muted)",
                 transition: "color 0.1s",
               }}

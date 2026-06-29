@@ -331,9 +331,9 @@ export function CopaArtistSinglesEditor({
                     gap: 8,
                     padding: "10px 12px",
                     borderRadius: 10,
-                    border: `1px solid ${highlighted ? "rgba(52,199,89,.55)" : "var(--divider)"}`,
+                    border: `1px solid ${highlighted ? "var(--up-fg)" : "var(--divider)"}`,
                     background: highlighted
-                      ? "rgba(52,199,89,.12)"
+                      ? "var(--up-bg)"
                       : lock
                         ? "var(--fill-inset)"
                         : "var(--surface)",
@@ -342,7 +342,7 @@ export function CopaArtistSinglesEditor({
                   }}
                 >
                   {canDrag ? (
-                    <GripVertical size={14} color="var(--text-disabled)" style={{ flexShrink: 0 }} />
+                    <GripVertical size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
                   ) : (
                     <span style={{ width: 14, flexShrink: 0 }} />
                   )}
@@ -394,13 +394,19 @@ export function CopaArtistSinglesEditor({
                       letterSpacing: "0.05em",
                       flexShrink: 0,
                       background: lock
-                        ? "rgba(250,36,60,.12)"
+                        ? lock.status === "LIVE"
+                          ? "var(--accent-tint)"
+                          : "var(--fill-inset)"
                         : editable
-                          ? "rgba(52,199,89,.1)"
-                          : editWindow.competingArtistIds?.length
-                            ? "var(--fill-inset)"
-                            : "var(--fill-inset)",
-                      color: lock ? "#FA243C" : editable ? "#34C759" : "var(--text-disabled)",
+                          ? "var(--up-bg)"
+                          : "var(--fill-inset)",
+                      color: lock
+                        ? lock.status === "LIVE"
+                          ? "var(--accent)"
+                          : "var(--text-muted)"
+                        : editable
+                          ? "var(--up-fg)"
+                          : "var(--text-muted)",
                     }}
                   >
                     {lock ? (lock.status === "LIVE" ? "Em jogo" : "Disputado") : editable ? "Editável" : editWindow.competingArtistIds?.length ? "Eliminado" : "Fechado"}

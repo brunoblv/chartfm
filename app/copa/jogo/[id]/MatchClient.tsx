@@ -52,7 +52,7 @@ function LiveDot() {
         width: 7,
         height: 7,
         borderRadius: "50%",
-        background: "#FA243C",
+        background: "var(--accent)",
         display: "inline-block",
         animation: "pulse 1.4s ease-in-out infinite",
         marginRight: 5,
@@ -190,7 +190,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
           ← Voltar
         </button>
         {isLive ? (
-          <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 700, background: "rgba(250,36,60,.13)", color: "#FA243C", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             <LiveDot />AO VIVO
           </span>
         ) : (
@@ -198,7 +198,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
             {data.status === "DONE" ? "Encerrado" : "Em breve"}
           </span>
         )}
-        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "var(--text-disabled)" }}>
+        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
           {phaseLabels[data.phase] ?? data.phase}
         </span>
       </div>
@@ -227,10 +227,10 @@ export function MatchClient({ fixture: init, userId }: Props) {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <span style={{ fontSize: 72, fontWeight: 900, letterSpacing: "-0.06em", lineHeight: 1, color: data.goalsA >= data.goalsB ? "var(--text)" : "var(--text-muted)" }}>{data.goalsA}</span>
-                <span style={{ fontSize: 40, color: "var(--text-disabled)", margin: "0 8px" }}>—</span>
+                <span style={{ fontSize: 40, color: "var(--text-muted)", margin: "0 8px" }}>—</span>
                 <span style={{ fontSize: 72, fontWeight: 900, letterSpacing: "-0.06em", lineHeight: 1, color: data.goalsB >= data.goalsA ? "var(--text)" : "var(--text-muted)" }}>{data.goalsB}</span>
               </div>
-              <div style={{ fontSize: 11, color: "var(--text-disabled)" }}>gols (2 votos = 1 gol)</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>gols (2 votos = 1 gol)</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", marginTop: 3 }}>{data.votesA} × {data.votesB} votos</div>
             </div>
 
@@ -264,7 +264,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
         {/* Vote buttons */}
         {isLive && (
           myVote ? (
-            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#34C759", padding: 14, background: "rgba(52,199,89,.1)", borderRadius: 12, marginBottom: 14 }}>
+            <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "var(--up-fg)", padding: 14, background: "var(--up-bg)", borderRadius: 12, marginBottom: 14 }}>
               ✓ Voto registrado para {myVote === "A" ? data.artistA.artistName : data.artistB.artistName}!
             </div>
           ) : !userId ? (
@@ -304,7 +304,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
                   >
                     <CopaArtistAvatar {...art} coverUrl={side === "A" ? data.singleACover : data.singleBCover} size={36} />
                     <span>Votar em {art.artistName.split(" ")[0]}</span>
-                    <span style={{ fontSize: 11, color: "var(--text-disabled)" }}>"{singleName}"</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>"{singleName}"</span>
                   </button>
                 );
               })}

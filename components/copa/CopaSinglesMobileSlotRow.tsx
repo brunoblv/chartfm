@@ -51,7 +51,7 @@ export function CopaSinglesMobileSlotRow({
             width: 22,
             fontSize: 11,
             fontWeight: 800,
-            color: "var(--text-disabled)",
+            color: "var(--text-muted)",
             flexShrink: 0,
             textAlign: "center",
           }}
@@ -59,7 +59,7 @@ export function CopaSinglesMobileSlotRow({
           {slotIndex + 1}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-disabled)", marginBottom: 2 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-muted)", marginBottom: 2 }}>
             {phaseLabel}
           </div>
           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -94,7 +94,7 @@ export function CopaSinglesMobileSlotRow({
           width: 22,
           fontSize: 11,
           fontWeight: 800,
-          color: "var(--text-disabled)",
+          color: "var(--text-muted)",
           flexShrink: 0,
           textAlign: "center",
         }}
@@ -102,7 +102,7 @@ export function CopaSinglesMobileSlotRow({
         {slotIndex + 1}
       </span>
       <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-disabled)", marginBottom: 2 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-muted)", marginBottom: 2 }}>
           {phaseLabel}
         </div>
         <div
@@ -115,7 +115,7 @@ export function CopaSinglesMobileSlotRow({
           style={{
             fontSize: 14,
             fontWeight: 600,
-            color: isEmpty ? "var(--text-disabled)" : "var(--text)",
+            color: isEmpty ? "var(--text-muted)" : "var(--text)",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",

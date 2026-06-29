@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { GlobalHubCards } from "@/components/global/GlobalHubCards";
+import { AdSlot } from "@/components/ui/AdSlot";
+import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { ChevronLeft } from "lucide-react";
 
@@ -26,6 +28,8 @@ export default async function GlobalHubPage() {
       </section>
 
       <GlobalHubCards />
+
+      <AdSlot slotId={ADSENSE_SLOTS.globalHub} format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
       <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 32, maxWidth: 820 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("global.hubHowTitle")}</h2>

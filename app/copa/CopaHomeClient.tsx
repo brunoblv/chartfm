@@ -63,7 +63,8 @@ function LiveDot() {
         width: 7,
         height: 7,
         borderRadius: "50%",
-        background: "#FA243C",
+        // ✅ FIX: var(--accent) em vez de #FA243C
+        background: "var(--accent)",
         animation: "pulse 1.4s ease-in-out infinite",
         marginRight: 5,
       }}
@@ -73,7 +74,8 @@ function LiveDot() {
 
 function Badge({ children, variant }: { children: React.ReactNode; variant: "live" | "done" | "next" }) {
   const styles: Record<string, React.CSSProperties> = {
-    live: { background: "rgba(250,36,60,.13)", color: "#FA243C" },
+    // ✅ FIX: live badge usa var(--surface) + var(--accent) em vez de rgba vermelha
+    live: { background: "var(--surface)", color: "var(--accent)" },
     done: { background: "var(--fill-inset)", color: "var(--text-muted)" },
     next: { background: "var(--fill-inset)", color: "var(--text-disabled)" },
   };
@@ -109,7 +111,8 @@ function ScoreRow({ f }: { f: SimpleFixture }) {
         padding: "10px 14px",
         borderRadius: 10,
         background: "var(--surface)",
-        border: `1px solid ${f.status === "LIVE" ? "rgba(250,36,60,.35)" : "var(--divider)"}`,
+        // ✅ FIX: borda sempre var(--divider), sem linha vermelha
+        border: "1px solid var(--divider)",
         cursor: "pointer",
         marginBottom: 6,
       }}
@@ -166,6 +169,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
         <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", margin: 0 }}>
           {copa.name} <span style={{ color: "#FFD426" }}>{copa.year}</span>
         </h1>
+        {/* ✅ FIX: var(--text-muted) em vez de var(--text-disabled) */}
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
           🏆 {phaseLabel[copa.status] ?? copa.status}
           {livePhaseSummary(liveFixture, liveCount) && ` · ${livePhaseSummary(liveFixture, liveCount)}`}
@@ -175,14 +179,17 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
       {/* Live hero */}
       {liveFixture && (
         <>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 10 }}>
+          {/* ✅ FIX: var(--text-muted) */}
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
             Ao vivo agora
           </p>
           <div
             onClick={() => router.push(`/copa/jogo/${liveFixture.id}`)}
             style={{
-              background: "linear-gradient(135deg, rgba(250,36,60,.1), rgba(255,255,255,.03))",
-              border: "1px solid rgba(250,36,60,.35)",
+              // ✅ FIX: fundo var(--accent-tint) em vez de gradient vermelho
+              background: "var(--accent-tint)",
+              // ✅ FIX: borda var(--divider) em vez de rgba(250,36,60,.35)
+              border: "1px solid var(--divider)",
               borderRadius: 16,
               padding: 18,
               marginBottom: 20,
@@ -192,7 +199,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <Badge variant="live">Ao vivo</Badge>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-disabled)" }}>
+              {/* ✅ FIX: var(--text-muted) */}
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
                 {fixtureContextLabel(liveFixture).toUpperCase()}
                 {liveCount > 1 ? ` · +${liveCount - 1} jogos` : ""}
               </span>
@@ -201,12 +209,12 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                 <CopaArtistAvatar {...liveFixture.artistA} coverUrl={liveFixture.singleACover} size={56} />
                 <div style={{ fontSize: 14, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{liveFixture.artistA.artistName}</div>
-                <div style={{ fontSize: 11, color: "var(--text-disabled)", textAlign: "center" }}>"{liveFixture.singleAName}"</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>"{liveFixture.singleAName}"</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <span style={{ fontSize: 48, fontWeight: 900, letterSpacing: "-0.05em" }}>{liveFixture.goalsA}</span>
-                  <span style={{ fontSize: 26, color: "var(--text-disabled)", margin: "0 8px" }}>—</span>
+                  <span style={{ fontSize: 26, color: "var(--text-muted)", margin: "0 8px" }}>—</span>
                   <span style={{ fontSize: 48, fontWeight: 900, letterSpacing: "-0.05em" }}>{liveFixture.goalsB}</span>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{liveFixture.votesA} × {liveFixture.votesB} votos</div>
@@ -214,10 +222,11 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                 <CopaArtistAvatar {...liveFixture.artistB} coverUrl={liveFixture.singleBCover} size={56} />
                 <div style={{ fontSize: 14, fontWeight: 800, textAlign: "center", lineHeight: 1.2 }}>{liveFixture.artistB.artistName}</div>
-                <div style={{ fontSize: 11, color: "var(--text-disabled)", textAlign: "center" }}>"{liveFixture.singleBName}"</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>"{liveFixture.singleBName}"</div>
               </div>
             </div>
-            <div style={{ marginTop: 14, fontSize: 12, fontWeight: 700, color: "#FA243C", textAlign: "center" }}>
+            {/* ✅ FIX: var(--accent) */}
+            <div style={{ marginTop: 14, fontSize: 12, fontWeight: 700, color: "var(--accent)", textAlign: "center" }}>
               {liveCount > 1 ? (
                 <span onClick={(e) => { e.stopPropagation(); router.push("/copa/ao-vivo"); }}>
                   Ver todos os {liveCount} jogos →
@@ -253,7 +262,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
               onClick={() => router.push("/copa/meu-time")}
               style={{
                 background: "#FFD426",
-                color: "#000",
+                color: "#1D1D1F",
                 border: "none",
                 padding: "10px 20px",
                 borderRadius: 99,
@@ -270,7 +279,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
               disabled={joining || (isFull && !!userId)}
               style={{
                 background: isFull ? "var(--fill-inset)" : "#FFD426",
-                color: isFull ? "var(--text-muted)" : "#000",
+                // ✅ FIX: cor de texto explícita para contraste no botão amarelo
+                color: isFull ? "var(--text-muted)" : "#1D1D1F",
                 border: "none",
                 padding: "10px 20px",
                 borderRadius: 99,
@@ -289,7 +299,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
       {/* My squad mini */}
       {myArtists.length > 0 && (
         <>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 10 }}>
+          {/* ✅ FIX: var(--text-muted) */}
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
             Meu time
           </p>
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
@@ -306,7 +317,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
                     alignItems: "center",
                     gap: 6,
                     background: "var(--surface)",
-                    border: `1px solid ${qual ? "rgba(52,199,89,.35)" : "var(--divider)"}`,
+                    // ✅ FIX: borda verde usa var(--up-bg) em vez de rgba(52,199,89,.35)
+                    border: `1px solid ${qual ? "var(--up-bg)" : "var(--divider)"}`,
                     borderRadius: 12,
                     padding: "12px 10px",
                     cursor: "pointer",
@@ -319,7 +331,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
                   </div>
                   {drawn && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>GRP {art.groupLetter}</div>}
                   {qual && (
-                    <span style={{ fontSize: 9, fontWeight: 700, color: "#34C759", background: "rgba(52,199,89,.12)", padding: "2px 7px", borderRadius: 99 }}>
+                    // ✅ FIX: var(--up-bg) + var(--up-fg) em vez de rgba(52,199,89,.12) + #34C759
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "var(--up-fg)", background: "var(--up-bg)", padding: "2px 7px", borderRadius: 99 }}>
                       ✓ CLASSIF.
                     </span>
                   )}
@@ -333,7 +346,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
       {/* Upcoming */}
       {upcoming && (
         <>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 10 }}>
+          {/* ✅ FIX: var(--text-muted) */}
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
             Próximo jogo
           </p>
           <div
@@ -361,7 +375,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
       {/* Recent results */}
       {recentDone.length > 0 && (
         <>
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 10 }}>
+          {/* ✅ FIX: var(--text-muted) */}
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
             Resultados recentes
           </p>
           {recentDone.map((f) => (
@@ -371,7 +386,8 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
       )}
 
       {/* Participants */}
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 10, marginTop: 24 }}>
+      {/* ✅ FIX: var(--text-muted) */}
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10, marginTop: 24 }}>
         Participantes
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 32 }}>

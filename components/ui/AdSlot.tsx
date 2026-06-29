@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { isAdSlotConfigured } from "@/lib/adsense-slots";
 
 export type AdFormat =
   | "leaderboard"
@@ -38,8 +39,10 @@ const WRAPPER_MAX_WIDTH: Record<AdFormat, number | string> = {
 
 export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
   const pushed = useRef(false);
+  const active = isAdSlotConfigured(slotId);
 
   useEffect(() => {
+    if (!active) return;
     if (pushed.current) return;
     try {
       (
@@ -50,7 +53,9 @@ export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
     } catch {
       // script ainda não carregou
     }
-  }, []);
+  }, [active]);
+
+  if (!active) return null;
 
   const isAuto = format === "auto";
 

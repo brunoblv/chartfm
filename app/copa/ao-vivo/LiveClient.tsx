@@ -43,8 +43,6 @@ function phaseLabel(g: Game): string {
   return PHASE_LABELS[g.phase] ?? g.phase;
 }
 
-/* ----------------------------- Goal overlay ----------------------------- */
-
 function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDone, 1500);
@@ -81,8 +79,6 @@ function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
     </div>
   );
 }
-
-/* --------------------------- Voting arena card --------------------------- */
 
 type VoteArenaProps = {
   game: Game;
@@ -133,7 +129,6 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
       setVoted(side);
       const scoredGoal = json[side === "A" ? "goalsA" : "goalsB"] > prevGoals[side];
       if (scoredGoal) {
-        // O overlay do gol dispara o avanço ao terminar.
         setGoalName((side === "A" ? game.artistA : game.artistB).artistName.split(" ")[0]);
       } else {
         advanceTimer.current = setTimeout(onAdvance, ADVANCE_DELAY);
@@ -156,31 +151,33 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
                 flex: "1 1 12px",
                 minWidth: 12,
                 borderRadius: 2,
-                background: i < position ? "#34C759" : i === position ? "#FA243C" : "var(--fill-inset)",
+                background: i < position ? "var(--up-fg)" : i === position ? "var(--accent)" : "var(--fill-inset)",
                 transition: "background 0.3s ease",
               }}
             />
           ))}
         </div>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", flexShrink: 0 }}>
           {position + 1} / {total}
         </span>
       </div>
 
+      {/* ✅ FIX: borda var(--divider) em vez de rgba vermelha */}
       <div
         style={{
           background: "var(--surface)",
-          border: "1px solid rgba(250,36,60,.35)",
+          border: "1px solid var(--divider)",
           borderRadius: 20,
           padding: "20px 18px",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-disabled)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             {phaseLabel(game)}
           </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, background: "rgba(250,36,60,.13)", color: "#FA243C", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FA243C", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
+          {/* ✅ FIX: badge live usa var(--accent-tint) + var(--accent) */}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
             Ao Vivo
           </span>
         </div>
@@ -196,7 +193,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: game.goalsA >= game.goalsB ? "var(--text)" : "var(--text-muted)" }}>{game.goalsA}</span>
-              <span style={{ fontSize: 20, color: "var(--text-disabled)" }}>—</span>
+              <span style={{ fontSize: 20, color: "var(--text-muted)" }}>—</span>
               <span style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: game.goalsB >= game.goalsA ? "var(--text)" : "var(--text-muted)" }}>{game.goalsB}</span>
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{game.votesA} × {game.votesB} votos</div>
@@ -214,9 +211,10 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
           <div style={{ height: "100%", width: `${pctA}%`, background: `linear-gradient(90deg, ${game.artistA.artistColor}, ${game.artistB.artistColor})`, borderRadius: 3, transition: "width 0.5s ease" }} />
         </div>
 
-        {/* Botões de voto / confirmação */}
+        {/* Botões de voto */}
         {voted ? (
-          <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "#34C759", padding: 14, background: "rgba(52,199,89,.1)", borderRadius: 12, marginTop: 16 }}>
+          // ✅ FIX: var(--up-bg) + var(--up-fg) em vez de rgba(52,199,89,.1) + #34C759
+          <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "var(--up-fg)", padding: 14, background: "var(--up-bg)", borderRadius: 12, marginTop: 16 }}>
             ✓ Voto registrado para {(voted === "A" ? game.artistA : game.artistB).artistName}!
           </div>
         ) : (
@@ -266,7 +264,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
             margin: "12px auto 0",
             background: "none",
             border: "none",
-            color: "var(--text-disabled)",
+            color: "var(--text-muted)",
             fontSize: 12,
             fontWeight: 700,
             cursor: "pointer",
@@ -282,8 +280,6 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
   );
 }
 
-/* ------------------------------ Result card ------------------------------ */
-
 function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
   const total = g.votesA + g.votesB || 1;
   const pctA = (g.votesA / total) * 100;
@@ -292,18 +288,20 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
       onClick={onClick}
       style={{
         background: "var(--surface)",
-        border: "1px solid rgba(250,36,60,.35)",
+        // ✅ FIX: borda var(--divider) em vez de rgba vermelha
+        border: "1px solid var(--divider)",
         borderRadius: 14,
         padding: "14px 16px",
         cursor: "pointer",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-disabled)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
           {phaseLabel(g)}
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, background: "rgba(250,36,60,.13)", color: "#FA243C", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#FA243C", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
+        {/* ✅ FIX: badge live usa var(--accent-tint) + var(--accent) */}
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
           Ao Vivo
         </span>
       </div>
@@ -318,7 +316,7 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: g.goalsA >= g.goalsB ? "var(--text)" : "var(--text-muted)" }}>{g.goalsA}</span>
-            <span style={{ fontSize: 18, color: "var(--text-disabled)" }}>—</span>
+            <span style={{ fontSize: 18, color: "var(--text-muted)" }}>—</span>
             <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: g.goalsB >= g.goalsA ? "var(--text)" : "var(--text-muted)" }}>{g.goalsB}</span>
           </div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{g.votesA} × {g.votesB} votos</div>
@@ -335,7 +333,8 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
         <div style={{ height: "100%", width: `${pctA}%`, background: `linear-gradient(90deg, ${g.artistA.artistColor}, ${g.artistB.artistColor})`, borderRadius: 3, transition: "width 0.5s ease" }} />
       </div>
 
-      <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, fontWeight: 700, color: g.myVote ? "#34C759" : "#FFD426" }}>
+      {/* ✅ FIX: votado usa var(--up-fg), não votado usa var(--accent) */}
+      <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, fontWeight: 700, color: g.myVote ? "var(--up-fg)" : "var(--accent)" }}>
         {g.myVote
           ? `✓ Você votou em ${g.myVote === "A" ? g.artistA.artistName : g.artistB.artistName}`
           : "Toque para votar →"}
@@ -343,8 +342,6 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
     </div>
   );
 }
-
-/* ----------------------------- Playlist links ---------------------------- */
 
 type DayPlaylists = {
   dayLabel: string;
@@ -355,16 +352,17 @@ type DayPlaylists = {
 function PlaylistLinks({ playlists }: { playlists: DayPlaylists }) {
   if (!playlists.spotifyUrl && !playlists.youtubeUrl) return null;
   return (
+    // ✅ FIX: borda var(--divider) em vez de rgba vermelha
     <div
       style={{
         background: "var(--surface)",
-        border: "1px solid rgba(250,36,60,.35)",
+        border: "1px solid var(--divider)",
         borderRadius: 14,
         padding: "12px 14px",
         marginBottom: 12,
       }}
     >
-      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-disabled)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
         🎧 Playlist dos jogos de hoje
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -393,8 +391,6 @@ function PlaylistLinks({ playlists }: { playlists: DayPlaylists }) {
   );
 }
 
-/* ------------------------------- LiveClient ------------------------------ */
-
 export function LiveClient({
   games,
   playlists,
@@ -407,12 +403,7 @@ export function LiveClient({
   userId: string | null;
 }) {
   const router = useRouter();
-
-  // Resultados de votos lançados nesta sessão (sobrepõe os dados do servidor).
   const [castVotes, setCastVotes] = useState<Record<string, Game>>({});
-
-  // Fila de disputas a votar: definida uma vez, a partir das que ainda não
-  // tinham voto. Mantém a posição estável mesmo com o refresh do placar.
   const [queue, setQueue] = useState<string[] | null>(null);
   const [index, setIndex] = useState(0);
 
@@ -422,13 +413,11 @@ export function LiveClient({
     }
   }, [games, queue]);
 
-  // Atualiza o placar ao vivo a cada 10s (preserva o estado local da fila).
   useEffect(() => {
     const t = setInterval(() => router.refresh(), 10000);
     return () => clearInterval(t);
   }, [router]);
 
-  // Mescla dados do servidor com os votos lançados nesta sessão.
   const mergedById = useMemo(() => {
     const map = new Map<string, Game>();
     for (const g of games) map.set(g.id, castVotes[g.id] ? { ...g, ...castVotes[g.id] } : g);
@@ -462,7 +451,7 @@ export function LiveClient({
       {games.length === 0 ? (
         <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14, padding: "40px 24px", background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14 }}>
           ⏳ Nenhum jogo ao vivo agora.<br />
-          <span style={{ fontSize: 12, color: "var(--text-disabled)" }}>Os jogos do dia abrem no horário definido.</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Os jogos do dia abrem no horário definido.</span>
         </div>
       ) : !canVote ? (
         <>
@@ -487,9 +476,10 @@ export function LiveClient({
         />
       ) : (
         <>
-          <div style={{ textAlign: "center", padding: "18px 16px", background: "rgba(52,199,89,.1)", border: "1px solid rgba(52,199,89,.35)", borderRadius: 14, marginBottom: 14 }}>
+          {/* ✅ FIX: var(--up-bg) + var(--up-fg) */}
+          <div style={{ textAlign: "center", padding: "18px 16px", background: "var(--up-bg)", border: "1px solid transparent", borderRadius: 14, marginBottom: 14 }}>
             <div style={{ fontSize: 32, marginBottom: 4 }}>🎉</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#34C759" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "var(--up-fg)" }}>
               Você votou em {votedCount} {votedCount === 1 ? "disputa" : "disputas"}!
             </div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>

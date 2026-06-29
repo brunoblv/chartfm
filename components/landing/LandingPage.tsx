@@ -409,7 +409,7 @@ export function LandingPage({
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FA243C", boxShadow: "0 0 0 3px rgba(250,36,60,0.2)" }} />
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, opacity: 0.7 }}>Parada global · ao vivo</div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "rgba(255,255,255,0.75)" }}>Parada global · ao vivo</div>
                 <div style={{ flex: 1 }} />
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>{top10[0]?.voters ?? 0}+ fãs de música</div>
               </div>
@@ -445,7 +445,7 @@ export function LandingPage({
                     <div style={{ flexShrink: 0 }}>
                       <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", width: 50, textAlign: "right" as const, opacity: 0.9 }}>{entry.points.toLocaleString("pt-BR")}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", width: 50, textAlign: "right" as const, color: "rgba(255,255,255,0.9)" }}>{entry.points.toLocaleString("pt-BR")}</div>
                   </div>
                 );
               })}

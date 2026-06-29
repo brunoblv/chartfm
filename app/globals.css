@@ -294,6 +294,12 @@ button {
   }
 }
 
+/* Chart page — max-width em monitores largos */
+.chart-page-outer {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 /* Line clamp utilities */
 .line-clamp-1 {
   overflow: hidden;

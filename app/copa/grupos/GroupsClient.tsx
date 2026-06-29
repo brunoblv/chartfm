@@ -51,8 +51,9 @@ type Props = {
 function StatusBadge({ status, round }: { status: string; round: number | null }) {
   if (status === "LIVE") {
     return (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, background: "rgba(250,36,60,.13)", color: "#FA243C", padding: "3px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FA243C", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
+      // ✅ FIX: var(--accent-tint) + var(--accent) em vez de rgba vermelha + #FA243C
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
         Ao vivo
       </span>
     );
@@ -60,7 +61,7 @@ function StatusBadge({ status, round }: { status: string; round: number | null }
   if (status === "DONE") {
     return <span style={{ fontSize: 10, fontWeight: 700, background: "var(--fill-inset)", color: "var(--text-muted)", padding: "3px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>R{round}</span>;
   }
-  return <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", padding: "3px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>R{round}</span>;
+  return <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", padding: "3px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>R{round}</span>;
 }
 
 export function GroupsClient({ groups, userId, copaId }: Props) {
@@ -85,9 +86,12 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                 width: 36,
                 height: 36,
                 borderRadius: 8,
-                border: hasLive && !isActive ? "1.5px solid rgba(250,36,60,.5)" : "1.5px solid transparent",
-                background: isActive ? "#FFD426" : hasLive ? "rgba(250,36,60,.08)" : "var(--fill-inset)",
-                color: isActive ? "#000" : hasLive ? "#FA243C" : "var(--text-muted)",
+                // ✅ FIX: borda live usa var(--divider) em vez de rgba vermelha
+                border: hasLive && !isActive ? "1.5px solid var(--divider)" : "1.5px solid transparent",
+                // ✅ FIX: ativo usa var(--accent), live usa var(--accent-tint)
+                background: isActive ? "var(--accent)" : hasLive ? "var(--accent-tint)" : "var(--fill-inset)",
+                // ✅ FIX: ativo usa #fff, live usa var(--accent)
+                color: isActive ? "#fff" : hasLive ? "var(--accent)" : "var(--text-muted)",
                 fontWeight: 800,
                 fontSize: 13,
                 cursor: "pointer",
@@ -103,17 +107,18 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
       {group && (
         <div style={{ padding: "0 24px 24px" }}>
           {/* Standings table */}
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 10 }}>
+          {/* ✅ FIX: var(--text-muted) em vez de var(--text-disabled) */}
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
             Classificação · Grupo {group.letter}
           </p>
           <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14, overflow: "hidden", marginBottom: 12 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "8px 14px 8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-disabled)" }}>#</th>
-                  <th style={{ padding: "8px 9px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-disabled)" }}>Artista</th>
+                  <th style={{ padding: "8px 14px 8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)" }}>#</th>
+                  <th style={{ padding: "8px 9px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)" }}>Artista</th>
                   {["PJ","V","E","D","GP","GC","SG","Pts"].map((h) => (
-                    <th key={h} style={{ padding: "8px 6px", textAlign: "right", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-disabled)" }}>{h}</th>
+                    <th key={h} style={{ padding: "8px 6px", textAlign: "right", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -126,10 +131,12 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                     <tr
                       key={row.artistId}
                       style={{
-                        borderTop: i === 2 ? "2px solid rgba(52,199,89,.35)" : "1px solid var(--divider)",
+                        // ✅ FIX: separador usa var(--up-bg) em vez de rgba(52,199,89,.35)
+                        borderTop: i === 2 ? "2px solid var(--up-bg)" : "1px solid var(--divider)",
                       }}
                     >
-                      <td style={{ padding: "9px 14px", fontWeight: 800, color: isQual ? "#34C759" : "var(--text-disabled)", textAlign: "left" }}>{i + 1}</td>
+                      {/* ✅ FIX: qualificado usa var(--up-fg) em vez de #34C759 */}
+                      <td style={{ padding: "9px 14px", fontWeight: 800, color: isQual ? "var(--up-fg)" : "var(--text-muted)", textAlign: "left" }}>{i + 1}</td>
                       <td style={{ padding: "9px 9px", textAlign: "left", fontWeight: 700 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {art && <CopaArtistAvatar {...art} size={22} />}
@@ -144,7 +151,8 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                       {[row.P, row.W, row.D, row.L, row.GF, row.GA].map((v, ci) => (
                         <td key={ci} style={{ padding: "9px 6px", textAlign: "right", color: "var(--text-muted)" }}>{v}</td>
                       ))}
-                      <td style={{ padding: "9px 6px", textAlign: "right", color: row.GD > 0 ? "#34C759" : row.GD < 0 ? "#E74C3C" : "var(--text-muted)" }}>
+                      {/* ✅ FIX: saldo usa var(--up-fg)/var(--down-fg) em vez de #34C759/#E74C3C */}
+                      <td style={{ padding: "9px 6px", textAlign: "right", color: row.GD > 0 ? "var(--up-fg)" : row.GD < 0 ? "var(--down-fg)" : "var(--text-muted)" }}>
                         {row.GD > 0 ? "+" : ""}{row.GD}
                       </td>
                       <td style={{ padding: "9px 6px", textAlign: "right", fontSize: 14, fontWeight: 800, color: "var(--text)" }}>{row.Pts}</td>
@@ -154,12 +162,14 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
               </tbody>
             </table>
           </div>
-          <div style={{ fontSize: 11, color: "var(--text-disabled)", marginBottom: 20 }}>
+          {/* ✅ FIX: var(--text-muted) */}
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 20 }}>
             ● 1º e 2º classificados avançam para o 1/16 de Final
           </div>
 
           {/* Fixtures */}
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 10 }}>
+          {/* ✅ FIX: var(--text-muted) */}
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
             Jogos · Grupo {group.letter}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -167,7 +177,6 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
               const artA = artistMap[f.artistAId];
               const artB = artistMap[f.artistBId];
               const canClick = f.status === "LIVE" || f.status === "DONE";
-              // Single revelado só Ao vivo/Encerrado (vem vazio do servidor antes disso).
               const singleA = f.singleAName;
               const singleB = f.singleBName;
               return (
@@ -180,25 +189,30 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                     gap: 8,
                     padding: "10px 12px",
                     borderRadius: 10,
-                    background: f.status === "LIVE" ? "rgba(250,36,60,.07)" : "var(--surface)",
-                    border: `1px solid ${f.status === "LIVE" ? "rgba(250,36,60,.35)" : "var(--divider)"}`,
+                    // ✅ FIX: live usa var(--accent-tint), borda sempre var(--divider)
+                    background: f.status === "LIVE" ? "var(--accent-tint)" : "var(--surface)",
+                    border: "1px solid var(--divider)",
                     cursor: canClick ? "pointer" : "default",
                   }}
                 >
                   {artA && <CopaArtistAvatar {...artA} coverUrl={f.singleACover} size={26} />}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{artA?.artistName}</div>
-                    {singleA && <div style={{ fontSize: 10, color: "var(--text-disabled)" }}>"{singleA}"</div>}
+                    {singleA && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>"{singleA}"</div>}
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 800, padding: "0 8px", flexShrink: 0, color: f.status === "UPCOMING" ? "var(--text-muted)" : "var(--text)" }}>
+                  {/* ✅ Score: min-width fixo para alinhar em todas as linhas */}
+                  <span style={{ fontSize: 14, fontWeight: 800, minWidth: 52, textAlign: "center", flexShrink: 0, color: f.status === "UPCOMING" ? "var(--text-muted)" : "var(--text)" }}>
                     {f.status === "UPCOMING" ? "— vs —" : `${f.goalsA} — ${f.goalsB}`}
                   </span>
                   <div style={{ flex: 1, textAlign: "right" }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{artB?.artistName}</div>
-                    {singleB && <div style={{ fontSize: 10, color: "var(--text-disabled)" }}>"{singleB}"</div>}
+                    {singleB && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>"{singleB}"</div>}
                   </div>
                   {artB && <CopaArtistAvatar {...artB} coverUrl={f.singleBCover} size={26} />}
-                  <StatusBadge status={f.status} round={f.round} />
+                  {/* ✅ Badge em wrapper fixo para não desalinhar o placar */}
+                  <div style={{ width: 64, flexShrink: 0, display: "flex", justifyContent: "flex-end" }}>
+                    <StatusBadge status={f.status} round={f.round} />
+                  </div>
                 </div>
               );
             })}

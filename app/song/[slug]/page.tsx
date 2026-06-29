@@ -10,6 +10,7 @@ import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-rout
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
 import { AdSlot } from "@/components/ui/AdSlot";
+import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 import { getDailyChartSongStatsForPages } from "@/lib/daily-chart-song-stats";
 import { globalStatsForSingleSong, songKey } from "@/lib/chart-page-common";
 import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
@@ -346,7 +347,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           initialClips={initialClips}
         />
 
-        <AdSlot slotId="COLE_AQUI_SLOT_ID_1" format="rectangle" style={{ margin: "28px 0" }} />
+        <AdSlot slotId={ADSENSE_SLOTS.song} format="rectangle" style={{ margin: "28px 0" }} />
 
         {!hasChartPresence && (
           <div style={{ marginTop: 20, padding: 14, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)" }}>

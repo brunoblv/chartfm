@@ -7,6 +7,7 @@ import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
 import { scoreColor, scoreBg } from "@/lib/album-score";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { AdSlot } from "@/components/ui/AdSlot";
+import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -599,7 +600,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
           {isMobile && viewMode === "list" ? (
             <div>
               {paginated.slice(0, 8).map((a) => <CriticsFMListRow key={a.id} album={a} />)}
-              {paginated.length > 8 && <AdSlot slotId="COLE_AQUI_SLOT_ID_6" format="mobile-banner" style={{ margin: "10px 0" }} />}
+              {paginated.length > 8 && <AdSlot slotId={ADSENSE_SLOTS.criticsFm} format="mobile-banner" style={{ margin: "10px 0" }} />}
               {paginated.slice(8).map((a) => <CriticsFMListRow key={a.id} album={a} />)}
             </div>
           ) : (
@@ -614,7 +615,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
               {paginated.slice(0, isMobile ? 6 : 8).map((a) => <CriticsFMGridCard key={a.id} album={a} />)}
               {paginated.length > (isMobile ? 6 : 8) && (
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <AdSlot slotId="COLE_AQUI_SLOT_ID_6" format="auto" style={{ margin: "4px 0" }} />
+                  <AdSlot slotId={ADSENSE_SLOTS.criticsFm} format="auto" style={{ margin: "4px 0" }} />
                 </div>
               )}
               {paginated.slice(isMobile ? 6 : 8).map((a) => <CriticsFMGridCard key={a.id} album={a} />)}

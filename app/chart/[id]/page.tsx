@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { AdSlot } from "@/components/ui/AdSlot";
+import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { VideoClipCover } from "@/components/ui/VideoClipCover";
@@ -427,6 +428,7 @@ export default function ChartDetailPage() {
 
   return (
     <Shell title="" noPadding>
+      <div className="chart-page-outer">
       {/* Hero */}
       <div style={{
         background: `linear-gradient(180deg, ${user.avatar}22 0%, transparent 100%)`,
@@ -618,11 +620,11 @@ export default function ChartDetailPage() {
         )}
       </div>
 
-      <AdSlot slotId="COLE_AQUI_SLOT_ID_2" format="leaderboard" style={{ margin: "0 0 4px 0" }} />
+      <AdSlot slotId={ADSENSE_SLOTS.chart} format="leaderboard" style={{ margin: "0 0 4px 0" }} />
 
 <div style={{ padding: isMobile ? "0 16px 80px 16px" : "0 40px 80px 40px" }}>
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--divider)", marginBottom: 24, overflowX: "auto", padding: isMobile ? "0 16px" : 0 }}>
+      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--divider)", marginBottom: 24, overflowX: "auto" }}>
         {([["chart", "Parada"], ["saidas", `Saídas${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`], ["comments", "Comentários"], ["overlap", "Quem tem em comum"]] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
@@ -668,6 +670,7 @@ export default function ChartDetailPage() {
         />
       )}
       {tab === "overlap" && <OverlapTab chartId={chart.id} isDbChart={isDbChart} statsLabels={statsLabels} />}
+      </div>
       </div>
     </Shell>
   );

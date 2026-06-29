@@ -5,6 +5,7 @@ import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { AdSlot } from "@/components/ui/AdSlot";
+import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import { loadCoverUrlsForSongIds } from "@/lib/chart-entry-cover";
 import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft, Youtube } from "lucide-react";
@@ -273,7 +274,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
           Rankings consolidados com base em {uniqueParadas} paradas pessoais publicadas na semana {weekRangeNow}.
         </p>
-        <AdSlot slotId="COLE_AQUI_SLOT_ID_3" format="rectangle" style={{ margin: "0 0 28px 0" }} />
+        <AdSlot slotId={ADSENSE_SLOTS.global100} format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
         <GlobalTabs
           weeklySongs={globalSongs}

@@ -350,7 +350,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
             Adicionar artista ({artists.length}/{maxArtists})
           </div>
 
-          <div style={{ fontSize: 12, color: "var(--text-disabled)", textAlign: "center", marginTop: 8 }}>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", marginTop: 8 }}>
             Faltam {maxArtists - artists.length} artista{maxArtists - artists.length !== 1 ? "s" : ""} para liberar a escolha das músicas.
           </div>
         </div>
@@ -366,8 +366,8 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
               alignItems: "center",
               gap: 10,
               padding: "12px 14px",
-              background: "rgba(52,199,89,.1)",
-              border: "1px solid rgba(52,199,89,.3)",
+              background: "var(--up-bg)",
+              border: "1px solid transparent",
               borderRadius: 12,
               marginBottom: 14,
               fontSize: 13,
@@ -383,8 +383,8 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
           <div
             style={{
               padding: "12px 14px",
-              background: editWindow.open ? "rgba(52,199,89,.1)" : "rgba(255,212,38,.08)",
-              border: `1px solid ${editWindow.open ? "rgba(52,199,89,.35)" : "rgba(255,212,38,.3)"}`,
+              background: editWindow.open ? "var(--up-bg)" : "rgba(255,212,38,.08)",
+              border: `1px solid ${editWindow.open ? "transparent" : "rgba(255,212,38,.3)"}`,
               borderRadius: 12,
               marginBottom: 14,
               fontSize: 12,
@@ -394,7 +394,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
           >
             {editWindow.open ? (
               <>
-                <strong style={{ color: "#34C759" }}>Janela de edição aberta.</strong>{" "}
+                <strong style={{ color: "var(--up-fg)" }}>Janela de edição aberta.</strong>{" "}
                 {editWindow.message} Cada música só pode ser usada uma vez por artista.
               </>
             ) : (
@@ -430,7 +430,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                   </div>
                 </div>
                 {isRegistration ? null : qual ? (
-                  <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(52,199,89,.12)", color: "#34C759", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "var(--up-bg)", color: "var(--up-fg)", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     ✓ Classificado
                   </span>
                 ) : (
@@ -489,23 +489,23 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                       gap: 9,
                       padding: "8px 16px",
                       borderTop: "1px solid var(--divider)",
-                      background: dropHighlight ? "rgba(52,199,89,.08)" : undefined,
+                      background: dropHighlight ? "var(--up-bg)" : undefined,
                       cursor: canDrag ? "grab" : canEdit ? "copy" : "default",
                     }}
                   >
                     {canDrag ? (
-                      <GripVertical size={14} color="var(--text-disabled)" style={{ flexShrink: 0, marginLeft: -4 }} />
+                      <GripVertical size={14} color="var(--text-muted)" style={{ flexShrink: 0, marginLeft: -4 }} />
                     ) : null}
-                    <span style={{ width: 20, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-disabled)", flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ width: 20, textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--text-muted)", flexShrink: 0 }}>{i + 1}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-disabled)", marginBottom: 2 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 2 }}>
                         {SLOT_LABELS[i]}
                       </div>
                       <div
                         style={{
                           fontSize: 13,
                           fontWeight: 600,
-                          color: lock || !canEdit ? "var(--text-muted)" : isEmpty ? "var(--text-disabled)" : "var(--text)",
+                          color: lock || !canEdit ? "var(--text-muted)" : isEmpty ? "var(--text-muted)" : "var(--text)",
                           cursor: canEdit ? "pointer" : "default",
                         }}
                         onClick={() => {
@@ -515,7 +515,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                       >
                         {isEmpty ? (canEdit ? "Escolher música…" : "—") : single!.songName}
                         {canEdit && (
-                          <span style={{ color: "var(--text-disabled)", marginLeft: 4, fontSize: 10 }}>✏</span>
+                          <span style={{ color: "var(--text-muted)", marginLeft: 4, fontSize: 10 }}>✏</span>
                         )}
                       </div>
                     </div>
@@ -529,18 +529,18 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                         letterSpacing: "0.05em",
                         background: lock
                           ? lock.status === "LIVE"
-                            ? "rgba(250,36,60,.12)"
+                            ? "var(--accent-tint)"
                             : "var(--fill-inset)"
                           : canEdit
-                            ? "rgba(52,199,89,.1)"
+                            ? "var(--up-bg)"
                             : "var(--fill-inset)",
                         color: lock
                           ? lock.status === "LIVE"
-                            ? "#FA243C"
+                            ? "var(--accent)"
                             : "var(--text-muted)"
                           : canEdit
-                            ? "#34C759"
-                            : "var(--text-disabled)",
+                            ? "var(--up-fg)"
+                            : "var(--text-muted)",
                       }}
                     >
                       {lock
@@ -639,7 +639,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                       </div>
                     </div>
                     {!taken && (
-                      <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(52,199,89,.12)", color: "#34C759", padding: "3px 8px", borderRadius: 99 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, background: "var(--up-bg)", color: "var(--up-fg)", padding: "3px 8px", borderRadius: 99 }}>
                         Livre
                       </span>
                     )}
