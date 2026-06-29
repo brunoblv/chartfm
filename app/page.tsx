@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { HomeGrid } from "@/components/layout/HomeGrid";
+import { YourWeekCard } from "@/components/home/YourWeekCard";
 import { FriendsRow, GlobalTeaser, SuggestedUsers, TrendingArtists } from "@/components/home/HomeSidebar";
 import { formatRelativeTime } from "@/lib/i18n/format";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -22,6 +23,7 @@ import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs } from "@/components/home/TimelineTabs";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
 import { mergeHomeFeed, filterFollowingRecommendations } from "@/lib/home-mixed-feed";
+import { getPrimaryParada } from "@/lib/paradas";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import type { UserWithCharts } from "@/lib/types";
 
@@ -32,6 +34,12 @@ export async function generateMetadata(): Promise<Metadata> {
     description: t("home.metaDescription"),
     alternates: { canonical: "/" },
   };
+}
+
+function daysUntilSundayBRT(): number {
+  const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const day = nowBRT.getUTCDay();
+  return day === 0 ? 0 : 7 - day;
 }
 
 type PublisherRow = {
@@ -298,6 +306,10 @@ export default async function HomePage() {
     );
   }
 
+  let userStreak = 0;
+  let userParadaNome: string | null = null;
+  let primaryParadaId: string | null = null;
+  let thisWeekChartId: string | null = null;
   let userGenres: string[] = [];
   let followingIds = new Set<string>();
 
@@ -306,11 +318,19 @@ export default async function HomePage() {
   const rankingWeek = getRankingWeekReference();
 
   if (session?.user?.id) {
-    const [user, followRows] = await Promise.all([
+    const [user, primaryWeek, followRows] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { genres: true },
+        select: { streak: true, genres: true },
       }),
+      (async () => {
+        const primary = await getPrimaryParada(prisma, session.user.id);
+        const chart = await prisma.chart.findUnique({
+          where: { paradaId_weekIndex: { paradaId: primary.id, weekIndex: currentWeekIdx } },
+          select: { id: true },
+        });
+        return { primary, chart };
+      })(),
       prisma.userFollow.findMany({
         where: { followerId: session.user.id },
         select: { followingId: true },
@@ -319,12 +339,17 @@ export default async function HomePage() {
 
     if (user && !user.genres?.length) redirect("/onboarding");
 
+    userStreak = user?.streak ?? 0;
+    userParadaNome = primaryWeek.primary.name;
+    primaryParadaId = primaryWeek.primary.id;
     userGenres = user?.genres ?? [];
+    thisWeekChartId = primaryWeek.chart?.id ?? null;
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed] =
     await Promise.all([
+      Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
       getSuggestedUsers(session.user.id, userGenres, followingIds, 3),
@@ -355,6 +380,14 @@ export default async function HomePage() {
 
   const feed = (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <YourWeekCard
+        streak={userStreak}
+        daysLeft={daysLeft}
+        paradaNome={userParadaNome}
+        primaryParadaId={primaryParadaId}
+        thisWeekChartId={thisWeekChartId}
+      />
+
       {publishedToday.length > 0 && <FriendsRow publishers={publishedToday} />}
 
       <TimelineTabs
@@ -378,7 +411,7 @@ export default async function HomePage() {
   );
 
   return (
-    <Shell title={t("home.title")} subtitle={t("home.subtitle")}>
+    <Shell>
       <HomeGrid feed={feed} sidebar={sidebar} />
     </Shell>
   );
