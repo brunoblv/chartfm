@@ -199,7 +199,7 @@ export async function loadLatestGlobalWeeklySongPositions(): Promise<Map<string,
     select: { weeklySongs: true },
   });
   if (!snap) return new Map();
-  const weekly = snap.weeklySongs as GlobalSnapshotPayload["weeklySongs"];
+  const weekly = snap.weeklySongs as unknown as GlobalSnapshotPayload["weeklySongs"];
   return new Map(weekly.map((s) => [songSnapshotAggKey(s.song), s.position]));
 }
 
