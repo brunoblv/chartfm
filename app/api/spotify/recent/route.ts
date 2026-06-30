@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { requireSpotifySession } from "@/lib/mytrl-access-server";
 import { getSpotifyUserAccessToken, fetchSpotifyRecentlyPlayed, SpotifyAuthError } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
@@ -41,9 +42,10 @@ export async function POST(req: NextRequest) {
       : 50;
 
   try {
-    const recent = await fetchSpotifyRecentlyPlayed(token, limit);
+    const recent = (await fetchSpotifyRecentlyPlayed(token, limit)).filter((t) => !isInstrumentalTitle(t.title));
 
-    const songs = await Promise.all(
+    const songs = (
+      await Promise.all(
       recent.map(async (t) => {
         const dbSong = await prisma.song.findUnique({
           where: { spotifyId: t.spotifyId },
@@ -56,6 +58,7 @@ export async function POST(req: NextRequest) {
           },
         });
         if (dbSong) {
+          if (isInstrumentalTitle(dbSong.title)) return null;
           return {
             title: dbSong.title,
             artist: dbSong.artist,
@@ -72,7 +75,8 @@ export async function POST(req: NextRequest) {
           imageUrl: t.imageUrl,
         };
       }),
-    );
+    )
+    ).filter((s): s is NonNullable<typeof s> => s != null);
 
     return NextResponse.json({ songs }, { headers: NO_CACHE });
   } catch (err) {

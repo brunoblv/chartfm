@@ -22,7 +22,7 @@ import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
 import { describeLastfmImportOrder, describeLastfmImportPeriod } from "@/lib/lastfm-import";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
-import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
+import { canUseSpotifyFeatures, isMyTrlOwner } from "@/lib/mytrl-access";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -100,6 +100,7 @@ export default function CreatePage() {
   const isMobile = useIsMobile();
   const { data: session } = useSession();
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
+  const isBrunoLastfmImport = isMyTrlOwner(session?.user?.handle);
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [dbQuery, setDbQuery] = useState("");
@@ -130,6 +131,7 @@ export default function CreatePage() {
   const [paradaNome, setParadaNome] = useState<string | null>(null);
   const [activeParadaId, setActiveParadaId] = useState<string | null>(paradaIdFromUrl);
   const [showLastfmModal, setShowLastfmModal] = useState(false);
+  const [lastfmFilterNewHits, setLastfmFilterNewHits] = useState(true);
   const [lastfmImportCount, setLastfmImportCount] = useState(200);
   const [userLastfmUser, setUserLastfmUser] = useState<string | null>(null);
   const [userChartSize, setUserChartSize] = useState<number | null>(null);
@@ -474,7 +476,7 @@ export default function CreatePage() {
     }
   };
 
-  const importFromLastfm = async (limit: number = 200) => {
+  const importFromLastfm = async (limit: number = 200, filterNewHits = true) => {
     lastfmImportAbortRef.current?.abort();
     const runId = ++lastfmImportRunRef.current;
     const ac = new AbortController();
@@ -493,7 +495,7 @@ export default function CreatePage() {
           "Cache-Control": "no-store, no-cache, max-age=0",
           Pragma: "no-cache",
         },
-        body: JSON.stringify({ nonce: requestNonce, limit, weekDate: weekDate.trim() }),
+        body: JSON.stringify({ nonce: requestNonce, limit, weekDate: weekDate.trim(), filterNewHits }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -891,26 +893,79 @@ export default function CreatePage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
         {session?.user && (
           <>
-            <button
-              type="button"
-              onClick={() => !importingLastfm && setShowLastfmModal(true)}
-              disabled={importingLastfm}
-              title="Importar do Last.fm conforme a data da parada selecionada"
-              style={{
-                border: "1px solid rgba(250,36,60,0.3)",
-                background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
-                color: "#FA243C",
-                borderRadius: 10,
-                padding: "8px 12px",
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: importingLastfm ? "not-allowed" : "pointer",
-                opacity: importingLastfm ? 0.65 : 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {importingLastfm ? "Buscando Last.fm…" : "↺ Last.fm"}
-            </button>
+            {isBrunoLastfmImport ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (importingLastfm) return;
+                    setLastfmFilterNewHits(true);
+                    setShowLastfmModal(true);
+                  }}
+                  disabled={importingLastfm}
+                  title="Importar do Last.fm (últimos 30 dias, somente faixas da playlist new hits)"
+                  style={{
+                    border: "1px solid rgba(250,36,60,0.3)",
+                    background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
+                    color: "#FA243C",
+                    borderRadius: 10,
+                    padding: "8px 12px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: importingLastfm ? "not-allowed" : "pointer",
+                    opacity: importingLastfm ? 0.65 : 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {importingLastfm ? "Buscando Last.fm…" : "↺ New Hits"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (importingLastfm) return;
+                    setLastfmFilterNewHits(false);
+                    setShowLastfmModal(true);
+                  }}
+                  disabled={importingLastfm}
+                  title="Importar do Last.fm (últimos 30 dias, todas as faixas ouvidas)"
+                  style={{
+                    border: "1px solid rgba(250,36,60,0.3)",
+                    background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
+                    color: "#FA243C",
+                    borderRadius: 10,
+                    padding: "8px 12px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: importingLastfm ? "not-allowed" : "pointer",
+                    opacity: importingLastfm ? 0.65 : 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {importingLastfm ? "Buscando Last.fm…" : "↺ Last.fm 30d"}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => !importingLastfm && setShowLastfmModal(true)}
+                disabled={importingLastfm}
+                title="Importar do Last.fm conforme a data da parada selecionada"
+                style={{
+                  border: "1px solid rgba(250,36,60,0.3)",
+                  background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
+                  color: "#FA243C",
+                  borderRadius: 10,
+                  padding: "8px 12px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: importingLastfm ? "not-allowed" : "pointer",
+                  opacity: importingLastfm ? 0.65 : 1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {importingLastfm ? "Buscando Last.fm…" : "↺ Last.fm"}
+              </button>
+            )}
             {canUseSpotifyImport && (
             <button
               type="button"
@@ -1228,10 +1283,16 @@ export default function CreatePage() {
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(250,36,60,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
                   ↺
                 </div>
-                <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Last.fm</span>
+                <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>
+                  {isBrunoLastfmImport
+                    ? lastfmFilterNewHits
+                      ? "Importar do Last.fm (New Hits)"
+                      : "Importar do Last.fm (30 dias)"
+                    : "Importar do Last.fm"}
+                </span>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                {describeLastfmImportPeriod(weekDate, session?.user?.handle)}
+                {describeLastfmImportPeriod(weekDate, session?.user?.handle, lastfmFilterNewHits)}
               </p>
             </div>
 
@@ -1297,7 +1358,7 @@ export default function CreatePage() {
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {describeLastfmImportOrder(weekDate, session?.user?.handle)}
+                {describeLastfmImportOrder(weekDate, session?.user?.handle, lastfmFilterNewHits)}
               </div>
             </div>
 
@@ -1355,7 +1416,7 @@ export default function CreatePage() {
                 Cancelar
               </button>
               <button
-                onClick={() => importFromLastfm(lastfmImportCount)}
+                onClick={() => importFromLastfm(lastfmImportCount, lastfmFilterNewHits)}
                 disabled={!userLastfmUser}
                 style={{
                   padding: "10px 20px",

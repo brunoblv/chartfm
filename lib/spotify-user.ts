@@ -3,6 +3,7 @@
  * Usar apenas em Route Handlers / Server — nunca no bundle do cliente.
  */
 
+import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { prisma } from "@/lib/prisma";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { pickAlbumImageUrl } from "@/lib/spotify-server";
@@ -428,7 +429,7 @@ export async function fetchSpotifyRecentlyPlayed(
 
   for (const item of json.items ?? []) {
     const track = item.track;
-    if (!track?.id || seen.has(track.id)) continue;
+    if (!track?.id || seen.has(track.id) || isInstrumentalTitle(track.name)) continue;
     seen.add(track.id);
     out.push({
       spotifyId: track.id,

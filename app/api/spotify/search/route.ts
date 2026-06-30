@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { spotifyConfigured, getAccessToken } from "@/lib/spotify-server";
 import { prisma } from "@/lib/prisma";
 
@@ -39,7 +40,9 @@ async function searchLocalCatalog(q: string, limit: number): Promise<TrackResult
     orderBy: { title: "asc" },
   });
 
-  return rows.map((r) => ({
+  return rows
+    .filter((r) => !isInstrumentalTitle(r.title))
+    .map((r) => ({
     spotifyId: r.spotifyId!,
     title: r.title,
     artist: r.artist,

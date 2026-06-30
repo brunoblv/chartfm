@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import type { Song } from "@/lib/types";
 
 type SpotifyApiTrack = {
@@ -99,7 +100,9 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
 
         setConfigured(serverData.configured !== false);
 
-        const dbSongs: Song[] = (serverData.tracks ?? []).map((t) => ({
+        const dbSongs: Song[] = (serverData.tracks ?? [])
+          .filter((t) => !isInstrumentalTitle(t.title))
+          .map((t) => ({
           title: t.title,
           artist: t.artist,
           album: t.album,
@@ -152,7 +155,7 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
           const seen = new Set(dbSongs.map((s) => s.spotifyId).filter((id): id is string => Boolean(id)));
           const merged = [...dbSongs];
           for (const item of candidates) {
-            if (seen.has(item.id)) continue;
+            if (seen.has(item.id) || isInstrumentalTitle(item.name)) continue;
             seen.add(item.id);
             merged.push({
               title: item.name,

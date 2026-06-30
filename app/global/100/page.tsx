@@ -282,6 +282,11 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
           overallSongs={overallSongs}
           overallArtists={topArtistsOverallWithImages}
           weeklyDropouts={weeklyDropouts}
+          spotifyPlaylist={{
+            kind: "global100",
+            weekIndex,
+            returnPath: `/global/100?week=${weekIndex}`,
+          }}
         />
       </section>
 

@@ -10,6 +10,7 @@ import {
   toBrtDate,
 } from "@/lib/mytrl-chart-engine";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
+import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById } from "@/lib/spotify-server";
 
 const WEEKLY_TOP_SIZE = 20;
@@ -88,6 +89,10 @@ export async function upsertSongFromSpotify(
   fallback: Pick<WeeklyMyTrlCandidate, "track" | "artist" | "album">,
 ) {
   const metadata = await getSpotifyTrackMetadataById(spotifyId);
+  const resolvedTitle = metadata?.title ?? fallback.track;
+  if (isInstrumentalTitle(resolvedTitle) || isInstrumentalTitle(fallback.track)) {
+    throw new Error("Faixas instrumentais não podem ser importadas do Spotify.");
+  }
   const primaryArtist = metadata?.primaryArtist;
   const albumSpotifyId = metadata?.album.spotifyId ?? null;
   const mainArtistName = primaryArtist?.name?.trim() || metadata?.artists?.[0]?.name?.trim() || fallback.artist;
@@ -136,8 +141,6 @@ export async function upsertSongFromSpotify(
       },
     });
   }
-
-  const resolvedTitle = metadata?.title ?? fallback.track;
 
   // A song may exist without a spotifyId under the same title+artist.
   // Upserting by spotifyId would try to CREATE and hit the (title,artist) unique constraint.

@@ -96,6 +96,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           title: true,
           artist: true,
           album: true,
+          genres: true,
           editorialNote: true,
           albumRef: { select: { id: true, coverUrl: true } },
           spotifyId: true,
@@ -114,6 +115,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         title: true,
         artist: true,
         album: true,
+        genres: true,
         editorialNote: true,
         albumRef: { select: { id: true, coverUrl: true } },
         spotifyId: true,
@@ -147,6 +149,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   let paletteA = first?.coverPaletteA ?? "#FA243C";
   let paletteB = first?.coverPaletteB ?? "#FFE66D";
   let coverSeed = first?.coverSeed ?? 0;
+  const songGenres = songRow.genres ?? [];
   let hasChartPresence = entries.length > 0;
   let chartEntries = 0;
   let topUsers: SongPageSnapshotPayload["topUsers"] = [];
@@ -344,6 +347,32 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
                 </Link>
               ) : null}
             </div>
+            {songGenres.length > 0 && (
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
+                {songGenres.map((g) => (
+                  <span
+                    key={g}
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: "4px 10px",
+                      borderRadius: 100,
+                      background: "var(--fill-subtle)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    {g}
+                  </span>
+                ))}
+              </div>
+            )}
             {canEditSong && (
               <div style={{ marginTop: 10 }}>
                 <Link href={`/song/${slug}/edit`} style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>

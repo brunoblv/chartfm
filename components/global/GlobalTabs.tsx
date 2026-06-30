@@ -23,6 +23,8 @@ import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { Cover as CoverData } from "@/lib/types";
+import type { GlobalPlaylistKind } from "@/lib/global-playlist-tracks";
+import { GlobalSpotifyPlaylistButton } from "@/components/global/GlobalSpotifyPlaylistButton";
 import Link from "next/link";
 import { Star } from "lucide-react";
 
@@ -121,12 +123,19 @@ export function GlobalTabs({
   overallSongs,
   overallArtists,
   weeklyDropouts = [],
+  spotifyPlaylist,
 }: {
   weeklySongs: SongEntry[];
   weeklyArtists: ArtistEntry[];
   overallSongs: SongEntry[];
   overallArtists: ArtistEntry[];
   weeklyDropouts?: SongEntry[];
+  spotifyPlaylist?: {
+    kind: Extract<GlobalPlaylistKind, "global100" | "genre">;
+    weekIndex: number;
+    genreSlug?: string;
+    returnPath: string;
+  };
 }) {
   const [tab, setTab] = useState<"songs" | "artists" | "saidas">("songs");
   const [viewSize, setViewSize] = useState<"small" | "large">("small");
@@ -162,7 +171,16 @@ export function GlobalTabs({
         </div>
 
         {tab !== "saidas" && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            {tab === "songs" && spotifyPlaylist && (
+              <GlobalSpotifyPlaylistButton
+                kind={spotifyPlaylist.kind}
+                weekIndex={spotifyPlaylist.weekIndex}
+                genreSlug={spotifyPlaylist.genreSlug}
+                period={period}
+                returnPath={spotifyPlaylist.returnPath}
+              />
+            )}
             {/* Period: Semanal / Overall */}
             <div style={{ ...segmentContainer, flex: isMobile ? 1 : undefined }}>
               <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>{t("global.weekly")}</button>

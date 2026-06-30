@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { resolveLastfmImportTracks, resolveBrunoNewHitsImportTracks } from "@/lib/lastfm-import";
+import {
+  resolveLastfmImportTracks,
+  resolveBrunoNewHitsImportTracks,
+  resolveBrunoLastfmImportTracks,
+} from "@/lib/lastfm-import";
 import { isMyTrlOwner } from "@/lib/mytrl-access";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 import { getNamedNewHitsPlaylistTracks } from "@/lib/spotify-user";
@@ -154,16 +158,25 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
 }
 
 // POST /api/lastfm/import
-// Body: { limit?: number; weekDate?: string } — semana atual: top tracks `1month`;
-// outras semanas: mês civil anterior à data da parada (YYYY-MM-DD).
-// Usa o lastfmUser do perfil do usuário autenticado.
+// Body: { limit?: number; weekDate?: string; filterNewHits?: boolean }
+// @bruno: filterNewHits true (padrão) → 30d + playlist "new hits"; false → 30d sem filtro.
+// Demais usuários: semana atual top `1month`; outras semanas → mês civil anterior.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
   }
 
-  const filterNewHits = isMyTrlOwner(session.user.handle);
+  const isBruno = isMyTrlOwner(session.user.handle);
+
+  let body: { limit?: unknown; weekDate?: unknown; filterNewHits?: unknown } = {};
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    body = {};
+  }
+
+  const filterNewHits = isBruno && body.filterNewHits !== false;
 
   const userRecord = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -201,16 +214,32 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let body: { limit?: unknown; weekDate?: unknown } = {};
-  try {
-    body = (await req.json()) as typeof body;
-  } catch {
-    body = {};
-  }
   const limit = typeof body.limit === "number" && body.limit > 0 && body.limit <= 200 ? Math.round(body.limit) : 200;
   const lastfmUsername = userRecord.lastfmUser;
 
   try {
+    if (isBruno && !filterNewHits) {
+      const { tracks: topTracks, periodLabel } = await resolveBrunoLastfmImportTracks(
+        body.weekDate,
+        limit,
+        lastfmUsername,
+      );
+
+      const BATCH = 20;
+      const enriched: EnrichedSong[] = [];
+      for (let i = 0; i < topTracks.length; i += BATCH) {
+        const slice = topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album }));
+        const batch = await enrichBatch(slice);
+        enriched.push(...batch);
+      }
+
+      const songs = (await preferExistingSongs(enriched)).slice(0, limit);
+      return NextResponse.json(
+        { songs, total: topTracks.length, periodLabel, filteredNewHits: false },
+        { headers: NO_CACHE_HEADERS },
+      );
+    }
+
     if (filterNewHits && playlistTracks) {
       const { tracks: newHitsTracks, periodLabel } = await resolveBrunoNewHitsImportTracks(
         body.weekDate,

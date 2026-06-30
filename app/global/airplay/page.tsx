@@ -5,6 +5,7 @@ import { ChevronLeft, Youtube } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { GlobalLastfmHero } from "@/components/global/GlobalLastfmHero";
 import { GlobalLastfmRanking } from "@/components/global/GlobalLastfmRanking";
+import { GlobalSpotifyPlaylistButton } from "@/components/global/GlobalSpotifyPlaylistButton";
 import { loadGlobalLastfmPageData } from "@/lib/global-lastfm-page";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 
@@ -62,7 +63,7 @@ export default async function GlobalAirplayPage({ searchParams }: PageProps) {
       />
 
       {data.youtubePlaylistId && (
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
           <a
             href={`https://www.youtube.com/playlist?list=${data.youtubePlaylistId}`}
             target="_blank"
@@ -85,6 +86,21 @@ export default async function GlobalAirplayPage({ searchParams }: PageProps) {
             <Youtube size={16} fill="white" />
             Ouvir no YouTube
           </a>
+          <GlobalSpotifyPlaylistButton
+            kind="airplay"
+            weekIndex={data.weekIndex}
+            returnPath={`/global/airplay?week=${data.weekIndex}`}
+          />
+        </div>
+      )}
+
+      {!data.youtubePlaylistId && data.entries.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <GlobalSpotifyPlaylistButton
+            kind="airplay"
+            weekIndex={data.weekIndex}
+            returnPath={`/global/airplay?week=${data.weekIndex}`}
+          />
         </div>
       )}
 

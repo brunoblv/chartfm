@@ -214,6 +214,12 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
             overallSongs={overallSongs}
             overallArtists={topArtistsOverallWithImages}
             weeklyDropouts={[]}
+            spotifyPlaylist={{
+              kind: "genre",
+              weekIndex,
+              genreSlug: slug,
+              returnPath: `${basePath}?week=${weekIndex}`,
+            }}
           />
         )}
       </section>

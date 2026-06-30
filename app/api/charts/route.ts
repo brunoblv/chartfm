@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@/lib/chart-cadence";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const entries: EntryInput[] = body.entries ?? [];
+  let entries: EntryInput[] = (body.entries ?? []).filter((e: EntryInput) => !isInstrumentalTitle(e.title));
   const fastPublish = body.fastPublish === true;
 
   if (!Array.isArray(entries) || entries.length === 0) {

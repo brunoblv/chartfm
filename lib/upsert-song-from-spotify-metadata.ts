@@ -1,3 +1,4 @@
+import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { prisma } from "@/lib/prisma";
 import { enrichSongMetadataAfterSave } from "@/lib/resolve-song-genres";
 import { getSpotifyArtistById, type SpotifyTrackMetadata } from "@/lib/spotify-server";
@@ -23,6 +24,9 @@ export async function upsertSongFromSpotifyMetadata(
 ): Promise<UpsertSongFromMetadataResult> {
   const tid = metadata.spotifyId.trim();
   if (!tid) return { ok: false, error: "missing_track_spotify_id", status: 400 };
+  if (isInstrumentalTitle(metadata.title)) {
+    return { ok: false, error: "Faixas instrumentais não podem ser importadas do Spotify.", status: 400 };
+  }
 
   const albumFallback = opts?.albumTitleFallback?.trim() || "Álbum";
   const primaryArtist = metadata.primaryArtist;

@@ -3,6 +3,8 @@
  * Usar apenas em Route Handlers / Server Components — nunca no bundle do cliente.
  */
 
+import { isInstrumentalTitle } from "./is-instrumental-title";
+
 const AUTH_URL = "https://accounts.spotify.com/api/token";
 const API_BASE = "https://api.spotify.com/v1";
 const SPOTIFY_RETRY_MAX_ATTEMPTS = 4;
@@ -305,6 +307,7 @@ export async function searchSpotifyTracks(query: string, limit = 10, market: str
   // sem tags de edição primeiro, depois a mais antiga
   const groups = new Map<string, SpotifyTrackApi[]>();
   for (const item of items) {
+    if (isInstrumentalTitle(item.name)) continue;
     const key = canonicalSongKey(item);
     const group = groups.get(key);
     if (group) group.push(item);
@@ -384,7 +387,7 @@ export async function listSpotifyAlbumTracks(
     if (!res?.ok) break;
     const json = (await res.json()) as SpotifyAlbumTracksPageJson;
     for (const it of json.items ?? []) {
-      if (it?.id && it?.name && !/instrumental/i.test(it.name)) out.push({ spotifyId: it.id, title: it.name });
+      if (it?.id && it?.name && !isInstrumentalTitle(it.name)) out.push({ spotifyId: it.id, title: it.name });
     }
     url = json.next ?? null;
   }

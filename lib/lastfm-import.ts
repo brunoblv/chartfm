@@ -139,8 +139,7 @@ export async function resolveBrunoNewHitsImportTracks(
 
 /**
  * @bruno — scrobbles dos últimos 30 dias, ranqueados por plays ponderados
- * (7 dias recentes ×20, demais ×10).
- * @deprecated Preferir resolveBrunoNewHitsImportTracks na importação com filtro new hits.
+ * (7 dias recentes ×20, demais ×10), sem filtro de playlist.
  */
 export async function resolveBrunoLastfmImportTracks(
   weekDateInput: unknown,
@@ -204,9 +203,16 @@ export async function resolveLastfmImportTracks(
   };
 }
 
-export function describeLastfmImportPeriod(weekDateInput: unknown, handle?: string | null): string {
+export function describeLastfmImportPeriod(
+  weekDateInput: unknown,
+  handle?: string | null,
+  filterNewHits = true,
+): string {
   if (isMyTrlOwner(handle)) {
-    return 'Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Apenas faixas da playlist Spotify "new hits" entram na parada.';
+    if (filterNewHits) {
+      return 'Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Apenas faixas da playlist Spotify "new hits" entram na parada.';
+    }
+    return "Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Todas as faixas ouvidas no período entram na parada.";
   }
   const anchor = parseChartWeekPickerDate(weekDateInput) ?? new Date();
   if (isCurrentChartWeek(anchor)) {
@@ -216,9 +222,16 @@ export function describeLastfmImportPeriod(weekDateInput: unknown, handle?: stri
   return `Suas músicas mais ouvidas em ${label} serão importadas, ordenadas por plays no Last.fm.`;
 }
 
-export function describeLastfmImportOrder(weekDateInput: unknown, handle?: string | null): string {
+export function describeLastfmImportOrder(
+  weekDateInput: unknown,
+  handle?: string | null,
+  filterNewHits = true,
+): string {
   if (isMyTrlOwner(handle)) {
-    return 'Máximo de 200 músicas. Período: últimos 30 dias. Somente faixas da playlist "new hits".';
+    if (filterNewHits) {
+      return 'Máximo de 200 músicas. Período: últimos 30 dias. Somente faixas da playlist "new hits".';
+    }
+    return "Máximo de 200 músicas. Período: últimos 30 dias. Sem filtro de playlist.";
   }
   const anchor = parseChartWeekPickerDate(weekDateInput) ?? new Date();
   if (isCurrentChartWeek(anchor)) {
