@@ -318,13 +318,14 @@ export default async function HomePage() {
   const rankingWeek = getRankingWeekReference();
 
   if (session?.user?.id) {
+    const userId = session.user.id;
     const [user, primaryWeek, followRows] = await Promise.all([
       prisma.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: userId },
         select: { streak: true, genres: true },
       }),
       (async () => {
-        const primary = await getPrimaryParada(prisma, session.user.id);
+        const primary = await getPrimaryParada(prisma, userId);
         const chart = await prisma.chart.findUnique({
           where: { paradaId_weekIndex: { paradaId: primary.id, weekIndex: currentWeekIdx } },
           select: { id: true },
@@ -332,7 +333,7 @@ export default async function HomePage() {
         return { primary, chart };
       })(),
       prisma.userFollow.findMany({
-        where: { followerId: session.user.id },
+        where: { followerId: userId },
         select: { followingId: true },
       }),
     ]);
