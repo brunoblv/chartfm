@@ -9,8 +9,8 @@ import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
-import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
-import { youtubeConnectErrorMessage } from "@/lib/youtube-connect-oauth";
+import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
+import { youtubeConnectErrorMessage } from "@/lib/youtube-connect-messages";
 import { canUseSpotifyFeatures, isMyTrlOwner } from "@/lib/mytrl-access";
 import { normalizeAvatarFile } from "@/lib/normalize-avatar-file";
 

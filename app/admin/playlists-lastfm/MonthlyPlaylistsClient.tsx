@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
+import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
 
 type MonthInfo = { month: number; name: string };
 

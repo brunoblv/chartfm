@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User } from "lucide-react";
+import { Home, Search, Globe, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -304,6 +304,7 @@ function SidebarContent({
     { href: "/guides", label: t("nav.guides") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
+    { href: "/support", label: t("nav.support") },
     { href: "/terms-of-use", label: t("nav.terms") },
     { href: "/whats-new", label: t("nav.whatsNew") },
     { href: "/privacy-policy", label: t("nav.privacy") },
@@ -496,6 +497,10 @@ function SidebarContent({
               <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
                 <UserCog size={14} />
                 <span>{t("nav.adminEditUsers")}</span>
+              </Link>
+              <Link href="/admin/support" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/support")}>
+                <LifeBuoy size={14} />
+                <span>{t("nav.adminSupport")}</span>
               </Link>
               <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
                 <Award size={14} />

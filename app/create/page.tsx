@@ -21,7 +21,7 @@ import type { Cover as CoverModel, Song } from "@/lib/types";
 import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
 import { describeLastfmImportOrder, describeLastfmImportPeriod } from "@/lib/lastfm-import";
-import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-oauth";
+import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
 import { canUseSpotifyFeatures, isMyTrlOwner } from "@/lib/mytrl-access";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;

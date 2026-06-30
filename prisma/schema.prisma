@@ -83,6 +83,8 @@ model User {
   copaArtists          CopaArtist[]
   copaVotes            CopaVote[]
   passwordResetTokens  PasswordResetToken[]
+  supportTickets       SupportTicket[]
+  supportTicketMessages SupportTicketMessage[]
 }
 
 model PasswordResetToken {
@@ -1068,4 +1070,49 @@ model WeeklyEditorial {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("weekly_editorials")
+}
+
+enum SupportTicketType {
+  BUG
+  SUGGESTION
+
+  @@map("support_ticket_type")
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+
+  @@map("support_ticket_status")
+}
+
+model SupportTicket {
+  id        String              @id @default(cuid())
+  userId    String              @map("user_id")
+  type      SupportTicketType
+  subject   String
+  status    SupportTicketStatus @default(OPEN)
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  SupportTicketMessage[]
+
+  @@index([userId])
+  @@index([status, updatedAt])
+  @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id        String        @id @default(cuid())
+  ticketId  String        @map("ticket_id")
+  userId    String        @map("user_id")
+  body      String
+  isStaff   Boolean       @default(false) @map("is_staff")
+  createdAt DateTime      @default(now()) @map("created_at")
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("support_ticket_messages")
 }
