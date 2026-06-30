@@ -12,6 +12,7 @@ import {
   type MyTrlSnapshotPayload,
 } from "@/lib/mytrl-chart-engine";
 import { getMyTrlOwnerUser, getNewHitsSpotifyIds, getNewHitsTracksForUser } from "@/lib/spotify-user";
+import { MYTRL_SOURCE_PLAYLIST_ID } from "@/lib/mytrl-access";
 import { recomputeAllMyTrlSnapshots } from "@/lib/mytrl-recompute";
 import type { TrackPlays } from "@/lib/lastfm";
 
@@ -132,7 +133,7 @@ export async function generateMyTrlSnapshot(
     return { ok: false, error: "Usuário @bruno não encontrado." };
   }
 
-  const playlistId = options?.playlistId ?? owner.spotifyNewHitsPlaylistId;
+  const playlistId = options?.playlistId ?? MYTRL_SOURCE_PLAYLIST_ID ?? owner.spotifyNewHitsPlaylistId;
   if (!playlistId || !owner.spotifyRefreshToken) {
     return { ok: false, error: "Spotify não conectado ou playlist do mês não configurada." };
   }

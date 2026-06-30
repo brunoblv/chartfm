@@ -175,6 +175,7 @@ export function GlobalLastfmRanking({ entries, mode, emptyMessage }: Props) {
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" }}>
               <StatPill compact label={t("global.colPeak")} value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
               <StatPill compact label={t("global.colWeeks")} value={e.weeks} />
+              <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"} />
               <StatPill compact label={t("global.colPoints")} value={e.points} />
             </div>
           </div>
@@ -200,7 +201,7 @@ export function GlobalLastfmRanking({ entries, mode, emptyMessage }: Props) {
           borderBottom: "1px solid var(--divider)",
         }}
       >
-        {[t("global.colPos"), "", mode === "albums" ? "Álbum" : t("global.colSong"), t("global.colWeeks"), t("global.colPeak"), t("global.colPoints")].map(
+        {[t("global.colPos"), "", mode === "albums" ? "Álbum" : t("global.colSong"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints")].map(
           (h, i) => (
             <div
               key={i}
@@ -270,6 +271,9 @@ export function GlobalLastfmRanking({ entries, mode, emptyMessage }: Props) {
           <div style={{ textAlign: "right", fontSize: 13, fontWeight: 600, padding: "0 8px" }}>{e.weeks}</div>
           <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, padding: "0 8px", color: e.peak === 1 ? "var(--accent)" : "var(--text)" }}>
             {e.peak}
+          </div>
+          <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, padding: "0 8px", fontVariantNumeric: "tabular-nums", color: (e.numberOnes ?? 0) > 0 ? "var(--text)" : "var(--text-disabled)" }}>
+            {(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"}
           </div>
           <div style={{ textAlign: "right", fontSize: 15, fontWeight: 800, padding: "0 8px", fontVariantNumeric: "tabular-nums" }}>
             {e.points}

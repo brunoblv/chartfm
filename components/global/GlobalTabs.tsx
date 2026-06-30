@@ -432,6 +432,9 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
             </Link>
           </div>
           <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            {e.prevPos ?? "—"}
+          </div>
+          <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.weeks}
           </div>
           <div style={{ fontSize: valueSize, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: "var(--text)", display: "flex", alignItems: "center", gap: 3 }}>

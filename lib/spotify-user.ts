@@ -5,7 +5,7 @@
 
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { prisma } from "@/lib/prisma";
-import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
+import { MYTRL_OWNER_HANDLE, MYTRL_SOURCE_PLAYLIST_ID, isMyTrlOwner } from "@/lib/mytrl-access";
 import { pickAlbumImageUrl } from "@/lib/spotify-server";
 
 const AUTH_URL = "https://accounts.spotify.com/api/token";
@@ -293,7 +293,14 @@ export async function saveSpotifyConnection(
   tokens: TokenResponse,
 ): Promise<{ playlistId: string | null; playlistFound: boolean }> {
   const me = await fetchSpotifyCurrentUser(tokens.access_token);
-  const playlistId = await findNewHitsPlaylistId(tokens.access_token);
+  // Para o dono do MyTRL, a fonte é fixada por ID e não é redetectada por nome.
+  const connecting = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { handle: true },
+  });
+  const playlistId = isMyTrlOwner(connecting?.handle)
+    ? MYTRL_SOURCE_PLAYLIST_ID
+    : await findNewHitsPlaylistId(tokens.access_token);
 
   await prisma.user.update({
     where: { id: userId },

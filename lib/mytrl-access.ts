@@ -1,5 +1,14 @@
 export const MYTRL_OWNER_HANDLE = "bruno";
 
+/**
+ * Playlist-fonte fixa do top 10 diário MyTRL (ID Spotify). Tem prioridade sobre a
+ * detecção por nome (`findNewHitsPlaylistId`), então sobrevive a reconexões do Spotify
+ * e a renomeações da playlist. Sobrescrevível por env `MYTRL_PLAYLIST_ID` sem deploy.
+ * Atual: "Voting List: UMS Video Countdown".
+ */
+export const MYTRL_SOURCE_PLAYLIST_ID =
+  process.env.MYTRL_PLAYLIST_ID?.trim() || "5UQFdjqm65yDgjg0imMrjb";
+
 /** Parada diária @bruno — top 10 new hits (MyTRL → UMS Request Live). */
 export const UMS_REQUEST_LIVE_PARADA_ID = "cmc06e6c262cf93ad97616c3c";
 

@@ -43,53 +43,75 @@ function missingLabels(values: Array<[boolean, string]>) {
   return values.filter(([missing]) => missing).map(([, label]) => label);
 }
 
-export async function MissingInfoSection() {
-  const [songTotal, artistTotal, albumTotal, songs, artists, albums] = await Promise.all([
+export type MissingInfoEntity = "music" | "artists" | "albums";
+
+const ENTITY_TITLE: Record<MissingInfoEntity, string> = {
+  music: "Músicas",
+  artists: "Artistas",
+  albums: "Álbuns",
+};
+
+export async function MissingInfoSection({ entity }: { entity: MissingInfoEntity }) {
+  // Totais das três entidades: o backfill do Spotify roda global, então o progresso
+  // precisa do total geral mesmo quando exibimos só uma aba.
+  const [songTotal, artistTotal, albumTotal] = await Promise.all([
     prisma.song.count({ where: songMissingWhere }),
     prisma.artist.count({ where: artistMissingWhere }),
     prisma.album.count({ where: albumMissingWhere }),
-    prisma.song.findMany({
-      where: songMissingWhere,
-      select: {
-        id: true,
-        title: true,
-        artist: true,
-        album: true,
-        spotifyId: true,
-        artistSpotifyId: true,
-        albumSpotifyId: true,
-        spotifyUrl: true,
-        durationMs: true,
-        albumRef: { select: { coverUrl: true } },
-      },
-      orderBy: [{ artist: "asc" }, { title: "asc" }],
-      take: PAGE_SIZE,
-    }),
-    prisma.artist.findMany({
-      where: artistMissingWhere,
-      select: { id: true, name: true, spotifyId: true, imageUrl: true, spotifyUrl: true, genres: true },
-      orderBy: { name: "asc" },
-      take: PAGE_SIZE,
-    }),
-    prisma.album.findMany({
-      where: albumMissingWhere,
-      select: {
-        id: true,
-        title: true,
-        spotifyId: true,
-        coverUrl: true,
-        spotifyUrl: true,
-        releaseDate: true,
-        albumType: true,
-        totalTracks: true,
-        artist: { select: { id: true, name: true } },
-      },
-      orderBy: { title: "asc" },
-      take: PAGE_SIZE,
-    }),
   ]);
-
   const total = songTotal + artistTotal + albumTotal;
+  const entityTotal = entity === "music" ? songTotal : entity === "artists" ? artistTotal : albumTotal;
+
+  const songs =
+    entity === "music"
+      ? await prisma.song.findMany({
+          where: songMissingWhere,
+          select: {
+            id: true,
+            title: true,
+            artist: true,
+            album: true,
+            spotifyId: true,
+            artistSpotifyId: true,
+            albumSpotifyId: true,
+            spotifyUrl: true,
+            durationMs: true,
+            albumRef: { select: { coverUrl: true } },
+          },
+          orderBy: [{ artist: "asc" }, { title: "asc" }],
+          take: PAGE_SIZE,
+        })
+      : [];
+
+  const artists =
+    entity === "artists"
+      ? await prisma.artist.findMany({
+          where: artistMissingWhere,
+          select: { id: true, name: true, spotifyId: true, imageUrl: true, spotifyUrl: true, genres: true },
+          orderBy: { name: "asc" },
+          take: PAGE_SIZE,
+        })
+      : [];
+
+  const albums =
+    entity === "albums"
+      ? await prisma.album.findMany({
+          where: albumMissingWhere,
+          select: {
+            id: true,
+            title: true,
+            spotifyId: true,
+            coverUrl: true,
+            spotifyUrl: true,
+            releaseDate: true,
+            albumType: true,
+            totalTracks: true,
+            artist: { select: { id: true, name: true } },
+          },
+          orderBy: { title: "asc" },
+          take: PAGE_SIZE,
+        })
+      : [];
 
   return (
     <div>
@@ -101,127 +123,131 @@ export async function MissingInfoSection() {
 
       <MissingInfoBackfillClient initialTotal={total} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 18 }}>
-        <StatCard label="Músicas" value={songTotal} />
-        <StatCard label="Artistas" value={artistTotal} />
-        <StatCard label="Álbuns" value={albumTotal} />
+      <div style={{ maxWidth: 240, marginBottom: 18 }}>
+        <StatCard label={ENTITY_TITLE[entity]} value={entityTotal} />
       </div>
 
-      <Section title="Músicas" total={songTotal}>
-        <table style={tableStyle}>
-          <thead>
-            <tr style={headRowStyle}>
-              <th style={thStyle}>Música</th>
-              <th style={thStyle}>Artista</th>
-              <th style={thStyle}>Falta</th>
-              <th style={thStyle}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {songs.map((s) => (
-              <tr key={s.id}>
-                <td style={tdStyle}>
-                  <div style={{ fontWeight: 650 }}>
-                    <AdminSongNameLink song={s} />
-                  </div>
-                  <div style={mutedStyle}>{s.album?.trim() || "Sem álbum"}</div>
-                </td>
-                <td style={tdStyle}>{s.artist}</td>
-                <td style={tdStyle}>
-                  <Pills
-                    items={missingLabels([
-                      [!s.spotifyId, "Spotify ID"],
-                      [!s.artistSpotifyId, "artista"],
-                      [!s.albumSpotifyId, "álbum"],
-                      [!s.album?.trim(), "nome do álbum"],
-                      [Boolean(s.albumSpotifyId) && !s.albumRef?.coverUrl?.trim(), "capa"],
-                      [!s.spotifyUrl, "link"],
-                      [!s.durationMs, "duração"],
-                    ])}
-                  />
-                </td>
-                <td style={tdStyle}>
-                  <AdminSongLinks song={s} />
-                </td>
+      {entity === "music" && (
+        <Section title="Músicas" total={songTotal}>
+          <table style={tableStyle}>
+            <thead>
+              <tr style={headRowStyle}>
+                <th style={thStyle}>Música</th>
+                <th style={thStyle}>Artista</th>
+                <th style={thStyle}>Falta</th>
+                <th style={thStyle}>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {songs.length === 0 && <EmptyState label="Nenhuma música com informação importante faltando." />}
-      </Section>
+            </thead>
+            <tbody>
+              {songs.map((s) => (
+                <tr key={s.id}>
+                  <td style={tdStyle}>
+                    <div style={{ fontWeight: 650 }}>
+                      <AdminSongNameLink song={s} />
+                    </div>
+                    <div style={mutedStyle}>{s.album?.trim() || "Sem álbum"}</div>
+                  </td>
+                  <td style={tdStyle}>{s.artist}</td>
+                  <td style={tdStyle}>
+                    <Pills
+                      items={missingLabels([
+                        [!s.spotifyId, "Spotify ID"],
+                        [!s.artistSpotifyId, "artista"],
+                        [!s.albumSpotifyId, "álbum"],
+                        [!s.album?.trim(), "nome do álbum"],
+                        [Boolean(s.albumSpotifyId) && !s.albumRef?.coverUrl?.trim(), "capa"],
+                        [!s.spotifyUrl, "link"],
+                        [!s.durationMs, "duração"],
+                      ])}
+                    />
+                  </td>
+                  <td style={tdStyle}>
+                    <AdminSongLinks song={s} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {songs.length === 0 && <EmptyState label="Nenhuma música com informação importante faltando." />}
+        </Section>
+      )}
 
-      <Section title="Artistas" total={artistTotal}>
-        <table style={tableStyle}>
-          <thead>
-            <tr style={headRowStyle}>
-              <th style={thStyle}>Artista</th>
-              <th style={thStyle}>Spotify ID</th>
-              <th style={thStyle}>Falta</th>
-              <th style={thStyle}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {artists.map((a) => (
-              <tr key={a.id}>
-                <td style={tdStyle}>
-                  <AdminArtistNameLink artist={a} />
-                </td>
-                <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12 }}>{a.spotifyId}</td>
-                <td style={tdStyle}>
-                  <Pills items={missingLabels([[!a.imageUrl, "imagem"], [!a.spotifyUrl, "link"], [a.genres.length === 0, "gêneros"]])} />
-                </td>
-                <td style={tdStyle}>
-                  <AdminArtistLinks artist={a} />
-                </td>
+      {entity === "artists" && (
+        <Section title="Artistas" total={artistTotal}>
+          <table style={tableStyle}>
+            <thead>
+              <tr style={headRowStyle}>
+                <th style={thStyle}>Artista</th>
+                <th style={thStyle}>Spotify ID</th>
+                <th style={thStyle}>Falta</th>
+                <th style={thStyle}>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {artists.length === 0 && <EmptyState label="Nenhum artista com informação importante faltando." />}
-      </Section>
+            </thead>
+            <tbody>
+              {artists.map((a) => (
+                <tr key={a.id}>
+                  <td style={tdStyle}>
+                    <AdminArtistNameLink artist={a} />
+                  </td>
+                  <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: 12 }}>{a.spotifyId}</td>
+                  <td style={tdStyle}>
+                    <Pills items={missingLabels([[!a.imageUrl, "imagem"], [!a.spotifyUrl, "link"], [a.genres.length === 0, "gêneros"]])} />
+                  </td>
+                  <td style={tdStyle}>
+                    <AdminArtistLinks artist={a} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {artists.length === 0 && <EmptyState label="Nenhum artista com informação importante faltando." />}
+        </Section>
+      )}
 
-      <Section title="Álbuns" total={albumTotal}>
-        <table style={tableStyle}>
-          <thead>
-            <tr style={headRowStyle}>
-              <th style={thStyle}>Álbum</th>
-              <th style={thStyle}>Artista</th>
-              <th style={thStyle}>Falta</th>
-              <th style={thStyle}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {albums.map((a) => (
-              <tr key={a.id}>
-                <td style={tdStyle}>
-                  <div style={{ fontWeight: 650 }}>
-                    <AdminAlbumNameLink album={a} />
-                  </div>
-                  <div style={mutedStyle}>{a.spotifyId}</div>
-                </td>
-                <td style={tdStyle}>
-                  <AdminArtistNameLink artist={a.artist} />
-                </td>
-                <td style={tdStyle}>
-                  <Pills
-                    items={missingLabels([
-                      [!a.coverUrl, "capa"],
-                      [!a.spotifyUrl, "link"],
-                      [!a.releaseDate, "data"],
-                      [!a.albumType, "tipo"],
-                      [!a.totalTracks, "faixas"],
-                    ])}
-                  />
-                </td>
-                <td style={tdStyle}>
-                  <AdminAlbumLinks album={a} />
-                </td>
+      {entity === "albums" && (
+        <Section title="Álbuns" total={albumTotal}>
+          <table style={tableStyle}>
+            <thead>
+              <tr style={headRowStyle}>
+                <th style={thStyle}>Álbum</th>
+                <th style={thStyle}>Artista</th>
+                <th style={thStyle}>Falta</th>
+                <th style={thStyle}>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {albums.length === 0 && <EmptyState label="Nenhum álbum com informação importante faltando." />}
-      </Section>
+            </thead>
+            <tbody>
+              {albums.map((a) => (
+                <tr key={a.id}>
+                  <td style={tdStyle}>
+                    <div style={{ fontWeight: 650 }}>
+                      <AdminAlbumNameLink album={a} />
+                    </div>
+                    <div style={mutedStyle}>{a.spotifyId}</div>
+                  </td>
+                  <td style={tdStyle}>
+                    <AdminArtistNameLink artist={a.artist} />
+                  </td>
+                  <td style={tdStyle}>
+                    <Pills
+                      items={missingLabels([
+                        [!a.coverUrl, "capa"],
+                        [!a.spotifyUrl, "link"],
+                        [!a.releaseDate, "data"],
+                        [!a.albumType, "tipo"],
+                        [!a.totalTracks, "faixas"],
+                      ])}
+                    />
+                  </td>
+                  <td style={tdStyle}>
+                    <AdminAlbumLinks album={a} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {albums.length === 0 && <EmptyState label="Nenhum álbum com informação importante faltando." />}
+        </Section>
+      )}
     </div>
   );
 }
