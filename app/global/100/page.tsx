@@ -8,8 +8,9 @@ import { AdSlot } from "@/components/ui/AdSlot";
 import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import { loadCoverUrlsForSongIds } from "@/lib/chart-entry-cover";
-import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft, Youtube } from "lucide-react";
+import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft } from "lucide-react";
 import { GlobalHero } from "@/components/global/GlobalHero";
+import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -240,32 +241,18 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         newerWeek={newerWeek}
       />
 
-      {youtubePlaylistId && (
-        <div style={{ marginBottom: 24 }}>
-          <a
-            href={`https://www.youtube.com/playlist?list=${youtubePlaylistId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#FF0000",
-              color: "white",
-              border: "none",
-              padding: "10px 20px",
-              borderRadius: 100,
-              fontSize: 14,
-              fontWeight: 700,
-              textDecoration: "none",
-              boxShadow: "0 2px 8px rgba(255,0,0,0.30)",
-            }}
-          >
-            <Youtube size={16} fill="white" />
-            Ouvir no YouTube
-          </a>
-        </div>
-      )}
+      <GlobalChartPlaybackActions
+        youtubePlaylistId={youtubePlaylistId}
+        spotify={
+          globalSongs.length > 0
+            ? {
+                kind: "global100",
+                weekIndex,
+                returnPath: `/global/100?week=${weekIndex}`,
+              }
+            : null
+        }
+      />
 
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>

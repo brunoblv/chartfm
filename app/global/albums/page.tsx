@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { GlobalLastfmHero } from "@/components/global/GlobalLastfmHero";
 import { GlobalLastfmRanking } from "@/components/global/GlobalLastfmRanking";
-import { GlobalSpotifyPlaylistButton } from "@/components/global/GlobalSpotifyPlaylistButton";
+import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
 import { loadGlobalLastfmPageData } from "@/lib/global-lastfm-page";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 
@@ -62,15 +62,17 @@ export default async function GlobalAlbumsPage({ searchParams }: PageProps) {
         gradient="radial-gradient(circle at 30% 30%, #06D6A0, #073B4C)"
       />
 
-      {data.entries.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <GlobalSpotifyPlaylistButton
-            kind="albums"
-            weekIndex={data.weekIndex}
-            returnPath={`/global/albums?week=${data.weekIndex}`}
-          />
-        </div>
-      )}
+      <GlobalChartPlaybackActions
+        spotify={
+          data.entries.length > 0
+            ? {
+                kind: "albums",
+                weekIndex: data.weekIndex,
+                returnPath: `/global/albums?week=${data.weekIndex}`,
+              }
+            : null
+        }
+      />
 
       <section style={{ marginBottom: 52 }}>
         <GlobalLastfmRanking entries={data.entries} mode="albums" emptyMessage={t("global.albumsEmpty")} />

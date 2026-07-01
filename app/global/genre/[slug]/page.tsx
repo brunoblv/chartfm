@@ -6,6 +6,7 @@ import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { GlobalHero } from "@/components/global/GlobalHero";
+import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
 import { loadCoverUrlsForSongIds } from "@/lib/chart-entry-cover";
 import { computeGlobalGenreChartData } from "@/lib/global-genre-chart";
 import {
@@ -179,6 +180,19 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
         songsCount={globalSongs.length}
         olderWeek={olderWeek}
         newerWeek={newerWeek}
+      />
+
+      <GlobalChartPlaybackActions
+        spotify={
+          globalSongs.length > 0
+            ? {
+                kind: "genre",
+                weekIndex,
+                genreSlug: slug,
+                returnPath: `${basePath}?week=${weekIndex}`,
+              }
+            : null
+        }
       />
 
       <section style={{ marginBottom: 52 }}>

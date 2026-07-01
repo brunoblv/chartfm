@@ -131,7 +131,7 @@ export function GlobalTabs({
   overallArtists: ArtistEntry[];
   weeklyDropouts?: SongEntry[];
   spotifyPlaylist?: {
-    kind: Extract<GlobalPlaylistKind, "global100" | "genre">;
+    kind: GlobalPlaylistKind;
     weekIndex: number;
     genreSlug?: string;
     returnPath: string;
@@ -170,9 +170,9 @@ export function GlobalTabs({
           ))}
         </div>
 
-        {tab !== "saidas" && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            {tab === "songs" && spotifyPlaylist && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {spotifyPlaylist &&
+            (spotifyPlaylist.kind === "global100" || spotifyPlaylist.kind === "genre") && (
               <GlobalSpotifyPlaylistButton
                 kind={spotifyPlaylist.kind}
                 weekIndex={spotifyPlaylist.weekIndex}
@@ -181,21 +181,24 @@ export function GlobalTabs({
                 returnPath={spotifyPlaylist.returnPath}
               />
             )}
-            {/* Period: Semanal / Overall */}
-            <div style={{ ...segmentContainer, flex: isMobile ? 1 : undefined }}>
-              <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>{t("global.weekly")}</button>
-              <button onClick={() => setPeriod("overall")} style={{ ...segmentBtnSm(period === "overall"), flex: isMobile ? 1 : undefined }}>{t("global.overall")}</button>
-            </div>
-
-            {/* Size toggle: hidden on mobile */}
-            {!isMobile && (
-              <div style={segmentContainer}>
-                <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>{t("global.smaller")}</button>
-                <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>{t("global.larger")}</button>
+          {tab !== "saidas" && (
+            <>
+              {/* Period: Semanal / Overall */}
+              <div style={{ ...segmentContainer, flex: isMobile ? 1 : undefined }}>
+                <button onClick={() => setPeriod("weekly")} style={{ ...segmentBtnSm(period === "weekly"), flex: isMobile ? 1 : undefined }}>{t("global.weekly")}</button>
+                <button onClick={() => setPeriod("overall")} style={{ ...segmentBtnSm(period === "overall"), flex: isMobile ? 1 : undefined }}>{t("global.overall")}</button>
               </div>
-            )}
-          </div>
-        )}
+
+              {/* Size toggle: hidden on mobile */}
+              {!isMobile && (
+                <div style={segmentContainer}>
+                  <button onClick={() => setViewSize("small")} style={segmentBtnSm(viewSize === "small")}>{t("global.smaller")}</button>
+                  <button onClick={() => setViewSize("large")} style={segmentBtnSm(viewSize === "large")}>{t("global.larger")}</button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {tab === "saidas" ? (
