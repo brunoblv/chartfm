@@ -9,7 +9,6 @@ import { Home, Search, Globe, Flame, LogOut, X, Settings, ChevronDown, Shield, D
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
-import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
 
 type SidebarParada = {
@@ -61,10 +60,12 @@ function ParadaLogoSquare({ name, logo }: { name: string; logo: string | null })
 function MyParadasList({
   paradas,
   activeParadaId,
+  userHandle,
   onNavClick,
 }: {
   paradas: SidebarParada[];
   activeParadaId: string | null;
+  userHandle: string;
   onNavClick: () => void;
 }) {
   if (paradas.length === 0) return null;
@@ -76,7 +77,7 @@ function MyParadasList({
         return (
           <Link
             key={p.id}
-            href={`/create?paradaId=${encodeURIComponent(p.id)}`}
+            href={`/profile/${encodeURIComponent(userHandle)}/paradas/${p.id}`}
             onClick={onNavClick}
             title={p.name}
             style={{
@@ -249,8 +250,12 @@ function SidebarContent({
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [myParadas, setMyParadas] = useState<SidebarParada[]>([]);
   const searchParams = useSearchParams();
-  const activeParadaId =
+  const activeParadaIdFromCreate =
     pathname === "/create" ? searchParams.get("paradaId") : null;
+  const paradaDetailMatch = pathname.match(
+    /^\/profile\/[^/]+\/paradas\/([^/]+)$/,
+  );
+  const activeParadaId = paradaDetailMatch?.[1] ?? activeParadaIdFromCreate;
   const [criticsfmMenuOpen, setCriticsfmMenuOpen] = useState(
     () => pathname === "/criticsfm" || pathname.startsWith("/criticsfm/"),
   );
@@ -539,19 +544,52 @@ function SidebarContent({
         </div>
       </div>
 
-      {authed && (
-        <MyParadasList
-          paradas={myParadas}
-          activeParadaId={activeParadaId}
-          onNavClick={onNavClick}
-        />
+      {authed && session?.user?.handle && (
+        <>
+          <MyParadasList
+            paradas={myParadas}
+            activeParadaId={activeParadaId}
+            userHandle={session.user.handle}
+            onNavClick={onNavClick}
+          />
+          <Link
+            href={`/profile/${encodeURIComponent(session.user.handle)}/paradas`}
+            onClick={onNavClick}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "8px",
+              borderRadius: 10,
+              textDecoration: "none",
+              color: "var(--text-muted)",
+              margin: "0 4px 8px",
+            }}
+          >
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 9,
+                border: "1.5px dashed var(--divider-strong)",
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+                color: "var(--text-muted)",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+              {t("nav.newChart")}
+            </span>
+          </Link>
+        </>
       )}
 
       <div style={{ flex: 1 }} />
-
-      <div style={{ padding: "8px 10px" }}>
-        <LanguageSwitcher />
-      </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "6px 10px 10px" }}>
         {footerLinks.map((item) => (

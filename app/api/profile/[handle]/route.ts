@@ -220,6 +220,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
       genres: p.genres,
       isPrimary: p.isPrimary,
       sortOrder: p.sortOrder,
+      chartSize: p.chartSize,
       cadence: toApiCadence(p.cadence),
     })),
     activeParadaId: activeParada?.id ?? null,

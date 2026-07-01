@@ -1330,7 +1330,7 @@ export default function ProfilePage() {
                   Editar perfil
                 </Link>
                 <Link
-                  href="/chart/setup"
+                  href={`/profile/${handle}/paradas`}
                   style={{
                     background: "var(--fill-subtle)",
                     border: "none",

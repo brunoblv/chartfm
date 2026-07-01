@@ -8,6 +8,12 @@ import { Bug, Lightbulb, MessageSquarePlus, ArrowLeft, Send, Loader2 } from "luc
 import { InstitutionalLayout } from "@/components/institutional/InstitutionalLayout";
 import { InstitutionalTitle } from "@/components/institutional/InstitutionalPrimitives";
 import { Avatar } from "@/components/ui/Avatar";
+import {
+  SUPPORT_MESSAGE_MIN,
+  SUPPORT_SUBJECT_MIN,
+  supportTicketErrorKey,
+  validateSupportTicketCreate,
+} from "@/lib/support-ticket-validation";
 import { useTranslations } from "@/hooks/useTranslations";
 
 type TicketType = "BUG" | "SUGGESTION";
@@ -155,14 +161,28 @@ export function SupportClient() {
     e.preventDefault();
     setCreating(true);
     setError(null);
+
+    const subject = newSubject.trim();
+    const message = newMessage.trim();
+    const local = validateSupportTicketCreate({ type: newType, subject, message });
+    if (!local.ok) {
+      setError(t(`support.${supportTicketErrorKey(local.error)}`));
+      setCreating(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/support/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: newType, subject: newSubject, message: newMessage }),
+        body: JSON.stringify(local.data),
       });
-      if (!res.ok) throw new Error("create_failed");
-      const created = (await res.json()) as TicketSummary;
+      const payload = (await res.json().catch(() => ({}))) as { error?: string; id?: string };
+      if (!res.ok) {
+        setError(t(`support.${supportTicketErrorKey(payload.error)}`));
+        return;
+      }
+      const created = payload as TicketSummary;
       router.push(`/support?ticket=${created.id}`);
     } catch {
       setError(t("support.errorCreate"));
@@ -296,11 +316,15 @@ export function SupportClient() {
               <input
                 value={newSubject}
                 onChange={(e) => setNewSubject(e.target.value)}
+                minLength={SUPPORT_SUBJECT_MIN}
                 maxLength={120}
                 required
                 placeholder={t("support.subjectPlaceholder")}
                 style={inputStyle}
               />
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "6px 0 0" }}>
+                {t("support.subjectHint")}
+              </p>
             </div>
 
             <div>
@@ -308,12 +332,16 @@ export function SupportClient() {
               <textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
+                minLength={SUPPORT_MESSAGE_MIN}
                 required
                 rows={6}
                 maxLength={4000}
                 placeholder={t("support.messagePlaceholder")}
                 style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
               />
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "6px 0 0" }}>
+                {t("support.messageHint")}
+              </p>
             </div>
 
             {error && <p style={{ color: "#FF3B30", fontSize: 13, margin: 0 }}>{error}</p>}
@@ -325,7 +353,7 @@ export function SupportClient() {
           </form>
         </div>
       ) : ticketId ? (
-        <div style={{ maxWidth: 680 }}>
+        <div style={{ maxWidth: 680, minWidth: 0, width: "100%" }}>
           <button
             type="button"
             onClick={() => router.push("/support")}
@@ -374,7 +402,7 @@ export function SupportClient() {
                 </p>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20, minWidth: 0, width: "100%" }}>
                 {detail.messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -382,31 +410,57 @@ export function SupportClient() {
                       display: "flex",
                       gap: 12,
                       flexDirection: msg.isStaff ? "row" : "row-reverse",
+                      minWidth: 0,
+                      width: "100%",
                     }}
                   >
-                    <Avatar
-                      user={{ name: msg.user.name, avatar: msg.user.avatarColor }}
-                      imageUrl={msg.user.image}
-                      size={36}
-                    />
+                    <div style={{ flexShrink: 0 }}>
+                      <Avatar
+                        user={{ name: msg.user.name, avatar: msg.user.avatarColor }}
+                        imageUrl={msg.user.image}
+                        size={36}
+                      />
+                    </div>
                     <div
                       style={{
                         maxWidth: "78%",
+                        minWidth: 0,
+                        flex: "1 1 auto",
                         borderRadius: 14,
                         padding: "12px 14px",
                         background: msg.isStaff ? "var(--accent-tint)" : "var(--fill-inset)",
                         border: msg.isStaff ? "1px solid rgba(250,36,60,0.15)" : "1px solid var(--divider)",
+                        overflow: "hidden",
+                        boxSizing: "border-box",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: 6,
+                          flexWrap: "wrap",
+                          minWidth: 0,
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 700, minWidth: 0 }}>
                           {msg.isStaff ? t("support.teamChartfm") : msg.user.name}
                         </span>
-                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
                           {formatDate(msg.createdAt)}
                         </span>
                       </div>
-                      <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap" }}>
+                      <p
+                        style={{
+                          fontSize: 14,
+                          lineHeight: 1.55,
+                          margin: 0,
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
                         {msg.body}
                       </p>
                     </div>
@@ -440,7 +494,7 @@ export function SupportClient() {
           )}
         </div>
       ) : (
-        <div style={{ maxWidth: 680 }}>
+        <div style={{ maxWidth: 680, minWidth: 0, width: "100%" }}>
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
             <Link href="/support?new=1" style={{ ...primaryBtnStyle, textDecoration: "none" }}>
               <MessageSquarePlus size={16} />

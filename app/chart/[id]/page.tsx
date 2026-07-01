@@ -9,12 +9,14 @@ import {
   ChevronRight,
   Heart,
   Repeat2,
-  Share,
+  Copy,
   Play,
   Star,
   MessageCircle,
+  Trash2,
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
+import { useTranslations } from "@/hooks/useTranslations";
 import { AdSlot } from "@/components/ui/AdSlot";
 import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 import { Avatar } from "@/components/ui/Avatar";
@@ -22,11 +24,12 @@ import { Cover } from "@/components/ui/Cover";
 import { VideoClipCover } from "@/components/ui/VideoClipCover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import {
-  chartStatsLabels,
-  formatTenureProse,
+  chartStatsLabelsI18n,
   isDailyChartIndex,
+  type ChartStatsLabels,
 } from "@/lib/chart-cadence";
 import { formatChartPeriod, safeHeaderBg } from "@/lib/chart-week";
+import { buildChartCopyText } from "@/lib/chart-copy-text";
 import { formatSongArtist } from "@/lib/song-artist";
 import { timeAgo } from "@/lib/time-ago";
 import {
@@ -137,6 +140,7 @@ type OverlapRow = {
 };
 
 export default function ChartDetailPage() {
+  const { t, locale } = useTranslations();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -165,9 +169,17 @@ export default function ChartDetailPage() {
   const [repostCount, setRepostCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
   const [deletingChart, setDeletingChart] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [exportingSpotify, setExportingSpotify] = useState(false);
   const [spotifyExportMsg, setSpotifyExportMsg] = useState<string | null>(null);
+  const [spotifyExportTone, setSpotifyExportTone] = useState<
+    "success" | "error" | null
+  >(null);
+  const [copyState, setCopyState] = useState<"idle" | "success" | "error">(
+    "idle",
+  );
   const [spotifyPlaylistPublic, setSpotifyPlaylistPublic] = useState(false);
   const isMobile = useIsMobile();
 
@@ -347,11 +359,12 @@ export default function ChartDetailPage() {
     if (status === "connected") {
       setSpotifyConnected(true);
       setSpotifyExportMsg(
-        'Spotify conectado! Toque em "Salvar no Spotify" para criar a playlist.',
+        t("chart.spotifyConnected"),
       );
+      setSpotifyExportTone("success");
       window.history.replaceState({}, "", `/chart/${id}`);
     }
-  }, [searchParams, id]);
+  }, [searchParams, id, canUseSpotifyImport, t]);
 
   const goToPreviousChart = useCallback(() => {
     if (previousChart?.id) router.push(`/chart/${previousChart.id}`);
@@ -399,6 +412,7 @@ export default function ChartDetailPage() {
 
     setExportingSpotify(true);
     setSpotifyExportMsg(null);
+    setSpotifyExportTone(null);
     try {
       const res = await fetch("/api/spotify/playlist-from-chart", {
         method: "POST",
@@ -415,21 +429,27 @@ export default function ChartDetailPage() {
       if (!res.ok) {
         if (data.needsReconnect) setSpotifyConnected(false);
         setSpotifyExportMsg(
-          data.error ?? "Não foi possível criar a playlist no Spotify.",
+          data.error ?? t("chart.spotifyCreateError"),
         );
+        setSpotifyExportTone("error");
         return;
       }
       const skipped =
         typeof data.skippedCount === "number" && data.skippedCount > 0
-          ? ` (${data.skippedCount} sem link Spotify foram ignoradas)`
+          ? t("chart.spotifySkippedSuffix", { count: data.skippedCount })
           : "";
       setSpotifyExportMsg(
-        `Playlist criada com ${data.trackCount ?? 0} músicas${skipped}.`,
+        t("chart.spotifyPlaylistCreated", {
+          count: data.trackCount ?? 0,
+          skipped,
+        }),
       );
+      setSpotifyExportTone("success");
       if (data.playlistUrl)
         window.open(data.playlistUrl, "_blank", "noopener,noreferrer");
     } catch {
-      setSpotifyExportMsg("Erro de conexão ao criar playlist no Spotify.");
+      setSpotifyExportMsg(t("chart.spotifyConnectionError"));
+      setSpotifyExportTone("error");
     } finally {
       setExportingSpotify(false);
     }
@@ -460,10 +480,10 @@ export default function ChartDetailPage() {
         >
           <Play size={isMobile ? 13 : 14} fill="white" />
           {exportingSpotify
-            ? "Criando playlist…"
+            ? t("chart.spotifyCreating")
             : spotifyConnected
-              ? "Salvar no Spotify"
-              : "Conectar Spotify"}
+              ? t("chart.spotifySave")
+              : t("chart.spotifyConnect")}
         </button>
         <label
           style={{
@@ -481,7 +501,7 @@ export default function ChartDetailPage() {
             disabled={exportingSpotify}
             onChange={(e) => toggleSpotifyPlaylistPublic(e.target.checked)}
           />
-          Playlist pública
+          {t("chart.spotifyPublic")}
         </label>
       </>
     ) : null;
@@ -491,11 +511,14 @@ export default function ChartDetailPage() {
       return { name: session.user.name, avatar: "#FA243C" };
     }
     if (user) return { name: user.name, avatar: user.avatar };
-    return { name: "Visitante", avatar: "#86868B" };
-  }, [session?.user?.name, user]);
+    return { name: t("chart.guest"), avatar: "#86868B" };
+  }, [session?.user?.name, user, t]);
 
   const composeImageUrl = session?.user?.image ?? null;
-  const tituloDetalheParada = `${ownerParadaNome ?? "Parada"} · Top ${chart?.entries.length ?? 0}`;
+  const tituloDetalheParada = t("chart.titleTop", {
+    name: ownerParadaNome ?? t("chart.title"),
+    count: chart?.entries.length ?? 0,
+  });
 
   async function toggleLike() {
     if (!id || !isDbChart) return;
@@ -523,20 +546,17 @@ export default function ChartDetailPage() {
 
   async function deleteChart() {
     if (!isDbChart || !isOwner || deletingChart || !id) return;
-    const confirmed = window.confirm(
-      "Tem certeza que deseja excluir esta parada? Essa ação não pode ser desfeita.",
-    );
-    if (!confirmed) return;
+    setDeleteError(null);
     setDeletingChart(true);
     try {
       const res = await fetch(`/api/charts/${id}`, { method: "DELETE" });
       if (!res.ok) {
-        alert("Não foi possível excluir a parada agora.");
+        setDeleteError(t("chart.deleteError"));
         return;
       }
       router.push(`/profile/${encodeURIComponent(user?.handle ?? "")}`);
     } catch {
-      alert("Erro de conexão ao excluir a parada.");
+      setDeleteError(t("chart.deleteConnectionError"));
     } finally {
       setDeletingChart(false);
     }
@@ -546,7 +566,7 @@ export default function ChartDetailPage() {
     return (
       <Shell title="" noPadding>
         <div style={{ padding: 48, color: "var(--text-muted)", fontSize: 15 }}>
-          Carregando parada…
+          {t("chart.loading")}
         </div>
       </Shell>
     );
@@ -554,7 +574,7 @@ export default function ChartDetailPage() {
 
   if (phase === "error") {
     return (
-      <Shell title="Parada" subtitle="Erro ao carregar">
+      <Shell title={t("chart.title")} subtitle={t("chart.loadError")}>
         <div
           style={{
             maxWidth: 480,
@@ -564,8 +584,7 @@ export default function ChartDetailPage() {
           }}
         >
           <p style={{ fontSize: 16, marginBottom: 20 }}>
-            Não foi possível carregar esta parada agora. Tente recarregar a
-            página em instantes.
+            {t("chart.loadErrorMessage")}
           </p>
           <Link
             href="/"
@@ -575,7 +594,7 @@ export default function ChartDetailPage() {
               textDecoration: "none",
             }}
           >
-            ← Voltar ao início
+            {t("chart.backHome")}
           </Link>
         </div>
       </Shell>
@@ -584,7 +603,7 @@ export default function ChartDetailPage() {
 
   if (phase === "missing" || !chart || !user) {
     return (
-      <Shell title="Parada" subtitle="Não encontrada">
+      <Shell title={t("chart.title")} subtitle={t("chart.notFound")}>
         <div
           style={{
             maxWidth: 480,
@@ -594,7 +613,7 @@ export default function ChartDetailPage() {
           }}
         >
           <p style={{ fontSize: 16, marginBottom: 20 }}>
-            Esta parada não existe ou foi removida.
+            {t("chart.notFoundMessage")}
           </p>
           <Link
             href="/"
@@ -604,7 +623,7 @@ export default function ChartDetailPage() {
               textDecoration: "none",
             }}
           >
-            ← Voltar ao início
+            {t("chart.backHome")}
           </Link>
         </div>
       </Shell>
@@ -612,7 +631,32 @@ export default function ChartDetailPage() {
   }
 
   const isDailyParada = isDailyChartIndex(chart.week);
-  const statsLabels = chartStatsLabels(isDailyParada);
+  const statsLabels = chartStatsLabelsI18n(t, isDailyParada);
+
+  async function copyChart() {
+    if (!chart) return;
+    const text = buildChartCopyText({
+      entries: chart.entries,
+      dropouts,
+      personalNumberOnes,
+      isDaily: isDailyParada,
+      locale,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyState("success");
+      window.setTimeout(() => setCopyState("idle"), 2500);
+    } catch {
+      setCopyState("error");
+    }
+  }
+
+  function chartVariantLabel(v: Variant, mobile: boolean): string {
+    if (v === "list") return t("chart.variantList");
+    if (v === "grid") return t("chart.variantGrid");
+    if (v === "podium") return t("chart.variantPodium");
+    return mobile ? t("chart.variantClip") : t("chart.variantVideoClip");
+  }
 
   return (
     <Shell title="" noPadding>
@@ -638,7 +682,7 @@ export default function ChartDetailPage() {
             }}
           >
             <ChevronLeft size={16} />
-            Voltar para o perfil
+            {t("chart.backToProfile")}
           </Link>
 
           {isMobile ? (
@@ -748,50 +792,6 @@ export default function ChartDetailPage() {
                 </span>
               </div>
 
-              {/* Prev / next navigation */}
-              {(previousChart || nextChart) && (
-                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                  {previousChart && (
-                    <Link
-                      href={`/chart/${previousChart.id}`}
-                      style={{
-                        flex: 1,
-                        textAlign: "center",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "var(--text)",
-                        textDecoration: "none",
-                        border: "1px solid var(--divider-strong)",
-                        borderRadius: 10,
-                        padding: "9px 0",
-                        display: "block",
-                      }}
-                    >
-                      ← Anterior
-                    </Link>
-                  )}
-                  {nextChart && (
-                    <Link
-                      href={`/chart/${nextChart.id}`}
-                      style={{
-                        flex: 1,
-                        textAlign: "center",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "var(--text)",
-                        textDecoration: "none",
-                        border: "1px solid var(--divider-strong)",
-                        borderRadius: 10,
-                        padding: "9px 0",
-                        display: "block",
-                      }}
-                    >
-                      Próxima →
-                    </Link>
-                  )}
-                </div>
-              )}
-
               {/* Edit / delete */}
               {isOwner && (
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
@@ -810,11 +810,14 @@ export default function ChartDetailPage() {
                       display: "block",
                     }}
                   >
-                    Editar parada
+                    {t("chart.editChart")}
                   </Link>
                   <button
                     type="button"
-                    onClick={deleteChart}
+                    onClick={() => {
+                      setDeleteError(null);
+                      setShowDeleteModal(true);
+                    }}
                     disabled={deletingChart}
                     style={{
                       flex: 1,
@@ -829,7 +832,7 @@ export default function ChartDetailPage() {
                       opacity: deletingChart ? 0.6 : 1,
                     }}
                   >
-                    {deletingChart ? "Excluindo..." : "Excluir"}
+                    {t("chart.deleteShort")}
                   </button>
                 </div>
               )}
@@ -863,7 +866,7 @@ export default function ChartDetailPage() {
                   }}
                 >
                   <Heart size={15} fill={liked ? "currentColor" : "none"} />
-                  {liked ? "Curtido" : "Curtir"}
+                  {liked ? t("chart.liked") : t("chart.like")}
                 </button>
                 <button
                   onClick={toggleRepost}
@@ -884,9 +887,11 @@ export default function ChartDetailPage() {
                   }}
                 >
                   <Repeat2 size={15} />
-                  {reposted ? "Repostado" : "Repostar"}
+                  {reposted ? t("chart.reposted") : t("chart.repost")}
                 </button>
                 <button
+                  type="button"
+                  onClick={copyChart}
                   style={{
                     background: "var(--fill-subtle)",
                     border: "none",
@@ -895,23 +900,33 @@ export default function ChartDetailPage() {
                     color: "var(--text-subtle)",
                     display: "flex",
                     alignItems: "center",
+                    gap: 6,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
                   }}
                 >
-                  <Share size={15} />
+                  <Copy size={15} />
+                  {t("chart.copy")}
                 </button>
               </div>
-              {spotifyExportMsg && (
+              {(spotifyExportMsg || copyState !== "idle") && (
                 <div
                   style={{
                     fontSize: 12,
-                    color: spotifyExportMsg.startsWith("Playlist criada")
-                      ? "#15803D"
-                      : "#B91C1C",
+                    color:
+                      copyState === "success" || spotifyExportTone === "success"
+                        ? "#15803D"
+                        : "#B91C1C",
                     marginBottom: 10,
                     lineHeight: 1.5,
                   }}
                 >
-                  {spotifyExportMsg}
+                  {copyState === "success"
+                    ? t("chart.copySuccess")
+                    : copyState === "error"
+                      ? t("chart.copyError")
+                      : spotifyExportMsg}
                 </div>
               )}
 
@@ -946,13 +961,7 @@ export default function ChartDetailPage() {
                         transition: "background 120ms",
                       }}
                     >
-                      {v === "list"
-                        ? "Lista"
-                        : v === "grid"
-                          ? "Grade"
-                          : v === "podium"
-                            ? "Pódio"
-                            : "Clipe"}
+                      {chartVariantLabel(v, true)}
                     </button>
                   ),
                 )}
@@ -1060,50 +1069,6 @@ export default function ChartDetailPage() {
                     @{user.handle}
                   </span>
                 </div>
-                {(previousChart || nextChart) && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      marginBottom: 14,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {previousChart && (
-                      <Link
-                        href={`/chart/${previousChart.id}`}
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "var(--text)",
-                          textDecoration: "none",
-                          border: "1px solid var(--divider-strong)",
-                          borderRadius: 10,
-                          padding: "7px 12px",
-                        }}
-                      >
-                        ← Anterior
-                      </Link>
-                    )}
-                    {nextChart && (
-                      <Link
-                        href={`/chart/${nextChart.id}`}
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "var(--text)",
-                          textDecoration: "none",
-                          border: "1px solid var(--divider-strong)",
-                          borderRadius: 10,
-                          padding: "7px 12px",
-                        }}
-                      >
-                        Próxima parada →
-                      </Link>
-                    )}
-                  </div>
-                )}
                 {isOwner && (
                   <div
                     style={{
@@ -1128,11 +1093,14 @@ export default function ChartDetailPage() {
                         alignItems: "center",
                       }}
                     >
-                      Editar parada
+                      {t("chart.editChart")}
                     </Link>
                     <button
                       type="button"
-                      onClick={deleteChart}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setShowDeleteModal(true);
+                      }}
                       disabled={deletingChart}
                       style={{
                         display: "inline-flex",
@@ -1149,7 +1117,7 @@ export default function ChartDetailPage() {
                         opacity: deletingChart ? 0.6 : 1,
                       }}
                     >
-                      {deletingChart ? "Excluindo..." : "Excluir parada"}
+                      {t("chart.deleteChart")}
                     </button>
                   </div>
                 )}
@@ -1184,7 +1152,7 @@ export default function ChartDetailPage() {
                       }}
                     >
                       <Heart size={16} fill={liked ? "currentColor" : "none"} />
-                      {liked ? "Curtido" : "Curtir"}
+                      {liked ? t("chart.liked") : t("chart.like")}
                     </button>
                     <button
                       onClick={toggleRepost}
@@ -1205,9 +1173,11 @@ export default function ChartDetailPage() {
                       }}
                     >
                       <Repeat2 size={16} />
-                      {reposted ? "Repostado" : "Repostar"}
+                      {reposted ? t("chart.reposted") : t("chart.repost")}
                     </button>
                     <button
+                      type="button"
+                      onClick={copyChart}
                       style={{
                         background: "var(--fill-subtle)",
                         border: "none",
@@ -1219,22 +1189,30 @@ export default function ChartDetailPage() {
                         display: "flex",
                         gap: 6,
                         alignItems: "center",
+                        cursor: "pointer",
                       }}
                     >
-                      <Share size={16} />
+                      <Copy size={16} />
+                      {t("chart.copy")}
                     </button>
                   </div>
-                  {spotifyExportMsg && (
+                  {(spotifyExportMsg || copyState !== "idle") && (
                     <div
                       style={{
                         fontSize: 13,
-                        color: spotifyExportMsg.startsWith("Playlist criada")
-                          ? "#15803D"
-                          : "#B91C1C",
+                        color:
+                          copyState === "success" ||
+                          spotifyExportTone === "success"
+                            ? "#15803D"
+                            : "#B91C1C",
                         lineHeight: 1.5,
                       }}
                     >
-                      {spotifyExportMsg}
+                      {copyState === "success"
+                        ? t("chart.copySuccess")
+                        : copyState === "error"
+                          ? t("chart.copyError")
+                          : spotifyExportMsg}
                     </div>
                   )}
                   <div
@@ -1270,13 +1248,7 @@ export default function ChartDetailPage() {
                           transition: "background 120ms",
                         }}
                       >
-                        {v === "list"
-                          ? "Lista"
-                          : v === "grid"
-                            ? "Grade"
-                            : v === "podium"
-                              ? "Pódio"
-                              : "Vídeo Clipe"}
+                        {chartVariantLabel(v, false)}
                       </button>
                     ))}
                   </div>
@@ -1309,28 +1281,30 @@ export default function ChartDetailPage() {
           >
             {(
               [
-                ["chart", "Parada"],
+                ["chart", t("chart.tabChart")],
                 [
                   "saidas",
-                  `Saídas${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`,
+                  `${t("chart.tabDropouts")}${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`,
                 ],
-                ["comments", "Comentários"],
-                ["overlap", "Quem tem em comum"],
+                ["comments", t("chart.tabComments")],
+                ["overlap", t("chart.tabCommon")],
               ] as [Tab, string][]
             ).map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 style={{
-                  padding: "12px 20px",
+                  padding: isMobile ? "12px 14px" : "12px 20px",
                   background: "none",
                   border: "none",
-                  fontSize: 15,
+                  fontSize: isMobile ? 14 : 15,
                   fontWeight: tab === t ? 600 : 500,
                   color: tab === t ? "var(--text)" : "var(--text-muted)",
                   borderBottom: `2px solid ${tab === t ? "var(--accent)" : "transparent"}`,
                   marginBottom: -1,
                   cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}
               >
                 {label}
@@ -1376,7 +1350,7 @@ export default function ChartDetailPage() {
                         fontSize: 15,
                       }}
                     >
-                      Carregando capturas…
+                      {t("chart.loadingClips")}
                     </div>
                   ) : (
                     <VideoClipVariant
@@ -1403,9 +1377,11 @@ export default function ChartDetailPage() {
             <CommentsTab
               chartId={chart.id}
               isDbChart={isDbChart}
+              chartOwnerId={user.id}
               composeUser={composeUser}
               composeImageUrl={composeImageUrl}
               onCommentAdded={() => setCommentCount((c) => c + 1)}
+              onCommentDeleted={() => setCommentCount((c) => Math.max(0, c - 1))}
             />
           )}
           {tab === "overlap" && (
@@ -1425,6 +1401,87 @@ export default function ChartDetailPage() {
           onPrev={goToPreviousChart}
           onNext={goToNextChart}
         />
+      )}
+      {showDeleteModal && (
+        <div
+          onClick={() => {
+            if (!deletingChart) setShowDeleteModal(false);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--surface-elevated)",
+              borderRadius: 20,
+              padding: 28,
+              maxWidth: 420,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
+              {t("chart.deleteModalTitle")}
+            </div>
+            <div
+              style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}
+            >
+              {t("chart.deleteModalBody")}
+            </div>
+            {deleteError && (
+              <div style={{ fontSize: 13, color: "#B91C1C" }}>{deleteError}</div>
+            )}
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deletingChart}
+                style={{
+                  background: "transparent",
+                  color: "var(--text)",
+                  border: "1px solid var(--divider-strong)",
+                  borderRadius: 100,
+                  padding: "10px 20px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: deletingChart ? "not-allowed" : "pointer",
+                  opacity: deletingChart ? 0.5 : 1,
+                }}
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={deleteChart}
+                disabled={deletingChart}
+                style={{
+                  background: "#B91C1C",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 100,
+                  padding: "10px 20px",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: deletingChart ? "not-allowed" : "pointer",
+                  opacity: deletingChart ? 0.7 : 1,
+                }}
+              >
+                {deletingChart ? t("chart.deleting") : t("chart.confirmDeleteChart")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </Shell>
   );
@@ -1461,10 +1518,12 @@ function ChartParadaFloatingNav({
   onPrev: () => void;
   onNext: () => void;
 }) {
+  const { t } = useTranslations();
+
   return (
     <div
       role="toolbar"
-      aria-label="Navegação entre paradas"
+      aria-label={t("chart.navAria")}
       style={{
         position: "fixed",
         bottom: isMobile ? "calc(68px + env(safe-area-inset-bottom, 0px))" : 28,
@@ -1490,8 +1549,8 @@ function ChartParadaFloatingNav({
         disabled={!previousChart}
         aria-label={
           previousChart
-            ? `Parada anterior: ${previousChart.weekLabel}`
-            : "Sem parada anterior"
+            ? t("chart.navPrev", { label: previousChart.weekLabel })
+            : t("chart.navNoPrev")
         }
         style={chartParadaNavBtnStyle(!!previousChart)}
       >
@@ -1522,7 +1581,7 @@ function ChartParadaFloatingNav({
               marginTop: previousChart || nextChart ? 2 : 0,
             }}
           >
-            ← → teclado
+            {t("chart.navKeyboard")}
           </div>
         )}
         {nextChart && (
@@ -1547,8 +1606,8 @@ function ChartParadaFloatingNav({
         disabled={!nextChart}
         aria-label={
           nextChart
-            ? `Próxima parada: ${nextChart.weekLabel}`
-            : "Sem próxima parada"
+            ? t("chart.navNext", { label: nextChart.weekLabel })
+            : t("chart.navNoNext")
         }
         style={chartParadaNavBtnStyle(!!nextChart)}
       >
@@ -1598,7 +1657,6 @@ function StatPill({
   );
 }
 
-type ChartStatsLabels = ReturnType<typeof chartStatsLabels>;
 
 function ClassicList({
   entries,
@@ -1611,6 +1669,7 @@ function ClassicList({
   globalNumberOnes?: Record<string, number>;
   statsLabels: ChartStatsLabels;
 }) {
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
   const coverSize = DESKTOP_COVER_SIZE;
   const gridColumns = desktopListGrid(
@@ -1734,10 +1793,10 @@ function ClassicList({
                 paddingLeft: MOBILE_STATS_INDENT,
               }}
             >
-              <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
+              <StatPill compact label={t("chart.pillPrev")} value={e.prevPos ?? "—"} />
               <StatPill
                 compact
-                label="PICO"
+                label={t("chart.pillPeak")}
                 value={e.peak}
                 accent={e.peak === 1 ? "var(--accent)" : undefined}
               />
@@ -1773,13 +1832,13 @@ function ClassicList({
         }}
       >
         {[
-          "Pos",
+          t("chart.colPos"),
           "",
-          "Música",
+          t("chart.colSong"),
           statsLabels.prevPeriodShort,
           statsLabels.tenureShort,
-          "Pico",
-          "#1s",
+          t("chart.colPeak"),
+          t("chart.colOnes"),
         ].map((h, i) => (
           <div
             key={i}
@@ -1954,6 +2013,8 @@ function GridVariant({
   entries: ChartEntry[];
   statsLabels: ChartStatsLabels;
 }) {
+  const { t } = useTranslations();
+
   return (
     <div
       style={{
@@ -2043,7 +2104,11 @@ function GridVariant({
             <div
               style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}
             >
-              Pico #{e.peak} · {e.weeks} {statsLabels.tenureSuffix}
+              {t("chart.gridPeakWeeks", {
+                peak: e.peak,
+                weeks: e.weeks,
+                suffix: statsLabels.tenureSuffix,
+              })}
             </div>
           </div>
         </div>
@@ -2184,6 +2249,8 @@ function VideoClipLayoutToggle({
   onChange: (layout: VideoClipLayout) => void;
   isMobile: boolean;
 }) {
+  const { t } = useTranslations();
+
   return (
     <div
       style={{
@@ -2199,8 +2266,8 @@ function VideoClipLayoutToggle({
     >
       {(
         [
-          ["table", "Tabela"],
-          ["stacked", "Detalhado"],
+          ["table", t("chart.clipLayoutTable")],
+          ["stacked", t("chart.clipLayoutStacked")],
         ] as const
       ).map(([value, label]) => (
         <button
@@ -2232,10 +2299,19 @@ function formatChartStatsProse(
   entry: ChartEntry,
   personal: number,
   isDaily: boolean,
+  t: (key: string, params?: Record<string, string | number>) => string,
 ): string {
-  const tenure = formatTenureProse(entry.weeks, isDaily);
+  const tenure = isDaily
+    ? entry.weeks === 1
+      ? t("chart.copyFmt.tenureOneDay")
+      : t("chart.copyFmt.tenureDays", { count: entry.weeks })
+    : entry.weeks === 1
+      ? t("chart.copyFmt.tenureOneWeek")
+      : t("chart.copyFmt.tenureWeeks", { count: entry.weeks });
   const peakPart =
-    personal > 0 ? `Pico: ${entry.peak}x${personal}` : `Pico: ${entry.peak}`;
+    personal > 0
+      ? t("chart.copyFmt.peakWithOnes", { peak: entry.peak, ones: personal })
+      : t("chart.copyFmt.peak", { peak: entry.peak });
   return `${tenure} / ${peakPart}`;
 }
 
@@ -2349,6 +2425,7 @@ function VideoClipVariant({
       videoClips={videoClips}
       personalNumberOnes={personalNumberOnes}
       statsLabels={statsLabels}
+      isDaily={isDaily}
     />
   );
 }
@@ -2364,6 +2441,7 @@ function VideoClipStackedVariant({
   personalNumberOnes?: Record<string, number>;
   isDaily: boolean;
 }) {
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
   const clipHeight = isMobile ? MOBILE_COVER_SIZE : 125;
   const clipWidth = Math.round(clipHeight * (16 / 9));
@@ -2383,7 +2461,7 @@ function VideoClipStackedVariant({
         {entries.map((e) => {
           const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
           const personal = lookupNumberOnes(personalNumberOnes, e.song);
-          const statsLine = formatChartStatsProse(e, personal, isDaily);
+          const statsLine = formatChartStatsProse(e, personal, isDaily, t);
           return (
             <div
               key={e.position}
@@ -2470,7 +2548,11 @@ function VideoClipStackedVariant({
           borderBottom: "1px solid var(--divider)",
         }}
       >
-        {["Pos", "", "Música"].map((h, i) => (
+        {[
+          t("chart.colPos"),
+          "",
+          t("chart.colSong"),
+        ].map((h, i) => (
           <div
             key={i}
             style={{
@@ -2489,7 +2571,7 @@ function VideoClipStackedVariant({
       {entries.map((e) => {
         const clipUrl = (e.song.id ? videoClips[e.song.id] : null) ?? null;
         const personal = lookupNumberOnes(personalNumberOnes, e.song);
-        const statsLine = formatChartStatsProse(e, personal, isDaily);
+        const statsLine = formatChartStatsProse(e, personal, isDaily, t);
         return (
           <div
             key={e.position}
@@ -2544,12 +2626,15 @@ function VideoClipTableVariant({
   videoClips,
   personalNumberOnes,
   statsLabels,
+  isDaily,
 }: {
   entries: ChartEntry[];
   videoClips: Record<string, string>;
   personalNumberOnes?: Record<string, number>;
   statsLabels: ChartStatsLabels;
+  isDaily: boolean;
 }) {
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
   const clipHeight = isMobile ? MOBILE_COVER_SIZE : 125;
   const clipWidth = Math.round(clipHeight * (16 / 9));
@@ -2680,10 +2765,10 @@ function VideoClipTableVariant({
                   paddingLeft: mobileClipIndent,
                 }}
               >
-                <StatPill compact label="ANT" value={e.prevPos ?? "—"} />
+                <StatPill compact label={t("chart.pillPrev")} value={e.prevPos ?? "—"} />
                 <StatPill
                   compact
-                  label="PICO"
+                  label={t("chart.pillPeak")}
                   value={e.peak}
                   accent={e.peak === 1 ? "var(--accent)" : undefined}
                 />
@@ -2720,13 +2805,13 @@ function VideoClipTableVariant({
         }}
       >
         {[
-          "Pos",
+          t("chart.colPos"),
           "",
-          "Música",
+          t("chart.colSong"),
           statsLabels.prevPeriodShort,
           statsLabels.tenureShort,
-          "Pico",
-          "#1s",
+          t("chart.colPeak"),
+          t("chart.colOnes"),
         ].map((h, i) => (
           <div
             key={i}
@@ -2906,6 +2991,7 @@ function VideoClipTableVariant({
 }
 
 function PersonalExitBadge() {
+  const { t } = useTranslations();
   return (
     <span
       style={{
@@ -2922,7 +3008,7 @@ function PersonalExitBadge() {
         flexShrink: 0,
       }}
     >
-      SAIU
+      {t("chart.exitBadge")}
     </span>
   );
 }
@@ -2936,6 +3022,7 @@ function PersonalDropoutsTab({
   isDbChart: boolean;
   statsLabels: ChartStatsLabels;
 }) {
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
 
   if (!isDbChart) {
@@ -2950,7 +3037,7 @@ function PersonalDropoutsTab({
           fontSize: 14,
         }}
       >
-        Recurso disponível apenas para paradas salvas no banco.
+        {t("chart.dbOnlyFeature")}
       </div>
     );
   }
@@ -3092,7 +3179,7 @@ function PersonalDropoutsTab({
             >
               <StatPill
                 compact
-                label="PICO"
+                label={t("chart.pillPeak")}
                 value={e.peak}
                 accent={e.peak === 1 ? "var(--accent)" : undefined}
               />
@@ -3132,7 +3219,13 @@ function PersonalDropoutsTab({
           borderBottom: "1px solid var(--divider)",
         }}
       >
-        {["Últ.", "", "Música", "Pico", statsLabels.tenureShort].map((h, i) => (
+        {[
+          t("chart.colLast"),
+          "",
+          t("chart.colSong"),
+          t("chart.colPeak"),
+          statsLabels.tenureShort,
+        ].map((h, i) => (
           <div
             key={i}
             style={{
@@ -3271,11 +3364,17 @@ function PersonalDropoutsTab({
 function CommentItem({
   comment,
   chartId,
+  chartOwnerId,
+  onDeleted,
 }: {
   comment: CommentRow;
   chartId: string;
+  chartOwnerId: string;
+  onDeleted: (commentId: string) => void;
 }) {
+  const { t } = useTranslations();
   const { data: session } = useSession();
+  const isMobile = useIsMobile();
   const [repliesOpen, setRepliesOpen] = useState(false);
   const [replies, setReplies] = useState<CommentReplyRow[]>([]);
   const [repliesLoaded, setRepliesLoaded] = useState(false);
@@ -3286,6 +3385,36 @@ function CommentItem({
   const [liked, setLiked] = useState(comment.liked ?? false);
   const [likeCount, setLikeCount] = useState(comment.likes);
   const [togglingLike, setTogglingLike] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const canDelete =
+    !!session?.user?.id &&
+    (session.user.id === comment.user.id || session.user.id === chartOwnerId);
+
+  async function deleteComment() {
+    if (!canDelete || deleting) return;
+    if (!window.confirm(t("chart.deleteCommentConfirm"))) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/charts/${chartId}/comment/${comment.id}`,
+        { method: "DELETE" },
+      );
+      if (res.ok) {
+        onDeleted(comment.id);
+        return;
+      }
+      if (res.status === 401) {
+        alert(t("chart.loginToComment"));
+        return;
+      }
+      alert(t("chart.deleteCommentError"));
+    } catch {
+      alert(t("chart.connectionError"));
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   async function toggleLike() {
     if (!session?.user || togglingLike) return;
@@ -3296,7 +3425,7 @@ function CommentItem({
         { method: "POST" },
       );
       if (res.status === 401) {
-        alert("Você precisa estar logado para curtir.");
+        alert(t("chart.loginToLike"));
         return;
       }
       if (res.ok) {
@@ -3364,45 +3493,60 @@ function CommentItem({
     <div
       style={{
         background: "var(--surface)",
-        borderRadius: 18,
+        borderRadius: isMobile ? 14 : 18,
         border: "1px solid var(--divider)",
-        padding: 20,
+        padding: isMobile ? 14 : 20,
       }}
     >
-      <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: "flex", gap: isMobile ? 10 : 12 }}>
         <Avatar
           user={{ name: comment.user.name, avatar: comment.user.avatarColor }}
           imageUrl={comment.user.image}
-          size={36}
+          size={isMobile ? 32 : 36}
         />
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               alignItems: "baseline",
-              gap: 8,
+              gap: isMobile ? "2px 8px" : 8,
               marginBottom: 6,
             }}
           >
             <Link
               href={`/profile/${comment.user.handle}`}
               style={{
-                fontSize: 14,
+                fontSize: isMobile ? 13 : 14,
                 fontWeight: 600,
                 color: "var(--text)",
                 textDecoration: "none",
+                maxWidth: "100%",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
               {comment.user.name}
             </Link>
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: isMobile ? "100%" : undefined,
+              }}
+            >
               @{comment.user.handle}
             </span>
             <span
               style={{
                 fontSize: 12,
                 color: "var(--text-muted)",
-                marginLeft: "auto",
+                marginLeft: isMobile ? 0 : "auto",
+                flexBasis: isMobile ? "100%" : undefined,
               }}
             >
               {timeAgo(comment.createdAt)}
@@ -3410,15 +3554,24 @@ function CommentItem({
           </div>
           <p
             style={{
-              fontSize: 14,
+              fontSize: isMobile ? 13 : 14,
               lineHeight: 1.5,
               color: "var(--text)",
               marginBottom: 10,
+              overflowWrap: "anywhere",
             }}
           >
             {comment.text}
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: isMobile ? 8 : 12,
+              flexWrap: "wrap",
+              rowGap: 8,
+            }}
+          >
             <button
               onClick={toggleLike}
               disabled={togglingLike}
@@ -3455,11 +3608,44 @@ function CommentItem({
             >
               <MessageCircle size={14} />
               {replyCount > 0
-                ? `${replyCount} resposta${replyCount !== 1 ? "s" : ""}`
-                : "Responder"}
+                ? replyCount === 1
+                  ? t("chart.replyOne", { count: replyCount })
+                  : t("chart.replyMany", { count: replyCount })
+                : t("chart.reply")}
             </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={deleteComment}
+                disabled={deleting}
+                aria-label={t("chart.deleteComment")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  background: "none",
+                  border: "none",
+                  color: "#C5291C",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  opacity: deleting ? 0.6 : 1,
+                  flexShrink: 0,
+                }}
+              >
+                <Trash2 size={14} />
+                {!isMobile && (deleting ? "…" : t("chart.deleteComment"))}
+              </button>
+            )}
             {comment.reactions.length > 0 && (
-              <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 4,
+                  flexWrap: "wrap",
+                  width: isMobile ? "100%" : undefined,
+                }}
+              >
                 {comment.reactions.map((r, i) => (
                   <span
                     key={i}
@@ -3483,9 +3669,11 @@ function CommentItem({
         <div
           style={{
             marginTop: 16,
-            marginLeft: 48,
-            borderLeft: "2px solid var(--divider)",
-            paddingLeft: 16,
+            marginLeft: isMobile ? 0 : 48,
+            borderLeft: isMobile ? "none" : "2px solid var(--divider)",
+            paddingLeft: isMobile ? 0 : 16,
+            borderTop: isMobile ? "1px solid var(--divider-soft)" : "none",
+            paddingTop: isMobile ? 14 : 0,
           }}
         >
           {session?.user && (
@@ -3512,7 +3700,7 @@ function CommentItem({
                       submitReply();
                     }
                   }}
-                  placeholder="Escreva uma resposta..."
+                  placeholder={t("chart.replyPlaceholder")}
                   style={{
                     width: "100%",
                     border: "none",
@@ -3543,7 +3731,7 @@ function CommentItem({
                         cursor: "pointer",
                       }}
                     >
-                      Cancelar
+                      {t("common.cancel")}
                     </button>
                     <button
                       onClick={submitReply}
@@ -3560,7 +3748,7 @@ function CommentItem({
                         opacity: submittingReply ? 0.6 : 1,
                       }}
                     >
-                      {submittingReply ? "Enviando…" : "Responder"}
+                      {submittingReply ? t("chart.sending") : t("chart.reply")}
                     </button>
                   </div>
                 )}
@@ -3576,7 +3764,7 @@ function CommentItem({
                 padding: "8px 0",
               }}
             >
-              Carregando respostas…
+              {t("chart.loadingReplies")}
             </div>
           )}
 
@@ -3588,26 +3776,31 @@ function CommentItem({
                 padding: "4px 0",
               }}
             >
-              Sem respostas ainda.
+              {t("chart.noReplies")}
             </div>
           )}
 
           {replies.map((r) => (
             <div
               key={r.id}
-              style={{ display: "flex", gap: 10, marginBottom: 12 }}
+              style={{
+                display: "flex",
+                gap: isMobile ? 8 : 10,
+                marginBottom: 12,
+              }}
             >
               <Avatar
                 user={{ name: r.user.name, avatar: r.user.avatarColor }}
                 imageUrl={r.user.image}
-                size={28}
+                size={isMobile ? 24 : 28}
               />
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
                     display: "flex",
+                    flexWrap: "wrap",
                     alignItems: "baseline",
-                    gap: 6,
+                    gap: isMobile ? "2px 6px" : 6,
                     marginBottom: 4,
                   }}
                 >
@@ -3618,6 +3811,10 @@ function CommentItem({
                       fontWeight: 600,
                       color: "var(--text)",
                       textDecoration: "none",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "100%",
                     }}
                   >
                     {r.user.name}
@@ -3629,7 +3826,8 @@ function CommentItem({
                     style={{
                       fontSize: 11,
                       color: "var(--text-muted)",
-                      marginLeft: "auto",
+                      marginLeft: isMobile ? 0 : "auto",
+                      flexBasis: isMobile ? "100%" : undefined,
                     }}
                   >
                     {timeAgo(r.createdAt)}
@@ -3641,6 +3839,7 @@ function CommentItem({
                     lineHeight: 1.5,
                     color: "var(--text)",
                     margin: 0,
+                    overflowWrap: "anywhere",
                   }}
                 >
                   {r.text}
@@ -3657,16 +3856,22 @@ function CommentItem({
 function CommentsTab({
   chartId,
   isDbChart,
+  chartOwnerId,
   composeUser,
   composeImageUrl,
   onCommentAdded,
+  onCommentDeleted,
 }: {
   chartId: string;
   isDbChart: boolean;
+  chartOwnerId: string;
   composeUser: Pick<User, "name" | "avatar">;
   composeImageUrl?: string | null;
   onCommentAdded: () => void;
+  onCommentDeleted: () => void;
 }) {
+  const { t } = useTranslations();
+  const isMobile = useIsMobile();
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [comments, setComments] = useState<CommentRow[]>([]);
@@ -3701,35 +3906,47 @@ function CommentsTab({
         setComment("");
         onCommentAdded();
       } else if (res.status === 401) {
-        alert("Você precisa estar logado para comentar.");
+        alert(t("chart.loginToComment"));
       } else {
-        alert("Erro ao enviar comentário. Tente novamente.");
+        alert(t("chart.commentSubmitError"));
       }
     } catch {
-      alert("Erro de conexão. Tente novamente.");
+      alert(t("chart.connectionError"));
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: isMobile ? 12 : 16,
+      }}
+    >
       {/* Compose */}
       <div
         style={{
           background: "var(--surface)",
-          borderRadius: 18,
+          borderRadius: isMobile ? 14 : 18,
           border: "1px solid var(--divider)",
-          padding: 20,
+          padding: isMobile ? 14 : 20,
         }}
       >
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: isMobile ? 10 : 12,
+            alignItems: "flex-start",
+          }}
+        >
           <Avatar
             user={composeUser}
             imageUrl={composeImageUrl ?? undefined}
-            size={36}
+            size={isMobile ? 32 : 36}
           />
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <input
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -3739,12 +3956,12 @@ function CommentsTab({
                   submitComment();
                 }
               }}
-              placeholder="Escreva um comentário..."
+              placeholder={t("chart.commentPlaceholder")}
               style={{
                 width: "100%",
                 border: "none",
                 outline: "none",
-                fontSize: 14,
+                fontSize: isMobile ? 13 : 14,
                 color: "var(--text)",
                 resize: "none",
                 padding: "8px 0",
@@ -3755,43 +3972,50 @@ function CommentsTab({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
+                gap: isMobile ? 4 : 8,
                 marginTop: 8,
+                flexWrap: "wrap",
+                rowGap: 8,
               }}
             >
               {reactions.map((r) => (
                 <button
                   key={r}
+                  type="button"
                   onClick={() => setComment((c) => c + r)}
                   style={{
                     background: "none",
                     border: "none",
-                    fontSize: 18,
+                    fontSize: isMobile ? 16 : 18,
                     cursor: "pointer",
                     padding: 2,
+                    flexShrink: 0,
                   }}
                 >
                   {r}
                 </button>
               ))}
               <button
+                type="button"
                 onClick={submitComment}
                 disabled={!comment.trim() || submitting}
                 style={{
-                  marginLeft: "auto",
+                  marginLeft: isMobile ? 0 : "auto",
+                  width: isMobile ? "100%" : undefined,
                   background: "var(--accent)",
                   color: "white",
                   border: "none",
-                  padding: "8px 18px",
+                  padding: isMobile ? "10px 18px" : "8px 18px",
                   borderRadius: 100,
                   fontSize: 13,
                   fontWeight: 700,
                   boxShadow: "0 2px 8px rgba(250,36,60,0.25)",
                   opacity: !comment.trim() || submitting ? 0.5 : 1,
                   cursor: !comment.trim() || submitting ? "default" : "pointer",
+                  textAlign: "center",
                 }}
               >
-                Comentar
+                {t("chart.comment")}
               </button>
             </div>
           </div>
@@ -3806,7 +4030,7 @@ function CommentsTab({
             padding: "12px 0",
           }}
         >
-          Carregando comentários…
+          {t("chart.loadingComments")}
         </div>
       )}
       {!loading && comments.length === 0 && (
@@ -3817,11 +4041,20 @@ function CommentsTab({
             padding: "12px 0",
           }}
         >
-          Nenhum comentário ainda. Seja o primeiro!
+          {t("chart.noComments")}
         </div>
       )}
       {comments.map((c) => (
-        <CommentItem key={c.id} comment={c} chartId={chartId} />
+        <CommentItem
+          key={c.id}
+          comment={c}
+          chartId={chartId}
+          chartOwnerId={chartOwnerId}
+          onDeleted={(commentId) => {
+            setComments((prev) => prev.filter((row) => row.id !== commentId));
+            onCommentDeleted();
+          }}
+        />
       ))}
     </div>
   );
@@ -3836,6 +4069,7 @@ function OverlapTab({
   isDbChart: boolean;
   statsLabels: ChartStatsLabels;
 }) {
+  const { t } = useTranslations();
   const [rows, setRows] = useState<OverlapRow[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -3863,7 +4097,7 @@ function OverlapTab({
           fontSize: 14,
         }}
       >
-        Recurso disponível apenas para paradas salvas no banco.
+        {t("chart.dbOnlyFeature")}
       </div>
     );
   }
@@ -3968,7 +4202,7 @@ function OverlapTab({
                 textDecoration: "none",
               }}
             >
-              Visualizar
+              {t("chart.overlapView")}
             </Link>
           </div>
         );

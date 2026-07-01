@@ -243,7 +243,7 @@ export function AdminSupportClient() {
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20, minWidth: 0, width: "100%" }}>
               {detail.messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -251,34 +251,62 @@ export function AdminSupportClient() {
                     display: "flex",
                     gap: 12,
                     flexDirection: msg.isStaff ? "row-reverse" : "row",
+                    minWidth: 0,
+                    width: "100%",
                   }}
                 >
-                  <Avatar
-                    user={{ name: msg.user.name, avatar: msg.user.avatarColor }}
-                    imageUrl={msg.user.image}
-                    size={36}
-                  />
+                  <div style={{ flexShrink: 0 }}>
+                    <Avatar
+                      user={{ name: msg.user.name, avatar: msg.user.avatarColor }}
+                      imageUrl={msg.user.image}
+                      size={36}
+                    />
+                  </div>
                   <div
                     style={{
                       maxWidth: "78%",
+                      minWidth: 0,
+                      flex: "1 1 auto",
                       borderRadius: 14,
                       padding: "12px 14px",
                       background: msg.isStaff ? "var(--accent-tint)" : "var(--fill-inset)",
                       border: "1px solid var(--divider)",
+                      overflow: "hidden",
+                      boxSizing: "border-box",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 6,
+                        flexWrap: "wrap",
+                        minWidth: 0,
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 700, minWidth: 0 }}>
                         {msg.isStaff ? msg.user.name : detail.user.name}
                         {msg.isStaff && (
                           <span style={{ fontSize: 11, color: "var(--accent)", marginLeft: 6 }}>staff</span>
                         )}
                       </span>
-                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)", flexShrink: 0 }}>
                         {formatDate(msg.createdAt)}
                       </span>
                     </div>
-                    <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap" }}>{msg.body}</p>
+                    <p
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 1.55,
+                        margin: 0,
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {msg.body}
+                    </p>
                   </div>
                 </div>
               ))}

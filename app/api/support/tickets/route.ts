@@ -6,11 +6,11 @@ import {
   serializeTicket,
   TICKET_USER_SELECT,
 } from "@/lib/support-tickets";
-import type { SupportTicketStatus, SupportTicketType } from "@prisma/client";
+import { validateSupportTicketCreate } from "@/lib/support-ticket-validation";
+import type { SupportTicketStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 
-const VALID_TYPES: SupportTicketType[] = ["BUG", "SUGGESTION"];
 const VALID_STATUSES: SupportTicketStatus[] = ["OPEN", "IN_PROGRESS", "CLOSED"];
 
 export async function GET(req: NextRequest) {
@@ -46,31 +46,23 @@ export async function POST(req: NextRequest) {
   const auth = await getSupportAuth();
   if (!auth) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const body = (await req.json()) as {
-    type?: SupportTicketType;
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+  }
+
+  const parsed = validateSupportTicketCreate(body as Record<string, unknown> & {
+    type?: "BUG" | "SUGGESTION";
     subject?: string;
     message?: string;
-  };
+  });
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
 
-  const type = body.type;
-  const subject = body.subject?.trim();
-  const message = body.message?.trim();
-
-  if (!type || !VALID_TYPES.includes(type)) {
-    return NextResponse.json({ error: "invalid_type" }, { status: 400 });
-  }
-  if (!subject || subject.length < 3) {
-    return NextResponse.json({ error: "invalid_subject" }, { status: 400 });
-  }
-  if (subject.length > 120) {
-    return NextResponse.json({ error: "subject_too_long" }, { status: 400 });
-  }
-  if (!message || message.length < 10) {
-    return NextResponse.json({ error: "invalid_message" }, { status: 400 });
-  }
-  if (message.length > 4000) {
-    return NextResponse.json({ error: "message_too_long" }, { status: 400 });
-  }
+  const { type, subject, message } = parsed.data;
 
   const ticket = await prisma.supportTicket.create({
     data: {

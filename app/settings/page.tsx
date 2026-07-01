@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { ChevronLeft, Camera, ImagePlus, Trash2 } from "lucide-react";
+import { ChevronLeft, Camera, Download, ImagePlus, Trash2 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
@@ -112,6 +112,8 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [exportingData, setExportingData] = useState(false);
+  const [exportDataError, setExportDataError] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [disconnectingSpotify, setDisconnectingSpotify] = useState(false);
   const [youtubeConnected, setYoutubeConnected] = useState(false);
@@ -474,6 +476,34 @@ export default function SettingsPage() {
       setLogoErrorByParada((e) => ({ ...e, [paradaId]: "Erro de conexão." }));
     } finally {
       setLogoUploadParadaId(null);
+    }
+  }
+
+  async function downloadMyData() {
+    setExportingData(true);
+    setExportDataError(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/user/export-data", { credentials: "include" });
+      if (!res.ok) {
+        setExportDataError(t("settings.exportDataError"));
+        return;
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? `chartfm-dados-${form.handle || "usuario"}.json`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      setSuccess(t("settings.exportData"));
+    } catch {
+      setExportDataError(t("settings.exportDataError"));
+    } finally {
+      setExportingData(false);
     }
   }
 
@@ -1258,6 +1288,53 @@ export default function SettingsPage() {
                 >
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+                      {t("settings.exportData")}
+                    </div>
+                    <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>
+                      {t("settings.exportDataDesc")}
+                    </div>
+                  </div>
+                  {exportDataError && (
+                    <div style={{ fontSize: 13, color: "#B91C1C" }}>{exportDataError}</div>
+                  )}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={downloadMyData}
+                      disabled={exportingData}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "var(--surface)",
+                        color: "var(--text)",
+                        border: "1px solid var(--divider-strong)",
+                        borderRadius: 100,
+                        padding: "9px 20px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: exportingData ? "not-allowed" : "pointer",
+                        opacity: exportingData ? 0.7 : 1,
+                      }}
+                    >
+                      <Download size={15} />
+                      {exportingData ? t("settings.exportingData") : t("settings.exportDataButton")}
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: "1px solid var(--divider)",
+                    padding: "18px 20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
                       {t("language.label")}
                     </div>
                     <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>
@@ -1280,11 +1357,10 @@ export default function SettingsPage() {
                 >
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700, color: "#B91C1C", marginBottom: 4 }}>
-                      Excluir conta
+                      {t("settings.deleteAccount")}
                     </div>
                     <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>
-                      Ao excluir sua conta, todas as suas paradas, curtidas, comentários e demais dados serão
-                      permanentemente removidos. Essa ação não pode ser desfeita.
+                      {t("settings.deleteAccountDesc")}
                     </div>
                   </div>
                   <div>
@@ -1301,7 +1377,7 @@ export default function SettingsPage() {
                         cursor: "pointer",
                       }}
                     >
-                      Excluir minha conta
+                      {t("settings.deleteMyAccount")}
                     </button>
                   </div>
                 </div>

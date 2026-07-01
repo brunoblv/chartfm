@@ -107,7 +107,22 @@ export function formatDayPickerLabel(date: Date): string {
 }
 
 /** Rótulos de estatísticas da parada conforme cadência (diária vs semanal). */
-export function chartStatsLabels(isDaily: boolean) {
+export type ChartStatsLabels = {
+  prevPeriodShort: string;
+  tenureShort: string;
+  tenurePill: string;
+  tenureSuffix: string;
+  noDropouts: string;
+  overlapLoading: string;
+  overlapEmpty: string;
+};
+
+type TranslateFn = (
+  key: string,
+  params?: Record<string, string | number>,
+) => string;
+
+export function chartStatsLabels(isDaily: boolean): ChartStatsLabels {
   return {
     prevPeriodShort: isDaily ? "Anterior" : "Semana ant.",
     tenureShort: isDaily ? "Dias" : "Sem.",
@@ -116,8 +131,39 @@ export function chartStatsLabels(isDaily: boolean) {
     noDropouts: isDaily
       ? "Nenhuma saída neste dia — primeira parada ou todas as músicas permaneceram."
       : "Nenhuma saída nesta semana — primeira parada ou todas as músicas permaneceram.",
-    overlapLoading: isDaily ? "Calculando afinidade do dia..." : "Calculando afinidade da semana...",
-    overlapEmpty: isDaily ? "Nenhuma afinidade encontrada neste dia." : "Nenhuma afinidade encontrada nesta semana.",
+    overlapLoading: isDaily
+      ? "Calculando afinidade do dia..."
+      : "Calculando afinidade da semana...",
+    overlapEmpty: isDaily
+      ? "Nenhuma afinidade encontrada neste dia."
+      : "Nenhuma afinidade encontrada nesta semana.",
+  };
+}
+
+export function chartStatsLabelsI18n(
+  t: TranslateFn,
+  isDaily: boolean,
+): ChartStatsLabels {
+  return {
+    prevPeriodShort: t(
+      isDaily ? "chart.stats.prevDay" : "chart.stats.prevWeek",
+    ),
+    tenureShort: t(
+      isDaily ? "chart.stats.daysShort" : "chart.stats.weeksShort",
+    ),
+    tenurePill: t(isDaily ? "chart.stats.dayPill" : "chart.stats.weekPill"),
+    tenureSuffix: t(
+      isDaily ? "chart.stats.daySuffix" : "chart.stats.weekSuffix",
+    ),
+    noDropouts: t(
+      isDaily ? "chart.stats.noDropoutsDay" : "chart.stats.noDropoutsWeek",
+    ),
+    overlapLoading: t(
+      isDaily ? "chart.stats.overlapLoadingDay" : "chart.stats.overlapLoadingWeek",
+    ),
+    overlapEmpty: t(
+      isDaily ? "chart.stats.overlapEmptyDay" : "chart.stats.overlapEmptyWeek",
+    ),
   };
 }
 
