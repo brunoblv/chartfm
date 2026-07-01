@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -299,6 +299,7 @@ function SidebarContent({
     { href: "/", label: t("nav.home"), icon: Home },
     { href: "/discover", label: t("nav.discover"), icon: Search },
     { href: "/global", label: t("nav.global"), icon: Globe },
+    { href: "/communities", label: t("nav.communities"), icon: Users },
     { href: "/push", label: "Push", icon: Zap },
     { href: "/copa", label: "Copa ChartFM", icon: Flame },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
@@ -321,6 +322,7 @@ function SidebarContent({
         const active =
           pathname === href ||
           (href === "/criticsfm" && pathname.startsWith("/criticsfm")) ||
+          (href === "/communities" && (pathname === "/communities" || pathname.startsWith("/community/"))) ||
           (href.startsWith("/profile/") && (pathname === href || pathname.startsWith(`${href}/`)));
         const locked = requiresAuth && !authed;
         const isCriticsFM = href === "/criticsfm";
