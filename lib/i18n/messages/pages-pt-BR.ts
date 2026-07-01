@@ -155,6 +155,7 @@ export const pagesPtBR = {
     spotifySkipped: "{count} sem link Spotify foram ignoradas",
     spotifyExportError: "Não foi possível criar a playlist no Spotify.",
     spotifyExportConnectionError: "Erro de conexão ao criar playlist no Spotify.",
+    spotifyPlaylistPublic: "Playlist pública",
   },
   discover: {
     title: "Descobrir",

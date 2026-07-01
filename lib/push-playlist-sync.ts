@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { pushRoundTitle } from "@/lib/push-format";
 import {
   addTracksToSpotifyPlaylist,
-  createSpotifyPlaylist,
+  createBrunoAutoSpotifyPlaylist,
   getMyTrlOwnerUser,
   getSpotifyUserAccessToken,
   replaceTracksInSpotifyPlaylist,
@@ -62,7 +62,7 @@ export async function syncPushSpotifyPlaylist(opts: {
   const playlistName = pushRoundTitle(opts.season, opts.roundNumber).slice(0, 100);
   const description = `Playlist do jogo Push no ChartFM · ${playlistName}`;
 
-  const created = await createSpotifyPlaylist(token, playlistName, description, true);
+  const created = await createBrunoAutoSpotifyPlaylist(token, playlistName, description);
   if (!created.ok) {
     return { ok: false, message: created.message, needsReconnect: created.needsReconnect };
   }

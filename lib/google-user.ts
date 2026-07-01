@@ -50,6 +50,7 @@ export async function ensureGoogleUser(params: {
         image: image ?? existing.image,
         googleId,
         email,
+        emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
       },
     });
     return { isNew: false };
@@ -69,6 +70,7 @@ export async function ensureGoogleUser(params: {
       googleId,
       avatarColor,
       needsHandle: true,
+      emailVerifiedAt: new Date(),
     },
   });
   return { isNew: true };

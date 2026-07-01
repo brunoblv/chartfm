@@ -23,7 +23,7 @@ async function allocateHandle(base: string): Promise<string> {
 }
 
 export type CreateEmailUserResult =
-  | { ok: true; isNew: true }
+  | { ok: true; isNew: true; userId: string }
   | { ok: false; error: "email_taken" | "google_account" | "invalid_email" | "weak_password" };
 
 export async function createEmailUser(params: {
@@ -51,7 +51,7 @@ export async function createEmailUser(params: {
   const hash = [...email].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
   const avatarColor = ACCENTS[Math.abs(hash) % ACCENTS.length];
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       handle,
       name: displayName,
@@ -62,5 +62,5 @@ export async function createEmailUser(params: {
     },
   });
 
-  return { ok: true, isNew: true };
+  return { ok: true, isNew: true, userId: user.id };
 }

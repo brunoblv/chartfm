@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import {
   AuthShell,
   AuthError,
@@ -64,21 +63,8 @@ export default function SignupClient() {
       return;
     }
 
-    const signInResult = await signIn("credentials", {
-      email: email.trim(),
-      password,
-      redirect: false,
-      callbackUrl: "/onboarding",
-    });
-
     setLoading(false);
-
-    if (signInResult?.error) {
-      router.push("/login?from=/onboarding");
-      return;
-    }
-
-    router.push(signInResult?.url ?? "/onboarding");
+    router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
   };
 
   const canSubmit = email.trim() && password && confirmPassword && !loading;

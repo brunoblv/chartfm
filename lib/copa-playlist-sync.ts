@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { COPA_DAY_LABELS, fixtureBatchOrder } from "@/lib/copa";
 import {
   addTracksToSpotifyPlaylist,
-  createSpotifyPlaylist,
+  createBrunoAutoSpotifyPlaylist,
   getMyTrlOwnerUser,
   getSpotifyUserAccessToken,
 } from "@/lib/spotify-user";
@@ -149,7 +149,7 @@ export async function syncCopaDayPlaylists(
       if (uris.length === 0) {
         result.spotify = { ok: false, message: "Nenhuma faixa encontrada no Spotify." };
       } else {
-        const created = await createSpotifyPlaylist(token, title, `Jogos do dia · ${dayLabel} · Copa ChartFM`, true);
+        const created = await createBrunoAutoSpotifyPlaylist(token, title, `Jogos do dia · ${dayLabel} · Copa ChartFM`);
         if (!created.ok) {
           result.spotify = { ok: false, message: created.message };
         } else {

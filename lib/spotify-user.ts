@@ -5,7 +5,7 @@
 
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { prisma } from "@/lib/prisma";
-import { MYTRL_OWNER_HANDLE, MYTRL_SOURCE_PLAYLIST_ID, isMyTrlOwner } from "@/lib/mytrl-access";
+import { BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC, MYTRL_OWNER_HANDLE, MYTRL_SOURCE_PLAYLIST_ID, isMyTrlOwner } from "@/lib/mytrl-access";
 import { pickAlbumImageUrl } from "@/lib/spotify-server";
 
 const AUTH_URL = "https://accounts.spotify.com/api/token";
@@ -511,6 +511,20 @@ export async function createSpotifyPlaylist(
     id: json.id,
     url: json.external_urls?.spotify ?? `https://open.spotify.com/playlist/${json.id}`,
   };
+}
+
+/** Cria playlist automática na conta @bruno (pública por padrão, como na Copa). */
+export async function createBrunoAutoSpotifyPlaylist(
+  accessToken: string,
+  name: string,
+  description: string,
+): Promise<SpotifyPlaylistCreateResult> {
+  return createSpotifyPlaylist(
+    accessToken,
+    name,
+    description,
+    BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC,
+  );
 }
 
 /** Substitui todas as faixas de uma playlist (PUT para as primeiras 100, POST para o restante). */

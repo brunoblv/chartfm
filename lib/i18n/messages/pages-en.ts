@@ -155,6 +155,7 @@ export const pagesEn = {
     spotifySkipped: "{count} without Spotify link were skipped",
     spotifyExportError: "Could not create the Spotify playlist.",
     spotifyExportConnectionError: "Connection error while creating Spotify playlist.",
+    spotifyPlaylistPublic: "Public playlist",
   },
   discover: {
     title: "Discover",

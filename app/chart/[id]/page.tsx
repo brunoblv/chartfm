@@ -168,7 +168,27 @@ export default function ChartDetailPage() {
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [exportingSpotify, setExportingSpotify] = useState(false);
   const [spotifyExportMsg, setSpotifyExportMsg] = useState<string | null>(null);
+  const [spotifyPlaylistPublic, setSpotifyPlaylistPublic] = useState(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    try {
+      setSpotifyPlaylistPublic(
+        localStorage.getItem("chartfm.spotifyPlaylistPublic") === "1",
+      );
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function toggleSpotifyPlaylistPublic(checked: boolean) {
+    setSpotifyPlaylistPublic(checked);
+    try {
+      localStorage.setItem("chartfm.spotifyPlaylistPublic", checked ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     try {
@@ -383,7 +403,7 @@ export default function ChartDetailPage() {
       const res = await fetch("/api/spotify/playlist-from-chart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chartId: id }),
+        body: JSON.stringify({ chartId: id, isPublic: spotifyPlaylistPublic }),
       });
       const data = (await res.json()) as {
         playlistUrl?: string;
@@ -417,33 +437,53 @@ export default function ChartDetailPage() {
 
   const spotifyExportButton =
     isOwner && isDbChart && canUseSpotifyImport ? (
-      <button
-        type="button"
-        onClick={exportChartToSpotify}
-        disabled={exportingSpotify}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          background: "#1DB954",
-          color: "white",
-          border: "none",
-          padding: isMobile ? "10px 16px" : "10px 20px",
-          borderRadius: 100,
-          fontSize: isMobile ? 13 : 14,
-          fontWeight: 700,
-          boxShadow: "0 2px 8px rgba(30,215,96,0.35)",
-          cursor: exportingSpotify ? "not-allowed" : "pointer",
-          opacity: exportingSpotify ? 0.7 : 1,
-        }}
-      >
-        <Play size={isMobile ? 13 : 14} fill="white" />
-        {exportingSpotify
-          ? "Criando playlist…"
-          : spotifyConnected
-            ? "Salvar no Spotify"
-            : "Conectar Spotify"}
-      </button>
+      <>
+        <button
+          type="button"
+          onClick={exportChartToSpotify}
+          disabled={exportingSpotify}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            background: "#1DB954",
+            color: "white",
+            border: "none",
+            padding: isMobile ? "10px 16px" : "10px 20px",
+            borderRadius: 100,
+            fontSize: isMobile ? 13 : 14,
+            fontWeight: 700,
+            boxShadow: "0 2px 8px rgba(30,215,96,0.35)",
+            cursor: exportingSpotify ? "not-allowed" : "pointer",
+            opacity: exportingSpotify ? 0.7 : 1,
+          }}
+        >
+          <Play size={isMobile ? 13 : 14} fill="white" />
+          {exportingSpotify
+            ? "Criando playlist…"
+            : spotifyConnected
+              ? "Salvar no Spotify"
+              : "Conectar Spotify"}
+        </button>
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: isMobile ? 12 : 13,
+            color: "var(--text-muted)",
+            cursor: exportingSpotify ? "not-allowed" : "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={spotifyPlaylistPublic}
+            disabled={exportingSpotify}
+            onChange={(e) => toggleSpotifyPlaylistPublic(e.target.checked)}
+          />
+          Playlist pública
+        </label>
+      </>
     ) : null;
 
   const composeUser = useMemo((): Pick<User, "name" | "avatar"> => {

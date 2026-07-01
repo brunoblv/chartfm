@@ -67,6 +67,9 @@ export function isMyTrlOwner(handle: string | null | undefined): boolean {
   return handle === MYTRL_OWNER_HANDLE;
 }
 
+/** Playlists Spotify criadas automaticamente na conta @bruno saem públicas (Copa, Push, cron Last.fm, etc.). */
+export const BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC = true;
+
 /** Handles com acesso a conectar Spotify, importar faixas e criar playlists de parada. */
 export const SPOTIFY_FEATURE_HANDLES = new Set([
   MYTRL_OWNER_HANDLE,

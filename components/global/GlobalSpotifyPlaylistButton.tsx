@@ -31,6 +31,24 @@ export function GlobalSpotifyPlaylistButton({
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
+
+  useEffect(() => {
+    try {
+      setIsPublic(localStorage.getItem("chartfm.spotifyPlaylistPublic") === "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function toggleIsPublic(checked: boolean) {
+    setIsPublic(checked);
+    try {
+      localStorage.setItem("chartfm.spotifyPlaylistPublic", checked ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     if (!session?.user?.id || !canUseSpotify) {
@@ -79,7 +97,7 @@ export function GlobalSpotifyPlaylistButton({
       const res = await fetch("/api/spotify/playlist-from-global", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, weekIndex, genreSlug, period }),
+        body: JSON.stringify({ kind, weekIndex, genreSlug, period, isPublic }),
       });
       const data = (await res.json()) as {
         playlistUrl?: string;
@@ -116,29 +134,49 @@ export function GlobalSpotifyPlaylistButton({
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={exportToSpotify}
-        disabled={exporting}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          background: "#1DB954",
-          color: "white",
-          border: "none",
-          padding: "10px 20px",
-          borderRadius: 100,
-          fontSize: 14,
-          fontWeight: 700,
-          boxShadow: "0 2px 8px rgba(30,215,96,0.35)",
-          cursor: exporting ? "not-allowed" : "pointer",
-          opacity: exporting ? 0.7 : 1,
-        }}
-      >
-        <Play size={16} fill="white" />
-        {label}
-      </button>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+        <button
+          type="button"
+          onClick={exportToSpotify}
+          disabled={exporting}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            background: "#1DB954",
+            color: "white",
+            border: "none",
+            padding: "10px 20px",
+            borderRadius: 100,
+            fontSize: 14,
+            fontWeight: 700,
+            boxShadow: "0 2px 8px rgba(30,215,96,0.35)",
+            cursor: exporting ? "not-allowed" : "pointer",
+            opacity: exporting ? 0.7 : 1,
+          }}
+        >
+          <Play size={16} fill="white" />
+          {label}
+        </button>
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 13,
+            color: "var(--text-muted)",
+            cursor: exporting ? "not-allowed" : "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={isPublic}
+            disabled={exporting}
+            onChange={(e) => toggleIsPublic(e.target.checked)}
+          />
+          {t("global.spotifyPlaylistPublic")}
+        </label>
+      </div>
       {message && (
         <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
           {message}

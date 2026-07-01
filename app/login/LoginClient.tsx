@@ -7,6 +7,7 @@ import { signIn, getProviders } from "next-auth/react";
 import {
   AuthShell,
   AuthError,
+  AuthSuccess,
   AuthTermsFooter,
   authInputStyle,
   authPrimaryButtonStyle,
@@ -34,6 +35,8 @@ function authErrorMessage(code: string | null, t: (k: string) => string): string
       return t("login.errAccessDenied");
     case "CredentialsSignin":
       return t("login.errCredentials");
+    case "EmailNotVerified":
+      return t("login.errEmailNotVerified");
     case "OAuthSignin":
     case "OAuthCallback":
     case "OAuthCreateAccount":
@@ -57,6 +60,8 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
   const [authError, setAuthError] = useState<string | null>(
     authErrorMessage(searchParams.get("error"), t),
   );
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const verified = searchParams.get("verified") === "1";
 
   const callbackUrl = (() => {
     const from = searchParams.get("from");
@@ -86,6 +91,28 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
 
     setLoadingEmail(true);
     setAuthError(null);
+    setEmailNotVerified(false);
+
+    const checkRes = await fetch("/api/auth/check-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
+
+    const checkData = await checkRes.json().catch(() => ({}));
+
+    if (checkData.error === "email_not_verified") {
+      setLoadingEmail(false);
+      setEmailNotVerified(true);
+      setAuthError(t("login.errEmailNotVerified"));
+      return;
+    }
+
+    if (!checkRes.ok) {
+      setLoadingEmail(false);
+      setAuthError(t("login.errCredentials"));
+      return;
+    }
 
     const result = await signIn("credentials", {
       email: email.trim(),
@@ -122,7 +149,18 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
         {t("login.formSubhead")}
       </p>
 
+      {verified && <AuthSuccess message={t("login.emailVerified")} />}
       {authError && <AuthError message={authError} />}
+      {emailNotVerified && email.trim() && (
+        <p style={{ fontSize: 13, color: "#86868B", margin: "0 0 16px 0", lineHeight: 1.5 }}>
+          <Link
+            href={`/verify-email?email=${encodeURIComponent(email.trim())}`}
+            style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}
+          >
+            {t("login.resendVerification")}
+          </Link>
+        </p>
+      )}
 
       {googleConfigured && (
         <>

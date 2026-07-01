@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createEmailUser } from "@/lib/email-user";
+import { sendVerificationEmailForUser } from "@/lib/email-verification";
 import { isPasswordStrongEnough } from "@/lib/password";
 
 export async function POST(req: Request) {
@@ -30,5 +31,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: result.error }, { status });
   }
 
-  return NextResponse.json({ ok: true });
+  const origin = new URL(req.url).origin;
+  const emailSent = await sendVerificationEmailForUser(result.userId, origin);
+
+  return NextResponse.json({ ok: true, emailSent });
 }

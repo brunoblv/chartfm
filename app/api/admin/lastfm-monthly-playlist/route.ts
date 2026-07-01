@@ -7,6 +7,7 @@ import {
   getSpotifyUserAccessToken,
   spotifyUserOAuthConfigured,
 } from "@/lib/spotify-user";
+import { BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC } from "@/lib/mytrl-access";
 import { fetchTracksBetweenUnix, type TrackPlays } from "@/lib/lastfm";
 import { searchSpotifyTracks } from "@/lib/spotify-server";
 
@@ -117,7 +118,8 @@ export async function POST(req: NextRequest) {
   const year = Number(body.year) || 2026;
   const month = Number(body.month);
   const limit = Math.min(500, Math.max(1, Number(body.limit) || 300));
-  const isPublic = body.isPublic === true;
+  const isPublic =
+    typeof body.isPublic === "boolean" ? body.isPublic : BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC;
 
   if (!Number.isInteger(month) || month < 1 || month > 12) {
     return NextResponse.json({ error: "month deve ser 1–12" }, { status: 400, headers: NO_CACHE });

@@ -70,3 +70,26 @@ export function passwordResetEmail(params: { resetUrl: string; name: string }) {
 
   return { subject, text, html };
 }
+
+export function emailVerificationEmail(params: { verifyUrl: string; name: string }) {
+  const subject = "Confirme seu email — ChartFM";
+  const text = [
+    `Olá, ${params.name}!`,
+    "",
+    "Obrigado por se cadastrar no ChartFM.",
+    "Confirme seu email abrindo o link abaixo (válido por 24 horas):",
+    "",
+    params.verifyUrl,
+    "",
+    "Se você não criou esta conta, ignore este email.",
+  ].join("\n");
+
+  const html = `
+    <p>Olá, <strong>${params.name}</strong>!</p>
+    <p>Obrigado por se cadastrar no ChartFM. Confirme seu email para ativar sua conta:</p>
+    <p><a href="${params.verifyUrl}">Confirmar email</a></p>
+    <p style="color:#666;font-size:13px">O link expira em 24 horas. Se você não criou esta conta, ignore este email.</p>
+  `;
+
+  return { subject, text, html };
+}

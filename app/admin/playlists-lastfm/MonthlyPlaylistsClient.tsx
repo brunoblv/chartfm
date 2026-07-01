@@ -52,7 +52,7 @@ export default function MonthlyPlaylistsClient({
   spotifyConnected: boolean;
 }) {
   const [limit, setLimit] = useState(300);
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
   const [results, setResults] = useState<Record<number, Result>>({});
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [bulk, setBulk] = useState(false);
