@@ -325,9 +325,12 @@ function buildMovementStats(
   });
 }
 
-async function loadLastfmUsers() {
+async function loadLastfmUsers(userIds?: string[]) {
   return prisma.user.findMany({
-    where: { lastfmUser: { not: null } },
+    where: {
+      lastfmUser: { not: null },
+      ...(userIds?.length ? { id: { in: userIds } } : {}),
+    },
     select: { id: true, lastfmUser: true },
   });
 }
@@ -493,8 +496,9 @@ export async function computeGlobalLastfmRanking(
   mode: GlobalLastfmMode,
   referenceDate: Date = new Date(),
   prevEntries: GlobalLastfmEntry[] = [],
+  options?: { userIds?: string[]; chartLimit?: number },
 ): Promise<{ entries: GlobalLastfmEntry[]; contributorCount: number; scoringWindow: string }> {
-  const users = await loadLastfmUsers();
+  const users = await loadLastfmUsers(options?.userIds);
   const { fromUnix, toUnix } = myTrlFetchWindow(referenceDate);
   const scoringWindow = buildMyTrlScoringWindow(brtDateKey(referenceDate));
   const playCap = mode === "airplay" ? GLOBAL_AIRPLAY_PLAY_CAP : GLOBAL_ALBUMS_PLAY_CAP;
@@ -608,7 +612,7 @@ export async function computeGlobalLastfmRanking(
       meta: bucket.meta,
     }))
     .sort((a, b) => b.points - a.points || b.contributors - a.contributors)
-    .slice(0, 100);
+    .slice(0, options?.chartLimit ?? 100);
 
   const modeLabel = mode === "albums" ? "Álbuns" : "Airplay";
   console.log(`\n=== Global ${modeLabel} — breakdown por usuário (Top ${rankedWithBreakdown.length}) ===`);

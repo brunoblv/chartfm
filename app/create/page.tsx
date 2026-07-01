@@ -101,6 +101,9 @@ export default function CreatePage() {
   const { data: session } = useSession();
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
   const isBrunoLastfmImport = isMyTrlOwner(session?.user?.handle);
+  const [flashbackSong, setFlashbackSong] = useState<Song | null>(null);
+  const [destaqueSong, setDestaqueSong] = useState<Song | null>(null);
+  const [pickingSpotlight, setPickingSpotlight] = useState<"flashback" | "destaque" | null>(null);
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [dbQuery, setDbQuery] = useState("");
@@ -372,6 +375,21 @@ export default function CreatePage() {
     setDragOver(null);
   };
 
+  const pickSpotlightSong = (song: Song) => {
+    if (pickingSpotlight === "flashback") setFlashbackSong(song);
+    else if (pickingSpotlight === "destaque") setDestaqueSong(song);
+    setPickingSpotlight(null);
+  };
+
+  const spotlightEntryPayload = (song: Song) => ({
+    title: song.title,
+    artist: song.artist,
+    album: song.album ?? null,
+    spotifyId: song.spotifyId ?? null,
+    songId: song.id ?? null,
+    imageUrl: song.imageUrl ?? null,
+  });
+
   const publishChart = async () => {
     if (!session?.user?.id) {
       setPublishError("Entre na sua conta para publicar. Use http://127.0.0.1:3000/login se o login não funcionar em localhost.");
@@ -385,32 +403,49 @@ export default function CreatePage() {
     setPublishError(null);
     try {
       const publishEntries = userChartSize ? entries.slice(0, userChartSize) : entries;
-      const res = await fetch("/api/charts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          entries: publishEntries.map((e) => ({
-            title: e.title,
-            artist: e.artist,
-            album: e.album,
-            spotifyId: e.spotifyId ?? null,
-            songId: e.id ?? null,
-            imageUrl: e.imageUrl ?? null,
-          })),
-          weekDate,
-          fastPublish: true,
-          ...(activeParadaId ? { paradaId: activeParadaId } : {}),
-        }),
+      const publishBody = JSON.stringify({
+        entries: publishEntries.map((e) => ({
+          title: e.title,
+          artist: e.artist,
+          album: e.album,
+          spotifyId: e.spotifyId ?? null,
+          songId: e.id ?? null,
+          imageUrl: e.imageUrl ?? null,
+        })),
+        weekDate,
+        fastPublish: true,
+        ...(activeParadaId ? { paradaId: activeParadaId } : {}),
+        ...(flashbackSong ? { flashback: spotlightEntryPayload(flashbackSong) } : {}),
+        ...(destaqueSong ? { destaque: spotlightEntryPayload(destaqueSong) } : {}),
       });
-      const data = await res.json().catch(() => null) as { id?: string; error?: string } | null;
+      const postChart = () =>
+        fetch("/api/charts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: publishBody,
+        });
+
+      let res = await postChart();
+      let data = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
+
+      // Gateway pode retornar 504 mesmo com a parada já gravada — confirma com 409 + id.
+      if (res.status === 504 || res.status === 502) {
+        res = await postChart();
+        data = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
+      }
+
       if (!res.ok) {
         if (res.status === 401) {
           setPublishError("Sessão expirada. Entre novamente em /login (prefira http://127.0.0.1:3000).");
           return;
         }
+        if (res.status === 409 && data?.id) {
+          router.push(`/chart/${data.id}`);
+          return;
+        }
         if (res.status === 504 || res.status === 502) {
-          setPublishError("A publicação demorou demais. Tente de novo — se persistir, publique com menos músicas de uma vez.");
+          setPublishError("A publicação demorou demais. Verifique no seu perfil se a parada foi criada antes de tentar de novo.");
           return;
         }
         setPublishError(data?.error ?? "Erro ao publicar parada.");
@@ -601,6 +636,7 @@ export default function CreatePage() {
 
   const renderSongRow = (song: Song, added: boolean) => {
     const cover = coverForSong(song);
+    const spotlightPick = pickingSpotlight !== null;
     return (
       <div
         key={`${song.title}-${song.artist}-${song.spotifyId ?? song.lastfmUrl ?? "local"}`}
@@ -638,25 +674,117 @@ export default function CreatePage() {
             ) : null}
           </div>
         </div>
-        <button
-          onClick={() => addSong(song)}
-          disabled={added}
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: "50%",
-            background: added ? "#E8F8EE" : "#FA243C",
-            color: added ? "#1B873F" : "white",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: added ? "default" : "pointer",
-            flexShrink: 0,
-          }}
-        >
-          {added ? "✓" : <Plus size={14} />}
-        </button>
+        {spotlightPick ? (
+          <button
+            onClick={() => pickSpotlightSong(song)}
+            style={{
+              border: "none",
+              borderRadius: 100,
+              background: pickingSpotlight === "flashback" ? "#7C3AED" : "var(--accent)",
+              color: "white",
+              fontSize: 11,
+              fontWeight: 700,
+              padding: "6px 10px",
+              cursor: "pointer",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {pickingSpotlight === "flashback" ? "Flashback" : "Destaque"}
+          </button>
+        ) : (
+          <button
+            onClick={() => addSong(song)}
+            disabled={added}
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              background: added ? "#E8F8EE" : "#FA243C",
+              color: added ? "#1B873F" : "white",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: added ? "default" : "pointer",
+              flexShrink: 0,
+            }}
+          >
+            {added ? "✓" : <Plus size={14} />}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const renderSpotlightSlot = (
+    kind: "flashback" | "destaque",
+    song: Song | null,
+    onClear: () => void,
+    onPick: () => void,
+  ) => {
+    const label = kind === "flashback" ? "Flashback" : "Destaque";
+    const isPicking = pickingSpotlight === kind;
+    return (
+      <div
+        style={{
+          padding: 12,
+          borderRadius: 12,
+          border: `1px solid ${isPicking ? (kind === "flashback" ? "rgba(124,58,237,0.35)" : "rgba(250,36,60,0.35)") : "var(--divider)"}`,
+          background: isPicking ? (kind === "flashback" ? "rgba(124,58,237,0.06)" : "rgba(250,36,60,0.06)") : "var(--fill-subtle)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: song || isPicking ? 10 : 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: kind === "flashback" ? "#7C3AED" : "var(--accent)" }}>{label}</div>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>opcional</span>
+        </div>
+        {song ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Cover cover={coverForSong(song)} song={song} size={44} rounded={8} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
+            </div>
+            <button
+              type="button"
+              onClick={onClear}
+              aria-label={`Remover ${label.toLowerCase()}`}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                border: "none",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onPick}
+            style={{
+              width: "100%",
+              border: "1px dashed var(--divider-strong)",
+              borderRadius: 10,
+              background: "transparent",
+              color: "var(--text-subtle)",
+              fontSize: 13,
+              fontWeight: 600,
+              padding: "10px 12px",
+              cursor: "pointer",
+            }}
+          >
+            {isPicking ? "Busque e escolha uma música acima" : "Escolher música"}
+          </button>
+        )}
       </div>
     );
   };
@@ -829,6 +957,33 @@ export default function CreatePage() {
             </>
           )}
         </div>
+      </div>
+
+      <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Extras da parada</div>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, margin: "0 0 14px" }}>
+          Flashback e destaque aparecem ao lado da parada na página publicada.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {renderSpotlightSlot(
+            "flashback",
+            flashbackSong,
+            () => setFlashbackSong(null),
+            () => setPickingSpotlight((prev) => (prev === "flashback" ? null : "flashback")),
+          )}
+          {renderSpotlightSlot(
+            "destaque",
+            destaqueSong,
+            () => setDestaqueSong(null),
+            () => setPickingSpotlight((prev) => (prev === "destaque" ? null : "destaque")),
+          )}
+        </div>
+        {pickingSpotlight && (
+          <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
+            Modo de seleção ativo — clique em uma música nos resultados acima para definir o{" "}
+            {pickingSpotlight === "flashback" ? "flashback" : "destaque"}.
+          </div>
+        )}
       </div>
 
       <div

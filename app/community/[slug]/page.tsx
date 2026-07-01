@@ -1,10 +1,15 @@
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { COMMUNITIES } from "@/lib/data";
+import { isCommunityAdmin, getCommunityMemberRole } from "@/lib/community-auth";
 import { CommunityPageClient, type CommunityDbSerializable, type CommunityPostSerializable } from "./CommunityPageClient";
 
 export default async function CommunityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id ?? null;
 
   const row = await prisma.community.findUnique({
     where: { slug },
@@ -17,27 +22,33 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       logoUrl: true,
       coverA: true,
       coverB: true,
+      coverImageUrl: true,
       members: true,
       posts: true,
       founded: true,
+      paradaName: true,
       owner: { select: { name: true, handle: true } },
     },
   });
 
   if (row) {
-    const postsRows = await prisma.post.findMany({
-      where: { communityId: row.id },
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
-        postReplies: {
-          orderBy: { createdAt: "asc" },
-          include: {
-            user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+    const [postsRows, isAdmin, memberRole] = await Promise.all([
+      prisma.post.findMany({
+        where: { communityId: row.id },
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+          postReplies: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+            },
           },
         },
-      },
-    });
+      }),
+      isCommunityAdmin(row.id, userId),
+      userId ? getCommunityMemberRole(row.id, userId) : Promise.resolve(null),
+    ]);
 
     const db: CommunityDbSerializable = {
       id: row.id,
@@ -48,11 +59,15 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       logoUrl: row.logoUrl,
       coverA: row.coverA,
       coverB: row.coverB,
+      coverImageUrl: row.coverImageUrl,
       members: row.members,
       posts: row.posts,
       founded: row.founded,
       ownerName: row.owner?.name ?? null,
       ownerHandle: row.owner?.handle ?? null,
+      paradaName: row.paradaName,
+      isAdmin,
+      isMember: memberRole != null,
     };
     const dbPosts: CommunityPostSerializable[] = postsRows.map((post) => ({
       id: post.id,

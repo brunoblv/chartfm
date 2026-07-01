@@ -52,6 +52,7 @@ import {
 } from "@/lib/chart-list-layout";
 import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
+import { ChartSpotlightCard } from "@/components/chart/ChartSpotlightCard";
 import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
 import { TIMELINE } from "@/lib/data";
 import type {
@@ -284,6 +285,9 @@ export default function ChartDetailPage() {
   const personalNumberOnes = dbPayload?.personalNumberOnes ?? {};
   const globalNumberOnes = dbPayload?.globalNumberOnes ?? {};
   const dropouts: PersonalDropoutEntry[] = dbPayload?.dropouts ?? [];
+  const flashback = dbPayload?.flashback ?? null;
+  const destaque = dbPayload?.destaque ?? null;
+  const hasSpotlights = Boolean(flashback || destaque);
   const isDbChart = !!dbPayload;
   const previousChart = dbPayload?.previousChart ?? null;
   const nextChart = dbPayload?.nextChart ?? null;
@@ -1315,6 +1319,28 @@ export default function ChartDetailPage() {
           {/* Tab content */}
           {tab === "chart" && (
             <>
+              {hasSpotlights && isMobile && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    marginBottom: 20,
+                  }}
+                >
+                  {flashback && <ChartSpotlightCard kind="flashback" song={flashback} />}
+                  {destaque && <ChartSpotlightCard kind="destaque" song={destaque} />}
+                </div>
+              )}
+              <div
+                style={{
+                  display: hasSpotlights && !isMobile ? "grid" : "block",
+                  gridTemplateColumns: hasSpotlights && !isMobile ? "1fr 280px" : undefined,
+                  gap: hasSpotlights && !isMobile ? 24 : undefined,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div>
               {variant === "list" && (
                 <ClassicList
                   entries={chart.entries}
@@ -1364,6 +1390,22 @@ export default function ChartDetailPage() {
                   )}
                 </>
               )}
+                </div>
+                {hasSpotlights && !isMobile && (
+                  <aside
+                    style={{
+                      position: "sticky",
+                      top: 100,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 16,
+                    }}
+                  >
+                    {flashback && <ChartSpotlightCard kind="flashback" song={flashback} />}
+                    {destaque && <ChartSpotlightCard kind="destaque" song={destaque} />}
+                  </aside>
+                )}
+              </div>
             </>
           )}
           {tab === "saidas" && (

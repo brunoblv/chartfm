@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { inferCadenceFromWeekIndex, prevPeriodIndex } from "@/lib/chart-cadence";
 import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
-import { hydrateChartEntryCoverUrls, hydrateDropoutCoverUrls, resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
+import { hydrateChartEntryCoverUrls, hydrateDropoutCoverUrls, loadCoverUrlsForSongIds, resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
+import { mapPrismaSpotlightSong, SPOTLIGHT_SONG_INCLUDE } from "@/lib/chart-spotlight";
 import { recomputePersistedChartEntryStatsForParada } from "@/lib/chart-entry-stats";
 import type { PersonalDropoutEntry } from "@/lib/types";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
@@ -86,6 +87,10 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       likes: true,
       comments: true,
       reposts: true,
+      flashbackSongId: true,
+      destaqueSongId: true,
+      flashbackSong: { include: SPOTLIGHT_SONG_INCLUDE },
+      destaqueSong: { include: SPOTLIGHT_SONG_INCLUDE },
       user: {
         select: {
           id: true,
@@ -303,9 +308,20 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   const hydratedDropouts = await hydrateDropoutCoverUrls(prisma, dropouts);
   const lastfmImportWeekDate = lastfmWeekPickerValueFromChart(mapped.chart);
 
+  const spotlightIds = [row.flashbackSongId, row.destaqueSongId].filter(
+    (id): id is string => Boolean(id),
+  );
+  const spotlightCovers = await loadCoverUrlsForSongIds(prisma, spotlightIds);
+
   return NextResponse.json(
     {
       ...mapped,
+      flashback: row.flashbackSong
+        ? mapPrismaSpotlightSong(row.flashbackSong, spotlightCovers.get(row.flashbackSong.id))
+        : null,
+      destaque: row.destaqueSong
+        ? mapPrismaSpotlightSong(row.destaqueSong, spotlightCovers.get(row.destaqueSong.id))
+        : null,
       lastfmImportWeekDate,
       previousChart,
       nextChart,

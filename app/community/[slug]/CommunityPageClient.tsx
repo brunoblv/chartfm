@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Play, Share, Heart, MessageCircle, ImagePlus } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
-import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
-import { MovementBadge } from "@/components/ui/MovementBadge";
-import { COMMUNITIES, POSTS, USERS_DATA } from "@/lib/data";
+import { CommunityHeader } from "@/components/community/CommunityHeader";
+import { YouTubeEmbed } from "@/components/ui/YouTubeEmbed";
+import { COMMUNITIES, POSTS } from "@/lib/data";
 import type { Community } from "@/lib/types";
 
 export type CommunityDbSerializable = {
@@ -21,11 +21,15 @@ export type CommunityDbSerializable = {
   logoUrl: string | null;
   coverA: string;
   coverB: string;
+  coverImageUrl: string | null;
   members: number;
   posts: number;
   founded: string;
   ownerName: string | null;
   ownerHandle: string | null;
+  paradaName: string;
+  isAdmin: boolean;
+  isMember: boolean;
 };
 
 type DbUser = {
@@ -63,20 +67,22 @@ export type CommunityPostSerializable = {
   repliesList: CommunityReplySerializable[];
 };
 
-type Tab = "chart" | "posts" | "members";
-
 type ViewModel = {
   id: string;
   slug: string;
   name: string;
   tagline: string;
   cover: [string, string];
+  coverImageUrl: string | null;
   icon: string;
   logoUrl: string | null;
   members: number;
   posts: number;
   founded: string;
   adminName: string;
+  paradaName: string;
+  isAdmin: boolean;
+  isMember: boolean;
   chart: Community["chart"];
   memberSample: Community["memberSample"];
   source: "db" | "mock";
@@ -90,12 +96,16 @@ function buildViewModel(db: CommunityDbSerializable | null, mock: Community | nu
       name: db.name,
       tagline: db.tagline,
       cover: [db.coverA, db.coverB],
+      coverImageUrl: db.coverImageUrl,
       icon: db.icon,
       logoUrl: db.logoUrl,
       members: db.members,
       posts: db.posts,
       founded: db.founded,
       adminName: db.ownerName ?? "—",
+      paradaName: db.paradaName,
+      isAdmin: db.isAdmin,
+      isMember: db.isMember,
       chart: [],
       memberSample: [],
       source: "db",
@@ -108,12 +118,16 @@ function buildViewModel(db: CommunityDbSerializable | null, mock: Community | nu
       name: mock.name,
       tagline: mock.tagline,
       cover: mock.cover,
+      coverImageUrl: null,
       icon: mock.icon,
       logoUrl: null,
       members: mock.members,
       posts: mock.posts,
       founded: mock.founded,
       adminName: mock.admins[0]?.name ?? "—",
+      paradaName: "Parada",
+      isAdmin: false,
+      isMember: true,
       chart: mock.chart,
       memberSample: mock.memberSample,
       source: "mock",
@@ -134,7 +148,6 @@ export function CommunityPageClient({
   const router = useRouter();
   const { data: session } = useSession();
   const community = useMemo(() => buildViewModel(dbCommunity, mockCommunity), [dbCommunity, mockCommunity]);
-  const [tab, setTab] = useState<Tab>("posts");
   const [postMode, setPostMode] = useState<"text" | "image" | "youtube">("text");
   const [postText, setPostText] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -144,6 +157,10 @@ export function CommunityPageClient({
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replyingFor, setReplyingFor] = useState<string | null>(null);
   const [timelinePosts, setTimelinePosts] = useState<CommunityPostSerializable[]>(dbPosts);
+  const [isMember, setIsMember] = useState(community.isMember);
+  const [memberCount, setMemberCount] = useState(community.members);
+  const [joining, setJoining] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const allPosts = community.source === "mock" ? POSTS : [];
 
@@ -269,183 +286,54 @@ export function CommunityPageClient({
     }
   }
 
-  return (
-    <Shell title="" noPadding>
-      <div
-        style={{
-          background: `linear-gradient(135deg, ${community.cover[0]}, ${community.cover[1]})`,
-          padding: "48px 40px 40px 40px",
-          color: "white",
-        }}
-      >
-        <div style={{ display: "flex", gap: 28, alignItems: "flex-end", flexWrap: "wrap" }}>
-          <div
-            style={{
-              width: 140,
-              height: 140,
-              borderRadius: 24,
-              flexShrink: 0,
-              background: "rgba(255,255,255,0.15)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 64,
-              overflow: "hidden",
-            }}
-          >
-            {community.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={community.logoUrl}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              community.icon
-            )}
-          </div>
+  async function handleShareCopy() {
+    const url = `${window.location.origin}/community/${community.slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      window.prompt("Copie o link da comunidade:", url);
+    }
+  }
 
-          <div style={{ flex: 1, minWidth: 280 }}>
-            <h1 style={{ fontSize: 56, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 8 }}>
-              {community.name}
-            </h1>
-            <p style={{ fontSize: 16, opacity: 0.85, marginBottom: 16 }}>{community.tagline}</p>
-            <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 14, opacity: 0.85, marginBottom: 20 }}>
-              <span>
-                <strong>{community.members.toLocaleString("pt-BR")}</strong> membros
-              </span>
-              <span>
-                <strong>{community.posts}</strong> posts
-              </span>
-              <span>Fundada em {community.founded}</span>
-              <span>
-                Moderado por <strong>{community.adminName}</strong>
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                style={{
-                  background: "white",
-                  color: community.cover[0],
-                  border: "none",
-                  padding: "10px 22px",
-                  borderRadius: 100,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                ✓ Participando
-              </button>
-              <button
-                style={{
-                  background: "rgba(255,255,255,0.15)",
-                  color: "white",
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  padding: "10px 22px",
-                  borderRadius: 100,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  backdropFilter: "blur(10px)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <Share size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+  async function handleJoinToggle() {
+    if (!session?.user?.id) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(`/community/${community.slug}`)}`);
+      return;
+    }
+    setJoining(true);
+    try {
+      const res = await fetch(`/api/communities/${encodeURIComponent(community.slug)}/members`, {
+        method: isMember ? "DELETE" : "POST",
+      });
+      if (!res.ok) return;
+      setIsMember(!isMember);
+      setMemberCount((c) => (isMember ? Math.max(0, c - 1) : c + 1));
+    } finally {
+      setJoining(false);
+    }
+  }
 
-      <div style={{ padding: "0 40px 80px 40px" }}>
-        <div style={{ display: "flex", borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 28, marginTop: 0 }}>
-          {([["chart", "Parada"], ["posts", "Posts"], ["members", "Membros"]] as [Tab, string][]).map(([t, label]) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              style={{
-                padding: "16px 24px",
-                background: "none",
-                border: "none",
-                fontSize: 15,
-                fontWeight: tab === t ? 700 : 500,
-                color: tab === t ? "#1D1D1F" : "#86868B",
-                borderBottom: `2px solid ${tab === t ? community.cover[0] : "transparent"}`,
-                marginBottom: -1,
-                cursor: "pointer",
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+  const headerData = {
+    slug: community.slug,
+    name: community.name,
+    tagline: community.tagline,
+    cover: community.cover,
+    coverImageUrl: community.coverImageUrl,
+    icon: community.icon,
+    logoUrl: community.logoUrl,
+    members: memberCount,
+    posts: community.posts,
+    founded: community.founded,
+    adminName: community.adminName,
+    paradaName: community.paradaName,
+    isAdmin: community.isAdmin,
+  };
 
-        {tab === "chart" && (
-          <div>
-            <p style={{ fontSize: 14, color: "#86868B", marginBottom: 20 }}>
-              {community.chart.length === 0
-                ? "Quando houver paradas publicadas pelos membros, a agregação semanal aparecerá aqui."
-                : `Agregada a partir das paradas dos ${community.memberSample?.length ?? 0} membros mais ativos desta semana.`}
-            </p>
-            <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-              {community.chart.length === 0 ? (
-                <div style={{ padding: 28, textAlign: "center", color: "#86868B", fontSize: 14 }}>
-                  Sem dados de parada por enquanto.
-                </div>
-              ) : (
-                community.chart.map((e) => (
-                  <div
-                    key={e.position}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "60px 64px 1fr 100px 100px 100px",
-                      alignItems: "center",
-                      padding: "8px 20px",
-                      borderBottom: "1px solid rgba(0,0,0,0.04)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: e.position <= 3 ? 24 : 18,
-                        fontWeight: 700,
-                        color: "#000000",
-                        fontVariantNumeric: "tabular-nums",
-                        textAlign: "right",
-                        paddingRight: 12,
-                        letterSpacing: "-0.04em",
-                      }}
-                    >
-                      {e.position}
-                    </div>
-                    <div style={{ padding: "6px 8px" }}>
-                      <Cover cover={e.cover} song={e.song} size={48} rounded={8} />
-                    </div>
-                    <div style={{ padding: "0 12px", minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.song.title}</div>
-                      <div style={{ fontSize: 12, color: "#86868B" }}>{e.song.artist}</div>
-                    </div>
-                    <div style={{ padding: "0 8px" }}>
-                      <MovementBadge status={e.status} delta={e.delta} />
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#FA243C", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>{e.points}</div>
-                    <div style={{ fontSize: 13, color: "#86868B", padding: "0 8px" }}>{e.voters} eleitores</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {tab === "posts" && (
-          <div>
-            <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, marginBottom: 20 }}>
+  const postsPanel = (
+    <div>
+      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, marginBottom: 20 }}>
               <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <Avatar
                   user={{
@@ -619,37 +507,8 @@ export function CommunityPageClient({
                             />
                           )}
 
-                          {post.kind === "youtube" && (
-                            <a
-                              href={post.youtubeId ? `https://www.youtube.com/watch?v=${post.youtubeId}` : "#"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                marginTop: 10,
-                                display: "block",
-                                borderRadius: 12,
-                                overflow: "hidden",
-                                textDecoration: "none",
-                                border: "1px solid rgba(0,0,0,0.08)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  height: 170,
-                                  background: `linear-gradient(135deg, ${post.ytThumbA ?? "#0A0A0A"}, ${post.ytThumbB ?? "#1A1A1A"})`,
-                                  color: "white",
-                                  display: "grid",
-                                  placeItems: "center",
-                                  fontSize: 44,
-                                  fontWeight: 800,
-                                }}
-                              >
-                                ▶
-                              </div>
-                              <div style={{ padding: "10px 12px", background: "#fff", color: "#1D1D1F", fontSize: 13, fontWeight: 600 }}>
-                                {post.ytTitle ?? "Vídeo do YouTube"}
-                              </div>
-                            </a>
+                          {post.kind === "youtube" && post.youtubeId && (
+                            <YouTubeEmbed videoId={post.youtubeId} title={post.ytTitle} />
                           )}
 
                           <div style={{ marginTop: 10, display: "flex", gap: 18, color: "#6B6B70", fontSize: 13 }}>
@@ -724,119 +583,87 @@ export function CommunityPageClient({
                 ))}
               </div>
             )}
-          </div>
-        )}
+    </div>
+  );
 
-        {tab === "members" && (
-          <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
-            {(() => {
-              const memberGrid = "40px 48px 1fr 100px 100px 110px";
-              const memberHeaders = ["#", "", "Membro", "Posts", "Curtidas", ""] as const;
-              const memberCellStyle = (col: number, row: "header" | "body"): React.CSSProperties => {
-                const pad = row === "header" ? "6px 8px" : "0 8px";
-                if (col === 0) return { padding: pad, textAlign: "center" };
-                if (col === 3 || col === 4) return { padding: pad, textAlign: "center", fontVariantNumeric: "tabular-nums" };
-                if (col === 5) return { padding: pad, textAlign: "right" };
-                return { padding: pad, minWidth: col === 2 ? 0 : undefined };
-              };
-
-              return (
-                <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: memberGrid,
-                alignItems: "center",
-                padding: "10px 20px",
-                background: "rgba(0,0,0,0.02)",
-                borderBottom: "1px solid rgba(0,0,0,0.06)",
-              }}
-            >
-              {memberHeaders.map((h, i) => (
-                <div
-                  key={i}
+  return (
+    <Shell title="" noPadding>
+      {community.source === "db" ? (
+        <>
+          <CommunityHeader
+            community={headerData}
+            activeTab="posts"
+            actions={
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleJoinToggle()}
+                  disabled={joining}
                   style={{
-                    ...memberCellStyle(i, "header"),
-                    fontSize: 11,
+                    background: isMember ? "rgba(255,255,255,0.2)" : "white",
+                    color: isMember ? "white" : community.cover[0],
+                    border: isMember ? "1px solid rgba(255,255,255,0.35)" : "none",
+                    padding: "10px 22px",
+                    borderRadius: 100,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: joining ? "wait" : "pointer",
+                  }}
+                >
+                  {joining ? "..." : isMember ? "✓ Participando" : "Participar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleShareCopy()}
+                  title={shareCopied ? "Link copiado!" : "Copiar link da comunidade"}
+                  aria-label={shareCopied ? "Link copiado" : "Copiar link da comunidade"}
+                  style={{
+                    background: shareCopied ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.15)",
+                    color: "white",
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    padding: "10px 22px",
+                    borderRadius: 100,
+                    fontSize: 14,
                     fontWeight: 600,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    color: "#86868B",
-                  }}
-                >
-                  {h}
-                </div>
-              ))}
-            </div>
-            {community.source === "db" && dbCommunity ? (
-              dbCommunity.ownerHandle ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: memberGrid,
-                  alignItems: "center",
-                  padding: "12px 20px",
-                  borderBottom: "1px solid rgba(0,0,0,0.04)",
-                }}
-              >
-                <div style={{ ...memberCellStyle(0, "body"), fontSize: 14, fontWeight: 700, color: "#86868B" }}>1</div>
-                <div style={memberCellStyle(1, "body")}>
-                  <Avatar user={{ name: dbCommunity.ownerName ?? "Fundador", avatar: "#FA243C" }} size={36} />
-                </div>
-                <div style={memberCellStyle(2, "body")}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{dbCommunity.ownerName ?? "Fundador"}</div>
-                  <Link href={`/profile/${dbCommunity.ownerHandle}`} style={{ fontSize: 12, color: "#86868B", textDecoration: "none" }}>
-                    @{dbCommunity.ownerHandle}
-                  </Link>
-                </div>
-                <div style={{ ...memberCellStyle(3, "body"), fontSize: 14 }}>—</div>
-                <div style={{ ...memberCellStyle(4, "body"), fontSize: 14 }}>—</div>
-                <div style={memberCellStyle(5, "body")}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B" }}>Dono</span>
-                </div>
-              </div>
-              ) : (
-                <div style={{ padding: 20, fontSize: 14, color: "#86868B" }}>Membros serão listados aqui em breve.</div>
-              )
-            ) : (
-              USERS_DATA.slice(0, 6).map((u, i) => (
-                <div
-                  key={u.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: memberGrid,
+                    backdropFilter: "blur(10px)",
+                    display: "flex",
                     alignItems: "center",
-                    padding: "12px 20px",
-                    borderBottom: "1px solid rgba(0,0,0,0.04)",
+                    gap: 6,
+                    cursor: "pointer",
                   }}
                 >
-                  <div style={{ ...memberCellStyle(0, "body"), fontSize: 14, fontWeight: 700, color: "#86868B" }}>{i + 1}</div>
-                  <div style={memberCellStyle(1, "body")}>
-                    <Avatar user={u} size={36} />
-                  </div>
-                  <div style={memberCellStyle(2, "body")}>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{u.name}</div>
-                    <div style={{ fontSize: 12, color: "#86868B" }}>@{u.handle}</div>
-                  </div>
-                  <div style={{ ...memberCellStyle(3, "body"), fontSize: 14 }}>{[42, 38, 31, 27, 19, 12][i]}</div>
-                  <div style={{ ...memberCellStyle(4, "body"), fontSize: 14 }}>{[1204, 987, 823, 654, 432, 287][i]}</div>
-                  <div style={memberCellStyle(5, "body")}>
-                    <button
-                      type="button"
-                      style={{ background: "#1D1D1F", color: "white", border: "none", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}
-                    >
-                      Seguir
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-                </>
-              );
-            })()}
-          </div>
-        )}
-      </div>
+                  <Share size={16} />
+                  {shareCopied ? "Copiado!" : null}
+                </button>
+              </>
+            }
+          />
+          <div style={{ padding: "28px 40px 80px 40px" }}>{postsPanel}</div>
+        </>
+      ) : (
+        <div style={{ padding: "28px 40px 80px 40px" }}>
+          <Link
+            href={`/community/${community.slug}/feed`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#1D1D1F",
+              color: "white",
+              textDecoration: "none",
+              padding: "8px 16px",
+              borderRadius: 100,
+              fontSize: 13,
+              fontWeight: 600,
+              marginBottom: 20,
+            }}
+          >
+            <Play size={12} fill="white" />
+            Ver no modo imersivo
+          </Link>
+          {postsPanel}
+        </div>
+      )}
     </Shell>
   );
 }

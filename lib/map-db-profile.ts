@@ -1,4 +1,5 @@
 import type { Chart, ChartEntry, PersonalDropoutEntry, User, UserWithCharts } from "@/lib/types";
+import type { ChartSpotlightSong } from "@/lib/chart-spotlight";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
 
@@ -203,6 +204,8 @@ export type ChartDetailPayload = {
   chart: Chart;
   imageUrl: string | null;
   paradaLogo: string | null;
+  flashback?: ChartSpotlightSong | null;
+  destaque?: ChartSpotlightSong | null;
   previousChart?: { id: string; weekLabel: string } | null;
   nextChart?: { id: string; weekLabel: string } | null;
   personalNumberOnes?: Record<string, number>;

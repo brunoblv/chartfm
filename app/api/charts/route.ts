@@ -14,9 +14,13 @@ import {
   resolveSongsForFastPublish,
   sanitizeChartEntrySpotifyRefs,
 } from "@/lib/resolve-publish-songs";
+import {
+  resolveOptionalSpotlightSongId,
+  spotlightSongIdFromResolvedEntries,
+} from "@/lib/chart-spotlight";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 type ResolvedSongRow = { id: string; spotifyId: string | null; albumSpotifyId: string | null };
 
@@ -104,12 +108,13 @@ export async function POST(req: NextRequest) {
   if (existing) {
     return NextResponse.json(
       {
+        id: existing.id,
         error:
           parada.cadence === "DAILY"
             ? "Você já publicou esta parada neste dia"
             : "Você já publicou esta parada nesta semana",
       },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -335,6 +340,21 @@ export async function POST(req: NextRequest) {
 
   const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);
 
+  const flashbackEntry = body.flashback ?? null;
+  const destaqueEntry = body.destaque ?? null;
+  const [flashbackSongId, destaqueSongId] = await Promise.all([
+    (async () => {
+      const fromChart = spotlightSongIdFromResolvedEntries(flashbackEntry, entries, songs);
+      if (fromChart) return fromChart;
+      return resolveOptionalSpotlightSongId(prisma, flashbackEntry);
+    })(),
+    (async () => {
+      const fromChart = spotlightSongIdFromResolvedEntries(destaqueEntry, entries, songs);
+      if (fromChart) return fromChart;
+      return resolveOptionalSpotlightSongId(prisma, destaqueEntry);
+    })(),
+  ]);
+
   // Previous chart for delta calculations
   const previousWeekIdx = prevPeriodIndex(weekIndex, parada.cadence);
   const previousChart = await prisma.chart.findFirst({
@@ -405,6 +425,8 @@ export async function POST(req: NextRequest) {
       dateRange,
       publishedAt,
       maxItems: entries.length,
+      flashbackSongId,
+      destaqueSongId,
       entries: { create: entryData },
     },
   });
