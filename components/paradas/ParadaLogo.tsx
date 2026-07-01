@@ -3,6 +3,7 @@ import { paradaPalette } from "@/lib/parada-palette";
 /** Logo quadrado fixo no hero da página de parada. */
 export const PARADA_HERO_LOGO_SIZE = {
   mobile: 88,
+  desktop: 112,
 } as const;
 
 type ParadaLogoProps = {
