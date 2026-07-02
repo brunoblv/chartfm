@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn, getProviders } from "next-auth/react";
 import {
   AuthShell,
@@ -48,7 +48,6 @@ function authErrorMessage(code: string | null, t: (k: string) => string): string
 
 export default function LoginClient({ googleConfigured }: { googleConfigured: boolean }) {
   const { t } = useTranslations();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const curatorCount = useCuratorCount();
 
@@ -128,11 +127,9 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
       return;
     }
 
-    if (result?.url) {
-      router.push(result.url);
-    } else {
-      router.push(callbackUrl);
-    }
+    // Navegação completa (não router.push): o middleware pula requisições RSC,
+    // então só um page load garante o redirect de needsHandle -> /onboarding.
+    window.location.href = result?.url ?? callbackUrl;
   };
 
   const busy = loadingGoogle || loadingEmail;

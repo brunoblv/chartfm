@@ -60,24 +60,23 @@ export function getAuthOptions(): NextAuthOptions {
     callbacks: {
       async signIn({ user, account }) {
         if (account?.provider === "credentials") {
-          if (!user.email) return false;
-          const db = await prisma.user.findUnique({
-            where: { email: user.email.toLowerCase().trim() },
-          });
-          return db?.needsHandle ? "/onboarding" : true;
+          return Boolean(user.email);
         }
 
         if (!user.email || account?.provider !== "google" || !account.providerAccountId) {
           return false;
         }
         try {
-          const { isNew } = await ensureGoogleUser({
+          // Retornar uma string aqui NÃO cria a sessão (next-auth aborta o login e só
+          // redireciona) — o envio de usuário novo para /onboarding é feito pelo
+          // middleware via token.needsHandle.
+          await ensureGoogleUser({
             email: user.email,
             name: user.name,
             image: user.image,
             googleId: account.providerAccountId,
           });
-          return isNew ? "/onboarding" : true;
+          return true;
         } catch (e) {
           console.error("[auth] ensureGoogleUser", e);
           return false;
