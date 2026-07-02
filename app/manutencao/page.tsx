@@ -74,7 +74,7 @@ export default function ManutencaoPage() {
           lineHeight: 1.55,
         }}
       >
-        Se você chegou aqui durante um deploy, é normal. Tente recarregar a página em 1–2 minutos.
+       Tente recarregar a página em 1–2 minutos.
       </div>
     </main>
   );
