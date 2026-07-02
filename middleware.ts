@@ -38,6 +38,10 @@ export async function middleware(request: NextRequest) {
   const isOAuthConnect =
     pathname.startsWith("/api/spotify/connect") ||
     pathname.startsWith("/api/youtube/connect");
+  // /login inicia o fluxo do Google (cookies de state/pkce). Se o host não estiver
+  // canonicalizado antes do clique, o cookie setado em /api/auth/signin é do host
+  // errado e não bate com o redirect_uri do callback -> falha na 1a tentativa.
+  const isAuthFlow = pathname === "/login";
 
   const devLocalRedirect = ensureDevLocalhostRedirect(request);
   if (devLocalRedirect) return devLocalRedirect;
@@ -45,7 +49,7 @@ export async function middleware(request: NextRequest) {
   const canonicalRedirect = ensureCanonicalAppOrigin(request);
   if (canonicalRedirect) return canonicalRedirect;
 
-  if (isOAuthConnect) {
+  if (isOAuthConnect || isAuthFlow) {
     return NextResponse.next();
   }
 
@@ -67,6 +71,7 @@ export const config = {
   matcher: [
     "/api/spotify/:path*",
     "/api/youtube/:path*",
+    "/login",
     "/((?!api|_next/static|_next/image|favicon\\.ico|login|signup|forgot-password|reset-password|verify-email|onboarding|public).*)",
   ],
 };
