@@ -8,6 +8,15 @@ import {
   isLocale,
   localeFromAcceptLanguage,
 } from "@/lib/i18n/config";
+import {
+  MAINTENANCE_PATH,
+  MAINTENANCE_BYPASS_COOKIE,
+  hasMaintenanceBypass,
+  isMaintenanceModeEnabled,
+  isMaintenancePath,
+  isMaintenanceStaticAsset,
+  maintenanceBypassSecret,
+} from "@/lib/maintenance";
 
 function isRscOrPrefetch(request: NextRequest): boolean {
   return (
@@ -33,6 +42,40 @@ function ensureLocaleCookie(request: NextRequest): NextResponse {
   return response;
 }
 
+/** Redireciona visitantes para /manutencao quando MAINTENANCE_MODE está ativo. */
+function handleMaintenance(request: NextRequest): NextResponse | null {
+  if (!isMaintenanceModeEnabled()) return null;
+
+  const pathname = request.nextUrl.pathname;
+  if (isMaintenanceStaticAsset(pathname) || isMaintenancePath(pathname)) return null;
+
+  const secret = maintenanceBypassSecret();
+  const bypassParam = request.nextUrl.searchParams.get("bypass");
+
+  if (secret && bypassParam === secret) {
+    const clean = request.nextUrl.clone();
+    clean.searchParams.delete("bypass");
+    const response = NextResponse.redirect(clean);
+    response.cookies.set(MAINTENANCE_BYPASS_COOKIE, secret, {
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60,
+    });
+    return response;
+  }
+
+  if (hasMaintenanceBypass(request)) return null;
+
+  const url = request.nextUrl.clone();
+  url.pathname = MAINTENANCE_PATH;
+  url.search = "";
+  const response = NextResponse.redirect(url, 307);
+  response.headers.set("Retry-After", "120");
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isOAuthConnect =
@@ -48,6 +91,9 @@ export async function middleware(request: NextRequest) {
 
   const canonicalRedirect = ensureCanonicalAppOrigin(request);
   if (canonicalRedirect) return canonicalRedirect;
+
+  const maintenanceRedirect = handleMaintenance(request);
+  if (maintenanceRedirect) return maintenanceRedirect;
 
   if (isOAuthConnect || isAuthFlow) {
     return NextResponse.next();
@@ -69,9 +115,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/:path*",
     "/api/spotify/:path*",
     "/api/youtube/:path*",
     "/login",
-    "/((?!api|_next/static|_next/image|favicon\\.ico|login|signup|forgot-password|reset-password|verify-email|onboarding|public).*)",
+    "/((?!api|_next/static|_next/image|favicon\\.ico|manutencao|login|signup|forgot-password|reset-password|verify-email|onboarding|public).*)",
   ],
 };
