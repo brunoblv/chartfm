@@ -504,17 +504,28 @@ export type StandingRow = {
   GF: number;
   GA: number;
   GD: number;
+  /** Votos recebidos/sofridos/saldo — usados nos critérios de desempate (regulamento §6). */
+  VF: number;
+  VA: number;
+  VD: number;
   Pts: number;
 };
 
+// Regulamento §5: "O artista cuja música receber mais votos vence a partida" — o
+// resultado (V/E/D) é decidido pelos votos brutos, não pelos "gols" (votos ÷ 2,
+// que são só a exibição do placar). Isso evita empates espúrios quando os votos
+// diferem por uma unidade ímpar (ex.: 5×4 vira 2×2 em gols mas A venceu nos votos).
 export function computeStandings(
   fixtures: Array<{ artistAId: string; artistBId: string; status: string; votes: CopaVote[] }>,
   artistIds: string[],
 ): StandingRow[] {
   const t: Record<string, StandingRow> = {};
   artistIds.forEach((id) => {
-    t[id] = { artistId: id, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0 };
+    t[id] = { artistId: id, P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, VF: 0, VA: 0, VD: 0, Pts: 0 };
   });
+
+  // Confronto direto (regulamento §6, critério 2): resultado entre cada par de artistas.
+  const h2h = new Map<string, string>(); // `${idA}:${idB}` -> id do vencedor, ou "DRAW"
 
   for (const f of fixtures) {
     if (f.status !== "DONE") continue;
@@ -528,15 +539,34 @@ export function computeStandings(
     ra.P++; rb.P++;
     ra.GF += g1; ra.GA += g2;
     rb.GF += g2; rb.GA += g1;
-    if (g1 > g2) { ra.W++; ra.Pts += 3; rb.L++; }
-    else if (g2 > g1) { rb.W++; rb.Pts += 3; ra.L++; }
+    ra.VF += votesA; ra.VA += votesB;
+    rb.VF += votesB; rb.VA += votesA;
+
+    const winner: string | "DRAW" =
+      votesA > votesB ? f.artistAId : votesB > votesA ? f.artistBId : "DRAW";
+    if (winner === f.artistAId) { ra.W++; ra.Pts += 3; rb.L++; }
+    else if (winner === f.artistBId) { rb.W++; rb.Pts += 3; ra.L++; }
     else { ra.D++; ra.Pts++; rb.D++; rb.Pts++; }
+
+    h2h.set(`${f.artistAId}:${f.artistBId}`, winner);
+    h2h.set(`${f.artistBId}:${f.artistAId}`, winner);
   }
 
-  Object.values(t).forEach((r) => { r.GD = r.GF - r.GA; });
-  return Object.values(t).sort(
-    (a, b) => b.Pts - a.Pts || b.GD - a.GD || b.GF - a.GF,
-  );
+  Object.values(t).forEach((r) => { r.GD = r.GF - r.GA; r.VD = r.VF - r.VA; });
+
+  // Regulamento §6: pontos → confronto direto → saldo de votos → votos recebidos
+  // → número de vitórias → sorteio. O confronto direto só decide empates diretos
+  // entre dois artistas; com 3+ artistas empatados, passa direto para os critérios
+  // seguintes (convenção padrão de tabelas de futebol).
+  return Object.values(t).sort((a, b) => {
+    if (b.Pts !== a.Pts) return b.Pts - a.Pts;
+    const h2hResult = h2h.get(`${a.artistId}:${b.artistId}`);
+    if (h2hResult && h2hResult !== "DRAW") return h2hResult === a.artistId ? -1 : 1;
+    if (b.VD !== a.VD) return b.VD - a.VD;
+    if (b.VF !== a.VF) return b.VF - a.VF;
+    if (b.W !== a.W) return b.W - a.W;
+    return 0; // Sorteio — sem critério objetivo restante.
+  });
 }
 
 export function getVoteCounts(fixture: { votes: CopaVote[] }) {

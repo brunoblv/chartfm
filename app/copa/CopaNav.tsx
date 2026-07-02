@@ -9,6 +9,7 @@ const NAV = [
   { href: "/copa/meu-time", label: "Meu Time" },
   { href: "/copa/grupos", label: "Grupos" },
   { href: "/copa/chaveamento", label: "Chaveamento" },
+  { href: "/copa/regras", label: "Regras" },
 ];
 
 export function CopaNav() {

@@ -41,14 +41,11 @@ export async function POST(
   const existing = await prisma.pushSubmission.findUnique({
     where: { roundId_userId: { roundId, userId: session.user.id } },
   });
-  if (existing) {
-    return NextResponse.json({ error: "Você já inscreveu uma música nesta rodada" }, { status: 400 });
-  }
 
   const alreadyUsed = await prisma.pushSubmission.findUnique({
     where: { spotifyTrackId },
   });
-  if (alreadyUsed) {
+  if (alreadyUsed && alreadyUsed.id !== existing?.id) {
     return NextResponse.json({ error: "Esta música já foi indicada em outra rodada" }, { status: 400 });
   }
 
@@ -68,17 +65,25 @@ export async function POST(
     return NextResponse.json({ error: upserted.error }, { status: upserted.status });
   }
 
-  const submission = await prisma.pushSubmission.create({
-    data: {
-      roundId,
-      userId: session.user.id,
-      songId: upserted.song.id,
-      spotifyTrackId,
-    },
-    include: {
-      song: { select: { title: true, artist: true, spotifyUrl: true } },
-    },
-  });
+  const submission = existing
+    ? await prisma.pushSubmission.update({
+        where: { id: existing.id },
+        data: { songId: upserted.song.id, spotifyTrackId },
+        include: {
+          song: { select: { title: true, artist: true, spotifyUrl: true } },
+        },
+      })
+    : await prisma.pushSubmission.create({
+        data: {
+          roundId,
+          userId: session.user.id,
+          songId: upserted.song.id,
+          spotifyTrackId,
+        },
+        include: {
+          song: { select: { title: true, artist: true, spotifyUrl: true } },
+        },
+      });
 
   return NextResponse.json({
     id: submission.id,

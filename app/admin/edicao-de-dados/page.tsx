@@ -10,6 +10,7 @@ import { ArtistCreatePanel } from "../artists/ArtistCreatePanel";
 import { CreateAlbumClient } from "../albums/CreateAlbumClient";
 import { NoAlbumSection, parseFiltro } from "./sections/NoAlbumSection";
 import { NoCoverSection } from "./sections/NoCoverSection";
+import { NoMbidSection } from "./sections/NoMbidSection";
 import { MissingInfoSection } from "./sections/MissingInfoSection";
 import { DataSearchClient } from "./DataSearchClient";
 
@@ -19,6 +20,7 @@ type Tab =
   | "artists"
   | "no-album"
   | "no-cover"
+  | "no-mbid"
   | "missing-music"
   | "missing-artists"
   | "missing-albums";
@@ -29,6 +31,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "artists", label: "Artistas" },
   { id: "no-album", label: "Músicas sem álbum" },
   { id: "no-cover", label: "Músicas sem capa" },
+  { id: "no-mbid", label: "Músicas sem MBID" },
   { id: "missing-music", label: "Faltando · Músicas" },
   { id: "missing-artists", label: "Faltando · Artistas" },
   { id: "missing-albums", label: "Faltando · Álbuns" },
@@ -92,6 +95,7 @@ export default async function AdminDataEditPage({
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <Link href="/admin/music/versions" style={adminNavChipStyle}>Versões (live, remix, acoustic…)</Link>
               <Link href="/admin/music/no-album" style={adminNavChipStyle}>Sem álbum</Link>
+              <Link href="/admin/music/no-mbid" style={adminNavChipStyle}>Sem MBID</Link>
               <Link
                 href="/admin/music/new"
                 style={{
@@ -148,6 +152,15 @@ export default async function AdminDataEditPage({
         )}
 
         {tab === "no-cover" && <NoCoverSection />}
+
+        {tab === "no-mbid" && (
+          <NoMbidSection
+            page={(() => {
+              const p = parseInt(params.page ?? "1", 10);
+              return Number.isFinite(p) && p > 0 ? p : 1;
+            })()}
+          />
+        )}
 
         {tab === "missing-music" && <MissingInfoSection entity="music" />}
         {tab === "missing-artists" && <MissingInfoSection entity="artists" />}
