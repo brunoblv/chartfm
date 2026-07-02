@@ -36,11 +36,11 @@ export function ChartSpotlightCard({ kind, song }: Props) {
       >
         {label}
       </div>
-      <div style={{ width: "100%", maxWidth: 248 }}>
+      <div style={{ width: "100%", maxWidth: 168 }}>
         <Cover
           cover={song.cover}
           song={{ title: song.title, artist: song.artist, imageUrl: song.cover.imageUrl ?? undefined }}
-          size={220}
+          size={150}
           rounded={12}
           style={{ width: "100%", height: "auto", aspectRatio: "1" }}
         />

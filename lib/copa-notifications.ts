@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { COPA_DAY_LABELS } from "@/lib/copa";
+import { createSystemFeedPost } from "@/lib/system-feed";
 
 export type CopaNotificationType = "copa_stage" | "copa_fixture";
 
@@ -40,9 +41,16 @@ export async function notifyCopaBatchOpened(copaId: string, batchOrder: number):
 
   const stageLabel = COPA_DAY_LABELS[batchOrder] ?? `Etapa ${batchOrder + 1}`;
   const targetUrl = `/copa/ao-vivo?copa=${copaId}&batch=${batchOrder}`;
-  const text = `A etapa "${stageLabel}" da ${copa.name} está aberta! Vote nos jogos ao vivo.`;
+  const text =
+    batchOrder === 0
+      ? `A ${copa.name} começou! A etapa "${stageLabel}" está aberta — vote nos jogos ao vivo.`
+      : `A etapa "${stageLabel}" da ${copa.name} está aberta! Vote nos jogos ao vivo.`;
 
-  return broadcastCopaNotification("copa_stage", targetUrl, text);
+  const notified = await broadcastCopaNotification("copa_stage", targetUrl, text);
+  if (notified > 0) {
+    await createSystemFeedPost("copa_stage", text, targetUrl);
+  }
+  return notified;
 }
 
 /** Notifica todos os usuários quando um jogo individual passa a ficar ao vivo. */

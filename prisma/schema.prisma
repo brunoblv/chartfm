@@ -523,6 +523,17 @@ model Notification {
   recipient   User     @relation("NotificationRecipient", fields: [recipientId], references: [id])
 }
 
+/// Post automático "da casa" (ChartFM) exibido no feed da home, ex.: Copa/Push publicados ou rodada avançou.
+model SystemFeedPost {
+  id        String   @id @default(cuid())
+  kind      String
+  text      String
+  targetUrl String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model UserFollow {
   id          String   @id @default(cuid())
   followerId  String   @map("follower_id")

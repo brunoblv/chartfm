@@ -22,6 +22,7 @@ import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } f
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs } from "@/components/home/TimelineTabs";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
+import { getSystemFeedPosts } from "@/lib/system-feed";
 import { mergeHomeFeed, filterFollowingRecommendations } from "@/lib/home-mixed-feed";
 import { getPrimaryParada } from "@/lib/paradas";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
@@ -348,7 +349,7 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed, systemFeedPosts] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
@@ -368,15 +369,20 @@ export default async function HomePage() {
         console.error("[home] getRecommendationsFeed", err);
         return [] as Awaited<ReturnType<typeof getRecommendationsFeed>>;
       }),
+      getSystemFeedPosts(locale).catch((err) => {
+        console.error("[home] getSystemFeedPosts", err);
+        return [] as Awaited<ReturnType<typeof getSystemFeedPosts>>;
+      }),
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
 
-  const forYouFeed = mergeHomeFeed(allFeed, reviewsForYou, recommendationsFeed, 30);
+  const forYouFeed = mergeHomeFeed(allFeed, reviewsForYou, recommendationsFeed, 30, systemFeedPosts);
   const followingFeed = mergeHomeFeed(
     friendsFeed,
     followingReviews,
     filterFollowingRecommendations(recommendationsFeed, followingIds, session.user.id),
     30,
+    systemFeedPosts,
   );
 
   const feed = (

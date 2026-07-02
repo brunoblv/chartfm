@@ -1409,8 +1409,6 @@ export default function ChartDetailPage() {
                       gap: 16,
                     }}
                   >
-                    {flashback && <ChartSpotlightCard kind="flashback" song={flashback} />}
-                    {destaque && <ChartSpotlightCard kind="destaque" song={destaque} />}
                     {commentsOpen && (
                       <CommentsTab
                         chartId={chart.id}
@@ -1422,6 +1420,8 @@ export default function ChartDetailPage() {
                         onCommentDeleted={() => setCommentCount((c) => Math.max(0, c - 1))}
                       />
                     )}
+                    {flashback && <ChartSpotlightCard kind="flashback" song={flashback} />}
+                    {destaque && <ChartSpotlightCard kind="destaque" song={destaque} />}
                   </aside>
                 )}
               </div>

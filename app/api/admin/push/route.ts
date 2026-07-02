@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { pushRoundTitle } from "@/lib/push-format";
+import { createSystemFeedPost } from "@/lib/system-feed";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +59,12 @@ export async function POST(req: NextRequest) {
       rankingEndsAt,
     },
   });
+
+  await createSystemFeedPost(
+    "push_published",
+    `O ${round.title} foi publicado! Indique sua música e participe.`,
+    "/push",
+  );
 
   return NextResponse.json(round, { status: 201 });
 }

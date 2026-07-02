@@ -3,6 +3,7 @@
 import { ChartCard } from "@/components/chart/ChartCard";
 import { FeedReviewCard } from "@/components/home/FeedReviewCard";
 import { FeedRecommendationCard } from "@/components/home/FeedRecommendationCard";
+import { FeedSystemPostCard } from "@/components/home/FeedSystemPostCard";
 import type { HomeFeedItem } from "@/lib/home-mixed-feed";
 
 export function MixedFeedList({ items }: { items: HomeFeedItem[] }) {
@@ -24,6 +25,9 @@ export function MixedFeedList({ items }: { items: HomeFeedItem[] }) {
         }
         if (entry.kind === "review") {
           return <FeedReviewCard key={entry.id} review={entry.item} />;
+        }
+        if (entry.kind === "system") {
+          return <FeedSystemPostCard key={entry.id} item={entry.item} />;
         }
         return <FeedRecommendationCard key={entry.id} item={entry.item} />;
       })}

@@ -3,6 +3,12 @@ import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import type { PushPhase } from "@prisma/client";
 import { syncPushPlaylistsOnPhaseAdvance } from "@/lib/push-playlist-sync";
+import { createSystemFeedPost } from "@/lib/system-feed";
+
+const PHASE_ANNOUNCEMENT: Partial<Record<PushPhase, string>> = {
+  LISTENING: "entrou na fase de escuta e avaliação! Ouça as indicações e avalie.",
+  RESULT: "chegou ao resultado! Confira o ranking final.",
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,6 +121,17 @@ export async function PUT(
     where: { id: roundId },
     data: updates,
   });
+
+  if (body.advancePhase && updates.phase) {
+    const announcement = PHASE_ANNOUNCEMENT[updates.phase];
+    if (announcement) {
+      await createSystemFeedPost(
+        "push_round",
+        `O ${updated.title ?? "Push"} ${announcement}`,
+        "/push",
+      );
+    }
+  }
 
   return NextResponse.json({ ...updated, playlistSync });
 }
