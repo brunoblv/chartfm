@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
+import { computePushRoundScores } from "@/lib/push-scoring";
 import { pushRoundTitle } from "@/lib/push-format";
 
 export const dynamic = "force-dynamic";
@@ -69,17 +70,14 @@ export async function GET() {
 
   let results: object[] | null = null;
   if (round.phase === "RESULT") {
-    const totals = new Map<string, number>();
     const allVotes = await prisma.pushVote.findMany({
       where: { roundId: round.id },
-      select: { submissionId: true, position: true },
+      select: { userId: true, submissionId: true, position: true },
     });
-    const totalToRank = round.submissions.length - 1;
-    for (const v of allVotes) {
-      const k = totalToRank <= 1 ? 0 : Math.log(20) / (totalToRank - 1);
-      const pts = totalToRank <= 1 ? 20 : Math.max(1, Math.round(20 * Math.exp(-k * (v.position - 1))));
-      totals.set(v.submissionId, (totals.get(v.submissionId) ?? 0) + pts);
-    }
+    const totals = computePushRoundScores(
+      round.submissions.map((s) => ({ id: s.id, userId: s.userId })),
+      allVotes,
+    );
     const sorted = round.submissions
       .map((s) => ({ ...s, totalPoints: totals.get(s.id) ?? 0 }))
       .sort((a, b) => b.totalPoints - a.totalPoints);

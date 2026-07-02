@@ -250,11 +250,13 @@ model Parada {
   cadence   ParadaCadence @default(WEEKLY)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   charts    Chart[]
 
   @@unique([userId, sortOrder])
   @@index([userId], map: "idx_paradas_user_id")
+  @@index([deletedAt], map: "idx_paradas_deleted_at")
   @@map("paradas")
 }
 

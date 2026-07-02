@@ -172,6 +172,7 @@ export function StatsSidebar({ round }: { round: RoundData }) {
             "Músicas ficam ocultas até a revelação",
             "Escuta começa logo após a revelação",
             "#1 = 20 pts · último = 1 pt",
+            "Não avaliar = +20 pts para as outras músicas",
           ].map((rule, i) => (
             <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
               <div style={{

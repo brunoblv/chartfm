@@ -4,6 +4,15 @@ import { useState, useRef } from "react";
 import { ExternalLink, Music } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { pushRoundTitle } from "@/lib/push-format";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { useMobileReorder } from "@/hooks/useMobileReorder";
+import {
+  MobileReorderPositionSheet,
+  MobileReorderToolbar,
+} from "@/components/mobile-reorder";
+import { MobileReorderRowControls } from "@/components/mobile-reorder/MobileReorderRowControls";
+import type { MobileReorderRowState } from "@/components/mobile-reorder/MobileReorderListRow";
+import type { MobileReorderMode } from "@/lib/mobile-reorder";
 import type { RoundData, SubmissionData } from "./push-types";
 import { SPOTIFY_PATH, pushPoints, formatDate } from "./push-helpers";
 import { TrackCover, RankBadge, CheckIcon } from "./PushAtoms";
@@ -120,9 +129,68 @@ function ListeningView({ round }: { round: RoundData }) {
   );
 }
 
+function PushRankingMobileRow({
+  sub,
+  idx,
+  total,
+  mode,
+  rowProps,
+}: {
+  sub: SubmissionData;
+  idx: number;
+  total: number;
+  mode: MobileReorderMode;
+  rowProps: MobileReorderRowState;
+}) {
+  const pts = pushPoints(idx + 1, total);
+  const { rowStyle, onRowClick, isSelected, isSwapTarget, canMoveUp, canMoveDown, onMoveUp, onMoveDown } = rowProps;
+
+  return (
+    <div
+      onClick={onRowClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "10px 12px",
+        borderBottom: "1px solid var(--divider)",
+        background: "var(--surface)",
+        userSelect: "none",
+        WebkitTapHighlightColor: "transparent",
+        ...rowStyle,
+      }}
+    >
+      <RankBadge pos={idx + 1} />
+      <TrackCover imageUrl={sub.song.coverUrl} size={38} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {sub.song.title}
+        </div>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {sub.song.artist}
+        </div>
+      </div>
+      <div style={{ textAlign: "center", flexShrink: 0, minWidth: 34 }}>
+        <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)", lineHeight: 1, letterSpacing: "-.02em" }}>{pts}</div>
+        <div style={{ fontSize: 8, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 1 }}>PTS</div>
+      </div>
+      <MobileReorderRowControls
+        mode={mode}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        isSelected={isSelected}
+        isSwapTarget={isSwapTarget}
+      />
+    </div>
+  );
+}
+
 function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void }) {
   const { data: session } = useSession();
   const authed = !!session?.user?.id;
+  const isMobile = useIsMobile();
 
   const mySubmission = round.mySubmission;
   const toRank = (round.submissions ?? []).filter((s) => s.id !== mySubmission?.id);
@@ -141,9 +209,15 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
   const [saved, setSaved]     = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const dragItem              = useRef<number | null>(null);
-  const touchDragIdx          = useRef<number | null>(null);
-  const touchStartY           = useRef<number>(0);
-  const itemHeight            = useRef<number>(76);
+
+  const mobileReorder = useMobileReorder({
+    items: ranking,
+    onChange: (next) => {
+      setRanking(next);
+      setSaved(false);
+    },
+    getItemLabel: (item) => item.song.title,
+  });
 
   const hasVoted = (round.myVotes ?? []).length > 0;
   const total    = toRank.length;
@@ -158,34 +232,9 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
       dragItem.current = idx;
       return next;
     });
-  }
-  function handleDragEnd() { dragItem.current = null; setSaved(false); }
-
-  function handleTouchStart(e: React.TouchEvent, idx: number) {
-    touchDragIdx.current = idx;
-    touchStartY.current  = e.touches[0].clientY;
-    itemHeight.current   = (e.currentTarget as HTMLElement).getBoundingClientRect().height + 8;
-  }
-  function handleTouchMove(e: React.TouchEvent) {
-    if (touchDragIdx.current === null) return;
-    e.preventDefault();
-    const dy = e.touches[0].clientY - touchStartY.current;
-    const steps = Math.round(dy / itemHeight.current);
-    if (steps === 0) return;
-    const from = touchDragIdx.current;
-    const to = Math.max(0, Math.min(ranking.length - 1, from + steps));
-    if (from === to) return;
-    setRanking((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
-    touchDragIdx.current = to;
-    touchStartY.current  = e.touches[0].clientY;
     setSaved(false);
   }
-  function handleTouchEnd() { touchDragIdx.current = null; }
+  function handleDragEnd() { dragItem.current = null; }
 
   async function handleSave() {
     setSaving(true);
@@ -209,78 +258,104 @@ function RankingView({ round, onSaved }: { round: RoundData; onSaved: () => void
   }
 
   if (!authed) return <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Faça login para avaliar as músicas.</div>;
-  if (!mySubmission) return (
-    <div style={{ padding: 20, borderRadius: 12, background: "var(--fill-subtle)", border: "1px solid var(--divider)", color: "var(--text-muted)", fontSize: 14 }}>
-      Você não inscreveu uma música nesta rodada. Apenas participantes com inscrição podem avaliar.
-    </div>
-  );
   if (toRank.length === 0) return <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Não há músicas para avaliar.</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 8 }}>Sua música</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 13, background: "color-mix(in srgb, var(--accent) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 18%, transparent)" }}>
-          <div style={{ width: 26, height: 26, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--accent) 18%, transparent)", flexShrink: 0 }}>
-            <Music size={12} color="var(--accent)" />
+      {mySubmission && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 8 }}>Sua música</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 13, background: "color-mix(in srgb, var(--accent) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 18%, transparent)" }}>
+            <div style={{ width: 26, height: 26, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--accent) 18%, transparent)", flexShrink: 0 }}>
+              <Music size={12} color="var(--accent)" />
+            </div>
+            <TrackCover imageUrl={mySubmission.song.coverUrl} size={38} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mySubmission.song.title}</div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{mySubmission.song.artist}</div>
+            </div>
+            <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>Não avaliada</span>
           </div>
-          <TrackCover imageUrl={mySubmission.song.coverUrl} size={38} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mySubmission.song.title}</div>
-            <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{mySubmission.song.artist}</div>
-          </div>
-          <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>Não avaliada</span>
         </div>
-      </div>
+      )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={2} strokeLinecap="round">
           <circle cx={12} cy={12} r={10} /><line x1={12} y1={8} x2={12} y2={12} /><line x1={12} y1={16} x2={12.01} y2={16} />
         </svg>
         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-          Arraste para ordenar · #1 = 20 pts · #{total} = 1 pt
+          {!isMobile && "Arraste para ordenar · "}#1 = 20 pts · #{total} = 1 pt
           {hasVoted && <span style={{ color: "#10b981", fontWeight: 600 }}> · ✓ Avaliação salva</span>}
         </span>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        {ranking.map((sub, idx) => {
-          const pts = pushPoints(idx + 1, total);
-          return (
-            <div key={sub.id} draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragEnter={() => handleDragEnter(idx)}
-              onDragEnd={handleDragEnd}
-              onTouchStart={(e) => handleTouchStart(e, idx)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
-                borderRadius: 13, background: "var(--surface)", border: "1.5px solid var(--divider)",
-                cursor: "grab", userSelect: "none", boxShadow: "0 1px 2px rgba(0,0,0,.04)",
-              }}>
-              <RankBadge pos={idx + 1} />
-              <TrackCover imageUrl={sub.song.coverUrl} size={38} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.song.title}</div>
-                <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.song.artist}</div>
+      {isMobile && ranking.length > 0 ? (
+        <div style={{ position: "relative", marginBottom: 16, borderRadius: 13, border: "1px solid var(--divider)", overflow: "hidden" }}>
+          <MobileReorderToolbar
+            mode={mobileReorder.mode}
+            onModeChange={mobileReorder.setMode}
+            hint={mobileReorder.hint}
+            showSwapBanner={mobileReorder.showSwapBanner}
+            swapBannerTitle={mobileReorder.selectedTitle ?? undefined}
+            onCancelSwap={mobileReorder.cancelSelection}
+          />
+          {ranking.map((sub, idx) => (
+            <PushRankingMobileRow
+              key={sub.id}
+              sub={sub}
+              idx={idx}
+              total={total}
+              mode={mobileReorder.mode}
+              rowProps={mobileReorder.getRowProps(idx)}
+            />
+          ))}
+          {mobileReorder.showPositionSheet && mobileReorder.editTargetTitle ? (
+            <MobileReorderPositionSheet
+              title={mobileReorder.editTargetTitle}
+              currentPosition={(mobileReorder.editTargetIndex ?? 0) + 1}
+              maxPosition={mobileReorder.itemCount}
+              onConfirm={mobileReorder.confirmPosition}
+              onClose={mobileReorder.closePositionSheet}
+            />
+          ) : null}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+          {ranking.map((sub, idx) => {
+            const pts = pushPoints(idx + 1, total);
+            return (
+              <div key={sub.id} draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDragEnd}
+                style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+                  borderRadius: 13, background: "var(--surface)", border: "1.5px solid var(--divider)",
+                  cursor: "grab", userSelect: "none", boxShadow: "0 1px 2px rgba(0,0,0,.04)",
+                }}>
+                <RankBadge pos={idx + 1} />
+                <TrackCover imageUrl={sub.song.coverUrl} size={38} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.song.title}</div>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.song.artist}</div>
+                </div>
+                <div style={{ textAlign: "center" as const, flexShrink: 0, minWidth: 34 }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)", lineHeight: 1, letterSpacing: "-.02em" }}>{pts}</div>
+                  <div style={{ fontSize: 8, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 1 }}>PTS</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2.5, paddingLeft: 2, flexShrink: 0 }}>
+                  {[0, 1, 2].map((row) => (
+                    <div key={row} style={{ display: "flex", gap: 2.5 }}>
+                      <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--text-disabled)" }} />
+                      <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--text-disabled)" }} />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ textAlign: "center" as const, flexShrink: 0, minWidth: 34 }}>
-                <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text)", lineHeight: 1, letterSpacing: "-.02em" }}>{pts}</div>
-                <div style={{ fontSize: 8, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 1 }}>PTS</div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2.5, paddingLeft: 2, flexShrink: 0 }}>
-                {[0, 1, 2].map((row) => (
-                  <div key={row} style={{ display: "flex", gap: 2.5 }}>
-                    <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--text-disabled)" }} />
-                    <div style={{ width: 3, height: 3, borderRadius: 1.5, background: "var(--text-disabled)" }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {error && (
         <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: 13, marginBottom: 12 }}>

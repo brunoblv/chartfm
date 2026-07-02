@@ -80,7 +80,7 @@ export async function PATCH(req: Request) {
 
   const owned = paradas.find((p) => p.id === targetId) ??
     (await prisma.parada.findFirst({
-      where: { id: targetId, userId: session.user.id },
+      where: { id: targetId, userId: session.user.id, deletedAt: null },
     }));
   if (!owned) {
     return NextResponse.json({ error: "Parada não encontrada" }, { status: 404 });

@@ -26,7 +26,9 @@ export const RULES = [
   "Cada membro indica exatamente 1 música por rodada",
   "Músicas ficam ocultas até o encerramento das inscrições",
   "O membro não pode avaliar a própria música indicada",
+  "Qualquer membro logado pode avaliar, mesmo sem ter inscrito música",
   "Pontuação: #1 = 20 pts → último = 1 pt (decaimento geométrico)",
+  "Participante que não avaliar: +20 pts de multa para cada outra música da rodada",
 ];
 
 export const NAV_ITEMS = ["Rodadas", "Membros", "Regras", "Histórico"];

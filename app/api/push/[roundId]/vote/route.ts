@@ -36,12 +36,14 @@ export async function POST(
     return NextResponse.json({ error: "Fora do período de escuta e avaliação" }, { status: 400 });
   }
 
+  // Qualquer usuário logado pode avaliar (não precisa ter inscrito música).
+  // Quem participou não avalia a própria indicação.
   const mySubmission = round.submissions.find((s) => s.userId === session.user.id);
-  if (!mySubmission) {
-    return NextResponse.json({ error: "Você precisa ter inscrito uma música para avaliar" }, { status: 400 });
-  }
-
-  const eligibleIds = new Set(round.submissions.filter((s) => s.id !== mySubmission.id).map((s) => s.id));
+  const eligibleIds = new Set(
+    mySubmission
+      ? round.submissions.filter((s) => s.id !== mySubmission.id).map((s) => s.id)
+      : round.submissions.map((s) => s.id),
+  );
   for (const v of votes) {
     if (!eligibleIds.has(v.submissionId)) {
       return NextResponse.json({ error: `Inscrição inválida: ${v.submissionId}` }, { status: 400 });

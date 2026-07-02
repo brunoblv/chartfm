@@ -4,8 +4,12 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import {
   canCreateAnotherParada,
+  countParadaWeeks,
   ensureUserParadas,
+  nextParadaSortOrder,
+  PARADA_TRASH_DAYS,
   setPrimaryParada,
+  softDeleteParada,
   syncUserPrimaryParadaFields,
 } from "@/lib/paradas";
 import { maxParadasForUser } from "@/lib/mytrl-access";
@@ -31,17 +35,43 @@ export async function GET() {
   const maxParadas = maxParadasForUser(session.user.handle);
   const canCreate = paradas.length < maxParadas;
 
+  const trashed = await prisma.parada.findMany({
+    where: { userId: session.user.id, deletedAt: { not: null } },
+    orderBy: { deletedAt: "desc" },
+  });
+
+  const [paradasWithWeeks, trashedWithWeeks] = await Promise.all([
+    Promise.all(
+      paradas.map(async (p) => ({
+        id: p.id,
+        name: p.name,
+        logo: p.logo,
+        genres: p.genres,
+        isPrimary: p.isPrimary,
+        sortOrder: p.sortOrder,
+        chartSize: p.chartSize,
+        cadence: toApiCadence(p.cadence),
+        weekCount: await countParadaWeeks(prisma, p.id),
+      })),
+    ),
+    Promise.all(
+      trashed.map(async (p) => {
+        const daysSince = Math.floor((Date.now() - p.deletedAt!.getTime()) / 86_400_000);
+        return {
+          id: p.id,
+          name: p.name,
+          logo: p.logo,
+          weekCount: await countParadaWeeks(prisma, p.id),
+          deletedAt: p.deletedAt!.toISOString(),
+          daysLeft: Math.max(0, PARADA_TRASH_DAYS - daysSince),
+        };
+      }),
+    ),
+  ]);
+
   return NextResponse.json({
-    paradas: paradas.map((p) => ({
-      id: p.id,
-      name: p.name,
-      logo: p.logo,
-      genres: p.genres,
-      isPrimary: p.isPrimary,
-      sortOrder: p.sortOrder,
-      chartSize: p.chartSize,
-      cadence: toApiCadence(p.cadence),
-    })),
+    paradas: paradasWithWeeks,
+    trashedParadas: trashedWithWeeks,
     canCreate,
     maxParadas,
   });
@@ -83,7 +113,7 @@ export async function POST(req: Request) {
 
   const cadence = parseCadenceInput(body.cadence) ?? "WEEKLY";
 
-  const sortOrder = await prisma.parada.count({ where: { userId: session.user.id } });
+  const sortOrder = await nextParadaSortOrder(prisma, session.user.id);
   const parada = await prisma.parada.create({
     data: {
       userId: session.user.id,
@@ -132,7 +162,7 @@ export async function PATCH(req: Request) {
   }
 
   const owned = await prisma.parada.findFirst({
-    where: { id: paradaId, userId: session.user.id },
+    where: { id: paradaId, userId: session.user.id, deletedAt: null },
   });
   if (!owned) {
     return NextResponse.json({ error: "Parada não encontrada" }, { status: 404 });
@@ -192,4 +222,28 @@ export async function PATCH(req: Request) {
       cadence: toApiCadence(updated.cadence),
     },
   });
+}
+
+export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = (await req.json()) as { paradaId?: string };
+  const paradaId = typeof body.paradaId === "string" ? body.paradaId.trim() : "";
+  if (!paradaId) {
+    return NextResponse.json({ error: "paradaId obrigatório" }, { status: 400 });
+  }
+
+  try {
+    await softDeleteParada(prisma, session.user.id, paradaId);
+  } catch (e) {
+    if (e instanceof Error && e.message === "parada_not_found") {
+      return NextResponse.json({ error: "Parada não encontrada" }, { status: 404 });
+    }
+    throw e;
+  }
+
+  return NextResponse.json({ ok: true });
 }

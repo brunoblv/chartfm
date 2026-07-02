@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
+import { computePushRoundScores } from "@/lib/push-scoring";
 import { pushRoundTitle } from "@/lib/push-format";
 import { ExternalLink, Trophy } from "lucide-react";
 
@@ -17,18 +18,15 @@ async function getHistory() {
           song: { select: { title: true, artist: true, spotifyUrl: true } },
         },
       },
-      votes: { select: { submissionId: true, position: true } },
+      votes: { select: { userId: true, submissionId: true, position: true } },
     },
   });
 
   return rounds.map((round) => {
-    const totals = new Map<string, number>();
-    const totalToRank = round.submissions.length - 1;
-    for (const v of round.votes) {
-      const k = totalToRank <= 1 ? 0 : Math.log(20) / (totalToRank - 1);
-      const pts = totalToRank <= 1 ? 20 : Math.max(1, Math.round(20 * Math.exp(-k * (v.position - 1))));
-      totals.set(v.submissionId, (totals.get(v.submissionId) ?? 0) + pts);
-    }
+    const totals = computePushRoundScores(
+      round.submissions.map((s) => ({ id: s.id, userId: s.userId })),
+      round.votes,
+    );
     const sorted = round.submissions
       .map((s) => ({ ...s, totalPoints: totals.get(s.id) ?? 0 }))
       .sort((a, b) => b.totalPoints - a.totalPoints);

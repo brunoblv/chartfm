@@ -50,12 +50,7 @@ export function formatReleaseDate(iso: string | null | undefined): string | null
   return `${m[0].toUpperCase() + m.slice(1)} ${d.getFullYear()}`;
 }
 
-export function pushPoints(pos: number, totalToRank: number): number {
-  if (totalToRank <= 0) return 0;
-  if (totalToRank === 1) return 20;
-  const k = Math.log(20) / (totalToRank - 1);
-  return Math.max(1, Math.round(20 * Math.exp(-k * (pos - 1))));
-}
+export { pushPoints } from "@/lib/push-scoring";
 
 export function useTimeRemaining(endIso: string | null): string {
   const compute = useCallback((iso: string | null): string => {

@@ -11,6 +11,7 @@ import type { RoundRow, IntegrationStatus } from "@/components/push/admin/push-a
 import { PHASE_LABELS, PHASE_NEXT, RULES, NAV_ITEMS, canRunPlaylistSync } from "@/components/push/admin/push-admin-helpers";
 import { PlaylistSyncButton, PlaylistSetupBanner, RoundListItem } from "@/components/push/admin/PushAdminRoundItem";
 import { StageTimeline, DurationControls, CreateRoundForm } from "@/components/push/admin/PushAdminForms";
+import { PushAdminMembers } from "@/components/push/admin/PushAdminMembers";
 
 export default function PushAdminClient({
   initialRounds,
@@ -353,7 +354,13 @@ export default function PushAdminClient({
           </div>
         )}
 
-        {activeNav === "Membros" && <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Gestão de membros em breve.</div>}
+        {activeNav === "Membros" && (
+          <PushAdminMembers
+            rounds={rounds}
+            defaultRoundId={currentRound?.id ?? null}
+            isMobile={isMobile}
+          />
+        )}
         {activeNav === "Histórico" && <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Histórico completo em breve.</div>}
       </div>
     </>

@@ -55,6 +55,16 @@ type ParadaDraft = {
   sortOrder: number;
   chartSize: number | null;
   cadence: "weekly" | "daily";
+  weekCount: number;
+};
+
+type TrashedParada = {
+  id: string;
+  name: string;
+  logo: string | null;
+  weekCount: number;
+  deletedAt: string;
+  daysLeft: number;
 };
 
 type ProfileData = {
@@ -132,21 +142,28 @@ export default function SettingsPage() {
   const [creatingParada, setCreatingParada] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [activeLogoParadaId, setActiveLogoParadaId] = useState<string | null>(null);
+  const [trashedParadas, setTrashedParadas] = useState<TrashedParada[]>([]);
+  const [deleteParadaTarget, setDeleteParadaTarget] = useState<ParadaDraft | null>(null);
+  const [deleteParadaStep, setDeleteParadaStep] = useState<1 | 2 | null>(null);
+  const [deletingParada, setDeletingParada] = useState(false);
+  const [deleteParadaError, setDeleteParadaError] = useState<string | null>(null);
+  const [restoringParadaId, setRestoringParadaId] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   async function loadParadas() {
     const res = await fetch("/api/user/paradas", { cache: "no-store" });
     if (!res.ok) return;
     const data = (await res.json()) as {
       paradas?: ParadaDraft[];
+      trashedParadas?: TrashedParada[];
       canCreate?: boolean;
     };
-    if (data.paradas?.length) {
-      setParadaDrafts(
-        [...data.paradas]
-          .sort((a, b) => a.sortOrder - b.sortOrder)
-          .map((p) => ({ ...p, cadence: p.cadence ?? "weekly" })),
-      );
-    }
+    setParadaDrafts(
+      [...(data.paradas ?? [])]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((p) => ({ ...p, cadence: p.cadence ?? "weekly", weekCount: p.weekCount ?? 0 })),
+    );
+    setTrashedParadas(data.trashedParadas ?? []);
     setCanCreateParada(data.canCreate !== false);
   }
 
@@ -348,6 +365,70 @@ export default function SettingsPage() {
       setSuccess("Parada principal atualizada.");
     } catch {
       setError("Erro de conexão.");
+    }
+  }
+
+  function requestDeleteParada(p: ParadaDraft) {
+    setDeleteParadaTarget(p);
+    setDeleteParadaStep(1);
+    setDeleteParadaError(null);
+  }
+
+  function closeDeleteParadaModal() {
+    if (deletingParada) return;
+    setDeleteParadaTarget(null);
+    setDeleteParadaStep(null);
+    setDeleteParadaError(null);
+  }
+
+  function advanceDeleteParadaStep() {
+    setDeleteParadaStep(2);
+  }
+
+  async function confirmDeleteParadaFinal() {
+    if (!deleteParadaTarget) return;
+    setDeletingParada(true);
+    setDeleteParadaError(null);
+    try {
+      const res = await fetch("/api/user/paradas", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paradaId: deleteParadaTarget.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setDeleteParadaError(data.error ?? "Erro ao excluir parada.");
+        return;
+      }
+      setDeleteParadaTarget(null);
+      setDeleteParadaStep(null);
+      await loadParadas();
+    } catch {
+      setDeleteParadaError("Erro de conexão.");
+    } finally {
+      setDeletingParada(false);
+    }
+  }
+
+  async function restoreParada(paradaId: string) {
+    setRestoringParadaId(paradaId);
+    setRestoreError(null);
+    try {
+      const res = await fetch("/api/user/paradas/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paradaId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setRestoreError(data.error ?? "Erro ao restaurar parada.");
+        return;
+      }
+      await loadParadas();
+    } catch {
+      setRestoreError("Erro de conexão.");
+    } finally {
+      setRestoringParadaId(null);
     }
   }
 
@@ -1136,9 +1217,114 @@ export default function SettingsPage() {
                           Quantas músicas tem esta parada (máx. 100). Ao publicar, só as primeiras N músicas são salvas.
                         </span>
                       </label>
+
+                      {/* Excluir parada */}
+                      <div style={{ borderTop: "1px solid var(--divider)", paddingTop: 14 }}>
+                        <button
+                          type="button"
+                          onClick={() => requestDeleteParada(p)}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid rgba(185,28,28,0.35)",
+                            borderRadius: 100,
+                            padding: "8px 16px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: "#B91C1C",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Excluir parada
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
+
+                {/* Lixeira de paradas excluídas */}
+                {trashedParadas.length > 0 && (
+                  <div
+                    style={{
+                      background: "rgba(217,119,6,0.04)",
+                      borderRadius: 18,
+                      border: "1px dashed rgba(217,119,6,0.3)",
+                      padding: 22,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 14,
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Lixeira</div>
+                    {restoreError && <div style={{ fontSize: 12, color: "#B91C1C" }}>{restoreError}</div>}
+                    {trashedParadas.map((tp) => (
+                      <div
+                        key={tp.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          background: "var(--surface)",
+                          border: "1px solid var(--divider)",
+                          borderRadius: 12,
+                          padding: "12px 14px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 10,
+                            overflow: "hidden",
+                            flexShrink: 0,
+                            border: "1px solid var(--divider-strong)",
+                            background: "var(--fill-inset)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {tp.logo ? (
+                            <img
+                              src={tp.logo}
+                              alt="Logo"
+                              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                            />
+                          ) : (
+                            <ImagePlus size={18} strokeWidth={1.5} color="var(--text-muted)" />
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{tp.name}</div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                            {tp.weekCount} {tp.weekCount === 1 ? "semana cadastrada" : "semanas cadastradas"} ·{" "}
+                            {tp.daysLeft > 0
+                              ? `restam ${tp.daysLeft} ${tp.daysLeft === 1 ? "dia" : "dias"} para restaurar`
+                              : "será excluída permanentemente em breve"}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => restoreParada(tp.id)}
+                          disabled={restoringParadaId === tp.id}
+                          style={{
+                            background: "var(--btn-dark-bg)",
+                            color: "var(--btn-dark-fg)",
+                            border: "none",
+                            borderRadius: 100,
+                            padding: "8px 16px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: restoringParadaId === tp.id ? "not-allowed" : "pointer",
+                            opacity: restoringParadaId === tp.id ? 0.6 : 1,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {restoringParadaId === tp.id ? "Restaurando..." : "Restaurar"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Criar segunda parada */}
                 {canCreateParada && paradaDrafts.length < 2 && (
@@ -1461,6 +1647,137 @@ export default function SettingsPage() {
                 {deleting ? "Excluindo..." : "Sim, excluir minha conta"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmação — excluir parada (2 passos) */}
+      {deleteParadaTarget && deleteParadaStep && (
+        <div
+          onClick={closeDeleteParadaModal}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--surface-elevated)",
+              borderRadius: 20,
+              padding: 28,
+              maxWidth: 420,
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            {deleteParadaStep === 1 ? (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
+                  Excluir a parada &quot;{deleteParadaTarget.name}&quot;?
+                </div>
+                <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}>
+                  Essa parada tem{" "}
+                  <strong style={{ color: "var(--text)" }}>
+                    {deleteParadaTarget.weekCount}{" "}
+                    {deleteParadaTarget.weekCount === 1 ? "semana cadastrada" : "semanas cadastradas"}
+                  </strong>
+                  . Ela vai para a lixeira e pode ser restaurada em até 7 dias. Depois disso, será
+                  excluída para sempre, junto com todas as músicas, curtidas e comentários dela.
+                </div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                  <button
+                    onClick={closeDeleteParadaModal}
+                    style={{
+                      background: "transparent",
+                      color: "var(--text)",
+                      border: "1px solid var(--divider-strong)",
+                      borderRadius: 100,
+                      padding: "10px 20px",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={advanceDeleteParadaStep}
+                    style={{
+                      background: "#B91C1C",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 100,
+                      padding: "10px 20px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
+                  Tem certeza mesmo?
+                </div>
+                <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}>
+                  Você está prestes a excluir <strong style={{ color: "var(--text)" }}>&quot;{deleteParadaTarget.name}&quot;</strong>{" "}
+                  ({deleteParadaTarget.weekCount}{" "}
+                  {deleteParadaTarget.weekCount === 1 ? "semana" : "semanas"}). Você terá 7 dias para
+                  restaurar antes da exclusão definitiva.
+                </div>
+                {deleteParadaError && (
+                  <div style={{ fontSize: 13, color: "#B91C1C" }}>{deleteParadaError}</div>
+                )}
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                  <button
+                    onClick={closeDeleteParadaModal}
+                    disabled={deletingParada}
+                    style={{
+                      background: "transparent",
+                      color: "var(--text)",
+                      border: "1px solid var(--divider-strong)",
+                      borderRadius: 100,
+                      padding: "10px 20px",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: deletingParada ? "not-allowed" : "pointer",
+                      opacity: deletingParada ? 0.5 : 1,
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={confirmDeleteParadaFinal}
+                    disabled={deletingParada}
+                    style={{
+                      background: "#B91C1C",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 100,
+                      padding: "10px 20px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: deletingParada ? "not-allowed" : "pointer",
+                      opacity: deletingParada ? 0.7 : 1,
+                    }}
+                  >
+                    {deletingParada ? "Excluindo..." : "Sim, excluir parada"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

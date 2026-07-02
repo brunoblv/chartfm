@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   if (paradaId) {
     const owned = await prisma.parada.findFirst({
-      where: { id: paradaId, userId: session.user.id },
+      where: { id: paradaId, userId: session.user.id, deletedAt: null },
       select: { id: true, isPrimary: true },
     });
     if (!owned) {
@@ -117,7 +117,7 @@ export async function DELETE(req: NextRequest) {
 
   if (paradaId) {
     const owned = await prisma.parada.findFirst({
-      where: { id: paradaId, userId: session.user.id },
+      where: { id: paradaId, userId: session.user.id, deletedAt: null },
       select: { id: true, isPrimary: true },
     });
     if (!owned) {
