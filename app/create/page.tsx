@@ -23,6 +23,7 @@ import { getChartWeekRange } from "@/lib/chart-week";
 import { describeLastfmImportOrder, describeLastfmImportPeriod } from "@/lib/lastfm-import";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
 import { canUseSpotifyFeatures, isMyTrlOwner } from "@/lib/mytrl-access";
+import { SpotlightSearchCard } from "@/components/create/SpotlightSearchCard";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -103,7 +104,6 @@ export default function CreatePage() {
   const isBrunoLastfmImport = isMyTrlOwner(session?.user?.handle);
   const [flashbackSong, setFlashbackSong] = useState<Song | null>(null);
   const [destaqueSong, setDestaqueSong] = useState<Song | null>(null);
-  const [pickingSpotlight, setPickingSpotlight] = useState<"flashback" | "destaque" | null>(null);
   const [entries, setEntries] = useState<Song[]>([]);
   const [weekDate, setWeekDate] = useState(toInputDate(new Date()));
   const [dbQuery, setDbQuery] = useState("");
@@ -375,12 +375,6 @@ export default function CreatePage() {
     setDragOver(null);
   };
 
-  const pickSpotlightSong = (song: Song) => {
-    if (pickingSpotlight === "flashback") setFlashbackSong(song);
-    else if (pickingSpotlight === "destaque") setDestaqueSong(song);
-    setPickingSpotlight(null);
-  };
-
   const spotlightEntryPayload = (song: Song) => ({
     title: song.title,
     artist: song.artist,
@@ -636,7 +630,6 @@ export default function CreatePage() {
 
   const renderSongRow = (song: Song, added: boolean) => {
     const cover = coverForSong(song);
-    const spotlightPick = pickingSpotlight !== null;
     return (
       <div
         key={`${song.title}-${song.artist}-${song.spotifyId ?? song.lastfmUrl ?? "local"}`}
@@ -674,117 +667,25 @@ export default function CreatePage() {
             ) : null}
           </div>
         </div>
-        {spotlightPick ? (
-          <button
-            onClick={() => pickSpotlightSong(song)}
-            style={{
-              border: "none",
-              borderRadius: 100,
-              background: pickingSpotlight === "flashback" ? "#7C3AED" : "var(--accent)",
-              color: "white",
-              fontSize: 11,
-              fontWeight: 700,
-              padding: "6px 10px",
-              cursor: "pointer",
-              flexShrink: 0,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {pickingSpotlight === "flashback" ? "Flashback" : "Destaque"}
-          </button>
-        ) : (
-          <button
-            onClick={() => addSong(song)}
-            disabled={added}
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              background: added ? "#E8F8EE" : "#FA243C",
-              color: added ? "#1B873F" : "white",
-              border: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: added ? "default" : "pointer",
-              flexShrink: 0,
-            }}
-          >
-            {added ? "✓" : <Plus size={14} />}
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  const renderSpotlightSlot = (
-    kind: "flashback" | "destaque",
-    song: Song | null,
-    onClear: () => void,
-    onPick: () => void,
-  ) => {
-    const label = kind === "flashback" ? "Flashback" : "Destaque";
-    const isPicking = pickingSpotlight === kind;
-    return (
-      <div
-        style={{
-          padding: 12,
-          borderRadius: 12,
-          border: `1px solid ${isPicking ? (kind === "flashback" ? "rgba(124,58,237,0.35)" : "rgba(250,36,60,0.35)") : "var(--divider)"}`,
-          background: isPicking ? (kind === "flashback" ? "rgba(124,58,237,0.06)" : "rgba(250,36,60,0.06)") : "var(--fill-subtle)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: song || isPicking ? 10 : 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: kind === "flashback" ? "#7C3AED" : "var(--accent)" }}>{label}</div>
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>opcional</span>
-        </div>
-        {song ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Cover cover={coverForSong(song)} song={song} size={44} rounded={8} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.artist}</div>
-            </div>
-            <button
-              type="button"
-              onClick={onClear}
-              aria-label={`Remover ${label.toLowerCase()}`}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                border: "none",
-                background: "var(--surface)",
-                color: "var(--text-muted)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              <X size={14} />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onPick}
-            style={{
-              width: "100%",
-              border: "1px dashed var(--divider-strong)",
-              borderRadius: 10,
-              background: "transparent",
-              color: "var(--text-subtle)",
-              fontSize: 13,
-              fontWeight: 600,
-              padding: "10px 12px",
-              cursor: "pointer",
-            }}
-          >
-            {isPicking ? "Busque e escolha uma música acima" : "Escolher música"}
-          </button>
-        )}
+        <button
+          onClick={() => addSong(song)}
+          disabled={added}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: added ? "#E8F8EE" : "#FA243C",
+            color: added ? "#1B873F" : "white",
+            border: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: added ? "default" : "pointer",
+            flexShrink: 0,
+          }}
+        >
+          {added ? "✓" : <Plus size={14} />}
+        </button>
       </div>
     );
   };
@@ -965,25 +866,21 @@ export default function CreatePage() {
           Flashback e destaque aparecem ao lado da parada na página publicada.
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {renderSpotlightSlot(
-            "flashback",
-            flashbackSong,
-            () => setFlashbackSong(null),
-            () => setPickingSpotlight((prev) => (prev === "flashback" ? null : "flashback")),
-          )}
-          {renderSpotlightSlot(
-            "destaque",
-            destaqueSong,
-            () => setDestaqueSong(null),
-            () => setPickingSpotlight((prev) => (prev === "destaque" ? null : "destaque")),
-          )}
+          <SpotlightSearchCard
+            label="Flashback"
+            accentColor="#7C3AED"
+            song={flashbackSong}
+            onSelect={setFlashbackSong}
+            onClear={() => setFlashbackSong(null)}
+          />
+          <SpotlightSearchCard
+            label="Destaque"
+            accentColor="var(--accent)"
+            song={destaqueSong}
+            onSelect={setDestaqueSong}
+            onClear={() => setDestaqueSong(null)}
+          />
         </div>
-        {pickingSpotlight && (
-          <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
-            Modo de seleção ativo — clique em uma música nos resultados acima para definir o{" "}
-            {pickingSpotlight === "flashback" ? "flashback" : "destaque"}.
-          </div>
-        )}
       </div>
 
       <div

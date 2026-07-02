@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Share, Heart, MessageCircle, ImagePlus, Check } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { PositionNumber } from "@/components/ui/PositionNumber";
@@ -116,6 +117,7 @@ export function CommunityPageClient({
 }) {
   const router = useRouter();
   const { data: session } = useSession();
+  const isMobile = useIsMobile(960);
   const community = {
     ...dbCommunity,
     cover: [dbCommunity.coverA, dbCommunity.coverB] as [string, string],
@@ -351,7 +353,18 @@ export function CommunityPageClient({
         }
       />
 
-      <div style={{ padding: "28px 40px 80px 40px", display: "flex", flexDirection: "column", gap: 20, maxWidth: 900, margin: "0 auto" }}>
+      <div
+        style={{
+          padding: "28px 40px 80px 40px",
+          maxWidth: 1300,
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: 20,
+          alignItems: "flex-start",
+        }}
+      >
+        <div style={{ width: isMobile ? "100%" : 280, flexShrink: 0, display: "flex", flexDirection: "column", gap: 20 }}>
         {top5.length > 0 && (
           <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
             <div style={{ padding: "15px 20px 12px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -408,7 +421,9 @@ export function CommunityPageClient({
             </div>
           </div>
         )}
+        </div>
 
+        <div style={{ flex: 1, minWidth: 0, width: isMobile ? "100%" : undefined, display: "flex", flexDirection: "column", gap: 20 }}>
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
             <Avatar
@@ -635,6 +650,16 @@ export function CommunityPageClient({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        </div>
+
+        {!isMobile && (
+          <div style={{ width: 296, flexShrink: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: "24px 16px", textAlign: "center" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Enquetes</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>Em breve você poderá criar e votar em enquetes da comunidade aqui.</div>
+            </div>
           </div>
         )}
       </div>

@@ -53,6 +53,7 @@ import {
 import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { ChartSpotlightCard } from "@/components/chart/ChartSpotlightCard";
+import { ParadaCommentsToggle } from "@/components/parada/ParadaComments";
 import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
 import { TIMELINE } from "@/lib/data";
 import type {
@@ -64,7 +65,7 @@ import type {
 
 type Variant = "list" | "grid" | "podium" | "video_clip";
 type VideoClipLayout = "table" | "stacked";
-type Tab = "chart" | "comments" | "overlap" | "saidas";
+type Tab = "chart" | "overlap" | "saidas";
 
 const VIDEO_CLIP_LAYOUT_KEY = "chartify-video-clip-layout";
 
@@ -159,8 +160,10 @@ export default function ChartDetailPage() {
   const [variant, setVariant] = useState<Variant>("list");
   const [videoClipLayout, setVideoClipLayout] =
     useState<VideoClipLayout>("table");
-  const initialTab = (searchParams?.get("tab") as Tab | null) ?? "chart";
+  const rawInitialTab = searchParams?.get("tab") ?? null;
+  const initialTab: Tab = rawInitialTab === "overlap" || rawInitialTab === "saidas" ? rawInitialTab : "chart";
   const [tab, setTab] = useState<Tab>(initialTab);
+  const [commentsOpen, setCommentsOpen] = useState(rawInitialTab === "comments");
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
   const [loadingClips, setLoadingClips] = useState(false);
 
@@ -1277,43 +1280,48 @@ export default function ChartDetailPage() {
           <div
             style={{
               display: "flex",
-              gap: 0,
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
               borderBottom: "1px solid var(--divider)",
               marginBottom: 24,
-              overflowX: "auto",
             }}
           >
-            {(
-              [
-                ["chart", t("chart.tabChart")],
+            <div style={{ display: "flex", gap: 0, overflowX: "auto" }}>
+              {(
                 [
-                  "saidas",
-                  `${t("chart.tabDropouts")}${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`,
-                ],
-                ["comments", t("chart.tabComments")],
-                ["overlap", t("chart.tabCommon")],
-              ] as [Tab, string][]
-            ).map(([t, label]) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  padding: isMobile ? "12px 14px" : "12px 20px",
-                  background: "none",
-                  border: "none",
-                  fontSize: isMobile ? 14 : 15,
-                  fontWeight: tab === t ? 600 : 500,
-                  color: tab === t ? "var(--text)" : "var(--text-muted)",
-                  borderBottom: `2px solid ${tab === t ? "var(--accent)" : "transparent"}`,
-                  marginBottom: -1,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {label}
-              </button>
-            ))}
+                  ["chart", t("chart.tabChart")],
+                  [
+                    "saidas",
+                    `${t("chart.tabDropouts")}${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`,
+                  ],
+                  ["overlap", t("chart.tabCommon")],
+                ] as [Tab, string][]
+              ).map(([tabKey, label]) => (
+                <button
+                  key={tabKey}
+                  onClick={() => setTab(tabKey)}
+                  style={{
+                    padding: isMobile ? "12px 14px" : "12px 20px",
+                    background: "none",
+                    border: "none",
+                    fontSize: isMobile ? 14 : 15,
+                    fontWeight: tab === tabKey ? 600 : 500,
+                    color: tab === tabKey ? "var(--text)" : "var(--text-muted)",
+                    borderBottom: `2px solid ${tab === tabKey ? "var(--accent)" : "transparent"}`,
+                    marginBottom: -1,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{ paddingBottom: 8, flexShrink: 0 }}>
+              <ParadaCommentsToggle open={commentsOpen} onClick={() => setCommentsOpen((v) => !v)} />
+            </div>
           </div>
 
           {/* Tab content */}
@@ -1334,9 +1342,9 @@ export default function ChartDetailPage() {
               )}
               <div
                 style={{
-                  display: hasSpotlights && !isMobile ? "grid" : "block",
-                  gridTemplateColumns: hasSpotlights && !isMobile ? "1fr 280px" : undefined,
-                  gap: hasSpotlights && !isMobile ? 24 : undefined,
+                  display: (hasSpotlights || commentsOpen) && !isMobile ? "grid" : "block",
+                  gridTemplateColumns: (hasSpotlights || commentsOpen) && !isMobile ? "1fr 320px" : undefined,
+                  gap: (hasSpotlights || commentsOpen) && !isMobile ? 24 : undefined,
                   alignItems: "flex-start",
                 }}
               >
@@ -1391,7 +1399,7 @@ export default function ChartDetailPage() {
                 </>
               )}
                 </div>
-                {hasSpotlights && !isMobile && (
+                {(hasSpotlights || commentsOpen) && !isMobile && (
                   <aside
                     style={{
                       position: "sticky",
@@ -1403,9 +1411,33 @@ export default function ChartDetailPage() {
                   >
                     {flashback && <ChartSpotlightCard kind="flashback" song={flashback} />}
                     {destaque && <ChartSpotlightCard kind="destaque" song={destaque} />}
+                    {commentsOpen && (
+                      <CommentsTab
+                        chartId={chart.id}
+                        isDbChart={isDbChart}
+                        chartOwnerId={user.id}
+                        composeUser={composeUser}
+                        composeImageUrl={composeImageUrl}
+                        onCommentAdded={() => setCommentCount((c) => c + 1)}
+                        onCommentDeleted={() => setCommentCount((c) => Math.max(0, c - 1))}
+                      />
+                    )}
                   </aside>
                 )}
               </div>
+              {commentsOpen && isMobile && (
+                <div style={{ marginTop: 20 }}>
+                  <CommentsTab
+                    chartId={chart.id}
+                    isDbChart={isDbChart}
+                    chartOwnerId={user.id}
+                    composeUser={composeUser}
+                    composeImageUrl={composeImageUrl}
+                    onCommentAdded={() => setCommentCount((c) => c + 1)}
+                    onCommentDeleted={() => setCommentCount((c) => Math.max(0, c - 1))}
+                  />
+                </div>
+              )}
             </>
           )}
           {tab === "saidas" && (
@@ -1413,17 +1445,6 @@ export default function ChartDetailPage() {
               dropouts={dropouts}
               isDbChart={isDbChart}
               statsLabels={statsLabels}
-            />
-          )}
-          {tab === "comments" && (
-            <CommentsTab
-              chartId={chart.id}
-              isDbChart={isDbChart}
-              chartOwnerId={user.id}
-              composeUser={composeUser}
-              composeImageUrl={composeImageUrl}
-              onCommentAdded={() => setCommentCount((c) => c + 1)}
-              onCommentDeleted={() => setCommentCount((c) => Math.max(0, c - 1))}
             />
           )}
           {tab === "overlap" && (

@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { Cover } from "@/lib/types";
 import {
+  finalizeSongsForChartPublish,
   resolveSongsForFastPublish,
   type PublishEntryInput,
 } from "@/lib/resolve-publish-songs";
@@ -71,14 +72,18 @@ const SPOTLIGHT_SONG_INCLUDE = {
 
 export { SPOTLIGHT_SONG_INCLUDE };
 
-/** Resolve só o ID da música no banco — sem enrich Spotify (evita timeout na publicação). */
+/**
+ * Resolve o ID da música de flashback/destaque e garante capa (enrich Spotify + hint de imageUrl).
+ * Só 1 música por chamada — o custo do enrich é desprezível comparado ao publish em lote.
+ */
 export async function resolveOptionalSpotlightSongId(
   db: Db,
   entry: PublishEntryInput | null | undefined,
 ): Promise<string | null> {
   if (!entry?.title?.trim() || !entry?.artist?.trim()) return null;
   const resolved = await resolveSongsForFastPublish(db, [entry]);
-  return resolved[0]?.id ?? null;
+  const finalized = await finalizeSongsForChartPublish(db, [entry], resolved);
+  return finalized[0]?.id ?? resolved[0]?.id ?? null;
 }
 
 export function spotlightSongIdFromResolvedEntries(

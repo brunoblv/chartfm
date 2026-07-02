@@ -24,7 +24,7 @@ const NAV: { key: NavTab; label: string; href: (slug: string) => string }[] = [
   { key: "parada", label: "Parada", href: (s) => `/community/${s}/parada` },
   { key: "airplay", label: "Airplay", href: (s) => `/community/${s}/airplay` },
   { key: "albums", label: "Álbuns", href: (s) => `/community/${s}/albums` },
-  { key: "posts", label: "Posts", href: (s) => `/community/${s}` },
+  { key: "posts", label: "Home", href: (s) => `/community/${s}` },
   { key: "members", label: "Membros", href: (s) => `/community/${s}/members` },
 ];
 
