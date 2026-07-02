@@ -156,6 +156,11 @@ export const pagesEn = {
     spotifyExportError: "Could not create the Spotify playlist.",
     spotifyExportConnectionError: "Connection error while creating Spotify playlist.",
     spotifyPlaylistPublic: "Public playlist",
+    commentsTitle: "Comments",
+    commentsTitleCount: "Comments ({count})",
+    commentsToggleShow: "Comments",
+    commentsToggleHide: "Hide comments",
+    commentsPlaceholder: "Comment on the chart...",
   },
   discover: {
     title: "Discover",

@@ -1,16 +1,20 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Play, Share, Heart, MessageCircle, ImagePlus } from "lucide-react";
+import { Share, Heart, MessageCircle, ImagePlus, Check } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
+import { Cover } from "@/components/ui/Cover";
+import { PositionNumber } from "@/components/ui/PositionNumber";
+import { MovementBadge } from "@/components/ui/MovementBadge";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { YouTubeEmbed } from "@/components/ui/YouTubeEmbed";
-import { COMMUNITIES, POSTS } from "@/lib/data";
-import type { Community } from "@/lib/types";
+import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
+import { formatSongArtist } from "@/lib/song-artist";
+import type { Cover as CoverType } from "@/lib/types";
 
 export type CommunityDbSerializable = {
   id: string;
@@ -67,87 +71,56 @@ export type CommunityPostSerializable = {
   repliesList: CommunityReplySerializable[];
 };
 
-type ViewModel = {
-  id: string;
-  slug: string;
-  name: string;
-  tagline: string;
-  cover: [string, string];
-  coverImageUrl: string | null;
-  icon: string;
-  logoUrl: string | null;
-  members: number;
-  posts: number;
-  founded: string;
-  adminName: string;
-  paradaName: string;
-  isAdmin: boolean;
-  isMember: boolean;
-  chart: Community["chart"];
-  memberSample: Community["memberSample"];
-  source: "db" | "mock";
+export type CommunityTopSongSerializable = {
+  position: number;
+  id: string | null;
+  title: string;
+  artist: string;
+  slugArtist: string | null;
+  spotifyId: string | null;
+  artistSpotifyId: string | null;
+  artistRefId: number | null;
+  cover: CoverType;
+  status: "new" | "return" | "up" | "down" | "same";
+  delta: number | null;
+  weeks: number;
 };
 
-function buildViewModel(db: CommunityDbSerializable | null, mock: Community | null): ViewModel {
-  if (db) {
-    return {
-      id: db.id,
-      slug: db.slug,
-      name: db.name,
-      tagline: db.tagline,
-      cover: [db.coverA, db.coverB],
-      coverImageUrl: db.coverImageUrl,
-      icon: db.icon,
-      logoUrl: db.logoUrl,
-      members: db.members,
-      posts: db.posts,
-      founded: db.founded,
-      adminName: db.ownerName ?? "—",
-      paradaName: db.paradaName,
-      isAdmin: db.isAdmin,
-      isMember: db.isMember,
-      chart: [],
-      memberSample: [],
-      source: "db",
-    };
-  }
-  if (mock) {
-    return {
-      id: mock.id,
-      slug: mock.slug,
-      name: mock.name,
-      tagline: mock.tagline,
-      cover: mock.cover,
-      coverImageUrl: null,
-      icon: mock.icon,
-      logoUrl: null,
-      members: mock.members,
-      posts: mock.posts,
-      founded: mock.founded,
-      adminName: mock.admins[0]?.name ?? "—",
-      paradaName: "Parada",
-      isAdmin: false,
-      isMember: true,
-      chart: mock.chart,
-      memberSample: mock.memberSample,
-      source: "mock",
-    };
-  }
-  return buildViewModel(null, COMMUNITIES[0]);
+export type CommunityActiveMemberSerializable = DbUser;
+
+function formatSince(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `há ${min}min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  return `há ${d}d`;
 }
 
 export function CommunityPageClient({
   dbCommunity,
-  mockCommunity,
   dbPosts,
+  top5,
+  activeMembers,
+  contributorCount,
+  dateRange,
 }: {
-  dbCommunity: CommunityDbSerializable | null;
-  mockCommunity: Community | null;
+  dbCommunity: CommunityDbSerializable;
   dbPosts: CommunityPostSerializable[];
+  top5: CommunityTopSongSerializable[];
+  activeMembers: CommunityActiveMemberSerializable[];
+  contributorCount: number;
+  dateRange: string;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
-  const community = useMemo(() => buildViewModel(dbCommunity, mockCommunity), [dbCommunity, mockCommunity]);
+  const community = {
+    ...dbCommunity,
+    cover: [dbCommunity.coverA, dbCommunity.coverB] as [string, string],
+    adminName: dbCommunity.ownerName ?? "—",
+  };
   const [postMode, setPostMode] = useState<"text" | "image" | "youtube">("text");
   const [postText, setPostText] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -161,19 +134,6 @@ export function CommunityPageClient({
   const [memberCount, setMemberCount] = useState(community.members);
   const [joining, setJoining] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-
-  const allPosts = community.source === "mock" ? POSTS : [];
-
-  function formatSince(iso: string) {
-    const diff = Date.now() - new Date(iso).getTime();
-    const min = Math.floor(diff / 60000);
-    if (min < 1) return "agora";
-    if (min < 60) return `há ${min}min`;
-    const h = Math.floor(min / 60);
-    if (h < 24) return `há ${h}h`;
-    const d = Math.floor(h / 24);
-    return `há ${d}d`;
-  }
 
   async function toDataUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -331,446 +291,353 @@ export function CommunityPageClient({
     isAdmin: community.isAdmin,
   };
 
-  const postsPanel = (
-    <div>
-      <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 20, marginBottom: 20 }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                <Avatar
-                  user={{
-                    name: session?.user?.name ?? "Você",
-                    avatar: "#FA243C",
-                  }}
-                  imageUrl={session?.user?.image ?? null}
-                  size={40}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                    {(["text", "image", "youtube"] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setPostMode(mode)}
-                        style={{
-                          border: "none",
-                          borderRadius: 100,
-                          padding: "6px 12px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          background:
-                            postMode === mode ? (mode === "youtube" ? "rgba(220,40,40,0.1)" : "rgba(29,29,31,0.1)") : "rgba(0,0,0,0.04)",
-                          color: postMode === mode ? "#1D1D1F" : "#6B6B70",
-                        }}
-                      >
-                        {mode === "text" ? "Texto" : mode === "image" ? "Imagem" : "YouTube"}
-                      </button>
-                    ))}
-                  </div>
-
-                  <textarea
-                    value={postText}
-                    onChange={(e) => setPostText(e.target.value)}
-                    placeholder="O que você quer compartilhar?"
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      border: "1px solid rgba(0,0,0,0.12)",
-                      borderRadius: 12,
-                      padding: "10px 12px",
-                      fontSize: 14,
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                      outline: "none",
-                      marginBottom: 10,
-                    }}
-                  />
-
-                  {postMode === "youtube" && (
-                    <input
-                      value={youtubeUrl}
-                      onChange={(e) => setYoutubeUrl(e.target.value)}
-                      placeholder="Cole o link do YouTube"
-                      style={{
-                        width: "100%",
-                        border: "1px solid rgba(0,0,0,0.12)",
-                        borderRadius: 10,
-                        padding: "9px 12px",
-                        fontSize: 13,
-                        marginBottom: 10,
-                        outline: "none",
-                      }}
-                    />
-                  )}
-
-                  {postMode === "image" && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                      <label
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          border: "1px solid rgba(0,0,0,0.12)",
-                          borderRadius: 10,
-                          padding: "8px 12px",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        <ImagePlus size={14} />
-                        Escolher imagem
-                        <input type="file" accept="image/*" onChange={onSelectImage} style={{ display: "none" }} />
-                      </label>
-                      {postImageDataUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={postImageDataUrl} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover" }} />
-                      )}
-                    </div>
-                  )}
-
-                  {postError && <div style={{ fontSize: 13, color: "#DC2626", marginBottom: 8 }}>{postError}</div>}
-
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: 12, color: "#86868B" }}>{postText.length}/2000</div>
-                    <button
-                      type="button"
-                      onClick={() => void handleCreatePost()}
-                      disabled={posting}
-                      style={{
-                        background: community.cover[0],
-                        color: "white",
-                        border: "none",
-                        padding: "8px 16px",
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: posting ? "wait" : "pointer",
-                        opacity: posting ? 0.75 : 1,
-                      }}
-                    >
-                      {posting ? "Postando..." : "Postar"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Posts recentes</h3>
-              {community.source === "mock" && (
-                <Link
-                  href={`/community/${community.slug}/feed`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    background: "#1D1D1F",
-                    color: "white",
-                    textDecoration: "none",
-                    padding: "8px 16px",
-                    borderRadius: 100,
-                    fontSize: 13,
-                    fontWeight: 600,
-                  }}
-                >
-                  <Play size={12} fill="white" />
-                  Ver no modo imersivo
-                </Link>
-              )}
-            </div>
-
-            {community.source === "db" ? (
-              timelinePosts.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", color: "#86868B", fontSize: 14, background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)" }}>
-                  Nenhum post nesta comunidade ainda.
-                </div>
-              ) : (
-                <div style={{ display: "grid", gap: 14 }}>
-                  {timelinePosts.map((post) => (
-                    <div key={post.id} style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", padding: 16 }}>
-                      <div style={{ display: "flex", gap: 10 }}>
-                        <Avatar user={{ name: post.user.name, avatar: post.user.avatarColor }} imageUrl={post.user.image} size={38} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 14, fontWeight: 700 }}>{post.user.name}</span>
-                            <span style={{ fontSize: 12, color: "#86868B" }}>@{post.user.handle}</span>
-                            <span style={{ fontSize: 12, color: "#86868B" }}>· {formatSince(post.createdAt)}</span>
-                          </div>
-                          <div style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6, whiteSpace: "pre-wrap" }}>{post.text}</div>
-
-                          {post.kind === "image" && post.imageUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={post.imageUrl}
-                              alt={post.imageCaption ?? ""}
-                              style={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 10, border: "1px solid rgba(0,0,0,0.08)" }}
-                            />
-                          )}
-
-                          {post.kind === "youtube" && post.youtubeId && (
-                            <YouTubeEmbed videoId={post.youtubeId} title={post.ytTitle} />
-                          )}
-
-                          <div style={{ marginTop: 10, display: "flex", gap: 18, color: "#6B6B70", fontSize: 13 }}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              <Heart size={14} /> {post.likes}
-                            </span>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              <MessageCircle size={14} /> {post.replies}
-                            </span>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              <Share size={14} /> {post.shares}
-                            </span>
-                          </div>
-
-                          <div style={{ marginTop: 12, borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 10, display: "grid", gap: 10 }}>
-                            {post.repliesList.map((reply) => (
-                              <div key={reply.id} style={{ display: "flex", gap: 8 }}>
-                                <Avatar user={{ name: reply.user.name, avatar: reply.user.avatarColor }} imageUrl={reply.user.image} size={30} />
-                                <div>
-                                  <div style={{ fontSize: 12, color: "#86868B" }}>
-                                    <strong style={{ color: "#1D1D1F" }}>{reply.user.name}</strong> @{reply.user.handle} · {formatSince(reply.createdAt)}
-                                  </div>
-                                  <div style={{ fontSize: 13, lineHeight: 1.5 }}>{reply.text}</div>
-                                </div>
-                              </div>
-                            ))}
-
-                            <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-                              <input
-                                value={replyDrafts[post.id] ?? ""}
-                                onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                                placeholder="Responder este post..."
-                                style={{
-                                  flex: 1,
-                                  border: "1px solid rgba(0,0,0,0.12)",
-                                  borderRadius: 999,
-                                  padding: "8px 12px",
-                                  fontSize: 13,
-                                  outline: "none",
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => void handleReply(post.id)}
-                                disabled={replyingFor === post.id}
-                                style={{
-                                  border: "none",
-                                  borderRadius: 999,
-                                  background: "#1D1D1F",
-                                  color: "white",
-                                  padding: "8px 12px",
-                                  fontSize: 12,
-                                  fontWeight: 700,
-                                  cursor: replyingFor === post.id ? "wait" : "pointer",
-                                  opacity: replyingFor === post.id ? 0.75 : 1,
-                                }}
-                              >
-                                Responder
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-                {allPosts.map((post) => (
-                  <PostCard key={post.id} post={post} communityColor={community.cover[0]} />
-                ))}
-              </div>
-            )}
-    </div>
-  );
-
   return (
     <Shell title="" noPadding>
-      {community.source === "db" ? (
-        <>
-          <CommunityHeader
-            community={headerData}
-            activeTab="posts"
-            actions={
-              <>
-                <button
-                  type="button"
-                  onClick={() => void handleJoinToggle()}
-                  disabled={joining}
-                  style={{
-                    background: isMember ? "rgba(255,255,255,0.2)" : "white",
-                    color: isMember ? "white" : community.cover[0],
-                    border: isMember ? "1px solid rgba(255,255,255,0.35)" : "none",
-                    padding: "10px 22px",
-                    borderRadius: 100,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: joining ? "wait" : "pointer",
-                  }}
-                >
-                  {joining ? "..." : isMember ? "✓ Participando" : "Participar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleShareCopy()}
-                  title={shareCopied ? "Link copiado!" : "Copiar link da comunidade"}
-                  aria-label={shareCopied ? "Link copiado" : "Copiar link da comunidade"}
-                  style={{
-                    background: shareCopied ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.15)",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.25)",
-                    padding: "10px 22px",
-                    borderRadius: 100,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    backdropFilter: "blur(10px)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    cursor: "pointer",
-                  }}
-                >
-                  <Share size={16} />
-                  {shareCopied ? "Copiado!" : null}
-                </button>
-              </>
-            }
-          />
-          <div style={{ padding: "28px 40px 80px 40px" }}>{postsPanel}</div>
-        </>
-      ) : (
-        <div style={{ padding: "28px 40px 80px 40px" }}>
-          <Link
-            href={`/community/${community.slug}/feed`}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#1D1D1F",
-              color: "white",
-              textDecoration: "none",
-              padding: "8px 16px",
-              borderRadius: 100,
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 20,
-            }}
-          >
-            <Play size={12} fill="white" />
-            Ver no modo imersivo
-          </Link>
-          {postsPanel}
-        </div>
-      )}
-    </Shell>
-  );
-}
-
-function PostCard({ post, communityColor }: { post: (typeof POSTS)[0]; communityColor: string }) {
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
-      <div style={{ aspectRatio: "4/5", position: "relative", overflow: "hidden" }}>
-        {post.kind === "image" && (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: `linear-gradient(135deg, ${post.imagePalette?.[0] ?? "#FA243C"}, ${post.imagePalette?.[1] ?? "#FF5858"})`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
+      <CommunityHeader
+        community={headerData}
+        activeTab="posts"
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => void handleJoinToggle()}
+              disabled={joining}
               style={{
-                fontSize: 36,
-                fontWeight: 900,
-                color: "white",
-                textAlign: "center",
-                padding: "0 16px",
-                textShadow: "0 2px 20px rgba(0,0,0,0.3)",
-                letterSpacing: "-0.03em",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: isMember ? "rgba(255,255,255,0.2)" : "white",
+                color: isMember ? "white" : community.cover[0],
+                border: isMember ? "1px solid rgba(255,255,255,0.35)" : "none",
+                padding: "10px 22px",
+                borderRadius: 100,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: joining ? "wait" : "pointer",
               }}
             >
-              {post.imageText}
+              {joining ? "..." : isMember ? (
+                <>
+                  <Check size={14} /> Participando
+                </>
+              ) : (
+                "Participar"
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleShareCopy()}
+              title={shareCopied ? "Link copiado!" : "Copiar link da comunidade"}
+              aria-label={shareCopied ? "Link copiado" : "Copiar link da comunidade"}
+              style={{
+                background: shareCopied ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.15)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.25)",
+                padding: "10px 22px",
+                borderRadius: 100,
+                fontSize: 14,
+                fontWeight: 600,
+                backdropFilter: "blur(10px)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+              }}
+            >
+              <Share size={16} />
+              {shareCopied ? "Copiado!" : null}
+            </button>
+          </>
+        }
+      />
+
+      <div style={{ padding: "28px 40px 80px 40px", display: "flex", flexDirection: "column", gap: 20, maxWidth: 900, margin: "0 auto" }}>
+        {top5.length > 0 && (
+          <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+            <div style={{ padding: "15px 20px 12px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>{community.paradaName}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                  {contributorCount} membros contribuíram · Semana {dateRange}
+                </div>
+              </div>
+              <Link href={`/community/${community.slug}/parada`} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                Ver tudo →
+              </Link>
+            </div>
+            {top5.map((entry) => (
+              <div key={entry.position} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 20px", borderBottom: "1px solid var(--divider-soft)" }}>
+                <PositionNumber n={entry.position} size={16} />
+                <Link href={buildSongPath(entry)} style={{ lineHeight: 0 }}>
+                  <Cover cover={entry.cover} song={entry} size={44} rounded={8} />
+                </Link>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Link href={buildSongPath(entry)} style={{ display: "block", fontSize: 14, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text)", textDecoration: "none" }}>
+                    {entry.title}
+                  </Link>
+                  <Link href={buildArtistPath(entry.artist, entry.artistSpotifyId, entry.artistRefId)} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", textDecoration: "none", marginTop: 1 }}>
+                    {formatSongArtist(entry)}
+                  </Link>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                  <MovementBadge status={entry.status} delta={entry.delta} compact />
+                  <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{entry.weeks}s</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeMembers.length > 0 && (
+          <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "15px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>Membros ativos</div>
+              <Link href={`/community/${community.slug}/members`} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                Ver todos →
+              </Link>
+            </div>
+            <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+              {activeMembers.map((m) => (
+                <Link key={m.id} href={`/profile/${m.handle}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none" }}>
+                  <Avatar user={{ name: m.name, avatar: m.avatarColor }} imageUrl={m.image} size={48} />
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", maxWidth: 54, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {m.name.split(" ")[0]}
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         )}
-        {post.kind === "youtube" && (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: `linear-gradient(135deg, ${post.ytThumb?.[0] ?? "#0A0A0A"}, ${post.ytThumb?.[1] ?? "#1A1A1A"})`,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 16,
-            }}
-          >
-            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#FF0000", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div
+
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <Avatar
+              user={{
+                name: session?.user?.name ?? "Você",
+                avatar: "#FA243C",
+              }}
+              imageUrl={session?.user?.image ?? null}
+              size={40}
+            />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                {(["text", "image", "youtube"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setPostMode(mode)}
+                    style={{
+                      border: "none",
+                      borderRadius: 100,
+                      padding: "6px 12px",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      background: postMode === mode ? "var(--accent-tint)" : "var(--fill-subtle)",
+                      color: postMode === mode ? "var(--accent)" : "var(--text-subtle)",
+                    }}
+                  >
+                    {mode === "text" ? "Texto" : mode === "image" ? "Imagem" : "YouTube"}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={postText}
+                onChange={(e) => setPostText(e.target.value)}
+                placeholder="O que você quer compartilhar?"
+                rows={3}
                 style={{
-                  width: 0,
-                  height: 0,
-                  borderTop: "12px solid transparent",
-                  borderBottom: "12px solid transparent",
-                  borderLeft: "20px solid white",
-                  marginLeft: 4,
+                  width: "100%",
+                  border: "1px solid var(--divider)",
+                  borderRadius: 12,
+                  padding: "10px 12px",
+                  fontSize: 14,
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  marginBottom: 10,
+                  background: "var(--fill-inset)",
+                  color: "var(--text)",
                 }}
               />
-            </div>
-            <div style={{ color: "white", fontSize: 13, fontWeight: 600, textAlign: "center", padding: "0 16px", opacity: 0.9 }}>{post.ytTitle}</div>
-          </div>
-        )}
-        {post.kind === "text" && (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: `${communityColor}18`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 20,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#1D1D1F",
-                lineHeight: 1.5,
-                overflow: "hidden",
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical",
-                WebkitLineClamp: 6,
-              }}
-            >
-              {post.text}
-            </div>
-          </div>
-        )}
-      </div>
 
-      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-        <Avatar user={post.user} size={28} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{post.user.name}</div>
-          <div style={{ fontSize: 11, color: "#86868B" }}>{post.postedAgo}</div>
+              {postMode === "youtube" && (
+                <input
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="Cole o link do YouTube"
+                  style={{
+                    width: "100%",
+                    border: "1px solid var(--divider)",
+                    borderRadius: 10,
+                    padding: "9px 12px",
+                    fontSize: 13,
+                    marginBottom: 10,
+                    outline: "none",
+                    background: "var(--fill-inset)",
+                    color: "var(--text)",
+                  }}
+                />
+              )}
+
+              {postMode === "image" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      border: "1px solid var(--divider)",
+                      borderRadius: 10,
+                      padding: "8px 12px",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      color: "var(--text)",
+                    }}
+                  >
+                    <ImagePlus size={14} />
+                    Escolher imagem
+                    <input type="file" accept="image/*" onChange={onSelectImage} style={{ display: "none" }} />
+                  </label>
+                  {postImageDataUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={postImageDataUrl} alt="" style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover" }} />
+                  )}
+                </div>
+              )}
+
+              {postError && <div style={{ fontSize: 13, color: "#DC2626", marginBottom: 8 }}>{postError}</div>}
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{postText.length}/2000</div>
+                <button
+                  type="button"
+                  onClick={() => void handleCreatePost()}
+                  disabled={posting}
+                  style={{
+                    background: "var(--accent)",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: posting ? "wait" : "pointer",
+                    opacity: posting ? 0.75 : 1,
+                  }}
+                >
+                  {posting ? "Postando..." : "Postar"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 10, fontSize: 12, color: "#86868B" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <Heart size={12} /> {post.likes >= 1000 ? `${(post.likes / 1000).toFixed(1)}k` : post.likes}
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <MessageCircle size={12} /> {post.replies}
-          </span>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Posts recentes</h3>
         </div>
+
+        {timelinePosts.length === 0 ? (
+          <div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 14, background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)" }}>
+            Nenhum post nesta comunidade ainda.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 14 }}>
+            {timelinePosts.map((post) => (
+              <div key={post.id} style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: 16 }}>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <Avatar user={{ name: post.user.name, avatar: post.user.avatarColor }} imageUrl={post.user.image} size={38} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{post.user.name}</span>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>@{post.user.handle}</span>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>· {formatSince(post.createdAt)}</span>
+                    </div>
+                    <div style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6, whiteSpace: "pre-wrap", color: "var(--text)" }}>{post.text}</div>
+
+                    {post.kind === "image" && post.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.imageUrl}
+                        alt={post.imageCaption ?? ""}
+                        style={{ width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 10, border: "1px solid var(--divider)" }}
+                      />
+                    )}
+
+                    {post.kind === "youtube" && post.youtubeId && (
+                      <YouTubeEmbed videoId={post.youtubeId} title={post.ytTitle} />
+                    )}
+
+                    <div style={{ marginTop: 10, display: "flex", gap: 18, color: "var(--text-muted)", fontSize: 13 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <Heart size={14} /> {post.likes}
+                      </span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <MessageCircle size={14} /> {post.replies}
+                      </span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <Share size={14} /> {post.shares}
+                      </span>
+                    </div>
+
+                    <div style={{ marginTop: 12, borderTop: "1px solid var(--divider-soft)", paddingTop: 10, display: "grid", gap: 10 }}>
+                      {post.repliesList.map((reply) => (
+                        <div key={reply.id} style={{ display: "flex", gap: 8 }}>
+                          <Avatar user={{ name: reply.user.name, avatar: reply.user.avatarColor }} imageUrl={reply.user.image} size={30} />
+                          <div>
+                            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                              <strong style={{ color: "var(--text)" }}>{reply.user.name}</strong> @{reply.user.handle} · {formatSince(reply.createdAt)}
+                            </div>
+                            <div style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text)" }}>{reply.text}</div>
+                          </div>
+                        </div>
+                      ))}
+
+                      <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+                        <input
+                          value={replyDrafts[post.id] ?? ""}
+                          onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                          placeholder="Responder este post..."
+                          style={{
+                            flex: 1,
+                            border: "1px solid var(--divider)",
+                            borderRadius: 999,
+                            padding: "8px 12px",
+                            fontSize: 13,
+                            outline: "none",
+                            background: "var(--fill-inset)",
+                            color: "var(--text)",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleReply(post.id)}
+                          disabled={replyingFor === post.id}
+                          style={{
+                            border: "none",
+                            borderRadius: 999,
+                            background: "var(--accent)",
+                            color: "white",
+                            padding: "8px 12px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: replyingFor === post.id ? "wait" : "pointer",
+                            opacity: replyingFor === post.id ? 0.75 : 1,
+                          }}
+                        >
+                          Responder
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </Shell>
   );
 }

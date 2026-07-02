@@ -57,6 +57,8 @@ model User {
   comments             Comment[]
   commentLikes         CommentLike[]
   commentReplies       CommentReply[]
+  paradaComments       ParadaComment[]
+  paradaCommentLikes   ParadaCommentLike[]
   communityMemberships CommunityMember[]
   actorNotifs          Notification[]    @relation("NotificationActor")
   notifications        Notification[]    @relation("NotificationRecipient")
@@ -386,6 +388,35 @@ model CommentReply {
   @@index([commentId])
 }
 
+model ParadaComment {
+  id          String   @id @default(cuid())
+  communityId String?
+  genreSlug   String?
+  section     String
+  period      String
+  weekIndex   Int?
+  userId      String
+  text        String
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  community    Community?          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id])
+  commentLikes ParadaCommentLike[]
+
+  @@index([communityId, genreSlug, section, period, weekIndex])
+}
+
+model ParadaCommentLike {
+  id              String        @id @default(cuid())
+  paradaCommentId String
+  userId          String
+  createdAt       DateTime      @default(now())
+  paradaComment   ParadaComment @relation(fields: [paradaCommentId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id])
+
+  @@unique([paradaCommentId, userId])
+}
+
 model Community {
   id               String            @id @default(cuid())
   slug             String            @unique
@@ -413,6 +444,7 @@ model Community {
   ownerId               String?
   owner            User?             @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   charts           Chart[]
+  paradaComments   ParadaComment[]
 
   @@index([ownerId], map: "communities_ownerId_fkey")
 }

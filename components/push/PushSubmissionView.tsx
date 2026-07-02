@@ -1,11 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useSpotifySearch } from "@/hooks/useSpotifySearch";
+import type { Song } from "@/lib/types";
 import type { RoundData, SpotifyTrack, SongData } from "./push-types";
 import { formatReleaseDate } from "./push-helpers";
 import { TrackCover, CheckIcon } from "./PushAtoms";
+
+function songToTrack(song: Song): SpotifyTrack | null {
+  if (!song.spotifyId) return null;
+  return {
+    spotifyId: song.spotifyId,
+    title: song.title,
+    artist: song.artist,
+    album: song.album ?? "",
+    imageUrl: song.imageUrl ?? null,
+    previewUrl: null,
+    externalUrl: "",
+  };
+}
 
 export function SubmissionView({
   round,
@@ -18,32 +33,17 @@ export function SubmissionView({
   const authed = !!session?.user?.id;
 
   const [query, setQuery]           = useState("");
-  const [results, setResults]       = useState<SpotifyTrack[]>([]);
-  const [loading, setLoading]       = useState(false);
   const [selected, setSelected]     = useState<SpotifyTrack | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [editing, setEditing]       = useState(!round.mySubmission);
 
-  useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) { setResults([]); return; }
-    const ac = new AbortController();
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=8`, { signal: ac.signal });
-        if (!res.ok || ac.signal.aborted) return;
-        const data = (await res.json()) as { tracks?: SpotifyTrack[] };
-        if (!ac.signal.aborted) setResults(data.tracks ?? []);
-      } catch {
-        if (!ac.signal.aborted) setResults([]);
-      } finally {
-        if (!ac.signal.aborted) setLoading(false);
-      }
-    }, 280);
-    return () => { ac.abort(); clearTimeout(timer); };
-  }, [query]);
+  const {
+    tracks: spotifyTracks,
+    loading: spotifyLoading,
+    configured: spotifyConfigured,
+    unavailable: spotifyUnavailable,
+  } = useSpotifySearch(query);
 
   async function handleSubmit() {
     if (!selected) return;
@@ -157,29 +157,50 @@ export function SubmissionView({
               }}
             />
           </div>
-          {loading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
-          {results.length > 0 && !selected && (
-            <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 13, overflow: "hidden" }}>
-              {results.map((track, i) => (
-                <button key={track.spotifyId} type="button"
-                  onClick={() => { setSelected(track); setQuery(`${track.title} — ${track.artist}`); setResults([]); }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 11, padding: "11px 14px",
-                    borderTop: "none", borderLeft: "none", borderRight: "none",
-                    borderBottom: i < results.length - 1 ? "1px solid var(--divider)" : "none",
-                    cursor: "pointer", background: "none", width: "100%", textAlign: "left" as const,
-                  }}>
-                  <TrackCover imageUrl={track.imageUrl} size={42} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.title}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.artist}</div>
-                  </div>
-                  <span style={{ padding: "2px 7px", borderRadius: 100, background: "rgba(29,185,84,.12)", color: "#1DB954", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
-                    Spotify
-                  </span>
-                </button>
-              ))}
-            </div>
+          {query.trim().length < 1 ? (
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Spotify.</div>
+          ) : (
+            <>
+              {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
+              {!spotifyLoading && !spotifyConfigured && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                  Spotify indisponível no momento.
+                </div>
+              )}
+              {!spotifyLoading && spotifyConfigured && spotifyUnavailable && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Spotify indisponível no momento. Tente novamente.</div>
+              )}
+              {!spotifyLoading && spotifyConfigured && !spotifyUnavailable && spotifyTracks.length === 0 && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Spotify.</div>
+              )}
+              {!spotifyLoading && !selected && spotifyTracks.length > 0 && (
+                <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 13, overflow: "hidden" }}>
+                  {spotifyTracks.map((song, i) => {
+                    const track = songToTrack(song);
+                    if (!track) return null;
+                    return (
+                      <button key={track.spotifyId} type="button"
+                        onClick={() => { setSelected(track); setQuery(`${track.title} — ${track.artist}`); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 11, padding: "11px 14px",
+                          borderTop: "none", borderLeft: "none", borderRight: "none",
+                          borderBottom: i < spotifyTracks.length - 1 ? "1px solid var(--divider)" : "none",
+                          cursor: "pointer", background: "none", width: "100%", textAlign: "left" as const,
+                        }}>
+                        <TrackCover imageUrl={track.imageUrl} size={42} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.title}</div>
+                          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.artist}</div>
+                        </div>
+                        <span style={{ padding: "2px 7px", borderRadius: 100, background: "rgba(29,185,84,.12)", color: "#1DB954", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                          Spotify
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
           {selected && (
             <div style={{

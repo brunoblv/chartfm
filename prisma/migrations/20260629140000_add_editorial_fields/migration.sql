@@ -2,7 +2,7 @@
 ALTER TABLE "artists" ADD COLUMN "bio" TEXT;
 
 -- AlterTable
-ALTER TABLE "songs" ADD COLUMN "editorial_note" TEXT;
+ALTER TABLE "Song" ADD COLUMN "editorial_note" TEXT;
 
 -- CreateTable
 CREATE TABLE "weekly_editorials" (

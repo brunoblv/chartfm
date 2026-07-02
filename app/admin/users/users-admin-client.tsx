@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
+import { Avatar } from "@/components/ui/Avatar";
 
 type UserRow = {
   id: string;
   handle: string;
   name: string;
   role: "USER" | "ADMIN" | "DEV";
+  image: string | null;
+  avatarColor: string;
 };
 
 export function UsersAdminClient({ users }: { users: UserRow[] }) {
@@ -35,6 +39,7 @@ export function UsersAdminClient({ users }: { users: UserRow[] }) {
       <table style={{ width: "100%", minWidth: 480, borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ background: "var(--fill-inset)" }}>
+            <th style={adminThStyle}></th>
             <th style={adminThStyle}>Nome</th>
             <th style={adminThStyle}>Nome de Usuário</th>
             <th style={adminThStyle}>Role</th>
@@ -43,8 +48,21 @@ export function UsersAdminClient({ users }: { users: UserRow[] }) {
         <tbody>
           {rows.map((u) => (
             <tr key={u.id}>
-              <td style={adminTdStyle}>{u.name}</td>
-              <td style={adminTdStyle}>@{u.handle}</td>
+              <td style={adminTdStyle}>
+                <Link href={`/profile/${u.handle}`}>
+                  <Avatar user={{ name: u.name, avatar: u.avatarColor }} imageUrl={u.image} size={32} />
+                </Link>
+              </td>
+              <td style={adminTdStyle}>
+                <Link href={`/profile/${u.handle}`} style={{ color: "inherit", textDecoration: "none" }}>
+                  {u.name}
+                </Link>
+              </td>
+              <td style={adminTdStyle}>
+                <Link href={`/profile/${u.handle}`} style={{ color: "inherit", textDecoration: "none" }}>
+                  @{u.handle}
+                </Link>
+              </td>
               <td style={adminTdStyle}>
                 <select
                   value={u.role}

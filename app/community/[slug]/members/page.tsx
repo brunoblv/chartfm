@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Crown, Zap, Check, Minus } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { Avatar } from "@/components/ui/Avatar";
@@ -35,15 +36,24 @@ export default async function CommunityMembersPage({ params }: { params: Promise
     <Shell title="" noPadding>
       <CommunityHeader community={community} activeTab="members" />
       <div style={{ padding: "28px 40px 80px 40px" }}>
-        <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
+          <div
+            style={{
+              padding: "15px 20px 13px",
+              borderBottom: "1px solid var(--divider)",
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Membros da comunidade</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{members.length} membros</div>
+          </div>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: memberGrid,
               alignItems: "center",
               padding: "10px 20px",
-              background: "rgba(0,0,0,0.02)",
-              borderBottom: "1px solid rgba(0,0,0,0.06)",
+              background: "var(--fill-inset)",
+              borderBottom: "1px solid var(--divider)",
             }}
           >
             {["#", "", "Membro", "Posts", "Last.fm", ""].map((h, i) => (
@@ -54,7 +64,7 @@ export default async function CommunityMembersPage({ params }: { params: Promise
                   fontWeight: 600,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
-                  color: "#86868B",
+                  color: "var(--text-muted)",
                   textAlign: i === 3 || i === 4 ? "center" : i === 0 ? "center" : "left",
                 }}
               >
@@ -63,7 +73,7 @@ export default async function CommunityMembersPage({ params }: { params: Promise
             ))}
           </div>
           {members.length === 0 ? (
-            <div style={{ padding: 28, textAlign: "center", color: "#86868B", fontSize: 14 }}>
+            <div style={{ padding: 28, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
               Nenhum membro ainda.
             </div>
           ) : (
@@ -75,23 +85,36 @@ export default async function CommunityMembersPage({ params }: { params: Promise
                   gridTemplateColumns: memberGrid,
                   alignItems: "center",
                   padding: "12px 20px",
-                  borderBottom: "1px solid rgba(0,0,0,0.04)",
+                  borderBottom: "1px solid var(--divider-soft)",
                 }}
               >
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#86868B", textAlign: "center" }}>{i + 1}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", textAlign: "center" }}>{i + 1}</div>
                 <Avatar user={{ name: m.user.name, avatar: m.user.avatarColor }} imageUrl={m.user.image} size={36} />
                 <div style={{ minWidth: 0, padding: "0 8px" }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{m.user.name}</div>
-                  <Link href={`/profile/${m.user.handle}`} style={{ fontSize: 12, color: "#86868B", textDecoration: "none" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
+                    {m.user.name}
+                    {m.role === "owner" && <Crown size={13} color="var(--accent)" />}
+                    {m.role === "admin" && <Zap size={13} color="#3B82F6" />}
+                  </div>
+                  <Link href={`/profile/${m.user.handle}`} style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none" }}>
                     @{m.user.handle}
                   </Link>
                 </div>
-                <div style={{ fontSize: 14, textAlign: "center" }}>{postsByUser.get(m.userId) ?? 0}</div>
-                <div style={{ fontSize: 12, textAlign: "center", color: m.user.lastfmUser ? "#16A34A" : "#86868B" }}>
-                  {m.user.lastfmUser ? "✓" : "—"}
+                <div style={{ fontSize: 14, textAlign: "center", color: "var(--text)" }}>{postsByUser.get(m.userId) ?? 0}</div>
+                <div style={{ display: "flex", justifyContent: "center", color: m.user.lastfmUser ? "#16A34A" : "var(--text-muted)" }}>
+                  {m.user.lastfmUser ? <Check size={14} /> : <Minus size={14} />}
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#86868B", textTransform: "capitalize" }}>
+                  <span
+                    style={{
+                      background: m.role === "owner" ? "var(--accent-tint)" : m.role === "admin" ? "rgba(59,130,246,0.1)" : "var(--fill-subtle)",
+                      color: m.role === "owner" ? "var(--accent)" : m.role === "admin" ? "#3B82F6" : "var(--text-subtle)",
+                      borderRadius: 100,
+                      padding: "3px 10px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
                     {m.role === "owner" ? "Dono" : m.role === "admin" ? "Admin" : "Membro"}
                   </span>
                 </div>

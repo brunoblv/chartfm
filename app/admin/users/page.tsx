@@ -12,7 +12,7 @@ export default async function AdminUsersPage() {
   if (!isPrivilegedRole(me?.role)) return <Shell title="Admin" subtitle="Acesso"><div>Acesso negado.</div></Shell>;
 
   const users = await prisma.user.findMany({
-    select: { id: true, handle: true, name: true, role: true },
+    select: { id: true, handle: true, name: true, role: true, image: true, avatarColor: true },
     orderBy: { createdAt: "desc" },
     take: 80,
   });

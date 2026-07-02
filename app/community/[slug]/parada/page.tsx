@@ -68,6 +68,8 @@ export default async function CommunityParadaPage({ params }: { params: Promise<
           overallSongs={chart.overallSongs}
           overallArtists={overallArtists}
           weeklyDropouts={chart.weeklyDropouts}
+          weekIndex={chart.weekIndex}
+          communityId={row.id}
         />
       </div>
     </Shell>

@@ -25,6 +25,7 @@ import { useTranslations } from "@/hooks/useTranslations";
 import type { Cover as CoverData } from "@/lib/types";
 import type { GlobalPlaylistKind } from "@/lib/global-playlist-tracks";
 import { GlobalSpotifyPlaylistButton } from "@/components/global/GlobalSpotifyPlaylistButton";
+import { ParadaCommentsPanel, ParadaCommentsToggle } from "@/components/parada/ParadaComments";
 import Link from "next/link";
 import { Star } from "lucide-react";
 
@@ -124,6 +125,9 @@ export function GlobalTabs({
   overallArtists,
   weeklyDropouts = [],
   spotifyPlaylist,
+  weekIndex,
+  communityId,
+  genreSlug,
 }: {
   weeklySongs: SongEntry[];
   weeklyArtists: ArtistEntry[];
@@ -136,14 +140,26 @@ export function GlobalTabs({
     genreSlug?: string;
     returnPath: string;
   };
+  weekIndex: number;
+  communityId?: string;
+  genreSlug?: string;
 }) {
   const [tab, setTab] = useState<"songs" | "artists" | "saidas">("songs");
   const [viewSize, setViewSize] = useState<"small" | "large">("small");
   const [period, setPeriod] = useState<"weekly" | "overall">("weekly");
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const isMobile = useIsMobile(MOBILE_LIST_BREAKPOINT);
   const { t } = useTranslations();
   const songs = period === "weekly" ? weeklySongs : overallSongs;
   const artists = period === "weekly" ? weeklyArtists : overallArtists;
+  const commentsPeriod = tab === "saidas" ? "weekly" : period;
+  const commentsScope = {
+    communityId,
+    genreSlug,
+    section: tab === "artists" ? ("artists" as const) : ("songs" as const),
+    period: commentsPeriod,
+    weekIndex,
+  };
 
   return (
     <div style={isMobile ? { marginLeft: -16, marginRight: -16 } : undefined}>
@@ -198,16 +214,27 @@ export function GlobalTabs({
               )}
             </>
           )}
+          <ParadaCommentsToggle open={commentsOpen} onClick={() => setCommentsOpen((v) => !v)} />
         </div>
       </div>
 
-      {tab === "saidas" ? (
-        <DropoutsGlobalTable songs={weeklyDropouts} viewSize={viewSize} isMobile={isMobile} />
-      ) : tab === "songs" ? (
-        <SongsTable songs={songs} viewSize={viewSize} isMobile={isMobile} />
-      ) : (
-        <ArtistsTable artists={artists} viewSize={viewSize} isMobile={isMobile} />
-      )}
+      <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexDirection: isMobile ? "column" : "row" }}>
+        <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
+          {tab === "saidas" ? (
+            <DropoutsGlobalTable songs={weeklyDropouts} viewSize={viewSize} isMobile={isMobile} />
+          ) : tab === "songs" ? (
+            <SongsTable songs={songs} viewSize={viewSize} isMobile={isMobile} />
+          ) : (
+            <ArtistsTable artists={artists} viewSize={viewSize} isMobile={isMobile} />
+          )}
+        </div>
+        {commentsOpen && (
+          <ParadaCommentsPanel
+            scope={commentsScope}
+            style={isMobile ? { width: "100%" } : { width: 320, flexShrink: 0 }}
+          />
+        )}
+      </div>
     </div>
   );
 }

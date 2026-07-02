@@ -156,6 +156,11 @@ export const pagesPtBR = {
     spotifyExportError: "Não foi possível criar a playlist no Spotify.",
     spotifyExportConnectionError: "Erro de conexão ao criar playlist no Spotify.",
     spotifyPlaylistPublic: "Playlist pública",
+    commentsTitle: "Comentários",
+    commentsTitleCount: "Comentários ({count})",
+    commentsToggleShow: "Comentários",
+    commentsToggleHide: "Ocultar comentários",
+    commentsPlaceholder: "Comentar sobre a parada...",
   },
   discover: {
     title: "Descobrir",

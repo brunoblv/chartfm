@@ -196,7 +196,17 @@ export function CommunityHeader({
         </div>
       </div>
 
-      <div style={{ padding: `0 ${H_PAD}`, borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+      <div
+        style={{
+          padding: `0 ${H_PAD}`,
+          borderBottom: "1px solid var(--divider)",
+          background: "var(--surface)",
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          backdropFilter: "blur(12px)",
+        }}
+      >
         <div style={{ display: "flex", overflowX: "auto" }}>
           {NAV.map(({ key, label, href }) => (
             <Link
@@ -206,7 +216,7 @@ export function CommunityHeader({
                 padding: "16px 20px",
                 fontSize: 15,
                 fontWeight: activeTab === key ? 700 : 500,
-                color: activeTab === key ? "#1D1D1F" : "#86868B",
+                color: activeTab === key ? "var(--text)" : "var(--text-muted)",
                 borderBottom: `2px solid ${activeTab === key ? community.cover[0] : "transparent"}`,
                 marginBottom: -1,
                 textDecoration: "none",
