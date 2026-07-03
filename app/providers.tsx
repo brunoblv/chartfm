@@ -2,7 +2,6 @@
 
 import type { Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
-import { CookieConsentBanner } from "@/components/privacy/CookieConsentBanner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import type { Locale } from "@/lib/i18n/config";
@@ -21,7 +20,6 @@ export function Providers({
       <LocaleProvider initialLocale={initialLocale}>
         <ThemeProvider>
           {children}
-          <CookieConsentBanner />
         </ThemeProvider>
       </LocaleProvider>
     </SessionProvider>

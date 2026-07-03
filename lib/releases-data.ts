@@ -14,6 +14,108 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    date: "2026-07-03",
+    label: "3 de julho de 2026",
+    entries: [
+      {
+        title: "Texto de contexto nas páginas de música, artista e parada",
+        tag: "melhoria",
+        description:
+          "Páginas de música, artista, álbum, parada e comunidade agora trazem um parágrafo explicativo montado a partir dos dados reais daquela entidade — posição no Global 100, semanas no ranking, avaliações e histórico. Ajuda a entender o que você está vendo sem precisar conhecer as regras da plataforma.",
+      },
+      {
+        title: "Novos guias e FAQ",
+        tag: "novo",
+        description:
+          "Cinco novos guias entraram no site: Glossário do ChartFM, Como funciona a pontuação, Como funciona a Copa, Como importar histórico do Last.fm/Spotify e Como avaliar álbuns. Além disso, a página de Perguntas Frequentes reúne as dúvidas mais comuns em um só lugar. Acesse em /guides e /faq.",
+      },
+      {
+        title: "Arquivo do Global 100",
+        tag: "novo",
+        description:
+          "Toda semana já consolidada do Global 100 agora pode ser consultada no arquivo, em /global/100/arquivo. Cada entrada mostra a faixa #1 da semana e um link para a parada completa.",
+      },
+      {
+        title: "Retrospectiva 2026",
+        tag: "novo",
+        description:
+          "O ano no Global 100, em números: a página de retrospectiva consolida os destaques de 2026 a partir dos snapshots semanais. Disponível em /global/retrospectiva-2026.",
+      },
+      {
+        title: "Editorial semanal com dados reais",
+        tag: "melhoria",
+        description:
+          "O texto editorial da Global 100 passou a ser montado automaticamente a partir dos números da semana — líder, maior subida, maior queda, estreias e retornos — sem geração por IA. Cada frase só aparece quando o dado existe.",
+      },
+      {
+        title: "Calendário de semanas ao criar parada",
+        tag: "novo",
+        description:
+          "A página de criar parada ganhou um calendário visual para escolher a semana — útil para quem publica paradas retroativas ou quer conferir o intervalo exato antes de salvar.",
+      },
+    ],
+  },
+  {
+    date: "2026-07-01",
+    label: "1 de julho de 2026",
+    entries: [
+      {
+        title: "Notícias da plataforma no feed",
+        tag: "novo",
+        description:
+          "A aba Notícias do feed agora traz posts automáticos da casa: quando a Copa publica uma rodada, o Push avança ou outro evento relevante acontece, um card aparece no feed com link direto.",
+      },
+      {
+        title: "Comunidades no menu principal",
+        tag: "design",
+        description:
+          "Comunidades ganhou um atalho fixo na barra lateral, entre Global e Push — não é mais preciso ir até Descobrir para encontrar seus grupos.",
+      },
+      {
+        title: "Flashback e Destaque na parada",
+        tag: "novo",
+        description:
+          "Ao criar ou editar uma parada, você pode marcar uma música como Flashback (lembrete de semanas anteriores) e outra como Destaque. Na página publicada, cards laterais destacam essas escolhas junto à lista principal.",
+      },
+      {
+        title: "Painel de comentários na parada",
+        tag: "melhoria",
+        description:
+          "A página de parada ganhou um painel dedicado de comentários, com alternância entre a lista e os comentários no mobile e layout lateral no desktop — sem precisar rolar até o fim da página.",
+      },
+      {
+        title: "Streak na tela inicial",
+        tag: "novo",
+        description:
+          "A home agora mostra seu streak de semanas consecutivas publicando parada, junto com um atalho rápido para montar a parada da semana. O contador também aparece na barra lateral quando você está logado.",
+      },
+      {
+        title: "Ouvir no Spotify e YouTube na Global 100",
+        tag: "melhoria",
+        description:
+          "Os botões de reprodução da Global 100 foram reorganizados: ouvir no Spotify e no YouTube ficam agrupados no topo da parada, com acesso mais direto em todas as variantes (100, Airplay, gêneros e álbuns).",
+      },
+    ],
+  },
+  {
+    date: "2026-06-23",
+    label: "23 de junho de 2026",
+    entries: [
+      {
+        title: "Copa ChartFM",
+        tag: "novo",
+        description:
+          "Torneio eliminatório de artistas movido a votos da comunidade. Cada artista escala 8 músicas; na fase de grupos e no mata-mata, você vota em partidas música contra música. Acompanhe ao vivo em /copa/ao-vivo, veja grupos, chaveamento e regras completas.",
+      },
+      {
+        title: "Tela de introdução do Push",
+        tag: "design",
+        description:
+          "Quem entra no Push pela primeira vez vê uma tela de introdução explicando como funciona o jogo antes de entrar em uma rodada.",
+      },
+    ],
+  },
+  {
     date: "2026-06-20",
     label: "20 de junho de 2026",
     entries: [

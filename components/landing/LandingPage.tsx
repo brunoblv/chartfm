@@ -496,6 +496,50 @@ export function LandingPage({
         </div>
       </section>
 
+      {/* COMO O GLOBAL 100 É CALCULADO — texto corrido */}
+      <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "var(--bg)" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>
+            Como funciona
+          </div>
+          <h2 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 22px 0", lineHeight: 1.15, color: "var(--text)" }}>
+            Como o Global 100 é calculado
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
+            <p style={{ margin: 0 }}>
+              O Global 100 é a parada coletiva do ChartFM, formada toda semana a partir das paradas pessoais
+              publicadas pelos usuários. Não existe algoritmo de reprodução automática aqui: cada posição no
+              ranking coletivo vem de uma escolha deliberada de alguém, feita ao montar a própria parada.
+            </p>
+            <p style={{ margin: 0 }}>
+              O cálculo usa uma curva geométrica: a música na 1ª posição de uma parada pessoal vale 1.000
+              pontos, e cada posição abaixo vale 95% da posição anterior — a 2ª vale 950, a 5ª vale 815, a 10ª
+              vale 630. Esses pontos são somados entre todas as paradas publicadas na semana para formar o
+              ranking coletivo.
+            </p>
+            <p style={{ margin: 0 }}>
+              Essa curva foi escolhida de propósito: ela valoriza o topo das paradas pessoais mais do que o
+              volume. Uma música que aparece em poucas paradas, sempre bem colocada, pontua mais do que uma
+              música que aparece em muitas paradas só nas posições finais.
+            </p>
+            <p style={{ margin: 0 }}>
+              A semana do Global 100 fecha toda terça-feira à meia-noite (horário de Brasília); paradas
+              publicadas depois desse horário contam para a semana seguinte. O snapshot de cada semana é
+              processado horas depois e vira um registro permanente — o histórico completo fica sempre
+              disponível para consulta.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" as const, marginTop: 24 }}>
+            <Link href="/guides/como-funciona-o-global-100" style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>
+              Guia completo do Global 100 →
+            </Link>
+            <Link href="/guides/como-funciona-a-pontuacao" style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>
+              Tabela de pontos e exemplos →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* FEATURE GRID — 4 recursos */}
       <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "var(--surface)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>

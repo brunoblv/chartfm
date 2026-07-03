@@ -3,6 +3,108 @@ import { RELEASES, TAG_META, type Release, type ReleaseTag } from "@/lib/release
 
 const RELEASES_EN: Release[] = [
   {
+    date: "2026-07-03",
+    label: "July 3, 2026",
+    entries: [
+      {
+        title: "Context text on song, artist, and chart pages",
+        tag: "melhoria",
+        description:
+          "Song, artist, album, chart, and community pages now include an explanatory paragraph built from that entity's real data — Global 100 position, weeks on chart, ratings, and history. Helps you understand what you're looking at without knowing the platform rules upfront.",
+      },
+      {
+        title: "New guides and FAQ",
+        tag: "novo",
+        description:
+          "Five new guides are live: ChartFM Glossary, How scoring works, How the Copa works, How to import your Last.fm/Spotify history, and How to review albums. There's also a FAQ page with the most common questions in one place. Visit /guides and /faq.",
+      },
+      {
+        title: "Global 100 archive",
+        tag: "novo",
+        description:
+          "Every consolidated Global 100 week is now browsable in the archive at /global/100/arquivo. Each entry shows that week's #1 track and a link to the full chart.",
+      },
+      {
+        title: "2026 year in review",
+        tag: "novo",
+        description:
+          "The year in Global 100 numbers: the retrospective page consolidates 2026 highlights from weekly snapshots. Available at /global/retrospectiva-2026.",
+      },
+      {
+        title: "Weekly editorial from real data",
+        tag: "melhoria",
+        description:
+          "The Global 100 editorial is now assembled automatically from the week's numbers — leader, biggest rise, biggest fall, debuts, and returns — with no AI generation. Each sentence only appears when the data exists.",
+      },
+      {
+        title: "Week calendar when creating a chart",
+        tag: "novo",
+        description:
+          "The create chart page now has a visual week calendar for picking the week — handy for retroactive charts or checking the exact date range before saving.",
+      },
+    ],
+  },
+  {
+    date: "2026-07-01",
+    label: "July 1, 2026",
+    entries: [
+      {
+        title: "Platform news in the feed",
+        tag: "novo",
+        description:
+          "The feed's News tab now shows automatic posts from ChartFM: when the Copa publishes a round, Push advances, or another relevant event happens, a card appears in the feed with a direct link.",
+      },
+      {
+        title: "Communities in the main menu",
+        tag: "design",
+        description:
+          "Communities got a fixed shortcut in the sidebar, between Global and Push — no need to go through Discover to find your groups.",
+      },
+      {
+        title: "Flashback and Spotlight on charts",
+        tag: "novo",
+        description:
+          "When creating or editing a chart, you can mark one song as Flashback (a nod to past weeks) and another as Spotlight. On the published page, side cards highlight those picks alongside the main list.",
+      },
+      {
+        title: "Comments panel on chart pages",
+        tag: "melhoria",
+        description:
+          "Chart pages now have a dedicated comments panel, with a toggle between the list and comments on mobile and a side layout on desktop — no need to scroll to the bottom of the page.",
+      },
+      {
+        title: "Streak on the home screen",
+        tag: "novo",
+        description:
+          "The home page now shows your streak of consecutive weeks publishing a chart, plus a quick shortcut to build this week's chart. The counter also appears in the sidebar when you're logged in.",
+      },
+      {
+        title: "Listen on Spotify and YouTube on Global 100",
+        tag: "melhoria",
+        description:
+          "Global 100 playback buttons were reorganized: Spotify and YouTube listen links are grouped at the top of the chart, with easier access across all variants (100, Airplay, genres, and albums).",
+      },
+    ],
+  },
+  {
+    date: "2026-06-23",
+    label: "June 23, 2026",
+    entries: [
+      {
+        title: "Copa ChartFM",
+        tag: "novo",
+        description:
+          "An artist knockout tournament driven by community votes. Each artist fields 8 songs; in the group stage and bracket, you vote on song-vs-song matchups. Follow live at /copa/ao-vivo, see groups, bracket, and full rules.",
+      },
+      {
+        title: "Push intro screen",
+        tag: "design",
+        description:
+          "First-time Push visitors see an intro screen explaining how the game works before joining a round.",
+      },
+    ],
+  },
+  {
     date: "2026-06-20",
     label: "June 20, 2026",
     entries: [

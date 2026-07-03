@@ -192,7 +192,7 @@ export const messagesPtBR = {
     signIn: "Entrar",
     signingIn: "Entrando…",
     signUp: "Cadastrar",
-    badge: "Nova semana, nova parada · Toda segunda",
+    badge: "Nova semana, nova parada · Toda terça",
     heroTitle1: "A rede social das",
     heroTitle2: "paradas pessoais",
     heroBody:
