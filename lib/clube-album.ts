@@ -1,4 +1,5 @@
 import { AlbumClubPhase, type Prisma } from "@prisma/client";
+import { announceClubePhaseChange, announceClubeRegistrationOpen } from "@/lib/game-announcements";
 import { prisma } from "@/lib/prisma";
 import { buildScheduleFromDate, parseDateInput, parseDateTimeLocal, buildDateRangeLabel } from "@/lib/clube-schedule";
 
@@ -291,6 +292,10 @@ export async function syncRoundPhase(roundId: string): Promise<AlbumClubPhase> {
   const now = new Date();
   let nextPhase: AlbumClubPhase = round.phase;
 
+  if (round.phase === AlbumClubPhase.NOMINATIONS && now >= round.nominationsOpenAt) {
+    await announceClubeRegistrationOpen(round);
+  }
+
   if (round.phase === AlbumClubPhase.NOMINATIONS && now >= round.nominationsCloseAt) {
     nextPhase = AlbumClubPhase.POLL;
   }
@@ -323,9 +328,38 @@ export async function syncRoundPhase(roundId: string): Promise<AlbumClubPhase> {
       where: { id: roundId },
       data: { phase: nextPhase },
     });
+    await announceClubePhaseChange(round, nextPhase);
   }
 
   return nextPhase;
+}
+
+/** Reconcilia fases de todas as rodadas ativas com o calendário (cron). */
+export async function syncActiveClubeRounds(): Promise<
+  { roundId: string; number: number; theme: string; previousPhase: AlbumClubPhase; phase: AlbumClubPhase }[]
+> {
+  const active = await prisma.albumClubRound.findMany({
+    where: { phase: { not: AlbumClubPhase.COMPLETED } },
+    select: { id: true, number: true, theme: true, phase: true },
+  });
+
+  const results: {
+    roundId: string;
+    number: number;
+    theme: string;
+    previousPhase: AlbumClubPhase;
+    phase: AlbumClubPhase;
+  }[] = [];
+
+  for (const r of active) {
+    const previousPhase = r.phase;
+    const phase = await syncRoundPhase(r.id);
+    if (phase !== previousPhase) {
+      results.push({ roundId: r.id, number: r.number, theme: r.theme, previousPhase, phase });
+    }
+  }
+
+  return results;
 }
 
 async function getNextRoundStart(activeRoundId: string): Promise<Date | null> {
@@ -817,7 +851,7 @@ export async function createClubeRound(
       resultCloseAt,
       listeningCloseAt,
     },
-    select: { id: true },
+    select: { id: true, number: true, theme: true, nominationsOpenAt: true, phase: true },
   });
 
   if (initialPhase !== AlbumClubPhase.COMPLETED) {
@@ -881,9 +915,15 @@ export async function updateClubeRound(
 
   if (Object.keys(update).length === 0) return { ok: false, error: "Nada para atualizar" };
 
+  const previousPhase = round.phase;
   await prisma.albumClubRound.update({ where: { id: roundId }, data: update });
 
-  if (!data.phase || data.phase === "AUTO") {
+  if (data.phase && data.phase !== "AUTO" && data.phase !== previousPhase) {
+    await announceClubePhaseChange(
+      { id: roundId, number: round.number, theme: (update.theme as string | undefined) ?? round.theme },
+      data.phase,
+    );
+  } else if (!data.phase || data.phase === "AUTO") {
     await syncRoundPhase(roundId);
   }
 
@@ -914,6 +954,8 @@ export async function openClubePollNow(
     },
   });
 
+  await announceClubePhaseChange(round, AlbumClubPhase.POLL);
+
   return { ok: true };
 }
 
@@ -926,6 +968,7 @@ export async function completeClubeRound(roundId: string): Promise<{ ok: true } 
     where: { id: roundId },
     data: { phase: AlbumClubPhase.COMPLETED },
   });
+  await announceClubePhaseChange(round, AlbumClubPhase.COMPLETED);
   return { ok: true };
 }
 

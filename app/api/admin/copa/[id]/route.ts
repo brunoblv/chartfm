@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { GROUP_PAIRS, COPA_GROUP_LETTERS, COPA_UNASSIGNED_GROUP, drawGroups } from "@/lib/copa";
 import { openNextBatch, advanceCopaDay, syncCopaToSchedule } from "@/lib/copa-day";
 import { repairCopaKnockout, fixMislabeledGroupFixtures, realignCopaLivePhase, resetR16ForEditing, startR16Round } from "@/lib/copa-repair";
+import { announceCopaStatusChange } from "@/lib/game-announcements";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -136,6 +137,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       prisma.copaEdition.update({ where: { id }, data: { status: "GROUP_STAGE" } }),
     ]);
 
+    await announceCopaStatusChange(copa, "GROUP_STAGE");
+
     // Com data marcada, o calendário abre os jogos no horário; sem data, abre já
     // o primeiro lote (1ª rodada, grupos A–H).
     const opened = copa.startsAt ? (await syncCopaToSchedule(id))?.opened ?? 0 : await openNextBatch(id);
@@ -144,6 +147,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   if (action === "start_knockout") {
     await prisma.copaEdition.update({ where: { id }, data: { status: "KNOCKOUT" } });
+    await announceCopaStatusChange(copa, "KNOCKOUT");
     const opened = copa.startsAt ? (await syncCopaToSchedule(id))?.opened ?? 0 : await openNextBatch(id);
     return NextResponse.json({ ok: true, opened });
   }
@@ -218,6 +222,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   if (action === "finish") {
     await prisma.copaEdition.update({ where: { id }, data: { status: "FINISHED" } });
+    await announceCopaStatusChange(copa, "FINISHED");
     return NextResponse.json({ ok: true });
   }
 

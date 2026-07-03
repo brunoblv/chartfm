@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { GlobalChartEntry } from "@/lib/types";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
+import { SocialFooterBadges } from "@/components/ui/SocialFooterBadges";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
 
@@ -39,11 +40,13 @@ type RecentUser = { id: string; name: string; avatarColor: string; image: string
 export function LandingPage({
   globalChart,
   userCount = 0,
+  chartsThisWeek = 0,
   recentUsers = [],
   children,
 }: {
   globalChart: GlobalChartEntry[];
   userCount?: number;
+  chartsThisWeek?: number;
   recentUsers?: RecentUser[];
   children?: React.ReactNode;
 }) {
@@ -61,12 +64,7 @@ export function LandingPage({
   const top10 = globalChart.slice(0, 10);
   const previewUser = USERS_DATA[2];
 
-  const heroEntries = [
-    { position: 1, title: "The Fate of Ophelia", artist: "Taylor Swift",    palette: ["#7B5EA7", "#4A2D7F"], status: "new",  delta: null },
-    { position: 2, title: "So Easy (To Fall in Love)", artist: "Olivia Dean", palette: ["#FF9A9E", "#F6A07A"], status: "up",   delta: 2    },
-    { position: 3, title: "Manchild",             artist: "Sabrina Carpenter", palette: ["#FF6B9D", "#FF8C42"], status: "up",   delta: 1    },
-    { position: 4, title: "Homewrecker",          artist: "Sombr",            palette: ["#3A3A4A", "#1A1A2E"], status: "down", delta: 1    },
-  ];
+  const heroEntries = globalChart.slice(0, 4);
   const footerGroups: { title: string; items: { label: string; href: string }[] }[] = [
     {
       title: t("landing.footerProduct"),
@@ -87,6 +85,7 @@ export function LandingPage({
       title: t("landing.footerResources"),
       items: [
         { label: t("landing.footerGuides"), href: "/guides" },
+        { label: t("landing.footerFaq"), href: "/faq" },
         { label: t("landing.footerImportSpotify"), href: "/login" },
         { label: t("landing.communities"), href: "/communities" },
       ],
@@ -240,14 +239,14 @@ export function LandingPage({
                 ))}
               </div>
               <div style={{ fontSize: 13, color: "var(--text-subtle)" }}>
-                <div style={{ display: "flex", gap: 1, color: "#FFB000", marginBottom: 2 }}>
-                  {"★★★★★".split("").map((s, i) => <span key={i}>{s}</span>)}
-                </div>
                 <div>
                   <b style={{ color: "var(--text)", fontWeight: 600 }}>
                     {userCount >= 1000 ? `+${(Math.floor(userCount / 100) * 100).toLocaleString(locale)}` : `+${userCount}`}
                   </b>{" "}
                   {t("landing.curatorsOn")}
+                </div>
+                <div style={{ marginTop: 2 }}>
+                  {t("landing.chartsThisWeek", { count: chartsThisWeek })}
                 </div>
               </div>
             </div>
@@ -280,10 +279,19 @@ export function LandingPage({
                     <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: entry.position <= 3 ? "var(--accent)" : "var(--text-muted)", textAlign: "center" as const }}>
                       {entry.position}
                     </div>
-                    <div style={{ width: 40, height: 40, borderRadius: 8, background: `linear-gradient(135deg, ${entry.palette[0]}, ${entry.palette[1]})` }} />
+                    {entry.cover.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={entry.cover.imageUrl}
+                        alt={entry.song.title}
+                        style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, objectFit: "cover" as const }}
+                      />
+                    ) : (
+                      <div style={{ width: 40, height: 40, borderRadius: 8, background: `linear-gradient(135deg, ${entry.cover.palette[0]}, ${entry.cover.palette[1]})` }} />
+                    )}
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.title}</div>
-                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{entry.artist}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>{entry.song.title}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{entry.song.artist}</div>
                     </div>
                     <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                   </div>
@@ -338,15 +346,24 @@ export function LandingPage({
                     <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: entry.position <= 3 ? "var(--accent)" : "var(--text-muted)", textAlign: "center" as const }}>
                       {entry.position}
                     </div>
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                      background: `linear-gradient(135deg, ${entry.palette[0]}, ${entry.palette[1]})`,
-                    }} />
+                    {entry.cover.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={entry.cover.imageUrl}
+                        alt={entry.song.title}
+                        style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, objectFit: "cover" as const }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                        background: `linear-gradient(135deg, ${entry.cover.palette[0]}, ${entry.cover.palette[1]})`,
+                      }} />
+                    )}
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" as const, overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {entry.title}
+                        {entry.song.title}
                       </div>
-                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{entry.artist}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{entry.song.artist}</div>
                     </div>
                     <StatusBadge status={entry.status} delta={entry.delta} newLabel={t("status.new")} />
                   </div>
@@ -525,9 +542,10 @@ export function LandingPage({
               <ChartFMLogo size={28} />
               <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.025em", color: "var(--text)" }}>ChartFM</div>
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, maxWidth: 280 }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, maxWidth: 280, marginBottom: 16 }}>
               {t("landing.footerTagline")}
             </div>
+            <SocialFooterBadges />
           </div>
           {footerGroups.map(({ title, items }) => (
             <div key={title}>

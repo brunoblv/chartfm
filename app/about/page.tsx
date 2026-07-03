@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <InstitutionalLayout>
-      <InstitutionalTitle updatedAt="junho de 2025">Sobre o ChartFM</InstitutionalTitle>
+      <InstitutionalTitle updatedAt="julho de 2026">Sobre o ChartFM</InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
         <InstitutionalSection title="O que é o ChartFM">
@@ -34,9 +34,16 @@ export default function AboutPage() {
 
         <InstitutionalSection title="Como surgiu">
           <InstitutionalParagraph>
-            A ideia veio de fãs de música que queriam uma forma simples de registrar e compartilhar suas preferências
-            semanais — algo parecido com as paradas de rádio, mas feito por ouvintes comuns. O projeto começou pequeno
-            e foi crescendo com o apoio da comunidade.
+            O ChartFM nasceu da paixão dos seus criadores pelo Disk MTV e pelo formato das paradas musicais que ele
+            popularizou no Brasil. Antes de existir qualquer site, fãs de música já montavam suas próprias paradas
+            semanais à mão ou em planilha, elegendo as melhores músicas da semana no mesmo espírito das paradas de
+            rádio e TV.
+          </InstitutionalParagraph>
+          <InstitutionalParagraph>
+            O ChartFM surgiu para automatizar esse hábito: em vez de cada pessoa manter sua planilha isolada, a
+            plataforma passou a reunir as paradas de toda a comunidade em um só lugar, facilitando compartilhar
+            listas, acompanhar novidades e comparar o gosto musical entre fãs. Hoje ela consolida as paradas semanais
+            de todos os usuários em um ranking coletivo, o Global 100.
           </InstitutionalParagraph>
         </InstitutionalSection>
 

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { getCommunityBySlug, isCommunityAdmin, getCommunityMemberRole } from "@/lib/community-auth";
 import { computeCommunityChartData, parseCommunityPointsConfig } from "@/lib/community-chart";
+import { buildCommunityContext } from "@/lib/entity-context-text";
 import { CommunityPageClient, type CommunityDbSerializable, type CommunityPostSerializable, type CommunityTopSongSerializable, type CommunityActiveMemberSerializable } from "./CommunityPageClient";
 
 export default async function CommunityPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -107,6 +108,18 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
     weeks: e.weeks,
   }));
 
+  // Tagline é uma "descrição curta" livre (frase sobre a comunidade), não necessariamente
+  // um gênero/tema — evita usar como "theme" para não gerar frases estranhas com texto livre.
+  const contextText = buildCommunityContext({
+    name: row.name,
+    theme: null,
+    memberCount: row.members,
+    foundedLabel: row.founded || null,
+    chartCount: chart.overallChartCount,
+    topSong: top5[0] ? { title: top5[0].title, artist: top5[0].artist } : null,
+    weekLabel: chart.weekLabel,
+  });
+
   const seenMemberIds = new Set<string>();
   const activeMembers: CommunityActiveMemberSerializable[] = [];
   for (const post of postsRows) {
@@ -130,6 +143,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       activeMembers={activeMembers}
       contributorCount={chart.contributorCount}
       dateRange={chart.dateRange}
+      contextText={contextText}
     />
   );
 }

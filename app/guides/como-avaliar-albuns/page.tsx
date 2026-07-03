@@ -25,9 +25,10 @@ export default function GuideAvaliarAlbuns() {
         {
           title: "Como avaliar um álbum",
           body: [
-            "Acesse a página do CriticsFM pelo menu lateral ou visite diretamente a rota /criticsfm. Na página de um álbum específico, você encontra o botão de avaliação.",
-            "A nota vai de 0 a 10, com incrementos de 0.5. Isso oferece granularidade suficiente para distinguir entre um álbum que você considera 7.5 (bom, mas com falhas) de um 8.0 (muito bom, recomendado).",
-            "Além da nota, você pode escrever uma review textual. Não há limite mínimo de caracteres — uma frase já é válida. Mas reviews mais elaboradas tendem a gerar mais interação e discussão com outros usuários.",
+            "Acesse a página do CriticsFM pelo menu lateral ou visite diretamente a rota /criticsfm. Na página de um álbum específico, você encontra o link \"Reviews no CriticsFM\", que leva para /criticsfm/[albumId].",
+            "A nota vai de 0 a 100, ajustada em um slider. Por padrão o slider começa em 70, mas você pode mover para qualquer valor inteiro entre 0 e 100. Isso oferece bastante granularidade para diferenciar um álbum que você considera 75 (bom, mas com falhas) de um 85 (muito bom, recomendado).",
+            "A nota é pessoal — não existe uma régua oficial do que cada número significa. É uma forma de você registrar o quanto gostou do álbum, comparável às notas que você mesmo deu a outros álbuns.",
+            "Além da nota, você pode escrever uma review textual, que é opcional. Não há limite mínimo de caracteres — uma frase já é válida. Mas reviews mais elaboradas tendem a gerar mais interação e discussão com outros usuários.",
           ],
         },
         {
@@ -41,7 +42,7 @@ export default function GuideAvaliarAlbuns() {
         {
           title: "Explorar avaliações da comunidade",
           body: [
-            "No CriticsFM, você pode ver a nota média de cada álbum calculada a partir de todas as avaliações enviadas pela comunidade. Isso cria um consenso coletivo que muitas vezes difere das notas de críticos profissionais — e isso é parte do valor da plataforma.",
+            "No CriticsFM, a nota exibida em cada álbum é a média das notas (0 a 100) enviadas por todos os usuários que avaliaram aquele álbum. Isso cria um consenso coletivo que muitas vezes difere das notas de críticos profissionais — e isso é parte do valor da plataforma.",
             "Você pode navegar pelos álbuns mais bem avaliados, pelos mais controversos (onde as notas ficam muito divididas) e pelos mais recentes. Isso ajuda a descobrir projetos que a comunidade considera imperdíveis, mesmo que não tenham recebido atenção da mídia especializada.",
             "Também é possível ver o histórico de avaliações de outros usuários, o que ajuda a identificar fãs de música cujo gosto musical se parece com o seu — e potencialmente seguir essas pessoas para descobrir novos álbuns.",
           ],

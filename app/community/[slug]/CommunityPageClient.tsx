@@ -107,6 +107,7 @@ export function CommunityPageClient({
   activeMembers,
   contributorCount,
   dateRange,
+  contextText,
 }: {
   dbCommunity: CommunityDbSerializable;
   dbPosts: CommunityPostSerializable[];
@@ -114,6 +115,7 @@ export function CommunityPageClient({
   activeMembers: CommunityActiveMemberSerializable[];
   contributorCount: number;
   dateRange: string;
+  contextText: string;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -353,9 +355,35 @@ export function CommunityPageClient({
         }
       />
 
+      {contextText && (
+        <div style={{ maxWidth: 1300, margin: "0 auto", padding: "28px 40px 20px 40px" }}>
+          <div
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--divider)",
+              borderRadius: 18,
+              padding: isMobile ? "16px" : "20px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>
+              {contextText}
+            </p>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--text-muted)" }}>
+              Comunidades são grupos dentro do ChartFM em que os membros montam paradas em
+              conjunto, normalmente em torno de um gênero, artista ou país. O ranking da
+              comunidade soma os pontos que cada música recebe nas paradas publicadas pelos
+              membros, considerando apenas os votos de quem participa do grupo.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div
         style={{
-          padding: "28px 40px 80px 40px",
+          padding: "0 40px 80px 40px",
           maxWidth: 1300,
           margin: "0 auto",
           display: "flex",

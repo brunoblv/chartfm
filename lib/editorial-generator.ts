@@ -1,63 +1,84 @@
 import type { GlobalChartEntry } from "@/lib/types";
 
-type TopSongInput = {
-  title: string;
-  artist: string;
-  status: string;
-  delta: number | null;
-  weeks: number;
-};
-
-export async function generateWeeklyEditorial(
-  topSongs: TopSongInput[],
-  weekLabel: string,
-): Promise<string | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-  if (!apiKey) return null;
-
-  const top5 = topSongs.slice(0, 5).map((s, i) => {
-    const deltaPart = s.delta != null ? `, delta: ${s.delta}` : "";
-    return `${i + 1}. "${s.title}" de ${s.artist} (status: ${s.status}${deltaPart})`;
-  }).join("\n");
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 300,
-        messages: [
-          {
-            role: "user",
-            content: `Escreva um parágrafo editorial curto (3-4 frases) sobre a parada musical da semana de ${weekLabel} no ChartFM. Top 5:\n${top5}\n\nEscreva em português brasileiro, tom editorial de rádio, sem títulos, sem listas. Só o parágrafo.`,
-          },
-        ],
-      }),
-    });
-
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as {
-      content?: Array<{ type: string; text?: string }>;
-    };
-    const text = data.content?.find((c) => c.type === "text")?.text?.trim();
-    return text || null;
-  } catch {
-    return null;
-  }
+function leaderPhrase(entry: GlobalChartEntry): string {
+  if (entry.status === "new") return "é a estreia mais forte";
+  if ((entry.numberOnes ?? 0) > 1) return `segue no topo pela ${entry.numberOnes}ª semana`;
+  return "assume a liderança";
 }
 
-export function chartEntriesToEditorialInput(entries: GlobalChartEntry[]): TopSongInput[] {
-  return entries.map((e) => ({
-    title: e.song.title,
-    artist: e.song.artist,
-    status: e.status,
-    delta: e.delta,
-    weeks: e.weeks,
-  }));
+function pickBiggestRiser(entries: GlobalChartEntry[]): GlobalChartEntry | null {
+  const risers = entries.filter((e) => e.status === "up" && (e.delta ?? 0) > 0);
+  if (risers.length === 0) return null;
+  return risers.reduce((best, e) => ((e.delta ?? 0) > (best.delta ?? 0) ? e : best));
+}
+
+function pickBiggestFaller(entries: GlobalChartEntry[]): GlobalChartEntry | null {
+  const fallers = entries.filter((e) => e.status === "down" && (e.delta ?? 0) < 0);
+  if (fallers.length === 0) return null;
+  return fallers.reduce((worst, e) => ((e.delta ?? 0) < (worst.delta ?? 0) ? e : worst));
+}
+
+/**
+ * Monta o editorial semanal a partir de dados reais do Global 100 — sem IA.
+ * Cada frase só entra se o dado correspondente existir (ex.: sem maior queda, a frase some).
+ */
+export function buildWeeklyEditorial(
+  entries: GlobalChartEntry[],
+  weekLabel: string,
+  publishersThisWeek: number,
+): string | null {
+  if (entries.length === 0) return null;
+
+  const sentences: string[] = [];
+
+  const leader = entries[0];
+  if (leader) {
+    const parts = [
+      `"${leader.song.title}", de ${leader.song.artist}, ${leaderPhrase(leader)} do Global 100 na semana de ${weekLabel}.`,
+    ];
+    if (leader.points > 0 && leader.voters > 0) {
+      parts.push(`A música somou ${leader.points.toLocaleString("pt-BR")} pontos, aparecendo em ${leader.voters} paradas.`);
+    }
+    sentences.push(parts.join(" "));
+  }
+
+  const riser = pickBiggestRiser(entries);
+  const faller = pickBiggestFaller(entries);
+  const movementParts: string[] = [];
+  if (riser) {
+    movementParts.push(
+      `A maior subida da semana foi "${riser.song.title}", de ${riser.song.artist}, que ganhou ${riser.delta} posições e chegou ao #${riser.position}.`,
+    );
+  }
+  if (faller && faller.prevPos != null) {
+    movementParts.push(`Já "${faller.song.title}" teve a maior queda, de #${faller.prevPos} para #${faller.position}.`);
+  }
+  if (movementParts.length > 0) sentences.push(movementParts.join(" "));
+
+  const newCount = entries.filter((e) => e.status === "new").length;
+  const returnCount = entries.filter((e) => e.status === "return").length;
+  const debutParts: string[] = [];
+  if (newCount > 0) {
+    debutParts.push(newCount === 1 ? "1 música estreou no ranking" : `${newCount} músicas estrearam no ranking`);
+  }
+  if (returnCount > 0) {
+    debutParts.push(
+      returnCount === 1
+        ? "1 voltou depois de pelo menos uma semana fora"
+        : `${returnCount} voltaram depois de pelo menos uma semana fora`,
+    );
+  }
+  if (debutParts.length > 0) {
+    sentences.push(`Ao todo, ${debutParts.join(" e ")}.`);
+  }
+
+  if (publishersThisWeek > 0) {
+    sentences.push(
+      publishersThisWeek === 1
+        ? "1 usuário publicou parada nesta semana."
+        : `${publishersThisWeek} usuários publicaram paradas nesta semana.`,
+    );
+  }
+
+  return sentences.length > 0 ? sentences.join(" ") : null;
 }

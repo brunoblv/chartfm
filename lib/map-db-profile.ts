@@ -211,6 +211,7 @@ export type ChartDetailPayload = {
   personalNumberOnes?: Record<string, number>;
   globalNumberOnes?: Record<string, number>;
   dropouts?: PersonalDropoutEntry[];
+  contextText?: string;
 };
 
 /** Uma parada com autor (para página de detalhe). */

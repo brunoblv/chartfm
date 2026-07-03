@@ -24,16 +24,16 @@ export default function GuideGlobal100() {
         {
           title: "Como os pontos são calculados",
           body: [
-            "O sistema de pontuação do ChartFM é simples e transparente. Cada posição em uma parada pessoal vale pontos conforme a fórmula: 101 menos a posição ocupada pela música.",
-            "Isso significa: a música na 1ª posição de uma parada vale 100 pontos. A da 2ª posição vale 99 pontos. A da 10ª posição vale 91 pontos. A da 20ª (última posição possível) vale 81 pontos.",
-            "Esses pontos são somados de todas as paradas publicadas na semana. Uma música que aparece em 50 paradas na posição #1 acumula muito mais pontos do que uma que aparece em 200 paradas sempre na posição #20. Isso premia músicas que os usuários realmente colocam em destaque, não apenas as mais mencionadas.",
+            "O sistema de pontuação do ChartFM usa uma curva geométrica: a música na 1ª posição de uma parada vale 1.000 pontos, e cada posição abaixo vale 95% da posição anterior. Assim, a 2ª posição vale 950 pontos, a 5ª vale 815, a 10ª vale 630, a 50ª vale 81, e a 100ª (última posição possível) vale 6.",
+            "Essa curva foi escolhida de propósito: ela valoriza mais o topo das paradas pessoais do que o volume. Uma música que aparece em poucas paradas, mas sempre nas primeiras posições, pontua mais do que uma música que aparece em muitas paradas só nas posições finais.",
+            "Esses pontos são somados de todas as paradas publicadas na semana. Isso premia músicas que os usuários realmente colocam em destaque, não apenas as mais mencionadas.",
           ],
         },
         {
           title: "O papel de cada fã de música",
           body: [
             "Cada usuário que publica uma parada semanal contribui igualmente para o Global 100. Não existe peso diferente por número de seguidores, tempo de plataforma ou histórico. Um usuário novo tem o mesmo impacto que alguém que usa o ChartFM há dois anos.",
-            "Essa igualdade de voz é intencional. O Global 100 reflete o gosto coletivo de toda a comunidade, não apenas dos usuários mais populares. Isso cria condições para que artistas independentes e descobertas pessoais apareçam no ranking quando são genuinamente valorizados por vários fãs de música ao mesmo tempo.",
+            "Isso é de propósito: o ranking deve refletir toda a comunidade, não só os perfis com mais seguidores. Isso cria condições para que artistas independentes e descobertas pessoais apareçam no ranking quando são genuinamente valorizados por vários fãs de música ao mesmo tempo.",
           ],
         },
         {
@@ -41,14 +41,14 @@ export default function GuideGlobal100() {
           body: [
             "A cada semana, o ranking global é recalculado do zero. Uma música que liderou o ranking por três semanas consecutivas pode sair completamente se nenhum usuário a incluir na nova semana.",
             "O sistema identifica automaticamente três tipos de movimentação: estreia (a música aparece no ranking pela primeira vez), retorno (volta ao ranking depois de ter ficado fora) e movimento (subida ou queda em relação à semana anterior).",
-            "Acompanhar essas movimentações ao longo das semanas revela padrões interessantes: como lançamentos novos entram rápido e caem, como clássicos revisitados mantêm presença consistente, e como músicas de artistas emergentes crescem gradualmente conforme mais usuários as descobrem.",
+            "Com algumas semanas de histórico dá para ver o comportamento de cada música: lançamentos entram alto e caem rápido; clássicos ficam semanas no meio da tabela; músicas de artistas menores sobem aos poucos, conforme mais gente as descobre.",
           ],
         },
         {
           title: "Quando o ranking é atualizado",
           body: [
-            "O Global 100 é consolidado toda segunda-feira às 01h00 (horário de Brasília). Esse processo gera um snapshot permanente da semana, preservando o histórico completo de todos os rankings anteriores.",
-            "Paradas publicadas após a consolidação da segunda-feira contam para a semana seguinte, não para a que acabou de fechar. Se você publicar na segunda-feira à tarde, sua chart contribui para o ranking que será consolidado na segunda-feira seguinte.",
+            "A semana do Global 100 fecha toda terça-feira à meia-noite (horário de Brasília): paradas publicadas até esse horário contam para a semana que está terminando. Pouco depois, por volta das 6h de terça, o snapshot da semana é processado e vira um registro permanente, preservando o histórico completo de todos os rankings anteriores.",
+            "Paradas publicadas depois da meia-noite de terça contam para a semana seguinte, não para a que acabou de fechar. Se você publicar na terça-feira de manhã, sua chart contribui para o ranking que só será consolidado na terça seguinte.",
             "O histórico completo de semanas anteriores está disponível na página do Global 100. É possível navegar entre semanas e ver como o ranking evoluiu ao longo do tempo.",
           ],
         },
@@ -56,7 +56,7 @@ export default function GuideGlobal100() {
           title: "Por que o Global 100 é diferente das charts de streaming",
           body: [
             "Nas grandes plataformas de streaming, uma música sobe no ranking quando é reproduzida — independente de ter sido escolhida conscientemente ou tocado no modo aleatório. Isso favorece músicas promovidas algoritmicamente e cria rankings que muitas vezes não refletem o que as pessoas realmente gostam.",
-            "No ChartFM, cada posição exige uma decisão intencional do usuário. Ninguém entra em uma parada por acidente. Isso torna o Global 100 um indicador mais fiel de relevância musical genuína, especialmente para artistas independentes que têm bases de fãs leais mas menos investimento em promoção algorítmica.",
+            "No ChartFM, cada posição exige uma decisão intencional do usuário. Ninguém entra em uma parada por acidente. Isso torna o Global 100 um retrato mais próximo do que as pessoas de fato gostam, especialmente para artistas independentes que têm bases de fãs leais mas menos investimento em promoção algorítmica.",
           ],
         },
       ]}

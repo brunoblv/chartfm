@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { InstitutionalLayout } from "@/components/institutional/InstitutionalLayout";
 import {
   InstitutionalDivider,
+  InstitutionalInlineLink,
   InstitutionalList,
   InstitutionalParagraph,
   InstitutionalSection,
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <InstitutionalLayout>
-      <InstitutionalTitle updatedAt="junho de 2025">Termos de Uso</InstitutionalTitle>
+      <InstitutionalTitle updatedAt="julho de 2026">Termos de Uso</InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 28, fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
         <InstitutionalSection title="1. Aceitação dos termos">
@@ -87,7 +88,18 @@ export default function TermsPage() {
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="7. Alterações nestes termos">
+        <InstitutionalSection title="7. Publicidade">
+          <InstitutionalParagraph>
+            O ChartFM exibe anúncios fornecidos por terceiros, incluindo o Google AdSense, para manter o serviço
+            gratuito. Os anúncios são identificados como tal e não representam recomendação do ChartFM. O uso de
+            cookies para publicidade está descrito na nossa{" "}
+            <InstitutionalInlineLink href="/privacy-policy">Política de Privacidade</InstitutionalInlineLink>.
+          </InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title="8. Alterações nestes termos">
           <InstitutionalParagraph>
             Podemos atualizar estes termos quando necessário. Quando isso acontecer, publicaremos a nova versão nesta
             página e informaremos a data da última atualização. O uso continuado da plataforma após a atualização
@@ -97,7 +109,7 @@ export default function TermsPage() {
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="8. Contato">
+        <InstitutionalSection title="9. Contato">
           <InstitutionalParagraph>
             Em caso de dúvidas sobre estes termos, entre em contato pelo e-mail{" "}
             <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span>.

@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
 import {
   BarChart2,
+  BookOpen,
+  Calculator,
   Calendar,
+  Compass,
+  Download,
   Lock,
   Music,
   Search,
+  Star,
+  Trophy,
   Users,
+  Users2,
 } from "lucide-react";
 import { InstitutionalLayout } from "@/components/institutional/InstitutionalLayout";
 import {
@@ -47,13 +54,55 @@ const GUIDES = [
   {
     icon: <BarChart2 size={20} />,
     title: "Pontuação e rankings globais",
-    body: "Cada vez que uma música aparece em uma parada publicada, ela acumula pontos no ranking global. Quanto mais alta a posição na parada, mais pontos. Os rankings são atualizados toda segunda-feira.",
+    body: "Cada vez que uma música aparece em uma parada publicada, ela acumula pontos no ranking global. Quanto mais alta a posição na parada, mais pontos. Os rankings fecham toda terça-feira à meia-noite (BRT).",
     href: "/guides/como-funciona-o-global-100",
   },
   {
     icon: <Lock size={20} />,
     title: "Privacidade da conta",
     body: "Por padrão, seu perfil e suas paradas são visíveis para todos. Você pode tornar sua conta privada nas configurações — assim, apenas pessoas que você aprovar poderão ver seu conteúdo.",
+  },
+  {
+    icon: <Users2 size={20} />,
+    title: "Como participar de comunidades",
+    body: "Entre em comunidades com o mesmo gosto musical que o seu, contribua com paradas coletivas e acompanhe o ranking formado só pelos votos dos membros do grupo.",
+    href: "/guides/como-participar-de-comunidades",
+  },
+  {
+    icon: <Compass size={20} />,
+    title: "Como descobrir músicas",
+    body: "Use o Discover para encontrar novos artistas, seguir fãs de música com gosto parecido e explorar paradas por gênero.",
+    href: "/guides/como-descobrir-musicas",
+  },
+  {
+    icon: <Star size={20} />,
+    title: "Como avaliar álbuns",
+    body: "Dê uma nota de 0 a 100 para os álbuns que você ouviu e escreva reviews no CriticsFM, o módulo de críticas musicais do ChartFM.",
+    href: "/guides/como-avaliar-albuns",
+  },
+  {
+    icon: <Download size={20} />,
+    title: "Importar do Last.fm ou Spotify",
+    body: "Conecte sua conta do Last.fm ou Spotify para montar suas paradas a partir do seu histórico real de audições, em vez de adicionar música por música.",
+    href: "/guides/como-importar-historico",
+  },
+  {
+    icon: <Trophy size={20} />,
+    title: "Como funciona a Copa",
+    body: "64 artistas, fase de grupos e mata-mata por votos da comunidade. Veja como participar, votar e acompanhar o chaveamento.",
+    href: "/guides/como-funciona-a-copa",
+  },
+  {
+    icon: <Calculator size={20} />,
+    title: "Como funciona a pontuação",
+    body: "A fórmula completa por trás dos pontos de cada posição, com tabela e exemplos calculados.",
+    href: "/guides/como-funciona-a-pontuacao",
+  },
+  {
+    icon: <BookOpen size={20} />,
+    title: "Glossário do ChartFM",
+    body: "Parada, estreia, retorno, pico, snapshot, Global 100, Copa — o significado de cada termo usado na plataforma.",
+    href: "/guides/glossario",
   },
 ];
 
@@ -78,8 +127,10 @@ export default function GuidesPage() {
 
       <div style={{ marginTop: 32 }}>
         <InstitutionalMutedCallout>
-          Não encontrou o que procurava? Envie sua dúvida pela página{" "}
-          <InstitutionalInlineLink href="/contact">Contato</InstitutionalInlineLink> e respondemos em até 2 dias úteis.
+          Não encontrou o que procurava? Veja também as{" "}
+          <InstitutionalInlineLink href="/faq">Perguntas frequentes</InstitutionalInlineLink> ou envie sua dúvida pela
+          página <InstitutionalInlineLink href="/contact">Contato</InstitutionalInlineLink> — respondemos em até 2 dias
+          úteis.
         </InstitutionalMutedCallout>
       </div>
     </InstitutionalLayout>

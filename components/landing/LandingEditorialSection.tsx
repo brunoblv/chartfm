@@ -9,6 +9,7 @@ type Props = {
   globalChart: GlobalChartEntry[];
   weekLabel: string;
   weekIndex: number;
+  publishersThisWeek: number;
 };
 
 type TFn = (key: string, params?: Record<string, string | number>) => string;
@@ -32,11 +33,11 @@ function movementLabel(t: TFn, entry: GlobalChartEntry): string {
   }
 }
 
-export async function LandingEditorialSection({ globalChart, weekLabel, weekIndex }: Props) {
+export async function LandingEditorialSection({ globalChart, weekLabel, weekIndex, publishersThisWeek }: Props) {
   const { t, locale } = await getServerTranslations();
   const formattedWeek = formatWeekLabel(locale, weekLabel);
   const top10 = globalChart.slice(0, 10);
-  const editorialBody = await getWeeklyEditorialBody(weekIndex, formattedWeek, globalChart);
+  const editorialBody = await getWeeklyEditorialBody(weekIndex, formattedWeek, globalChart, publishersThisWeek);
 
   return (
     <section

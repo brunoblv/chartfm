@@ -21,6 +21,7 @@ import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { getSpotifyArtistById } from "@/lib/spotify-server";
 import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
+import { buildArtistContext } from "@/lib/entity-context-text";
 
 function artistColor(name: string): [string, string] {
   let hash = 0;
@@ -659,6 +660,31 @@ export default async function ArtistPage({
     }));
   }
 
+  // ── Context text (AdSense/SEO) ────────────────────────────────────────────
+  // Deriva um parágrafo único a partir dos dados já computados acima (não inventa números).
+  const bestSong = songs.reduce<{ title: string; peak: number } | null>((best, s) => {
+    if (s.peak <= 0) return best;
+    if (!best || s.peak < best.peak) return { title: s.title, peak: s.peak };
+    return best;
+  }, null);
+
+  const thisWeekSongs = songs.filter((s) => s.currentWeekPos < 9999);
+  const thisWeekSongCount = thisWeekSongs.length;
+  const thisWeekTopSong = thisWeekSongs.reduce<{ title: string; position: number } | null>((top, s) => {
+    if (!top || s.currentWeekPos < top.position) return { title: s.title, position: s.currentWeekPos };
+    return top;
+  }, null);
+
+  const artistContextText = buildArtistContext({
+    name: canonicalName,
+    songCount: songs.length,
+    listenersCount,
+    totalPoints: totalPointsCached,
+    bestSong,
+    thisWeekSongCount,
+    thisWeekTopSong,
+  });
+
   // ── User-specific data ────────────────────────────────────────────────────
   const userEntries = currentUserId ? allEntries.filter((e) => e.chart.userId === currentUserId) : [];
 
@@ -861,44 +887,55 @@ export default async function ArtistPage({
           })}
         </div>
 
-        {artistRef?.bio && (
+        <div
+          style={{
+            marginBottom: 40,
+            padding: "28px 30px",
+            background: "var(--surface)",
+            border: "1px solid var(--divider)",
+            borderRadius: 20,
+          }}
+        >
           <div
             style={{
-              marginBottom: 40,
-              padding: "28px 30px",
-              background: "var(--surface)",
-              border: "1px solid var(--divider)",
-              borderRadius: 20,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              color: "var(--accent)",
+              marginBottom: 6,
             }}
           >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                color: "var(--accent)",
-                marginBottom: 6,
-              }}
-            >
-              No ChartFM
-            </div>
-            <h2
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
-                color: "var(--text)",
-                marginBottom: 16,
-              }}
-            >
-              {canonicalName} na comunidade
-            </h2>
-            <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
+            No ChartFM
+          </div>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              color: "var(--text)",
+              marginBottom: 16,
+            }}
+          >
+            {canonicalName} na comunidade
+          </h2>
+          {artistRef?.bio && (
+            <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: 16 }}>
               {artistRef.bio}
             </p>
-          </div>
-        )}
+          )}
+          {artistContextText && (
+            <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
+              {artistContextText}
+            </p>
+          )}
+          <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 16 }}>
+            Esta página reúne o desempenho de todas as músicas do artista nas paradas da comunidade, com pontos
+            acumulados, semanas no ranking, pico e número de vezes em 1º lugar no Global 100. As músicas que estão
+            no Global 100 nesta semana aparecem primeiro, ordenadas pela posição atual; as demais são listadas por
+            pontos acumulados.
+          </p>
+        </div>
 
         {/* Stats cards */}
         {activeStats.length > 0 ? (

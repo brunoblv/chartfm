@@ -18,6 +18,7 @@ import { isPrimaryParadaChartEntry } from "@/lib/paradas";
 import { songEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
+import { buildSongContext } from "@/lib/entity-context-text";
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);
@@ -232,6 +233,15 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     };
   }
 
+  let firstAppearanceRange: string | null = null;
+  {
+    const withWeek = primaryEntries.filter((e) => typeof e.chart.weekIndex === "number");
+    if (withWeek.length > 0) {
+      const earliest = withWeek.reduce((min, e) => (e.chart.weekIndex < min.chart.weekIndex ? e : min));
+      firstAppearanceRange = earliest.chart.dateRange ?? null;
+    }
+  }
+
   {
     const globalRank = await loadSongGlobalStatsFromSnapshots();
     const gs = lookupSongGlobal100Stats(
@@ -383,44 +393,68 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
 
-        {songRow?.editorialNote && (
+        <div
+          style={{
+            margin: "32px 0",
+            padding: "28px 30px",
+            background: "var(--surface)",
+            border: "1px solid var(--divider)",
+            borderRadius: 20,
+          }}
+        >
           <div
             style={{
-              margin: "32px 0",
-              padding: "28px 30px",
-              background: "var(--surface)",
-              border: "1px solid var(--divider)",
-              borderRadius: 20,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              color: "var(--accent)",
+              marginBottom: 6,
             }}
           >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                color: "var(--accent)",
-                marginBottom: 6,
-              }}
-            >
-              Contexto no ChartFM
-            </div>
-            <h2
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
-                color: "var(--text)",
-                marginBottom: 16,
-              }}
-            >
-              Desempenho da comunidade
-            </h2>
-            <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
+            Contexto no ChartFM
+          </div>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              color: "var(--text)",
+              marginBottom: 16,
+            }}
+          >
+            Desempenho da comunidade
+          </h2>
+          <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: songRow?.editorialNote ? 16 : 0 }}>
+            {buildSongContext({
+              title,
+              artist,
+              album,
+              chartEntries,
+              uniqueUsers: globalStats?.uniqueUsers ?? 0,
+              totalPoints: globalStats?.totalPoints ?? 0,
+              peak: globalStats?.peak ?? 0,
+              weeksTop100: globalStats?.weeksTop100 ?? 0,
+              firstAppearanceRange,
+            })}
+          </p>
+          {songRow?.editorialNote && (
+            <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", margin: 0 }}>
               {songRow.editorialNote}
             </p>
-          </div>
-        )}
+          )}
+          <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 16 }}>
+            Os números desta página vêm das paradas publicadas pelos usuários do ChartFM. Cada vez que alguém
+            inclui a música em sua parada semanal, ela ganha pontos conforme a posição: 1.000 no 1º lugar, 900
+            no 2º, 850 no 3º, e uma curva decrescente até a 100ª posição, que vale 10 pontos. A melhor posição
+            no Global 100 (o ranking coletivo semanal) usa um cálculo separado, somando essas paradas de forma
+            diferente — veja como em{" "}
+            <Link href="/guides/como-funciona-o-global-100" style={{ color: "var(--accent)" }}>
+              Como funciona o Global 100
+            </Link>
+            .
+          </p>
+        </div>
 
         <SongAppearancesTabs
           currentUserId={currentUserId}

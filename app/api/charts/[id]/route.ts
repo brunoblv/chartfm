@@ -17,6 +17,8 @@ import {
   sanitizeChartEntrySpotifyRefs,
 } from "@/lib/resolve-publish-songs";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
+import { lookupNumberOnes } from "@/lib/song-stats-key";
+import { buildChartContext } from "@/lib/entity-context-text";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -142,7 +144,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
 
   const cadence = inferCadenceFromWeekIndex(row.weekIndex);
   const currentSongIds = [...new Set(row.entries.map((e) => e.songId))];
-  const [previousChartFull, nextChart] = await Promise.all([
+  const [previousChartFull, nextChart, chartNumber] = await Promise.all([
     prisma.chart.findFirst({
       where: { paradaId: row.paradaId, weekIndex: { lt: row.weekIndex } },
       orderBy: { weekIndex: "desc" },
@@ -166,6 +168,11 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       where: { paradaId: row.paradaId, weekIndex: { gt: row.weekIndex } },
       orderBy: { weekIndex: "asc" },
       select: { id: true, weekLabel: true },
+    }),
+    // Ordinal position of this chart among all charts ever published for this parada
+    // (weekIndex is monotonic and unique per parada, so this cheap count works as the ordinal).
+    prisma.chart.count({
+      where: { paradaId: row.paradaId, weekIndex: { lte: row.weekIndex } },
     }),
   ]);
   const previousChart = previousChartFull
@@ -313,6 +320,27 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   );
   const spotlightCovers = await loadCoverUrlsForSongIds(prisma, spotlightIds);
 
+  // Real-data context paragraph for AdSense compliance: only uses values already
+  // computed above from actual queries, nothing invented.
+  const previousSongIds = new Set((previousChartFull?.entries ?? []).map((e) => e.songId));
+  const newEntryCount = mapped.chart.entries.filter(
+    (e) => e.song.id && !previousSongIds.has(e.song.id),
+  ).length;
+  const topEntry = mapped.chart.entries.find((e) => e.position === 1) ?? null;
+  const topSongTitle = topEntry?.song.title ?? null;
+  const topSongOnesCount = topEntry ? lookupNumberOnes(personalNumberOnes, topEntry.song) : 0;
+  const topSongStreak = topSongOnesCount > 0 ? topSongOnesCount : null;
+
+  const contextText = buildChartContext({
+    userName: mapped.user.name,
+    weekLabel: mapped.chart.weekLabel,
+    entryCount: mapped.chart.entries.length,
+    newEntryCount,
+    topSongTitle,
+    topSongStreak,
+    chartNumber,
+  });
+
   return NextResponse.json(
     {
       ...mapped,
@@ -330,6 +358,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       liked,
       reposted,
       dropouts: hydratedDropouts,
+      contextText,
     },
     { headers: NO_CACHE_HEADERS },
   );

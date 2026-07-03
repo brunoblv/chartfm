@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
+import { SocialFooterBadges } from "@/components/ui/SocialFooterBadges";
 import { useTranslations } from "@/hooks/useTranslations";
 
 type LinkItem = { label: string; href: string };
@@ -117,6 +118,7 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
           <p style={{ fontSize: 13, lineHeight: 1.65, color: "var(--text-muted)", margin: 0 }}>
             {t("globalFooter.tagline")}
           </p>
+          <SocialFooterBadges />
           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>© {year} ChartFM</div>
         </div>
 

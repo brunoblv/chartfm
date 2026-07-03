@@ -1276,6 +1276,44 @@ export default function ChartDetailPage() {
             padding: isMobile ? "0 16px 80px 16px" : "0 40px 80px 40px",
           }}
         >
+          {isDbChart && dbPayload?.contextText && (
+            <div
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--divider)",
+                borderRadius: 18,
+                padding: isMobile ? "16px" : "20px 24px",
+                marginBottom: 24,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  color: "var(--text)",
+                }}
+              >
+                {dbPayload.contextText}
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: "var(--text-muted)",
+                }}
+              >
+                Cada usuário do ChartFM publica uma parada por semana com as
+                músicas que mais marcaram seus dias, em ordem de preferência.
+                As posições desta lista geram pontos para o Global 100, o
+                ranking coletivo da plataforma.
+              </p>
+            </div>
+          )}
           {/* Tabs */}
           <div
             style={{

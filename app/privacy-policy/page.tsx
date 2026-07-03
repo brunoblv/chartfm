@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default function PrivacyPolicyPage() {
   return (
     <InstitutionalLayout>
-      <InstitutionalTitle updatedAt="junho de 2025">Política de Privacidade</InstitutionalTitle>
+      <InstitutionalTitle updatedAt="julho de 2026">Política de Privacidade</InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 28, fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
         <InstitutionalSection title="1. Quem somos">

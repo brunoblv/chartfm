@@ -12,6 +12,7 @@ import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft } from "luci
 import { GlobalHero } from "@/components/global/GlobalHero";
 import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { buildWeeklyEditorial } from "@/lib/editorial-generator";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -174,7 +175,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
     },
     {
       q: "Com que frequência a parada é atualizada?",
-      a: "O Global 100 é consolidado toda segunda-feira às 01h00 (horário de Brasília), refletindo as charts publicadas pelos usuários durante a semana anterior. O histórico de semanas anteriores também está disponível para consulta.",
+      a: "O Global 100 fecha toda terça-feira à meia-noite (horário de Brasília) e o snapshot da semana é processado horas depois, refletindo as charts publicadas pelos usuários durante a semana anterior. O histórico de semanas anteriores também está disponível para consulta.",
     },
     {
       q: "Como participar da parada global?",
@@ -209,6 +210,15 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         Todas as paradas globais
       </Link>
 
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" as const, marginBottom: 24 }}>
+        <Link href="/global/100/arquivo" style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+          Ver todas as semanas do Global 100 →
+        </Link>
+        <Link href="/global/retrospectiva-2026" style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+          Retrospectiva 2026 →
+        </Link>
+      </div>
+
       <section style={{ marginBottom: 48 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
           Sobre a parada
@@ -217,7 +227,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
           {[
             { icon: <Music size={20} />, title: "Curadoria da comunidade", desc: "Cada música entra porque alguém escolheu colocá-la na própria parada." },
             { icon: <Users size={20} />, title: "Mais fãs de música, mais força", desc: "Quanto mais usuários incluem uma música, maior sua presença no ranking." },
-            { icon: <BarChart2 size={20} />, title: "Atualizado toda semana", desc: "A consolidação ocorre toda segunda-feira com base nas paradas da semana anterior." },
+            { icon: <BarChart2 size={20} />, title: "Atualizado toda semana", desc: "A semana fecha toda terça-feira à meia-noite e a consolidação ocorre horas depois, com base nas paradas da semana anterior." },
             { icon: <TrendingUp size={20} />, title: "Histórico preservado", desc: "Cada semana gera um snapshot permanente para consulta histórica." },
           ].map((item) => (
             <div key={item.title} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14, padding: "18px 20px" }}>
@@ -259,7 +269,8 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
           Rankings da semana {weekNow}
         </h2>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          Rankings consolidados com base em {uniqueParadas} paradas pessoais publicadas na semana {weekRangeNow}.
+          {buildWeeklyEditorial(globalSongs, weekRangeNow, uniqueParadas) ??
+            `Rankings consolidados com base em ${uniqueParadas} paradas pessoais publicadas na semana ${weekRangeNow}.`}
         </p>
         <AdSlot slotId={ADSENSE_SLOTS.global100} format="rectangle" style={{ margin: "0 0 28px 0" }} />
 

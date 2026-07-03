@@ -287,21 +287,24 @@ export default async function HomePage() {
     const dataWeekIndex = (await getLatestAvailableWeekIndex(rankingWeek.weekIndex)) ?? rankingWeek.weekIndex;
     const weekRefDate = getWeeklySnapshotReferenceDate(dataWeekIndex);
     const weekLabel = buildWeekLabelFromDate(weekRefDate);
-    const [globalChart, userCount, recentUsers] = await Promise.all([
-      getGlobalTopSongs(dataWeekIndex, 10),
+    const [globalChart, userCount, recentUsers, chartsThisWeek, publishersThisWeek] = await Promise.all([
+      getGlobalTopSongs(dataWeekIndex, 100),
       prisma.user.count(),
       prisma.user.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: { id: true, name: true, avatarColor: true, image: true },
       }),
+      prisma.chart.count({ where: { weekIndex: dataWeekIndex } }),
+      prisma.chart.groupBy({ by: ["userId"], where: { weekIndex: dataWeekIndex } }),
     ]);
     return (
-      <LandingPage globalChart={globalChart} userCount={userCount} recentUsers={recentUsers}>
+      <LandingPage globalChart={globalChart} userCount={userCount} chartsThisWeek={chartsThisWeek} recentUsers={recentUsers}>
         <LandingEditorialSection
           globalChart={globalChart}
           weekLabel={weekLabel}
           weekIndex={dataWeekIndex}
+          publishersThisWeek={publishersThisWeek.length}
         />
       </LandingPage>
     );

@@ -124,6 +124,8 @@ export type CommunityChartPayload = {
   weekLabel: string;
   dateRange: string;
   contributorCount: number;
+  /** Nº de paradas distintas de membros já contabilizadas no ranking geral da comunidade (histórico completo). */
+  overallChartCount: number;
   weeklySongs: GlobalSnapshotPayload["weeklySongs"];
   weeklyArtists: GlobalSnapshotPayload["weeklyArtists"];
   overallSongs: GlobalSnapshotPayload["overallSongs"];
@@ -158,6 +160,7 @@ export async function computeCommunityChartData(
 
   const limit = config.maxSongs;
   const contributorCount = new Set(weeklyRaw.map((e) => e.chartId)).size;
+  const overallChartCount = new Set(overallRaw.map((e) => e.chartId)).size;
 
   const weeklySongs = aggregateGlobalSongs(weeklyEntries, limit, {
     previousWeekEntries: prevWeeklyEntries,
@@ -189,6 +192,7 @@ export async function computeCommunityChartData(
     weekLabel: rankingWeek.weekLabel,
     dateRange: rankingWeek.dateRange,
     contributorCount,
+    overallChartCount,
     weeklySongs: hydratedWeekly,
     weeklyArtists,
     overallSongs: hydratedOverall,

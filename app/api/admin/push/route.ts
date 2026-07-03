@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { pushRoundTitle } from "@/lib/push-format";
-import { createSystemFeedPost } from "@/lib/system-feed";
+import { announcePushRegistrationOpen } from "@/lib/game-announcements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,11 +60,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  await createSystemFeedPost(
-    "push_published",
-    `O ${round.title} foi publicado! Indique sua música e participe.`,
-    "/push",
-  );
+  await announcePushRegistrationOpen(round);
 
   return NextResponse.json(round, { status: 201 });
 }

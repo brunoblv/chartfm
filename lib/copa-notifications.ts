@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { COPA_DAY_LABELS } from "@/lib/copa";
-import { createSystemFeedPost } from "@/lib/system-feed";
+import { broadcastGameAnnouncement } from "@/lib/game-broadcast";
 
 export type CopaNotificationType = "copa_stage" | "copa_fixture";
 
@@ -8,27 +8,10 @@ async function broadcastCopaNotification(
   type: CopaNotificationType,
   targetUrl: string,
   text: string,
+  feedKind: string,
+  linkUrl: string,
 ): Promise<number> {
-  const existingCount = await prisma.notification.count({
-    where: { type, targetUrl },
-  });
-  if (existingCount > 0) return 0;
-
-  const allUsers = await prisma.user.findMany({ select: { id: true } });
-  if (!allUsers.length) return 0;
-
-  await prisma.notification.createMany({
-    data: allUsers.map((u) => ({
-      recipientId: u.id,
-      actorId: null,
-      type,
-      text,
-      targetUrl,
-      read: false,
-    })),
-  });
-
-  return allUsers.length;
+  return broadcastGameAnnouncement(type, targetUrl, text, feedKind, linkUrl);
 }
 
 /** Notifica todos os usuários quando um lote/etapa da Copa é aberto. */
@@ -46,11 +29,7 @@ export async function notifyCopaBatchOpened(copaId: string, batchOrder: number):
       ? `A ${copa.name} começou! A etapa "${stageLabel}" está aberta — vote nos jogos ao vivo.`
       : `A etapa "${stageLabel}" da ${copa.name} está aberta! Vote nos jogos ao vivo.`;
 
-  const notified = await broadcastCopaNotification("copa_stage", targetUrl, text);
-  if (notified > 0) {
-    await createSystemFeedPost("copa_stage", text, targetUrl);
-  }
-  return notified;
+  return broadcastCopaNotification("copa_stage", targetUrl, text, "copa_stage", targetUrl);
 }
 
 /** Notifica todos os usuários quando um jogo individual passa a ficar ao vivo. */
@@ -69,5 +48,5 @@ export async function notifyCopaFixtureOpened(fixtureId: string): Promise<number
   const targetUrl = `/copa/jogo/${fixtureId}`;
   const text = `O jogo ${fixture.artistA.artistName} x ${fixture.artistB.artistName} está ao vivo na ${fixture.copa.name}! Vote agora.`;
 
-  return broadcastCopaNotification("copa_fixture", targetUrl, text);
+  return broadcastCopaNotification("copa_fixture", targetUrl, text, "copa_fixture", targetUrl);
 }

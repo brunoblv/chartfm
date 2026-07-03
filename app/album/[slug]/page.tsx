@@ -17,6 +17,7 @@ import { COVER_PALETTES } from "@/lib/data";
 import { parseAlbumSlug, buildArtistPath, buildSongPath, slugify } from "@/lib/music-routes";
 import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { buildAlbumContext } from "@/lib/entity-context-text";
 import { AlbumDetailClient } from "./AlbumDetailClient";
 
 function albumColor(name: string): [string, string] {
@@ -130,6 +131,19 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     const artistDbId = p.artistDbId;
     const albumDbId = p.albumDbId;
     const firstEntrySpotifyId = songs[0]?.spotifyId ?? null;
+
+    const rankedSongs = songs.filter((s) => s.peak > 0);
+    const bestSong = rankedSongs.length > 0
+      ? rankedSongs.reduce((best, s) => (s.peak < best.peak ? s : best))
+      : null;
+    const albumContextText = buildAlbumContext({
+      album: canonicalAlbum,
+      artist: canonicalArtist,
+      releaseYear: releaseDate ? releaseDate.getFullYear().toString() : null,
+      trackCount: songs.length,
+      rankedTrackCount: rankedSongs.length,
+      bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
+    });
 
     const statsSection = (
       <>
@@ -335,6 +349,48 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
             </div>
           </div>
         </div>
+
+        <div
+          style={{
+            margin: "32px 40px",
+            padding: "28px 30px",
+            background: "var(--surface)",
+            border: "1px solid var(--divider)",
+            borderRadius: 20,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              color: "var(--accent)",
+              marginBottom: 6,
+            }}
+          >
+            Contexto no ChartFM
+          </div>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              color: "var(--text)",
+              marginBottom: 16,
+            }}
+          >
+            Desempenho no ChartFM
+          </h2>
+          <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: 16 }}>
+            {albumContextText}
+          </p>
+          <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", margin: 0 }}>
+            A tabela de faixas mostra os pontos acumulados por cada música do álbum, quantas semanas ela passou
+            no Global 100 e sua melhor posição no ranking coletivo.
+          </p>
+        </div>
+
         <AlbumDetailClient
           albumDbId={albumDbId}
           albumTitle={canonicalAlbum}
@@ -476,6 +532,19 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   const albumDbId = parsed.type === "artistAlbumIds"
     ? parsed.albumId
     : (albumEntries.find((e) => e.song.albumRef?.id)?.song.albumRef?.id ?? null);
+
+  const rankedSongs = songs.filter((s) => s.peak > 0);
+  const bestSong = rankedSongs.length > 0
+    ? rankedSongs.reduce((best, s) => (s.peak < best.peak ? s : best))
+    : null;
+  const albumContextText = buildAlbumContext({
+    album: canonicalAlbum,
+    artist: canonicalArtist,
+    releaseYear: releaseDate ? releaseDate.getFullYear().toString() : null,
+    trackCount: songs.length,
+    rankedTrackCount: rankedSongs.length,
+    bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
+  });
 
   // — Stats section (for "Estatísticas" tab) —
   const statsSection = (
@@ -683,6 +752,47 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
         </div>
       </div>
+      </div>
+
+      <div
+        style={{
+          margin: "32px 40px",
+          padding: "28px 30px",
+          background: "var(--surface)",
+          border: "1px solid var(--divider)",
+          borderRadius: 20,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+            color: "var(--accent)",
+            marginBottom: 6,
+          }}
+        >
+          Contexto no ChartFM
+        </div>
+        <h2
+          style={{
+            fontSize: 20,
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            color: "var(--text)",
+            marginBottom: 16,
+          }}
+        >
+          Desempenho no ChartFM
+        </h2>
+        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: 16 }}>
+          {albumContextText}
+        </p>
+        <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", margin: 0 }}>
+          A tabela de faixas mostra os pontos acumulados por cada música do álbum, quantas semanas ela passou
+          no Global 100 e sua melhor posição no ranking coletivo.
+        </p>
       </div>
 
       {/* Tabbed content */}

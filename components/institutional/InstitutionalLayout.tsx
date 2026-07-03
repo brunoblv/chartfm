@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Shell } from "@/components/layout/Shell";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
+import { SocialFooterBadges } from "@/components/ui/SocialFooterBadges";
 import { useTranslations } from "@/hooks/useTranslations";
 
 export function InstitutionalLayout({ children }: { children: React.ReactNode }) {
@@ -89,6 +90,9 @@ export function InstitutionalLayout({ children }: { children: React.ReactNode })
         >
           <ChartFMLogo size={18} />
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>ChartFM</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <SocialFooterBadges />
         </div>
         <div
           style={{

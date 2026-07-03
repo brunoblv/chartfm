@@ -222,11 +222,12 @@ export function ParadaCommentsPanel({
           borderTop: "1px solid var(--divider)",
           display: "flex",
           gap: 8,
-          alignItems: "center",
+          alignItems: "flex-end",
         }}
       >
-        <input
+        <textarea
           value={text}
+          rows={1}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -238,13 +239,18 @@ export function ParadaCommentsPanel({
           style={{
             flex: 1,
             border: "1px solid var(--divider)",
-            borderRadius: 100,
+            borderRadius: 12,
             padding: "8px 12px",
             fontSize: 13,
+            lineHeight: 1.45,
             background: "var(--fill-inset)",
             color: "var(--text)",
             outline: "none",
             fontFamily: "inherit",
+            resize: "none",
+            minHeight: 36,
+            maxHeight: 120,
+            overflowY: "auto",
           }}
         />
         <button

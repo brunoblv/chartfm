@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { announceCopaRegistrationOpen } from "@/lib/game-announcements";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -54,6 +55,8 @@ export async function POST(req: Request) {
     },
     include: { participants: true },
   });
+
+  await announceCopaRegistrationOpen(copa);
 
   return NextResponse.json({ copa });
 }
