@@ -88,7 +88,7 @@ type Tab = "perfil" | "parada" | "conta";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { data: session, status: sessionStatus } = useSession();
+  const { data: session, status: sessionStatus, update: updateSession } = useSession();
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
   const canUseYoutubePush = isMyTrlOwner(session?.user?.handle);
 
@@ -287,6 +287,7 @@ export default function SettingsPage() {
         setError(data.error ?? "Erro ao salvar.");
         return;
       }
+      await updateSession();
       setSuccess("Perfil atualizado com sucesso.");
     } catch {
       setError("Erro de conexão.");
@@ -791,7 +792,13 @@ export default function SettingsPage() {
                   <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>User</span>
                   <input
                     value={form.handle}
-                    onChange={(e) => setForm((f) => ({ ...f, handle: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        handle: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+                      }))
+                    }
+                    maxLength={28}
                     style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                   />
                 </label>
