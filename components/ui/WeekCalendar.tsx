@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { buildDayIndexFromDate, formatDayPickerLabel } from "@/lib/chart-cadence";
 
 function isoWeekNumber(date: Date): number {
@@ -192,29 +192,42 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
         width: 300,
       };
 
+  const periodLabel = mode === "daily" ? "Dia da parada" : "Semana da parada";
+  const helpText =
+    mode === "daily"
+      ? "Toque em um dia no calendário para escolher quando publicar — inclusive dias passados."
+      : "Toque em uma semana no calendário para escolher quando publicar — inclusive semanas passadas.";
+
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       <button
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        title={`${periodLabel}: clique para abrir o calendário e escolher outra data`}
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          border: "1px solid var(--divider-strong)",
+          gap: 10,
+          border: open ? "1.5px solid rgba(250,36,60,0.35)" : "1px solid var(--divider-strong)",
           borderRadius: 10,
           padding: "8px 12px",
-          background: "var(--surface)",
+          background: open ? "var(--accent-tint)" : "var(--surface)",
           cursor: "pointer",
-          fontSize: 13,
-          fontWeight: 600,
-          color: "var(--text)",
           whiteSpace: "nowrap",
+          transition: "border-color 0.15s, background 0.15s",
         }}
       >
-        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-subtle)" }}>{triggerLabel}</span>
-        <ChevronRight size={14} style={{ color: "var(--text-muted)", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} />
+        <CalendarDays size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>
+            {periodLabel}
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>{triggerLabel}</span>
+        </div>
+        <ChevronRight size={14} style={{ color: "var(--text-muted)", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.15s", flexShrink: 0 }} />
       </button>
 
       {open && isMobile && (
@@ -392,6 +405,23 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
             </div>
           )}
 
+          {/* Help text */}
+          {!pickerMode && (
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--text-muted)",
+                lineHeight: 1.45,
+                marginBottom: 12,
+                padding: "8px 10px",
+                background: "var(--fill-inset)",
+                borderRadius: 8,
+              }}
+            >
+              {helpText}
+            </div>
+          )}
+
           {/* Day headers */}
           {!pickerMode && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr) 12px", marginBottom: 4 }}>
@@ -400,7 +430,12 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
                 {d}
               </div>
             ))}
-            <div /> {/* dot column header */}
+            <div
+              title={mode === "daily" ? "Status do dia" : "Status da semana"}
+              style={{ textAlign: "center", fontSize: 8, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.02em", paddingBottom: 6, lineHeight: 1.1 }}
+            >
+              {mode === "daily" ? "Dia" : "Sem."}
+            </div>
           </div>
           )}
 
@@ -532,16 +567,23 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
           })}
 
           {/* Legend */}
-          {!pickerMode && <div style={{ display: "flex", gap: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--divider)", fontSize: 11, color: "var(--text-muted)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#1B873F" }} />
-              Com parada
+          {!pickerMode && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--divider)" }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
+                Bolinhas ao lado
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.35 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#1B873F", flexShrink: 0 }} />
+                  <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>Verde</strong> — {mode === "daily" ? "dia" : "semana"} com parada publicada</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "var(--fill-subtle)", flexShrink: 0 }} />
+                  <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>Cinza</strong> — ainda sem parada (pode publicar agora)</span>
+                </div>
+              </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "var(--fill-subtle)" }} />
-              Sem parada
-            </div>
-          </div>}
+          )}
         </div>
       )}
     </div>

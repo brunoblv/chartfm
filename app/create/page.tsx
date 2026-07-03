@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Plus, X, GripVertical, ExternalLink } from "lucide-react";
+import { ChevronLeft, Plus, X, GripVertical, ExternalLink, CalendarDays } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
@@ -1240,33 +1240,62 @@ export default function CreatePage() {
                 </div>
               )}
             </div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <WeekCalendar
-                value={weekDate}
-                onChange={setWeekDate}
-                paradaId={activeParadaId}
-                mode={activeParadaCadence}
-                label={activeParadaCadence === "daily" ? "Dia" : "Semana"}
-              />
-              <button
-                onClick={publishChart}
-                disabled={publishing || entries.length === 0}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: isMobile ? "stretch" : "flex-end" }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <WeekCalendar
+                  value={weekDate}
+                  onChange={setWeekDate}
+                  paradaId={activeParadaId}
+                  mode={activeParadaCadence}
+                  label={activeParadaCadence === "daily" ? "Dia" : "Semana"}
+                />
+                <button
+                  onClick={publishChart}
+                  disabled={publishing || entries.length === 0}
+                  style={{
+                    background: entries.length === 0 ? "var(--fill-subtle)" : "var(--accent)",
+                    color: entries.length === 0 ? "var(--text-disabled)" : "white",
+                    border: "none",
+                    padding: "10px 22px",
+                    borderRadius: 100,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    boxShadow: entries.length > 0 ? "0 2px 8px rgba(250,36,60,0.25)" : "none",
+                    cursor: publishing || entries.length === 0 ? "not-allowed" : "pointer",
+                    opacity: publishing ? 0.7 : 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {publishing ? "Publicando…" : "Publicar parada"}
+                </button>
+              </div>
+              <div
                 style={{
-                  background: entries.length === 0 ? "var(--fill-subtle)" : "var(--accent)",
-                  color: entries.length === 0 ? "var(--text-disabled)" : "white",
-                  border: "none",
-                  padding: "10px 22px",
-                  borderRadius: 100,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  boxShadow: entries.length > 0 ? "0 2px 8px rgba(250,36,60,0.25)" : "none",
-                  cursor: publishing || entries.length === 0 ? "not-allowed" : "pointer",
-                  opacity: publishing ? 0.7 : 1,
-                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 8,
+                  padding: "8px 10px",
+                  borderRadius: 10,
+                  background: "var(--fill-inset)",
+                  border: "1px solid var(--divider)",
+                  maxWidth: isMobile ? undefined : 340,
                 }}
               >
-                {publishing ? "Publicando…" : "Publicar parada"}
-              </button>
+                <CalendarDays size={14} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }} />
+                <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
+                  {activeParadaCadence === "daily" ? (
+                    <>
+                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Dia da parada</strong> para escolher no calendário — inclusive dias passados.{" "}
+                      <span style={{ whiteSpace: "nowrap" }}>Bolinha verde = já publicou;</span> cinza = ainda sem parada.
+                    </>
+                  ) : (
+                    <>
+                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Semana da parada</strong> para escolher no calendário — inclusive semanas passadas.{" "}
+                      <span style={{ whiteSpace: "nowrap" }}>Bolinha verde = já publicou;</span> cinza = ainda sem parada.
+                    </>
+                  )}
+                </p>
+              </div>
             </div>
           </div>
         </div>
