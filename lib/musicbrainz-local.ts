@@ -1,4 +1,4 @@
-import { Pool, type PoolClient } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
 import { parseMusicBrainzDate } from "@/lib/musicbrainz";
 
 export type MusicBrainzLocalConfig = {
@@ -42,7 +42,7 @@ export async function closeMusicBrainzPool(): Promise<void> {
   }
 }
 
-async function queryOne<T>(
+async function queryOne<T extends QueryResultRow>(
   client: Pool | PoolClient,
   sql: string,
   params: unknown[],
