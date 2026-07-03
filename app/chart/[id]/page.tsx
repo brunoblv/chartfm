@@ -561,7 +561,13 @@ export default function ChartDetailPage() {
         setDeleteError(t("chart.deleteError"));
         return;
       }
-      router.push(`/profile/${encodeURIComponent(user?.handle ?? "")}`);
+      const data = (await res.json().catch(() => null)) as { paradaId?: string } | null;
+      const handle = encodeURIComponent(user?.handle ?? "");
+      router.push(
+        data?.paradaId
+          ? `/profile/${handle}/paradas/${encodeURIComponent(data.paradaId)}`
+          : `/profile/${handle}/paradas`,
+      );
     } catch {
       setDeleteError(t("chart.deleteConnectionError"));
     } finally {
