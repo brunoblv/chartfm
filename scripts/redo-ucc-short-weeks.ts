@@ -79,6 +79,7 @@ function normalizeText(value: string): string {
 /**
  * Separa o nome base do(s) artista(s) convidado(s), cobrindo:
  *   "P!nk (featuring Nate Ruess)"  → base "P!nk", feat "Nate Ruess"
+ *   "Clandestino (with Maluma)"    → base "Clandestino", feat "Maluma"
  *   "fun. [feat. Janelle Monáe]"   → base "fun.", feat "Janelle Monáe"
  *   "Katy Perry featuring Juicy J" → base "Katy Perry", feat "Juicy J"
  * Funciona tanto para o campo artista quanto para o título.
@@ -87,7 +88,7 @@ function parseNameAndFeat(raw: string): { base: string; feat: string | null } {
   let text = raw.trim();
   let feat: string | null = null;
 
-  const paren = text.match(/[([]\s*(?:feat\.?|ft\.?|featuring)\s+([^)\]]+)[)\]]/i);
+  const paren = text.match(/[([]\s*(?:feat\.?|ft\.?|featuring|with|com)\s+([^)\]]+)[)\]]/i);
   if (paren && paren.index != null) {
     feat = paren[1].trim();
     text = (text.slice(0, paren.index) + text.slice(paren.index + paren[0].length))
