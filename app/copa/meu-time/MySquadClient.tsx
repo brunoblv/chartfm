@@ -361,8 +361,8 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
               ? "Time completo! Agora escolha as músicas de cada artista"
               : editWindow.open
                 ? isMobile
-                  ? "Toque num slot para escolher a música · ordene com ↑↓, trocar ou posição"
-                  : "Toque em ✏ ou arraste músicas entre slots editáveis"
+                  ? "Toque na música ou em Editável para escolher · ordene com ↑↓, trocar ou posição"
+                  : "Toque na música ou em Editável, use ✏ ou arraste entre slots editáveis"
                 : "Visualize suas músicas · edição indisponível agora"}
         </div>
       </div>
@@ -428,52 +428,33 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
       {/* ── Phase 2: choose songs (and live squad during the tournament) ── */}
       {!claiming && (
       <div style={{ padding: "0 24px 24px" }}>
-        {isRegistration && rosterComplete && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "12px 14px",
-              background: "var(--up-bg)",
-              border: "1px solid transparent",
-              borderRadius: 12,
-              marginBottom: 14,
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text)",
-            }}
-          >
-            <span style={{ fontSize: 18 }}>🎵</span>
-            Time completo! Defina as músicas de cada artista — uma música diferente por fase. O sorteio dos grupos acontece quando todos terminarem.
-          </div>
-        )}
-        {!isRegistration && (
-          <div
-            style={{
-              padding: "12px 14px",
-              background: editWindow.open ? "var(--up-bg)" : "rgba(255,212,38,.08)",
-              border: `1px solid ${editWindow.open ? "transparent" : "rgba(255,212,38,.3)"}`,
-              borderRadius: 12,
-              marginBottom: 14,
-              fontSize: 12,
-              lineHeight: 1.5,
-              color: "var(--text-muted)",
-            }}
-          >
-            {editWindow.open ? (
-              <>
-                <strong style={{ color: "var(--up-fg)" }}>Janela de edição aberta.</strong>{" "}
-                {editWindow.message} Cada música só pode ser usada uma vez por artista.
-              </>
-            ) : (
-              <>
-                <strong style={{ color: "var(--text)" }}>Edição fechada.</strong>{" "}
-                {editWindow.message}
-              </>
-            )}
-          </div>
-        )}
+        <div
+          style={{
+            padding: "12px 14px",
+            background: editWindow.open ? "var(--up-bg)" : "rgba(255,212,38,.08)",
+            border: `1px solid ${editWindow.open ? "transparent" : "rgba(255,212,38,.3)"}`,
+            borderRadius: 12,
+            marginBottom: 14,
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: "var(--text-muted)",
+          }}
+        >
+          {editWindow.open ? (
+            <>
+              <strong style={{ color: "var(--up-fg)" }}>
+                {isRegistration ? "Inscrições abertas." : "Janela de edição aberta."}
+              </strong>{" "}
+              {editWindow.message} Cada música só pode ser usada uma vez por artista.
+              {isRegistration && " O sorteio dos grupos acontece quando todos terminarem."}
+            </>
+          ) : (
+            <>
+              <strong style={{ color: "var(--text)" }}>Edição fechada.</strong>{" "}
+              {editWindow.message}
+            </>
+          )}
+        </div>
         {artists.map((art) => {
           const qual = art.standings.rank === 0 || art.standings.rank === 1;
           return (
@@ -624,6 +605,28 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                         )}
                       </div>
                     </div>
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        onClick={() => openArtistEditor(art.id, i)}
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: "3px 8px",
+                          borderRadius: 99,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          background: "var(--up-bg)",
+                          color: "var(--up-fg)",
+                          border: "none",
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                          flexShrink: 0,
+                        }}
+                      >
+                        Editável
+                      </button>
+                    ) : (
                     <span
                       style={{
                         fontSize: 10,
@@ -636,15 +639,13 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                           ? lock.status === "LIVE"
                             ? "var(--accent-tint)"
                             : "var(--fill-inset)"
-                          : canEdit
-                            ? "var(--up-bg)"
-                            : "var(--fill-inset)",
+                          : "var(--fill-inset)",
                         color: lock
                           ? lock.status === "LIVE"
                             ? "var(--accent)"
                             : "var(--text-muted)"
-                          : canEdit
-                            ? "var(--up-fg)"
+                          : editWindow.competingArtistIds?.length
+                            ? "var(--text-muted)"
                             : "var(--text-muted)",
                       }}
                     >
@@ -652,12 +653,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                         ? lock.status === "LIVE"
                           ? "Em jogo"
                           : "Disputado"
-                        : canEdit
-                          ? "Editável"
-                          : editWindow.competingArtistIds?.length
-                            ? "Eliminado"
-                            : "Fechado"}
+                        : editWindow.competingArtistIds?.length
+                          ? "Eliminado"
+                          : "Fechado"}
                     </span>
+                    )}
                   </div>
                 );
               })

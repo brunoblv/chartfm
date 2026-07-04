@@ -118,6 +118,7 @@ export function CopaSinglesMobileReorder({
               statusBg={status.bg}
               mode={mobileReorder.mode}
               rowProps={mobileReorder.getRowProps(listIndex)}
+              editable={canEdit}
               onEdit={() => onEditSlot(slotIndex)}
             />
           );
@@ -133,6 +134,7 @@ export function CopaSinglesMobileReorder({
             statusColor={status.color}
             statusBg={status.bg}
             readonly
+            editable={canEdit}
             onEdit={canEdit ? () => onEditSlot(slotIndex) : undefined}
           />
         );

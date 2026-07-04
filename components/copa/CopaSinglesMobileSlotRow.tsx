@@ -14,6 +14,7 @@ type Props = {
   mode?: MobileReorderMode;
   rowProps?: MobileReorderRowState;
   readonly?: boolean;
+  editable?: boolean;
   onEdit?: () => void;
 };
 
@@ -27,6 +28,7 @@ export function CopaSinglesMobileSlotRow({
   mode = "arrows",
   rowProps,
   readonly = false,
+  editable = false,
   onEdit,
 }: Props) {
   const isEmpty = songName.startsWith("Single ");
@@ -66,9 +68,13 @@ export function CopaSinglesMobileSlotRow({
             {isEmpty ? "—" : songName}
           </div>
         </div>
-        <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0, background: statusBg, color: statusColor }}>
-          {statusLabel}
-        </span>
+        <SlotStatusBadge
+          label={statusLabel}
+          color={statusColor}
+          bg={statusBg}
+          editable={editable}
+          onEdit={onEdit}
+        />
       </div>
     );
   }
@@ -133,9 +139,59 @@ export function CopaSinglesMobileSlotRow({
         isSelected={isSelected}
         isSwapTarget={isSwapTarget}
       />
-      <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0, background: statusBg, color: statusColor }}>
-        {statusLabel}
-      </span>
+      <SlotStatusBadge
+        label={statusLabel}
+        color={statusColor}
+        bg={statusBg}
+        editable={editable}
+        onEdit={onEdit}
+      />
     </div>
   );
+}
+
+function SlotStatusBadge({
+  label,
+  color,
+  bg,
+  editable,
+  onEdit,
+}: {
+  label: string;
+  color: string;
+  bg: string;
+  editable: boolean;
+  onEdit?: () => void;
+}) {
+  const style = {
+    fontSize: 9,
+    fontWeight: 700,
+    padding: "3px 7px",
+    borderRadius: 99,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.05em",
+    flexShrink: 0,
+    background: bg,
+    color,
+    border: "none",
+    fontFamily: "inherit",
+  };
+
+  if (editable && onEdit) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit();
+        }}
+        aria-label={`Editar ${label.toLowerCase()}`}
+        style={{ ...style, cursor: "pointer" }}
+      >
+        {label}
+      </button>
+    );
+  }
+
+  return <span style={style}>{label}</span>;
 }
