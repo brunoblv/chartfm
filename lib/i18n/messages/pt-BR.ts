@@ -38,6 +38,7 @@ export const messagesPtBR = {
     adminEditAlbums: "Editar álbuns",
     adminAlbumsNoCover: "Músicas sem capa",
     adminEditUsers: "Editar usuários",
+    adminPendingVerifications: "Confirmações pendentes",
     adminClube: "Clube do Álbum",
     adminSupport: "Tickets de suporte",
     ctaTitle: "Crie sua parada semanal",
@@ -162,6 +163,7 @@ export const messagesPtBR = {
     requestNew: "Solicitar novo link",
     errInvalidToken: "Link inválido ou expirado. Solicite um novo link de confirmação.",
     errResend: "Não foi possível reenviar o email. Tente novamente.",
+    sendFailed: "Não conseguimos enviar o email de confirmação agora. Tente reenviar abaixo em alguns minutos ou fale com o suporte.",
   },
   forgotPassword: {
     badge: "Recuperação",

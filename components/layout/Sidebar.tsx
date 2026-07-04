@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -504,6 +504,10 @@ function SidebarContent({
               <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
                 <UserCog size={14} />
                 <span>{t("nav.adminEditUsers")}</span>
+              </Link>
+              <Link href="/admin/pending-verifications" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/pending-verifications")}>
+                <MailWarning size={14} />
+                <span>{t("nav.adminPendingVerifications")}</span>
               </Link>
               <Link href="/admin/support" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/support")}>
                 <LifeBuoy size={14} />

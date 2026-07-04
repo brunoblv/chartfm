@@ -64,7 +64,8 @@ export default function SignupClient() {
     }
 
     setLoading(false);
-    router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+    const q = `email=${encodeURIComponent(email.trim())}${data.emailSent === false ? "&sent=0" : ""}`;
+    router.push(`/verify-email?${q}`);
   };
 
   const canSubmit = email.trim() && password && confirmPassword && !loading;

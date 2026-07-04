@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { USERS_DATA, COVER_PALETTES } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -52,13 +50,7 @@ export function LandingPage({
 }) {
   const isMobile = useIsMobile();
   const { t, locale } = useTranslations();
-  const [signingIn, setSigningIn] = useState(false);
   const year = new Date().getFullYear();
-
-  const handleSignIn = () => {
-    setSigningIn(true);
-    signIn("google", { callbackUrl: "/" }).catch(() => setSigningIn(false));
-  };
 
   const covers = Array.from({ length: 25 }, (_, i) => COVER_PALETTES[i % COVER_PALETTES.length]);
   const top10 = globalChart.slice(0, 10);
@@ -126,23 +118,21 @@ export function LandingPage({
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <LanguageSwitcher />
           {!isMobile && (
-            <button onClick={handleSignIn} disabled={signingIn} style={{ background: "none", border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", color: "var(--text)" }}>
+            <Link href="/login" style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>
               {t("landing.signIn")}
-            </button>
+            </Link>
           )}
-          <button
-            onClick={handleSignIn}
-            disabled={signingIn}
+          <Link
+            href="/signup"
             style={{
               padding: "8px 20px", borderRadius: 100,
               background: "var(--btn-dark-bg)", color: "var(--btn-dark-fg)",
-              border: "none", fontSize: 13, fontWeight: 700,
-              letterSpacing: "-0.01em", cursor: signingIn ? "not-allowed" : "pointer",
-              opacity: signingIn ? 0.6 : 1,
+              fontSize: 13, fontWeight: 700,
+              letterSpacing: "-0.01em", textDecoration: "none",
             }}
           >
-            {signingIn ? t("landing.signingIn") : t("landing.signUp")}
-          </button>
+            {t("landing.signUp")}
+          </Link>
         </div>
       </nav>
 
@@ -207,26 +197,23 @@ export function LandingPage({
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" as const }}>
-              <button
-                onClick={handleSignIn}
-                disabled={signingIn}
+              <Link
+                href="/signup"
                 style={{
                   padding: "15px 28px", borderRadius: 100,
                   background: "#FA243C", color: "white",
-                  border: "none", fontSize: 15, fontWeight: 700,
-                  letterSpacing: "-0.01em", cursor: signingIn ? "not-allowed" : "pointer",
+                  fontSize: 15, fontWeight: 700,
+                  letterSpacing: "-0.01em",
                   boxShadow: "0 4px 18px rgba(250,36,60,0.3)",
                   display: "flex", alignItems: "center", gap: 10,
-                  opacity: signingIn ? 0.7 : 1,
+                  textDecoration: "none",
                 }}
               >
-                {signingIn ? t("landing.signingIn") : t("landing.ctaPrimary")}
-                {!signingIn && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                )}
-              </button>
+                {t("landing.ctaPrimary")}
+                <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </Link>
             </div>
 
             {/* Social proof */}
@@ -478,20 +465,20 @@ export function LandingPage({
             <p style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.55, margin: "0 0 30px 0" }}>
             Toda semana, os rankings dos usuários se transformam nas paradas globais do ChartFM. Quanto mais alta uma música aparece, mais pontos ela recebe.
             </p>
-            <button
-              onClick={handleSignIn}
-              disabled={signingIn}
+            <Link
+              href="/global/100"
               style={{
+                display: "inline-block",
                 padding: "13px 28px", borderRadius: 100,
                 background: "#FA243C", color: "white",
-                border: "none", fontSize: 14, fontWeight: 700,
-                letterSpacing: "-0.01em", cursor: signingIn ? "not-allowed" : "pointer",
+                fontSize: 14, fontWeight: 700,
+                letterSpacing: "-0.01em",
                 boxShadow: "0 4px 18px rgba(250,36,60,0.4)",
-                opacity: signingIn ? 0.7 : 1,
+                textDecoration: "none",
               }}
             >
-              {signingIn ? "Entrando…" : "Ver parada completa →"}
-            </button>
+              Ver parada completa →
+            </Link>
           </div>
         </div>
       </section>

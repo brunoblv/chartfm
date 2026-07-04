@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { announceCopaRegistrationOpen } from "@/lib/game-announcements";
+import { COPA_PARTICIPANT_OPTIONS, COPA_TOTAL_ARTISTS } from "@/lib/copa";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -44,14 +45,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "name and year required" }, { status: 400 });
   }
 
+  const resolvedMaxParticipants = maxParticipants ?? 8;
+  if (!(COPA_PARTICIPANT_OPTIONS as readonly number[]).includes(resolvedMaxParticipants)) {
+    return NextResponse.json(
+      { error: `maxParticipants must be one of ${COPA_PARTICIPANT_OPTIONS.join(", ")}` },
+      { status: 400 },
+    );
+  }
+
   // Editions open in REGISTRATION with no participants — users sign themselves up.
   const copa = await prisma.copaEdition.create({
     data: {
       name,
       year,
       status: "REGISTRATION",
-      maxParticipants: maxParticipants && maxParticipants > 0 ? maxParticipants : 8,
-      artistsPerUser: 8,
+      maxParticipants: resolvedMaxParticipants,
+      artistsPerUser: COPA_TOTAL_ARTISTS / resolvedMaxParticipants,
     },
     include: { participants: true },
   });

@@ -21,6 +21,7 @@ export default function VerifyEmailClient() {
 
   const token = searchParams.get("token") ?? "";
   const initialEmail = searchParams.get("email") ?? "";
+  const sendFailed = searchParams.get("sent") === "0";
 
   const [email, setEmail] = useState(initialEmail);
   const [verifying, setVerifying] = useState(Boolean(token));
@@ -127,6 +128,7 @@ export default function VerifyEmailClient() {
         {t("verifyEmail.subhead")}
       </p>
 
+      {sendFailed && !resent && <AuthError message={t("verifyEmail.sendFailed")} />}
       {error && <AuthError message={error} />}
       {resent && <AuthSuccess message={t("verifyEmail.resent")} />}
 

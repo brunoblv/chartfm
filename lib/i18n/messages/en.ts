@@ -38,6 +38,7 @@ export const messagesEn = {
     adminEditAlbums: "Edit albums",
     adminAlbumsNoCover: "Songs without cover",
     adminEditUsers: "Edit users",
+    adminPendingVerifications: "Pending verifications",
     adminClube: "Album Club",
     adminSupport: "Support tickets",
     ctaTitle: "Create your weekly chart",
@@ -162,6 +163,7 @@ export const messagesEn = {
     requestNew: "Request new link",
     errInvalidToken: "Invalid or expired link. Request a new confirmation link.",
     errResend: "Could not resend email. Please try again.",
+    sendFailed: "We couldn't send the confirmation email right now. Try resending below in a few minutes or contact support.",
   },
   forgotPassword: {
     badge: "Recovery",

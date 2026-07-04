@@ -60,7 +60,7 @@ async function getPublishedThisWeek(
 ): Promise<PublisherRow[]> {
   const charts = await prisma.chart.findMany({
     where: { userId: { not: userId }, isPublished: true },
-    orderBy: { publishedAt: "desc" },
+    orderBy: { postedAt: "desc" },
     take: 30,
     select: {
       id: true,
@@ -109,7 +109,7 @@ async function getTimelineFeed(
       weekIndex: { gte: weekIdx - 2 },
       isPublished: true,
     },
-    orderBy: { publishedAt: "desc" },
+    orderBy: { postedAt: "desc" },
     take: 80,
     select: {
       id: true,
@@ -117,7 +117,7 @@ async function getTimelineFeed(
       weekLabel: true,
       dateRange: true,
       weekIndex: true,
-      publishedAt: true,
+      postedAt: true,
       likes: true,
       comments: true,
       reposts: true,
@@ -170,7 +170,7 @@ async function getTimelineFeed(
   const visibleRows = rows.filter((r) => isParadaVisibleToViewer(r.paradaId, viewerHandle));
 
   const sortByPublished = (a: (typeof visibleRows)[number], b: (typeof visibleRows)[number]) =>
-    b.publishedAt.getTime() - a.publishedAt.getTime();
+    b.postedAt.getTime() - a.postedAt.getTime();
 
   const friendsRows = visibleRows
     .filter((r) => followingIds.has(r.user.id) || r.user.id === userId)
@@ -196,7 +196,7 @@ async function getTimelineFeed(
 function mapChartRow(
   c: {
     id: string; weekLabel: string; dateRange: string; weekIndex: number;
-    publishedAt: Date; likes: number; comments: number; reposts: number;
+    postedAt: Date; likes: number; comments: number; reposts: number;
     user: {
       id: string; handle: string; name: string; avatarColor: string; image: string | null;
       followers: number; verified: boolean; streak: number; bio: string | null;
@@ -267,8 +267,8 @@ function mapChartRow(
         },
       })),
     },
-    postedAgo: formatRelativeTime(locale, c.publishedAt),
-    createdAt: c.publishedAt.toISOString(),
+    postedAgo: formatRelativeTime(locale, c.postedAt),
+    createdAt: c.postedAt.toISOString(),
     isFollowing: followingIds.has(c.user.id),
     isLiked: likedSet.has(c.id),
   };

@@ -161,6 +161,7 @@ export default async function CopaPage() {
         year: copa.year,
         status: copa.status as string,
         maxParticipants: copa.maxParticipants,
+        artistsPerUser: copa.artistsPerUser,
         isParticipant: userId ? copa.participants.some((p) => p.userId === userId) : false,
         participants: copa.participants.map((p) => ({
           userId: p.userId,

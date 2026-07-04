@@ -25,7 +25,7 @@ type SimpleFixture = {
 };
 
 type Props = {
-  copa: { id: string; name: string; year: number; status: string; maxParticipants: number; isParticipant: boolean; participants: { userId: string; name: string; handle: string; avatarColor: string }[] };
+  copa: { id: string; name: string; year: number; status: string; maxParticipants: number; artistsPerUser: number; isParticipant: boolean; participants: { userId: string; name: string; handle: string; avatarColor: string }[] };
   userId: string | null;
   liveFixture: SimpleFixture | null;
   liveCount: number;
@@ -255,7 +255,9 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
           <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Inscrições abertas</div>
           <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
             {copa.participants.length}/{copa.maxParticipants} participante{copa.participants.length !== 1 ? "s" : ""}
-            {copa.isParticipant ? " · Cadastre seus 8 artistas" : " · Inscreva-se e monte seu time"}
+            {copa.isParticipant
+              ? ` · Cadastre seus ${copa.artistsPerUser} artista${copa.artistsPerUser !== 1 ? "s" : ""}`
+              : ` · Inscreva-se e escolha ${copa.artistsPerUser} artista${copa.artistsPerUser !== 1 ? "s" : ""}`}
           </div>
           {copa.isParticipant ? (
             <button

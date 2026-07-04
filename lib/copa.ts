@@ -4,6 +4,14 @@ import { fetchSpotifyTrackCovers } from "@/lib/spotify-server";
 
 export const COPA_GROUP_LETTERS = "ABCDEFGHIJKLMNOP".split("") as string[];
 
+// The bracket structure (16 groups → R32 → R16 → ... → final) is hardcoded
+// throughout lib/copa-knockout.ts, so the total number of artists is fixed —
+// only how they're distributed among participants (maxParticipants) varies.
+export const COPA_TOTAL_ARTISTS = 64;
+
+// Allowed participant counts; each must evenly divide COPA_TOTAL_ARTISTS.
+export const COPA_PARTICIPANT_OPTIONS = [8, 16, 32, 64] as const;
+
 // Placeholder group for artists that have been claimed but not yet drawn into a
 // real group. Groups are only formed by the draw (sorteio), after registration.
 export const COPA_UNASSIGNED_GROUP = "?";

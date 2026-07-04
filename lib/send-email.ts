@@ -26,12 +26,20 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
         }),
       });
       if (!res.ok) {
-        console.error("[email] Resend error", res.status, await res.text());
+        const detail = await res.text().catch(() => "");
+        console.error(
+          `[email] Resend recusou o envio (status ${res.status}). from="${from}" to="${params.to}" subject="${params.subject}". Resposta: ${detail}`,
+        );
+        if (res.status === 401 || res.status === 403) {
+          console.error(
+            "[email] Dica: 401/403 costuma ser RESEND_API_KEY inválida ou domínio de EMAIL_FROM não verificado no Resend.",
+          );
+        }
         return false;
       }
       return true;
     } catch (e) {
-      console.error("[email] Resend fetch failed", e);
+      console.error(`[email] Falha de rede ao chamar o Resend (to="${params.to}")`, e);
       return false;
     }
   }
@@ -44,7 +52,9 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
     return true;
   }
 
-  console.error("[email] RESEND_API_KEY ausente em produção");
+  console.error(
+    `[email] RESEND_API_KEY ausente em produção — email NÃO enviado (to="${params.to}", subject="${params.subject}"). Configure RESEND_API_KEY e EMAIL_FROM no .env.`,
+  );
   return false;
 }
 

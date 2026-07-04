@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
-import { COPA_DAY_LABELS, COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles } from "@/lib/copa";
+import { COPA_DAY_LABELS, COPA_PARTICIPANT_OPTIONS, COPA_SINGLES_COUNT, COPA_TOTAL_ARTISTS, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 import { GripVertical } from "lucide-react";
 
@@ -1083,15 +1083,17 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
               <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
                 Máximo de participantes
               </label>
-              <input
-                type="number"
-                min={2}
+              <select
                 value={newMaxParticipants}
                 onChange={(e) => setNewMaxParticipants(Number(e.target.value))}
                 style={{ width: "100%", background: "var(--fill-inset)", border: "1.5px solid var(--divider)", borderRadius: 10, padding: "10px 14px", color: "var(--text)", fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
-              />
+              >
+                {COPA_PARTICIPANT_OPTIONS.map((n) => (
+                  <option key={n} value={n}>{n} participantes</option>
+                ))}
+              </select>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-                Os próprios usuários se inscrevem enquanto a Copa está em Inscrições.
+                Cada participante deverá escolher <strong>{COPA_TOTAL_ARTISTS / newMaxParticipants} artista{COPA_TOTAL_ARTISTS / newMaxParticipants > 1 ? "s" : ""}</strong> ({COPA_TOTAL_ARTISTS} artistas ÷ {newMaxParticipants} participantes). Os próprios usuários se inscrevem enquanto a Copa está em Inscrições.
               </div>
             </div>
 
