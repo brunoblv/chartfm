@@ -26,6 +26,7 @@ import { getSystemFeedPosts } from "@/lib/system-feed";
 import { mergeHomeFeed, filterFollowingRecommendations } from "@/lib/home-mixed-feed";
 import { getPrimaryParada } from "@/lib/paradas";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
+import { userActiveInLastDaysFilter } from "@/lib/user-activity";
 import type { UserWithCharts } from "@/lib/types";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -357,8 +358,8 @@ export default async function HomePage() {
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
       getGlobalTopSongs(rankingWeek.weekIndex, 3),
-      getSuggestedUsers(session.user.id, userGenres, followingIds, 3),
-      getNewUsers(session.user.id, followingIds, 3),
+      getSuggestedUsers(session.user.id, userGenres, followingIds, 5),
+      getNewUsers(session.user.id, followingIds, 5),
       getTimelineFeed(session.user.id, session.user.handle, currentWeekIdx, followingIds, locale),
       getPublishedThisWeek(session.user.id, session.user.handle, followingIds),
       getReviewsFeed(session.user.id, locale),
@@ -442,12 +443,13 @@ async function getSuggestedUsers(
   userId: string,
   genres: string[],
   followingIds: Set<string>,
-  limit = 3,
+  limit = 5,
 ): Promise<SuggestedUserRow[]> {
   const excludeIds = [userId, ...followingIds];
+  const activeFilter = userActiveInLastDaysFilter(7);
   const where = genres.length
-    ? { id: { notIn: excludeIds }, genres: { hasSome: genres } }
-    : { id: { notIn: excludeIds } };
+    ? { id: { notIn: excludeIds }, genres: { hasSome: genres }, ...activeFilter }
+    : { id: { notIn: excludeIds }, ...activeFilter };
   const candidates = await prisma.user.findMany({
     where,
     select: { id: true, handle: true, name: true, followers: true, avatarColor: true, image: true, genres: true },
@@ -473,7 +475,7 @@ async function getSuggestedUsers(
   if (ranked.length >= limit || genres.length === 0) return ranked;
 
   const fallback = await prisma.user.findMany({
-    where: { id: { notIn: [...excludeIds, ...ranked.map((r) => r.id)] } },
+    where: { id: { notIn: [...excludeIds, ...ranked.map((r) => r.id)] }, ...activeFilter },
     select: { id: true, handle: true, name: true, followers: true, avatarColor: true, image: true, genres: true },
     orderBy: { followers: "desc" },
     take: limit - ranked.length,
@@ -492,7 +494,7 @@ async function getSuggestedUsers(
   ];
 }
 
-async function getNewUsers(userId: string, followingIds: Set<string>, limit = 3): Promise<SuggestedUserRow[]> {
+async function getNewUsers(userId: string, followingIds: Set<string>, limit = 5): Promise<SuggestedUserRow[]> {
   const users = await prisma.user.findMany({
     where: { id: { notIn: [userId, ...followingIds] } },
     select: { id: true, handle: true, name: true, followers: true, avatarColor: true, image: true },
