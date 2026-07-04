@@ -117,17 +117,49 @@ function parseArgsForPython(): string[] {
   return args;
 }
 
-function parseWeeksFromExcel(): RawWeek[] {
-  if (!existsSync(XLSX_PATH)) throw new Error(`Arquivo não encontrado: ${XLSX_PATH}`);
-  if (!existsSync(PARSE_SCRIPT_PATH)) throw new Error(`Parser não encontrado: ${PARSE_SCRIPT_PATH}`);
+function runPythonParser(): string {
+  const args = parseArgsForPython();
+  const attempts = ["python3", "python"] as const;
+  let lastError: unknown;
 
-  let output: string;
-  try {
-    output = execFileSync("python", parseArgsForPython(), { encoding: "utf-8" });
-  } catch {
-    output = execFileSync("python3", parseArgsForPython(), { encoding: "utf-8" });
+  for (const bin of attempts) {
+    try {
+      return execFileSync(bin, args, {
+        encoding: "utf-8",
+        maxBuffer: 64 * 1024 * 1024,
+      });
+    } catch (err) {
+      lastError = err;
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === "ENOENT") continue;
+    }
   }
 
+  const err = lastError as {
+    message?: string;
+    stderr?: string | Buffer;
+    stdout?: string | Buffer;
+    status?: number;
+  };
+  const stderr = err?.stderr?.toString().trim();
+  const stdout = err?.stdout?.toString().trim();
+  const details = [stderr, stdout].filter(Boolean).join("\n");
+  throw new Error(
+    `Falha ao executar parse-ucc-xlsx.py (${args.join(" ")}).` +
+      (details ? `\n${details}` : `\n${err?.message ?? "python3/python não disponível"}`),
+  );
+}
+
+function parseWeeksFromExcel(): RawWeek[] {
+  if (!existsSync(XLSX_PATH)) {
+    throw new Error(
+      `Arquivo não encontrado: ${XLSX_PATH}\n` +
+        "Suba a planilha para uploads/ ou passe --xlsx=caminho/arquivo.xlsx",
+    );
+  }
+  if (!existsSync(PARSE_SCRIPT_PATH)) throw new Error(`Parser não encontrado: ${PARSE_SCRIPT_PATH}`);
+
+  const output = runPythonParser();
   return JSON.parse(output) as RawWeek[];
 }
 
@@ -278,6 +310,7 @@ async function resolveSongWithSpotify(
 }
 
 async function importWeeks() {
+  console.log(`[info] Planilha: ${XLSX_PATH}`);
   const weeks = parseWeeksFromExcel();
   console.log(`[info] Semanas parseadas: ${weeks.length} (${XLSX_PATH})`);
   if (!weeks.length) return;
