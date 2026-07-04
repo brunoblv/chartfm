@@ -28,41 +28,162 @@ function shuffle<T>(arr: T[]): T[] {
 export type DrawInput = { id: string; ownerId: string };
 export type DrawSlot = { artistId: string; groupLetter: string; slotInGroup: number };
 
-// Randomly distribute artists into groups of 4 such that no two artists owned by
-// the same participant land in the same group. Returns null if no valid draw was
-// found (e.g. too few participants for the number of artists per owner).
+/** Pares do 1/16 (A×B, C×D, …) — índice 0–7 para 16 grupos. */
+export function r32PairIndex(groupIndex: number): number {
+  return Math.floor(groupIndex / 2);
+}
+
+/**
+ * Distância mínima no chaveamento entre dois grupos (quanto maior, mais tarde podem se enfrentar).
+ * 0 = mesmo grupo · 1 = mesmo par R32 · 2 = mesmo quadrante R16 · 3 = mesma metade · 4 = metades opostas
+ */
+export function bracketSeparation(g1: number, g2: number): number {
+  if (g1 === g2) return 0;
+  if (r32PairIndex(g1) === r32PairIndex(g2)) return 1;
+  if (Math.floor(g1 / 4) === Math.floor(g2 / 4)) return 2;
+  if (Math.floor(g1 / 8) === Math.floor(g2 / 8)) return 3;
+  return 4;
+}
+
+type DrawState = {
+  groups: DrawInput[][];
+  ownerPairCount: Map<string, Map<number, number>>;
+};
+
+function emptyDrawState(numGroups: number): DrawState {
+  return { groups: Array.from({ length: numGroups }, () => []), ownerPairCount: new Map() };
+}
+
+function canPlaceInGroup(state: DrawState, ownerId: string, g: number): boolean {
+  if (state.groups[g].length >= 4) return false;
+  if (state.groups[g].some((a) => a.ownerId === ownerId)) return false;
+  if ((state.ownerPairCount.get(ownerId)?.get(r32PairIndex(g)) ?? 0) > 0) return false;
+  return true;
+}
+
+function placementScore(state: DrawState, ownerId: string, g: number): number {
+  let minSep = 4;
+  for (let gi = 0; gi < state.groups.length; gi++) {
+    for (const a of state.groups[gi]) {
+      if (a.ownerId !== ownerId) continue;
+      minSep = Math.min(minSep, bracketSeparation(gi, g));
+    }
+  }
+  return minSep;
+}
+
+function placeArtist(state: DrawState, art: DrawInput, g: number): void {
+  state.groups[g].push(art);
+  const pair = r32PairIndex(g);
+  if (!state.ownerPairCount.has(art.ownerId)) state.ownerPairCount.set(art.ownerId, new Map());
+  const pairs = state.ownerPairCount.get(art.ownerId)!;
+  pairs.set(pair, (pairs.get(pair) ?? 0) + 1);
+}
+
+function unplaceArtist(state: DrawState, art: DrawInput, g: number): void {
+  state.groups[g].pop();
+  const pair = r32PairIndex(g);
+  const pairs = state.ownerPairCount.get(art.ownerId);
+  if (!pairs) return;
+  const next = (pairs.get(pair) ?? 1) - 1;
+  if (next <= 0) pairs.delete(pair);
+  else pairs.set(pair, next);
+  if (pairs.size === 0) state.ownerPairCount.delete(art.ownerId);
+}
+
+function totalDrawScore(groups: DrawInput[][]): number {
+  const byOwner = new Map<string, number[]>();
+  groups.forEach((grp, gi) => {
+    for (const a of grp) {
+      if (!byOwner.has(a.ownerId)) byOwner.set(a.ownerId, []);
+      byOwner.get(a.ownerId)!.push(gi);
+    }
+  });
+  let score = 0;
+  for (const indices of byOwner.values()) {
+    for (let i = 0; i < indices.length; i++) {
+      for (let j = i + 1; j < indices.length; j++) {
+        score += bracketSeparation(indices[i], indices[j]);
+      }
+    }
+  }
+  return score;
+}
+
+function buildDrawResult(groups: DrawInput[][]): DrawSlot[] {
+  const result: DrawSlot[] = [];
+  groups.forEach((grp, gi) =>
+    grp.forEach((a, slot) =>
+      result.push({ artistId: a.id, groupLetter: COPA_GROUP_LETTERS[gi], slotInGroup: slot }),
+    ),
+  );
+  return result;
+}
+
+function orderArtistsForDraw(artists: DrawInput[]): DrawInput[] {
+  const byOwner = new Map<string, DrawInput[]>();
+  for (const a of artists) {
+    if (!byOwner.has(a.ownerId)) byOwner.set(a.ownerId, []);
+    byOwner.get(a.ownerId)!.push(a);
+  }
+  return [...byOwner.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .flatMap(([, arts]) => shuffle(arts));
+}
+
+function solveDraw(
+  ordered: DrawInput[],
+  numGroups: number,
+  idx: number,
+  state: DrawState,
+): DrawInput[][] | null {
+  if (idx === ordered.length) {
+    return state.groups.every((g) => g.length === 4) ? state.groups.map((g) => [...g]) : null;
+  }
+
+  const art = ordered[idx];
+  const candidates: number[] = [];
+  for (let g = 0; g < numGroups; g++) {
+    if (canPlaceInGroup(state, art.ownerId, g)) candidates.push(g);
+  }
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) => {
+    const sep = placementScore(state, art.ownerId, b) - placementScore(state, art.ownerId, a);
+    if (sep !== 0) return sep;
+    return state.groups[a].length - state.groups[b].length;
+  });
+
+  for (const g of candidates) {
+    placeArtist(state, art, g);
+    const result = solveDraw(ordered, numGroups, idx + 1, state);
+    if (result) return result;
+    unplaceArtist(state, art, g);
+  }
+  return null;
+}
+
+// Distribui artistas em grupos de 4 sem repetir dono no mesmo grupo nem em pares
+// vizinhos do chaveamento (A×B, C×D, …). Entre sorteios válidos, prefere o que
+// maximiza a distância no mata-mata. Retorna null se não houver solução.
 export function drawGroups(artists: DrawInput[], numGroups: number, maxTries = 300): DrawSlot[] | null {
   if (numGroups <= 0 || numGroups > COPA_GROUP_LETTERS.length) return null;
   if (artists.length !== numGroups * 4) return null;
 
+  let best: DrawSlot[] | null = null;
+  let bestScore = -1;
+
   for (let t = 0; t < maxTries; t++) {
-    const groups: DrawInput[][] = Array.from({ length: numGroups }, () => []);
-    let ok = true;
-
-    for (const art of shuffle(artists)) {
-      const candidates: number[] = [];
-      for (let g = 0; g < numGroups; g++) {
-        if (groups[g].length < 4 && !groups[g].some((a) => a.ownerId === art.ownerId)) {
-          candidates.push(g);
-        }
-      }
-      if (candidates.length === 0) { ok = false; break; }
-      // Prefer the emptiest valid group to keep groups balanced; random tiebreak.
-      const minLen = Math.min(...candidates.map((g) => groups[g].length));
-      const best = candidates.filter((g) => groups[g].length === minLen);
-      groups[best[Math.floor(Math.random() * best.length)]].push(art);
+    const state = emptyDrawState(numGroups);
+    const slots = solveDraw(orderArtistsForDraw(artists), numGroups, 0, state);
+    if (!slots) continue;
+    const score = totalDrawScore(slots);
+    if (score > bestScore) {
+      bestScore = score;
+      best = buildDrawResult(slots);
     }
-    if (!ok) continue;
-
-    const result: DrawSlot[] = [];
-    groups.forEach((grp, gi) =>
-      grp.forEach((a, slot) =>
-        result.push({ artistId: a.id, groupLetter: COPA_GROUP_LETTERS[gi], slotInGroup: slot }),
-      ),
-    );
-    return result;
   }
-  return null;
+  return best;
 }
 
 // Round-robin fixture pairs for a group of 4

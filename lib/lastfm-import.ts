@@ -1,6 +1,6 @@
 import { fetchTopTracks, fetchTracksBetweenUnix, type TopTrack, type TrackPlays } from "./lastfm";
 import { scoreLastfmTracks } from "./lastfm-chart-engine";
-import { isMyTrlOwner } from "./mytrl-access";
+import { getWeightedLastfmImportConfig } from "./mytrl-access";
 import {
   formatPreviousCalendarMonthLabel,
   isCurrentChartWeek,
@@ -208,9 +208,10 @@ export function describeLastfmImportPeriod(
   handle?: string | null,
   filterNewHits = true,
 ): string {
-  if (isMyTrlOwner(handle)) {
+  const weighted = getWeightedLastfmImportConfig(handle);
+  if (weighted) {
     if (filterNewHits) {
-      return 'Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Apenas faixas da playlist Spotify "new hits" entram na parada.';
+      return `Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Apenas faixas da playlist Spotify "${weighted.playlistLabel}" entram na parada.`;
     }
     return "Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Todas as faixas ouvidas no período entram na parada.";
   }
@@ -227,9 +228,10 @@ export function describeLastfmImportOrder(
   handle?: string | null,
   filterNewHits = true,
 ): string {
-  if (isMyTrlOwner(handle)) {
+  const weighted = getWeightedLastfmImportConfig(handle);
+  if (weighted) {
     if (filterNewHits) {
-      return 'Máximo de 200 músicas. Período: últimos 30 dias. Somente faixas da playlist "new hits".';
+      return `Máximo de 200 músicas. Período: últimos 30 dias. Somente faixas da playlist "${weighted.playlistLabel}".`;
     }
     return "Máximo de 200 músicas. Período: últimos 30 dias. Sem filtro de playlist.";
   }

@@ -67,6 +67,48 @@ export function isMyTrlOwner(handle: string | null | undefined): boolean {
   return handle === MYTRL_OWNER_HANDLE;
 }
 
+/** Import Last.fm ponderado (30d) + filtro por playlist Spotify. */
+export const BRINGTHELEO_HANDLE = "bringtheleo";
+
+/**
+ * Playlist-fonte fixa do import Last.fm @bringtheleo (ID Spotify).
+ * Atual: "New Rock" (blvbruno). Sobrescrevível por env sem deploy.
+ */
+export const BRINGTHELEO_LASTFM_SOURCE_PLAYLIST_ID =
+  process.env.BRINGTHELEO_LASTFM_PLAYLIST_ID?.trim() || "5LCCEDB7B2fvu6UCYg7C7f";
+
+export type WeightedLastfmImportConfig = {
+  /** null = buscar playlist "new hits" por nome na conta Spotify do usuário. */
+  sourcePlaylistId: string | null;
+  requiresSpotifyConnection: boolean;
+  playlistLabel: string;
+};
+
+export function getWeightedLastfmImportConfig(
+  handle: string | null | undefined,
+): WeightedLastfmImportConfig | null {
+  const h = handle?.toLowerCase();
+  if (h === MYTRL_OWNER_HANDLE) {
+    return {
+      sourcePlaylistId: null,
+      requiresSpotifyConnection: true,
+      playlistLabel: "new hits",
+    };
+  }
+  if (h === BRINGTHELEO_HANDLE) {
+    return {
+      sourcePlaylistId: BRINGTHELEO_LASTFM_SOURCE_PLAYLIST_ID,
+      requiresSpotifyConnection: false,
+      playlistLabel: "New Rock",
+    };
+  }
+  return null;
+}
+
+export function hasWeightedLastfmImport(handle: string | null | undefined): boolean {
+  return getWeightedLastfmImportConfig(handle) !== null;
+}
+
 /** Playlists Spotify criadas automaticamente na conta @bruno saem públicas (Copa, Push, cron Last.fm, etc.). */
 export const BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC = true;
 

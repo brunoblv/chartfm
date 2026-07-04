@@ -30,7 +30,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (action === "draw_groups") {
     // Sorteio dos grupos — só depois que todos os participantes se inscreverem
     // e cadastrarem o time completo. Garante que artistas de um mesmo dono não
-    // caiam no mesmo grupo.
+    // caiam no mesmo grupo nem em pares vizinhos do chaveamento (A×B, C×D, …).
     if (copa.status !== "REGISTRATION") {
       return NextResponse.json({ error: "O sorteio só pode ser feito durante as inscrições" }, { status: 400 });
     }
@@ -69,7 +69,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const draw = drawGroups(artists, numGroups);
     if (!draw) {
       return NextResponse.json(
-        { error: "Não foi possível sortear sem repetir donos no mesmo grupo. São necessários mais participantes." },
+        {
+          error:
+            "Não foi possível sortear sem repetir donos no mesmo grupo ou em pares vizinhos (A×B, C×D, …). São necessários mais participantes.",
+        },
         { status: 400 },
       );
     }

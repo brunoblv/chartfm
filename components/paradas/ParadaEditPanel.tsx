@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 
-const SIZE_OPTIONS = [10, 15, 20, 25, 30];
+const CHART_SIZE_MIN = 1;
+const CHART_SIZE_MAX = 100;
 
 type ParadaEditPanelProps = {
   paradaId: string;
@@ -217,17 +218,40 @@ export function ParadaEditPanel({
           >
             Tamanho do chart
           </label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {SIZE_OPTIONS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setChartSize(s)}
-                style={optionBtn(chartSize === s)}
-              >
-                {s}
-              </button>
-            ))}
+          <input
+            type="number"
+            min={CHART_SIZE_MIN}
+            max={CHART_SIZE_MAX}
+            value={chartSize ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              if (!raw) {
+                setChartSize(null);
+                return;
+              }
+              const v = parseInt(raw, 10);
+              setChartSize(
+                Number.isNaN(v)
+                  ? null
+                  : Math.min(CHART_SIZE_MAX, Math.max(CHART_SIZE_MIN, v)),
+              );
+            }}
+            placeholder="Ex: 30"
+            style={{
+              width: "100%",
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1.5px solid var(--divider-strong)",
+              background: "var(--bg)",
+              color: "var(--text)",
+              fontSize: 15,
+              fontFamily: "inherit",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+            Digite de {CHART_SIZE_MIN} a {CHART_SIZE_MAX} posições.
           </div>
         </div>
 

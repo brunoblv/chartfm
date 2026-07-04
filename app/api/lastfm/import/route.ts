@@ -6,9 +6,9 @@ import {
   resolveBrunoNewHitsImportTracks,
   resolveBrunoLastfmImportTracks,
 } from "@/lib/lastfm-import";
-import { isMyTrlOwner } from "@/lib/mytrl-access";
+import { getWeightedLastfmImportConfig, hasWeightedLastfmImport } from "@/lib/mytrl-access";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
-import { getNamedNewHitsPlaylistTracks } from "@/lib/spotify-user";
+import { getLastfmImportPlaylistTracks } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -159,7 +159,7 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
 
 // POST /api/lastfm/import
 // Body: { limit?: number; weekDate?: string; filterNewHits?: boolean }
-// @bruno: filterNewHits true (padrão) → 30d + playlist "new hits"; false → 30d sem filtro.
+// Import ponderado (@bruno, @bringtheleo): filterNewHits true (padrão) → 30d + playlist-fonte; false → 30d sem filtro.
 // Demais usuários: semana atual top `1month`; outras semanas → mês civil anterior.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -167,7 +167,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
   }
 
-  const isBruno = isMyTrlOwner(session.user.handle);
+  const weightedConfig = getWeightedLastfmImportConfig(session.user.handle);
+  const isWeightedImport = weightedConfig !== null;
 
   let body: { limit?: unknown; weekDate?: unknown; filterNewHits?: unknown } = {};
   try {
@@ -176,7 +177,7 @@ export async function POST(req: NextRequest) {
     body = {};
   }
 
-  const filterNewHits = isBruno && body.filterNewHits !== false;
+  const filterNewHits = isWeightedImport && body.filterNewHits !== false;
 
   const userRecord = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -197,18 +198,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Spotify não configurado" }, { status: 503, headers: NO_CACHE_HEADERS });
   }
 
-  let playlistTracks: Awaited<ReturnType<typeof getNamedNewHitsPlaylistTracks>> = null;
-  if (filterNewHits) {
-    if (!userRecord.spotifyRefreshToken) {
+  let playlistTracks: Awaited<ReturnType<typeof getLastfmImportPlaylistTracks>> = null;
+  if (filterNewHits && weightedConfig) {
+    if (weightedConfig.requiresSpotifyConnection && !userRecord.spotifyRefreshToken) {
       return NextResponse.json(
         { error: "Conecte o Spotify para importar do Last.fm." },
         { status: 400, headers: NO_CACHE_HEADERS },
       );
     }
-    playlistTracks = await getNamedNewHitsPlaylistTracks(session.user.id);
+    playlistTracks = await getLastfmImportPlaylistTracks(session.user.id, session.user.handle);
     if (!playlistTracks?.tracks.length) {
+      const playlistHint = weightedConfig.sourcePlaylistId
+        ? `Playlist Spotify "${weightedConfig.playlistLabel}" (ID ${weightedConfig.sourcePlaylistId})`
+        : `Playlist Spotify "${weightedConfig.playlistLabel}"`;
       return NextResponse.json(
-        { error: "Playlist Spotify \"new hits\" não encontrada ou vazia." },
+        { error: `${playlistHint} não encontrada ou vazia.` },
         { status: 400, headers: NO_CACHE_HEADERS },
       );
     }
@@ -218,7 +222,7 @@ export async function POST(req: NextRequest) {
   const lastfmUsername = userRecord.lastfmUser;
 
   try {
-    if (isBruno && !filterNewHits) {
+    if (isWeightedImport && !filterNewHits) {
       const { tracks: topTracks, periodLabel } = await resolveBrunoLastfmImportTracks(
         body.weekDate,
         limit,

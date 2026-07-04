@@ -22,7 +22,7 @@ import { buildDayLabelFromDate } from "@/lib/chart-cadence";
 import { getChartWeekRange } from "@/lib/chart-week";
 import { describeLastfmImportOrder, describeLastfmImportPeriod } from "@/lib/lastfm-import";
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
-import { canUseSpotifyFeatures, isMyTrlOwner } from "@/lib/mytrl-access";
+import { canUseSpotifyFeatures, getWeightedLastfmImportConfig, hasWeightedLastfmImport } from "@/lib/mytrl-access";
 import { SpotlightSearchCard } from "@/components/create/SpotlightSearchCard";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
@@ -101,7 +101,8 @@ export default function CreatePage() {
   const isMobile = useIsMobile();
   const { data: session } = useSession();
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
-  const isBrunoLastfmImport = isMyTrlOwner(session?.user?.handle);
+  const weightedLastfmImport = getWeightedLastfmImportConfig(session?.user?.handle);
+  const hasWeightedLastfmImportUi = hasWeightedLastfmImport(session?.user?.handle);
   const [flashbackSong, setFlashbackSong] = useState<Song | null>(null);
   const [destaqueSong, setDestaqueSong] = useState<Song | null>(null);
   const [entries, setEntries] = useState<Song[]>([]);
@@ -945,7 +946,7 @@ export default function CreatePage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
         {session?.user && (
           <>
-            {isBrunoLastfmImport ? (
+            {hasWeightedLastfmImportUi ? (
               <>
                 <button
                   type="button"
@@ -955,7 +956,7 @@ export default function CreatePage() {
                     setShowLastfmModal(true);
                   }}
                   disabled={importingLastfm}
-                  title="Importar do Last.fm (últimos 30 dias, somente faixas da playlist new hits)"
+                  title={`Importar do Last.fm (últimos 30 dias, somente faixas da playlist ${weightedLastfmImport?.playlistLabel ?? "new hits"})`}
                   style={{
                     border: "1px solid rgba(250,36,60,0.3)",
                     background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -969,7 +970,7 @@ export default function CreatePage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {importingLastfm ? "Buscando Last.fm…" : "↺ New Hits"}
+                  {importingLastfm ? "Buscando Last.fm…" : `↺ ${weightedLastfmImport?.playlistLabel ?? "New Hits"}`}
                 </button>
                 <button
                   type="button"
@@ -1365,9 +1366,9 @@ export default function CreatePage() {
                   ↺
                 </div>
                 <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>
-                  {isBrunoLastfmImport
+                  {hasWeightedLastfmImportUi
                     ? lastfmFilterNewHits
-                      ? "Importar do Last.fm (New Hits)"
+                      ? `Importar do Last.fm (${weightedLastfmImport?.playlistLabel ?? "New Hits"})`
                       : "Importar do Last.fm (30 dias)"
                     : "Importar do Last.fm"}
                 </span>

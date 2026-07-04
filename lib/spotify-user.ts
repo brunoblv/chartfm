@@ -5,7 +5,8 @@
 
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { prisma } from "@/lib/prisma";
-import { BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC, MYTRL_OWNER_HANDLE, MYTRL_SOURCE_PLAYLIST_ID, isMyTrlOwner } from "@/lib/mytrl-access";
+import { BRUNO_AUTO_SPOTIFY_PLAYLIST_PUBLIC, MYTRL_OWNER_HANDLE, MYTRL_SOURCE_PLAYLIST_ID, getWeightedLastfmImportConfig, isMyTrlOwner } from "@/lib/mytrl-access";
+import { getAccessToken } from "@/lib/spotify-server";
 import { pickAlbumImageUrl } from "@/lib/spotify-server";
 
 const AUTH_URL = "https://accounts.spotify.com/api/token";
@@ -370,6 +371,26 @@ export async function getNamedNewHitsPlaylistTracks(
   if (!playlistId) return null;
   const tracks = await fetchNewHitsTracks(token, playlistId);
   return { playlistId, tracks };
+}
+
+/**
+ * Faixas da playlist-fonte do import Last.fm ponderado (@bruno por nome, demais por ID fixo).
+ */
+export async function getLastfmImportPlaylistTracks(
+  userId: string,
+  handle: string | null | undefined,
+): Promise<{ playlistId: string; tracks: NewHitsTrack[] } | null> {
+  const config = getWeightedLastfmImportConfig(handle);
+  if (!config) return null;
+
+  if (config.sourcePlaylistId) {
+    const token = await getAccessToken();
+    if (!token) return null;
+    const tracks = await fetchNewHitsTracks(token, config.sourcePlaylistId);
+    return { playlistId: config.sourcePlaylistId, tracks };
+  }
+
+  return getNamedNewHitsPlaylistTracks(userId);
 }
 
 export function mapNewHitsToLookup(tracks: NewHitsTrack[]): Map<string, NewHitsTrack> {

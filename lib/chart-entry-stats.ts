@@ -98,10 +98,24 @@ export async function recomputePersistedChartEntryStatsForParada(
   });
 
   const computedCharts = applyComputedEntryStatsToCharts(charts);
-  const updates = computedCharts.flatMap((chart) =>
+  const entriesToUpdate = computedCharts.flatMap((chart) =>
     chart.entries
       .filter(() => fromWeekIndex === undefined || chart.weekIndex >= fromWeekIndex)
-      .map((entry) =>
+      .map((entry) => ({
+        id: entry.id,
+        status: entry.status,
+        delta: entry.delta,
+        prevPos: entry.prevPos,
+        peak: entry.peak,
+        weeks: entry.weeks,
+      })),
+  );
+
+  const CONCURRENT_UPDATES = 4;
+  for (let i = 0; i < entriesToUpdate.length; i += CONCURRENT_UPDATES) {
+    const batch = entriesToUpdate.slice(i, i + CONCURRENT_UPDATES);
+    await Promise.all(
+      batch.map((entry) =>
         client.chartEntry.update({
           where: { id: entry.id },
           data: {
@@ -113,10 +127,10 @@ export async function recomputePersistedChartEntryStatsForParada(
           },
         }),
       ),
-  );
+    );
+  }
 
-  await Promise.all(updates);
-  return { charts: charts.length, entries: updates.length };
+  return { charts: charts.length, entries: entriesToUpdate.length };
 }
 
 export async function recomputePersistedChartEntryStats(
