@@ -36,7 +36,7 @@ const ROSTER: { handle: string; artists: [string, string] }[] = [
   { handle: "heavydirtysoul", artists: ["Nx Zero", "CPM 22"] },
   { handle: "caiosoares", artists: ["Harry Styles", "The Weeknd"] },
   { handle: "joaoHT", artists: ["Camila Cabello", "Tate McRae"] },
-  { handle: "theandre", artists: ["Lindsay Lohan", "Ashlee Simpson"] },
+  { handle: "theandre", artists: ["Lindsay Lohan", "Charli xcx"] },
   { handle: "karlacomk", artists: ["Justin Bieber", "Ashley Tisdale"] },
   { handle: "julianast", artists: ["Nelly Furtado", "Fergie"] },
   { handle: "kendikamura", artists: ["Three Days Grace", "Kings of Leon"] },
