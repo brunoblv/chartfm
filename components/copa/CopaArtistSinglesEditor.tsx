@@ -19,6 +19,7 @@ import {
   type CopaSongDragPayload,
 } from "@/lib/copa-song-dnd";
 import { CopaSinglesMobileReorder } from "@/components/copa/CopaSinglesMobileReorder";
+import { COPA_SONG_SEARCH_MIN_CHARS } from "@/lib/copa-song-search-client";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
@@ -167,19 +168,29 @@ export function CopaArtistSinglesEditor({
     />
   );
 
+  // No mobile a edição é por slot: o modal busca música só para o slot que o
+  // abriu e fecha ao escolher. A ordenação fica nos controles da lista de slots.
+  const mobileSlot =
+    isMobile && focusSlotIndex != null && canEditSlot(focusSlotIndex) ? focusSlotIndex : null;
+  const mobileSlotLabel = mobileSlot != null ? SLOT_LABELS[mobileSlot] ?? `Fase ${mobileSlot + 1}` : null;
+
   const searchHint = (
     <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.4 }}>
       {isMobile
-        ? "Toque no + para adicionar. Depois ordene com os controles dos slots."
+        ? `Toque no + para definir a música${mobileSlotLabel ? ` de ${mobileSlotLabel}` : ""}.`
         : "Toque no + para adicionar ao próximo slot livre, ou arraste direto para um slot."}
     </div>
   );
 
-  const emptyState = search.length > 0 && results.length === 0 && (
-    <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 4px", marginBottom: 8 }}>
-      Nenhuma música encontrada no catálogo ou no Spotify.
-    </div>
-  );
+  const searchTooShort = search.trim().length > 0 && search.trim().length < COPA_SONG_SEARCH_MIN_CHARS;
+  const emptyState =
+    search.trim().length > 0 && results.length === 0 ? (
+      <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 4px", marginBottom: 8 }}>
+        {searchTooShort
+          ? `Digite pelo menos ${COPA_SONG_SEARCH_MIN_CHARS} letras para buscar.`
+          : "Nenhuma música encontrada no catálogo ou no Spotify."}
+      </div>
+    ) : null;
 
   const resultsList = results.length > 0 && (
     <div style={{ marginBottom: isMobile ? 14 : 0 }}>
@@ -231,11 +242,12 @@ export function CopaArtistSinglesEditor({
             </div>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (disabled) return;
-                const slot = defaultAssignSlot();
+                const slot = mobileSlot ?? defaultAssignSlot();
                 if (slot === focusSlotIndex) setFocusConsumed(true);
-                onAssign(slot, song.title, song.id, song.spotifyId ?? null);
+                const ok = await onAssign(slot, song.title, song.id, song.spotifyId ?? null);
+                if (ok && isMobile) onClose();
               }}
               disabled={disabled}
               aria-label={taken ? "Música já usada" : `Adicionar ${song.title}`}
@@ -434,11 +446,13 @@ export function CopaArtistSinglesEditor({
           }}
         >
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800 }}>{title}</div>
+            <div style={{ fontSize: 16, fontWeight: 800 }}>
+              {mobileSlotLabel ? `Música para ${mobileSlotLabel}` : title}
+            </div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
               {artistName}
               {isMobile
-                ? " · toque no + para adicionar e ordene com os controles"
+                ? " · a busca fecha ao escolher"
                 : " · adicione com o + ou arraste músicas para os slots"}
             </div>
           </div>
@@ -457,7 +471,8 @@ export function CopaArtistSinglesEditor({
             {searchHint}
             {emptyState}
             {resultsList}
-            {slotsList}
+            {/* Sem slot focado (fallback), mostra a lista para o usuário se situar */}
+            {mobileSlot == null && slotsList}
           </div>
         ) : (
           <div style={{ flex: 1, minHeight: 0, display: "flex" }}>

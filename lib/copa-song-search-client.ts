@@ -52,9 +52,11 @@ export function dedupeExactTitles(
  * não encontrou nada. Releases idênticos são deduplicados; versões distintas
  * (remix, radio edit…) aparecem todas. Nunca retorna texto livre.
  */
+export const COPA_SONG_SEARCH_MIN_CHARS = 3;
+
 export async function searchCopaSongs(query: string, artistName: string): Promise<CopaSongSearchResult[]> {
   const q = query.trim();
-  if (!q) return [];
+  if (q.length < COPA_SONG_SEARCH_MIN_CHARS) return [];
 
   let dbTracks: CopaSongSearchResult[] = [];
   let accessToken: string | null = null;

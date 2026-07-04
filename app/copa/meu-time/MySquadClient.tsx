@@ -289,6 +289,34 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
     }
   }
 
+  function clearableSlots(art: MyArtist) {
+    return Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => i).filter((i) => {
+      if (!isSingleSlotEditableInWindow(i, editWindow, art.slotLocks, art.id)) return false;
+      const s = art.singles.find((x) => x.slotIndex === i);
+      return !!s && !s.songName.startsWith("Single ");
+    });
+  }
+
+  async function clearSingles(artistId: string) {
+    if (savingSingle) return;
+    const art = artists.find((a) => a.id === artistId);
+    if (!art) return;
+    const slots = clearableSlots(art);
+    if (slots.length === 0) return;
+    if (!confirm(`Limpar as ${slots.length} música${slots.length !== 1 ? "s" : ""} de ${art.artistName}? Fases já disputadas não são alteradas.`)) {
+      return;
+    }
+    setSavingSingle(true);
+    try {
+      await persistSingles(
+        artistId,
+        slots.map((i) => ({ slotIndex: i, songName: `Single ${i + 1}`, songId: null })),
+      );
+    } finally {
+      setSavingSingle(false);
+    }
+  }
+
   async function handleSlotDrop(artistId: string, slotIndex: number, e: React.DragEvent) {
     e.preventDefault();
     setSlotDropOver(null);
@@ -333,7 +361,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
               ? "Time completo! Agora escolha as músicas de cada artista"
               : editWindow.open
                 ? isMobile
-                  ? "Use ↑↓, trocar ou posição nos slots editáveis · toque para buscar música"
+                  ? "Toque num slot para escolher a música · ordene com ↑↓, trocar ou posição"
                   : "Toque em ✏ ou arraste músicas entre slots editáveis"
                 : "Visualize suas músicas · edição indisponível agora"}
         </div>
@@ -470,6 +498,25 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                       : `Grupo ${art.groupLetter} · ${art.standings.pts}pts · ${art.standings.pj} PJ`}
                   </div>
                 </div>
+                {clearableSlots(art).length > 0 && (
+                  <button
+                    onClick={() => clearSingles(art.id)}
+                    disabled={savingSingle}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: "var(--fill-inset)",
+                      color: "var(--text-muted)",
+                      border: "none",
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      cursor: savingSingle ? "not-allowed" : "pointer",
+                      marginRight: 6,
+                    }}
+                  >
+                    Limpar músicas
+                  </button>
+                )}
                 {isRegistration ? (
                   <button
                     onClick={() => openReplaceModal(art.id, art.artistName)}

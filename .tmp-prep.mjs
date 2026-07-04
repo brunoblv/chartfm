@@ -1,0 +1,10 @@
+import { PrismaClient } from '@prisma/client';
+import { encode } from "next-auth/jwt";
+import fs from 'fs';
+const p = new PrismaClient();
+const jlo = await p.copaArtist.findFirst({ where: { copaId: 'cmr5sk19r0000l7y3izkgj6u4', artistName: 'Jennifer Lopez' } });
+const song = await p.song.findFirst({ where: { artist: { contains: 'Jennifer Lopez', mode: 'insensitive' } }, select: { id: true, title: true } });
+const secret = fs.readFileSync('.env','utf8').match(/NEXTAUTH_SECRET=(.+)/)[1].trim();
+const token = await encode({ token: { sub: 'cmodmfqzu0000vyi40pzufstt', prismaUserId: 'cmodmfqzu0000vyi40pzufstt', email: 'blv.bruno@gmail.com', name: 'Bruno', handle: 'bruno', role: 'ADMIN' }, secret });
+console.log(JSON.stringify({ artistId: jlo.id, songId: song.id, songTitle: song.title, token }));
+await p.$disconnect();
