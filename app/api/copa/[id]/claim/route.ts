@@ -30,10 +30,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     );
   }
 
-  const [localArtist, spotifyProfile] = await Promise.all([
-    prisma.artist.findUnique({ where: { spotifyId: artistSpotifyId } }),
-    getSpotifyArtistById(artistSpotifyId),
-  ]);
+  // Só consulta o Spotify quando o artista não existe no catálogo local: esta rota
+  // responde a um clique do usuário e não pode ficar presa nos retries longos de 429.
+  const localArtist = await prisma.artist.findUnique({ where: { spotifyId: artistSpotifyId } });
+  const spotifyProfile = localArtist ? null : await getSpotifyArtistById(artistSpotifyId, { maxAttempts: 1 });
   if (!localArtist && !spotifyProfile) {
     return NextResponse.json({ error: "Artista inválido" }, { status: 400 });
   }
@@ -153,11 +153,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     );
   }
 
-  const [oldArtist, copa, localArtist, spotifyProfile] = await Promise.all([
+  const [oldArtist, copa, localArtist] = await Promise.all([
     prisma.copaArtist.findUnique({ where: { id: oldArtistId } }),
     prisma.copaEdition.findUnique({ where: { id } }),
     prisma.artist.findUnique({ where: { spotifyId: artistSpotifyId } }),
-    getSpotifyArtistById(artistSpotifyId),
   ]);
 
   if (!oldArtist || oldArtist.copaId !== id || oldArtist.ownerId !== userId) {
@@ -166,6 +165,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!copa || copa.status !== "REGISTRATION") {
     return NextResponse.json({ error: "Só é possível trocar artistas durante o registro" }, { status: 400 });
   }
+  // Só consulta o Spotify quando o artista não existe no catálogo local: esta rota
+  // responde a um clique do usuário e não pode ficar presa nos retries longos de 429.
+  const spotifyProfile = localArtist ? null : await getSpotifyArtistById(artistSpotifyId, { maxAttempts: 1 });
   if (!localArtist && !spotifyProfile) {
     return NextResponse.json({ error: "Artista inválido" }, { status: 400 });
   }

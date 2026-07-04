@@ -653,16 +653,23 @@ function mapArtistApiToProfile(artist: SpotifyArtistApi): SpotifyArtistProfile {
 }
 
 /** Perfil oficial do artista (GET /artists/{id}), incluindo fotos. */
-export async function getSpotifyArtistById(spotifyId: string): Promise<SpotifyArtistProfile | null> {
+export async function getSpotifyArtistById(
+  spotifyId: string,
+  opts?: { maxAttempts?: number },
+): Promise<SpotifyArtistProfile | null> {
   const token = await getAccessToken();
   if (!token) return null;
   const id = spotifyId.trim();
   if (!id) return null;
 
-  const res = await spotifyFetch(`${API_BASE}/artists/${encodeURIComponent(id)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 3600 },
-  });
+  const res = await spotifyFetch(
+    `${API_BASE}/artists/${encodeURIComponent(id)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 3600 },
+    },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+  );
   if (!res?.ok) return null;
 
   const artist = (await res.json()) as SpotifyArtistApi;

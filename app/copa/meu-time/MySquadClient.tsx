@@ -121,7 +121,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
         }),
       });
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         alert(err.error ?? "Erro ao cadastrar artista");
         return;
       }

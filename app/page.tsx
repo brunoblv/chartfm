@@ -59,8 +59,9 @@ async function getPublishedThisWeek(
   viewerHandle: string | null | undefined,
   followingIds: Set<string>,
 ): Promise<PublisherRow[]> {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const charts = await prisma.chart.findMany({
-    where: { userId: { not: userId }, isPublished: true },
+    where: { userId: { not: userId }, isPublished: true, postedAt: { gte: since } },
     orderBy: { postedAt: "desc" },
     take: 30,
     select: {
