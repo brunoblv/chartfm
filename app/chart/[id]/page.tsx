@@ -407,7 +407,7 @@ export default function ChartDetailPage() {
   ]);
 
   async function exportChartToSpotify() {
-    if (!id || !isDbChart || !isOwner || exportingSpotify) return;
+    if (!id || !isDbChart || !canUseSpotifyImport || exportingSpotify) return;
     if (!session?.user?.id) {
       router.push(`/login?callbackUrl=${encodeURIComponent(`/chart/${id}`)}`);
       return;
@@ -463,7 +463,7 @@ export default function ChartDetailPage() {
   }
 
   const spotifyExportButton =
-    isOwner && isDbChart && canUseSpotifyImport ? (
+    isDbChart && canUseSpotifyImport ? (
       <>
         <button
           type="button"

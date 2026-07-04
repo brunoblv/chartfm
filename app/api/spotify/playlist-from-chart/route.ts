@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSpotifySession } from "@/lib/mytrl-access-server";
+import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import { prisma } from "@/lib/prisma";
 import {
   addTracksToSpotifyPlaylist,
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
     select: {
       id: true,
       userId: true,
+      paradaId: true,
       weekLabel: true,
       dateRange: true,
       user: { select: { handle: true } },
@@ -59,11 +61,10 @@ export async function POST(req: NextRequest) {
   if (!chart) {
     return NextResponse.json({ error: "Parada não encontrada" }, { status: 404, headers: NO_CACHE });
   }
-  if (chart.userId !== session.user.id) {
-    return NextResponse.json(
-      { error: "Só o dono da parada pode exportá-la para o Spotify." },
-      { status: 403, headers: NO_CACHE },
-    );
+  // Qualquer usuário com permissão Spotify pode exportar paradas de outros,
+  // exceto as owner-only (invisíveis para quem não é @bruno).
+  if (!isParadaVisibleToViewer(chart.paradaId, session.user.handle)) {
+    return NextResponse.json({ error: "Parada não encontrada" }, { status: 404, headers: NO_CACHE });
   }
 
   const trackIds: string[] = [];

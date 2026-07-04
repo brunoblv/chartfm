@@ -6,7 +6,6 @@ import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import {
   AdminAlbumLinks,
-  AdminAlbumNameLink,
   AdminArtistLinks,
   AdminArtistNameLink,
   AdminSongLinks,
@@ -15,6 +14,7 @@ import {
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 import { chartGenreSlugsForTags, getChartGenreBySlug } from "@/lib/genre-taxonomy";
 import { ArtistRefreshImageButton } from "../artists/ArtistRefreshImageButton";
+import { InlineField, InlineTags } from "./InlineEdit";
 
 type Kind = "music" | "albums" | "artists";
 
@@ -213,19 +213,25 @@ function MusicTable({ rows }: { rows: SongRow[] }) {
         {rows.map((s) => (
           <tr key={s.id}>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
-              <AdminSongNameLink song={s} />
+              <InlineField kind="music" id={s.id} field="title" value={s.title} required bold />
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>{s.artist}</td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>{s.album?.trim() ? s.album : "—"}</td>
             <td style={{ ...adminTdStyle, verticalAlign: "top", maxWidth: 280 }}>
-              <GenreBadges tags={s.genres} />
+              <InlineTags
+                kind="music"
+                id={s.id}
+                field="genres"
+                tags={s.genres}
+                render={(tags) => <GenreBadges tags={tags} />}
+              />
               {s.genreSource && <div style={{ ...mutedSmall, marginTop: 4 }}>fonte: {s.genreSource}</div>}
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top", maxWidth: 280 }}>
               <GenreBadges tags={s.artistGenres} />
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top", fontFamily: "monospace", fontSize: 12 }}>
-              {s.spotifyId ?? "—"}
+              <InlineField kind="music" id={s.id} field="spotifyId" value={s.spotifyId} mono />
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminSongLinks song={s} />
@@ -254,7 +260,7 @@ function AlbumTable({ rows }: { rows: AlbumRow[] }) {
         {rows.map((a) => (
           <tr key={a.id}>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
-              <AdminAlbumNameLink album={a} />
+              <InlineField kind="albums" id={a.id} field="title" value={a.title} required bold />
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminArtistNameLink artist={a.artist} />{" "}
@@ -318,14 +324,22 @@ function ArtistTable({ rows }: { rows: ArtistRow[] }) {
                     style={{ width: 28, height: 28, borderRadius: 6, border: "1.5px dashed var(--text-disabled)", flexShrink: 0 }}
                   />
                 )}
-                <AdminArtistNameLink artist={a} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <InlineField kind="artists" id={a.id} field="name" value={a.name} required bold />
+                </div>
               </div>
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top", color: "var(--text-subtle)" }}>
-              {a.exhibitionName ?? "—"}
+              <InlineField kind="artists" id={a.id} field="exhibitionName" value={a.exhibitionName} placeholder="—" />
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top", maxWidth: 360 }}>
-              <GenreBadges tags={a.genres} />
+              <InlineTags
+                kind="artists"
+                id={a.id}
+                field="genres"
+                tags={a.genres}
+                render={(tags) => <GenreBadges tags={tags} />}
+              />
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top", fontFamily: "monospace", fontSize: 12, color: "var(--text-muted)" }}>
               {a.spotifyId}

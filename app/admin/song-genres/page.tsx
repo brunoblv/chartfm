@@ -16,6 +16,7 @@ function sourceLabel(source: string | null) {
   if (source === "musicbrainz") return "MusicBrainz";
   if (source === "lastfm") return "Last.fm";
   if (source === "artist") return "Artista";
+  if (source === "manual") return "Manual";
   return "—";
 }
 
