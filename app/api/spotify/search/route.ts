@@ -18,14 +18,22 @@ type TrackResult = {
   externalUrl: string | null;
 };
 
-async function searchLocalCatalog(q: string, limit: number): Promise<TrackResult[]> {
+async function searchLocalCatalog(q: string, limit: number, artist?: string): Promise<TrackResult[]> {
   const rows = await prisma.song.findMany({
     where: {
       spotifyId: { not: null },
-      OR: [
-        { title: { contains: q, mode: "insensitive" } },
-        { artist: { contains: q, mode: "insensitive" } },
-      ],
+      // Com filtro de artista, o q é buscado só no título — o artista já está fixo.
+      ...(artist
+        ? {
+            artist: { contains: artist, mode: "insensitive" },
+            title: { contains: q, mode: "insensitive" },
+          }
+        : {
+            OR: [
+              { title: { contains: q, mode: "insensitive" } },
+              { artist: { contains: q, mode: "insensitive" } },
+            ],
+          }),
     },
     select: {
       title: true,
@@ -55,6 +63,7 @@ async function searchLocalCatalog(q: string, limit: number): Promise<TrackResult
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, 200) ?? "";
+  const artist = req.nextUrl.searchParams.get("artist")?.trim().slice(0, 120) || undefined;
   const limitRaw = req.nextUrl.searchParams.get("limit");
   const limit = Math.min(50, Math.max(1, Number(limitRaw) || 12));
 
@@ -66,7 +75,7 @@ export async function GET(req: NextRequest) {
 
   // DB search + token fetch em paralelo (ambos rápidos)
   const [dbTracks, accessToken] = await Promise.all([
-    searchLocalCatalog(q, limit),
+    searchLocalCatalog(q, limit, artist),
     configured ? getAccessToken() : Promise.resolve(null),
   ]);
 
