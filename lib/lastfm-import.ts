@@ -1,6 +1,6 @@
 import { fetchTopTracks, fetchTracksBetweenUnix, type TopTrack, type TrackPlays } from "./lastfm";
 import { scoreLastfmTracks } from "./lastfm-chart-engine";
-import { getWeightedLastfmImportConfig } from "./mytrl-access";
+import { formatWeightedLastfmWeightsLabel, getWeightedLastfmImportConfig } from "./mytrl-access";
 import { getMyTrlOwnerUser } from "./spotify-user";
 import {
   formatPreviousCalendarMonthLabel,
@@ -15,21 +15,30 @@ export type LastfmImportResult = {
   source: "rolling_1month" | "calendar_month" | "rolling_30day_weighted";
 };
 
-/** @bruno — últimos 7 dias (incl. hoje): ×20; dias 8–30: ×10. */
-function brunoImportPlayWeight(diffDays: number): number {
+/** Import ponderado — últimos 7 dias (incl. hoje) vs dias 8–30. */
+function weightedImportPlayWeight(
+  diffDays: number,
+  recentWeight: number,
+  olderWeight: number,
+): number {
   if (diffDays < 0 || diffDays >= 30) return 0;
-  if (diffDays < 7) return 20;
-  return 10;
+  if (diffDays < 7) return recentWeight;
+  return olderWeight;
 }
 
-function computeBrunoImportScore(dayPlays: TrackPlays["dayPlays"], referenceDay: Date): number {
+function computeWeightedImportScore(
+  dayPlays: TrackPlays["dayPlays"],
+  referenceDay: Date,
+  recentWeight: number,
+  olderWeight: number,
+): number {
   const refMs = Date.UTC(referenceDay.getUTCFullYear(), referenceDay.getUTCMonth(), referenceDay.getUTCDate());
   let score = 0;
 
   for (const { date, plays } of dayPlays) {
     const playMs = new Date(`${date}T00:00:00Z`).getTime();
     const diffDays = Math.round((refMs - playMs) / 86_400_000);
-    const w = brunoImportPlayWeight(diffDays);
+    const w = weightedImportPlayWeight(diffDays, recentWeight, olderWeight);
     if (w === 0) continue;
     score += plays * w;
   }
@@ -37,19 +46,35 @@ function computeBrunoImportScore(dayPlays: TrackPlays["dayPlays"], referenceDay:
   return score;
 }
 
-function scoreBrunoImportTracks(
+function scoreWeightedImportTracks(
   trackPlays: TrackPlays[],
   referenceDay: Date,
+  recentWeight: number,
+  olderWeight: number,
 ): Array<{ track: string; artist: string; album: string; score: number }> {
   return trackPlays
     .map((tp) => ({
       track: tp.track,
       artist: tp.artist,
       album: tp.album,
-      score: computeBrunoImportScore(tp.dayPlays, referenceDay),
+      score: computeWeightedImportScore(tp.dayPlays, referenceDay, recentWeight, olderWeight),
     }))
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
+}
+
+function resolveWeightedImportWeights(handle: string | null | undefined): {
+  recentPlayWeight: number;
+  olderPlayWeight: number;
+  periodLabel: string;
+} {
+  const config = getWeightedLastfmImportConfig(handle);
+  const recentPlayWeight = config?.recentPlayWeight ?? 20;
+  const olderPlayWeight = config?.olderPlayWeight ?? 10;
+  const periodLabel = config
+    ? `últimos 30 dias (${formatWeightedLastfmWeightsLabel(config)})`
+    : `últimos 30 dias (7d ×${recentPlayWeight}, demais ×${olderPlayWeight})`;
+  return { recentPlayWeight, olderPlayWeight, periodLabel };
 }
 
 function normalizeTrackMatchKey(s: string): string {
@@ -110,14 +135,16 @@ export async function resolveBrunoNewHitsImportTracks(
   weekDateInput: unknown,
   username: string,
   playlistTracks: Array<{ spotifyId: string; title: string; artist: string; album: string; imageUrl: string | null }>,
+  handle?: string | null,
 ): Promise<{ tracks: BrunoNewHitsImportTrack[]; periodLabel: string }> {
   const anchor = parseChartWeekPickerDate(weekDateInput) ?? new Date();
+  const { recentPlayWeight, olderPlayWeight, periodLabel } = resolveWeightedImportWeights(handle);
   const toExclusive = Math.floor(
     Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), anchor.getUTCDate() + 1) / 1000,
   );
   const from = toExclusive - 30 * 86400;
   const trackPlays = await fetchTracksBetweenUnix(from, toExclusive, username);
-  const scored = scoreBrunoImportTracks(trackPlays, anchor);
+  const scored = scoreWeightedImportTracks(trackPlays, anchor, recentPlayWeight, olderPlayWeight);
 
   const bestBySpotifyId = new Map<string, BrunoNewHitsImportTrack>();
 
@@ -150,26 +177,27 @@ export async function resolveBrunoNewHitsImportTracks(
 
   return {
     tracks,
-    periodLabel: "últimos 30 dias (7d ×20, demais ×10)",
+    periodLabel,
   };
 }
 
 /**
- * @bruno — scrobbles dos últimos 30 dias, ranqueados por plays ponderados
- * (7 dias recentes ×20, demais ×10), sem filtro de playlist.
+ * Import ponderado — scrobbles dos últimos 30 dias, sem filtro de playlist.
  */
 export async function resolveBrunoLastfmImportTracks(
   weekDateInput: unknown,
   limit: number,
   username: string,
+  handle?: string | null,
 ): Promise<LastfmImportResult> {
   const anchor = parseChartWeekPickerDate(weekDateInput) ?? new Date();
+  const { recentPlayWeight, olderPlayWeight, periodLabel } = resolveWeightedImportWeights(handle);
   const toExclusive = Math.floor(
     Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), anchor.getUTCDate() + 1) / 1000,
   );
   const from = toExclusive - 30 * 86400;
   const trackPlays = await fetchTracksBetweenUnix(from, toExclusive, username);
-  const tracks = scoreBrunoImportTracks(trackPlays, anchor)
+  const tracks = scoreWeightedImportTracks(trackPlays, anchor, recentPlayWeight, olderPlayWeight)
     .slice(0, limit)
     .map((t) => ({
       track: t.track,
@@ -180,7 +208,7 @@ export async function resolveBrunoLastfmImportTracks(
 
   return {
     tracks,
-    periodLabel: "últimos 30 dias (7d ×20, demais ×10)",
+    periodLabel,
     source: "rolling_30day_weighted",
   };
 }
@@ -227,16 +255,17 @@ export function describeLastfmImportPeriod(
 ): string {
   const weighted = getWeightedLastfmImportConfig(handle);
   if (weighted) {
+    const weightsLabel = formatWeightedLastfmWeightsLabel(weighted);
     if (filterNewHits) {
       const lastfmNote = weighted.useMyTrlOwnerLastfm
         ? "O histórico vem do Last.fm do @bruno. "
         : "";
-      return `${lastfmNote}Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Apenas faixas da playlist Spotify "${weighted.playlistLabel}" entram na parada.`;
+      return `${lastfmNote}Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (${weightsLabel}). Apenas faixas da playlist Spotify "${weighted.playlistLabel}" entram na parada.`;
     }
     const lastfmNote = weighted.useMyTrlOwnerLastfm
       ? "O histórico vem do Last.fm do @bruno. "
       : "";
-    return `${lastfmNote}Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Todas as faixas ouvidas no período entram na parada.`;
+    return `${lastfmNote}Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (${weightsLabel}). Todas as faixas ouvidas no período entram na parada.`;
   }
   const anchor = parseChartWeekPickerDate(weekDateInput) ?? new Date();
   if (isCurrentChartWeek(anchor)) {

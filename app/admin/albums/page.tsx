@@ -6,5 +6,5 @@ export default async function AdminAlbumsPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  redirect(`/admin/edicao-de-dados?tab=albums${q ? `&q=${encodeURIComponent(q)}` : ""}`);
+  redirect(`/admin/dados/albuns${q ? `?q=${encodeURIComponent(q)}` : ""}`);
 }

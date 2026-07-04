@@ -52,6 +52,8 @@ type SquadParticipant = {
   avatarColor: string;
   artistCount: number;
   singlesFilled: number;
+  expectedSingles: number;
+  isIncomplete: boolean;
   artists: SquadArtist[];
 };
 
@@ -98,6 +100,8 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
   const [singleSearch, setSingleSearch] = useState("");
   const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string; spotifyId?: string | null }[]>([]);
   const [savingSingle, setSavingSingle] = useState(false);
+  const [notifyingIncomplete, setNotifyingIncomplete] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
   const startRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // ISO (UTC) → valor de <input datetime-local> no fuso do navegador.
@@ -259,6 +263,35 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
       setSquadsData({ artistsPerUser: json.artistsPerUser, squads: json.squads });
     } finally {
       setLoadingSquads(false);
+    }
+  }
+
+  async function notifyIncompleteSingles(copaId: string, copaName: string) {
+    const incomplete = squadsData?.squads.filter((s) => s.isIncomplete).length ?? 0;
+    if (incomplete === 0) {
+      alert("Todos os inscritos já completaram artistas e músicas.");
+      return;
+    }
+    if (!confirm(`Enviar aviso no sino para ${incomplete} participante(s) com pendências na ${copaName}?`)) return;
+
+    setNotifyingIncomplete(true);
+    setNotifyMessage(null);
+    try {
+      const res = await fetch(`/api/admin/copa/${copaId}/notify-incomplete-singles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: `Faltam músicas no seu time da ${copaName}! Acesse Meu Time e complete as 8 músicas de cada artista.`,
+        }),
+      });
+      const json = (await res.json()) as { error?: string; message?: string; sent?: number };
+      if (!res.ok) {
+        alert(json.error ?? "Não foi possível enviar.");
+        return;
+      }
+      setNotifyMessage(json.message ?? `Aviso enviado para ${json.sent} participante(s).`);
+    } finally {
+      setNotifyingIncomplete(false);
     }
   }
 
@@ -538,23 +571,59 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
 
           {squadsEditionId === e.id && squadsData && (
             <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "0 2px" }}>
-                Use o botão <strong style={{ color: "var(--text)" }}>Editar</strong> ao lado de cada música para corrigir a escolha do participante.
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "0 2px" }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", flex: 1, minWidth: 200 }}>
+                  Use o botão <strong style={{ color: "var(--text)" }}>Editar</strong> ao lado de cada música para corrigir a escolha do participante.
+                </div>
+                {(() => {
+                  const incompleteCount = squadsData.squads.filter((s) => s.isIncomplete).length;
+                  return (
+                    <>
+                      {incompleteCount > 0 && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#C5291C" }}>
+                          {incompleteCount} com pendências
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        disabled={notifyingIncomplete || incompleteCount === 0}
+                        onClick={() => notifyIncompleteSingles(e.id, e.name)}
+                        style={{
+                          border: "none",
+                          background: incompleteCount === 0 ? "var(--fill-inset)" : "#FA243C",
+                          color: incompleteCount === 0 ? "var(--text-muted)" : "#fff",
+                          borderRadius: 8,
+                          padding: "8px 12px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: notifyingIncomplete || incompleteCount === 0 ? "not-allowed" : "pointer",
+                          opacity: notifyingIncomplete ? 0.7 : 1,
+                        }}
+                      >
+                        {notifyingIncomplete ? "Enviando…" : "Avisar incompletos"}
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
+              {notifyMessage && squadsEditionId === e.id && (
+                <div style={{ fontSize: 12, color: "#0F9D58", padding: "0 2px" }}>{notifyMessage}</div>
+              )}
               {squadsData.squads.length === 0 ? (
                 <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "12px", background: "var(--fill-inset)", borderRadius: 10 }}>
                   Nenhum participante inscrito.
                 </div>
               ) : squadsData.squads.map((p) => {
-                const expectedSingles = p.artistCount * COPA_SINGLES_COUNT;
+                const expectedSingles = p.expectedSingles ?? p.artistCount * COPA_SINGLES_COUNT;
                 return (
-                  <div key={p.userId} style={{ background: "var(--fill-inset)", borderRadius: 12, overflow: "hidden" }}>
+                  <div key={p.userId} style={{ background: "var(--fill-inset)", borderRadius: 12, overflow: "hidden", border: p.isIncomplete ? "1px solid rgba(197,41,28,0.35)" : undefined }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--divider)" }}>
                       <span style={{ width: 28, height: 28, borderRadius: "50%", background: p.avatarColor, flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 800 }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: p.isIncomplete ? "#C5291C" : "var(--text-muted)", marginTop: 2 }}>
                           @{p.handle} · {p.artistCount}/{squadsData.artistsPerUser} artistas · {p.singlesFilled}/{expectedSingles || "—"} músicas
+                          {p.isIncomplete ? " · incompleto" : ""}
                         </div>
                       </div>
                     </div>

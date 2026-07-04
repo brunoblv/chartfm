@@ -84,7 +84,15 @@ export type WeightedLastfmImportConfig = {
   playlistLabel: string;
   /** Usar histórico Last.fm do @bruno em vez da conta do usuário logado. */
   useMyTrlOwnerLastfm: boolean;
+  /** Peso dos scrobbles dos últimos 7 dias (incl. hoje). */
+  recentPlayWeight: number;
+  /** Peso dos scrobbles dos dias 8–30. */
+  olderPlayWeight: number;
 };
+
+export function formatWeightedLastfmWeightsLabel(config: WeightedLastfmImportConfig): string {
+  return `7d ×${config.recentPlayWeight}, demais ×${config.olderPlayWeight}`;
+}
 
 export function getWeightedLastfmImportConfig(
   handle: string | null | undefined,
@@ -96,6 +104,8 @@ export function getWeightedLastfmImportConfig(
       requiresSpotifyConnection: true,
       playlistLabel: "new hits",
       useMyTrlOwnerLastfm: false,
+      recentPlayWeight: 20,
+      olderPlayWeight: 10,
     };
   }
   if (h === BRINGTHELEO_HANDLE) {
@@ -104,6 +114,8 @@ export function getWeightedLastfmImportConfig(
       requiresSpotifyConnection: false,
       playlistLabel: "New Rock",
       useMyTrlOwnerLastfm: true,
+      recentPlayWeight: 16,
+      olderPlayWeight: 14,
     };
   }
   return null;

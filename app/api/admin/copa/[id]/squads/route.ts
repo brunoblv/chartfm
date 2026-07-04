@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { getLockedSingleSlots } from "@/lib/copa";
+import { countFilledSingles, expectedSinglesForParticipant } from "@/lib/copa-incomplete-singles";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -54,7 +55,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const squads = participants.map((p) => {
     const pArtists = artistsByOwner.get(p.userId) ?? [];
-    const singlesFilled = pArtists.reduce((n, a) => n + a.singles.length, 0);
+    const singlesFilled = pArtists.reduce((n, a) => n + countFilledSingles(a.singles), 0);
+    const expectedSingles = expectedSinglesForParticipant(pArtists.length);
+    const isIncomplete = pArtists.length < copa.artistsPerUser || singlesFilled < expectedSingles;
     return {
       userId: p.userId,
       name: p.user.name,
@@ -62,6 +65,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       avatarColor: p.user.avatarColor,
       artistCount: pArtists.length,
       singlesFilled,
+      expectedSingles,
+      isIncomplete,
       artists: pArtists.map((a) => ({
         id: a.id,
         artistName: a.artistName,

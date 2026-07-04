@@ -195,6 +195,7 @@ async function findCommunityUserAndParada() {
         userId: user.id,
         name: community.paradaName,
         isPrimary: false,
+        isCommunityOfficial: true,
         sortOrder,
         chartSize: community.maxSongs ?? 20,
         cadence: "WEEKLY",

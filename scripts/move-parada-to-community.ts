@@ -47,6 +47,7 @@ async function main() {
       chartSize: true,
       cadence: true,
       deletedAt: true,
+      isCommunityOfficial: true,
       user: { select: { handle: true, name: true } },
     },
   });
@@ -124,22 +125,43 @@ async function main() {
   }
 
   const pending = charts.filter((c) => c.communityId !== COMMUNITY_ID);
-  if (!pending.length) {
-    console.log("[ok] Nada a fazer: todos os charts já estão na comunidade.");
+  const needsFlag = !parada.isCommunityOfficial;
+
+  if (!pending.length && !needsFlag) {
+    console.log("[ok] Nada a fazer: charts já na comunidade e parada já marcada isCommunityOfficial.");
     return;
   }
 
   if (!APPLY) {
-    console.log(`[dry-run] ${pending.length} chart(s) receberiam communityId=${COMMUNITY_ID}.`);
+    if (pending.length) {
+      console.log(`[dry-run] ${pending.length} chart(s) receberiam communityId=${COMMUNITY_ID}.`);
+    }
+    if (needsFlag) {
+      console.log(
+        "[dry-run] A parada seria marcada isCommunityOfficial=true (some do perfil do usuário e não conta no limite de paradas).",
+      );
+    }
     console.log("[dry-run] Rode novamente com --apply para gravar.");
     return;
   }
 
-  const moved = await prisma.chart.updateMany({
-    where: { paradaId: PARADA_ID, communityId: null },
-    data: { communityId: COMMUNITY_ID },
-  });
-  console.log(`[ok] ${moved.count} chart(s) marcados como parada oficial da comunidade.`);
+  if (pending.length) {
+    const moved = await prisma.chart.updateMany({
+      where: { paradaId: PARADA_ID, communityId: null },
+      data: { communityId: COMMUNITY_ID },
+    });
+    console.log(`[ok] ${moved.count} chart(s) marcados como parada oficial da comunidade.`);
+  }
+
+  if (needsFlag) {
+    await prisma.parada.update({
+      where: { id: PARADA_ID },
+      data: { isCommunityOfficial: true },
+    });
+    console.log(
+      "[ok] Parada marcada isCommunityOfficial=true: some do perfil do usuário e não conta no limite de paradas.",
+    );
+  }
 }
 
 main()

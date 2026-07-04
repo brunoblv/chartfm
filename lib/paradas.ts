@@ -15,6 +15,7 @@ export type ParadaRow = {
   sortOrder: number;
   chartSize: number | null;
   cadence: ParadaCadence;
+  isCommunityOfficial: boolean;
 };
 
 export const PARADA_TRASH_DAYS = 7;
@@ -34,15 +35,16 @@ export function isPrimaryParadaChartEntry(entry: {
 /** Garante parada principal (migra `User.paradaNome` / `genres` / `paradaLogo` se necessário). */
 export async function ensureUserParadas(db: Db, userId: string): Promise<ParadaRow[]> {
   const existing = await db.parada.findMany({
-    where: { userId, deletedAt: null },
+    where: { userId, deletedAt: null, isCommunityOfficial: false },
     orderBy: { sortOrder: "asc" },
   });
   if (existing.length > 0) return existing;
 
-  // Se o usuário já teve alguma parada (mesmo que hoje todas estejam na lixeira),
-  // não recria uma "fantasma" a partir dos campos legados de User — evita duplicar
-  // a parada que acabou de ser excluída enquanto ela ainda pode ser restaurada.
-  const everHadParada = await db.parada.count({ where: { userId } });
+  // Se o usuário já teve alguma parada pessoal (mesmo que hoje todas estejam na
+  // lixeira), não recria uma "fantasma" a partir dos campos legados de User — evita
+  // duplicar a parada que acabou de ser excluída enquanto ela ainda pode ser restaurada.
+  // Ignora paradas oficiais de comunidade: quem só tem uma delas ainda não tem parada própria.
+  const everHadParada = await db.parada.count({ where: { userId, isCommunityOfficial: false } });
   if (everHadParada > 0) return [];
 
   const user = await db.user.findUnique({
@@ -119,7 +121,7 @@ export async function syncUserPrimaryParadaFields(db: Db, userId: string): Promi
 
 export async function countUserParadas(db: Db, userId: string): Promise<number> {
   await ensureUserParadas(db, userId);
-  return db.parada.count({ where: { userId, deletedAt: null } });
+  return db.parada.count({ where: { userId, deletedAt: null, isCommunityOfficial: false } });
 }
 
 /** Próximo sortOrder livre para o usuário. Usa o maior valor já usado (inclusive por
@@ -169,7 +171,7 @@ export async function setPrimaryParada(db: Db, userId: string, paradaId: string)
 /** Move uma parada para a lixeira (soft-delete). Recuperável por `PARADA_TRASH_DAYS` dias. */
 export async function softDeleteParada(db: Db, userId: string, paradaId: string): Promise<void> {
   const active = await db.parada.findMany({
-    where: { userId, deletedAt: null },
+    where: { userId, deletedAt: null, isCommunityOfficial: false },
     orderBy: { sortOrder: "asc" },
   });
   const target = active.find((p) => p.id === paradaId);
@@ -209,7 +211,9 @@ export async function restoreParada(
     throw new Error("parada_not_found");
   }
 
-  const active = await db.parada.findMany({ where: { userId, deletedAt: null } });
+  const active = await db.parada.findMany({
+    where: { userId, deletedAt: null, isCommunityOfficial: false },
+  });
   const resolvedHandle =
     handle ??
     (await db.user.findUnique({ where: { id: userId }, select: { handle: true } }))?.handle;

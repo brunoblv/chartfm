@@ -261,7 +261,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const myEntries = currentUserId ? entries.filter((e) => e.chart.userId === currentUserId) : [];
   const userParadas = currentUserId
     ? await prisma.parada.findMany({
-        where: { userId: currentUserId },
+        where: { userId: currentUserId, isCommunityOfficial: false },
         select: { id: true, name: true, isPrimary: true, sortOrder: true },
         orderBy: { sortOrder: "asc" },
       })

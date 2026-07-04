@@ -162,7 +162,7 @@ export async function PATCH(req: Request) {
   }
 
   const owned = await prisma.parada.findFirst({
-    where: { id: paradaId, userId: session.user.id, deletedAt: null },
+    where: { id: paradaId, userId: session.user.id, deletedAt: null, isCommunityOfficial: false },
   });
   if (!owned) {
     return NextResponse.json({ error: "Parada não encontrada" }, { status: 404 });

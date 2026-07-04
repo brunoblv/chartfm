@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { isDailyChartIndex } from "@/lib/chart-cadence";
 import { prevChartWeekIndex } from "@/lib/chart-week";
 
@@ -111,23 +111,29 @@ export async function recomputePersistedChartEntryStatsForParada(
       })),
   );
 
-  const CONCURRENT_UPDATES = 4;
-  for (let i = 0; i < entriesToUpdate.length; i += CONCURRENT_UPDATES) {
-    const batch = entriesToUpdate.slice(i, i + CONCURRENT_UPDATES);
-    await Promise.all(
-      batch.map((entry) =>
-        client.chartEntry.update({
-          where: { id: entry.id },
-          data: {
-            status: entry.status,
-            delta: entry.delta,
-            prevPos: entry.prevPos,
-            peak: entry.peak,
-            weeks: entry.weeks,
-          },
-        }),
+  // UPDATE em massa via VALUES: com paradas grandes (centenas de semanas) o
+  // antigo update-por-entrada em lotes pequenos esgotava o connection pool do
+  // Prisma (muitos round-trips sequenciais). Isto substitui milhares de updates
+  // individuais por poucas dezenas de statements em lote.
+  const BATCH_SIZE = 500;
+  for (let i = 0; i < entriesToUpdate.length; i += BATCH_SIZE) {
+    const batch = entriesToUpdate.slice(i, i + BATCH_SIZE);
+    const values = Prisma.join(
+      batch.map(
+        (entry) =>
+          Prisma.sql`(${entry.id}::text, ${entry.status}::text, ${entry.delta}::int, ${entry.prevPos}::int, ${entry.peak}::int, ${entry.weeks}::int)`,
       ),
     );
+    await client.$executeRaw`
+      UPDATE "ChartEntry" AS ce
+      SET status = v.status,
+          delta = v.delta,
+          "prevPos" = v.prevpos,
+          peak = v.peak,
+          weeks = v.weeks
+      FROM (VALUES ${values}) AS v(id, status, delta, prevpos, peak, weeks)
+      WHERE ce.id = v.id
+    `;
   }
 
   return { charts: charts.length, entries: entriesToUpdate.length };

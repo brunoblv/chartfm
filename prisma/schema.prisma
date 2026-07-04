@@ -248,6 +248,9 @@ model Parada {
   sortOrder Int           @default(0) @map("sort_order")
   chartSize Int?          @map("chart_size")
   cadence   ParadaCadence @default(WEEKLY)
+  // Parada oficial de uma comunidade (charts com Chart.communityId) — vive sob um userId
+  // por exigência do schema, mas não é "do usuário": some do perfil dele e não conta no limite.
+  isCommunityOfficial Boolean @default(false) @map("is_community_official")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
@@ -536,6 +539,32 @@ model SystemFeedPost {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// Aviso programado ou recorrente criado pelo admin — notifica todos + post no feed da ChartFM.
+model ScheduledAnnouncement {
+  id            String    @id @default(cuid())
+  label         String?
+  text          String
+  targetUrl     String?
+  notifyType    String    @default("admin_announcement")
+  feedKind      String    @default("admin_announcement")
+  templateId    String?   @map("template_id")
+  contextKey    String?   @map("context_key")
+  status        String    @default("active")
+  scheduleMode  String    @map("schedule_mode")
+  scheduledAt   DateTime? @map("scheduled_at")
+  intervalHours Int?      @map("interval_hours")
+  nextRunAt     DateTime? @map("next_run_at")
+  lastSentAt    DateTime? @map("last_sent_at")
+  runCount      Int       @default(0) @map("run_count")
+  maxRuns       Int?      @map("max_runs")
+  createdById   String?   @map("created_by_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, nextRunAt], map: "idx_scheduled_announcements_due")
+  @@map("scheduled_announcements")
 }
 
 model UserFollow {

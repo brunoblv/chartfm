@@ -243,6 +243,7 @@ export async function POST(req: NextRequest) {
         body.weekDate,
         limit,
         lastfmUsername,
+        session.user.handle,
       );
 
       const BATCH = 20;
@@ -265,6 +266,7 @@ export async function POST(req: NextRequest) {
         body.weekDate,
         lastfmUsername,
         playlistTracks.tracks,
+        session.user.handle,
       );
       const enriched: EnrichedSong[] = newHitsTracks.map((t) => ({
         title: t.track,

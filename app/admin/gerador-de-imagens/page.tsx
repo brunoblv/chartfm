@@ -109,7 +109,14 @@ async function fetchGeradorData(): Promise<GeradorData> {
 
     prisma.copaEdition.findFirst({
       orderBy: [{ year: "desc" }, { createdAt: "desc" }],
-      select: { name: true, year: true },
+      select: {
+        name: true,
+        year: true,
+        maxParticipants: true,
+        artistsPerUser: true,
+        startsAt: true,
+        _count: { select: { participants: true } },
+      },
     }),
   ]);
 
@@ -210,5 +217,9 @@ async function fetchGeradorData(): Promise<GeradorData> {
     copaName: copaEdition?.name ?? "Copa ChartFM",
     copaYear: copaEdition?.year ?? new Date().getFullYear(),
     copaStages: [...COPA_DAY_LABELS],
+    copaArtistsPerUser: copaEdition?.artistsPerUser ?? 8,
+    copaMaxParticipants: copaEdition?.maxParticipants ?? 8,
+    copaParticipantCount: copaEdition?._count.participants ?? 0,
+    copaStartsAt: copaEdition?.startsAt ? fmtDeadline(copaEdition.startsAt) : null,
   };
 }

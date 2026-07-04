@@ -6,7 +6,7 @@ export default async function AdminSongsNoMbidPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const sp = await searchParams;
-  const params = new URLSearchParams({ tab: "no-mbid" });
+  const params = new URLSearchParams({ filtro: "sem-mbid" });
   if (sp.page) params.set("page", sp.page);
-  redirect(`/admin/edicao-de-dados?${params.toString()}`);
+  redirect(`/admin/dados/catalogo?${params.toString()}`);
 }

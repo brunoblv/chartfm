@@ -290,6 +290,13 @@ export function songPickKey(songId: string | null | undefined, songName: string)
   return `name:${name.toLowerCase()}`;
 }
 
+/** Single preenchido (não é placeholder "Single N" vazio). */
+export function isCopaSingleFilled(single: { songName: string; songId: string | null }): boolean {
+  if (single.songId) return true;
+  const name = single.songName.trim();
+  return name.length > 0 && !/^Single \d+$/i.test(name);
+}
+
 /** Músicas já atribuídas a outros slots do mesmo artista (slotIndex → fase). */
 export function getArtistUsedSongKeys(
   singles: ArtistSinglePick[],

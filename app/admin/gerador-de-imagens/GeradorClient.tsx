@@ -18,6 +18,10 @@ export type GeradorData = {
   copaName: string;
   copaYear: number;
   copaStages: string[];
+  copaArtistsPerUser: number;
+  copaMaxParticipants: number;
+  copaParticipantCount: number;
+  copaStartsAt: string | null;
 };
 
 export type GeradorAlbum = GeradorData["ratable"][number];
@@ -39,6 +43,7 @@ const TYPES = [
   { id: "top5",       label: "Top 5 Global",       desc: "Parada da semana",                  emoji: "🌎", accent: "#B89CFF" },
   { id: "posts",      label: "Posts",              desc: "Reviews em destaque da comunidade", emoji: "📝", accent: "#FA243C" },
   { id: "twitter",    label: "Twitter / X",        desc: "Post formato tweet",                emoji: "🐦", accent: "#1D9BF0" },
+  { id: "copa-inscricao", label: "Copa · Inscrição", desc: "Chamada para se inscrever no torneio", emoji: "⚽", accent: "#FFD426" },
   { id: "copa-etapa", label: "Copa · Etapa",       desc: "Início de etapa — convite para votar", emoji: "🏆", accent: "#2EB550" },
 ];
 
@@ -56,6 +61,9 @@ type TemplateData = {
   copaName: string;
   copaYear: string;
   copaStage: string;
+  copaArtistsPerUser: string;
+  copaMaxParticipants: string;
+  copaParticipantCount: string;
 };
 
 // ── Utility functions ─────────────────────────────────────────────────────────
@@ -675,7 +683,70 @@ function TplPosts({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
   );
 }
 
-// ── Template 7: Copa · Início de etapa ───────────────────────────────────────
+// ── Template 7: Copa · Inscrições ─────────────────────────────────────────────
+
+function TplCopaInscricao({ fmt, d }: { fmt: SocialFmt; d: TemplateData }) {
+  const u = fmt.w / 1080;
+  const landscape = fmt.w > fmt.h;
+  const pad = Math.round((landscape ? 56 : 72) * u);
+  const artists = Number(d.copaArtistsPerUser) || 8;
+  const maxP = Number(d.copaMaxParticipants) || 8;
+  const countP = Number(d.copaParticipantCount) || 0;
+
+  return (
+    <ChartBg fmt={fmt}>
+      <div style={{ padding: `${pad}px`, height: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
+        <ChartHeader
+          fmt={fmt}
+          u={u}
+          right={
+            <span style={{ fontSize: Math.round(20 * u), fontWeight: 700, color: "#86868B", letterSpacing: "-0.01em" }}>
+              Copa ChartFM
+            </span>
+          }
+        />
+
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: Math.round(22 * u) }}>
+          <SEyebrow u={u} color="#C47500" bg="rgba(255,212,38,0.16)">⚽ Inscrições abertas</SEyebrow>
+
+          <div style={{ fontSize: Math.round((landscape ? 72 : 88) * u), fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 0.98, color: "#1D1D1F" }}>
+            {d.copaName}{d.copaYear ? ` ${d.copaYear}` : ""}
+          </div>
+
+          <div style={{ fontSize: Math.round(32 * u), fontWeight: 500, color: "#3A3A3C", lineHeight: 1.4, maxWidth: Math.round(820 * u), marginTop: Math.round(4 * u) }}>
+            Inscreva-se e escolha <b style={{ color: "#1D1D1F" }}>{artists} artista{artists !== 1 ? "s" : ""}</b> para representar seu time no torneio. A comunidade vota nos confrontos até a final!
+          </div>
+
+          {maxP > 0 && (
+            <div style={{
+              display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: Math.round(10 * u),
+              background: "rgba(46,181,80,0.12)", color: "#1A7A34", borderRadius: 9999,
+              padding: `${Math.round(10 * u)}px ${Math.round(18 * u)}px`,
+              fontSize: Math.round(22 * u), fontWeight: 700,
+            }}>
+              {countP}/{maxP} participante{maxP !== 1 ? "s" : ""}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1.5px solid rgba(0,0,0,0.08)", paddingTop: Math.round(32 * u) }}>
+          <div style={{ display: "flex", alignItems: "center", gap: Math.round(10 * u), fontSize: Math.round(28 * u), fontWeight: 700, color: "#1D1D1F" }}>
+            {d.deadline && d.deadline !== "—" ? (
+              <><SClock u={u} /> Inscrições até {d.deadline}</>
+            ) : (
+              <><span style={{ fontSize: Math.round(28 * u) }}>🏆</span> Vagas limitadas</>
+            )}
+          </div>
+          <div style={{ fontSize: Math.round(26 * u), fontWeight: 800, background: "#2EB550", color: "#fff", borderRadius: 9999, padding: `${Math.round(14 * u)}px ${Math.round(30 * u)}px` }}>
+            chartfm.com.br/copa
+          </div>
+        </div>
+      </div>
+    </ChartBg>
+  );
+}
+
+// ── Template 8: Copa · Início de etapa ───────────────────────────────────────
 
 function CopaTrophyIcon({ u }: { u: number }) {
   const s = Math.round(120 * u);
@@ -921,6 +992,7 @@ const TEMPLATE_MAP: Record<string, (props: { fmt: SocialFmt; d: TemplateData }) 
   top5:       TplTop5,
   posts:      TplPosts,
   twitter:    TplTwitter,
+  "copa-inscricao": TplCopaInscricao,
   "copa-etapa": TplCopaEtapa,
 };
 
@@ -1215,6 +1287,10 @@ export function GeradorClient({ data }: { data: GeradorData }) {
   const [copaName, setCopaName] = useState(data.copaName);
   const [copaYear, setCopaYear] = useState(String(data.copaYear));
   const [copaStage, setCopaStage] = useState(data.copaStages[0] ?? "Grupos · Rodada 1 (A–H)");
+  const [dCopaInscr, setDCopaInscr] = useState(data.copaStartsAt ?? "—");
+  const [copaArtistsPerUser, setCopaArtistsPerUser] = useState(String(data.copaArtistsPerUser));
+  const [copaMaxParticipants, setCopaMaxParticipants] = useState(String(data.copaMaxParticipants));
+  const [copaParticipantCount, setCopaParticipantCount] = useState(String(data.copaParticipantCount));
   const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
   const isMobile = useIsMobile();
 
@@ -1238,7 +1314,7 @@ export function GeradorClient({ data }: { data: GeradorData }) {
   const d: TemplateData = {
     theme: type === "nota" ? notaTheme : theme,
     round,
-    deadline: type === "votacao" ? dPoll : dInscr,
+    deadline: type === "votacao" ? dPoll : type === "copa-inscricao" ? dCopaInscr : dInscr,
     nominations: data.nominations,
     winners: data.winners,
     album: selectedAlbum,
@@ -1249,6 +1325,9 @@ export function GeradorClient({ data }: { data: GeradorData }) {
     copaName,
     copaYear,
     copaStage,
+    copaArtistsPerUser,
+    copaMaxParticipants,
+    copaParticipantCount,
   };
 
   const Tpl = TEMPLATE_MAP[type];
@@ -1435,7 +1514,7 @@ export function GeradorClient({ data }: { data: GeradorData }) {
               </div>
             )}
 
-            {type === "copa-etapa" && (
+            {(type === "copa-inscricao" || type === "copa-etapa") && (
               <>
                 <Field label="Nome da copa">
                   <input style={inputStyle} value={copaName} onChange={(e) => setCopaName(e.target.value)} placeholder="Copa ChartFM" />
@@ -1443,6 +1522,33 @@ export function GeradorClient({ data }: { data: GeradorData }) {
                 <Field label="Ano">
                   <input style={inputStyle} value={copaYear} onChange={(e) => setCopaYear(e.target.value)} placeholder="2026" />
                 </Field>
+              </>
+            )}
+
+            {type === "copa-inscricao" && (
+              <>
+                <Field label="Prazo das inscrições">
+                  <input style={inputStyle} value={dCopaInscr} onChange={(e) => setDCopaInscr(e.target.value)} placeholder="15 jul, 20h00" />
+                </Field>
+                <Field label="Artistas por participante">
+                  <input style={inputStyle} type="number" min={1} value={copaArtistsPerUser} onChange={(e) => setCopaArtistsPerUser(e.target.value)} />
+                </Field>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Field label="Participantes">
+                    <input style={inputStyle} type="number" min={0} value={copaParticipantCount} onChange={(e) => setCopaParticipantCount(e.target.value)} />
+                  </Field>
+                  <Field label="Vagas">
+                    <input style={inputStyle} type="number" min={1} value={copaMaxParticipants} onChange={(e) => setCopaMaxParticipants(e.target.value)} />
+                  </Field>
+                </div>
+                <div style={{ background: "var(--fill)", borderRadius: 11, padding: "12px 14px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                  Anuncia que as <b style={{ color: "var(--text)" }}>inscrições estão abertas</b> e convida a montar o time. Ideal para Story ou Quadrado.
+                </div>
+              </>
+            )}
+
+            {type === "copa-etapa" && (
+              <>
                 <Field label="Etapa">
                   <select value={copaStage} onChange={(e) => setCopaStage(e.target.value)} style={selectStyle}>
                     {data.copaStages.map((s) => (

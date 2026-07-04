@@ -50,6 +50,7 @@ async function main() {
         userId: owner.id,
         name: community.paradaName,
         isPrimary: false,
+        isCommunityOfficial: true,
         sortOrder,
         chartSize: 20,
         cadence: "WEEKLY",

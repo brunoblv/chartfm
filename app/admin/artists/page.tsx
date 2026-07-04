@@ -6,5 +6,5 @@ export default async function AdminArtistsPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  redirect(`/admin/edicao-de-dados?tab=artists${q ? `&q=${encodeURIComponent(q)}` : ""}`);
+  redirect(`/admin/dados/artistas${q ? `?q=${encodeURIComponent(q)}` : ""}`);
 }
