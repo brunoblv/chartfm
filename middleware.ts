@@ -106,7 +106,10 @@ export async function middleware(request: NextRequest) {
 
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
-  if (token?.needsHandle && token.prismaUserId) {
+  // Rotas de API devem responder com JSON/erro, nunca com redirect — a própria
+  // página de onboarding depende de /api/user/handle e /api/user/genres para
+  // funcionar enquanto needsHandle ainda é true.
+  if (token?.needsHandle && token.prismaUserId && !pathname.startsWith("/api")) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 

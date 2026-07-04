@@ -76,7 +76,8 @@
       "Bash(mkdir -p .ds-sync)",
       "Bash(cp -r C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/package-build.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/package-validate.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/package-capture.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/resync.mjs C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/lib C:/Users/blvbr/AppData/Local/Temp/claude/bundled-skills/2.1.191/d63026981e5fbacdcfc29ac9cacee590/design-sync/storybook .ds-sync/)",
       "Bash(echo '{\"name\":\"ds-sync-deps\",\"private\":true}')",
-      "Bash(npm i *)"
+      "Bash(npm i *)",
+      "PowerShell(& \".\\\\node_modules\\\\.bin\\\\tsc.cmd\" --noEmit)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

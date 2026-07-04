@@ -558,7 +558,7 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ id:
 
   const chart = await prisma.chart.findUnique({
     where: { id: chartId },
-    select: { id: true, userId: true },
+    select: { id: true, userId: true, paradaId: true },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (chart.userId !== session.user.id) {
@@ -569,5 +569,5 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ id:
     where: { id: chartId },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, paradaId: chart.paradaId });
 }
