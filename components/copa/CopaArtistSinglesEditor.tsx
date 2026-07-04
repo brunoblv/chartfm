@@ -41,6 +41,7 @@ type Props = {
   saving: boolean;
   onAssign: (slotIndex: number, songName: string, songId: string | null, spotifySongId?: string | null) => Promise<boolean>;
   onSwap: (fromSlotIndex: number, toSlotIndex: number) => Promise<boolean>;
+  onClear?: (slotIndex: number) => Promise<boolean>;
   focusSlotIndex?: number | null;
   title?: string;
   onEditSlot?: (slotIndex: number) => void;
@@ -61,6 +62,7 @@ export function CopaArtistSinglesEditor({
   saving,
   onAssign,
   onSwap,
+  onClear,
   focusSlotIndex = null,
   title = "Definir músicas",
   onEditSlot,
@@ -173,6 +175,53 @@ export function CopaArtistSinglesEditor({
   const mobileSlot =
     isMobile && focusSlotIndex != null && canEditSlot(focusSlotIndex) ? focusSlotIndex : null;
   const mobileSlotLabel = mobileSlot != null ? SLOT_LABELS[mobileSlot] ?? `Fase ${mobileSlot + 1}` : null;
+  const mobileCurrent = mobileSlot != null ? singles.find((s) => s.slotIndex === mobileSlot) : null;
+  const mobileCurrentFilled = !!mobileCurrent && !mobileCurrent.songName.startsWith("Single ");
+
+  const mobileCurrentBlock =
+    mobileSlot != null && mobileCurrentFilled && onClear ? (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 12px",
+          border: "1px solid var(--divider)",
+          borderRadius: 10,
+          background: "var(--surface)",
+          marginBottom: 10,
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-muted)", marginBottom: 2 }}>
+            Música atual
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {mobileCurrent!.songName}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onClear(mobileSlot)}
+          disabled={saving}
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "6px 12px",
+            borderRadius: 99,
+            background: "var(--fill-inset)",
+            color: "var(--down-fg, var(--text))",
+            border: "none",
+            cursor: saving ? "default" : "pointer",
+            fontFamily: "inherit",
+            flexShrink: 0,
+            opacity: saving ? 0.5 : 1,
+          }}
+        >
+          Remover
+        </button>
+      </div>
+    ) : null;
 
   const searchHint = (
     <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.4 }}>
@@ -246,8 +295,7 @@ export function CopaArtistSinglesEditor({
                 if (disabled) return;
                 const slot = mobileSlot ?? defaultAssignSlot();
                 if (slot === focusSlotIndex) setFocusConsumed(true);
-                const ok = await onAssign(slot, song.title, song.id, song.spotifyId ?? null);
-                if (ok && isMobile) onClose();
+                await onAssign(slot, song.title, song.id, song.spotifyId ?? null);
               }}
               disabled={disabled}
               aria-label={taken ? "Música já usada" : `Adicionar ${song.title}`}
@@ -400,6 +448,32 @@ export function CopaArtistSinglesEditor({
             >
               {lock ? (lock.status === "LIVE" ? "Em jogo" : "Disputado") : editable ? "Editável" : editWindow.competingArtistIds?.length ? "Eliminado" : "Fechado"}
             </span>
+            {editable && !isEmpty && onClear ? (
+              <button
+                type="button"
+                onClick={() => onClear(i)}
+                disabled={saving}
+                aria-label={`Remover ${single!.songName}`}
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: "var(--fill-inset)",
+                  color: "var(--text-muted)",
+                  border: "none",
+                  fontSize: 15,
+                  lineHeight: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: saving ? "default" : "pointer",
+                  flexShrink: 0,
+                  opacity: saving ? 0.5 : 1,
+                }}
+              >
+                ×
+              </button>
+            ) : null}
           </div>
         );
       })}
@@ -420,7 +494,6 @@ export function CopaArtistSinglesEditor({
         padding: 16,
         boxSizing: "border-box",
       }}
-      onClick={onClose}
     >
       <div
         style={{
@@ -433,7 +506,6 @@ export function CopaArtistSinglesEditor({
           flexDirection: "column",
           overflow: "hidden",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         <div
           style={{
@@ -452,7 +524,7 @@ export function CopaArtistSinglesEditor({
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
               {artistName}
               {isMobile
-                ? " · a busca fecha ao escolher"
+                ? " · toque em Salvar quando terminar"
                 : " · adicione com o + ou arraste músicas para os slots"}
             </div>
           </div>
@@ -467,6 +539,7 @@ export function CopaArtistSinglesEditor({
 
         {isMobile ? (
           <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
+            {mobileCurrentBlock}
             {searchInput}
             {searchHint}
             {emptyState}
@@ -501,6 +574,35 @@ export function CopaArtistSinglesEditor({
             </div>
           </div>
         )}
+
+        <div
+          style={{
+            padding: "12px 20px",
+            borderTop: "1px solid var(--divider)",
+            flexShrink: 0,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "var(--accent)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              padding: "11px 26px",
+              fontSize: 14,
+              fontWeight: 800,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              width: isMobile ? "100%" : undefined,
+            }}
+          >
+            Salvar
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -283,6 +283,24 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
     }
   }
 
+  async function removeSingle(artistId: string, slotIndex: number) {
+    if (savingSingle) return false;
+    const art = artists.find((a) => a.id === artistId);
+    if (!art) return false;
+    if (!isSingleSlotEditableInWindow(slotIndex, editWindow, art.slotLocks, artistId)) {
+      alert("Este slot não pode ser alterado agora.");
+      return false;
+    }
+    setSavingSingle(true);
+    try {
+      return await persistSingles(artistId, [
+        { slotIndex, songName: `Single ${slotIndex + 1}`, songId: null },
+      ]);
+    } finally {
+      setSavingSingle(false);
+    }
+  }
+
   function clearableSlots(art: MyArtist) {
     return Array.from({ length: COPA_SINGLES_COUNT }, (_, i) => i).filter((i) => {
       if (!isSingleSlotEditableInWindow(i, editWindow, art.slotLocks, art.id)) return false;
@@ -779,6 +797,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
               assignSingle(art.id, slotIndex, songName, songId, spotifySongId)
             }
             onSwap={(fromSlotIndex, toSlotIndex) => swapSingles(art.id, fromSlotIndex, toSlotIndex)}
+            onClear={(slotIndex) => removeSingle(art.id, slotIndex)}
           />
         );
       })()}
