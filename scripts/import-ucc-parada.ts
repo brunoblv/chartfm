@@ -311,6 +311,7 @@ async function resolveSongWithSpotify(
 
 async function importWeeks() {
   console.log(`[info] Planilha: ${XLSX_PATH}`);
+  console.log("[info] Parseando planilha (Python, pode levar 1–3 min)...");
   const weeks = parseWeeksFromExcel();
   console.log(`[info] Semanas parseadas: ${weeks.length} (${XLSX_PATH})`);
   if (!weeks.length) return;
@@ -336,7 +337,11 @@ async function importWeeks() {
   let updatedCharts = 0;
   let createdEntries = 0;
 
-  for (const week of weeks) {
+  for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
+    const week = weeks[weekIdx];
+    console.log(
+      `[info] Semana ${weekIdx + 1}/${weeks.length}: ${week.date} (${week.entries.length} entradas)`,
+    );
     const refDate = parseYmdDate(week.date);
     const weekIndex = buildWeekIndexFromDate(refDate);
     const weekLabel = buildWeekLabelFromDate(refDate);

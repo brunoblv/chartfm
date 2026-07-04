@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { searchSpotifyAlbums, getSpotifyAlbumDetails, getSpotifyArtistById } from "@/lib/spotify-server";
 import { AlbumType } from "@prisma/client";
+import { findConflictingAlbum } from "@/lib/duplicate-registration-guards";
 
 function mapAlbumType(raw: string | null): AlbumType | undefined {
   if (!raw) return undefined;
@@ -72,6 +73,13 @@ export async function POST(req: NextRequest) {
       imageUrl: artistProfile?.imageUrl ?? null,
     },
   });
+
+  // Já existe um álbum do mesmo artista com o mesmo nome (spotifyId diferente, ex.: outra edição)?
+  const conflicting = await findConflictingAlbum(prisma, {
+    artistSpotifyId,
+    titles: [details.title],
+  });
+  if (conflicting) return NextResponse.json({ id: conflicting.id });
 
   // Upsert álbum
   const album = await prisma.album.upsert({
