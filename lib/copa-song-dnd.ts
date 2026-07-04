@@ -5,6 +5,7 @@ export const COPA_SONG_DRAG_MIME = "application/x-chartify-copa-song";
 export type CopaSongDragPayload = {
   title: string;
   songId: string | null;
+  spotifyId?: string | null;
   fromArtistId?: string;
   fromSlotIndex?: number;
 };

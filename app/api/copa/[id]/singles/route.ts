@@ -15,9 +15,10 @@ import {
   validateArtistSingleAssignment,
 } from "@/lib/copa";
 import { getR32WinnerArtistIds } from "@/lib/copa-knockout";
+import { resolveSongsForFastPublish } from "@/lib/resolve-publish-songs";
 
 // PUT /api/copa/[id]/singles
-// body: { artistId, singles: [{slotIndex, songName, songId?}] }
+// body: { artistId, singles: [{slotIndex, songName, songId?, spotifySongId?}] }
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions);
@@ -28,7 +29,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const body = await req.json();
   const { artistId, singles } = body as {
     artistId: string;
-    singles: { slotIndex: number; songName: string; songId?: string | null }[];
+    singles: { slotIndex: number; songName: string; songId?: string | null; spotifySongId?: string | null }[];
   };
 
   if (!artistId || !Array.isArray(singles)) {
@@ -49,6 +50,41 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
     if (!s.songName?.trim()) {
       return NextResponse.json({ error: "songName é obrigatório" }, { status: 400 });
+    }
+    const isEmptyPlaceholder = /^Single \d+$/i.test(s.songName.trim());
+    if (!isEmptyPlaceholder && !s.songId && !s.spotifySongId) {
+      return NextResponse.json(
+        { error: "Selecione uma música da busca (catálogo ou Spotify) — não é permitido texto livre" },
+        { status: 400 },
+      );
+    }
+  }
+
+  // Resolve (ou crie) a Song local para escolhas vindas de um resultado do Spotify
+  // que ainda não existe no catálogo local.
+  const needsResolution = singles
+    .map((s, i) => ({ s, i }))
+    .filter(({ s }) => !s.songId && s.spotifySongId);
+  if (needsResolution.length > 0) {
+    const resolved = await resolveSongsForFastPublish(
+      prisma,
+      needsResolution.map(({ s }) => ({
+        title: s.songName.trim(),
+        artist: artist.artistName,
+        spotifyId: s.spotifySongId,
+      })),
+    );
+    needsResolution.forEach(({ i }, idx) => {
+      singles[i] = { ...singles[i], songId: resolved[idx].id };
+    });
+  }
+
+  const songIds = [...new Set(singles.map((s) => s.songId).filter((v): v is string => Boolean(v)))];
+  if (songIds.length > 0) {
+    const foundSongs = await prisma.song.findMany({ where: { id: { in: songIds } }, select: { id: true } });
+    const foundIds = new Set(foundSongs.map((f) => f.id));
+    if (foundIds.size !== songIds.length) {
+      return NextResponse.json({ error: "Música inválida" }, { status: 400 });
     }
   }
 

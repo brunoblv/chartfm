@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { emailVerificationTemplate, emailVerificationResendTemplate, passwordResetTemplate } from "./email-templates";
 
 type SendEmailParams = {
   to: string;
@@ -8,6 +9,14 @@ type SendEmailParams = {
 };
 
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
+  // Kill-switch para dev/testes: finge sucesso sem enviar nada.
+  if (process.env.SMTP_DISABLED?.trim()) {
+    console.info(
+      `[email] SMTP_DISABLED ativo — envio simulado (to="${params.to}", subject="${params.subject}")`,
+    );
+    return true;
+  }
+
   const smtpHost = process.env.SMTP_HOST?.trim();
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from =
@@ -101,7 +110,7 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
 }
 
 export function passwordResetEmail(params: { resetUrl: string; name: string }) {
-  const subject = "Redefinir sua senha — ChartFM";
+  const subject = "Redefina sua senha do ChartFM";
   const text = [
     `Olá, ${params.name}!`,
     "",
@@ -113,18 +122,41 @@ export function passwordResetEmail(params: { resetUrl: string; name: string }) {
     "Se você não pediu isso, ignore este email.",
   ].join("\n");
 
+  const html = passwordResetTemplate({
+    name: params.name,
+    resetUrl: params.resetUrl,
+  });
+
+  return { subject, text, html };
+}
+
+export function googleAccountResetEmail(params: { loginUrl: string; name: string }) {
+  const subject = "Sua conta usa login com Google — ChartFM";
+  const text = [
+    `Olá, ${params.name}!`,
+    "",
+    "Recebemos um pedido para redefinir a senha da sua conta ChartFM,",
+    "mas ela foi criada com o login do Google e não tem senha própria.",
+    "",
+    "Para entrar, use o botão \"Entrar com Google\" na página de login:",
+    "",
+    params.loginUrl,
+    "",
+    "Se você não pediu isso, ignore este email.",
+  ].join("\n");
+
   const html = `
     <p>Olá, <strong>${params.name}</strong>!</p>
-    <p>Recebemos um pedido para redefinir a senha da sua conta ChartFM.</p>
-    <p><a href="${params.resetUrl}">Redefinir senha</a></p>
-    <p style="color:#666;font-size:13px">O link expira em 1 hora. Se você não pediu isso, ignore este email.</p>
+    <p>Recebemos um pedido para redefinir a senha da sua conta ChartFM, mas ela foi criada com o login do Google e não tem senha própria.</p>
+    <p>Para entrar, use o botão <strong>"Entrar com Google"</strong> na <a href="${params.loginUrl}">página de login</a>.</p>
+    <p style="color:#666;font-size:13px">Se você não pediu isso, ignore este email.</p>
   `;
 
   return { subject, text, html };
 }
 
 export function emailVerificationEmail(params: { verifyUrl: string; name: string }) {
-  const subject = "Confirme seu email — ChartFM";
+  const subject = "Confirme seu e-mail para começar no ChartFM 🎧";
   const text = [
     `Olá, ${params.name}!`,
     "",
@@ -136,12 +168,31 @@ export function emailVerificationEmail(params: { verifyUrl: string; name: string
     "Se você não criou esta conta, ignore este email.",
   ].join("\n");
 
-  const html = `
-    <p>Olá, <strong>${params.name}</strong>!</p>
-    <p>Obrigado por se cadastrar no ChartFM. Confirme seu email para ativar sua conta:</p>
-    <p><a href="${params.verifyUrl}">Confirmar email</a></p>
-    <p style="color:#666;font-size:13px">O link expira em 24 horas. Se você não criou esta conta, ignore este email.</p>
-  `;
+  const html = emailVerificationTemplate({
+    name: params.name,
+    verifyUrl: params.verifyUrl,
+  });
+
+  return { subject, text, html };
+}
+
+export function emailVerificationResendEmail(params: { verifyUrl: string; name: string }) {
+  const subject = "Seu novo link de confirmação chegou";
+  const text = [
+    `Olá, ${params.name}!`,
+    "",
+    "Você pediu o reenvio do e-mail de confirmação.",
+    "Use este link para confirmar sua conta (válido por 24 horas):",
+    "",
+    params.verifyUrl,
+    "",
+    "Se você não pediu isso, ignore este email.",
+  ].join("\n");
+
+  const html = emailVerificationResendTemplate({
+    name: params.name,
+    verifyUrl: params.verifyUrl,
+  });
 
   return { subject, text, html };
 }

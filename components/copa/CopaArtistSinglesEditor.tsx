@@ -23,7 +23,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
 
-type SongResult = { id: string | null; title: string; artist: string };
+type SongResult = { id: string | null; title: string; artist: string; spotifyId?: string | null };
 
 type Props = {
   open: boolean;
@@ -38,7 +38,7 @@ type Props = {
   onSearchChange: (q: string) => void;
   results: SongResult[];
   saving: boolean;
-  onAssign: (slotIndex: number, songName: string, songId: string | null) => Promise<boolean>;
+  onAssign: (slotIndex: number, songName: string, songId: string | null, spotifySongId?: string | null) => Promise<boolean>;
   onSwap: (fromSlotIndex: number, toSlotIndex: number) => Promise<boolean>;
   focusSlotIndex?: number | null;
   title?: string;
@@ -96,7 +96,7 @@ export function CopaArtistSinglesEditor({
       return;
     }
 
-    await onAssign(slotIndex, payload.title, payload.songId);
+    await onAssign(slotIndex, payload.title, payload.songId, payload.spotifyId);
   }
 
   function onSlotDragOver(e: React.DragEvent, slotIndex: number) {
@@ -216,29 +216,9 @@ export function CopaArtistSinglesEditor({
               : "Arraste entre slots das próximas fases. Músicas de etapas já disputadas ficam bloqueadas."}
           </div>
 
-          {search.length > 0 && !isSongUsed(search, null) && (
-            <div
-              draggable={!saving}
-              onDragStart={(e) => writeCopaSongDrag(e, { title: search, songId: null })}
-              onDragEnd={clearDrop}
-              onClick={() => !saving && onAssign(defaultAssignSlot(), search, null)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 12px",
-                borderRadius: 10,
-                cursor: saving ? "not-allowed" : "grab",
-                border: "1px dashed var(--divider)",
-                marginBottom: 8,
-                opacity: saving ? 0.5 : 1,
-              }}
-            >
-              <GripVertical size={16} color="var(--text-disabled)" />
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>Usar &quot;{search}&quot;</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Entrada manual · arraste para um slot</div>
-              </div>
+          {search.length > 0 && results.length === 0 && (
+            <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 4px", marginBottom: 8 }}>
+              Nenhuma música encontrada no catálogo ou no Spotify.
             </div>
           )}
 
@@ -256,10 +236,10 @@ export function CopaArtistSinglesEditor({
                         e.preventDefault();
                         return;
                       }
-                      writeCopaSongDrag(e, { title: song.title, songId: song.id });
+                      writeCopaSongDrag(e, { title: song.title, songId: song.id, spotifyId: song.spotifyId ?? null });
                     }}
                     onDragEnd={clearDrop}
-                    onClick={() => !taken && !saving && onAssign(defaultAssignSlot(), song.title, song.id)}
+                    onClick={() => !taken && !saving && onAssign(defaultAssignSlot(), song.title, song.id, song.spotifyId ?? null)}
                     style={{
                       display: "flex",
                       alignItems: "center",

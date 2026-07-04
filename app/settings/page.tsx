@@ -483,6 +483,7 @@ export default function SettingsPage() {
         return;
       }
       setForm((f) => ({ ...f, image: data.url ?? f.image }));
+      await updateSession();
     } catch (e) {
       setAvatarError(e instanceof Error ? e.message : "Erro de conexão.");
     } finally {
@@ -500,6 +501,7 @@ export default function SettingsPage() {
         return;
       }
       setForm((f) => ({ ...f, image: null }));
+      await updateSession();
     } catch {
       setAvatarError("Erro de conexão.");
     } finally {

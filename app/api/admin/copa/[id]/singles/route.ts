@@ -7,6 +7,7 @@ import {
   mergeArtistSingles,
   validateArtistSingleAssignment,
 } from "@/lib/copa";
+import { resolveSongsForFastPublish } from "@/lib/resolve-publish-songs";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -24,11 +25,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!adminId) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
   const body = await req.json();
-  const { artistId, slotIndex, songName, songId } = body as {
+  const { artistId, slotIndex, songName, songId, spotifySongId } = body as {
     artistId: string;
     slotIndex: number;
     songName: string;
     songId?: string | null;
+    spotifySongId?: string | null;
   };
 
   if (!artistId || slotIndex == null || !songName?.trim()) {
@@ -37,19 +39,34 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (slotIndex < 0 || slotIndex >= COPA_SINGLES_COUNT) {
     return NextResponse.json({ error: "slotIndex inválido" }, { status: 400 });
   }
+  const isEmptyPlaceholder = /^Single \d+$/i.test(songName.trim());
+  if (!isEmptyPlaceholder && !songId && !spotifySongId) {
+    return NextResponse.json(
+      { error: "Selecione uma música da busca (catálogo ou Spotify) — não é permitido texto livre" },
+      { status: 400 },
+    );
+  }
 
   const artist = await prisma.copaArtist.findUnique({ where: { id: artistId } });
   if (!artist || artist.copaId !== id) {
     return NextResponse.json({ error: "Artista não encontrado" }, { status: 404 });
   }
 
+  let resolvedSongId = songId ?? null;
+  if (!resolvedSongId && spotifySongId) {
+    const [resolved] = await resolveSongsForFastPublish(prisma, [
+      { title: songName.trim(), artist: artist.artistName, spotifyId: spotifySongId },
+    ]);
+    resolvedSongId = resolved.id;
+  }
+
   const existing = await prisma.copaSingle.findMany({ where: { copaArtistId: artistId } });
   const merged = mergeArtistSingles(
     existing.map((e) => ({ slotIndex: e.slotIndex, songName: e.songName, songId: e.songId })),
-    [{ slotIndex, songName: songName.trim(), songId: songId ?? null }],
+    [{ slotIndex, songName: songName.trim(), songId: resolvedSongId }],
   );
 
-  const dupErr = validateArtistSingleAssignment(slotIndex, songName.trim(), songId ?? null, merged);
+  const dupErr = validateArtistSingleAssignment(slotIndex, songName.trim(), resolvedSongId, merged);
   if (dupErr) {
     return NextResponse.json({ error: dupErr }, { status: 400 });
   }
@@ -60,11 +77,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       copaArtistId: artistId,
       slotIndex,
       songName: songName.trim(),
-      songId: songId ?? null,
+      songId: resolvedSongId,
     },
     update: {
       songName: songName.trim(),
-      songId: songId ?? null,
+      songId: resolvedSongId,
     },
   });
 

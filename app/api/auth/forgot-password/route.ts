@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { appPathUrl } from "@/lib/app-url";
 import { generateResetToken, hashResetToken } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
-import { passwordResetEmail, sendEmail } from "@/lib/send-email";
+import {
+  googleAccountResetEmail,
+  passwordResetEmail,
+  sendEmail,
+} from "@/lib/send-email";
 
 const RESET_TTL_MS = 60 * 60 * 1000;
 
@@ -41,6 +45,15 @@ export async function POST(req: Request) {
       name: user.name,
     });
 
+    await sendEmail({ to: email, subject, text, html });
+  } else if (user?.googleId) {
+    // Conta criada via Google não tem senha para redefinir; avisar por email
+    // (a resposta HTTP continua genérica para não revelar se a conta existe).
+    const loginUrl = appPathUrl("/login", new URL(req.url).origin).href;
+    const { subject, text, html } = googleAccountResetEmail({
+      loginUrl,
+      name: user.name,
+    });
     await sendEmail({ to: email, subject, text, html });
   }
 

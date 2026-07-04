@@ -23,6 +23,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!artistName?.trim()) {
     return NextResponse.json({ error: "Artist name required" }, { status: 400 });
   }
+  if (!artistSpotifyId) {
+    return NextResponse.json(
+      { error: "Selecione um artista da busca (catálogo ou Spotify) — não é permitido texto livre" },
+      { status: 400 },
+    );
+  }
+
+  const [localArtist, spotifyProfile] = await Promise.all([
+    prisma.artist.findUnique({ where: { spotifyId: artistSpotifyId } }),
+    getSpotifyArtistById(artistSpotifyId),
+  ]);
+  if (!localArtist && !spotifyProfile) {
+    return NextResponse.json({ error: "Artista inválido" }, { status: 400 });
+  }
 
   const copa = await prisma.copaEdition.findUnique({ where: { id } });
   if (!copa || copa.status !== "REGISTRATION") {
@@ -62,9 +76,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const initials = getArtistInitials(artistName);
 
   let resolvedImage = artistImage?.trim() || null;
-  if (!resolvedImage && artistSpotifyId) {
-    const profile = await getSpotifyArtistById(artistSpotifyId);
-    resolvedImage = profile?.imageUrl ?? null;
+  if (!resolvedImage) {
+    resolvedImage = localArtist?.imageUrl ?? spotifyProfile?.imageUrl ?? null;
   }
 
   let artist = null;
@@ -107,6 +120,104 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   return NextResponse.json({ artist });
+}
+
+// PATCH /api/copa/[id]/claim — troca um artista já escolhido por outro (só durante REGISTRATION).
+// body: { oldArtistId, artistSpotifyId, artistName, artistImage? }
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
+  const body = await req.json();
+  const { oldArtistId, artistSpotifyId, artistName, artistImage } = body as {
+    oldArtistId: string;
+    artistSpotifyId: string | null;
+    artistName: string;
+    artistImage?: string | null;
+  };
+
+  if (!oldArtistId) {
+    return NextResponse.json({ error: "oldArtistId é obrigatório" }, { status: 400 });
+  }
+  if (!artistName?.trim()) {
+    return NextResponse.json({ error: "Artist name required" }, { status: 400 });
+  }
+  if (!artistSpotifyId) {
+    return NextResponse.json(
+      { error: "Selecione um artista da busca (catálogo ou Spotify) — não é permitido texto livre" },
+      { status: 400 },
+    );
+  }
+
+  const [oldArtist, copa, localArtist, spotifyProfile] = await Promise.all([
+    prisma.copaArtist.findUnique({ where: { id: oldArtistId } }),
+    prisma.copaEdition.findUnique({ where: { id } }),
+    prisma.artist.findUnique({ where: { spotifyId: artistSpotifyId } }),
+    getSpotifyArtistById(artistSpotifyId),
+  ]);
+
+  if (!oldArtist || oldArtist.copaId !== id || oldArtist.ownerId !== userId) {
+    return NextResponse.json({ error: "Not found or unauthorized" }, { status: 404 });
+  }
+  if (!copa || copa.status !== "REGISTRATION") {
+    return NextResponse.json({ error: "Só é possível trocar artistas durante o registro" }, { status: 400 });
+  }
+  if (!localArtist && !spotifyProfile) {
+    return NextResponse.json({ error: "Artista inválido" }, { status: 400 });
+  }
+  if (oldArtist.artistSpotifyId === artistSpotifyId) {
+    return NextResponse.json({ error: "Esse já é o artista atual" }, { status: 400 });
+  }
+
+  const existingClaim = await prisma.copaArtist.findFirst({
+    where: { copaId: id, artistSpotifyId, NOT: { id: oldArtistId } },
+  });
+  if (existingClaim) {
+    return NextResponse.json({ error: "Artist already claimed" }, { status: 409 });
+  }
+
+  const color = getArtistColor(artistSpotifyId);
+  const initials = getArtistInitials(artistName);
+  let resolvedImage = artistImage?.trim() || null;
+  if (!resolvedImage) {
+    resolvedImage = localArtist?.imageUrl ?? spotifyProfile?.imageUrl ?? null;
+  }
+
+  try {
+    const artist = await prisma.$transaction(async (tx) => {
+      // Apaga o artista antigo (cascade remove os singles já definidos para ele —
+      // é um artista diferente, o usuário precisa escolher as músicas de novo)
+      // e recria na mesma posição (groupLetter/slotInGroup) para manter a ordem no time.
+      await tx.copaArtist.delete({ where: { id: oldArtistId } });
+      return tx.copaArtist.create({
+        data: {
+          copaId: id,
+          ownerId: userId,
+          groupLetter: oldArtist.groupLetter,
+          slotInGroup: oldArtist.slotInGroup,
+          artistSpotifyId,
+          artistName: artistName.trim(),
+          artistImage: resolvedImage,
+          artistColor: color,
+          artistInitials: initials,
+        },
+        include: {
+          owner: { select: { id: true, name: true, handle: true, avatarColor: true } },
+          singles: true,
+        },
+      });
+    });
+    return NextResponse.json({ artist });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return NextResponse.json({ error: "Artist already claimed" }, { status: 409 });
+    }
+    throw e;
+  }
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {

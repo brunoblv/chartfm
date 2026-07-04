@@ -2,10 +2,17 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
+import { CommunityParadaWeekNav } from "@/components/community/CommunityParadaWeekNav";
+import { GlobalHero } from "@/components/global/GlobalHero";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { loadCommunityHeader } from "@/lib/community-page-data";
-import { computeCommunityChartData, parseCommunityPointsConfig } from "@/lib/community-chart";
+import {
+  computeCommunityChartData,
+  getCommunityAvailableWeeks,
+  parseCommunityPointsConfig,
+} from "@/lib/community-chart";
 import { getCommunityBySlug } from "@/lib/community-auth";
+import { getRankingWeekReference } from "@/lib/chart-week";
 
 async function resolveArtistImages(artists: { name: string; spotifyId: string | null }[]) {
   const imageMap = new Map<string, string | null>();
@@ -27,7 +34,12 @@ async function resolveArtistImages(artists: { name: string; spotifyId: string | 
   return imageMap;
 }
 
-export default async function CommunityParadaPage({ params }: { params: Promise<{ slug: string }> }) {
+type CommunityParadaPageProps = {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ week?: string }> | { week?: string };
+};
+
+export default async function CommunityParadaPage({ params, searchParams }: CommunityParadaPageProps) {
   const { slug } = await params;
   const { community, notFound: missing } = await loadCommunityHeader(slug);
   if (missing) notFound();
@@ -35,8 +47,45 @@ export default async function CommunityParadaPage({ params }: { params: Promise<
   const row = await getCommunityBySlug(slug);
   if (!row) notFound();
 
+  const sp = searchParams ? ("then" in searchParams ? await searchParams : searchParams) : {};
+  const requestedWeek = Number(sp.week ?? "");
+
   const config = parseCommunityPointsConfig(row);
-  const chart = await computeCommunityChartData(row.id, config);
+  const availableWeeks = await getCommunityAvailableWeeks(row.id);
+  const availableWeekIndexes = availableWeeks.map((w) => w.weekIndex);
+
+  const defaultWeekIndex =
+    availableWeekIndexes[0] ?? getRankingWeekReference().weekIndex;
+  const weekIndex =
+    Number.isFinite(requestedWeek) && availableWeekIndexes.includes(requestedWeek)
+      ? requestedWeek
+      : defaultWeekIndex;
+
+  const chart = await computeCommunityChartData(row.id, config, { weekIndex });
+
+  const currentIndexInList = availableWeekIndexes.indexOf(chart.weekIndex);
+  const newerWeek = currentIndexInList > 0 ? availableWeekIndexes[currentIndexInList - 1]! : null;
+  const olderWeek =
+    currentIndexInList >= 0 && currentIndexInList < availableWeekIndexes.length - 1
+      ? availableWeekIndexes[currentIndexInList + 1]!
+      : null;
+
+  const previousWeek =
+    olderWeek != null
+      ? (availableWeeks.find((w) => w.weekIndex === olderWeek) ?? null)
+      : null;
+  const nextWeek =
+    newerWeek != null
+      ? (availableWeeks.find((w) => w.weekIndex === newerWeek) ?? null)
+      : null;
+
+  const basePath = `/community/${slug}/parada`;
+  const pointsRule = chart.usesOfficialParada
+    ? "Parada oficial da comunidade — histórico semanal importado."
+    : "Ranking agregado a partir das paradas primárias dos membros.";
+  const statPrimaryLabel = chart.usesOfficialParada
+    ? `${chart.overallChartCount} semanas no histórico`
+    : `${chart.contributorCount} paradas na semana`;
 
   const imageMap = await resolveArtistImages(
     [...chart.weeklyArtists, ...chart.overallArtists].map((a) => ({
@@ -58,10 +107,17 @@ export default async function CommunityParadaPage({ params }: { params: Promise<
     <Shell title="" noPadding>
       <CommunityHeader community={community} activeTab="parada" />
       <div style={{ padding: "28px 40px 80px 40px" }}>
-        <p style={{ fontSize: 14, color: "#86868B", marginBottom: 20, lineHeight: 1.6 }}>
-          {community.paradaName} agregada a partir das paradas primárias de{" "}
-          <strong>{chart.contributorCount}</strong> membros na semana {chart.dateRange}.
-        </p>
+        <GlobalHero
+          title={community.paradaName}
+          basePath={basePath}
+          weekNow={chart.weekLabel}
+          weekRangeNow={chart.dateRange}
+          songsCount={chart.weeklySongs.length}
+          statPrimaryLabel={statPrimaryLabel}
+          pointsRule={pointsRule}
+          olderWeek={olderWeek}
+          newerWeek={newerWeek}
+        />
         <GlobalTabs
           weeklySongs={chart.weeklySongs}
           weeklyArtists={weeklyArtists}
@@ -70,8 +126,15 @@ export default async function CommunityParadaPage({ params }: { params: Promise<
           weeklyDropouts={chart.weeklyDropouts}
           weekIndex={chart.weekIndex}
           communityId={row.id}
+          overallPageSize={config.maxSongs}
+          rankingLimit={config.maxSongs}
         />
       </div>
+      <CommunityParadaWeekNav
+        basePath={basePath}
+        previousWeek={previousWeek}
+        nextWeek={nextWeek}
+      />
     </Shell>
   );
 }

@@ -6,6 +6,7 @@ import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
 import { COPA_DAY_LABELS, COPA_PARTICIPANT_OPTIONS, COPA_SINGLES_COUNT, COPA_TOTAL_ARTISTS, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
+import { searchCopaSongs } from "@/lib/copa-song-search-client";
 import { GripVertical } from "lucide-react";
 
 type Edition = {
@@ -95,7 +96,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
   const [editArtist, setEditArtist] = useState<{ artistId: string; artistName: string; focusSlotIndex: number } | null>(null);
   const [slotDropOver, setSlotDropOver] = useState<string | null>(null);
   const [singleSearch, setSingleSearch] = useState("");
-  const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string }[]>([]);
+  const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string; spotifyId?: string | null }[]>([]);
   const [savingSingle, setSavingSingle] = useState(false);
   const startRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -264,15 +265,8 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
   async function searchSongs(q: string, artistName: string) {
     setSingleSearch(q);
     if (!q.trim()) { setSingleResults([]); return; }
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q + " " + artistName)}&type=songs&limit=8`);
-      const json = await res.json();
-      setSingleResults((json.songs ?? []).map((s: { id: string; title: string; artist: string }) => ({
-        id: s.id,
-        title: s.title,
-        artist: s.artist,
-      })));
-    } catch {}
+    const results = await searchCopaSongs(q, artistName);
+    setSingleResults(results);
   }
 
   async function saveAdminSingle(
@@ -334,7 +328,13 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
     return null;
   }
 
-  async function assignAdminSingle(artistId: string, slotIndex: number, songName: string, songId: string | null) {
+  async function assignAdminSingle(
+    artistId: string,
+    slotIndex: number,
+    songName: string,
+    songId: string | null,
+    spotifySongId?: string | null,
+  ) {
     const art = getSquadArtist(artistId);
     if (!art || art.lockedSlots.includes(slotIndex) || !squadsEditionId || savingSingle) return false;
     const lockedIndexes = new Set(art.lockedSlots);
@@ -355,6 +355,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
 
     setSavingSingle(true);
     try {
+      const resolvedBySlot = new Map<number, string | null>();
       for (const s of changed) {
         const res = await fetch(`/api/admin/copa/${squadsEditionId}/singles`, {
           method: "PUT",
@@ -364,6 +365,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
             slotIndex: s.slotIndex,
             songName: s.songName,
             songId: s.songId,
+            spotifySongId: s.slotIndex === slotIndex ? spotifySongId ?? null : null,
           }),
         });
         if (!res.ok) {
@@ -371,6 +373,8 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
           alert(err.error ?? "Erro ao salvar");
           return false;
         }
+        const json = await res.json();
+        resolvedBySlot.set(s.slotIndex, json.single?.songId ?? s.songId);
       }
       setSquadsData((prev) => {
         if (!prev) return prev;
@@ -384,7 +388,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
                 singles: merged.map((s) => ({
                   slotIndex: s.slotIndex,
                   songName: s.songName,
-                  songId: s.songId,
+                  songId: resolvedBySlot.has(s.slotIndex) ? (resolvedBySlot.get(s.slotIndex) ?? null) : s.songId,
                 })),
               };
             });
@@ -436,7 +440,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
       await swapAdminSingles(artistId, payload.fromSlotIndex, slotIndex);
       return;
     }
-    await assignAdminSingle(artistId, slotIndex, payload.title, payload.songId);
+    await assignAdminSingle(artistId, slotIndex, payload.title, payload.songId, payload.spotifyId);
   }
 
   function closeAdminEditor() {
@@ -1038,8 +1042,8 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
             onSearchChange={(q) => searchSongs(q, editArtist.artistName)}
             results={singleResults}
             saving={savingSingle}
-            onAssign={(slotIndex, songName, songId) =>
-              assignAdminSingle(editArtist.artistId, slotIndex, songName, songId)
+            onAssign={(slotIndex, songName, songId, spotifySongId) =>
+              assignAdminSingle(editArtist.artistId, slotIndex, songName, songId, spotifySongId)
             }
             onSwap={(fromSlotIndex, toSlotIndex) =>
               swapAdminSingles(editArtist.artistId, fromSlotIndex, toSlotIndex)

@@ -129,6 +129,8 @@ export const pagesEn = {
     dropouts: "Dropouts",
     top100Songs: "Top 100 Songs",
     top100Artists: "Top 100 Artists",
+    topNSongs: "Top {count} Songs",
+    topNArtists: "Top {count} Artists",
     dropoutsCount: "Dropouts ({count})",
     weekly: "Weekly",
     overall: "Overall",

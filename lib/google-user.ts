@@ -27,6 +27,15 @@ function upgradeGooglePhoto(url: string | null | undefined): string | null {
   return url.replace(/=s\d+-c(\?.*)?$/, "=s400-c$1");
 }
 
+function isCustomUploadedAvatar(url: string | null | undefined): boolean {
+  return Boolean(url?.includes("/api/uploads/avatars/"));
+}
+
+function isGooglePhoto(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.includes("googleusercontent.com") || url.includes("ggpht.com");
+}
+
 export async function ensureGoogleUser(params: {
   email: string;
   name: string | null | undefined;
@@ -43,15 +52,32 @@ export async function ensureGoogleUser(params: {
   });
 
   if (existing) {
+    const data: {
+      googleId: string;
+      email: string;
+      emailVerifiedAt: Date;
+      image?: string | null;
+    } = {
+      googleId,
+      email,
+      emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
+    };
+
+    // Não sobrescreve nome/foto personalizados em logins subsequentes.
+    if (!existing.image && image) {
+      data.image = image;
+    } else if (
+      existing.image &&
+      !isCustomUploadedAvatar(existing.image) &&
+      isGooglePhoto(existing.image) &&
+      image
+    ) {
+      data.image = image;
+    }
+
     await prisma.user.update({
       where: { id: existing.id },
-      data: {
-        name: displayName,
-        image: image ?? existing.image,
-        googleId,
-        email,
-        emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
-      },
+      data,
     });
     return { isNew: false };
   }

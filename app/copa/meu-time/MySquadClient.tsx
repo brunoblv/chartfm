@@ -9,6 +9,7 @@ import { CopaSinglesMobileReorder } from "@/components/copa/CopaSinglesMobileReo
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, getLockedSlotIndexes, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
+import { searchCopaSongs } from "@/lib/copa-song-search-client";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
 
@@ -50,11 +51,12 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
   const [searchResults, setSearchResults] = useState<SpotifyArtist[]>([]);
   const [searching, setSearching] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [replaceTarget, setReplaceTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Single editing
   const [editArtist, setEditArtist] = useState<{ artistId: string; focusSlotIndex: number } | null>(null);
   const [singleSearch, setSingleSearch] = useState("");
-  const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string }[]>([]);
+  const [singleResults, setSingleResults] = useState<{ id: string | null; title: string; artist: string; spotifyId?: string | null }[]>([]);
   const [savingSingle, setSavingSingle] = useState(false);
   const [slotDropOver, setSlotDropOver] = useState<string | null>(null);
 
@@ -85,14 +87,34 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
     }, 300);
   }
 
+  function closeAddModal() {
+    setShowAddModal(false);
+    setReplaceTarget(null);
+    setSearchQ("");
+    setSearchResults([]);
+  }
+
+  function openReplaceModal(artistId: string, artistName: string) {
+    const art = artists.find((a) => a.id === artistId);
+    const hasSongs = art?.singles.some((s) => !s.songName.startsWith("Single "));
+    if (hasSongs && !confirm(`Trocar ${artistName}? As músicas já escolhidas para esse artista serão perdidas.`)) {
+      return;
+    }
+    setReplaceTarget({ id: artistId, name: artistName });
+    setShowAddModal(true);
+    setSearchQ("");
+    setSearchResults([]);
+  }
+
   async function claimArtist(spotifyArtist: SpotifyArtist) {
     if (adding) return;
     setAdding(true);
     try {
       const res = await fetch(`/api/copa/${copaId}/claim`, {
-        method: "POST",
+        method: replaceTarget ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(replaceTarget ? { oldArtistId: replaceTarget.id } : {}),
           artistSpotifyId: spotifyArtist.id || null,
           artistName: spotifyArtist.name,
           artistImage: spotifyArtist.imageUrl,
@@ -104,26 +126,26 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
         return;
       }
       const { artist } = await res.json();
-      // Optimistically append so the list updates without a reload (useState is
-      // seeded once, so router.refresh() alone wouldn't refresh it).
-      setArtists((prev) => [
-        ...prev,
-        {
-          id: artist.id,
-          artistSpotifyId: artist.artistSpotifyId,
-          artistName: artist.artistName,
-          artistImage: artist.artistImage,
-          artistColor: artist.artistColor,
-          artistInitials: artist.artistInitials,
-          groupLetter: artist.groupLetter,
-          standings: { rank: -1, pts: 0, pj: 0 },
-          singles: [],
-          slotLocks: [],
-        },
-      ]);
-      setShowAddModal(false);
-      setSearchQ("");
-      setSearchResults([]);
+      const newArtist = {
+        id: artist.id,
+        artistSpotifyId: artist.artistSpotifyId,
+        artistName: artist.artistName,
+        artistImage: artist.artistImage,
+        artistColor: artist.artistColor,
+        artistInitials: artist.artistInitials,
+        groupLetter: artist.groupLetter,
+        standings: { rank: -1, pts: 0, pj: 0 },
+        singles: [],
+        slotLocks: [],
+      };
+      // Optimistically update so the list reflects the change without a reload
+      // (useState is seeded once, so router.refresh() alone wouldn't refresh it).
+      if (replaceTarget) {
+        setArtists((prev) => prev.map((a) => (a.id === replaceTarget.id ? newArtist : a)));
+      } else {
+        setArtists((prev) => [...prev, newArtist]);
+      }
+      closeAddModal();
       router.refresh();
     } finally {
       setAdding(false);
@@ -154,35 +176,50 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
   async function searchSongs(q: string, artistName: string) {
     setSingleSearch(q);
     if (!q.trim()) { setSingleResults([]); return; }
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q + " " + artistName)}&type=songs&limit=8`);
-      const json = await res.json();
-      setSingleResults((json.songs ?? []).map((s: { id: string; title: string; artist: string }) => ({
-        id: s.id,
-        title: s.title,
-        artist: s.artist,
-      })));
-    } catch {}
+    const results = await searchCopaSongs(q, artistName);
+    setSingleResults(results);
   }
 
-  async function persistSingles(artistId: string, newSingles: SingleData[]) {
+  async function persistSingles(
+    artistId: string,
+    newSingles: SingleData[],
+    spotifySongIdBySlot?: Record<number, string | null>,
+  ) {
+    const payloadSingles = newSingles.map((s) => ({
+      ...s,
+      spotifySongId: spotifySongIdBySlot?.[s.slotIndex] ?? null,
+    }));
     const res = await fetch(`/api/copa/${copaId}/singles`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ artistId, singles: newSingles }),
+      body: JSON.stringify({ artistId, singles: payloadSingles }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       alert(err.error ?? "Não foi possível salvar a música");
       return false;
     }
+    const json = await res.json();
+    const resolvedSingles: SingleData[] = (json.singles ?? newSingles).map(
+      (s: { slotIndex: number; songName: string; songId: string | null }) => ({
+        slotIndex: s.slotIndex,
+        songName: s.songName,
+        songId: s.songId ?? null,
+      }),
+    );
     setArtists((prev) =>
-      prev.map((a) => (a.id === artistId ? { ...a, singles: newSingles } : a)),
+      prev.map((a) => (a.id === artistId ? { ...a, singles: resolvedSingles } : a)),
     );
     return true;
   }
 
-  async function assignSingle(artistId: string, slotIndex: number, songName: string, songId: string | null) {
+  async function assignSingle(
+    artistId: string,
+    slotIndex: number,
+    songName: string,
+    songId: string | null,
+    spotifySongId?: string | null,
+  ) {
     if (savingSingle) return false;
     const art = artists.find((a) => a.id === artistId);
     if (!art) return false;
@@ -203,7 +240,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
 
     setSavingSingle(true);
     try {
-      return await persistSingles(artistId, merged);
+      return await persistSingles(
+        artistId,
+        merged,
+        spotifySongId ? { [slotIndex]: spotifySongId } : undefined,
+      );
     } finally {
       setSavingSingle(false);
     }
@@ -329,7 +370,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
           ))}
 
           <div
-            onClick={() => { setShowAddModal(true); setSearchQ(""); setSearchResults([]); }}
+            onClick={() => { setReplaceTarget(null); setShowAddModal(true); setSearchQ(""); setSearchResults([]); }}
             style={{
               display: "flex",
               alignItems: "center",
@@ -429,7 +470,24 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                       : `Grupo ${art.groupLetter} · ${art.standings.pts}pts · ${art.standings.pj} PJ`}
                   </div>
                 </div>
-                {isRegistration ? null : qual ? (
+                {isRegistration ? (
+                  <button
+                    onClick={() => openReplaceModal(art.id, art.artistName)}
+                    disabled={adding}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: "var(--fill-inset)",
+                      color: "var(--text-muted)",
+                      border: "none",
+                      padding: "6px 10px",
+                      borderRadius: 8,
+                      cursor: adding ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Trocar
+                  </button>
+                ) : qual ? (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "var(--up-bg)", color: "var(--up-fg)", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                     ✓ Classificado
                   </span>
@@ -567,15 +625,17 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
       {showAddModal && (
         <div
           style={{ position: "fixed", inset: 0, height: "100dvh", background: "rgba(0,0,0,.75)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, boxSizing: "border-box" }}
-          onClick={() => setShowAddModal(false)}
+          onClick={closeAddModal}
         >
           <div
             style={{ background: "var(--panel, var(--surface))", width: "100%", maxWidth: 520, maxHeight: "calc(100dvh - 32px)", borderRadius: 20, display: "flex", flexDirection: "column", overflow: "hidden" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 800 }}>Adicionar Artista</div>
-              <button onClick={() => setShowAddModal(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>
+                {replaceTarget ? `Trocar ${replaceTarget.name}` : "Adicionar Artista"}
+              </div>
+              <button onClick={closeAddModal} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
             </div>
             <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
               <input
@@ -670,7 +730,9 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
             onSearchChange={(q) => searchSongs(q, art.artistName)}
             results={singleResults}
             saving={savingSingle}
-            onAssign={(slotIndex, songName, songId) => assignSingle(art.id, slotIndex, songName, songId)}
+            onAssign={(slotIndex, songName, songId, spotifySongId) =>
+              assignSingle(art.id, slotIndex, songName, songId, spotifySongId)
+            }
             onSwap={(fromSlotIndex, toSlotIndex) => swapSingles(art.id, fromSlotIndex, toSlotIndex)}
           />
         );

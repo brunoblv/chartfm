@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CopaArtistAvatar } from "./CopaArtistAvatar";
 
 type SimpleFixture = {
@@ -173,6 +174,12 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
           🏆 {phaseLabel[copa.status] ?? copa.status}
           {livePhaseSummary(liveFixture, liveCount) && ` · ${livePhaseSummary(liveFixture, liveCount)}`}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
+          Um torneio de artistas decidido pelo voto da comunidade: você vota nas partidas, acompanha os grupos e o chaveamento até a final.{" "}
+          <Link href="/guides/como-funciona-a-copa" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+            Como funciona a Copa →
+          </Link>
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { InstitutionalLayout } from "@/components/institutional/InstitutionalLayout";
 import {
@@ -9,7 +10,7 @@ import {
 
 type Section = {
   title: string;
-  body: string[];
+  body: ReactNode[];
 };
 
 export function LegalPage({
@@ -35,8 +36,8 @@ export function LegalPage({
             {index > 0 && <InstitutionalDivider />}
             <InstitutionalSection title={section.title}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {section.body.map((paragraph) => (
-                  <InstitutionalParagraph key={paragraph}>{paragraph}</InstitutionalParagraph>
+                {section.body.map((paragraph, i) => (
+                  <InstitutionalParagraph key={i}>{paragraph}</InstitutionalParagraph>
                 ))}
               </div>
             </InstitutionalSection>

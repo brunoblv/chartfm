@@ -129,6 +129,8 @@ export const pagesPtBR = {
     dropouts: "Saídas",
     top100Songs: "Top 100 Músicas",
     top100Artists: "Top 100 Artistas",
+    topNSongs: "Top {count} Músicas",
+    topNArtists: "Top {count} Artistas",
     dropoutsCount: "Saídas ({count})",
     weekly: "Semanal",
     overall: "Overall",

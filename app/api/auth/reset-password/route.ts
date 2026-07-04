@@ -33,12 +33,18 @@ export async function POST(req: Request) {
 
   const passwordHash = await hashPassword(password);
 
+  // Chegar aqui prova posse do email (o link só chega na caixa de entrada do
+  // dono) — a mesma prova do link de confirmação, então verificamos junto.
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        emailVerifiedAt: record.user.emailVerifiedAt ?? new Date(),
+      },
     }),
     prisma.passwordResetToken.delete({ where: { id: record.id } }),
+    prisma.emailVerificationToken.deleteMany({ where: { userId: record.userId } }),
   ]);
 
   return NextResponse.json({ ok: true });

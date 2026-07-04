@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { COVER_PALETTES } from "@/lib/data";
@@ -26,6 +26,7 @@ import type { Cover as CoverData } from "@/lib/types";
 import type { GlobalPlaylistKind } from "@/lib/global-playlist-tracks";
 import { GlobalSpotifyPlaylistButton } from "@/components/global/GlobalSpotifyPlaylistButton";
 import { ParadaCommentsPanel, ParadaCommentsToggle } from "@/components/parada/ParadaComments";
+import { ParadaPagination } from "@/components/paradas/ParadaPagination";
 import Link from "next/link";
 import { Star } from "lucide-react";
 
@@ -128,6 +129,8 @@ export function GlobalTabs({
   weekIndex,
   communityId,
   genreSlug,
+  overallPageSize = 20,
+  rankingLimit = 100,
 }: {
   weeklySongs: SongEntry[];
   weeklyArtists: ArtistEntry[];
@@ -143,15 +146,50 @@ export function GlobalTabs({
   weekIndex: number;
   communityId?: string;
   genreSlug?: string;
+  /** Itens por página na aba Overall (comunidades). */
+  overallPageSize?: number;
+  /** Tamanho do ranking semanal exibido nas abas (ex.: Top 20). */
+  rankingLimit?: number;
 }) {
   const [tab, setTab] = useState<"songs" | "artists" | "saidas">("songs");
   const [viewSize, setViewSize] = useState<"small" | "large">("small");
   const [period, setPeriod] = useState<"weekly" | "overall">("weekly");
+  const [overallPage, setOverallPage] = useState(1);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const isMobile = useIsMobile(MOBILE_LIST_BREAKPOINT);
   const { t } = useTranslations();
-  const songs = period === "weekly" ? weeklySongs : overallSongs;
-  const artists = period === "weekly" ? weeklyArtists : overallArtists;
+
+  useEffect(() => {
+    setOverallPage(1);
+  }, [tab, period, weekIndex, communityId]);
+
+  const overallSongsAll = overallSongs;
+  const overallArtistsAll = overallArtists;
+  const paginateOverall = Boolean(communityId && period === "overall");
+  const overallList = tab === "artists" ? overallArtistsAll : overallSongsAll;
+  const overallTotalPages = paginateOverall
+    ? Math.max(1, Math.ceil(overallList.length / overallPageSize))
+    : 1;
+  const safeOverallPage = Math.min(overallPage, overallTotalPages);
+
+  useEffect(() => {
+    if (overallPage > overallTotalPages) setOverallPage(overallTotalPages);
+  }, [overallPage, overallTotalPages]);
+
+  const paginatedOverallSongs = useMemo(() => {
+    if (!paginateOverall || tab === "artists" || tab === "saidas") return overallSongsAll;
+    const start = (safeOverallPage - 1) * overallPageSize;
+    return overallSongsAll.slice(start, start + overallPageSize);
+  }, [paginateOverall, tab, overallSongsAll, safeOverallPage, overallPageSize]);
+
+  const paginatedOverallArtists = useMemo(() => {
+    if (!paginateOverall || tab !== "artists") return overallArtistsAll;
+    const start = (safeOverallPage - 1) * overallPageSize;
+    return overallArtistsAll.slice(start, start + overallPageSize);
+  }, [paginateOverall, tab, overallArtistsAll, safeOverallPage, overallPageSize]);
+
+  const songs = period === "weekly" ? weeklySongs : paginatedOverallSongs;
+  const artists = period === "weekly" ? weeklyArtists : paginatedOverallArtists;
   const commentsPeriod = tab === "saidas" ? "weekly" : period;
   const commentsScope = {
     communityId,
@@ -176,9 +214,9 @@ export function GlobalTabs({
               {isMobile
                 ? (tabKey === "songs" ? t("global.songs") : tabKey === "artists" ? t("global.artists") : t("global.dropouts"))
                 : (tabKey === "songs"
-                  ? t("global.top100Songs")
+                  ? t("global.topNSongs", { count: rankingLimit })
                   : tabKey === "artists"
-                    ? t("global.top100Artists")
+                    ? t("global.topNArtists", { count: rankingLimit })
                     : weeklyDropouts.length > 0
                       ? t("global.dropoutsCount", { count: weeklyDropouts.length })
                       : t("global.dropouts"))}
@@ -226,6 +264,26 @@ export function GlobalTabs({
             <SongsTable songs={songs} viewSize={viewSize} isMobile={isMobile} />
           ) : (
             <ArtistsTable artists={artists} viewSize={viewSize} isMobile={isMobile} />
+          )}
+          {paginateOverall && tab !== "saidas" && overallTotalPages > 1 && (
+            <>
+              <div
+                style={{
+                  marginTop: 12,
+                  fontSize: 13,
+                  color: "var(--text-muted)",
+                  textAlign: "center",
+                }}
+              >
+                {(safeOverallPage - 1) * overallPageSize + 1}–
+                {Math.min(safeOverallPage * overallPageSize, overallList.length)} de {overallList.length}
+              </div>
+              <ParadaPagination
+                page={safeOverallPage}
+                totalPages={overallTotalPages}
+                onChange={setOverallPage}
+              />
+            </>
           )}
         </div>
         {commentsOpen && (
