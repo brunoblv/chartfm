@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3 } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -497,6 +497,10 @@ function SidebarContent({
                 gap: 8,
               }}
             >
+              <Link href="/admin/analytics" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/analytics")}>
+                <BarChart3 size={14} />
+                <span>Analytics</span>
+              </Link>
               <Link href="/admin/edicao-de-dados" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/edicao-de-dados")}>
                 <Database size={14} />
                 <span>{t("nav.adminDataEdit")}</span>

@@ -35,3 +35,6 @@ TZ=America/Sao_Paulo
 
 # 3h — purga definitivamente paradas na lixeira há mais de 7 dias
 0 3 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/purge-deleted-paradas >> /root/chartfm/logs/cron.log 2>&1
+
+# 0h20 — consolida analytics do dia anterior (visitas, sessões, tempo no site) e purga eventos >90d
+20 0 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/analytics-rollup >> /root/chartfm/logs/cron.log 2>&1

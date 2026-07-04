@@ -7,6 +7,7 @@ import "./globals.css";
 import { ThemeScript } from "@/components/theme-script";
 import { Providers } from "./providers";
 import { CookieConsent } from "@/components/consent/CookieConsent";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import { AdSenseScript } from "@/components/consent/AdSenseScript";
 import { authOptions } from "@/lib/auth-options";
 import { getServerLocale } from "@/lib/i18n/server";
@@ -74,6 +75,7 @@ export default async function RootLayout({
         <Providers session={session} initialLocale={locale}>
           {children}
         </Providers>
+        <AnalyticsTracker />
         <CookieConsent />
       </body>
 

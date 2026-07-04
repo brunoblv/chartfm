@@ -1175,6 +1175,38 @@ model SupportTicket {
   @@map("support_tickets")
 }
 
+model AnalyticsEvent {
+  id        BigInt   @id @default(autoincrement())
+  sessionId String   @map("session_id")
+  userId    String?  @map("user_id")
+  type      String // "pageview" | "heartbeat"
+  path      String
+  referrer  String?
+  device    String? // "mobile" | "desktop"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([sessionId, createdAt])
+  @@index([userId, createdAt])
+  @@map("analytics_events")
+}
+
+model AnalyticsDailyStat {
+  id                Int      @id @default(autoincrement())
+  date              DateTime @unique @db.Date
+  visitors          Int      @default(0) // sessões únicas (inclui anônimos)
+  loggedUsers       Int      @default(0) @map("logged_users") // usuários logados únicos (DAU)
+  sessions          Int      @default(0)
+  pageviews         Int      @default(0)
+  totalSeconds      Int      @default(0) @map("total_seconds") // tempo total no site
+  avgSessionSeconds Int      @default(0) @map("avg_session_seconds")
+  signups           Int      @default(0)
+  topPaths          Json?    @map("top_paths") // [{ path, views }]
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("analytics_daily_stats")
+}
+
 model SupportTicketMessage {
   id        String        @id @default(cuid())
   ticketId  String        @map("ticket_id")
