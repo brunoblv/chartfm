@@ -101,11 +101,11 @@ export function CopaArtistSinglesEditor({
   async function handleDropOnSlot(slotIndex: number, payload: CopaSongDragPayload) {
     if (!canEditSlot(slotIndex) || saving) return;
 
-    if (
-      payload.fromArtistId === artistId &&
-      payload.fromSlotIndex != null &&
-      payload.fromSlotIndex !== slotIndex
-    ) {
+    // Drag vindo de um slot é sempre reordenação: nunca vira "adição" (que
+    // valida reuso). Soltar no mesmo slot ou vindo de outro artista é no-op.
+    if (payload.fromArtistId != null) {
+      if (payload.fromArtistId !== artistId) return;
+      if (payload.fromSlotIndex == null || payload.fromSlotIndex === slotIndex) return;
       await onSwap(payload.fromSlotIndex, slotIndex);
       return;
     }

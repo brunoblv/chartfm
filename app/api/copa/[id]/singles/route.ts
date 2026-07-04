@@ -12,6 +12,7 @@ import {
   applyCopaSingleMoveFromEditable,
   isSingleSlotEditableInWindow,
   mergeArtistSingles,
+  songPickKey,
   validateArtistSingleAssignment,
 } from "@/lib/copa";
 import { getR32WinnerArtistIds } from "@/lib/copa-knockout";
@@ -149,6 +150,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     normalized = applyCopaSingleMoveFromEditable(normalized, s.slotIndex, s.songName, s.songId, lockedIndexes);
   }
 
+  // Reordenação pura (swap/arrastar) não muda o conjunto de músicas — nunca é
+  // bloqueada por reuso. A validação de duplicata vale só quando a requisição
+  // adiciona ou troca uma música da lista.
+  const songKeyMultiset = (picks: { slotIndex: number; songName: string; songId: string | null }[]) =>
+    picks
+      .map((s) => songPickKey(s.songId, s.songName))
+      .filter((k): k is string => k != null)
+      .sort()
+      .join("\n");
+  const isReorderOnly = songKeyMultiset(normalized) === songKeyMultiset(existingPicks);
+
   for (const s of updates) {
     const prev = existing.find((e) => e.slotIndex === s.slotIndex);
     const changed =
@@ -163,15 +175,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       );
     }
 
+    if (isReorderOnly) continue;
+
     const dupErr = validateArtistSingleAssignment(s.slotIndex, s.songName, s.songId, normalized, validationOpts);
     if (dupErr) {
       return NextResponse.json({ error: dupErr }, { status: 400 });
     }
   }
 
-  const fullDupErr = findDuplicateSongInSingles(normalized, validationOpts);
-  if (fullDupErr) {
-    return NextResponse.json({ error: fullDupErr }, { status: 400 });
+  if (!isReorderOnly) {
+    const fullDupErr = findDuplicateSongInSingles(normalized, validationOpts);
+    if (fullDupErr) {
+      return NextResponse.json({ error: fullDupErr }, { status: 400 });
+    }
   }
 
   await Promise.all(

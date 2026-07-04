@@ -7,7 +7,7 @@ import { CopaArtistAvatar } from "../CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
 import { CopaSinglesMobileReorder } from "@/components/copa/CopaSinglesMobileReorder";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, getLockedSlotIndexes, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
+import { COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, getLockedSlotIndexes, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 import { searchCopaSongs } from "@/lib/copa-song-search-client";
 
@@ -268,18 +268,12 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
     };
     const from = pick(fromSlotIndex);
     const to = pick(toSlotIndex);
-    const lockedIndexes = getLockedSlotIndexes(art.slotLocks);
-    const validationOpts =
-      art.slotLocks.length > 0 ? { lockedSlotIndexes: lockedIndexes } : undefined;
+    // Swap é permutação das músicas já na lista — não cria duplicata nova, então
+    // não passa pela validação de reuso (que vale só para adição).
     const merged = mergeArtistSingles(art.singles, [
       { slotIndex: fromSlotIndex, songName: to.songName, songId: to.songId },
       { slotIndex: toSlotIndex, songName: from.songName, songId: from.songId },
     ]);
-    const dupErr = findDuplicateSongInSingles(merged, validationOpts);
-    if (dupErr) {
-      alert(dupErr);
-      return false;
-    }
 
     setSavingSingle(true);
     try {
@@ -323,7 +317,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
     const payload = readCopaSongDrag(e);
     if (!payload) return;
 
-    if (payload.fromArtistId === artistId && payload.fromSlotIndex != null && payload.fromSlotIndex !== slotIndex) {
+    // Drag vindo de um slot é sempre reordenação: nunca vira "adição" (que
+    // valida reuso). Soltar no mesmo slot ou no card de outro artista é no-op.
+    if (payload.fromArtistId != null) {
+      if (payload.fromArtistId !== artistId) return;
+      if (payload.fromSlotIndex == null || payload.fromSlotIndex === slotIndex) return;
       await swapSingles(artistId, payload.fromSlotIndex, slotIndex);
       return;
     }
