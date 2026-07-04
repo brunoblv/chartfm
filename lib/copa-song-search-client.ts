@@ -26,10 +26,31 @@ function normalizeName(s: string): string {
 }
 
 /**
- * Busca músicas para o editor de singles da Copa: catálogo local (com spotifyId)
- * + busca ao vivo no Spotify, no mesmo padrão de duas fases usado por useSpotifySearch
- * na Parada. Só retorna músicas do artista selecionado — as singles da Copa são
- * sempre do próprio artista. Nunca retorna texto livre — só resultados reais de busca.
+ * Remove releases duplicados: o mesmo título (normalizado) aparece uma vez só.
+ * Versões distintas (remix, radio edit, live…) têm títulos diferentes e
+ * continuam todas na lista.
+ */
+export function dedupeExactTitles(
+  tracks: CopaSongSearchResult[],
+  max: number,
+): CopaSongSearchResult[] {
+  const seen = new Set<string>();
+  const out: CopaSongSearchResult[] = [];
+  for (const t of tracks) {
+    const key = normalizeName(t.title).replace(/[^a-z0-9]+/g, " ").trim() || t.title;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/**
+ * Busca músicas para o editor de singles da Copa, sempre restrita ao artista
+ * selecionado. Primeiro o catálogo local; só consulta o Spotify quando o banco
+ * não encontrou nada. Releases idênticos são deduplicados; versões distintas
+ * (remix, radio edit…) aparecem todas. Nunca retorna texto livre.
  */
 export async function searchCopaSongs(query: string, artistName: string): Promise<CopaSongSearchResult[]> {
   const q = query.trim();
@@ -41,7 +62,7 @@ export async function searchCopaSongs(query: string, artistName: string): Promis
 
   try {
     const res = await fetch(
-      `/api/spotify/search?q=${encodeURIComponent(q)}&artist=${encodeURIComponent(artistName)}&limit=10`,
+      `/api/spotify/search?q=${encodeURIComponent(q)}&artist=${encodeURIComponent(artistName)}&limit=20`,
       { cache: "no-store" },
     );
     if (!res.ok) return [];
@@ -58,37 +79,36 @@ export async function searchCopaSongs(query: string, artistName: string): Promis
     return [];
   }
 
-  if (!accessToken || !configured) return dbTracks;
+  // Achou no catálogo local → não precisa do Spotify.
+  if (dbTracks.length > 0) return dedupeExactTitles(dbTracks, 20);
+  if (!accessToken || !configured) return [];
 
   try {
     const fieldQuery = `${q} artist:"${artistName}"`;
     const sres = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(fieldQuery)}&type=track&limit=10&market=BR`,
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(fieldQuery)}&type=track&limit=20&market=BR`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
-    if (!sres.ok) return dbTracks;
+    if (!sres.ok) return [];
     const sjson = (await sres.json()) as { tracks?: { items?: SpotifyDirectTrackItem[] } };
     const items = sjson.tracks?.items ?? [];
 
     // O filtro artist: do Spotify é fuzzy — confirma que o artista selecionado
     // está mesmo entre os artistas da faixa antes de exibir.
     const target = normalizeName(artistName);
-    const seen = new Set(dbTracks.map((t) => t.spotifyId).filter((id): id is string => Boolean(id)));
-    const merged = [...dbTracks];
+    const results: CopaSongSearchResult[] = [];
     for (const item of items) {
-      if (!item?.id || seen.has(item.id)) continue;
+      if (!item?.id) continue;
       if (!item.artists?.some((a) => normalizeName(a.name) === target)) continue;
-      seen.add(item.id);
-      merged.push({
+      results.push({
         id: null,
         title: item.name,
         artist: item.artists?.map((a) => a.name).join(", ") || artistName,
         spotifyId: item.id,
       });
-      if (merged.length >= 10) break;
     }
-    return merged;
+    return dedupeExactTitles(results, 20);
   } catch {
-    return dbTracks;
+    return [];
   }
 }
