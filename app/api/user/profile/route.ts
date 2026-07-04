@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { ensureUserParadas, getPrimaryParada, syncUserPrimaryParadaFields } from "@/lib/paradas";
+import { resolveWeightedLastfmUsername } from "@/lib/lastfm-import";
 
 function normalizeHandle(raw: string): string {
   return raw
@@ -44,9 +45,11 @@ export async function GET() {
 
   const paradas = await ensureUserParadas(prisma, session.user.id);
   const { spotifyRefreshToken, youtubeRefreshToken, youtubeChannelHandle, ...userPublic } = user;
+  const lastfmImportUser = await resolveWeightedLastfmUsername(user.handle, user.lastfmUser);
 
   return NextResponse.json({
     ...userPublic,
+    lastfmImportUser,
     spotifyConnected: Boolean(spotifyRefreshToken),
     youtubeConnected: Boolean(youtubeRefreshToken),
     youtubeChannelHandle: youtubeChannelHandle ?? null,

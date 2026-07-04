@@ -1,6 +1,7 @@
 import { fetchTopTracks, fetchTracksBetweenUnix, type TopTrack, type TrackPlays } from "./lastfm";
 import { scoreLastfmTracks } from "./lastfm-chart-engine";
 import { getWeightedLastfmImportConfig } from "./mytrl-access";
+import { getMyTrlOwnerUser } from "./spotify-user";
 import {
   formatPreviousCalendarMonthLabel,
   isCurrentChartWeek,
@@ -84,6 +85,22 @@ export type BrunoNewHitsImportTrack = TopTrack & {
   spotifyId: string;
   imageUrl: string | null;
 };
+
+/** Last.fm efetivo para import ponderado (ex.: @bringtheleo usa o histórico do @bruno). */
+export async function resolveWeightedLastfmUsername(
+  handle: string | null | undefined,
+  userLastfmUser: string | null | undefined,
+): Promise<string | null> {
+  const config = getWeightedLastfmImportConfig(handle);
+  if (config?.useMyTrlOwnerLastfm) {
+    const owner = await getMyTrlOwnerUser();
+    const fromOwner = owner?.lastfmUser?.trim();
+    if (fromOwner) return fromOwner;
+    const fromEnv = process.env.LASTFM_USERNAME?.trim();
+    return fromEnv || null;
+  }
+  return userLastfmUser?.trim() || null;
+}
 
 /**
  * @bruno — cruza todos os scrobbles dos últimos 30 dias com a playlist "new hits"
@@ -211,9 +228,15 @@ export function describeLastfmImportPeriod(
   const weighted = getWeightedLastfmImportConfig(handle);
   if (weighted) {
     if (filterNewHits) {
-      return `Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Apenas faixas da playlist Spotify "${weighted.playlistLabel}" entram na parada.`;
+      const lastfmNote = weighted.useMyTrlOwnerLastfm
+        ? "O histórico vem do Last.fm do @bruno. "
+        : "";
+      return `${lastfmNote}Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Apenas faixas da playlist Spotify "${weighted.playlistLabel}" entram na parada.`;
     }
-    return "Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Todas as faixas ouvidas no período entram na parada.";
+    const lastfmNote = weighted.useMyTrlOwnerLastfm
+      ? "O histórico vem do Last.fm do @bruno. "
+      : "";
+    return `${lastfmNote}Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7 dias recentes ×20, demais ×10). Todas as faixas ouvidas no período entram na parada.`;
   }
   const anchor = parseChartWeekPickerDate(weekDateInput) ?? new Date();
   if (isCurrentChartWeek(anchor)) {

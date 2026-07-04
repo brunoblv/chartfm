@@ -199,9 +199,9 @@ export default function CreatePage() {
   useEffect(() => {
     fetch("/api/user/profile")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { lastfmUser?: string | null; spotifyConnected?: boolean } | null) => {
+      .then((data: { lastfmUser?: string | null; lastfmImportUser?: string | null; spotifyConnected?: boolean } | null) => {
         if (!data) return;
-        setUserLastfmUser(data.lastfmUser ?? null);
+        setUserLastfmUser(data.lastfmImportUser ?? data.lastfmUser ?? null);
         if (canUseSpotifyImport) setSpotifyUserConnected(data.spotifyConnected ?? false);
       })
       .catch(() => {});

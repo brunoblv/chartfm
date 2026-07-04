@@ -82,6 +82,8 @@ export type WeightedLastfmImportConfig = {
   sourcePlaylistId: string | null;
   requiresSpotifyConnection: boolean;
   playlistLabel: string;
+  /** Usar histórico Last.fm do @bruno em vez da conta do usuário logado. */
+  useMyTrlOwnerLastfm: boolean;
 };
 
 export function getWeightedLastfmImportConfig(
@@ -93,6 +95,7 @@ export function getWeightedLastfmImportConfig(
       sourcePlaylistId: null,
       requiresSpotifyConnection: true,
       playlistLabel: "new hits",
+      useMyTrlOwnerLastfm: false,
     };
   }
   if (h === BRINGTHELEO_HANDLE) {
@@ -100,6 +103,7 @@ export function getWeightedLastfmImportConfig(
       sourcePlaylistId: BRINGTHELEO_LASTFM_SOURCE_PLAYLIST_ID,
       requiresSpotifyConnection: false,
       playlistLabel: "New Rock",
+      useMyTrlOwnerLastfm: true,
     };
   }
   return null;

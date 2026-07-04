@@ -5,6 +5,7 @@ import {
   resolveLastfmImportTracks,
   resolveBrunoNewHitsImportTracks,
   resolveBrunoLastfmImportTracks,
+  resolveWeightedLastfmUsername,
 } from "@/lib/lastfm-import";
 import { getWeightedLastfmImportConfig, hasWeightedLastfmImport } from "@/lib/mytrl-access";
 import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
@@ -187,9 +188,25 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  if (!userRecord?.lastfmUser) {
+  const needsOwnLastfm = !weightedConfig?.useMyTrlOwnerLastfm;
+  if (needsOwnLastfm && !userRecord?.lastfmUser) {
     return NextResponse.json(
       { error: "Configure seu usuário do Last.fm nas configurações de perfil para usar esta função." },
+      { status: 400, headers: NO_CACHE_HEADERS },
+    );
+  }
+
+  const lastfmUsername = await resolveWeightedLastfmUsername(
+    session.user.handle,
+    userRecord?.lastfmUser,
+  );
+  if (!lastfmUsername) {
+    return NextResponse.json(
+      {
+        error: weightedConfig?.useMyTrlOwnerLastfm
+          ? "Last.fm do @bruno não configurado. Configure nas configurações de @bruno ou em LASTFM_USERNAME."
+          : "Configure seu usuário do Last.fm nas configurações de perfil para usar esta função.",
+      },
       { status: 400, headers: NO_CACHE_HEADERS },
     );
   }
@@ -200,7 +217,7 @@ export async function POST(req: NextRequest) {
 
   let playlistTracks: Awaited<ReturnType<typeof getLastfmImportPlaylistTracks>> = null;
   if (filterNewHits && weightedConfig) {
-    if (weightedConfig.requiresSpotifyConnection && !userRecord.spotifyRefreshToken) {
+    if (weightedConfig.requiresSpotifyConnection && !userRecord?.spotifyRefreshToken) {
       return NextResponse.json(
         { error: "Conecte o Spotify para importar do Last.fm." },
         { status: 400, headers: NO_CACHE_HEADERS },
@@ -219,7 +236,6 @@ export async function POST(req: NextRequest) {
   }
 
   const limit = typeof body.limit === "number" && body.limit > 0 && body.limit <= 200 ? Math.round(body.limit) : 200;
-  const lastfmUsername = userRecord.lastfmUser;
 
   try {
     if (isWeightedImport && !filterNewHits) {
