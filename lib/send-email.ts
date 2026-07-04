@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer";
+
 type SendEmailParams = {
   to: string;
   subject: string;
@@ -6,8 +8,48 @@ type SendEmailParams = {
 };
 
 export async function sendEmail(params: SendEmailParams): Promise<boolean> {
+  const smtpHost = process.env.SMTP_HOST?.trim();
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim() || "ChartFM <noreply@chartfm.com>";
+  const from =
+    process.env.EMAIL_FROM?.trim() || "ChartFM <contato@chartfm.com.br>";
+
+  if (smtpHost) {
+    const port = Number(process.env.SMTP_PORT?.trim() || 465);
+    const user = process.env.SMTP_USER?.trim();
+    const pass = process.env.SMTP_PASS?.trim();
+
+    if (!user || !pass) {
+      console.error(
+        "[email] SMTP_HOST definido mas SMTP_USER/SMTP_PASS ausentes — email NÃO enviado.",
+      );
+      return false;
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port,
+        // 465 = TLS implícito; outras portas (587/25) usam STARTTLS
+        secure: port === 465,
+        auth: { user, pass },
+      });
+
+      await transporter.sendMail({
+        from,
+        to: params.to,
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+      });
+      return true;
+    } catch (e) {
+      console.error(
+        `[email] Falha no envio via SMTP (host="${smtpHost}", porta=${port}, to="${params.to}")`,
+        e,
+      );
+      return false;
+    }
+  }
 
   if (apiKey) {
     try {
@@ -45,7 +87,7 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
   }
 
   if (process.env.NODE_ENV !== "production") {
-    console.info("[email] (dev — RESEND_API_KEY não configurada)");
+    console.info("[email] (dev — SMTP/RESEND não configurados)");
     console.info(`  Para: ${params.to}`);
     console.info(`  Assunto: ${params.subject}`);
     console.info(`  Corpo:\n${params.text}`);
@@ -53,7 +95,7 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
   }
 
   console.error(
-    `[email] RESEND_API_KEY ausente em produção — email NÃO enviado (to="${params.to}", subject="${params.subject}"). Configure RESEND_API_KEY e EMAIL_FROM no .env.`,
+    `[email] Nenhum provedor de email configurado em produção — email NÃO enviado (to="${params.to}", subject="${params.subject}"). Configure SMTP_HOST/SMTP_USER/SMTP_PASS (ou RESEND_API_KEY) e EMAIL_FROM no .env.`,
   );
   return false;
 }

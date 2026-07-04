@@ -71,7 +71,7 @@ export function PendingVerificationsClient() {
       setNote(
         data.ok
           ? { kind: "ok", text: "Email reenviado." }
-          : { kind: "err", text: "Não foi possível enviar (verifique RESEND_API_KEY / EMAIL_FROM)." },
+          : { kind: "err", text: "Não foi possível enviar (verifique SMTP_HOST/SMTP_USER/SMTP_PASS e EMAIL_FROM no servidor)." },
       );
     } finally {
       setBusyId(null);
