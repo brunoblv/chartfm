@@ -10,6 +10,7 @@ import {
 } from "@/components/admin/AdminEntityLinks";
 import type { AlbumAuditRow, SongAuditRow } from "./lib";
 import { SourceFetchButtons } from "./SourceFetchButtons";
+import { InlineDate } from "./InlineEdit";
 
 // ---------------------------------------------------------------------------
 // Navegação da seção
@@ -215,7 +216,6 @@ export function ResultInfo({ total, page, totalPages, descricao }: {
 
 const okStyle: CSSProperties = { color: "#2D7A32", fontWeight: 700, fontSize: 12 };
 const missStyle: CSSProperties = { color: "#C41E3A", fontWeight: 700, fontSize: 12 };
-const suspectStyle: CSSProperties = { color: "#B45309", fontWeight: 700 };
 
 export function OkFlag({ ok, okLabel = "OK", missLabel = "falta" }: {
   ok: boolean;
@@ -223,33 +223,6 @@ export function OkFlag({ ok, okLabel = "OK", missLabel = "falta" }: {
   missLabel?: string;
 }) {
   return <span style={ok ? okStyle : missStyle}>{ok ? okLabel : missLabel}</span>;
-}
-
-export function isJan1(date: Date): boolean {
-  return date.getUTCMonth() === 0 && date.getUTCDate() === 1;
-}
-
-export function formatDateBR(date: Date): string {
-  return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
-}
-
-export function DateCell({ date }: { date: Date | null }) {
-  if (!date) return <span style={missStyle}>falta</span>;
-  const suspect = isJan1(date);
-  return (
-    <span
-      title={suspect ? "Data 01/01 — pode indicar que o MusicBrainz só tinha o ano" : undefined}
-      style={{
-        fontSize: 13,
-        fontVariantNumeric: "tabular-nums",
-        whiteSpace: "nowrap",
-        ...(suspect ? suspectStyle : { color: "var(--text)" }),
-      }}
-    >
-      {formatDateBR(date)}
-      {suspect ? " ⚠️" : ""}
-    </span>
-  );
 }
 
 export function CoverThumb({ url, size = 32 }: { url: string | null | undefined; size?: number }) {
@@ -326,7 +299,6 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
         </thead>
         <tbody>
           {rows.map((s) => {
-            const clipDate = s.musicVideoReleaseDate ?? s.youtubeReleaseDate;
             return (
               <tr key={s.id}>
                 <td style={cellEllipsis} title={s.title}>
@@ -356,13 +328,17 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                   <OkFlag ok={Boolean(s.recordingMbid?.trim())} />
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                  <DateCell date={s.singleReleaseDate} />
+                  <InlineDate kind="music" id={s.id} field="singleReleaseDate" value={s.singleReleaseDate} />
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                  <DateCell date={clipDate} />
-                  {!s.musicVideoReleaseDate && s.youtubeReleaseDate && (
-                    <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>YT</span>
-                  )}
+                  <InlineDate
+                    kind="music"
+                    id={s.id}
+                    field="musicVideoReleaseDate"
+                    value={s.musicVideoReleaseDate}
+                    fallback={s.youtubeReleaseDate}
+                    fallbackTag="YT"
+                  />
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <AdminSongLinks song={s} />
@@ -426,7 +402,7 @@ export function AlbumAuditTable({ rows, emptyLabel }: { rows: AlbumAuditRow[]; e
                 {a.albumType ?? <span style={missStyle}>falta</span>}
               </td>
               <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                <DateCell date={a.releaseDate} />
+                <InlineDate kind="albums" id={a.id} field="releaseDate" value={a.releaseDate} />
               </td>
               <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                 {a.totalTracks ?? <span style={missStyle}>falta</span>}

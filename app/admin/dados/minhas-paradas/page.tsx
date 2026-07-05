@@ -1,6 +1,7 @@
-import { getAdminAccess, parsePage, parseSongFiltro } from "../lib";
+import { countSongsSemDatas, getAdminAccess, parsePage, parseSongFiltro } from "../lib";
 import { AccessDenied, DadosShell } from "../ui";
 import { SongAuditView } from "../SongAuditView";
+import { DatesBackfillClient } from "../DatesBackfillClient";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function MinhasParadasAuditPage({
   const params = await searchParams;
   const filtro = parseSongFiltro(params.filtro, "todas");
   const page = parsePage(params.page);
+  const semDatas = await countSongsSemDatas(access.userId);
 
   return (
     <DadosShell active="minhas-paradas" subtitle="Músicas das minhas paradas" showMinhasParadas>
@@ -23,6 +25,9 @@ export default async function MinhasParadasAuditPage({
         Todas as músicas que já apareceram em alguma das suas paradas (paradas de comunidade e
         excluídas ficam de fora), com o status de álbum, capa, MBID e datas de lançamento.
       </p>
+      <div style={{ maxWidth: 720 }}>
+        <DatesBackfillClient initialTotal={semDatas} scope="minhas" />
+      </div>
       <SongAuditView basePath="/admin/dados/minhas-paradas" userId={access.userId} filtro={filtro} page={page} />
     </DadosShell>
   );

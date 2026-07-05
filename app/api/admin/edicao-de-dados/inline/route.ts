@@ -23,6 +23,15 @@ function asTrimmed(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/** "" → null; "YYYY-MM-DD" → Date UTC; qualquer outra coisa → undefined (inválido). */
+function asDateOrNull(value: unknown): Date | null | undefined {
+  const raw = asTrimmed(value);
+  if (!raw) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
+  const d = new Date(`${raw}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
 /** Aceita array de strings ou texto separado por vírgula; normaliza e deduplica. */
 function asTags(value: unknown): string[] {
   const raw = Array.isArray(value)
@@ -77,6 +86,12 @@ export async function PATCH(req: NextRequest) {
         });
         return NextResponse.json({ ok: true, genres });
       }
+      if (field === "singleReleaseDate" || field === "musicVideoReleaseDate") {
+        const date = asDateOrNull(body.value);
+        if (date === undefined) return NextResponse.json({ error: "invalid_date" }, { status: 400 });
+        await prisma.song.update({ where: { id }, data: { [field]: date } });
+        return NextResponse.json({ ok: true });
+      }
     }
 
     if (kind === "albums") {
@@ -96,6 +111,12 @@ export async function PATCH(req: NextRequest) {
           where: { albumSpotifyId: album.spotifyId },
           data: { album: title },
         });
+        return NextResponse.json({ ok: true });
+      }
+      if (field === "releaseDate") {
+        const date = asDateOrNull(body.value);
+        if (date === undefined) return NextResponse.json({ error: "invalid_date" }, { status: 400 });
+        await prisma.album.update({ where: { id }, data: { releaseDate: date } });
         return NextResponse.json({ ok: true });
       }
     }

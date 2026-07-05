@@ -94,6 +94,11 @@ export const semMbidWhere: Prisma.SongWhereInput = {
 
 export const semSingleWhere: Prisma.SongWhereInput = { singleReleaseDate: null };
 
+/** Alvo do backfill de datas: sem data do single OU sem data do clipe própria. */
+export const semDatasWhere: Prisma.SongWhereInput = {
+  OR: [{ singleReleaseDate: null }, { musicVideoReleaseDate: null }],
+};
+
 export const semClipeWhere: Prisma.SongWhereInput = {
   AND: [{ musicVideoReleaseDate: null }, { youtubeReleaseDate: null }],
 };
@@ -190,6 +195,12 @@ async function songIdsComData0101(userId?: string): Promise<string[]> {
 
 export async function countSongsComData0101(userId?: string): Promise<number> {
   return (await songIdsComData0101(userId)).length;
+}
+
+/** Quantas músicas ainda estão sem data de single ou de clipe (alvo do backfill). */
+export async function countSongsSemDatas(userId?: string): Promise<number> {
+  const scope = userId ? minhasParadasWhere(userId) : null;
+  return prisma.song.count({ where: scope ? { AND: [scope, semDatasWhere] } : semDatasWhere });
 }
 
 export type SongAuditPage = {

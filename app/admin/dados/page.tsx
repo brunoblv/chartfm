@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { MissingInfoBackfillClient } from "../missing-info/MissingInfoBackfillClient";
-import { fetchDadosOverview, getAdminAccess, type EscopoContadores } from "./lib";
+import { countSongsSemDatas, fetchDadosOverview, getAdminAccess, type EscopoContadores } from "./lib";
 import { AccessDenied, DadosShell } from "./ui";
+import { DatesBackfillClient } from "./DatesBackfillClient";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +88,10 @@ export default async function DadosOverviewPage() {
   const access = await getAdminAccess();
   if (!access) return <AccessDenied />;
 
-  const ov = await fetchDadosOverview(access.isOwner ? access.userId : null);
+  const [ov, semDatas] = await Promise.all([
+    fetchDadosOverview(access.isOwner ? access.userId : null),
+    countSongsSemDatas(),
+  ]);
   const totalPendencias =
     ov.catalogo.semAlbum +
     ov.catalogo.albumSemCapa +
@@ -123,6 +127,7 @@ export default async function DadosOverviewPage() {
 
       <GroupTitle>Ferramentas</GroupTitle>
       <div style={{ maxWidth: 720 }}>
+        <DatesBackfillClient initialTotal={semDatas} scope="catalogo" />
         <MissingInfoBackfillClient initialTotal={totalPendencias} />
       </div>
     </DadosShell>
