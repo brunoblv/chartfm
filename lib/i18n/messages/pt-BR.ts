@@ -40,6 +40,7 @@ export const messagesPtBR = {
     adminEditUsers: "Editar usuários",
     adminPendingVerifications: "Confirmações pendentes",
     adminClube: "Clube do Álbum",
+    adminCrownnoteExport: "Exportar Crownnote",
     adminSupport: "Tickets de suporte",
     ctaTitle: "Crie sua parada semanal",
     ctaBody:

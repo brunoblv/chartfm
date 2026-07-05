@@ -287,6 +287,16 @@ export function getWeeklySnapshotReferenceDate(weekIndex: number): Date {
   return new Date(deadline.getTime() - 23 * 60 * 60 * 1000);
 }
 
+/** Paradas principais publicadas antes do corte da semana (terça 0h BRT). */
+export function frozenPrimaryParadaChartWhere(weekIndex: number) {
+  return {
+    weekIndex,
+    isPublished: true as const,
+    parada: { isPrimary: true as const },
+    publishedAt: { lt: getGlobalSnapshotDeadline(weekIndex) },
+  };
+}
+
 export function formatChartPeriod(chart: Pick<Chart, "weekLabel" | "dateRange">): string {
   const weekLabel = normalizeWeekLabel(chart.weekLabel);
   const dateRange = normalizeDateRange(chart.dateRange);

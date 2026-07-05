@@ -211,28 +211,32 @@ export default async function CommunitiesPage({
 
       {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
       <section style={{ marginBottom: 48 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 16 }}>
-          Descubra comunidades musicais no ChartFM
+        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
+          As comunidades são espaços para encontrar pessoas que compartilham os mesmos interesses musicais que você. Entre para conversar sobre seus artistas favoritos, lançamentos, álbuns, paradas e tudo o que movimenta o mundo da música.
+        </p>
+
+        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
+          Explore comunidades dedicadas a diferentes gêneros, artistas e cenas musicais. Do pop ao rock, do indie à música eletrônica, cada grupo reúne pessoas com algo em comum e cria seu próprio espaço para conversas, descobertas e troca de recomendações.
+        </p>
+
+        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", margin: "28px 0 14px 0" }}>
+          Uma parada para cada comunidade
         </h2>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          As comunidades do ChartFM foram criadas para conectar pessoas através da música. Cada espaço reúne usuários com gostos, artistas e interesses em comum, permitindo discussões sobre lançamentos, álbuns clássicos, rankings semanais, reviews e cultura pop. Em vez de ouvir música de forma isolada, as comunidades tornam a experiência coletiva — você descobre o que seus pares estão ouvindo, defende seus artistas favoritos e acompanha como o gosto coletivo evolui semana a semana.
+          Cada comunidade tem sua própria parada musical, formada a partir das paradas pessoais publicadas por seus membros. Assim, é possível acompanhar quais músicas estão em alta dentro de cada grupo e comparar como os gostos mudam de uma comunidade para outra.
         </p>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Dentro das comunidades, fãs podem compartilhar opiniões, acompanhar tendências musicais, descobrir novos artistas e participar de conversas sobre diferentes gêneros e movimentos da música ao redor do mundo. Do pop ao indie, do rock ao eletrônico, cada comunidade funciona como um espaço dedicado para trocar experiências e encontrar pessoas que enxergam a música da mesma forma. Não importa se você é fã de um nicho específico ou se seu gosto é eclético — existe uma comunidade para você, e se não existir, você pode criar a sua.
+          Uma música pode dominar a parada de uma comunidade de fãs de pop enquanto outra cresce entre os fãs de rock alternativo. É uma maneira diferente de descobrir música: através do gosto coletivo de pessoas que compartilham interesses com você.
         </p>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Um dos recursos mais únicos das comunidades no ChartFM é a <strong style={{ color: "var(--text)" }}>parada coletiva</strong>. Toda semana, o sistema agrega automaticamente os charts individuais de todos os membros e gera um ranking exclusivo da comunidade. Isso significa que a chart reflete, de verdade, o que aquele grupo de pessoas está ouvindo e defendendo naquele momento — não um algoritmo genérico, mas o gosto real de quem faz parte daquela comunidade. É uma forma completamente nova de descobrir música através de pessoas com quem você tem afinidade.
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Além das discussões e da parada semanal, as comunidades ajudam usuários a descobrir novas charts pessoais, avaliações de álbuns e playlists criadas pela própria base de fãs do ChartFM. Conforme a plataforma cresce, novos grupos surgem constantemente, criando um ambiente dinâmico onde diferentes estilos musicais coexistem. Você pode acompanhar debates sobre posições no Global 100, comentar lançamentos aguardados e compartilhar suas previsões sobre artistas em ascensão.
+          Além das paradas, você pode participar das conversas, compartilhar músicas, comentar lançamentos e conhecer as paradas pessoais de outros membros.
         </p>
 
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>
-          Seja para encontrar pessoas com o mesmo gosto musical, discutir um álbum recém-lançado, explorar novas recomendações ou simplesmente acompanhar o que está em alta dentro de um gênero específico, as comunidades do ChartFM foram feitas para aproximar fãs de música em um único lugar. Qualquer usuário pode criar uma comunidade: basta definir um nome, um ícone, uma descrição e começar a convidar membros. A experiência cresce junto com o grupo.
+          Não encontrou a comunidade que procurava? Crie a sua, escolha um nome e uma identidade, convide pessoas e comece a construir um novo espaço dentro do ChartFM.
         </p>
       </section>
 

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { loadGlobalGenreSnapshot } from "@/lib/global-genre-snapshot";
 import { computeGlobalGenreChartData } from "@/lib/global-genre-chart";
 import { getGlobalGenreChart } from "@/lib/global-genre-charts";
 import { loadGlobalLastfmSnapshot } from "@/lib/global-lastfm-snapshot";
@@ -115,15 +116,18 @@ export async function resolveGlobalPlaylistTrackIds(source: GlobalPlaylistSource
       where: { weekIndex: source.weekIndex },
       select: { weekLabel: true, dateRange: true },
     });
-    const payload = await computeGlobalGenreChartData(source.weekIndex, slug!);
+    const snapshot = await loadGlobalGenreSnapshot(source.weekIndex, slug!);
+    const payload =
+      snapshot?.payload ??
+      (await computeGlobalGenreChartData(source.weekIndex, slug!));
     const entries = songsForPeriod(payload, period);
 
     return {
       trackIds: trackIdsFromSongEntries(entries),
       totalEntries: entries.length,
       chartName: period === "overall" ? `${chart.name} Overall` : chart.name,
-      weekLabel: meta?.weekLabel ?? `Semana ${source.weekIndex}`,
-      dateRange: meta?.dateRange ?? "",
+      weekLabel: snapshot?.weekLabel ?? meta?.weekLabel ?? `Semana ${source.weekIndex}`,
+      dateRange: snapshot?.dateRange ?? meta?.dateRange ?? "",
     };
   }
 

@@ -88,7 +88,9 @@ function buildArtistPrevPositions(
 export type GlobalGenreChartPayload = Pick<
   GlobalSnapshotPayload,
   "weeklySongs" | "weeklyArtists" | "overallSongs" | "overallArtists"
->;
+> & {
+  contributorCount: number;
+};
 
 export async function computeGlobalGenreChartData(
   weekIdx: number,
@@ -150,6 +152,7 @@ export async function computeGlobalGenreChartData(
 
   const prevWeeklySongs = aggregateGlobalSongs(prevWeekEntries, limit, { weightMode: "stored" });
   const prevOverallSongs = aggregateGlobalSongs(prevOverallEntries, limit, { weightMode: "stored" });
+  const contributorCount = new Set(weeklyEntries.map((e) => e.chartId)).size;
 
   return {
     weeklySongs: aggregateGlobalSongs(weeklyEntries, limit, {
@@ -180,5 +183,6 @@ export async function computeGlobalGenreChartData(
       ),
       weightMode: "stored",
     }),
+    contributorCount,
   };
 }

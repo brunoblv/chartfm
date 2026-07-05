@@ -3,6 +3,7 @@ import {
   getOrCreateGlobalLastfmSnapshot,
 } from "@/lib/global-lastfm-snapshot";
 import { getOrCreateCuratorsSnapshot } from "@/lib/curators-snapshot";
+import { publishGlobalGenreSnapshotsForRankingWeek } from "@/lib/global-genre-snapshot";
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
 import { closeWeeklySpotlightPoll } from "@/lib/weekly-spotlight-poll";
@@ -22,10 +23,11 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
     console.error("[publish-weekly-globals] closeWeeklySpotlightPoll", e);
   }
 
-  const [airplay, albums, curators] = await Promise.all([
+  const [airplay, albums, curators, genreSnapshots] = await Promise.all([
     getOrCreateGlobalLastfmSnapshot("airplay", now),
     getOrCreateGlobalLastfmSnapshot("albums", now),
     getOrCreateCuratorsSnapshot(now),
+    publishGlobalGenreSnapshotsForRankingWeek(now),
   ]);
 
   syncGlobal100YouTubePlaylist(global.weekIndex, global.weekLabel).catch((e) =>
@@ -80,6 +82,7 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
       created: curators.created,
       count: curators.entries.length,
     },
+    genreSnapshots,
     weeklyPoll,
     notificationsSent,
   };

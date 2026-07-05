@@ -9,6 +9,7 @@ import { GlobalHero } from "@/components/global/GlobalHero";
 import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
 import { loadCoverUrlsForSongIds } from "@/lib/chart-entry-cover";
 import { computeGlobalGenreChartData } from "@/lib/global-genre-chart";
+import { loadGlobalGenreSnapshot } from "@/lib/global-genre-snapshot";
 import {
   formatGenreChartTags,
   getGlobalGenreChart,
@@ -106,9 +107,12 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
       : availableWeekIndexes[0] ?? rankingWeek.weekIndex;
   const currentMeta = availableSnapshots.find((w) => w.weekIndex === weekIndex) ?? null;
 
-  const payload = await computeGlobalGenreChartData(weekIndex, slug);
-  const weekNow = currentMeta?.weekLabel ?? rankingWeek.weekLabel;
-  const weekRangeNow = currentMeta?.dateRange ?? rankingWeek.dateRange;
+  const snapshotRow = await loadGlobalGenreSnapshot(weekIndex, slug);
+  const payload =
+    snapshotRow?.payload ??
+    (await computeGlobalGenreChartData(weekIndex, slug));
+  const weekNow = snapshotRow?.weekLabel ?? currentMeta?.weekLabel ?? rankingWeek.weekLabel;
+  const weekRangeNow = snapshotRow?.dateRange ?? currentMeta?.dateRange ?? rankingWeek.dateRange;
 
   const globalSongs = await hydrateSongCovers(payload.weeklySongs);
   const overallSongs = await hydrateSongCovers(payload.overallSongs);
@@ -134,9 +138,7 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
       ? availableWeekIndexes[currentIndexInList + 1]
       : null;
 
-  const uniqueParadas = await prisma.chart.count({
-    where: { weekIndex, parada: { isPrimary: true } },
-  });
+  const uniqueParadas = snapshotRow?.payload.contributorCount ?? payload.contributorCount;
 
   const basePath = `/global/genre/${slug}`;
 

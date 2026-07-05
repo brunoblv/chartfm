@@ -40,6 +40,7 @@ export const messagesEn = {
     adminEditUsers: "Edit users",
     adminPendingVerifications: "Pending verifications",
     adminClube: "Album Club",
+    adminCrownnoteExport: "Export Crownnote",
     adminSupport: "Support tickets",
     ctaTitle: "Create your weekly chart",
     ctaBody:

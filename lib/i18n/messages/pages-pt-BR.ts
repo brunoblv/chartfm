@@ -252,7 +252,7 @@ export const pagesPtBR = {
   },
   communities: {
     title: "Comunidades",
-    subtitle: "Encontre sua tribo musical",
+    subtitle: "Música é melhor quando é compartilhada.",
     searchPlaceholder: "Buscar comunidades...",
     create: "Criar comunidade",
     yours: "Suas comunidades",
