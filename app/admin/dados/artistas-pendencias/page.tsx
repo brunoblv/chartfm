@@ -4,6 +4,7 @@ import { AdminArtistLinks, AdminArtistNameLink } from "@/components/admin/AdminE
 import { ArtistRefreshImageButton } from "../../artists/ArtistRefreshImageButton";
 import { fetchArtistPendencias, getAdminAccess, parsePage } from "../lib";
 import { AccessDenied, CoverThumb, DadosShell, OkFlag, Pagination, ResultInfo } from "../ui";
+import { SourceFetchButtons } from "../SourceFetchButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ export default async function ArtistasPendenciasPage({
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <AdminArtistLinks artist={a} />
                   <ArtistRefreshImageButton artistId={a.id} />
+                  <SourceFetchButtons kind="artists" id={a.id} />
                 </td>
               </tr>
             ))}

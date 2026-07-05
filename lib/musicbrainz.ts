@@ -335,6 +335,49 @@ export async function searchRecordingMbid(title: string, artist: string): Promis
   return recs[0]?.id ?? null;
 }
 
+/** Data de lançamento de um álbum via busca de release-group (first-release-date). */
+export async function searchMusicBrainzAlbumReleaseDate(
+  title: string,
+  artist: string,
+): Promise<{ mbid: string; releaseDate: Date | null } | null> {
+  const t = escapeLucene(title);
+  const a = escapeLucene(artist);
+  if (!t || !a) return null;
+  const query = `releasegroup:"${t}" AND artist:"${a}"`;
+  const data = (await mbFetch(
+    `/release-group?query=${encodeURIComponent(query)}&limit=5&fmt=json`,
+  )) as {
+    "release-groups"?: Array<{ id?: string; score?: number; "first-release-date"?: string }>;
+  } | null;
+  const groups = (data?.["release-groups"] ?? []).filter((rg) => rg.id);
+  if (!groups.length) return null;
+  groups.sort((x, y) => (y.score ?? 0) - (x.score ?? 0));
+  const best = groups[0];
+  return { mbid: best.id!, releaseDate: parseMusicBrainzDate(best["first-release-date"]) };
+}
+
+/** Tags/gêneros de um artista via busca por nome. */
+export async function searchMusicBrainzArtistTags(name: string): Promise<{
+  mbid: string;
+  name: string;
+  tags: string[];
+} | null> {
+  const n = escapeLucene(name);
+  if (!n) return null;
+  const data = (await mbFetch(
+    `/artist?query=${encodeURIComponent(`artist:"${n}"`)}&limit=3&fmt=json`,
+  )) as { artists?: Array<{ id?: string; name?: string; score?: number }> } | null;
+  const artists = (data?.artists ?? []).filter((a) => a.id);
+  if (!artists.length) return null;
+  artists.sort((x, y) => (y.score ?? 0) - (x.score ?? 0));
+  const best = artists[0];
+  const detail = (await mbFetch(
+    `/artist/${encodeURIComponent(best.id!)}?inc=tags+genres&fmt=json`,
+  )) as MbRecording | null;
+  if (!detail?.id) return null;
+  return { mbid: detail.id, name: best.name ?? name, tags: pickTagsFromRecording(detail) };
+}
+
 export type MusicBrainzSongGenreResult = {
   mbid: string;
   tags: string[];

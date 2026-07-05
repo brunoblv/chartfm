@@ -5,6 +5,7 @@ import {
 import { getOrCreateCuratorsSnapshot } from "@/lib/curators-snapshot";
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
+import { closeWeeklySpotlightPoll } from "@/lib/weekly-spotlight-poll";
 
 /**
  * Publica rankings semanais congelados (Global 100, Airplay, Álbuns, Top Curadores) — só cria se ainda não existir.
@@ -12,6 +13,15 @@ import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "
  */
 export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
   const global = await getOrCreateRankingWeekSnapshot(now);
+
+  // Apura a enquete da semana (Melhor da Semana + Flashback) — vencedoras entram nos cards do Global 100
+  let weeklyPoll: Awaited<ReturnType<typeof closeWeeklySpotlightPoll>> | null = null;
+  try {
+    weeklyPoll = await closeWeeklySpotlightPoll(global.weekIndex);
+  } catch (e) {
+    console.error("[publish-weekly-globals] closeWeeklySpotlightPoll", e);
+  }
+
   const [airplay, albums, curators] = await Promise.all([
     getOrCreateGlobalLastfmSnapshot("airplay", now),
     getOrCreateGlobalLastfmSnapshot("albums", now),
@@ -70,6 +80,7 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
       created: curators.created,
       count: curators.entries.length,
     },
+    weeklyPoll,
     notificationsSent,
   };
 }

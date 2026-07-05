@@ -15,6 +15,7 @@ import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 import { chartGenreSlugsForTags, getChartGenreBySlug } from "@/lib/genre-taxonomy";
 import { ArtistRefreshImageButton } from "../artists/ArtistRefreshImageButton";
 import { InlineField, InlineTags } from "./InlineEdit";
+import { SourceFetchButtons } from "./SourceFetchButtons";
 
 type Kind = "music" | "albums" | "artists";
 
@@ -235,6 +236,7 @@ function MusicTable({ rows }: { rows: SongRow[] }) {
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminSongLinks song={s} />
+              <SourceFetchButtons kind="music" id={s.id} />
             </td>
           </tr>
         ))}
@@ -284,6 +286,7 @@ function AlbumTable({ rows }: { rows: AlbumRow[] }) {
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminAlbumLinks album={a} />
+              <SourceFetchButtons kind="albums" id={a.id} />
             </td>
           </tr>
         ))}
@@ -347,6 +350,7 @@ function ArtistTable({ rows }: { rows: ArtistRow[] }) {
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminArtistLinks artist={a} />
               <ArtistRefreshImageButton artistId={a.id} />
+              <SourceFetchButtons kind="artists" id={a.id} />
             </td>
           </tr>
         ))}

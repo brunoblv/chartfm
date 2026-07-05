@@ -13,6 +13,8 @@ import { GlobalHero } from "@/components/global/GlobalHero";
 import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { buildWeeklyEditorial } from "@/lib/editorial-generator";
+import { getWeeklySpotlightWinners, WEEKLY_POLL_PATH } from "@/lib/weekly-spotlight-poll";
+import { GlobalSpotlightWinnerCard } from "@/components/global/GlobalSpotlightWinnerCard";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -156,6 +158,22 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
   const weeklyDropoutsRaw = prevWeeklySongs.filter((s) => !currentKeySet.has(songKey(s.song)));
   const weeklyDropouts = await hydrateSongCovers(weeklyDropoutsRaw);
 
+  // Vencedoras da Votação da Semana (Melhor da Semana + Flashback) desta semana
+  const spotlightWinnersRaw = await getWeeklySpotlightWinners(weekIndex);
+  const winnerCoverMap = spotlightWinnersRaw.length
+    ? await loadCoverUrlsForSongIds(prisma, spotlightWinnersRaw.map((w) => w.song.id))
+    : new Map<string, string | null>();
+  const spotlightWinners = spotlightWinnersRaw.map((w) => ({
+    ...w,
+    song: {
+      ...w.song,
+      cover: {
+        ...w.song.cover,
+        imageUrl: winnerCoverMap.get(w.song.id) ?? w.song.cover.imageUrl ?? null,
+      },
+    },
+  }));
+
   const imageMap = await resolveArtistImages(
     [...topArtists, ...topArtistsOverall].map((a) => ({ name: a.name, spotifyId: a.spotifyId }))
   );
@@ -263,6 +281,27 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
             : null
         }
       />
+
+      {spotlightWinners.length > 0 && (
+        <section style={{ marginBottom: 44 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>
+              Escolhidas pela comunidade
+            </h2>
+            <Link href={WEEKLY_POLL_PATH} style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
+              Ver a Votação da Semana →
+            </Link>
+          </div>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.6 }}>
+            Vencedoras da enquete semanal: a comunidade votou entre as músicas indicadas como Destaque e Flashback nas paradas pessoais.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
+            {spotlightWinners.map((winner) => (
+              <GlobalSpotlightWinnerCard key={`${winner.category}-${winner.song.id}`} winner={winner} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>

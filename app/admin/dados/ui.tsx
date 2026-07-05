@@ -9,6 +9,7 @@ import {
   AdminSongNameLink,
 } from "@/components/admin/AdminEntityLinks";
 import type { AlbumAuditRow, SongAuditRow } from "./lib";
+import { SourceFetchButtons } from "./SourceFetchButtons";
 
 // ---------------------------------------------------------------------------
 // Navegação da seção
@@ -365,6 +366,7 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <AdminSongLinks song={s} />
+                  <SourceFetchButtons kind="music" id={s.id} />
                 </td>
               </tr>
             );
@@ -434,6 +436,7 @@ export function AlbumAuditTable({ rows, emptyLabel }: { rows: AlbumAuditRow[]; e
               </td>
               <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                 <AdminAlbumLinks album={a} />
+                <SourceFetchButtons kind="albums" id={a.id} />
               </td>
             </tr>
           ))}

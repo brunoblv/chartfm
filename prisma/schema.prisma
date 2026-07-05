@@ -89,6 +89,8 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   supportTickets       SupportTicket[]
   supportTicketMessages SupportTicketMessage[]
+  weeklySpotlightNominations WeeklySpotlightNomination[]
+  weeklySpotlightVotes WeeklySpotlightVote[]
 }
 
 model PasswordResetToken {
@@ -205,6 +207,7 @@ model Song {
   videoClipChoices      UserSongVideoClipChoice[]
   pushSubmissions       PushSubmission[]
   recommendations       SongRecommendation[]
+  weeklySpotlightOptions WeeklySpotlightOption[]
 
   @@unique([title, artist])
   @@index([spotifyId], map: "idx_songs_spotify_id")
@@ -1248,4 +1251,67 @@ model SupportTicketMessage {
 
   @@index([ticketId, createdAt])
   @@map("support_ticket_messages")
+}
+
+/// Enquete semanal (Melhor da Semana + Flashback da Semana). Abre domingo 23:59 BRT
+/// com as indicações das paradas da semana; fecha na terça junto com o snapshot global.
+model WeeklySpotlightPoll {
+  id        String    @id @default(cuid())
+  weekIndex Int       @unique @map("week_index")
+  weekLabel String    @map("week_label")
+  dateRange String    @map("date_range")
+  status    String    @default("open") // "open" | "closed"
+  openedAt  DateTime  @default(now()) @map("opened_at")
+  closedAt  DateTime? @map("closed_at")
+  options   WeeklySpotlightOption[]
+  votes     WeeklySpotlightVote[]
+
+  @@map("weekly_spotlight_polls")
+}
+
+model WeeklySpotlightOption {
+  id        String   @id @default(cuid())
+  pollId    String   @map("poll_id")
+  category  String // "destaque" (Melhor da Semana) | "flashback"
+  songId    String   @map("song_id")
+  voteCount Int      @default(0) @map("vote_count") // congelado na apuração
+  isWinner  Boolean  @default(false) @map("is_winner")
+  createdAt DateTime @default(now()) @map("created_at")
+  poll        WeeklySpotlightPoll         @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  song        Song                        @relation(fields: [songId], references: [id], onDelete: Cascade)
+  nominations WeeklySpotlightNomination[]
+  votes       WeeklySpotlightVote[]
+
+  @@unique([pollId, category, songId])
+  @@index([pollId], map: "idx_weekly_spotlight_options_poll_id")
+  @@map("weekly_spotlight_options")
+}
+
+/// Quem indicou a música na própria parada da semana (mostrado junto da vencedora).
+model WeeklySpotlightNomination {
+  id        String   @id @default(cuid())
+  optionId  String   @map("option_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  option    WeeklySpotlightOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@map("weekly_spotlight_nominations")
+}
+
+model WeeklySpotlightVote {
+  id        String   @id @default(cuid())
+  pollId    String   @map("poll_id")
+  optionId  String   @map("option_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  poll      WeeklySpotlightPoll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option    WeeklySpotlightOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([pollId], map: "idx_weekly_spotlight_votes_poll_id")
+  @@index([userId], map: "idx_weekly_spotlight_votes_user_id")
+  @@map("weekly_spotlight_votes")
 }

@@ -44,6 +44,35 @@ function parseTopTags(payload: unknown): string[] {
     .slice(0, 12);
 }
 
+/** Tags de um artista via artist.getTopTags. */
+export async function fetchLastfmArtistTags(artist: string): Promise<string[] | null> {
+  if (!apiConfigured()) return null;
+  const a = artist.trim();
+  if (!a) return null;
+  try {
+    const payload = await lastfmJson("artist.getTopTags", { artist: a, autocorrect: "1" });
+    const tags = parseTopTags(payload);
+    return tags.length ? tags : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Tags de um álbum via album.getTopTags. */
+export async function fetchLastfmAlbumTags(album: string, artist: string): Promise<string[] | null> {
+  if (!apiConfigured()) return null;
+  const al = album.trim();
+  const a = artist.trim();
+  if (!al || !a) return null;
+  try {
+    const payload = await lastfmJson("album.getTopTags", { album: al, artist: a, autocorrect: "1" });
+    const tags = parseTopTags(payload);
+    return tags.length ? tags : null;
+  } catch {
+    return null;
+  }
+}
+
 export type LastfmTrackTagsResult = {
   tags: string[];
   mbid: string | null;
