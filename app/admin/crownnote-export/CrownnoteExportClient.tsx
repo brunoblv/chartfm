@@ -76,6 +76,23 @@ export default function CrownnoteExportClient() {
     }
   }
 
+  async function handleJsonUpload(file: File) {
+    setError(null);
+    setLoading(false);
+    setMatching(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text) as CrownnoteUserExport;
+      if (!data.charts?.length) throw new Error("JSON inválido ou sem paradas.");
+      setExportData(data);
+      await runMatch(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao ler JSON.");
+    } finally {
+      setMatching(false);
+    }
+  }
+
   async function handleExport() {
     const value = username.trim().replace(/^@/, "");
     if (!value) {
@@ -198,6 +215,23 @@ export default function CrownnoteExportClient() {
         >
           {loading ? "Extraindo paradas..." : matching ? "Correspondendo músicas..." : "Extrair e revisar"}
         </button>
+
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--divider)" }}>
+          <p style={{ margin: "0 0 8px", fontSize: 13, color: "var(--text-muted)" }}>
+            Já tem o JSON extraído? Carregue aqui para ir direto à correspondência.
+          </p>
+          <input
+            type="file"
+            accept=".json,application/json"
+            disabled={loading || matching}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleJsonUpload(file);
+              e.target.value = "";
+            }}
+            style={{ fontSize: 13 }}
+          />
+        </div>
 
         {loading && progress && (
           <p style={{ margin: "12px 0 0", fontSize: 13, color: "var(--text-muted)" }}>

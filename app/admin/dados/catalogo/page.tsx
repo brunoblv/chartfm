@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { spotifyConfigured } from "@/lib/spotify-server";
 import { SongCoversBackfillClient } from "../../albums/no-cover/SongCoversBackfillClient";
-import { getAdminAccess, parsePage, parseSongFiltro, semCapaWhere } from "../lib";
+import { countSongsSemDatas, getAdminAccess, parsePage, parseSongFiltro, semCapaWhere } from "../lib";
 import { AccessDenied, DadosShell } from "../ui";
 import { SongAuditView } from "../SongAuditView";
+import { DatesBackfillClient } from "../DatesBackfillClient";
 
 export const dynamic = "force-dynamic";
 
@@ -20,15 +21,19 @@ export default async function CatalogoAuditPage({
   const page = parsePage(params.page);
 
   const mostrarBackfillCapas = filtro === "sem-album" || filtro === "album-sem-capa";
-  const totalSemCapa = mostrarBackfillCapas
-    ? await prisma.song.count({ where: semCapaWhere })
-    : 0;
+  const [totalSemCapa, semDatas] = await Promise.all([
+    mostrarBackfillCapas ? prisma.song.count({ where: semCapaWhere }) : Promise.resolve(0),
+    countSongsSemDatas(),
+  ]);
 
   return (
     <DadosShell active="catalogo" subtitle="Auditoria do catálogo" showMinhasParadas={access.isOwner}>
       <p style={{ margin: "0 0 14px", fontSize: 14, color: "var(--text-muted)", maxWidth: 720, lineHeight: 1.5 }}>
         A mesma auditoria das minhas paradas, aplicada a todas as músicas do catálogo.
       </p>
+      <div style={{ maxWidth: 720 }}>
+        <DatesBackfillClient initialTotal={semDatas} scope="catalogo" />
+      </div>
       {mostrarBackfillCapas && (
         <div style={{ maxWidth: 720, marginBottom: 14 }}>
           <SongCoversBackfillClient

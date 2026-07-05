@@ -363,7 +363,14 @@ export default function CrownnoteMatchPanel({
   onBack: () => void;
 }) {
   const [rows, setRows] = useState(initialRows);
-  const [manualSources, setManualSources] = useState<Record<string, "manual_db" | "manual_spotify">>({});
+  const [manualSources, setManualSources] = useState<
+    Record<string, CrownnoteSongMapping["source"]>
+  >({});
+  const [onlyPending, setOnlyPending] = useState(true);
+  const [showMatched, setShowMatched] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState<"rematch" | "spotify" | null>(null);
+  const [bulkProgress, setBulkProgress] = useState<string | null>(null);
+  const [bulkError, setBulkError] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const matched = rows.filter((r) => r.match).length;
@@ -377,16 +384,101 @@ export default function CrownnoteMatchPanel({
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
       if (Boolean(a.match) !== Boolean(b.match)) return a.match ? 1 : -1;
+      if (b.occurrences !== a.occurrences) return b.occurrences - a.occurrences;
       return `${a.crownnoteArtist} ${a.crownnoteTitle}`.localeCompare(
         `${b.crownnoteArtist} ${b.crownnoteTitle}`,
       );
     });
   }, [rows]);
 
+  const visibleRows = useMemo(() => {
+    if (onlyPending) return sortedRows.filter((r) => !r.match);
+    if (!showMatched) return sortedRows.filter((r) => !r.match);
+    return sortedRows;
+  }, [onlyPending, showMatched, sortedRows]);
+
+  async function runBulkResolve(mode: "rematch" | "spotify") {
+    setBulkLoading(mode);
+    setBulkError(null);
+    setBulkProgress(mode === "spotify" ? "Iniciando importação via Spotify…" : "Refinando busca no catálogo…");
+
+    try {
+      const res = await fetch("/api/admin/crownnote-export/bulk-resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows, mode, stream: true }),
+      });
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? `Erro ${res.status}`);
+      }
+      if (!res.body) throw new Error("Resposta vazia.");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let nextRows: CrownnoteSongMatchRow[] | null = null;
+      let resolved = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line) as {
+            type: string;
+            rows?: CrownnoteSongMatchRow[];
+            resolved?: number;
+            failed?: number;
+            current?: number;
+            total?: number;
+            key?: string;
+            ok?: boolean;
+            message?: string;
+          };
+
+          if (event.type === "progress" && event.total) {
+            setBulkProgress(
+              `${mode === "spotify" ? "Spotify" : "Catálogo"}: ${event.current}/${event.total}${
+                event.ok === false ? " (não encontrada)" : ""
+              }`,
+            );
+          } else if (event.type === "done" && event.rows) {
+            nextRows = event.rows;
+            resolved = event.resolved ?? 0;
+          } else if (event.type === "error") {
+            throw new Error(event.message ?? "Erro.");
+          }
+        }
+      }
+
+      if (!nextRows) throw new Error("Processamento não retornou dados.");
+      setRows(nextRows);
+      if (mode === "spotify") {
+        setManualSources((prev) => {
+          const next = { ...prev };
+          for (const row of nextRows!) {
+            if (row.match && !next[row.key]) next[row.key] = "auto_spotify";
+          }
+          return next;
+        });
+      }
+      setBulkProgress(`Concluído: ${resolved} resolvida(s).`);
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : "Erro no processamento em lote.");
+    } finally {
+      setBulkLoading(null);
+    }
+  }
+
   function applyMatch(
     key: string,
     match: CrownnoteCatalogSong,
-    source: "manual_db" | "manual_spotify",
+    source: CrownnoteSongMapping["source"],
   ) {
     setRows((prev) =>
       prev.map((row) =>
@@ -410,17 +502,7 @@ export default function CrownnoteMatchPanel({
   }
 
   function buildMappings(): CrownnoteSongMapping[] {
-    const auto = mappingsFromMatchRows(
-      rows.map((row) => ({
-        ...row,
-        status: row.match ? "matched" : "unmatched",
-      })),
-    );
-
-    return auto.map((mapping) => ({
-      ...mapping,
-      source: manualSources[mapping.key] ?? mapping.source,
-    }));
+    return mappingsFromMatchRows(rows, manualSources);
   }
 
   function handleDownloadMapped() {
@@ -435,10 +517,11 @@ export default function CrownnoteMatchPanel({
       <div style={card}>
         <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Correspondência com o catálogo</h3>
         <p style={{ margin: "0 0 12px", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-          Cada música única do Crownnote precisa apontar para uma faixa do ChartFM antes de concluir a
-          migração. Corrija as pendências buscando no banco ou importando do Spotify.
+          A maioria das pendentes provavelmente não está no catálogo ainda (paradas desde 2000). Use a
+          resolução automática via Spotify antes de revisar manualmente — você só precisa corrigir o que
+          sobrar.
         </p>
-        <div style={{ display: "flex", gap: 16, fontSize: 14, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 16, fontSize: 14, flexWrap: "wrap", marginBottom: 12 }}>
           <span>
             <strong>{stats.matched}</strong> encontradas
           </span>
@@ -449,17 +532,76 @@ export default function CrownnoteMatchPanel({
             <strong>{stats.uniqueSongs}</strong> músicas únicas
           </span>
         </div>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            style={btn(Boolean(bulkLoading))}
+            disabled={Boolean(bulkLoading) || stats.unmatched === 0}
+            onClick={() => runBulkResolve("rematch")}
+          >
+            {bulkLoading === "rematch" ? "Refinando…" : "Refinar busca no catálogo"}
+          </button>
+          <button
+            type="button"
+            style={btn(Boolean(bulkLoading))}
+            disabled={Boolean(bulkLoading) || stats.unmatched === 0}
+            onClick={() => runBulkResolve("spotify")}
+          >
+            {bulkLoading === "spotify" ? "Importando…" : "Resolver pendentes via Spotify"}
+          </button>
+        </div>
+
+        {bulkProgress && (
+          <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--text-muted)" }}>{bulkProgress}</p>
+        )}
+        {bulkError && (
+          <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--danger, #e74c3c)" }}>{bulkError}</p>
+        )}
+      </div>
+
+      <div style={{ ...card, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+          <input
+            type="checkbox"
+            checked={onlyPending}
+            onChange={(e) => {
+              setOnlyPending(e.target.checked);
+              if (e.target.checked) setShowMatched(false);
+            }}
+          />
+          Mostrar só pendentes
+        </label>
+        {!onlyPending && (
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+            <input
+              type="checkbox"
+              checked={showMatched}
+              onChange={(e) => setShowMatched(e.target.checked)}
+            />
+            Incluir já encontradas ({stats.matched})
+          </label>
+        )}
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+          Ordenadas por impacto (mais aparições primeiro)
+        </span>
       </div>
 
       <div style={{ display: "grid", gap: 10 }}>
-        {sortedRows.map((row) => (
-          <MatchRow
-            key={row.key}
-            row={row}
-            onResolved={(match, source) => applyMatch(row.key, match, source)}
-            onClear={() => clearMatch(row.key)}
-          />
-        ))}
+        {visibleRows.length === 0 ? (
+          <div style={{ ...card, color: "var(--text-muted)", fontSize: 14 }}>
+            Nenhuma pendência visível. {stats.unmatched > 0 ? "Desmarque o filtro para ver todas." : "Tudo resolvido!"}
+          </div>
+        ) : (
+          visibleRows.map((row) => (
+            <MatchRow
+              key={row.key}
+              row={row}
+              onResolved={(match, source) => applyMatch(row.key, match, source)}
+              onClear={() => clearMatch(row.key)}
+            />
+          ))
+        )}
       </div>
 
       <div style={{ ...card, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
