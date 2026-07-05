@@ -10,7 +10,7 @@ const SOURCES: { key: Source; label: string; title: string }[] = [
   { key: "lastfm", label: "LFM", title: "Buscar no Last.fm (tags/gêneros)" },
   { key: "spotify", label: "SPT", title: "Buscar no Spotify (metadados, capa, links)" },
   { key: "musicbrainz", label: "MB", title: "Buscar no MusicBrainz (MBID, datas de single/clipe, tags)" },
-  { key: "wikipedia", label: "WIKI", title: "Buscar na Wikipedia (datas de lançamento, bio)" },
+  { key: "wikipedia", label: "WIKI", title: "Buscar na Wikipedia (datas de lançamento, bio) — datas divergentes são corrigidas: vale a da Wikipedia" },
 ];
 
 const chipStyle: CSSProperties = {

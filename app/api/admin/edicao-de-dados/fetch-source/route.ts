@@ -35,7 +35,9 @@ export const maxDuration = 60;
 
 /**
  * Botões por fonte da tela /admin/dados: consulta UMA fonte para UM registro
- * e preenche apenas os campos que estão vazios (nunca sobrescreve).
+ * e preenche os campos que estão vazios. Exceção: datas de single/clipe da
+ * Wikipedia SOBRESCREVEM valores divergentes (datas de YouTube podem ser de
+ * repostagens anos depois — quando divergir, vale a da Wikipedia).
  * Devolve o que foi encontrado e o que foi aplicado, para o admin conferir.
  */
 
@@ -155,28 +157,40 @@ async function fetchForSong(songId: string, source: Source): Promise<FetchResult
     return { found, applied };
   }
 
-  // wikipedia
+  // wikipedia — fonte de confiança para datas: quando a data no banco vier de
+  // upload tardio (ex.: clipe postado no YouTube anos depois), a da Wikipedia
+  // é a correta. Diferente das outras fontes, aqui a data divergente SOBRESCREVE.
   const info = await getWikipediaSongInfo(song.title, song.artist);
   if (!info) return nothing;
   const found: string[] = [];
   const applied: string[] = [];
   const data: Record<string, unknown> = {};
 
+  const sameDay = (a: Date | null, b: Date) => a != null && a.getTime() === b.getTime();
+
   if (info.releasedDates.length) {
     found.push(`lançamentos: ${info.releasedDates.map(fmtDate).join(", ")}`);
   }
   if (info.singleReleaseDate) {
     found.push(`single (mais antiga): ${fmtDate(info.singleReleaseDate)}`);
-    if (!song.singleReleaseDate) {
+    if (!sameDay(song.singleReleaseDate, info.singleReleaseDate)) {
       data.singleReleaseDate = info.singleReleaseDate;
-      applied.push("data do single");
+      applied.push(
+        song.singleReleaseDate
+          ? `data do single corrigida (${fmtDate(song.singleReleaseDate)} → ${fmtDate(info.singleReleaseDate)})`
+          : "data do single",
+      );
     }
   }
   if (info.musicVideoReleaseDate) {
     found.push(`clipe: ${fmtDate(info.musicVideoReleaseDate)}`);
-    if (!song.musicVideoReleaseDate) {
+    if (!sameDay(song.musicVideoReleaseDate, info.musicVideoReleaseDate)) {
       data.musicVideoReleaseDate = info.musicVideoReleaseDate;
-      applied.push("data do clipe");
+      applied.push(
+        song.musicVideoReleaseDate
+          ? `data do clipe corrigida (${fmtDate(song.musicVideoReleaseDate)} → ${fmtDate(info.musicVideoReleaseDate)})`
+          : "data do clipe",
+      );
     }
   }
   if (Object.keys(data).length > 0) await prisma.song.update({ where: { id: song.id }, data });
