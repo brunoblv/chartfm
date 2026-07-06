@@ -106,9 +106,11 @@ export default async function CopaPage() {
     ...(upcoming ? collectSongIds({ ...upcoming, votes: [] }) : []),
   ]);
 
+  const votesPerGoal = copa.votesPerGoal;
+
   function serializeFixture(f: typeof liveFixture) {
     if (!f) return null;
-    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, copa.votesPerGoal);
+    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, votesPerGoal);
     const myVote = userId ? (f.votes.find((v) => v.userId === userId)?.side ?? null) : null;
     const singlesA = [...f.artistA.singles].sort((a, b) => a.slotIndex - b.slotIndex);
     const singlesB = [...f.artistB.singles].sort((a, b) => a.slotIndex - b.slotIndex);
