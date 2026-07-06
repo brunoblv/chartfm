@@ -16,7 +16,7 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
     where: { id },
     include: {
       votes: true,
-      copa: { select: { id: true, name: true, year: true } },
+      copa: { select: { id: true, name: true, year: true, votesPerGoal: true } },
       artistA: {
         include: {
           owner: { select: { id: true, name: true, handle: true, avatarColor: true } },
@@ -34,7 +34,7 @@ export default async function CopaMatchPage({ params }: { params: Promise<{ id: 
 
   if (!f) notFound();
 
-  const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
+  const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, f.copa.votesPerGoal);
   const myVote = userId ? (f.votes.find((v) => v.userId === userId)?.side ?? null) : null;
   const singlesA = [...f.artistA.singles].sort((a, b) => a.slotIndex - b.slotIndex);
   const singlesB = [...f.artistB.singles].sort((a, b) => a.slotIndex - b.slotIndex);

@@ -15,6 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     where: { id: fid },
     include: {
       votes: true,
+      copa: { select: { votesPerGoal: true } },
       artistA: {
         include: {
           owner: { select: { id: true, name: true, handle: true, avatarColor: true } },
@@ -34,7 +35,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
+  const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, f.copa.votesPerGoal);
   const myVote = userId ? (f.votes.find((v) => v.userId === userId)?.side ?? null) : null;
   const singlesA = f.artistA.singles.sort((a, b) => a.slotIndex - b.slotIndex);
   const singlesB = f.artistB.singles.sort((a, b) => a.slotIndex - b.slotIndex);

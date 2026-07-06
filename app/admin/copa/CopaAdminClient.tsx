@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
-import { COPA_DAY_LABELS, COPA_PARTICIPANT_OPTIONS, COPA_SINGLES_COUNT, COPA_TOTAL_ARTISTS, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles } from "@/lib/copa";
+import { COPA_DAY_LABELS, COPA_PARTICIPANT_OPTIONS, COPA_SINGLES_COUNT, COPA_TOTAL_ARTISTS, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles, votesToGoals } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 import { searchCopaSongs } from "@/lib/copa-song-search-client";
 import { GripVertical } from "lucide-react";
@@ -15,6 +15,7 @@ type Edition = {
   year: number;
   status: string;
   startsAt: string | null;
+  votesPerGoal: number;
   artistCount: number;
   fixtureCount: number;
   participants: { userId: string; name: string; handle: string; avatarColor: string }[];
@@ -60,6 +61,7 @@ type SquadParticipant = {
 type Props = {
   editions: Edition[];
   activeEditionId: string | null;
+  activeVotesPerGoal: number;
   fixturesByStatus: { UPCOMING: number; LIVE: number; DONE: number } | null;
   knockoutControls: { r32Complete: boolean; hasR16: boolean } | null;
   activeFixtures: Fixture[];
@@ -82,7 +84,7 @@ const PHASE_LABELS: Record<string, string> = {
   FINAL: "FIN",
 };
 
-export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, knockoutControls, activeFixtures }: Props) {
+export function CopaAdminClient({ editions, activeEditionId, activeVotesPerGoal, fixturesByStatus, knockoutControls, activeFixtures }: Props) {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("Copa ChartFM");
@@ -103,6 +105,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
   const [notifyingIncomplete, setNotifyingIncomplete] = useState(false);
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
   const startRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const votesPerGoalRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // ISO (UTC) → valor de <input datetime-local> no fuso do navegador.
   function toLocalInput(iso: string): string {
@@ -126,6 +129,32 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
         alert(err.error ?? "Erro");
         return;
       }
+      router.refresh();
+    } finally {
+      setActioning(null);
+    }
+  }
+
+  async function saveVotesPerGoal(copaId: string) {
+    const raw = votesPerGoalRefs.current[copaId]?.value;
+    const votesPerGoal = Number(raw);
+    if (!Number.isFinite(votesPerGoal) || votesPerGoal < 1 || !Number.isInteger(votesPerGoal)) {
+      alert("Informe um número inteiro de votos por gol (mínimo 1).");
+      return;
+    }
+    setActioning("set_votes_per_goal" + copaId);
+    try {
+      const res = await fetch(`/api/admin/copa/${copaId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_votes_per_goal", votesPerGoal }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(json.error ?? "Erro ao salvar votos por gol");
+        return;
+      }
+      alert(`Placar atualizado: ${votesPerGoal} ${votesPerGoal === 1 ? "voto" : "votos"} = 1 gol.`);
       router.refresh();
     } finally {
       setActioning(null);
@@ -772,6 +801,32 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
             </div>
           )}
 
+          {/* Votes per goal */}
+          {e.status !== "FINISHED" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 14, padding: "12px", background: "var(--fill-inset)", borderRadius: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)" }}>⚽ Votos por gol:</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                defaultValue={e.votesPerGoal}
+                ref={(el) => { votesPerGoalRefs.current[e.id] = el; }}
+                style={{ width: 72, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 8, padding: "6px 10px", color: "var(--text)", fontSize: 13 }}
+              />
+              <button
+                onClick={() => saveVotesPerGoal(e.id)}
+                disabled={!!actioning}
+                style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
+              >
+                Salvar
+              </button>
+              <span style={{ fontSize: 11, color: "var(--text-disabled)" }}>
+                Quantos votos equivalem a 1 gol no placar. Pode ser alterado a qualquer momento — o placar recalcula na hora.
+              </span>
+            </div>
+          )}
+
           {/* Actions */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {e.status === "REGISTRATION" && (
@@ -1031,7 +1086,7 @@ export function CopaAdminClient({ editions, activeEditionId, fixturesByStatus, k
                 />
                 <span style={{ fontSize: 13, fontWeight: 700, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.artistA.artistName}</span>
                 <span style={{ fontSize: 12, fontWeight: 800, padding: "0 6px", flexShrink: 0 }}>
-                  {Math.floor(f.votesA / 2)}–{Math.floor(f.votesB / 2)}
+                  {votesToGoals(f.votesA, activeVotesPerGoal)}–{votesToGoals(f.votesB, activeVotesPerGoal)}
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 700, flex: 1, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.artistB.artistName}</span>
                 <CopaArtistAvatar

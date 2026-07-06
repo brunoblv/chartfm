@@ -43,7 +43,8 @@ export type SongFiltro =
   | "sem-mbid"
   | "sem-single"
   | "sem-clipe"
-  | "data-01-01";
+  | "data-01-01"
+  | "datas-nao-encontradas";
 
 export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "todas", label: "Todas" },
@@ -54,6 +55,7 @@ export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "sem-single", label: "Sem data do single" },
   { key: "sem-clipe", label: "Sem data do clipe" },
   { key: "data-01-01", label: "Data 01/01 (suspeita)" },
+  { key: "datas-nao-encontradas", label: "Datas não encontradas" },
 ];
 
 export const SONG_FILTRO_DESCRICAO: Record<SongFiltro, string> = {
@@ -65,6 +67,8 @@ export const SONG_FILTRO_DESCRICAO: Record<SongFiltro, string> = {
   "sem-single": "Músicas sem data de lançamento do single.",
   "sem-clipe": "Músicas sem data de lançamento do clipe (nem YouTube).",
   "data-01-01": "Datas em 01/01 — pode indicar que o MusicBrainz só tinha o ano, sem dia/mês.",
+  "datas-nao-encontradas":
+    "Backfill automático já tentou Wikipedia e MusicBrainz sem resultado — corrija manualmente ou edite título/artista e use WIKI/MB na linha.",
 };
 
 export function parseSongFiltro(raw: string | undefined, fallback: SongFiltro): SongFiltro {
@@ -98,6 +102,29 @@ export const semSingleWhere: Prisma.SongWhereInput = { singleReleaseDate: null }
 export const semDatasWhere: Prisma.SongWhereInput = {
   OR: [{ singleReleaseDate: null }, { musicVideoReleaseDate: null }],
 };
+
+/** Igual a semDatasWhere, mas exclui músicas já marcadas como não encontradas no backfill. */
+export const semDatasBackfillWhere: Prisma.SongWhereInput = {
+  AND: [semDatasWhere, { releaseDatesNotFoundAt: null }],
+};
+
+/** Músicas marcadas pelo backfill como sem resultado em nenhuma fonte (correção manual). */
+export const datasNaoEncontradasWhere: Prisma.SongWhereInput = {
+  AND: [semDatasWhere, { releaseDatesNotFoundAt: { not: null } }],
+};
+
+/** Limpa a marcação ao corrigir metadados ou datas manualmente. */
+export function withReleaseDatesNotFoundCleared<T extends Record<string, unknown>>(data: T) {
+  return { ...data, releaseDatesNotFoundAt: null };
+}
+
+/** Só limpa a marcação quando uma data de single/clipe foi aplicada. */
+export function songDataWithOptionalDatesNotFoundClear(data: Record<string, unknown>) {
+  if ("singleReleaseDate" in data || "musicVideoReleaseDate" in data) {
+    return withReleaseDatesNotFoundCleared(data);
+  }
+  return data;
+}
 
 export const semClipeWhere: Prisma.SongWhereInput = {
   AND: [{ musicVideoReleaseDate: null }, { youtubeReleaseDate: null }],
@@ -137,6 +164,8 @@ function songFiltroWhere(filtro: SongFiltro): Prisma.SongWhereInput | null {
       return semSingleWhere;
     case "sem-clipe":
       return semClipeWhere;
+    case "datas-nao-encontradas":
+      return datasNaoEncontradasWhere;
   }
 }
 
@@ -151,6 +180,7 @@ export const SONG_AUDIT_SELECT = {
   singleReleaseDate: true,
   musicVideoReleaseDate: true,
   youtubeReleaseDate: true,
+  releaseDatesNotFoundAt: true,
   albumRef: {
     select: {
       id: true,
@@ -200,7 +230,14 @@ export async function countSongsComData0101(userId?: string): Promise<number> {
 /** Quantas músicas ainda estão sem data de single ou de clipe (alvo do backfill). */
 export async function countSongsSemDatas(userId?: string): Promise<number> {
   const scope = userId ? minhasParadasWhere(userId) : null;
-  return prisma.song.count({ where: scope ? { AND: [scope, semDatasWhere] } : semDatasWhere });
+  const where = scope ? { AND: [scope, semDatasBackfillWhere] } : semDatasBackfillWhere;
+  return prisma.song.count({ where });
+}
+
+export async function countSongsDatasNaoEncontradas(userId?: string): Promise<number> {
+  const scope = userId ? minhasParadasWhere(userId) : null;
+  const where = scope ? { AND: [scope, datasNaoEncontradasWhere] } : datasNaoEncontradasWhere;
+  return prisma.song.count({ where });
 }
 
 export type SongAuditPage = {
@@ -406,13 +443,14 @@ export type EscopoContadores = {
   semSingle: number;
   semClipe: number;
   data0101: number;
+  datasNaoEncontradas: number;
 };
 
 async function contadoresDeEscopo(userId?: string): Promise<EscopoContadores> {
   const scope = userId ? minhasParadasWhere(userId) : null;
   const withScope = (w: Prisma.SongWhereInput): Prisma.SongWhereInput =>
     scope ? { AND: [scope, w] } : w;
-  const [total, semAlbum, albumSemCapa, semMbid, semSingle, semClipe, data0101] =
+  const [total, semAlbum, albumSemCapa, semMbid, semSingle, semClipe, data0101, datasNaoEncontradas] =
     await Promise.all([
       prisma.song.count({ where: scope ?? {} }),
       prisma.song.count({ where: withScope(semAlbumWhere) }),
@@ -421,8 +459,9 @@ async function contadoresDeEscopo(userId?: string): Promise<EscopoContadores> {
       prisma.song.count({ where: withScope(semSingleWhere) }),
       prisma.song.count({ where: withScope(semClipeWhere) }),
       countSongsComData0101(userId),
+      countSongsDatasNaoEncontradas(userId),
     ]);
-  return { total, semAlbum, albumSemCapa, semMbid, semSingle, semClipe, data0101 };
+  return { total, semAlbum, albumSemCapa, semMbid, semSingle, semClipe, data0101, datasNaoEncontradas };
 }
 
 export type DadosOverview = {

@@ -188,13 +188,27 @@ export default function CopaRegrasPage() {
 
       <Section title="5. Votação das Partidas">
         <p style={{ marginBottom: 10 }}>
-          Cada confronto é formado por uma música de cada artista. Os torcedores votam na música preferida — o artista
-          cuja música recebe mais votos vence a partida.
+          Cada confronto é formado por uma música de cada artista. Os torcedores votam na música preferida. Os votos
+          são convertidos em gols no placar (conforme a configuração da edição — ex.: 2 votos = 1 gol).
         </p>
-        <Card>
-          <p style={{ fontWeight: 700, marginBottom: 6 }}>Exemplo</p>
-          <p style={{ color: "var(--text-muted)" }}>Paramore: "Decode" × Avril Lavigne: "Complicated"</p>
-        </Card>
+        <List
+          items={[
+            <>
+              <strong>Fase de grupos:</strong> vence quem tiver mais gols. Empate no placar = 1 ponto para cada
+              artista.
+            </>,
+            <>
+              <strong>Eliminatórias:</strong> não há empate — se o placar em gols empatar, vence quem tiver mais votos
+              no total (desempate nos &quot;pênaltis&quot;).
+            </>,
+          ]}
+        />
+        <div style={{ marginTop: 10 }}>
+          <Card>
+            <p style={{ fontWeight: 700, marginBottom: 6 }}>Exemplo</p>
+            <p style={{ color: "var(--text-muted)" }}>Paramore: &quot;Decode&quot; × Avril Lavigne: &quot;Complicated&quot;</p>
+          </Card>
+        </div>
       </Section>
 
       <Section title="6. Critérios de Desempate — Fase de Grupos">
@@ -243,9 +257,9 @@ export default function CopaRegrasPage() {
         </p>
         <OrderedList
           items={[
-            "Placar (votos convertidos em gols) — quem tiver mais gols vence.",
-            "Empate em gols: vence quem tiver mais votos no total (a \"prorrogação\").",
-            "Empate também em votos: decide nos \"pênaltis\" — vence a música com mais pontos no Global 100.",
+            "Placar em gols — quem tiver mais gols vence.",
+            "Empate em gols: vence quem tiver mais votos no total (pênaltis).",
+            "Empate também em votos: vence a música com mais pontos no Global 100.",
           ]}
         />
       </Section>

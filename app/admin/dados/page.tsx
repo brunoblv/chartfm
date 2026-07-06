@@ -79,6 +79,7 @@ function SongCards({ base, c }: { base: string; c: EscopoContadores }) {
       <StatCard label="Sem MBID" value={c.semMbid} href={`${base}?filtro=sem-mbid`} alert />
       <StatCard label="Sem data do single" value={c.semSingle} href={`${base}?filtro=sem-single`} alert />
       <StatCard label="Sem data do clipe" value={c.semClipe} href={`${base}?filtro=sem-clipe`} alert />
+      <StatCard label="Datas não encontradas" value={c.datasNaoEncontradas} href={`${base}?filtro=datas-nao-encontradas`} alert />
       <StatCard label="Data 01/01" value={c.data0101} href={`${base}?filtro=data-01-01`} alert />
     </div>
   );

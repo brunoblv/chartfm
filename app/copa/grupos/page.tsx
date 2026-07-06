@@ -65,6 +65,7 @@ export default async function CopaGruposPage() {
     const standings = computeStandings(
       groupFixtures,
       groupArtists.map((a) => a.id),
+      copa.votesPerGoal,
     );
 
     return {
@@ -85,7 +86,7 @@ export default async function CopaGruposPage() {
       })),
       standings,
       fixtures: groupFixtures.map((f) => {
-        const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
+        const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, copa.votesPerGoal);
         const artA = artistById.get(f.artistAId);
         const artB = artistById.get(f.artistBId);
         const singleASongId = artA?.singles.find((s) => s.slotIndex === f.singleAIdx)?.songId;

@@ -55,7 +55,7 @@ export default function GuideComoFuncionaACopa() {
         {
           title: "Formato resumido e regras completas",
           body: [
-            "Em resumo: são 64 artistas divididos em 16 grupos de 4, com 12 dias de competição. Cada artista enfrenta os outros três do seu grupo; os dois melhores de cada grupo avançam a um mata-mata de 32 artistas até a final. Empates no mata-mata são decididos, em ordem, por gols, depois por votos (prorrogação) e por fim pela pontuação do Global 100 das músicas (pênaltis).",
+            "Em resumo: são 64 artistas divididos em 16 grupos de 4, com 12 dias de competição. Cada artista enfrenta os outros três do seu grupo; os dois melhores de cada grupo avançam a um mata-mata de 32 artistas até a final. Na fase de grupos, empate no placar vale 1 ponto para cada lado. No mata-mata, empates em gols são decididos pelos votos totais (pênaltis) e, se necessário, pela pontuação no Global 100.",
             <>
               Esse resumo cobre o essencial para acompanhar e votar. Para o regulamento oficial completo, com todos os critérios de desempate e detalhes da escalação, veja{" "}
               <InstitutionalInlineLink href="/copa/regras">/copa/regras</InstitutionalInlineLink>.

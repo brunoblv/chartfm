@@ -85,6 +85,8 @@ model User {
   copaParticipations   CopaParticipant[]
   copaArtists          CopaArtist[]
   copaVotes            CopaVote[]
+  copaLiveComments     CopaLiveComment[]
+  copaLiveCommentLikes CopaLiveCommentLike[]
   passwordResetTokens  PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   supportTickets       SupportTicket[]
@@ -196,6 +198,8 @@ model Song {
   musicVideoReleaseDate     DateTime? @map("music_video_release_date") @db.Date
   youtubeReleaseDate        DateTime? @map("youtube_release_date") @db.Date
   singleReleaseDateFetchedAt DateTime? @map("single_release_date_fetched_at")
+  /// Backfill automático (Wikipedia/MB) não achou datas — não tentar de novo até correção manual.
+  releaseDatesNotFoundAt    DateTime? @map("release_dates_not_found_at")
   releaseDatesVersion       Int       @default(0) @map("release_dates_version")
   editorialNote             String?   @map("editorial_note")
   createdAt       DateTime     @default(now()) @map("created_at")
@@ -1074,6 +1078,7 @@ model CopaEdition {
   status          CopaStatus        @default(REGISTRATION)
   maxParticipants Int               @default(8)  @map("max_participants")
   artistsPerUser  Int               @default(8)  @map("artists_per_user")
+  votesPerGoal    Int               @default(2)  @map("votes_per_goal")
   startsAt        DateTime?         @map("starts_at")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
@@ -1081,6 +1086,7 @@ model CopaEdition {
   copaArtists     CopaArtist[]
   fixtures        CopaFixture[]
   dayPlaylists    CopaDayPlaylist[]
+  liveComments    CopaLiveComment[]
 
   @@map("copa_editions")
 }
@@ -1184,6 +1190,34 @@ model CopaVote {
 
   @@unique([fixtureId, userId])
   @@map("copa_votes")
+}
+
+model CopaLiveComment {
+  id          String   @id @default(cuid())
+  copaId      String   @map("copa_id")
+  batchOrder  Int?     @map("batch_order")
+  userId      String   @map("user_id")
+  text        String
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  copa        CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+  commentLikes CopaLiveCommentLike[]
+
+  @@index([copaId, batchOrder])
+  @@map("copa_live_comments")
+}
+
+model CopaLiveCommentLike {
+  id        String          @id @default(cuid())
+  commentId String          @map("comment_id")
+  userId    String          @map("user_id")
+  createdAt DateTime        @default(now()) @map("created_at")
+  comment   CopaLiveComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User            @relation(fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
+  @@map("copa_live_comment_likes")
 }
 
 model WeeklyEditorial {

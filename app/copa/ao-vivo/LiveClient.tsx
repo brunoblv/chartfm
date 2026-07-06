@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
+import { CopaLiveCommentsPanel, CopaLiveCommentsScrollButton } from "@/components/copa/CopaLiveComments";
 
 type ArtistSlot = {
   artistName: string;
@@ -349,10 +350,22 @@ type DayPlaylists = {
   youtubeUrl: string | null;
 };
 
-function PlaylistLinks({ playlists }: { playlists: DayPlaylists }) {
-  if (!playlists.spotifyUrl && !playlists.youtubeUrl) return null;
+function PlaylistLinks({
+  playlists,
+  onCommentsClick,
+}: {
+  playlists: DayPlaylists | null;
+  onCommentsClick: () => void;
+}) {
+  const hasPlaylist = !!(playlists?.spotifyUrl || playlists?.youtubeUrl);
+  if (!hasPlaylist) {
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <CopaLiveCommentsScrollButton onClick={onCommentsClick} />
+      </div>
+    );
+  }
   return (
-    // ✅ FIX: borda var(--divider) em vez de rgba vermelha
     <div
       style={{
         background: "var(--surface)",
@@ -365,10 +378,10 @@ function PlaylistLinks({ playlists }: { playlists: DayPlaylists }) {
       <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
         🎧 Playlist dos jogos de hoje
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {playlists.spotifyUrl && (
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        {playlists!.spotifyUrl && (
           <a
-            href={playlists.spotifyUrl}
+            href={playlists!.spotifyUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#fff", background: "#1DB954", padding: "8px 14px", borderRadius: 99, textDecoration: "none" }}
@@ -376,9 +389,9 @@ function PlaylistLinks({ playlists }: { playlists: DayPlaylists }) {
             Ouvir no Spotify
           </a>
         )}
-        {playlists.youtubeUrl && (
+        {playlists!.youtubeUrl && (
           <a
-            href={playlists.youtubeUrl}
+            href={playlists!.youtubeUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#fff", background: "#FF0000", padding: "8px 14px", borderRadius: 99, textDecoration: "none" }}
@@ -386,6 +399,7 @@ function PlaylistLinks({ playlists }: { playlists: DayPlaylists }) {
             Ver no YouTube
           </a>
         )}
+        <CopaLiveCommentsScrollButton onClick={onCommentsClick} />
       </div>
     </div>
   );
@@ -395,17 +409,23 @@ export function LiveClient({
   games,
   playlists,
   copaId,
+  batchOrder,
   userId,
 }: {
   games: Game[];
   playlists: DayPlaylists | null;
   copaId: string;
+  batchOrder: number | null;
   userId: string | null;
 }) {
   const router = useRouter();
   const [castVotes, setCastVotes] = useState<Record<string, Game>>({});
   const [queue, setQueue] = useState<string[] | null>(null);
   const [index, setIndex] = useState(0);
+
+  const scrollToComments = useCallback(() => {
+    document.getElementById("copa-live-comments")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   useEffect(() => {
     if (queue === null) {
@@ -446,7 +466,7 @@ export function LiveClient({
         Vote em uma disputa e a próxima aparece automaticamente
       </div>
 
-      {playlists && <PlaylistLinks playlists={playlists} />}
+      <PlaylistLinks playlists={playlists} onCommentsClick={scrollToComments} />
 
       {games.length === 0 ? (
         <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14, padding: "40px 24px", background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14 }}>
@@ -493,6 +513,8 @@ export function LiveClient({
           </div>
         </>
       )}
+
+      <CopaLiveCommentsPanel copaId={copaId} batchOrder={batchOrder} />
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }

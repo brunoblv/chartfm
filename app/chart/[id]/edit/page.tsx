@@ -7,7 +7,10 @@ import { ChevronLeft, GripVertical, Plus, X, ExternalLink } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Shell } from "@/components/layout/Shell";
 import { Cover } from "@/components/ui/Cover";
+import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { SONG_POOL, COVER_PALETTES } from "@/lib/data";
+import { buildDayLabelFromDate } from "@/lib/chart-cadence";
+import { buildDateRangeFromDate, buildWeekLabelFromDate } from "@/lib/chart-week";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useMobileReorder } from "@/hooks/useMobileReorder";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
@@ -23,7 +26,17 @@ type ChartDetailResponse = {
   user: { id: string; handle: string; name: string };
   chart: Pick<Chart, "id" | "weekLabel" | "dateRange" | "entries">;
   lastfmImportWeekDate?: string | null;
+  paradaId?: string;
+  paradaCadence?: "weekly" | "daily";
 };
+
+function fromInputDate(value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
 
 type DbSong = {
   id: string;
@@ -61,8 +74,9 @@ export default function EditChartPage() {
   const [saving, setSaving] = useState(false);
   const [importingLastfm, setImportingLastfm] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [weekLabel, setWeekLabel] = useState("");
-  const [lastfmImportWeekDate, setLastfmImportWeekDate] = useState<string | null>(null);
+  const [weekDate, setWeekDate] = useState("");
+  const [paradaId, setParadaId] = useState<string | null>(null);
+  const [paradaCadence, setParadaCadence] = useState<"weekly" | "daily">("weekly");
   const [entries, setEntries] = useState<Song[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
@@ -98,8 +112,9 @@ export default function EditChartPage() {
           throw new Error("Não foi possível carregar a parada.");
         }
         const data = (await res.json()) as ChartDetailResponse;
-        setWeekLabel(data.chart.weekLabel);
-        setLastfmImportWeekDate(data.lastfmImportWeekDate ?? null);
+        setParadaId(data.paradaId ?? null);
+        setParadaCadence(data.paradaCadence ?? "weekly");
+        if (data.lastfmImportWeekDate) setWeekDate(data.lastfmImportWeekDate);
         setEntries(
           data.chart.entries.map((e) => ({
             id: e.song.id,
@@ -270,7 +285,7 @@ export default function EditChartPage() {
           "Cache-Control": "no-store, no-cache, max-age=0",
           Pragma: "no-cache",
         },
-        body: JSON.stringify({ nonce: requestNonce, weekDate: lastfmImportWeekDate ?? undefined }),
+        body: JSON.stringify({ nonce: requestNonce, weekDate: weekDate || undefined }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -326,6 +341,7 @@ export default function EditChartPage() {
             songId: e.id ?? null,
             imageUrl: e.imageUrl ?? null,
           })),
+          ...(weekDate ? { weekDate } : {}),
         }),
       });
       const data = await res.json().catch(() => null) as { error?: string } | null;
@@ -723,6 +739,14 @@ export default function EditChartPage() {
     </div>
   );
 
+  const weekDateObj = fromInputDate(weekDate);
+  const periodLabel =
+    weekDateObj && paradaCadence === "daily"
+      ? buildDayLabelFromDate(weekDateObj)
+      : weekDateObj
+        ? `${buildWeekLabelFromDate(weekDateObj)} · ${buildDateRangeFromDate(weekDateObj)}`
+        : null;
+
   return (
     <Shell title="">
       <div>
@@ -734,7 +758,31 @@ export default function EditChartPage() {
           Voltar para a parada
         </Link>
         <h1 style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-0.04em", margin: 0 }}>Editar parada</h1>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6 }}>{weekLabel}</p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+            marginTop: 10,
+          }}
+        >
+          {periodLabel ? (
+            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>{periodLabel}</p>
+          ) : (
+            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>Carregando período…</p>
+          )}
+          {!loading && weekDate ? (
+            <WeekCalendar
+              value={weekDate}
+              onChange={setWeekDate}
+              paradaId={paradaId}
+              mode={paradaCadence}
+              label={paradaCadence === "daily" ? "Dia" : "Semana"}
+            />
+          ) : null}
+        </div>
 
         {error && (
           <div

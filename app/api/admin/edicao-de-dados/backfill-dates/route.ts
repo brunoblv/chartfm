@@ -11,7 +11,7 @@ import {
   searchRecordingMbid,
 } from "@/lib/musicbrainz";
 import { buildSongPath } from "@/lib/music-routes";
-import { minhasParadasWhere, semDatasWhere } from "@/app/admin/dados/lib";
+import { minhasParadasWhere, semDatasBackfillWhere, withReleaseDatesNotFoundCleared } from "@/app/admin/dados/lib";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -87,9 +87,13 @@ async function processSong(song: SongRow): Promise<{ updated: boolean; summary: 
   }
 
   if (Object.keys(data).length > 0) {
-    await prisma.song.update({ where: { id: song.id }, data });
+    await prisma.song.update({ where: { id: song.id }, data: withReleaseDatesNotFoundCleared(data) });
     return { updated: true, summary: parts.join(" · ") };
   }
+  await prisma.song.update({
+    where: { id: song.id },
+    data: { releaseDatesNotFoundAt: new Date() },
+  });
   return { updated: false, summary: "nada encontrado" };
 }
 
@@ -102,22 +106,16 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     limit?: unknown;
     scope?: unknown;
-    exclude?: unknown;
   };
   const limit = Math.min(
     MAX_BATCH_SIZE,
     Math.max(1, typeof body.limit === "number" ? Math.floor(body.limit) : MAX_BATCH_SIZE),
   );
-  const excluded = Array.isArray(body.exclude)
-    ? body.exclude.filter((id): id is string => typeof id === "string")
-    : [];
 
-  const scope: Prisma.SongWhereInput[] = [semDatasWhere];
+  const scope: Prisma.SongWhereInput[] = [semDatasBackfillWhere];
   if (body.scope === "minhas") scope.push(minhasParadasWhere(session.user.id));
 
-  const where: Prisma.SongWhereInput = {
-    AND: [...scope, ...(excluded.length ? [{ id: { notIn: excluded } }] : [])],
-  };
+  const where: Prisma.SongWhereInput = { AND: scope };
 
   const songs = await prisma.song.findMany({
     where,
@@ -155,6 +153,9 @@ export async function POST(req: NextRequest) {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "erro";
+      await prisma.song
+        .update({ where: { id: song.id }, data: { releaseDatesNotFoundAt: new Date() } })
+        .catch(() => null);
       notFound.push({
         id: song.id,
         label,
@@ -164,12 +165,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const stillExcluded = [...excluded, ...notFound.map((n) => n.id)];
-  const remaining = await prisma.song.count({
-    where: {
-      AND: [...scope, ...(stillExcluded.length ? [{ id: { notIn: stillExcluded } }] : [])],
-    },
-  });
+  const remaining = await prisma.song.count({ where: { AND: scope } });
 
   return NextResponse.json({
     ok: true,

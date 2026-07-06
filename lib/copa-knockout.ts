@@ -142,7 +142,11 @@ async function resolvePhase(copaId: string, phase: CopaPhase): Promise<PhaseResu
 
   if (fixtures.length === 0 || !fixtures.every((f) => f.status === "DONE")) return null;
 
-
+  const copa = await prisma.copaEdition.findUnique({
+    where: { id: copaId },
+    select: { votesPerGoal: true },
+  });
+  const votesPerGoal = copa?.votesPerGoal ?? 2;
 
   // Song.id da música em disputa de cada lado (para o desempate do Global 100).
 
@@ -194,6 +198,8 @@ async function resolvePhase(copaId: string, phase: CopaPhase): Promise<PhaseResu
 
       globalPointsB: songB ? points.get(songB) ?? 0 : 0,
 
+      votesPerGoal,
+
     });
 
     return {
@@ -230,7 +236,11 @@ export async function maybeGenerateR32Only(copaId: string): Promise<void> {
 
   if (groupFixtures.length === 0 || !groupFixtures.every((f) => f.status === "DONE")) return;
 
-
+  const copa = await prisma.copaEdition.findUnique({
+    where: { id: copaId },
+    select: { votesPerGoal: true },
+  });
+  const votesPerGoal = copa?.votesPerGoal ?? 2;
 
   const artists = await prisma.copaArtist.findMany({ where: { copaId } });
 
@@ -242,7 +252,7 @@ export async function maybeGenerateR32Only(copaId: string): Promise<void> {
 
     if (ids.length < 4) continue;
 
-    const standings = computeStandings(groupFixtures.filter((f) => f.groupLetter === letter), ids);
+    const standings = computeStandings(groupFixtures.filter((f) => f.groupLetter === letter), ids, votesPerGoal);
 
     if (standings.length < 2) continue;
 

@@ -41,6 +41,7 @@ export const messagesPtBR = {
     adminPendingVerifications: "Confirmações pendentes",
     adminClube: "Clube do Álbum",
     adminCrownnoteExport: "Exportar Crownnote",
+    adminLowerThirdsYoutube: "Lower Thirds YouTube",
     adminSupport: "Tickets de suporte",
     ctaTitle: "Crie sua parada semanal",
     ctaBody:

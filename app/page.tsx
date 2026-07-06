@@ -21,6 +21,8 @@ import { LandingEditorialSection } from "@/components/landing/LandingEditorialSe
 import { aggregateGlobalSongs, aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import { getOrCreateRankingWeekSnapshot } from "@/lib/global-snapshot";
 import { TimelineTabs } from "@/components/home/TimelineTabs";
+import { CopaLiveFeedCarousel } from "@/components/home/CopaLiveFeedCarousel";
+import { getCopaLiveFeedFixtures } from "@/lib/copa-live-feed";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
 import { getSystemFeedPosts } from "@/lib/system-feed";
 import { mergeHomeFeed, filterFollowingRecommendations } from "@/lib/home-mixed-feed";
@@ -354,7 +356,7 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed, systemFeedPosts] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed, systemFeedPosts, copaLiveFeed] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
@@ -377,6 +379,10 @@ export default async function HomePage() {
       getSystemFeedPosts(locale).catch((err) => {
         console.error("[home] getSystemFeedPosts", err);
         return [] as Awaited<ReturnType<typeof getSystemFeedPosts>>;
+      }),
+      getCopaLiveFeedFixtures(session.user.id).catch((err) => {
+        console.error("[home] getCopaLiveFeedFixtures", err);
+        return null;
       }),
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
@@ -401,6 +407,10 @@ export default async function HomePage() {
       />
 
       {publishedToday.length > 0 && <FriendsRow publishers={publishedToday} />}
+
+      {copaLiveFeed && copaLiveFeed.fixtures.length > 0 && (
+        <CopaLiveFeedCarousel initial={copaLiveFeed} />
+      )}
 
       <TimelineTabs
         forYouFeed={forYouFeed}

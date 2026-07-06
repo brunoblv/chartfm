@@ -43,7 +43,7 @@ export default async function CopaAoVivoPage() {
   );
 
   const games = fixtures.map((f) => {
-    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
+    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, copa.votesPerGoal);
     // Jogo Ao vivo → single em disputa é revelado.
     const sA = f.artistA.singles.find((s) => s.slotIndex === f.singleAIdx);
     const sB = f.artistB.singles.find((s) => s.slotIndex === f.singleBIdx);
@@ -98,5 +98,5 @@ export default async function CopaAoVivoPage() {
         }
       : null;
 
-  return <LiveClient games={games} playlists={playlists} copaId={copa.id} userId={userId} />;
+  return <LiveClient games={games} playlists={playlists} copaId={copa.id} batchOrder={batchOrder} userId={userId} />;
 }

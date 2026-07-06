@@ -167,6 +167,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ ok: true });
   }
 
+  if (action === "set_votes_per_goal") {
+    const { votesPerGoal } = body as { votesPerGoal?: number };
+    const n = Number(votesPerGoal);
+    if (!Number.isFinite(n) || n < 1 || n > 100 || !Number.isInteger(n)) {
+      return NextResponse.json({ error: "Informe um número inteiro entre 1 e 100" }, { status: 400 });
+    }
+    await prisma.copaEdition.update({ where: { id }, data: { votesPerGoal: n } });
+    return NextResponse.json({ ok: true, votesPerGoal: n });
+  }
+
   if (action === "advance_day") {
     const { closed, opened } = await advanceCopaDay(id);
     return NextResponse.json({ ok: true, closed, opened, done: opened === 0 });

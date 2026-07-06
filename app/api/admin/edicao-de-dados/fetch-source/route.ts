@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { songDataWithOptionalDatesNotFoundClear } from "@/app/admin/dados/lib";
 import { applySpotifyMetadataToSong } from "@/lib/apply-spotify-metadata-to-song";
 import {
   getSpotifyAlbumMetadataById,
@@ -134,7 +135,12 @@ async function fetchForSong(songId: string, source: Source): Promise<FetchResult
       }
     }
 
-    if (Object.keys(data).length > 0) await prisma.song.update({ where: { id: song.id }, data });
+    if (Object.keys(data).length > 0) {
+      await prisma.song.update({
+        where: { id: song.id },
+        data: songDataWithOptionalDatesNotFoundClear(data),
+      });
+    }
     return {
       found,
       applied,
@@ -193,7 +199,12 @@ async function fetchForSong(songId: string, source: Source): Promise<FetchResult
       );
     }
   }
-  if (Object.keys(data).length > 0) await prisma.song.update({ where: { id: song.id }, data });
+  if (Object.keys(data).length > 0) {
+    await prisma.song.update({
+      where: { id: song.id },
+      data: songDataWithOptionalDatesNotFoundClear(data),
+    });
+  }
   return { found, applied, link: info.pageUrl };
 }
 

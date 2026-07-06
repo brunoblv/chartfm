@@ -73,6 +73,7 @@ export default async function CopaAdminPage() {
         year: e.year,
         status: e.status as string,
         startsAt: e.startsAt ? e.startsAt.toISOString() : null,
+        votesPerGoal: e.votesPerGoal,
         artistCount: e._count.copaArtists,
         fixtureCount: e._count.fixtures,
         participants: e.participants.map((p) => ({
@@ -83,6 +84,7 @@ export default async function CopaAdminPage() {
         })),
       }))}
       activeEditionId={activeEdition?.id ?? null}
+      activeVotesPerGoal={activeEdition?.votesPerGoal ?? 2}
       fixturesByStatus={fixturesByStatus}
       knockoutControls={knockoutControls}
       activeFixtures={activeFixtures.map((f) => ({

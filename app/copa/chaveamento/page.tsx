@@ -37,7 +37,7 @@ export default async function ChaveamentoPage() {
   });
 
   function serFixture(f: typeof allFixtures[0]) {
-    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
+    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, copa.votesPerGoal);
     const myVote = userId ? (f.votes.find((v) => v.userId === userId)?.side ?? null) : null;
     return {
       id: f.id,

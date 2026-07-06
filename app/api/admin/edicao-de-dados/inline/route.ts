@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { withReleaseDatesNotFoundCleared } from "@/app/admin/dados/lib";
 
 export const runtime = "nodejs";
 
@@ -70,12 +71,18 @@ export async function PATCH(req: NextRequest) {
       if (field === "title") {
         const title = asTrimmed(body.value);
         if (!title) return NextResponse.json({ error: "title_required" }, { status: 400 });
-        await prisma.song.update({ where: { id }, data: { title } });
+        await prisma.song.update({
+          where: { id },
+          data: withReleaseDatesNotFoundCleared({ title }),
+        });
         return NextResponse.json({ ok: true });
       }
       if (field === "spotifyId") {
         const spotifyId = asTrimmed(body.value);
-        await prisma.song.update({ where: { id }, data: { spotifyId: spotifyId || null } });
+        await prisma.song.update({
+          where: { id },
+          data: withReleaseDatesNotFoundCleared({ spotifyId: spotifyId || null }),
+        });
         return NextResponse.json({ ok: true });
       }
       if (field === "genres") {
@@ -89,7 +96,10 @@ export async function PATCH(req: NextRequest) {
       if (field === "singleReleaseDate" || field === "musicVideoReleaseDate") {
         const date = asDateOrNull(body.value);
         if (date === undefined) return NextResponse.json({ error: "invalid_date" }, { status: 400 });
-        await prisma.song.update({ where: { id }, data: { [field]: date } });
+        await prisma.song.update({
+          where: { id },
+          data: withReleaseDatesNotFoundCleared({ [field]: date }),
+        });
         return NextResponse.json({ ok: true });
       }
     }

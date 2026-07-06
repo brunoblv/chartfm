@@ -41,6 +41,7 @@ export const messagesEn = {
     adminPendingVerifications: "Pending verifications",
     adminClube: "Album Club",
     adminCrownnoteExport: "Export Crownnote",
+    adminLowerThirdsYoutube: "YouTube Lower Thirds",
     adminSupport: "Support tickets",
     ctaTitle: "Create your weekly chart",
     ctaBody:

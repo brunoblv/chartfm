@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -540,6 +540,10 @@ function SidebarContent({
               <Link href="/admin/gerador-de-imagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/gerador-de-imagens")}>
                 <ImagePlay size={14} />
                 <span>Gerador de Imagens</span>
+              </Link>
+              <Link href="/admin/lower-thirds-youtube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lower-thirds-youtube")}>
+                <Tv size={14} />
+                <span>{t("nav.adminLowerThirdsYoutube")}</span>
               </Link>
               <Link href="/admin/crownnote-export" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/crownnote-export")}>
                 <Download size={14} />

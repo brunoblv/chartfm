@@ -16,6 +16,14 @@ export const COPA_PARTICIPANT_OPTIONS = [8, 16, 32, 64] as const;
 // real group. Groups are only formed by the draw (sorteio), after registration.
 export const COPA_UNASSIGNED_GROUP = "?";
 
+export const COPA_DEFAULT_VOTES_PER_GOAL = 2;
+
+/** Converte votos brutos em gols do placar exibido. */
+export function votesToGoals(votes: number, votesPerGoal = COPA_DEFAULT_VOTES_PER_GOAL): number {
+  const divisor = Math.max(1, votesPerGoal);
+  return Math.floor(votes / divisor);
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -647,13 +655,25 @@ export type StandingRow = {
   Pts: number;
 };
 
-// Regulamento §5: "O artista cuja música receber mais votos vence a partida" — o
-// resultado (V/E/D) é decidido pelos votos brutos, não pelos "gols" (votos ÷ 2,
-// que são só a exibição do placar). Isso evita empates espúrios quando os votos
-// diferem por uma unidade ímpar (ex.: 5×4 vira 2×2 em gols mas A venceu nos votos).
+// Regulamento §5 — Fase de grupos: o resultado (V/E/D) segue o placar em gols
+// (votos ÷ votesPerGoal). Empate em gols = 1 ponto para cada lado. Votos brutos
+// entram só na tabela (VF/VA/VD) e nos critérios de desempate da classificação.
+export function resolveGroupMatchWinner(
+  votesA: number,
+  votesB: number,
+  votesPerGoal = COPA_DEFAULT_VOTES_PER_GOAL,
+): string | "DRAW" {
+  const goalsA = votesToGoals(votesA, votesPerGoal);
+  const goalsB = votesToGoals(votesB, votesPerGoal);
+  if (goalsA > goalsB) return "A";
+  if (goalsB > goalsA) return "B";
+  return "DRAW";
+}
+
 export function computeStandings(
   fixtures: Array<{ artistAId: string; artistBId: string; status: string; votes: CopaVote[] }>,
   artistIds: string[],
+  votesPerGoal = COPA_DEFAULT_VOTES_PER_GOAL,
 ): StandingRow[] {
   const t: Record<string, StandingRow> = {};
   artistIds.forEach((id) => {
@@ -667,8 +687,8 @@ export function computeStandings(
     if (f.status !== "DONE") continue;
     const votesA = f.votes.filter((v) => v.side === "A").length;
     const votesB = f.votes.filter((v) => v.side === "B").length;
-    const g1 = Math.floor(votesA / 2);
-    const g2 = Math.floor(votesB / 2);
+    const g1 = votesToGoals(votesA, votesPerGoal);
+    const g2 = votesToGoals(votesB, votesPerGoal);
     const ra = t[f.artistAId];
     const rb = t[f.artistBId];
     if (!ra || !rb) continue;
@@ -678,8 +698,9 @@ export function computeStandings(
     ra.VF += votesA; ra.VA += votesB;
     rb.VF += votesB; rb.VA += votesA;
 
+    const winnerSide = resolveGroupMatchWinner(votesA, votesB, votesPerGoal);
     const winner: string | "DRAW" =
-      votesA > votesB ? f.artistAId : votesB > votesA ? f.artistBId : "DRAW";
+      winnerSide === "A" ? f.artistAId : winnerSide === "B" ? f.artistBId : "DRAW";
     if (winner === f.artistAId) { ra.W++; ra.Pts += 3; rb.L++; }
     else if (winner === f.artistBId) { rb.W++; rb.Pts += 3; ra.L++; }
     else { ra.D++; ra.Pts++; rb.D++; rb.Pts++; }
@@ -705,26 +726,23 @@ export function computeStandings(
   });
 }
 
-export function getVoteCounts(fixture: { votes: CopaVote[] }) {
+export function getVoteCounts(fixture: { votes: CopaVote[] }, votesPerGoal = COPA_DEFAULT_VOTES_PER_GOAL) {
   const votesA = fixture.votes.filter((v) => v.side === "A").length;
   const votesB = fixture.votes.filter((v) => v.side === "B").length;
   return {
     votesA,
     votesB,
-    goalsA: Math.floor(votesA / 2),
-    goalsB: Math.floor(votesB / 2),
+    goalsA: votesToGoals(votesA, votesPerGoal),
+    goalsB: votesToGoals(votesB, votesPerGoal),
   };
 }
 
 // ── Desempate das fases eliminatórias ─────────────────────────────────────────
 // Um jogo de mata-mata nunca pode empatar. A decisão segue, em ordem:
-//   1) GOALS      — mais gols (votos ÷ 2), o tempo normal.
-//   2) VOTES      — empatou em gols, vence quem tem mais votos (o voto "extra"
-//                   que não fechou um gol decide a prorrogação).
-//   3) GLOBAL_100 — empatou também em votos: vai aos pênaltis, vence a música
-//                   com mais pontos totais no Global 100.
-//   4) COIN       — fallback determinístico (praticamente impossível: gols,
-//                   votos e pontos idênticos). Mantém o lado A para não travar.
+//   1) GOALS   — mais gols no placar (tempo normal).
+//   2) VOTES   — empatou em gols: vence quem tem mais votos (pênaltis).
+//   3) GLOBAL_100 — empatou também em votos: Global 100 da música.
+//   4) COIN    — fallback determinístico.
 export type KnockoutTiebreak = "GOALS" | "VOTES" | "GLOBAL_100" | "COIN";
 
 export function resolveKnockoutWinner(input: {
@@ -732,9 +750,11 @@ export function resolveKnockoutWinner(input: {
   votesB: number;
   globalPointsA: number;
   globalPointsB: number;
+  votesPerGoal?: number;
 }): { winner: "A" | "B"; decidedBy: KnockoutTiebreak } {
-  const goalsA = Math.floor(input.votesA / 2);
-  const goalsB = Math.floor(input.votesB / 2);
+  const votesPerGoal = input.votesPerGoal ?? COPA_DEFAULT_VOTES_PER_GOAL;
+  const goalsA = votesToGoals(input.votesA, votesPerGoal);
+  const goalsB = votesToGoals(input.votesB, votesPerGoal);
   if (goalsA !== goalsB) return { winner: goalsA > goalsB ? "A" : "B", decidedBy: "GOALS" };
   if (input.votesA !== input.votesB) return { winner: input.votesA > input.votesB ? "A" : "B", decidedBy: "VOTES" };
   if (input.globalPointsA !== input.globalPointsB)

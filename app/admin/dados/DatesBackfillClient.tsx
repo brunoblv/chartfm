@@ -60,7 +60,6 @@ export function DatesBackfillClient({
     let remaining = initialTotal;
     let processedSum = 0;
     let updatedSum = 0;
-    const exclude: string[] = [];
     const notFoundAll = new Map<string, NotFoundItem>();
 
     try {
@@ -68,7 +67,7 @@ export function DatesBackfillClient({
         const res = await fetch("/api/admin/edicao-de-dados/backfill-dates", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ limit: CLIENT_BATCH_LIMIT, scope, exclude }),
+          body: JSON.stringify({ limit: CLIENT_BATCH_LIMIT, scope }),
         });
         const data = (await res.json().catch(() => ({}))) as BatchResponse;
         if (!res.ok || !data.ok) {
@@ -86,7 +85,6 @@ export function DatesBackfillClient({
         if (data.log?.length) setLog((prev) => [...data.log!, ...prev].slice(0, LOG_MAX));
         for (const item of data.notFound ?? []) {
           notFoundAll.set(item.id, item);
-          exclude.push(item.id);
         }
         setNotFound([...notFoundAll.values()]);
         setMessage(remaining > 0 ? `Processando… (${remaining} restantes)` : "Concluído.");
@@ -120,7 +118,8 @@ export function DatesBackfillClient({
           <div style={{ marginTop: 5, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.45 }}>
             Roda todas as músicas {scope === "minhas" ? "das suas paradas" : "do catálogo"} sem data de
             single ou de clipe. Wikipedia primeiro (quando divergir, vale a dela); MusicBrainz completa o
-            que sobrar. Lento por respeito aos limites das APIs (~1 música a cada poucos segundos).
+            que sobrar. Itens sem resultado em nenhuma fonte são marcados e não entram de novo na fila — use o
+            filtro &quot;Datas não encontradas&quot; para corrigi-los à mão.
           </div>
         </div>
 
@@ -196,8 +195,9 @@ export function DatesBackfillClient({
 
         {notFound.length > 0 && !running && (
           <div style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)" }}>
-            Sem resultado em nenhuma fonte (preencha manualmente clicando na data, ou tente os botões
-            WIKI/MB na linha da música):
+            {notFound.length.toLocaleString("pt-BR")} marcada{notFound.length === 1 ? "" : "s"} como sem
+            resultado (não serão buscadas de novo). Corrija manualmente ou use o filtro{" "}
+            <strong>Datas não encontradas</strong> na lista abaixo:
             <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
               {notFound.slice(0, 20).map((item) => (
                 <Link key={item.id} href={item.href} style={{ color: "#FA243C", fontWeight: 700, textDecoration: "none", fontSize: 13 }}>

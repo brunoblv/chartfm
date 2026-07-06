@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { inferCadenceFromWeekIndex, prevPeriodIndex } from "@/lib/chart-cadence";
-import { lastfmWeekPickerValueFromChart } from "@/lib/chart-week";
+import { buildPeriodFromDate, inferCadenceFromWeekIndex, prevPeriodIndex, toApiCadence } from "@/lib/chart-cadence";
+import { lastfmWeekPickerValueFromChart, parseChartWeekPickerDate } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 import { hydrateChartEntryCoverUrls, hydrateDropoutCoverUrls, loadCoverUrlsForSongIds, resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
 import { mapPrismaSpotlightSong, SPOTLIGHT_SONG_INCLUDE } from "@/lib/chart-spotlight";
@@ -341,9 +341,16 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     chartNumber,
   });
 
+  const paradaCadence = await prisma.parada.findUnique({
+    where: { id: row.paradaId },
+    select: { cadence: true },
+  });
+
   return NextResponse.json(
     {
       ...mapped,
+      paradaId: row.paradaId,
+      paradaCadence: paradaCadence ? toApiCadence(paradaCadence.cadence) : "weekly",
       flashback: row.flashbackSong
         ? mapPrismaSpotlightSong(row.flashbackSong, spotlightCovers.get(row.flashbackSong.id))
         : null,
@@ -390,7 +397,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
 
-  const body = (await req.json()) as { entries?: EntryInput[] };
+  const body = (await req.json()) as { entries?: EntryInput[]; weekDate?: string };
   const entries = body.entries ?? [];
   if (!Array.isArray(entries) || entries.length === 0) {
     return NextResponse.json({ error: "Adicione ao menos uma música" }, { status: 400 });
@@ -413,14 +420,71 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       userId: true,
       paradaId: true,
       weekIndex: true,
-      parada: { select: { isPrimary: true } },
+      weekLabel: true,
+      dateRange: true,
+      parada: { select: { isPrimary: true, cadence: true } },
     },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (chart.userId !== session.user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  const cadence = inferCadenceFromWeekIndex(chart.weekIndex);
+  const cadence = chart.parada.cadence;
+  const oldWeekIndex = chart.weekIndex;
+  let targetWeekIndex = oldWeekIndex;
+  let targetWeekLabel = chart.weekLabel;
+  let targetDateRange = chart.dateRange;
+
+  if (body.weekDate !== undefined) {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const selectedDate = parseChartWeekPickerDate(body.weekDate);
+    if (!selectedDate) {
+      return NextResponse.json({ error: "Data inválida" }, { status: 400 });
+    }
+    if (selectedDate.getTime() > today.getTime()) {
+      return NextResponse.json(
+        {
+          error:
+            cadence === "DAILY"
+              ? "Não é possível definir parada em dia futuro"
+              : "Não é possível definir parada em semana futura",
+        },
+        { status: 400 },
+      );
+    }
+    const period = buildPeriodFromDate(selectedDate, cadence);
+    if (period.periodIndex !== oldWeekIndex) {
+      const conflict = await prisma.chart.findFirst({
+        where: {
+          paradaId: chart.paradaId,
+          weekIndex: period.periodIndex,
+          id: { not: chartId },
+        },
+        select: { id: true },
+      });
+      if (conflict) {
+        return NextResponse.json(
+          {
+            error:
+              cadence === "DAILY"
+                ? "Você já tem uma parada publicada neste dia"
+                : "Você já tem uma parada publicada nesta semana",
+          },
+          { status: 409 },
+        );
+      }
+    }
+    targetWeekIndex = period.periodIndex;
+    targetWeekLabel = period.periodLabel;
+    targetDateRange = period.dateRange;
+  }
+
+  const periodChanged =
+    targetWeekIndex !== oldWeekIndex ||
+    targetWeekLabel !== chart.weekLabel ||
+    targetDateRange !== chart.dateRange;
+
   const scoringTier = scoringTierFromPrimary(chart.parada.isPrimary);
   const chartSize = entries.length;
 
@@ -442,13 +506,13 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);
 
   const previousChart = await prisma.chart.findFirst({
-    where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(chart.weekIndex, cadence) },
+    where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(targetWeekIndex, cadence) },
     include: { entries: true },
   });
   const historicalRows = await prisma.chartEntry.findMany({
     where: {
       songId: { in: [...new Set(songs.map((s) => s.id))] },
-      chart: { paradaId: chart.paradaId, weekIndex: { lt: chart.weekIndex } },
+      chart: { paradaId: chart.paradaId, weekIndex: { lt: targetWeekIndex } },
     },
     select: { songId: true },
     distinct: ["songId"],
@@ -505,11 +569,16 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       where: { id: chartId },
       data: {
         maxItems: entries.length,
+        ...(periodChanged
+          ? { weekIndex: targetWeekIndex, weekLabel: targetWeekLabel, dateRange: targetDateRange }
+          : {}),
         entries: { create: entryData },
       },
     }),
   ]);
-  await recomputePersistedChartEntryStatsForParada(prisma, chart.paradaId, chart.weekIndex);
+  const recomputeFrom =
+    targetWeekIndex !== oldWeekIndex ? Math.min(oldWeekIndex, targetWeekIndex) : targetWeekIndex;
+  await recomputePersistedChartEntryStatsForParada(prisma, chart.paradaId, recomputeFrom);
 
   return NextResponse.json({ ok: true });
   } catch (err) {

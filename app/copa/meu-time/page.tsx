@@ -57,7 +57,7 @@ export default async function MeuTimePage() {
       where: { copaId: copa.id, groupLetter: letter, phase: "GROUP" },
       include: { votes: true },
     });
-    const standings = computeStandings(groupFixtures, groupArtists.map((a) => a.id));
+    const standings = computeStandings(groupFixtures, groupArtists.map((a) => a.id), copa.votesPerGoal);
     for (const a of myArtists.filter((a) => a.groupLetter === letter)) {
       const row = standings.find((r) => r.artistId === a.id);
       const rank = standings.findIndex((r) => r.artistId === a.id);

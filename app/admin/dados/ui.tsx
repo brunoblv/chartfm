@@ -329,6 +329,11 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <InlineDate kind="music" id={s.id} field="singleReleaseDate" value={s.singleReleaseDate} />
+                  {s.releaseDatesNotFoundAt && (
+                    <div style={{ marginTop: 3, fontSize: 10, fontWeight: 700, color: "#B45309" }} title="Backfill automático sem resultado">
+                      busca esgotada
+                    </div>
+                  )}
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <InlineDate

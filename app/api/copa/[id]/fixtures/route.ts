@@ -43,6 +43,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (phase) where.phase = phase;
   if (group) where.groupLetter = group;
 
+  const copa = await prisma.copaEdition.findUnique({
+    where: { id },
+    select: { votesPerGoal: true },
+  });
+  if (!copa) return NextResponse.json({ error: "not found" }, { status: 404 });
+
   const fixtures = await prisma.copaFixture.findMany({
     where,
     orderBy: [{ groupLetter: "asc" }, { round: "asc" }, { matchIndex: "asc" }],
@@ -64,7 +70,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   });
 
   const data = fixtures.map((f) => {
-    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f);
+    const { votesA, votesB, goalsA, goalsB } = getVoteCounts(f, copa.votesPerGoal);
     const myVote = userId ? (f.votes.find((v) => v.userId === userId)?.side ?? null) : null;
     const singlesA = f.artistA.singles.sort((a, b) => a.slotIndex - b.slotIndex);
     const singlesB = f.artistB.singles.sort((a, b) => a.slotIndex - b.slotIndex);
