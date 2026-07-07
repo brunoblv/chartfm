@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { formatRelativeTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/config";
+import { notifyTelegramEventSafe } from "@/lib/telegram";
 
 export type SystemFeedItem = {
   id: string;
@@ -19,6 +20,8 @@ export async function createSystemFeedPost(
   await prisma.systemFeedPost.create({
     data: { kind, text, targetUrl: targetUrl ?? null },
   });
+
+  notifyTelegramEventSafe({ kind, text, targetUrl });
 }
 
 export async function getSystemFeedPosts(locale: Locale, limit = 10): Promise<SystemFeedItem[]> {

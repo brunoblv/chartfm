@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { notifyTelegramEventSafe } from "@/lib/telegram";
 
 export type GlobalWeeklyNotificationType = "global_chart" | "global_airplay" | "global_albums";
 
@@ -31,6 +32,8 @@ export async function sendGlobalWeeklyNotification(
       read: false,
     })),
   });
+
+  notifyTelegramEventSafe({ kind: type, text, targetUrl });
 
   return allUsers.length;
 }
