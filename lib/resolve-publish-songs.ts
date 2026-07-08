@@ -518,13 +518,21 @@ export type EnrichSongsResult = {
   viaSearch: number;
   invalidSpotifyIds: number;
   tokenMissing: boolean;
+  /** Ids não tentados por falta de tempo (deadline) — devem voltar em um próximo lote, não são falha. */
+  deferredIds: string[];
 };
 
 /** Após publicação rápida, busca capas e vínculos de álbum no Spotify (lotes de 50). */
 export async function enrichResolvedSongsWithSpotifyMetadata(
   db: Db,
   songs: ResolvedPublishSong[],
-  opts?: { searchFallback?: boolean },
+  opts?: {
+    searchFallback?: boolean;
+    /** Prazo absoluto (epoch ms) — o fallback por busca para ao atingi-lo; itens não tentados vão para `deferredIds`. */
+    deadlineAt?: number;
+    /** Coletor de ids pulados por falta de tempo (preenchido quando `deadlineAt` estoura). */
+    deferredIds?: Set<string>;
+  },
 ): Promise<ResolvedPublishSong[]> {
   if (songs.length === 0) return songs;
 
@@ -538,6 +546,9 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
 
   const batch = await getSpotifyTracksMetadataByIds(
     needsEnrich.map((r) => r.spotifyId).filter((id): id is string => Boolean(id && isSpotifyTrackId(id))),
+    "BR",
+    // Com deadline (backfill interativo), falha rápido; sem deadline (publicação), mantém retries.
+    opts?.deadlineAt ? { maxAttempts: 1 } : undefined,
   );
   const updatedById = new Map<string, ResolvedPublishSong>();
 
@@ -562,6 +573,10 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
   if (opts?.searchFallback !== false) {
     for (const row of needsEnrich) {
       if (updatedById.has(row.id)) continue;
+      if (opts?.deadlineAt && Date.now() >= opts.deadlineAt) {
+        opts.deferredIds?.add(row.id);
+        continue;
+      }
       try {
         const ok = await enrichSongRowFallback(db, row, { maxAttempts: 1 });
         if (!ok) continue;
@@ -773,10 +788,10 @@ export async function countSongsMissingCovers(db: Db): Promise<number> {
 export async function enrichSongsWithSpotifyMetadataByIds(
   db: Db,
   songIds: string[],
-  opts?: { searchFallback?: boolean },
+  opts?: { searchFallback?: boolean; deadlineAt?: number },
 ): Promise<EnrichSongsResult> {
   if (songIds.length === 0) {
-    return { updated: 0, skipped: 0, viaBatch: 0, viaSearch: 0, invalidSpotifyIds: 0, tokenMissing: false };
+    return { updated: 0, skipped: 0, viaBatch: 0, viaSearch: 0, invalidSpotifyIds: 0, tokenMissing: false, deferredIds: [] };
   }
 
   const before = await db.song.findMany({
@@ -789,10 +804,11 @@ export async function enrichSongsWithSpotifyMetadataByIds(
     before.filter((r) => r.albumRef?.coverUrl?.trim()).map((r) => r.id),
   );
 
+  const deferredIds = new Set<string>();
   await enrichResolvedSongsWithSpotifyMetadata(
     db,
     songIds.map((id) => ({ id, spotifyId: null, albumSpotifyId: null })),
-    opts,
+    { ...opts, deferredIds },
   );
 
   const after = await db.song.findMany({
@@ -839,5 +855,6 @@ export async function enrichSongsWithSpotifyMetadataByIds(
     viaSearch,
     invalidSpotifyIds,
     tokenMissing,
+    deferredIds: [...deferredIds],
   };
 }

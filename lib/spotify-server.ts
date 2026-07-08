@@ -175,9 +175,11 @@ export async function probeSpotifyApi(): Promise<SpotifyProbeResult> {
   if (!token) {
     return { ok: false, error: "Não foi possível obter access token (credenciais inválidas ou rede)" };
   }
-  const res = await spotifyFetch(`${API_BASE}/tracks/11dFghVXANMlKmJXsNCbNl?market=BR`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await spotifyFetch(
+    `${API_BASE}/tracks/11dFghVXANMlKmJXsNCbNl?market=BR`,
+    { headers: { Authorization: `Bearer ${token}` } },
+    1, // probe é diagnóstico: falha rápido e reporta status/retry-after em vez de dormir nos retries
+  );
   if (!res?.ok) {
     const status = res?.status;
     const retryAfterMs = status === 429 ? parseRetryAfterMs(res?.headers.get("retry-after") ?? null) : null;
@@ -640,6 +642,7 @@ export type SpotifyBatchMetadataResult = {
 export async function getSpotifyTracksMetadataByIds(
   trackIds: string[],
   market: string = "BR",
+  opts?: { maxAttempts?: number },
 ): Promise<SpotifyBatchMetadataResult> {
   const metadata = new Map<string, SpotifyTrackMetadata>();
   const unique = [...new Set(trackIds.map((id) => id.trim()).filter(Boolean))];
@@ -660,6 +663,7 @@ export async function getSpotifyTracksMetadataByIds(
     const res = await spotifyFetch(
       `${API_BASE}/tracks?ids=${batch.join(",")}&market=${encodeURIComponent(market)}`,
       { headers: { Authorization: `Bearer ${token}` } },
+      opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
     );
     if (!res?.ok) {
       batchErrors += batch.length;

@@ -14,6 +14,9 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_BATCH = 50;
+// Prazo por requisição: bem abaixo dos ~60s do timeout do proxy (nginx) na VPS.
+// O que não couber volta em `remaining` e é processado no próximo lote do cliente.
+const REQUEST_TIME_BUDGET_MS = 35_000;
 
 async function ensurePrivilegedUser() {
   const session = await getServerSession(authOptions);
@@ -43,6 +46,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const deadlineAt = Date.now() + REQUEST_TIME_BUDGET_MS;
   const guard = await ensurePrivilegedUser();
   if (!guard.ok) {
     return NextResponse.json({ ok: false, error: guard.status === 401 ? "unauthorized" : "forbidden" }, { status: guard.status });
@@ -90,11 +94,14 @@ export async function POST(req: NextRequest) {
   const batchIds = new Set(batch.map((s) => s.id));
   const result = await enrichSongsWithSpotifyMetadataByIds(prisma, batch.map((s) => s.id), {
     searchFallback: true,
+    deadlineAt,
   });
+  const deferred = new Set(result.deferredIds);
   const remaining = await countSongsMissingCovers(prisma);
   const stillMissing = await findSongsMissingCovers(prisma);
+  // Adiados por tempo não são falha — voltam no próximo lote (o cliente só exclui failedItems).
   const failedItems = stillMissing
-    .filter((s) => batchIds.has(s.id))
+    .filter((s) => batchIds.has(s.id) && !deferred.has(s.id))
     .map((s) => ({
       id: s.id,
       title: s.title,
@@ -106,7 +113,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     configured: true,
-    processed: batch.length,
+    // Adiados por tempo não contam como processados — se um lote inteiro for
+    // adiado (processed=0), o cliente para em vez de repetir o mesmo lote para sempre.
+    processed: batch.length - deferred.size,
     updated: result.updated,
     skipped: result.skipped,
     viaBatch: result.viaBatch,
