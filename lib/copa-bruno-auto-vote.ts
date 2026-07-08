@@ -124,5 +124,5 @@ export async function dripBrunoAutoVote(): Promise<DripBrunoAutoVoteResult> {
   await prisma.copaAutoVoteQueue.delete({ where: { id: next.id } });
   const remaining = await prisma.copaAutoVoteQueue.count();
 
-  return { ok: true, voted: true, fixtureId: next.fixtureId, userId: next.userId, side: next.side, alreadyVoted, remaining };
+  return { ok: true, voted: true, fixtureId: next.fixtureId, userId: next.userId, side: next.side as "A" | "B", alreadyVoted, remaining };
 }
