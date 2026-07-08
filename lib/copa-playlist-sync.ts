@@ -11,11 +11,14 @@
 
 import { prisma } from "@/lib/prisma";
 import { COPA_DAY_LABELS, fixtureBatchOrder } from "@/lib/copa";
+import { COPA_FIXED_SPOTIFY_PLAYLIST_ID } from "@/lib/mytrl-access";
 import {
   addTracksToSpotifyPlaylist,
   createBrunoAutoSpotifyPlaylist,
   getMyTrlOwnerUser,
   getSpotifyUserAccessToken,
+  replaceTracksInSpotifyPlaylist,
+  updateSpotifyPlaylistDetails,
 } from "@/lib/spotify-user";
 import { isSpotifyTrackId, searchSpotifyTracks } from "@/lib/spotify-server";
 import {
@@ -212,5 +215,70 @@ export async function generateCopaDayPlaylistsSafely(copaId: string, batchOrder:
     await syncCopaDayPlaylists(copaId, batchOrder);
   } catch (e) {
     console.error("[copa] falha ao gerar playlists do dia", copaId, batchOrder, e);
+  }
+}
+
+export type SyncCopaFixedPlaylistResult =
+  | { ok: true; playlistId: string; trackCount: number }
+  | { ok: false; message: string };
+
+/**
+ * Atualiza a playlist FIXA da Copa no Spotify (@bruno) a cada etapa/dia:
+ * substitui as faixas e o título pelos singles em disputa no lote do dia
+ * atual (batchOrder). Nunca recria a playlist — o ID é fixo
+ * (`COPA_FIXED_SPOTIFY_PLAYLIST_ID`).
+ */
+export async function syncCopaFixedSpotifyPlaylist(
+  copaId: string,
+  batchOrder: number,
+): Promise<SyncCopaFixedPlaylistResult> {
+  if (batchOrder < 0 || batchOrder >= COPA_DAY_LABELS.length) {
+    return { ok: false, message: "batchOrder inválido." };
+  }
+
+  const owner = await getMyTrlOwnerUser();
+  const token = owner?.id ? await getSpotifyUserAccessToken(owner.id) : null;
+  if (!token) {
+    return { ok: false, message: "Conta Spotify (@bruno) não conectada." };
+  }
+
+  const tracks = await collectDayTracks(copaId, batchOrder);
+  if (tracks.length === 0) {
+    return { ok: false, message: "Nenhuma faixa em disputa neste lote." };
+  }
+
+  const uris = await resolveSpotifyUris(tracks);
+  if (uris.length === 0) {
+    return { ok: false, message: "Nenhuma faixa encontrada no Spotify." };
+  }
+
+  const playlistId = COPA_FIXED_SPOTIFY_PLAYLIST_ID;
+  const replaced = await replaceTracksInSpotifyPlaylist(token, playlistId, uris);
+  if (!replaced.ok) {
+    return { ok: false, message: replaced.message };
+  }
+
+  const dayLabel = COPA_DAY_LABELS[batchOrder];
+  const copa = await prisma.copaEdition.findUnique({ where: { id: copaId }, select: { name: true } });
+  const name = `${copa?.name ?? "Copa ChartFM"} · ${dayLabel}`.slice(0, 100);
+  const description = `Jogos do dia · ${dayLabel} · Copa ChartFM`.slice(0, 300);
+  const renamed = await updateSpotifyPlaylistDetails(token, playlistId, name, description);
+  if (!renamed.ok) {
+    return { ok: false, message: renamed.message };
+  }
+
+  return { ok: true, playlistId, trackCount: uris.length };
+}
+
+// Wrapper que nunca lança: a atualização da playlist fixa é "best effort" e
+// não pode quebrar o agendamento/avanço da Copa.
+export async function syncCopaFixedSpotifyPlaylistSafely(copaId: string, batchOrder: number): Promise<void> {
+  try {
+    const result = await syncCopaFixedSpotifyPlaylist(copaId, batchOrder);
+    if (!result.ok) {
+      console.error("[copa-playlist-sync]", result.message);
+    }
+  } catch (e) {
+    console.error("[copa-playlist-sync] falha ao atualizar playlist fixa", copaId, batchOrder, e);
   }
 }

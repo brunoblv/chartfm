@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { PUSH_FIXED_SPOTIFY_PLAYLIST_ID } from "@/lib/mytrl-access";
 import { pushRoundTitle } from "@/lib/push-format";
 import {
   addTracksToSpotifyPlaylist,
@@ -6,6 +7,7 @@ import {
   getMyTrlOwnerUser,
   getSpotifyUserAccessToken,
   replaceTracksInSpotifyPlaylist,
+  updateSpotifyPlaylistDetails,
 } from "@/lib/spotify-user";
 import { syncPushYouTubePlaylist, type PushTrackForYouTube } from "@/lib/youtube-user";
 
@@ -40,13 +42,20 @@ export async function syncPushSpotifyPlaylist(opts: {
     select: { spotifyPlaylistId: true },
   });
 
-  const fixedId = process.env.PUSH_SPOTIFY_PLAYLIST_ID ?? null;
+  const playlistName = pushRoundTitle(opts.season, opts.roundNumber).slice(0, 100);
+  const description = `Playlist do jogo Push no ChartFM · ${playlistName}`;
+
+  const fixedId = PUSH_FIXED_SPOTIFY_PLAYLIST_ID;
   const existingId = fixedId ?? round?.spotifyPlaylistId ?? null;
 
   if (existingId) {
     const result = await replaceTracksInSpotifyPlaylist(token, existingId, uris);
     if (!result.ok) {
       return { ok: false, message: result.message, needsReconnect: result.needsReconnect };
+    }
+    const renamed = await updateSpotifyPlaylistDetails(token, existingId, playlistName, description);
+    if (!renamed.ok) {
+      return { ok: false, message: renamed.message, needsReconnect: renamed.needsReconnect };
     }
     await prisma.pushRound.update({
       where: { id: opts.roundId },
@@ -58,9 +67,6 @@ export async function syncPushSpotifyPlaylist(opts: {
       playlistUrl: `https://open.spotify.com/playlist/${existingId}`,
     };
   }
-
-  const playlistName = pushRoundTitle(opts.season, opts.roundNumber).slice(0, 100);
-  const description = `Playlist do jogo Push no ChartFM · ${playlistName}`;
 
   const created = await createBrunoAutoSpotifyPlaylist(token, playlistName, description);
   if (!created.ok) {

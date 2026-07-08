@@ -18,6 +18,29 @@ export const MYTRL_WEEKLY_PARADA_ID = "cmpn5qqi20001mly9beqx3xkt";
 /** Alias: Top 20 semanal Under My Skin Video (@bruno). */
 export const UMS_VIDEO_WEEKLY_PARADA_ID = MYTRL_WEEKLY_PARADA_ID;
 
+/**
+ * Playlist fixa do Global 100 no Spotify (@bruno) — atualizada toda semana (faixas + título),
+ * nunca recriada. Sobrescrevível por env `GLOBAL_100_PLAYLIST_ID` sem deploy.
+ */
+export const GLOBAL_100_FIXED_SPOTIFY_PLAYLIST_ID =
+  process.env.GLOBAL_100_PLAYLIST_ID?.trim() || "7kT8IqVN3UIH5wj9clu6UN";
+
+/**
+ * Playlist fixa da Copa ChartFM no Spotify (@bruno) — atualizada a cada etapa/dia
+ * (faixas + título substituídos pelo lote do dia atual), nunca recriada.
+ * Sobrescrevível por env `COPA_PLAYLIST_ID` sem deploy.
+ */
+export const COPA_FIXED_SPOTIFY_PLAYLIST_ID =
+  process.env.COPA_PLAYLIST_ID?.trim() || "7rSBTvLkagKtyqNZCvtJ2M";
+
+/**
+ * Playlist fixa do Push no Spotify (@bruno) — atualizada a cada rodada
+ * (faixas + título substituídos pela rodada atual), nunca recriada.
+ * Sobrescrevível por env `PUSH_SPOTIFY_PLAYLIST_ID` sem deploy.
+ */
+export const PUSH_FIXED_SPOTIFY_PLAYLIST_ID =
+  process.env.PUSH_SPOTIFY_PLAYLIST_ID?.trim() || "4iKKVWdfHPUHl3TG9a9fxz";
+
 /** Parada semanal Hot 100 (@bruno). */
 export const UMS_HOT_100_PARADA_ID = "cmqyiop8m00012b83w8d56h7e";
 

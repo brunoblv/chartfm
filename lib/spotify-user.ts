@@ -548,6 +548,40 @@ export async function createBrunoAutoSpotifyPlaylist(
   );
 }
 
+/** Atualiza nome/descrição de uma playlist existente (usado para playlists fixas atualizadas semanalmente). */
+export async function updateSpotifyPlaylistDetails(
+  accessToken: string,
+  playlistId: string,
+  name: string,
+  description: string,
+): Promise<SpotifyPlaylistAddTracksResult> {
+  const res = await fetch(`${API_BASE}/playlists/${encodeURIComponent(playlistId)}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name: name.slice(0, 100), description: description.slice(0, 300) }),
+    cache: "no-store",
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    return {
+      ok: false,
+      status: res.status,
+      needsReconnect: true,
+      message: "Sem permissão para editar playlists. Reconecte sua conta Spotify.",
+    };
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[spotify] update playlist details failed", res.status, body.slice(0, 300));
+    return { ok: false, status: res.status, message: "Não foi possível atualizar o título da playlist." };
+  }
+
+  return { ok: true };
+}
+
 /** Substitui todas as faixas de uma playlist (PUT para as primeiras 100, POST para o restante). */
 export async function replaceTracksInSpotifyPlaylist(
   accessToken: string,

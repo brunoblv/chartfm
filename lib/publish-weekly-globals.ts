@@ -7,6 +7,7 @@ import { publishGlobalGenreSnapshotsForRankingWeek } from "@/lib/global-genre-sn
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
 import { closeWeeklySpotlightPoll } from "@/lib/weekly-spotlight-poll";
+import { syncGlobal100FixedSpotifyPlaylistSafely } from "@/lib/global-100-playlist-sync";
 
 /**
  * Publica rankings semanais congelados (Global 100, Airplay, Álbuns, Top Curadores) — só cria se ainda não existir.
@@ -32,6 +33,9 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
 
   syncGlobal100YouTubePlaylist(global.weekIndex, global.weekLabel).catch((e) =>
     console.error("[publish-weekly-globals] syncGlobal100YouTube", e),
+  );
+  syncGlobal100FixedSpotifyPlaylistSafely(global.weekIndex).catch((e) =>
+    console.error("[publish-weekly-globals] syncGlobal100FixedSpotify", e),
   );
   syncGlobalAirplayYouTubePlaylist(airplay.weekIndex, airplay.weekLabel).catch((e) =>
     console.error("[publish-weekly-globals] syncGlobalAirplayYouTube", e),

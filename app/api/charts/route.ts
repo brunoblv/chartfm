@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@/lib/chart-cadence";
-import { getSpotifyArtistById, getSpotifyTrackMetadataById, searchSpotifyArtist } from "@/lib/spotify-server";
+import { getSpotifyArtistById, getSpotifyTrackMetadataById, probeSpotifyApi, searchSpotifyArtist } from "@/lib/spotify-server";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
 import {
@@ -121,7 +121,12 @@ export async function POST(req: NextRequest) {
   // Upsert songs/artists/albums — publicação rápida evita timeout do Spotify
   let songs: ResolvedSongRow[];
 
-  if (fastPublish) {
+  // Caminho lento faz dezenas de chamadas Spotify; sob rate limit (429), degrada para o
+  // caminho rápido (só banco local) — a parada salva com o que se sabe e o cron de
+  // backfill completa capas/metadados depois.
+  const useFastPath = fastPublish || !(await probeSpotifyApi()).ok;
+
+  if (useFastPath) {
     const resolved = await resolveSongsForFastPublish(prisma, entries);
     songs = await finalizeSongsForChartPublish(prisma, entries, resolved);
   } else {

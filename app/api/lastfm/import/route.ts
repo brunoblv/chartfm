@@ -8,7 +8,7 @@ import {
   resolveWeightedLastfmUsername,
 } from "@/lib/lastfm-import";
 import { getWeightedLastfmImportConfig, hasWeightedLastfmImport } from "@/lib/mytrl-access";
-import { searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
+import { probeSpotifyApi, searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 import { getLastfmImportPlaylistTracks } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
 
@@ -86,10 +86,16 @@ const NO_CACHE_HEADERS = {
 
 async function enrichBatch(
   items: Array<{ track: string; artist: string; album: string }>,
+  useSpotify: boolean,
 ): Promise<EnrichedSong[]> {
+  // Modo degradado (Spotify em rate limit): mantém os nomes do Last.fm; o catálogo local
+  // (preferExistingSongs) ainda resolve o que já existe e o cron de backfill corrige o resto depois.
+  if (!useSpotify) {
+    return items.map((item) => ({ title: item.track, artist: item.artist, album: item.album, spotifyId: null, imageUrl: null }));
+  }
   return Promise.all(
     items.map(async (item) => {
-      const matches = await searchSpotifyTracks(`${item.track} ${item.artist}`, 8);
+      const matches = await searchSpotifyTracks(`${item.track} ${item.artist}`, 8, "BR", undefined, { maxAttempts: 1 });
       const m = pickBestTrackMatch(item, matches);
       if (m) {
         return { title: m.title, artist: m.artist, album: m.album, spotifyId: m.spotifyId, imageUrl: m.imageUrl ?? null };
@@ -247,10 +253,11 @@ export async function POST(req: NextRequest) {
       );
 
       const BATCH = 20;
+      const spotifyOk = (await probeSpotifyApi()).ok;
       const enriched: EnrichedSong[] = [];
       for (let i = 0; i < topTracks.length; i += BATCH) {
         const slice = topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album }));
-        const batch = await enrichBatch(slice);
+        const batch = await enrichBatch(slice, spotifyOk);
         enriched.push(...batch);
       }
 
@@ -285,10 +292,11 @@ export async function POST(req: NextRequest) {
     const { tracks: topTracks, periodLabel } = await resolveLastfmImportTracks(body.weekDate, limit, lastfmUsername);
 
     const BATCH = 20;
+    const spotifyOk = (await probeSpotifyApi()).ok;
     const enriched: EnrichedSong[] = [];
     for (let i = 0; i < topTracks.length; i += BATCH) {
       const slice = topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album }));
-      const batch = await enrichBatch(slice);
+      const batch = await enrichBatch(slice, spotifyOk);
       enriched.push(...batch);
     }
 
