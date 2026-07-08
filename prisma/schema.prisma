@@ -1223,6 +1223,19 @@ model CopaVote {
   @@map("copa_votes")
 }
 
+/// Fila de votos automáticos (@bruno) para os jogos abertos da Copa — o cron
+/// processa 1 item por minuto para os votos não caírem todos juntos.
+model CopaAutoVoteQueue {
+  id        String   @id @default(cuid())
+  fixtureId String   @map("fixture_id")
+  userId    String   @map("user_id")
+  side      String   // "A" or "B"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("copa_auto_vote_queue")
+}
+
 model CopaLiveComment {
   id          String   @id @default(cuid())
   copaId      String   @map("copa_id")

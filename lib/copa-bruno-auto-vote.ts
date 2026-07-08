@@ -8,36 +8,30 @@ const AUTO_VOTE_HANDLES = [
   "xalmeida", "sandman", "ingrididas7", "keku",
 ];
 
-// Artistas que recebem voto garantido de todos os 22 (quando estiverem em algum
-// jogo aberto na rodada atual); os demais jogos recebem voto aleatório.
-const FORCED_ARTIST_NAMES = ["Silverchair", "Bring Me the Horizon", "Foo Fighters", "Keane"];
-
 function randomSide(): "A" | "B" {
   return Math.random() < 0.5 ? "A" : "B";
 }
 
-export type BrunoAutoVoteResult =
+export type EnqueueBrunoAutoVoteResult =
   | { ok: false; error: string }
   | {
       ok: true;
       copaId: string;
-      fixturesVoted: number;
-      usersVoted: number;
-      votesCreated: number;
-      votesAttempted: number;
-      forcedArtists: string[];
-      forcedFixtures: number;
+      fixturesOpen: number;
+      usersConsidered: number;
+      queued: number;
+      alreadyVoted: number;
+      alreadyQueued: number;
       missingHandles: string[];
     };
 
 /**
- * Faz os 22 usuários das paradas "de estilo" votarem em todos os jogos "LIVE"
- * da Copa ativa: aleatório em geral, mas todos votam no lado dos artistas em
- * FORCED_ARTIST_NAMES (se estiverem em algum jogo aberto). Idempotente — usa
- * `@@unique([fixtureId, userId])` + skipDuplicates, então pode ser chamada
- * repetidamente (ex.: cron a cada minuto) sem duplicar ou alterar votos já dados.
+ * Botão @bruno: sorteia o lado (A/B) de cada um dos 22 usuários para cada
+ * jogo "LIVE" da Copa ativa e enfileira em CopaAutoVoteQueue os pares
+ * (fixture, usuário) que ainda não votaram nem estão na fila. Não vota na
+ * hora — o cron drena a fila 1 item a cada 10 minutos.
  */
-export async function runBrunoAutoVote(): Promise<BrunoAutoVoteResult> {
+export async function enqueueBrunoAutoVotes(): Promise<EnqueueBrunoAutoVoteResult> {
   const copa = await prisma.copaEdition.findFirst({
     where: { status: { not: "FINISHED" } },
     orderBy: { createdAt: "desc" },
@@ -50,43 +44,85 @@ export async function runBrunoAutoVote(): Promise<BrunoAutoVoteResult> {
   });
   if (!fixtures.length) return { ok: false, error: "Nenhum jogo aberto (LIVE) no momento" };
 
-  const forcedArtists = await prisma.copaArtist.findMany({
-    where: { copaId: copa.id, OR: FORCED_ARTIST_NAMES.map((name) => ({ artistName: { contains: name, mode: "insensitive" as const } })) },
-    select: { id: true, artistName: true },
-  });
-  const forcedArtistIds = new Set(forcedArtists.map((a) => a.id));
-
   const users = await prisma.user.findMany({
     where: { handle: { in: AUTO_VOTE_HANDLES } },
     select: { id: true, handle: true },
   });
   const missingHandles = AUTO_VOTE_HANDLES.filter((h) => !users.some((u) => u.handle.toLowerCase() === h.toLowerCase()));
 
-  const sideForFixture = new Map<string, "A" | "B">();
-  for (const f of fixtures) {
-    if (forcedArtistIds.has(f.artistAId)) sideForFixture.set(f.id, "A");
-    else if (forcedArtistIds.has(f.artistBId)) sideForFixture.set(f.id, "B");
-  }
+  const fixtureIds = fixtures.map((f) => f.id);
+  const userIds = users.map((u) => u.id);
 
-  const votesData: Array<{ fixtureId: string; userId: string; side: "A" | "B" }> = [];
+  const [existingVotes, existingQueue] = await Promise.all([
+    prisma.copaVote.findMany({
+      where: { fixtureId: { in: fixtureIds }, userId: { in: userIds } },
+      select: { fixtureId: true, userId: true },
+    }),
+    prisma.copaAutoVoteQueue.findMany({
+      where: { fixtureId: { in: fixtureIds }, userId: { in: userIds } },
+      select: { fixtureId: true, userId: true },
+    }),
+  ]);
+  const doneKey = (fixtureId: string, userId: string) => `${fixtureId}|${userId}`;
+  const alreadyVotedKeys = new Set(existingVotes.map((v) => doneKey(v.fixtureId, v.userId)));
+  const alreadyQueuedKeys = new Set(existingQueue.map((v) => doneKey(v.fixtureId, v.userId)));
+
+  const toQueue: Array<{ fixtureId: string; userId: string; side: "A" | "B" }> = [];
+  let alreadyVoted = 0;
+  let alreadyQueued = 0;
   for (const user of users) {
     for (const f of fixtures) {
-      const side = sideForFixture.get(f.id) ?? randomSide();
-      votesData.push({ fixtureId: f.id, userId: user.id, side });
+      const key = doneKey(f.id, user.id);
+      if (alreadyVotedKeys.has(key)) {
+        alreadyVoted++;
+        continue;
+      }
+      if (alreadyQueuedKeys.has(key)) {
+        alreadyQueued++;
+        continue;
+      }
+      toQueue.push({ fixtureId: f.id, userId: user.id, side: randomSide() });
     }
   }
 
-  const result = await prisma.copaVote.createMany({ data: votesData, skipDuplicates: true });
+  if (toQueue.length) {
+    await prisma.copaAutoVoteQueue.createMany({ data: toQueue });
+  }
 
   return {
     ok: true,
     copaId: copa.id,
-    fixturesVoted: fixtures.length,
-    usersVoted: users.length,
-    votesCreated: result.count,
-    votesAttempted: votesData.length,
-    forcedArtists: forcedArtists.map((a) => a.artistName),
-    forcedFixtures: sideForFixture.size,
+    fixturesOpen: fixtures.length,
+    usersConsidered: users.length,
+    queued: toQueue.length,
+    alreadyVoted,
+    alreadyQueued,
     missingHandles,
   };
+}
+
+export type DripBrunoAutoVoteResult =
+  | { ok: true; voted: false; reason: "queue_empty" }
+  | { ok: true; voted: true; fixtureId: string; userId: string; side: "A" | "B"; alreadyVoted: boolean; remaining: number };
+
+/**
+ * Cron (a cada 10 min): tira o item mais antigo da fila e registra o voto de
+ * verdade (CopaVote). Se o par já tiver voto (ex.: usuário votou manualmente
+ * nesse meio-tempo), só descarta o item da fila sem erro.
+ */
+export async function dripBrunoAutoVote(): Promise<DripBrunoAutoVoteResult> {
+  const next = await prisma.copaAutoVoteQueue.findFirst({ orderBy: { createdAt: "asc" } });
+  if (!next) return { ok: true, voted: false, reason: "queue_empty" };
+
+  let alreadyVoted = false;
+  try {
+    await prisma.copaVote.create({ data: { fixtureId: next.fixtureId, userId: next.userId, side: next.side } });
+  } catch {
+    alreadyVoted = true;
+  }
+
+  await prisma.copaAutoVoteQueue.delete({ where: { id: next.id } });
+  const remaining = await prisma.copaAutoVoteQueue.count();
+
+  return { ok: true, voted: true, fixtureId: next.fixtureId, userId: next.userId, side: next.side, alreadyVoted, remaining };
 }

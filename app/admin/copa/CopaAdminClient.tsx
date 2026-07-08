@@ -186,7 +186,7 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
 
   async function brunoAutoVote() {
     if (autoVoting) return;
-    if (!confirm("Fazer os 22 usuários das paradas de estilo votarem em todos os jogos abertos (Silverchair, Bring Me the Horizon, Foo Fighters e Keane fixos)?")) return;
+    if (!confirm("Enfileirar votos aleatórios dos 22 usuários das paradas de estilo para todos os jogos abertos? Um voto é registrado a cada 10 minutos (cron), para não caírem todos juntos.")) return;
     setAutoVoting(true);
     try {
       const res = await fetch("/api/admin/copa/bruno-auto-vote", { method: "POST" });
@@ -196,12 +196,14 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
         return;
       }
       alert(
-        `Votação automática concluída.\n\n` +
-          `Jogos abertos: ${json.fixturesVoted}\n` +
-          `Usuários: ${json.usersVoted}\n` +
-          `Votos criados: ${json.votesCreated}/${json.votesAttempted}\n` +
-          `Artistas fixos: ${json.forcedArtists.length ? json.forcedArtists.join(", ") : "(nenhum encontrado nos jogos abertos)"}\n` +
-          (json.missingHandles.length ? `Handles não encontrados: ${json.missingHandles.join(", ")}\n` : ""),
+        `Votos enfileirados.\n\n` +
+          `Jogos abertos: ${json.fixturesOpen}\n` +
+          `Usuários: ${json.usersConsidered}\n` +
+          `Novos na fila: ${json.queued}\n` +
+          `Já votados antes: ${json.alreadyVoted}\n` +
+          `Já estavam na fila: ${json.alreadyQueued}\n` +
+          (json.missingHandles.length ? `Handles não encontrados: ${json.missingHandles.join(", ")}\n` : "") +
+          `\nO cron dá 1 voto da fila a cada 10 minutos.`,
       );
       router.refresh();
     } finally {
@@ -894,7 +896,7 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
               <button
                 onClick={brunoAutoVote}
                 disabled={autoVoting}
-                title="Faz os 22 usuários das paradas de estilo votarem em todos os jogos abertos (Silverchair, Bring Me the Horizon, Foo Fighters e Keane fixos)"
+                title="Enfileira votos aleatórios dos 22 usuários das paradas de estilo para todos os jogos abertos — 1 voto a cada 10 minutos"
                 style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#AF52DE", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: autoVoting ? 0.5 : 1 }}
               >
                 🎲 Votar automático (bruno)
