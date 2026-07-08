@@ -468,6 +468,7 @@ export async function listSpotifyArtistAlbums(
 export async function listSpotifyArtistRecentReleases(
   artistSpotifyId: string,
   market: string = "BR",
+  opts?: { maxAttempts?: number },
 ): Promise<SpotifyArtistAlbumRef[]> {
   const token = await getAccessToken();
   if (!token) return [];
@@ -476,10 +477,14 @@ export async function listSpotifyArtistRecentReleases(
 
   const url =
     `${API_BASE}/artists/${encodeURIComponent(id)}/albums?include_groups=album,single&market=${encodeURIComponent(market)}&limit=50`;
-  const res = await spotifyFetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 0 },
-  });
+  const res = await spotifyFetch(
+    url,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 0 },
+    },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+  );
   if (!res?.ok) return [];
   const json = (await res.json()) as SpotifyArtistAlbumsPageJson;
   return (json.items ?? [])

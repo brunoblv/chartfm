@@ -4,6 +4,7 @@ import {
   getSpotifyAlbumDetails,
   getSpotifyArtistById,
   listSpotifyArtistRecentReleases,
+  probeSpotifyApi,
   spotifyConfigured,
 } from "@/lib/spotify-server";
 import { isTelegramConfigured, sendTelegramMessage, sendTelegramPhoto } from "@/lib/telegram";
@@ -121,6 +122,12 @@ export async function runReleaseRadar(): Promise<ReleaseRadarRunResult> {
     errors.push("Telegram não configurado — lançamentos serão registrados sem aviso");
   }
 
+  // Sob rate limit, varrer 200 artistas só piora a penalização — aborta e espera o próximo cron.
+  const probe = await probeSpotifyApi();
+  if (!probe.ok) {
+    return { ok: false, watches: 0, checked: 0, announced: 0, errors: [...errors, probe.error ?? "Spotify indisponível"] };
+  }
+
   const watches = await prisma.artistReleaseWatch.findMany({
     where: { active: true },
     orderBy: { name: "asc" },
@@ -131,7 +138,9 @@ export async function runReleaseRadar(): Promise<ReleaseRadarRunResult> {
 
   for (const watch of watches) {
     try {
-      const releases = await listSpotifyArtistRecentReleases(watch.spotifyId);
+      // maxAttempts 1: se o rate limit chegar no meio da varredura, não dormir
+      // em retries por artista — o próximo cron recomeça do zero de qualquer forma.
+      const releases = await listSpotifyArtistRecentReleases(watch.spotifyId, "BR", { maxAttempts: 1 });
       checked += 1;
 
       const recent = releases.filter((r) => isRecentRelease(r.releaseDate));
