@@ -24,7 +24,8 @@ export type DadosTab =
   | "albuns"
   | "artistas"
   | "albuns-pendencias"
-  | "artistas-pendencias";
+  | "artistas-pendencias"
+  | "flags";
 
 const NAV: { key: DadosTab; label: string; href: string }[] = [
   { key: "geral", label: "Visão geral", href: "/admin/dados" },
@@ -35,6 +36,7 @@ const NAV: { key: DadosTab; label: string; href: string }[] = [
   { key: "artistas", label: "Artistas", href: "/admin/dados/artistas" },
   { key: "albuns-pendencias", label: "Álbuns · pendências", href: "/admin/dados/albuns-pendencias" },
   { key: "artistas-pendencias", label: "Artistas · pendências", href: "/admin/dados/artistas-pendencias" },
+  { key: "flags", label: "Sinalizações", href: "/admin/dados/flags" },
 ];
 
 function navChipStyle(active: boolean): CSSProperties {

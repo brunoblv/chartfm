@@ -59,6 +59,7 @@ type SquadParticipant = {
 };
 
 type Props = {
+  viewerHandle: string | null;
   editions: Edition[];
   activeEditionId: string | null;
   activeVotesPerGoal: number;
@@ -84,8 +85,9 @@ const PHASE_LABELS: Record<string, string> = {
   FINAL: "FIN",
 };
 
-export function CopaAdminClient({ editions, activeEditionId, activeVotesPerGoal, fixturesByStatus, knockoutControls, activeFixtures }: Props) {
+export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activeVotesPerGoal, fixturesByStatus, knockoutControls, activeFixtures }: Props) {
   const router = useRouter();
+  const [autoVoting, setAutoVoting] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("Copa ChartFM");
   const [newYear, setNewYear] = useState(new Date().getFullYear());
@@ -179,6 +181,31 @@ export function CopaAdminClient({ editions, activeEditionId, activeVotesPerGoal,
       router.refresh();
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function brunoAutoVote() {
+    if (autoVoting) return;
+    if (!confirm("Fazer os 22 usuários das paradas de estilo votarem em todos os jogos abertos (Silverchair, Bring Me the Horizon, Foo Fighters e Keane fixos)?")) return;
+    setAutoVoting(true);
+    try {
+      const res = await fetch("/api/admin/copa/bruno-auto-vote", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(json.error ?? "Erro");
+        return;
+      }
+      alert(
+        `Votação automática concluída.\n\n` +
+          `Jogos abertos: ${json.fixturesVoted}\n` +
+          `Usuários: ${json.usersVoted}\n` +
+          `Votos criados: ${json.votesCreated}/${json.votesAttempted}\n` +
+          `Artistas fixos: ${json.forcedArtists.length ? json.forcedArtists.join(", ") : "(nenhum encontrado nos jogos abertos)"}\n` +
+          (json.missingHandles.length ? `Handles não encontrados: ${json.missingHandles.join(", ")}\n` : ""),
+      );
+      router.refresh();
+    } finally {
+      setAutoVoting(false);
     }
   }
 
@@ -861,6 +888,16 @@ export function CopaAdminClient({ editions, activeEditionId, activeVotesPerGoal,
                 style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
               >
                 ⏭️ Avançar Dia
+              </button>
+            )}
+            {viewerHandle === "bruno" && (e.status === "GROUP_STAGE" || e.status === "KNOCKOUT") && (
+              <button
+                onClick={brunoAutoVote}
+                disabled={autoVoting}
+                title="Faz os 22 usuários das paradas de estilo votarem em todos os jogos abertos (Silverchair, Bring Me the Horizon, Foo Fighters e Keane fixos)"
+                style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#AF52DE", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: autoVoting ? 0.5 : 1 }}
+              >
+                🎲 Votar automático (bruno)
               </button>
             )}
             {(e.status === "GROUP_STAGE" || e.status === "KNOCKOUT") && (

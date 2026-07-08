@@ -93,6 +93,7 @@ model User {
   supportTicketMessages SupportTicketMessage[]
   weeklySpotlightNominations WeeklySpotlightNomination[]
   weeklySpotlightVotes WeeklySpotlightVote[]
+  songFlags            SongFlag[]
 }
 
 model PasswordResetToken {
@@ -212,11 +213,36 @@ model Song {
   pushSubmissions       PushSubmission[]
   recommendations       SongRecommendation[]
   weeklySpotlightOptions WeeklySpotlightOption[]
+  flags                 SongFlag[]
 
   @@unique([title, artist])
   @@index([spotifyId], map: "idx_songs_spotify_id")
   @@index([artistSpotifyId], map: "idx_songs_artist_spotify_id")
   @@index([albumSpotifyId], map: "idx_songs_album_spotify_id")
+}
+
+enum SongFlagStatus {
+  PENDING
+  DISMISSED
+
+  @@map("song_flag_status")
+}
+
+/// Denúncia de usuário: "essa música não está correta" (duplicata, versão errada, etc).
+/// Resolvida via merge no admin (a música some junto com a flag) ou dispensada (status DISMISSED).
+model SongFlag {
+  id        String         @id @default(cuid())
+  songId    String         @map("song_id")
+  userId    String         @map("user_id")
+  reason    String?
+  status    SongFlagStatus @default(PENDING)
+  createdAt DateTime       @default(now()) @map("created_at")
+  song      Song           @relation(fields: [songId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([songId])
+  @@index([status])
+  @@map("song_flags")
 }
 
 model SongFeat {

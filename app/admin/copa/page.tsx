@@ -67,6 +67,7 @@ export default async function CopaAdminPage() {
   return (
     <Shell title="Copa ChartFM" subtitle="Gerencie edições, fases e jogos">
       <CopaAdminClient
+      viewerHandle={session.user.handle ?? null}
       editions={editions.map((e) => ({
         id: e.id,
         name: e.name,

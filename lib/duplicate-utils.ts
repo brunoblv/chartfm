@@ -31,7 +31,8 @@ function stripTrailingDashVariant(input: string, hintRe: RegExp): string {
   return input.slice(0, m.index).trim();
 }
 
-const FEATURING_RE = /\b(?:feat\.?|featuring|ft\.?|part\.?|participa[cç][aã]o)\b/i;
+const FEATURING_ALT = "feat\\.?|featuring|ft\\.?|part\\.?|participa[cç][aã]o";
+const FEATURING_RE = new RegExp(`\\b(?:${FEATURING_ALT})\\b`, "i");
 
 export function canonicalSongTitle(title: string): string {
   const variantRe = new RegExp(`${FEATURING_RE.source}|\\bremix(?:es)?\\b`, "i");
@@ -43,7 +44,7 @@ export function canonicalSongTitle(title: string): string {
 export function canonicalArtistName(artist: string): string {
   const noBrackets = stripTrailingBracketVariant(artist, FEATURING_RE);
   const noDash = stripTrailingDashVariant(noBrackets, FEATURING_RE);
-  const noSuffix = noDash.replace(new RegExp(`\\s+(?:${FEATURING_RE.source})\\s+.+$`, "i"), "");
+  const noSuffix = noDash.replace(new RegExp(`\\s+(?:${FEATURING_ALT})\\s+.+$`, "i"), "");
   return normalizeLoose(noSuffix);
 }
 

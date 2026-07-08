@@ -19,6 +19,7 @@ import { songEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
 import { buildSongContext } from "@/lib/entity-context-text";
+import { SongFlagButton } from "@/components/song/SongFlagButton";
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);
@@ -390,6 +391,9 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
                 </Link>
               </div>
             )}
+            <div style={{ marginTop: 10 }}>
+              <SongFlagButton songId={songId} isLoggedIn={Boolean(currentUserId)} />
+            </div>
           </div>
         </div>
 
