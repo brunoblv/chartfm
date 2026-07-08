@@ -77,6 +77,7 @@ export function LandingPage({
       title: t("landing.footerResources"),
       items: [
         { label: t("landing.footerGuides"), href: "/guides" },
+        { label: t("landing.footerEditorial"), href: "/editorial" },
         { label: t("landing.footerFaq"), href: "/faq" },
         { label: t("landing.footerImportSpotify"), href: "/login" },
         { label: t("landing.communities"), href: "/communities" },

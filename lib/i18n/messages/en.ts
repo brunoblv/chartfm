@@ -18,6 +18,7 @@ export const messagesEn = {
     newChart: "New chart",
     myProfile: "My profile",
     guides: "Guides",
+    editorial: "Editorial",
     about: "About",
     contact: "Contact",
     terms: "Terms",
@@ -42,6 +43,7 @@ export const messagesEn = {
     adminClube: "Album Club",
     adminCrownnoteExport: "Export Crownnote",
     adminLowerThirdsYoutube: "YouTube Lower Thirds",
+    adminEditorial: "Editorial",
     adminSupport: "Support tickets",
     ctaTitle: "Create your weekly chart",
     ctaBody:
@@ -212,6 +214,7 @@ export const messagesEn = {
     footerLegal: "Legal",
     footerHowItWorks: "How it works",
     footerGuides: "Guides",
+    footerEditorial: "Editorial",
     footerFaq: "FAQ",
     footerImportSpotify: "Import from Spotify",
     footerTerms: "Terms of Use",

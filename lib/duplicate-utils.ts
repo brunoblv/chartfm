@@ -31,15 +31,20 @@ function stripTrailingDashVariant(input: string, hintRe: RegExp): string {
   return input.slice(0, m.index).trim();
 }
 
+const FEATURING_RE = /\b(?:feat\.?|featuring|ft\.?|part\.?|participa[cç][aã]o)\b/i;
+
 export function canonicalSongTitle(title: string): string {
-  const remixRe = /\bremix(?:es)?\b/i;
-  const noBrackets = stripTrailingBracketVariant(title, remixRe);
-  const noDash = stripTrailingDashVariant(noBrackets, remixRe);
+  const variantRe = new RegExp(`${FEATURING_RE.source}|\\bremix(?:es)?\\b`, "i");
+  const noBrackets = stripTrailingBracketVariant(title, variantRe);
+  const noDash = stripTrailingDashVariant(noBrackets, variantRe);
   return normalizeLoose(noDash);
 }
 
 export function canonicalArtistName(artist: string): string {
-  return normalizeLoose(artist.replace(/\s+(?:feat\.?|ft\.?|featuring)\s+.+$/i, ""));
+  const noBrackets = stripTrailingBracketVariant(artist, FEATURING_RE);
+  const noDash = stripTrailingDashVariant(noBrackets, FEATURING_RE);
+  const noSuffix = noDash.replace(new RegExp(`\\s+(?:${FEATURING_RE.source})\\s+.+$`, "i"), "");
+  return normalizeLoose(noSuffix);
 }
 
 export function canonicalAlbumTitle(title: string): string {

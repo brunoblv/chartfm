@@ -149,6 +149,8 @@ export const pagesEn = {
     noDropouts: "No dropouts this week.",
     noChartsWeek: "No charts published this week yet.",
     exited: "OUT",
+    spotifyListen: "Listen on Spotify",
+    youtubeListen: "Listen on YouTube",
     spotifySave: "Save to Spotify",
     spotifyConnect: "Connect Spotify",
     spotifyCreating: "Creating playlist…",

@@ -10,6 +10,7 @@ export const ADSENSE_SLOTS = {
   profile: process.env.NEXT_PUBLIC_ADSENSE_SLOT_PROFILE ?? "",
   homeFeed: process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME_FEED ?? "",
   criticsFm: process.env.NEXT_PUBLIC_ADSENSE_SLOT_CRITICS_FM ?? "",
+  editorial: process.env.NEXT_PUBLIC_ADSENSE_SLOT_EDITORIAL ?? "",
 } as const;
 
 const PLACEHOLDER_RE = /^COLE_AQUI/i;

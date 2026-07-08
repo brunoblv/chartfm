@@ -1235,6 +1235,38 @@ model WeeklyEditorial {
   @@map("weekly_editorials")
 }
 
+enum EditorialPostCategory {
+  video
+  clipe
+  playlist
+  album
+  artista
+  editorial
+}
+
+model EditorialPost {
+  id           String                @id @default(cuid())
+  slug         String                @unique
+  title        String
+  subtitle     String?
+  category     EditorialPostCategory
+  publishedAt  DateTime              @map("published_at") @db.Date
+  author       String                @default("Equipe ChartFM")
+  excerpt      String
+  paragraphs   Json
+  youtubeUrl   String?               @map("youtube_url")
+  spotifyUrl   String?               @map("spotify_url")
+  previewImage String?               @map("preview_image")
+  tags         Json?
+  relatedLinks Json?                 @map("related_links")
+  published    Boolean               @default(true)
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+
+  @@index([published, publishedAt(sort: Desc)])
+  @@map("editorial_posts")
+}
+
 enum SupportTicketType {
   BUG
   SUGGESTION

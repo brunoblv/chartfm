@@ -15,6 +15,7 @@ import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { buildWeeklyEditorial } from "@/lib/editorial-generator";
 import { getWeeklySpotlightWinners, WEEKLY_POLL_PATH } from "@/lib/weekly-spotlight-poll";
 import { GlobalSpotlightWinnerCard } from "@/components/global/GlobalSpotlightWinnerCard";
+import { GLOBAL_100_FIXED_SPOTIFY_PLAYLIST_ID } from "@/lib/mytrl-access";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -273,6 +274,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
 
       <GlobalChartPlaybackActions
         youtubePlaylistId={youtubePlaylistId}
+        spotifyPlaylistId={globalSongs.length > 0 ? GLOBAL_100_FIXED_SPOTIFY_PLAYLIST_ID : null}
         spotify={
           globalSongs.length > 0
             ? {

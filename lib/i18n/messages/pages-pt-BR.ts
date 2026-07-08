@@ -149,6 +149,8 @@ export const pagesPtBR = {
     noDropouts: "Nenhuma saída esta semana.",
     noChartsWeek: "Nenhuma parada publicada esta semana ainda.",
     exited: "SAIU",
+    spotifyListen: "Ouvir no Spotify",
+    youtubeListen: "Ouvir no YouTube",
     spotifySave: "Salvar no Spotify",
     spotifyConnect: "Conectar Spotify",
     spotifyCreating: "Criando playlist…",

@@ -1,8 +1,15 @@
 import type { MetadataRoute } from "next";
+import { getEditorialPicksSorted } from "@/lib/editorial-picks";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://chartfm.com.br";
   const now = new Date();
+  const editorialPosts = (await getEditorialPicksSorted()).map((pick) => ({
+    url: `${base}/editorial/${pick.slug}`,
+    lastModified: new Date(pick.publishedAt),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
 
   return [
     { url: base, lastModified: now, changeFrequency: "daily", priority: 1 },
@@ -20,5 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/terms-of-use`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
     { url: `${base}/whats-new`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
     { url: `${base}/guides`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
+    { url: `${base}/editorial`, lastModified: now, changeFrequency: "weekly", priority: 0.65 },
+    ...editorialPosts,
   ];
 }

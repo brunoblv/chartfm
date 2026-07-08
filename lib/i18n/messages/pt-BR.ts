@@ -18,6 +18,7 @@ export const messagesPtBR = {
     newChart: "Nova parada",
     myProfile: "Meu perfil",
     guides: "Guias",
+    editorial: "Editorial",
     about: "Sobre",
     contact: "Contato",
     terms: "Termos",
@@ -42,6 +43,7 @@ export const messagesPtBR = {
     adminClube: "Clube do Álbum",
     adminCrownnoteExport: "Exportar Crownnote",
     adminLowerThirdsYoutube: "Lower Thirds YouTube",
+    adminEditorial: "Editorial",
     adminSupport: "Tickets de suporte",
     ctaTitle: "Crie sua parada semanal",
     ctaBody:
@@ -212,6 +214,7 @@ export const messagesPtBR = {
     footerLegal: "Legal",
     footerHowItWorks: "Como funciona",
     footerGuides: "Guias",
+    footerEditorial: "Editorial",
     footerFaq: "Perguntas frequentes",
     footerImportSpotify: "Importar Spotify",
     footerTerms: "Termos de Uso",

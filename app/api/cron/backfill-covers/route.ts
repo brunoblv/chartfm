@@ -16,7 +16,7 @@ export const maxDuration = 300;
 const CRON_BATCH = 100;
 const CRON_TIME_BUDGET_MS = 240_000;
 
-// GET /api/cron/backfill-covers — 1x/dia: completa capas/metadados de músicas pendentes
+// GET /api/cron/backfill-covers — a cada 2h: completa capas/metadados de músicas pendentes
 export async function GET(req: NextRequest) {
   if (!authorizedCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

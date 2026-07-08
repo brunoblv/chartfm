@@ -174,6 +174,54 @@ export async function resolveRecordingMbidFromLocalDb(
   return findRecordingMbidByTitleArtist(input.title, input.artist, client);
 }
 
+export type LocalRecordingTagsResult = {
+  mbid: string;
+  tags: string[];
+};
+
+/** Tags + gêneros de um recording via Postgres local (gêneros pesam 2x, mesma lógica do WS). */
+export async function getRecordingTagsFromLocalDb(
+  mbid: string,
+  client: Pool | PoolClient = getMusicBrainzPool(),
+): Promise<LocalRecordingTagsResult | null> {
+  const id = mbid.trim();
+  if (!id) return null;
+
+  const rec = await queryOne<{ id: number; gid: string }>(
+    client,
+    `SELECT id, gid::text AS gid FROM musicbrainz.recording WHERE gid = $1::uuid LIMIT 1`,
+    [id],
+  );
+  if (!rec) return null;
+
+  const { rows } = await client.query<{ name: string; count: number; is_genre: boolean }>(
+    `
+      SELECT t.name, rt.count, (g.id IS NOT NULL) AS is_genre
+      FROM musicbrainz.recording_tag rt
+      JOIN musicbrainz.tag t ON t.id = rt.tag
+      LEFT JOIN musicbrainz.genre g ON lower(g.name) = lower(t.name)
+      WHERE rt.recording = $1
+        AND t.name !~ '[_:?]'
+    `,
+    [rec.id],
+  );
+
+  const scored = new Map<string, number>();
+  for (const row of rows) {
+    const name = row.name?.trim().toLowerCase();
+    if (!name) continue;
+    const weight = row.count * (row.is_genre ? 2 : 1);
+    scored.set(name, (scored.get(name) ?? 0) + weight);
+  }
+
+  const tags = [...scored.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name]) => name)
+    .slice(0, 12);
+
+  return { mbid: rec.gid, tags };
+}
+
 const SINGLE_PRIMARY_TYPE_ID = 2;
 
 export type MusicBrainzLocalReleaseDates = {

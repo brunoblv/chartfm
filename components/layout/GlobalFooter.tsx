@@ -59,6 +59,7 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
 
   const communityLinks: LinkItem[] = [
     { label: t("nav.whatsNew"), href: "/whats-new" },
+    { label: t("nav.editorial"), href: "/editorial" },
     { label: t("nav.guides"), href: "/guides" },
     { label: t("nav.contact"), href: "/contact" },
     { label: t("nav.support"), href: "/support" },

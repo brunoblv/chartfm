@@ -101,7 +101,20 @@
       "Bash(curl -s \"https://chartfm.com.br/api/criticsfm/search-spotify?q=test\" --max-time 15)",
       "Bash(curl -s -o /dev/null -w \"gerador/albums/search: %{http_code}\\\\n\" \"https://chartfm.com.br/api/admin/gerador/albums/search?q=test\" --max-time 15)",
       "Bash(curl -s -o /dev/null -w \"edicao-de-dados/search: %{http_code}\\\\n\" \"https://chartfm.com.br/api/admin/edicao-de-dados/search?q=test\" --max-time 15)",
-      "Bash(curl -s -o /dev/null -w \"edicao-de-dados/fetch-source: %{http_code}\\\\n\" \"https://chartfm.com.br/api/admin/edicao-de-dados/fetch-source?q=test\" --max-time 15)"
+      "Bash(curl -s -o /dev/null -w \"edicao-de-dados/fetch-source: %{http_code}\\\\n\" \"https://chartfm.com.br/api/admin/edicao-de-dados/fetch-source?q=test\" --max-time 15)",
+      "Bash(docker --version)",
+      "Read(//c//**)",
+      "Bash(docker system *)",
+      "Bash(docker start *)",
+      "Bash(docker port *)",
+      "Bash(awk '{print $1}')",
+      "Bash(netstat -ano)",
+      "Bash(PGPASSWORD=postgres psql -h 127.0.0.1 -p 5433 -U postgres -d chartfm -c \"select count\\(*\\) from \\\\\"Song\\\\\";\")",
+      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:5433/chartfm\" -c \"select 1\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres:Ramuh88@127.0.0.1:5433/postgres\" npx tsx scripts/backfill-song-tags-dates-local.ts --dry-run --limit=20)",
+      "PowerShell(npx tsx scripts/merge-songs.ts 3d0WouFnFmr0K3kjeza3fF 52XoFtAGfg9AFuCB4YCcVQ)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:Ramuh88@127.0.0.1:5433/postgres\" nohup npx tsx scripts/backfill-song-tags-dates-local.ts)",
+      "Bash(echo \"started pid $!\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

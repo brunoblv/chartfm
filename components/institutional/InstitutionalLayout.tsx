@@ -14,6 +14,7 @@ export function InstitutionalLayout({ children }: { children: React.ReactNode })
   const tabs = [
     { href: "/about", label: t("nav.about") },
     { href: "/guides", label: t("nav.guides") },
+    { href: "/editorial", label: t("nav.editorial") },
     { href: "/whats-new", label: t("nav.whatsNew") },
     { href: "/contact", label: t("nav.contact") },
     { href: "/support", label: t("nav.support") },
@@ -39,6 +40,7 @@ export function InstitutionalLayout({ children }: { children: React.ReactNode })
           const active =
             pathname === tab.href ||
             (tab.href === "/guides" && pathname.startsWith("/guides/")) ||
+            (tab.href === "/editorial" && pathname.startsWith("/editorial/")) ||
             (tab.href === "/support" && pathname.startsWith("/support"));
           return (
             <Link

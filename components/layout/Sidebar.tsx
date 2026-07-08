@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -520,6 +520,10 @@ function SidebarContent({
               <Link href="/admin/avisos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/avisos")}>
                 <Megaphone size={14} />
                 <span>Avisos</span>
+              </Link>
+              <Link href="/admin/editorial" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/editorial")}>
+                <Newspaper size={14} />
+                <span>Editorial</span>
               </Link>
               <Link href="/admin/clube" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/clube")}>
                 <Award size={14} />
