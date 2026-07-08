@@ -2,17 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import type { PushPhase } from "@prisma/client";
-import { syncPushPlaylistsOnPhaseAdvance } from "@/lib/push-playlist-sync";
+import { advancePushRoundPhase, normalizePushPhase } from "@/lib/push-advance";
 import { announcePushPhaseChange } from "@/lib/game-announcements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const PHASE_ORDER: PushPhase[] = ["SUBMISSION", "LISTENING", "RESULT"];
-
-function normalizePushPhase(phase: PushPhase): PushPhase {
-  return phase === "RANKING" ? "LISTENING" : phase;
-}
 
 export async function PUT(
   req: NextRequest,
@@ -37,6 +31,21 @@ export async function PUT(
   const round = await prisma.pushRound.findUnique({ where: { id: roundId } });
   if (!round) return NextResponse.json({ error: "Rodada não encontrada" }, { status: 404 });
 
+  if (body.advancePhase) {
+    // Inscrições não podem ser encerradas antes do prazo (mesma regra da
+    // validação de datas abaixo, onde listeningEndsAt vira "agora").
+    if (normalizePushPhase(round.phase) === "SUBMISSION" && new Date() < round.submissionEndsAt) {
+      return NextResponse.json(
+        { error: "A escuta deve começar após o fim das inscrições" },
+        { status: 400 },
+      );
+    }
+
+    const result = await advancePushRoundPhase(round);
+    if (!result) return NextResponse.json({ ...round, playlistSync: null });
+    return NextResponse.json({ ...result.updated, playlistSync: result.playlistSync });
+  }
+
   const updates: Partial<{
     phase: PushPhase;
     title: string | null;
@@ -48,48 +57,7 @@ export async function PUT(
     youtubePlaylistId: string | null;
   }> = {};
 
-  let playlistSync: Awaited<ReturnType<typeof syncPushPlaylistsOnPhaseAdvance>> | null = null;
-
-  if (body.advancePhase) {
-    const idx = PHASE_ORDER.indexOf(normalizePushPhase(round.phase));
-
-    if (idx < PHASE_ORDER.length - 1) {
-      updates.phase = PHASE_ORDER[idx + 1];
-
-      // SUBMISSION → Escuta & Avaliação: revelação concluída → escuta começa agora
-      if (round.phase === "SUBMISSION") {
-        updates.listeningEndsAt = new Date();
-
-        const submissions = await prisma.pushSubmission.findMany({
-          where: { roundId },
-          include: { song: { select: { title: true, artist: true } } },
-        });
-
-        if (submissions.length > 0) {
-          playlistSync = await syncPushPlaylistsOnPhaseAdvance({
-            roundId,
-            roundNumber: round.number,
-            season: round.season,
-            trackIds: submissions.map((s) => s.spotifyTrackId),
-            tracks: submissions.map((s) => ({ title: s.song.title, artist: s.song.artist })),
-            existingYoutubePlaylistId: round.youtubePlaylistId,
-          });
-
-          if (playlistSync.spotify?.ok) {
-            updates.spotifyPlaylistId = playlistSync.spotify.playlistId;
-          } else if (playlistSync.spotify && !playlistSync.spotify.ok) {
-            console.error("[push] Spotify playlist on phase advance:", playlistSync.spotify.message);
-          }
-
-          if (playlistSync.youtube?.ok) {
-            updates.youtubePlaylistId = playlistSync.youtube.playlistId;
-          } else if (playlistSync.youtube && !playlistSync.youtube.ok) {
-            console.error("[push] YouTube playlist on phase advance:", playlistSync.youtube.message);
-          }
-        }
-      }
-    }
-  } else if (body.phase) {
+  if (body.phase) {
     updates.phase = body.phase;
   }
 
@@ -121,7 +89,7 @@ export async function PUT(
     await announcePushPhaseChange(updated);
   }
 
-  return NextResponse.json({ ...updated, playlistSync });
+  return NextResponse.json({ ...updated, playlistSync: null });
 }
 
 export async function DELETE(

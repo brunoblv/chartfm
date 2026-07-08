@@ -5,7 +5,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ClubeRoundData, ClubeWinner, UiPhase } from "@/lib/clube-album";
-import { MIN_POLL_VOTES } from "@/lib/clube-album";
+import { MIN_POLL_VOTES } from "@/lib/clube-album-shared";
 import { formatCountdown } from "@/lib/clube-schedule";
 import { scoreColor } from "@/lib/album-score";
 

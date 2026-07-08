@@ -2,6 +2,7 @@ import { AlbumClubPhase, type Prisma } from "@prisma/client";
 import { announceClubePhaseChange, announceClubeRegistrationOpen } from "@/lib/game-announcements";
 import { prisma } from "@/lib/prisma";
 import { buildScheduleFromDate, parseDateInput, parseDateTimeLocal, buildDateRangeLabel } from "@/lib/clube-schedule";
+import { MIN_POLL_VOTES } from "@/lib/clube-album-shared";
 
 export type UiPhase = "0" | "1" | "2" | "3" | "4";
 
@@ -972,7 +973,9 @@ export async function completeClubeRound(roundId: string): Promise<{ ok: true } 
   return { ok: true };
 }
 
-export const MIN_POLL_VOTES = 7;
+// MIN_POLL_VOTES vive em clube-album-shared.ts: componentes client importam de lá
+// sem puxar este módulo (que arrasta system-feed → telegram → playwright).
+export { MIN_POLL_VOTES };
 export const MAX_NOMINATIONS = 2;
 
 export async function submitClubeNominations(
