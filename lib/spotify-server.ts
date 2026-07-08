@@ -271,7 +271,13 @@ function pickBestVersion(tracks: SpotifyTrackApi[]): SpotifyTrackApi {
   })[0];
 }
 
-export async function searchSpotifyTracks(query: string, limit = 10, market: string = "BR", signal?: AbortSignal) {
+export async function searchSpotifyTracks(
+  query: string,
+  limit = 10,
+  market: string = "BR",
+  signal?: AbortSignal,
+  opts?: { maxAttempts?: number },
+) {
   const q = query.trim();
   const lim = Math.min(50, Math.max(1, limit));
   const cacheKey = `${q}|${lim}|${market}`;
@@ -292,11 +298,15 @@ export async function searchSpotifyTracks(query: string, limit = 10, market: str
   url.searchParams.set("limit", String(fetchLimit));
   url.searchParams.set("market", market);
 
-  const res = await spotifyFetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 0 },
-    signal,
-  });
+  const res = await spotifyFetch(
+    url.toString(),
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 0 },
+      signal,
+    },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+  );
 
   if (!res?.ok) return [];
 
@@ -595,16 +605,24 @@ function mapTrackApiToMetadata(track: SpotifyTrackApi): SpotifyTrackMetadata {
   };
 }
 
-export async function getSpotifyTrackMetadataById(trackId: string, market: string = "BR"): Promise<SpotifyTrackMetadata | null> {
+export async function getSpotifyTrackMetadataById(
+  trackId: string,
+  market: string = "BR",
+  opts?: { maxAttempts?: number },
+): Promise<SpotifyTrackMetadata | null> {
   const token = await getAccessToken();
   if (!token) return null;
   const id = trackId.trim();
   if (!id) return null;
 
-  const res = await spotifyFetch(`${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 0 },
-  });
+  const res = await spotifyFetch(
+    `${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 0 },
+    },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+  );
   if (!res?.ok) return null;
   const track = (await res.json()) as SpotifyTrackApi;
   if (!track?.id) return null;

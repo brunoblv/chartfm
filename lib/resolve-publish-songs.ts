@@ -468,13 +468,14 @@ async function enrichSongRowFromExistingTwin(
 async function enrichSongRowBySearch(
   db: Db,
   row: { id: string; title: string; artist: string; spotifyId: string | null },
+  opts?: { maxAttempts?: number },
 ): Promise<boolean> {
   const invalidId = row.spotifyId != null && !isSpotifyTrackId(row.spotifyId);
   const minScore = invalidId ? 100 : 120;
 
   const seen = new Map<string, { title: string; artist: string; album: string; spotifyId: string }>();
   for (const query of searchQueriesForRow(row)) {
-    const matches = await searchSpotifyTracks(query, 8);
+    const matches = await searchSpotifyTracks(query, 8, "BR", undefined, opts);
     for (const m of matches) seen.set(m.spotifyId, m);
   }
   if (seen.size === 0) return false;
@@ -490,7 +491,7 @@ async function enrichSongRowBySearch(
   }
   if (bestScore < minScore) return false;
 
-  const meta = await getSpotifyTrackMetadataById(best.spotifyId);
+  const meta = await getSpotifyTrackMetadataById(best.spotifyId, "BR", opts);
   if (!meta?.album.coverUrl?.trim()) return false;
 
   return applySpotifyMetadataToSongRow(
@@ -504,9 +505,10 @@ async function enrichSongRowBySearch(
 async function enrichSongRowFallback(
   db: Db,
   row: { id: string; title: string; artist: string; spotifyId: string | null },
+  opts?: { maxAttempts?: number },
 ): Promise<boolean> {
   if (await enrichSongRowFromExistingTwin(db, row)) return true;
-  return enrichSongRowBySearch(db, row);
+  return enrichSongRowBySearch(db, row, opts);
 }
 
 export type EnrichSongsResult = {
@@ -561,7 +563,7 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
     for (const row of needsEnrich) {
       if (updatedById.has(row.id)) continue;
       try {
-        const ok = await enrichSongRowFallback(db, row);
+        const ok = await enrichSongRowFallback(db, row, { maxAttempts: 1 });
         if (!ok) continue;
         const fresh = await db.song.findUnique({
           where: { id: row.id },
