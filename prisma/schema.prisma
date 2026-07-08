@@ -258,6 +258,11 @@ model Parada {
   // Parada oficial de uma comunidade (charts com Chart.communityId) — vive sob um userId
   // por exigência do schema, mas não é "do usuário": some do perfil dele e não conta no limite.
   isCommunityOfficial Boolean @default(false) @map("is_community_official")
+  // Paradas "de estilo" simuladas: toda semana as músicas caem aleatoriamente 1-7
+  // posições até sair, e a(s) vaga(s) no topo são preenchidas com novas faixas do
+  // Last.fm dos usuários-fonte, filtradas por `genres`. Ver lib/genre-parada-decay.ts.
+  autoDecay        Boolean  @default(false) @map("auto_decay")
+  sourceLastfmUsers String[] @default([]) @map("source_lastfm_users")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")

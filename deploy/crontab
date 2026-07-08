@@ -50,3 +50,6 @@ TZ=America/Sao_Paulo
 
 # Radar de Lançamentos — terça 12h: sincroniza a lista com o top 200 do Global da semana
 0 12 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar-import >> /root/chartfm/logs/cron.log 2>&1
+
+# Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora)
+20 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
