@@ -41,3 +41,9 @@ TZ=America/Sao_Paulo
 
 # Domingo 23:59 — abre a Votação da Semana (Melhor da Semana + Flashback) e notifica todos
 59 23 * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
+
+# Radar de Lançamentos — checa artistas monitorados no Spotify e avisa no Telegram (de hora em hora)
+15 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar >> /root/chartfm/logs/cron.log 2>&1
+
+# Radar de Lançamentos — terça 12h: sincroniza a lista com o top 200 do Global da semana
+0 12 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar-import >> /root/chartfm/logs/cron.log 2>&1

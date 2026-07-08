@@ -448,6 +448,38 @@ export async function listSpotifyArtistAlbums(
   return out;
 }
 
+/**
+ * Lançamentos recentes do artista (só álbuns e singles, 1ª página — os 50 mais novos).
+ * Versão leve de `listSpotifyArtistAlbums` para o Radar de Lançamentos: sem appears_on
+ * e sem paginação, já que só interessam datas dentro da janela do radar.
+ */
+export async function listSpotifyArtistRecentReleases(
+  artistSpotifyId: string,
+  market: string = "BR",
+): Promise<SpotifyArtistAlbumRef[]> {
+  const token = await getAccessToken();
+  if (!token) return [];
+  const id = artistSpotifyId.trim();
+  if (!id) return [];
+
+  const url =
+    `${API_BASE}/artists/${encodeURIComponent(id)}/albums?include_groups=album,single&market=${encodeURIComponent(market)}&limit=50`;
+  const res = await spotifyFetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 0 },
+  });
+  if (!res?.ok) return [];
+  const json = (await res.json()) as SpotifyArtistAlbumsPageJson;
+  return (json.items ?? [])
+    .filter((it) => Boolean(it?.id && it?.name))
+    .map((it) => ({
+      spotifyId: it.id,
+      name: it.name,
+      albumType: it.album_type ?? null,
+      releaseDate: it.release_date ?? null,
+    }));
+}
+
 type SpotifyAlbumApi = {
   id: string;
   name: string;

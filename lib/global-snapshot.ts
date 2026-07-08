@@ -342,6 +342,31 @@ export async function computeGlobalSnapshotData(
   };
 }
 
+/**
+ * Top N artistas da última semana congelada do Global. O snapshot salvo guarda
+ * só o top 100, então recalcula das entradas da semana (mesmo filtro/deadline)
+ * para permitir limites maiores — usado pelo Radar de Lançamentos (top 200).
+ */
+export async function computeLatestWeeklyTopArtists(limit: number): Promise<{
+  weekIndex: number;
+  weekLabel: string;
+  artists: ReturnType<typeof aggregateTopArtists>;
+} | null> {
+  const latest = await prisma.globalSnapshot.findFirst({
+    orderBy: { weekIndex: "desc" },
+    select: { weekIndex: true, weekLabel: true },
+  });
+  if (!latest) return null;
+
+  const deadline = getGlobalSnapshotDeadline(latest.weekIndex);
+  const entries = await loadWeeklyGlobalEntries(latest.weekIndex, deadline);
+  return {
+    weekIndex: latest.weekIndex,
+    weekLabel: latest.weekLabel,
+    artists: aggregateTopArtists(entries, limit, { weightMode: "stored" }),
+  };
+}
+
 export async function getOrCreateRankingWeekSnapshot(now: Date = new Date()) {
   const rankingWeek = getRankingWeekReference(now);
   const existing = await prisma.globalSnapshot.findUnique({

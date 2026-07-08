@@ -1369,3 +1369,37 @@ model WeeklySpotlightVote {
   @@index([userId], map: "idx_weekly_spotlight_votes_user_id")
   @@map("weekly_spotlight_votes")
 }
+
+/// Radar de Lançamentos — artista monitorado no Spotify; o cron avisa novos lançamentos no Telegram.
+/// `source`: "manual" (adicionado no admin, nunca removido automaticamente) ou
+/// "global" (importado do top 200 do Global da semana; sai quando sai do top).
+model ArtistReleaseWatch {
+  id            Int       @id @default(autoincrement())
+  spotifyId     String    @unique @map("spotify_id")
+  name          String
+  imageUrl      String?   @map("image_url")
+  source        String    @default("manual")
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastCheckedAt DateTime? @map("last_checked_at")
+  notifications ArtistReleaseNotification[]
+
+  @@map("artist_release_watches")
+}
+
+/// Lançamento já registrado pelo radar (dedupe). `announced=false` = pré-existente ao monitoramento, não avisado.
+model ArtistReleaseNotification {
+  id             Int      @id @default(autoincrement())
+  watchId        Int      @map("watch_id")
+  albumSpotifyId String   @map("album_spotify_id")
+  title          String
+  albumType      String?  @map("album_type")
+  releaseDate    String?  @map("release_date")
+  announced      Boolean  @default(true)
+  notifiedAt     DateTime @default(now()) @map("notified_at")
+  watch          ArtistReleaseWatch @relation(fields: [watchId], references: [id], onDelete: Cascade)
+
+  @@unique([watchId, albumSpotifyId])
+  @@index([notifiedAt], map: "idx_artist_release_notifications_notified_at")
+  @@map("artist_release_notifications")
+}

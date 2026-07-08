@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -536,6 +536,10 @@ function SidebarContent({
               <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
                 <Sparkles size={14} />
                 <span>Lançamentos</span>
+              </Link>
+              <Link href="/admin/radar-lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/radar-lancamentos")}>
+                <Radar size={14} />
+                <span>Radar de Lançamentos</span>
               </Link>
               <Link href="/admin/gerador-de-imagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/gerador-de-imagens")}>
                 <ImagePlay size={14} />

@@ -59,19 +59,21 @@ async function telegramFetch(config: TelegramConfig, method: string, body: BodyI
   }
 }
 
-function buildCaption(text: string, url: string | null): string {
+const DEFAULT_LINK_LABEL = "Abrir no ChartFM →";
+
+function buildCaption(text: string, url: string | null, linkLabel: string = DEFAULT_LINK_LABEL): string {
   const base = escapeHtml(text);
-  return url ? `${base}\n\n<a href="${escapeHtml(url)}">Abrir no ChartFM →</a>` : base;
+  return url ? `${base}\n\n<a href="${escapeHtml(url)}">${escapeHtml(linkLabel)}</a>` : base;
 }
 
 /** Envia uma mensagem de texto simples ao grupo. */
-export async function sendTelegramMessage(text: string, targetUrl?: string | null): Promise<boolean> {
+export async function sendTelegramMessage(text: string, targetUrl?: string | null, linkLabel?: string): Promise<boolean> {
   const config = readConfig();
   if (!config || !config.enabled) return false;
 
   const body = JSON.stringify({
     chat_id: config.chatId,
-    text: buildCaption(text, absoluteUrl(targetUrl)),
+    text: buildCaption(text, absoluteUrl(targetUrl), linkLabel),
     parse_mode: "HTML",
     disable_web_page_preview: false,
   });
@@ -79,13 +81,13 @@ export async function sendTelegramMessage(text: string, targetUrl?: string | nul
 }
 
 /** Envia uma foto (PNG) com legenda ao grupo. */
-export async function sendTelegramPhoto(png: Buffer, caption: string, targetUrl?: string | null): Promise<boolean> {
+export async function sendTelegramPhoto(png: Buffer, caption: string, targetUrl?: string | null, linkLabel?: string): Promise<boolean> {
   const config = readConfig();
   if (!config || !config.enabled) return false;
 
   const form = new FormData();
   form.set("chat_id", config.chatId);
-  form.set("caption", buildCaption(caption, absoluteUrl(targetUrl)));
+  form.set("caption", buildCaption(caption, absoluteUrl(targetUrl), linkLabel));
   form.set("parse_mode", "HTML");
   form.set("photo", new Blob([new Uint8Array(png)], { type: "image/png" }), "chartfm-card.png");
   return telegramFetch(config, "sendPhoto", form);
@@ -100,6 +102,7 @@ function styleForKind(kind: string): EventStyle {
   if (k.startsWith("push")) return { eyebrow: "ChartFM Push", accent: "#06D6A0" };
   if (k.startsWith("clube")) return { eyebrow: "Clube do Álbum", accent: "#7C5CFF" };
   if (k.startsWith("global")) return { eyebrow: "Parada Global", accent: "#FA243C" };
+  if (k.startsWith("release")) return { eyebrow: "Radar de Lançamentos", accent: "#1DB954" };
   if (k.startsWith("weekly_poll")) return { eyebrow: "Votação da Semana", accent: "#B89CFF" };
   return { eyebrow: "Aviso ChartFM", accent: "#FA243C" };
 }
