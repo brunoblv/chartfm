@@ -59,3 +59,6 @@ TZ=America/Sao_Paulo
 
 # Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora)
 20 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
+
+# Copa — usuários das paradas de estilo votam nos jogos abertos assim que abrem (a cada minuto)
+* * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-bruno-auto-vote >> /root/chartfm/logs/cron.log 2>&1
