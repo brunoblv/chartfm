@@ -63,7 +63,8 @@ async function getPublishedThisWeek(
 ): Promise<PublisherRow[]> {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const charts = await prisma.chart.findMany({
-    where: { userId: { not: userId }, isPublished: true, postedAt: { gte: since } },
+    // parada.autoDecay: paradas "de estilo" simuladas (queda semanal) não entram no feed.
+    where: { userId: { not: userId }, isPublished: true, postedAt: { gte: since }, parada: { autoDecay: false } },
     orderBy: { postedAt: "desc" },
     take: 30,
     select: {
@@ -112,6 +113,8 @@ async function getTimelineFeed(
     where: {
       weekIndex: { gte: weekIdx - 2 },
       isPublished: true,
+      // paradas "de estilo" simuladas (queda semanal) não entram no feed.
+      parada: { autoDecay: false },
     },
     orderBy: { postedAt: "desc" },
     take: 80,
