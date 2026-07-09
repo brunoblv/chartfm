@@ -5,6 +5,7 @@ import {
   type PhasePlaylistSyncReport,
 } from "@/lib/push-playlist-sync";
 import { announcePushPhaseChange } from "@/lib/game-announcements";
+import { onPushPhaseChanged } from "@/lib/social/events";
 
 export const PUSH_PHASE_ORDER: PushPhase[] = ["SUBMISSION", "LISTENING", "RESULT"];
 
@@ -74,6 +75,7 @@ export async function advancePushRoundPhase(round: PushRound): Promise<PushAdvan
   });
 
   await announcePushPhaseChange(updated);
+  onPushPhaseChanged(updated.id, updated.phase).catch((e) => console.error("[push-advance] onPushPhaseChanged", e));
 
   return { updated, playlistSync };
 }

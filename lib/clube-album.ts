@@ -3,6 +3,7 @@ import { announceClubePhaseChange, announceClubeRegistrationOpen } from "@/lib/g
 import { prisma } from "@/lib/prisma";
 import { buildScheduleFromDate, parseDateInput, parseDateTimeLocal, buildDateRangeLabel } from "@/lib/clube-schedule";
 import { MIN_POLL_VOTES } from "@/lib/clube-album-shared";
+import { onAlbumClubWinner } from "@/lib/social/events";
 
 export type UiPhase = "0" | "1" | "2" | "3" | "4";
 
@@ -284,6 +285,11 @@ async function computeWinners(roundId: string): Promise<void> {
       }),
     ),
   ]);
+
+  const winnerNomination = await prisma.albumClubNomination.findUnique({ where: { id: top[0].nominationId }, select: { albumId: true } });
+  if (winnerNomination) {
+    onAlbumClubWinner(roundId, winnerNomination.albumId).catch((e) => console.error("[clube-album] onAlbumClubWinner", e));
+  }
 }
 
 export async function syncRoundPhase(roundId: string): Promise<AlbumClubPhase> {

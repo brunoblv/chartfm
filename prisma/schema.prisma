@@ -15,85 +15,85 @@ enum UserRole {
 }
 
 model User {
-  id                   String            @id @default(cuid())
-  handle               String            @unique
-  name                 String
-  email                String?           @unique
-  image                String?
-  googleId             String?           @unique
-  passwordHash         String?           @map("password_hash")
-  emailVerifiedAt      DateTime?         @map("email_verified_at")
-  avatarColor          String            @default("#FA243C")
-  bio                  String?
-  followers            Int               @default(0)
-  following            Int               @default(0)
-  streak               Int               @default(0)
-  verified             Boolean           @default(false)
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  paradaNome           String?
-  genres               String[]          @default([])
-  role                 UserRole          @default(USER)
-  needsHandle          Boolean           @default(false) @map("needs_handle")
-  lastfmUser           String?
-  spotifyAccessToken   String?           @map("spotify_access_token")
-  spotifyRefreshToken  String?           @map("spotify_refresh_token")
-  spotifyTokenExpiresAt DateTime?        @map("spotify_token_expires_at")
-  spotifyUserId        String?           @map("spotify_user_id")
-  spotifyNewHitsPlaylistId String?       @map("spotify_new_hits_playlist_id")
-  youtubeAccessToken   String?           @map("youtube_access_token")
-  youtubeRefreshToken  String?           @map("youtube_refresh_token")
-  youtubeTokenExpiresAt DateTime?        @map("youtube_token_expires_at")
-  youtubeChannelId     String?           @map("youtube_channel_id")
-  youtubeChannelHandle String?           @map("youtube_channel_handle")
-  twitterUser          String?
-  instagramUser        String?
-  chartSize            Int?              @map("chart_size")
-  paradaLogo           String?           @map("parada_logo")
-  paradas              Parada[]
-  charts               Chart[]
-  likes                ChartLike[]
-  reposts              ChartRepost[]
-  comments             Comment[]
-  commentLikes         CommentLike[]
-  commentReplies       CommentReply[]
-  paradaComments       ParadaComment[]
-  paradaCommentLikes   ParadaCommentLike[]
-  communityMemberships CommunityMember[]
-  actorNotifs          Notification[]    @relation("NotificationActor")
-  notifications        Notification[]    @relation("NotificationRecipient")
-  posts                Post[]
-  postLikes            PostLike[]
-  postReplies          PostReply[]
-  albumReviews         AlbumReview[]
-  albumReviewHelpful   AlbumReviewHelpful[]
-  ownedCommunities     Community[]        @relation("CommunityOwner")
-  followerLinks        UserFollow[]       @relation("UserFollows")
-  followingLinks       UserFollow[]       @relation("UserFollowing")
-  uploadedVideoClips   SongVideoClip[]
-  videoClipVotes       SongVideoClipVote[]
-  videoClipChoices     UserSongVideoClipChoice[]
-  albumClubNominations AlbumClubNomination[]
-  albumClubPollVotes   AlbumClubPollVote[]
-  pushSubmissions      PushSubmission[]
-  pushVotes            PushVote[]
-  songRecommendations  SongRecommendation[]
-  songRecommendationLikes SongRecommendationLike[]
-  songRecommendationComments SongRecommendationComment[]
-  songRecommendationCommentLikes SongRecommendationCommentLike[]
+  id                               String                           @id @default(cuid())
+  handle                           String                           @unique
+  name                             String
+  email                            String?                          @unique
+  image                            String?
+  googleId                         String?                          @unique
+  passwordHash                     String?                          @map("password_hash")
+  emailVerifiedAt                  DateTime?                        @map("email_verified_at")
+  avatarColor                      String                           @default("#FA243C")
+  bio                              String?
+  followers                        Int                              @default(0)
+  following                        Int                              @default(0)
+  streak                           Int                              @default(0)
+  verified                         Boolean                          @default(false)
+  createdAt                        DateTime                         @default(now())
+  updatedAt                        DateTime                         @updatedAt
+  paradaNome                       String?
+  genres                           String[]                         @default([])
+  role                             UserRole                         @default(USER)
+  needsHandle                      Boolean                          @default(false) @map("needs_handle")
+  lastfmUser                       String?
+  spotifyAccessToken               String?                          @map("spotify_access_token")
+  spotifyRefreshToken              String?                          @map("spotify_refresh_token")
+  spotifyTokenExpiresAt            DateTime?                        @map("spotify_token_expires_at")
+  spotifyUserId                    String?                          @map("spotify_user_id")
+  spotifyNewHitsPlaylistId         String?                          @map("spotify_new_hits_playlist_id")
+  youtubeAccessToken               String?                          @map("youtube_access_token")
+  youtubeRefreshToken              String?                          @map("youtube_refresh_token")
+  youtubeTokenExpiresAt            DateTime?                        @map("youtube_token_expires_at")
+  youtubeChannelId                 String?                          @map("youtube_channel_id")
+  youtubeChannelHandle             String?                          @map("youtube_channel_handle")
+  twitterUser                      String?
+  instagramUser                    String?
+  chartSize                        Int?                             @map("chart_size")
+  paradaLogo                       String?                          @map("parada_logo")
+  paradas                          Parada[]
+  charts                           Chart[]
+  likes                            ChartLike[]
+  reposts                          ChartRepost[]
+  comments                         Comment[]
+  commentLikes                     CommentLike[]
+  commentReplies                   CommentReply[]
+  paradaComments                   ParadaComment[]
+  paradaCommentLikes               ParadaCommentLike[]
+  communityMemberships             CommunityMember[]
+  actorNotifs                      Notification[]                   @relation("NotificationActor")
+  notifications                    Notification[]                   @relation("NotificationRecipient")
+  posts                            Post[]
+  postLikes                        PostLike[]
+  postReplies                      PostReply[]
+  albumReviews                     AlbumReview[]
+  albumReviewHelpful               AlbumReviewHelpful[]
+  ownedCommunities                 Community[]                      @relation("CommunityOwner")
+  followerLinks                    UserFollow[]                     @relation("UserFollows")
+  followingLinks                   UserFollow[]                     @relation("UserFollowing")
+  uploadedVideoClips               SongVideoClip[]
+  videoClipVotes                   SongVideoClipVote[]
+  videoClipChoices                 UserSongVideoClipChoice[]
+  albumClubNominations             AlbumClubNomination[]
+  albumClubPollVotes               AlbumClubPollVote[]
+  pushSubmissions                  PushSubmission[]
+  pushVotes                        PushVote[]
+  songRecommendations              SongRecommendation[]
+  songRecommendationLikes          SongRecommendationLike[]
+  songRecommendationComments       SongRecommendationComment[]
+  songRecommendationCommentLikes   SongRecommendationCommentLike[]
   songRecommendationCommentReplies SongRecommendationCommentReply[]
-  copaParticipations   CopaParticipant[]
-  copaArtists          CopaArtist[]
-  copaVotes            CopaVote[]
-  copaLiveComments     CopaLiveComment[]
-  copaLiveCommentLikes CopaLiveCommentLike[]
-  passwordResetTokens  PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  supportTickets       SupportTicket[]
-  supportTicketMessages SupportTicketMessage[]
-  weeklySpotlightNominations WeeklySpotlightNomination[]
-  weeklySpotlightVotes WeeklySpotlightVote[]
-  songFlags            SongFlag[]
+  copaParticipations               CopaParticipant[]
+  copaArtists                      CopaArtist[]
+  copaVotes                        CopaVote[]
+  copaLiveComments                 CopaLiveComment[]
+  copaLiveCommentLikes             CopaLiveCommentLike[]
+  passwordResetTokens              PasswordResetToken[]
+  emailVerificationTokens          EmailVerificationToken[]
+  supportTickets                   SupportTicket[]
+  supportTicketMessages            SupportTicketMessage[]
+  weeklySpotlightNominations       WeeklySpotlightNomination[]
+  weeklySpotlightVotes             WeeklySpotlightVote[]
+  songFlags                        SongFlag[]
 }
 
 model PasswordResetToken {
@@ -121,19 +121,19 @@ model EmailVerificationToken {
 }
 
 model Artist {
-  id         Int        @id @default(autoincrement())
-  spotifyId  String     @unique @map("spotify_id")
-  name       String
-  exhibitionName String? @map("exhibition_name")
-  genres     String[]   @default([])
-  imageUrl   String?    @map("image_url")
-  spotifyUrl String?    @map("spotify_url")
-  bio        String?
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
-  albums     Album[]
-  songs      Song[]     @relation("PrimarySongArtist")
-  feats      SongFeat[]
+  id             Int        @id @default(autoincrement())
+  spotifyId      String     @unique @map("spotify_id")
+  name           String
+  exhibitionName String?    @map("exhibition_name")
+  genres         String[]   @default([])
+  imageUrl       String?    @map("image_url")
+  spotifyUrl     String?    @map("spotify_url")
+  bio            String?
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  albums         Album[]
+  songs          Song[]     @relation("PrimarySongArtist")
+  feats          SongFeat[]
 
   @@index([spotifyId], map: "idx_artists_spotify_id")
   @@map("artists")
@@ -149,25 +149,25 @@ enum AlbumType {
 }
 
 model Album {
-  id              Int         @id @default(autoincrement())
-  spotifyId       String      @unique @map("spotify_id")
-  title           String
-  exhibitionName  String?     @map("exhibition_name")
-  artistSpotifyId String      @map("artist_spotify_id")
-  albumType       AlbumType?  @map("album_type")
-  releaseDate     DateTime?   @map("release_date") @db.Date
-  coverUrl        String?     @map("cover_url")
-  spotifyUrl      String?     @map("spotify_url")
-  totalTracks     Int?        @map("total_tracks")
-  label           String?     @map("label")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  artist          Artist      @relation(fields: [artistSpotifyId], references: [spotifyId])
-  songs           Song[]      @relation("AlbumSongs")
-  chartEntries    ChartEntry[] @relation("ChartEntryAlbumSpotify")
-  reviews              AlbumReview[]
-  clubNominations      AlbumClubNomination[]
-  weeklyReleaseAlbums  WeeklyReleaseAlbum[]
+  id                  Int                   @id @default(autoincrement())
+  spotifyId           String                @unique @map("spotify_id")
+  title               String
+  exhibitionName      String?               @map("exhibition_name")
+  artistSpotifyId     String                @map("artist_spotify_id")
+  albumType           AlbumType?            @map("album_type")
+  releaseDate         DateTime?             @map("release_date") @db.Date
+  coverUrl            String?               @map("cover_url")
+  spotifyUrl          String?               @map("spotify_url")
+  totalTracks         Int?                  @map("total_tracks")
+  label               String?               @map("label")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  artist              Artist                @relation(fields: [artistSpotifyId], references: [spotifyId])
+  songs               Song[]                @relation("AlbumSongs")
+  chartEntries        ChartEntry[]          @relation("ChartEntryAlbumSpotify")
+  reviews             AlbumReview[]
+  clubNominations     AlbumClubNomination[]
+  weeklyReleaseAlbums WeeklyReleaseAlbum[]
 
   @@index([spotifyId], map: "idx_albums_spotify_id")
   @@index([artistSpotifyId], map: "idx_albums_artist_spotify_id")
@@ -175,45 +175,45 @@ model Album {
 }
 
 model Song {
-  id      String       @id @default(cuid())
-  title   String
-  exhibitionName String? @map("exhibition_name")
-  artist  String
-  album   String?
-  entries ChartEntry[]
-  chartsAsFlashback Chart[] @relation("ChartFlashback")
-  chartsAsDestaque  Chart[] @relation("ChartDestaque")
-  spotifyId       String?      @unique @map("spotify_id")
-  artistSpotifyId String?      @map("artist_spotify_id")
-  albumSpotifyId  String?      @map("album_spotify_id")
-  durationMs      Int?         @map("duration_ms")
-  previewUrl      String?      @map("preview_url")
-  spotifyUrl      String?      @map("spotify_url")
-  trackNumber     Int?         @map("track_number")
-  genres          String[]     @default([])
-  genreSource     String?      @map("genre_source")
-  recordingMbid   String?      @map("recording_mbid")
-  isrc            String?      @map("isrc")
-  genresFetchedAt DateTime?    @map("genres_fetched_at")
-  singleReleaseDate         DateTime? @map("single_release_date") @db.Date
-  musicVideoReleaseDate     DateTime? @map("music_video_release_date") @db.Date
-  youtubeReleaseDate        DateTime? @map("youtube_release_date") @db.Date
-  singleReleaseDateFetchedAt DateTime? @map("single_release_date_fetched_at")
+  id                         String                    @id @default(cuid())
+  title                      String
+  exhibitionName             String?                   @map("exhibition_name")
+  artist                     String
+  album                      String?
+  entries                    ChartEntry[]
+  chartsAsFlashback          Chart[]                   @relation("ChartFlashback")
+  chartsAsDestaque           Chart[]                   @relation("ChartDestaque")
+  spotifyId                  String?                   @unique @map("spotify_id")
+  artistSpotifyId            String?                   @map("artist_spotify_id")
+  albumSpotifyId             String?                   @map("album_spotify_id")
+  durationMs                 Int?                      @map("duration_ms")
+  previewUrl                 String?                   @map("preview_url")
+  spotifyUrl                 String?                   @map("spotify_url")
+  trackNumber                Int?                      @map("track_number")
+  genres                     String[]                  @default([])
+  genreSource                String?                   @map("genre_source")
+  recordingMbid              String?                   @map("recording_mbid")
+  isrc                       String?                   @map("isrc")
+  genresFetchedAt            DateTime?                 @map("genres_fetched_at")
+  singleReleaseDate          DateTime?                 @map("single_release_date") @db.Date
+  musicVideoReleaseDate      DateTime?                 @map("music_video_release_date") @db.Date
+  youtubeReleaseDate         DateTime?                 @map("youtube_release_date") @db.Date
+  singleReleaseDateFetchedAt DateTime?                 @map("single_release_date_fetched_at")
   /// Backfill automático (Wikipedia/MB) não achou datas — não tentar de novo até correção manual.
-  releaseDatesNotFoundAt    DateTime? @map("release_dates_not_found_at")
-  releaseDatesVersion       Int       @default(0) @map("release_dates_version")
-  editorialNote             String?   @map("editorial_note")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  artistRef       Artist?      @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
-  albumRef        Album?       @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])
-  feats           SongFeat[]
-  chartEntriesBySpotify ChartEntry[] @relation("ChartEntrySongSpotify")
-  videoClips            SongVideoClip[]
-  videoClipChoices      UserSongVideoClipChoice[]
-  pushSubmissions       PushSubmission[]
-  recommendations       SongRecommendation[]
-  weeklySpotlightOptions WeeklySpotlightOption[]
-  flags                 SongFlag[]
+  releaseDatesNotFoundAt     DateTime?                 @map("release_dates_not_found_at")
+  releaseDatesVersion        Int                       @default(0) @map("release_dates_version")
+  editorialNote              String?                   @map("editorial_note")
+  createdAt                  DateTime                  @default(now()) @map("created_at")
+  artistRef                  Artist?                   @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
+  albumRef                   Album?                    @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])
+  feats                      SongFeat[]
+  chartEntriesBySpotify      ChartEntry[]              @relation("ChartEntrySongSpotify")
+  videoClips                 SongVideoClip[]
+  videoClipChoices           UserSongVideoClipChoice[]
+  pushSubmissions            PushSubmission[]
+  recommendations            SongRecommendation[]
+  weeklySpotlightOptions     WeeklySpotlightOption[]
+  flags                      SongFlag[]
 
   @@unique([title, artist])
   @@index([spotifyId], map: "idx_songs_spotify_id")
@@ -272,28 +272,28 @@ enum ParadaCadence {
 }
 
 model Parada {
-  id        String        @id @default(cuid())
-  userId    String        @map("user_id")
-  name      String
-  logo      String?       @map("logo")
-  genres    String[]      @default([])
-  isPrimary Boolean       @default(true) @map("is_primary")
-  sortOrder Int           @default(0) @map("sort_order")
-  chartSize Int?          @map("chart_size")
-  cadence   ParadaCadence @default(WEEKLY)
+  id                  String        @id @default(cuid())
+  userId              String        @map("user_id")
+  name                String
+  logo                String?       @map("logo")
+  genres              String[]      @default([])
+  isPrimary           Boolean       @default(true) @map("is_primary")
+  sortOrder           Int           @default(0) @map("sort_order")
+  chartSize           Int?          @map("chart_size")
+  cadence             ParadaCadence @default(WEEKLY)
   // Parada oficial de uma comunidade (charts com Chart.communityId) — vive sob um userId
   // por exigência do schema, mas não é "do usuário": some do perfil dele e não conta no limite.
-  isCommunityOfficial Boolean @default(false) @map("is_community_official")
+  isCommunityOfficial Boolean       @default(false) @map("is_community_official")
   // Paradas "de estilo" simuladas: toda semana as músicas caem aleatoriamente 1-7
   // posições até sair, e a(s) vaga(s) no topo são preenchidas com novas faixas do
   // Last.fm dos usuários-fonte, filtradas por `genres`. Ver lib/genre-parada-decay.ts.
-  autoDecay        Boolean  @default(false) @map("auto_decay")
-  sourceLastfmUsers String[] @default([]) @map("source_lastfm_users")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  charts    Chart[]
+  autoDecay           Boolean       @default(false) @map("auto_decay")
+  sourceLastfmUsers   String[]      @default([]) @map("source_lastfm_users")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  deletedAt           DateTime?     @map("deleted_at")
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  charts              Chart[]
 
   @@unique([userId, sortOrder])
   @@index([userId], map: "idx_paradas_user_id")
@@ -302,36 +302,36 @@ model Parada {
 }
 
 model Chart {
-  id            String        @id @default(cuid())
-  userId        String
-  paradaId      String        @map("parada_id")
-  weekIndex     Int
-  weekLabel     String
-  dateRange     String
-  publishedAt   DateTime      @default(now())
-  postedAt      DateTime      @default(now())
-  likes         Int           @default(0)
-  comments      Int           @default(0)
-  reposts       Int           @default(0)
-  user          User          @relation(fields: [userId], references: [id])
-  parada        Parada        @relation(fields: [paradaId], references: [id], onDelete: Cascade)
-  entries       ChartEntry[]
-  chartLikes    ChartLike[]
-  chartReposts  ChartRepost[]
-  chartComments Comment[]
-  slug          String?       @unique
-  title         String?
-  description   String?
-  chartType     ChartType     @default(SONGS) @map("chart_type")
-  weekStartDate DateTime?     @map("week_start_date") @db.Date
-  isPublished   Boolean       @default(true) @map("is_published")
-  maxItems      Int           @default(100) @map("max_items")
-  communityId   String?       @map("community_id")
-  community     Community?    @relation(fields: [communityId], references: [id])
-  flashbackSongId String?     @map("flashback_song_id")
-  destaqueSongId  String?     @map("destaque_song_id")
-  flashbackSong   Song?       @relation("ChartFlashback", fields: [flashbackSongId], references: [id], onDelete: SetNull)
-  destaqueSong    Song?       @relation("ChartDestaque", fields: [destaqueSongId], references: [id], onDelete: SetNull)
+  id              String        @id @default(cuid())
+  userId          String
+  paradaId        String        @map("parada_id")
+  weekIndex       Int
+  weekLabel       String
+  dateRange       String
+  publishedAt     DateTime      @default(now())
+  postedAt        DateTime      @default(now())
+  likes           Int           @default(0)
+  comments        Int           @default(0)
+  reposts         Int           @default(0)
+  user            User          @relation(fields: [userId], references: [id])
+  parada          Parada        @relation(fields: [paradaId], references: [id], onDelete: Cascade)
+  entries         ChartEntry[]
+  chartLikes      ChartLike[]
+  chartReposts    ChartRepost[]
+  chartComments   Comment[]
+  slug            String?       @unique
+  title           String?
+  description     String?
+  chartType       ChartType     @default(SONGS) @map("chart_type")
+  weekStartDate   DateTime?     @map("week_start_date") @db.Date
+  isPublished     Boolean       @default(true) @map("is_published")
+  maxItems        Int           @default(100) @map("max_items")
+  communityId     String?       @map("community_id")
+  community       Community?    @relation(fields: [communityId], references: [id])
+  flashbackSongId String?       @map("flashback_song_id")
+  destaqueSongId  String?       @map("destaque_song_id")
+  flashbackSong   Song?         @relation("ChartFlashback", fields: [flashbackSongId], references: [id], onDelete: SetNull)
+  destaqueSong    Song?         @relation("ChartDestaque", fields: [destaqueSongId], references: [id], onDelete: SetNull)
 
   @@unique([paradaId, weekIndex])
   @@index([userId, weekStartDate], map: "idx_charts_user_week")
@@ -342,26 +342,26 @@ model Chart {
 }
 
 model ChartEntry {
-  id            String @id @default(cuid())
-  chartId       String
-  songId        String
-  position      Int
-  points        Int    @default(0)
-  createdAt     DateTime @default(now()) @map("created_at")
-  songSpotifyId String?  @map("song_spotify_id")
-  albumSpotifyId String? @map("album_spotify_id")
-  status        String @default("new")
-  delta         Int?
-  prevPos       Int?
-  peak          Int
-  weeks         Int    @default(1)
-  coverPaletteA String @default("#FF6B6B")
-  coverPaletteB String @default("#FFE66D")
-  coverSeed     Int    @default(0)
-  chart         Chart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
-  song          Song   @relation(fields: [songId], references: [id])
-  songBySpotify Song?  @relation("ChartEntrySongSpotify", fields: [songSpotifyId], references: [spotifyId])
-  albumBySpotify Album? @relation("ChartEntryAlbumSpotify", fields: [albumSpotifyId], references: [spotifyId])
+  id             String   @id @default(cuid())
+  chartId        String
+  songId         String
+  position       Int
+  points         Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  songSpotifyId  String?  @map("song_spotify_id")
+  albumSpotifyId String?  @map("album_spotify_id")
+  status         String   @default("new")
+  delta          Int?
+  prevPos        Int?
+  peak           Int
+  weeks          Int      @default(1)
+  coverPaletteA  String   @default("#FF6B6B")
+  coverPaletteB  String   @default("#FFE66D")
+  coverSeed      Int      @default(0)
+  chart          Chart    @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  song           Song     @relation(fields: [songId], references: [id])
+  songBySpotify  Song?    @relation("ChartEntrySongSpotify", fields: [songSpotifyId], references: [spotifyId])
+  albumBySpotify Album?   @relation("ChartEntryAlbumSpotify", fields: [albumSpotifyId], references: [spotifyId])
 
   @@unique([chartId, position])
   @@index([chartId, position], map: "idx_chart_entries_chart_position")
@@ -394,18 +394,18 @@ model ChartRepost {
 }
 
 model Comment {
-  id         String         @id @default(cuid())
-  chartId    String
-  userId     String
-  text       String
-  likes      Int            @default(0)
-  reactions  String         @default("[]")
-  replyCount Int            @default(0)
-  createdAt  DateTime       @default(now())
-  chart      Chart          @relation(fields: [chartId], references: [id], onDelete: Cascade)
-  user       User           @relation(fields: [userId], references: [id])
+  id           String         @id @default(cuid())
+  chartId      String
+  userId       String
+  text         String
+  likes        Int            @default(0)
+  reactions    String         @default("[]")
+  replyCount   Int            @default(0)
+  createdAt    DateTime       @default(now())
+  chart        Chart          @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id])
   commentLikes CommentLike[]
-  replies    CommentReply[]
+  replies      CommentReply[]
 }
 
 model CommentLike {
@@ -434,16 +434,16 @@ model CommentReply {
 }
 
 model ParadaComment {
-  id          String   @id @default(cuid())
-  communityId String?
-  genreSlug   String?
-  section     String
-  period      String
-  weekIndex   Int?
-  userId      String
-  text        String
-  likes       Int      @default(0)
-  createdAt   DateTime @default(now())
+  id           String              @id @default(cuid())
+  communityId  String?
+  genreSlug    String?
+  section      String
+  period       String
+  weekIndex    Int?
+  userId       String
+  text         String
+  likes        Int                 @default(0)
+  createdAt    DateTime            @default(now())
   community    Community?          @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user         User                @relation(fields: [userId], references: [id])
   commentLikes ParadaCommentLike[]
@@ -463,33 +463,33 @@ model ParadaCommentLike {
 }
 
 model Community {
-  id               String            @id @default(cuid())
-  slug             String            @unique
-  name             String
-  tagline          String
-  icon             String            @default("🎵")
-  logoUrl          String?
-  coverA           String            @default("#FA243C")
-  coverB           String            @default("#FF5858")
-  coverImageUrl    String?
-  members          Int               @default(0)
-  posts            Int               @default(0)
-  founded          String
-  privacy          String            @default("public")
-  rules            String?
-  createdAt        DateTime          @default(now())
-  communityMembers CommunityMember[]
-  communityPosts   Post[]
-  maxSongs              Int               @default(50)
-  paradaName            String            @default("Parada")
-  memberPositionLimit   Int?
-  pointsMode            String            @default("member")
-  customPoints          Json?
-  isPublic              Boolean           @default(true)
-  ownerId               String?
-  owner            User?             @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  charts           Chart[]
-  paradaComments   ParadaComment[]
+  id                  String            @id @default(cuid())
+  slug                String            @unique
+  name                String
+  tagline             String
+  icon                String            @default("🎵")
+  logoUrl             String?
+  coverA              String            @default("#FA243C")
+  coverB              String            @default("#FF5858")
+  coverImageUrl       String?
+  members             Int               @default(0)
+  posts               Int               @default(0)
+  founded             String
+  privacy             String            @default("public")
+  rules               String?
+  createdAt           DateTime          @default(now())
+  communityMembers    CommunityMember[]
+  communityPosts      Post[]
+  maxSongs            Int               @default(50)
+  paradaName          String            @default("Parada")
+  memberPositionLimit Int?
+  pointsMode          String            @default("member")
+  customPoints        Json?
+  isPublic            Boolean           @default(true)
+  ownerId             String?
+  owner               User?             @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  charts              Chart[]
+  paradaComments      ParadaComment[]
 
   @@index([ownerId], map: "communities_ownerId_fkey")
 }
@@ -778,17 +778,17 @@ enum ClipType {
 }
 
 model SongVideoClip {
-  id          String   @id @default(cuid())
-  songId      String   @map("song_id")
-  uploadedBy  String   @map("uploaded_by")
-  youtubeId   String?  @map("youtube_id")
-  imageUrl    String   @map("image_url")
-  publishedAt DateTime? @map("published_at")
-  clipType    ClipType  @default(OFFICIAL) @map("clip_type")
-  votes       Int      @default(0)
-  createdAt   DateTime @default(now()) @map("created_at")
-  song        Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
-  uploader    User     @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  id          String                    @id @default(cuid())
+  songId      String                    @map("song_id")
+  uploadedBy  String                    @map("uploaded_by")
+  youtubeId   String?                   @map("youtube_id")
+  imageUrl    String                    @map("image_url")
+  publishedAt DateTime?                 @map("published_at")
+  clipType    ClipType                  @default(OFFICIAL) @map("clip_type")
+  votes       Int                       @default(0)
+  createdAt   DateTime                  @default(now()) @map("created_at")
+  song        Song                      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  uploader    User                      @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
   voteRecords SongVideoClipVote[]
   choices     UserSongVideoClipChoice[]
 
@@ -810,12 +810,12 @@ model SongVideoClipVote {
 }
 
 model UserSongVideoClipChoice {
-  userId    String        @map("user_id")
-  songId    String        @map("song_id")
-  clipId    String        @map("clip_id")
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  song      Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
-  clip      SongVideoClip @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  userId String        @map("user_id")
+  songId String        @map("song_id")
+  clipId String        @map("clip_id")
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song   Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  clip   SongVideoClip @relation(fields: [clipId], references: [id], onDelete: Cascade)
 
   @@id([userId, songId])
   @@map("user_song_video_clip_choices")
@@ -832,18 +832,18 @@ enum AlbumClubPhase {
 }
 
 model AlbumClubRound {
-  id                 String              @id @default(cuid())
-  number             Int                 @unique
+  id                 String                @id @default(cuid())
+  number             Int                   @unique
   theme              String
-  dateRange          String              @map("date_range")
-  phase              AlbumClubPhase      @default(NOMINATIONS)
-  nominationsOpenAt  DateTime            @map("nominations_open_at")
-  nominationsCloseAt DateTime            @map("nominations_close_at")
-  pollCloseAt        DateTime            @map("poll_close_at")
-  resultCloseAt      DateTime?           @map("result_close_at")
-  listeningCloseAt   DateTime?           @map("listening_close_at")
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
+  dateRange          String                @map("date_range")
+  phase              AlbumClubPhase        @default(NOMINATIONS)
+  nominationsOpenAt  DateTime              @map("nominations_open_at")
+  nominationsCloseAt DateTime              @map("nominations_close_at")
+  pollCloseAt        DateTime              @map("poll_close_at")
+  resultCloseAt      DateTime?             @map("result_close_at")
+  listeningCloseAt   DateTime?             @map("listening_close_at")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
   nominations        AlbumClubNomination[]
   pollVotes          AlbumClubPollVote[]
   winners            AlbumClubWinner[]
@@ -950,19 +950,19 @@ enum PushPhase {
 }
 
 model SongRecommendation {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  songId    String?  @map("song_id")
-  youtubeId String?  @map("youtube_id")
-  ytTitle   String?  @map("yt_title")
-  ytChannel String?  @map("yt_channel")
-  text      String?
-  likes     Int      @default(0)
-  comments  Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  song      Song?    @relation(fields: [songId], references: [id])
-  recLikes  SongRecommendationLike[]
+  id          String                      @id @default(cuid())
+  userId      String                      @map("user_id")
+  songId      String?                     @map("song_id")
+  youtubeId   String?                     @map("youtube_id")
+  ytTitle     String?                     @map("yt_title")
+  ytChannel   String?                     @map("yt_channel")
+  text        String?
+  likes       Int                         @default(0)
+  comments    Int                         @default(0)
+  createdAt   DateTime                    @default(now()) @map("created_at")
+  user        User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song        Song?                       @relation(fields: [songId], references: [id])
+  recLikes    SongRecommendationLike[]
   recComments SongRecommendationComment[]
 
   @@index([createdAt(sort: Desc)])
@@ -982,15 +982,15 @@ model SongRecommendationLike {
 }
 
 model SongRecommendationComment {
-  id               String             @id @default(cuid())
-  recommendationId String             @map("recommendation_id")
-  userId           String             @map("user_id")
+  id               String                           @id @default(cuid())
+  recommendationId String                           @map("recommendation_id")
+  userId           String                           @map("user_id")
   text             String
-  likes            Int                @default(0)
-  replyCount       Int                @default(0) @map("reply_count")
-  createdAt        DateTime           @default(now()) @map("created_at")
-  recommendation   SongRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  user             User               @relation(fields: [userId], references: [id])
+  likes            Int                              @default(0)
+  replyCount       Int                              @default(0) @map("reply_count")
+  createdAt        DateTime                         @default(now()) @map("created_at")
+  recommendation   SongRecommendation               @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user             User                             @relation(fields: [userId], references: [id])
   commentLikes     SongRecommendationCommentLike[]
   replies          SongRecommendationCommentReply[]
 
@@ -1044,15 +1044,15 @@ model PushRound {
 }
 
 model PushSubmission {
-  id             String      @id @default(cuid())
-  roundId        String      @map("round_id")
-  userId         String      @map("user_id")
-  songId         String      @map("song_id")
-  spotifyTrackId String      @unique @map("spotify_track_id")
-  createdAt      DateTime    @default(now()) @map("created_at")
-  round          PushRound   @relation(fields: [roundId], references: [id], onDelete: Cascade)
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  song           Song        @relation(fields: [songId], references: [id])
+  id             String     @id @default(cuid())
+  roundId        String     @map("round_id")
+  userId         String     @map("user_id")
+  songId         String     @map("song_id")
+  spotifyTrackId String     @unique @map("spotify_track_id")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  round          PushRound  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song           Song       @relation(fields: [songId], references: [id])
   votes          PushVote[]
 
   @@unique([roundId, userId])
@@ -1107,9 +1107,9 @@ model CopaEdition {
   name            String
   year            Int
   status          CopaStatus        @default(REGISTRATION)
-  maxParticipants Int               @default(8)  @map("max_participants")
-  artistsPerUser  Int               @default(8)  @map("artists_per_user")
-  votesPerGoal    Int               @default(2)  @map("votes_per_goal")
+  maxParticipants Int               @default(8) @map("max_participants")
+  artistsPerUser  Int               @default(8) @map("artists_per_user")
+  votesPerGoal    Int               @default(2) @map("votes_per_goal")
   startsAt        DateTime?         @map("starts_at")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
@@ -1141,30 +1141,30 @@ model CopaDayPlaylist {
 }
 
 model CopaParticipant {
-  id        String      @id @default(cuid())
-  copaId    String      @map("copa_id")
-  userId    String      @map("user_id")
-  copa      CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String      @id @default(cuid())
+  copaId String      @map("copa_id")
+  userId String      @map("user_id")
+  copa   CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([copaId, userId])
   @@map("copa_participants")
 }
 
 model CopaArtist {
-  id              String      @id @default(cuid())
-  copaId          String      @map("copa_id")
-  ownerId         String      @map("owner_id")
-  groupLetter     String      @map("group_letter")
-  slotInGroup     Int         @map("slot_in_group")
-  artistSpotifyId String?     @map("artist_spotify_id")
-  artistName      String      @map("artist_name")
-  artistImage     String?     @map("artist_image")
-  artistColor     String      @default("#FA243C") @map("artist_color")
-  artistInitials  String      @default("??") @map("artist_initials")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  copa            CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
-  owner           User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  id              String        @id @default(cuid())
+  copaId          String        @map("copa_id")
+  ownerId         String        @map("owner_id")
+  groupLetter     String        @map("group_letter")
+  slotInGroup     Int           @map("slot_in_group")
+  artistSpotifyId String?       @map("artist_spotify_id")
+  artistName      String        @map("artist_name")
+  artistImage     String?       @map("artist_image")
+  artistColor     String        @default("#FA243C") @map("artist_color")
+  artistInitials  String        @default("??") @map("artist_initials")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  copa            CopaEdition   @relation(fields: [copaId], references: [id], onDelete: Cascade)
+  owner           User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   singles         CopaSingle[]
   fixturesAsA     CopaFixture[] @relation("FixtureArtistA")
   fixturesAsB     CopaFixture[] @relation("FixtureArtistB")
@@ -1214,7 +1214,7 @@ model CopaVote {
   id        String      @id @default(cuid())
   fixtureId String      @map("fixture_id")
   userId    String      @map("user_id")
-  side      String      // "A" or "B"
+  side      String // "A" or "B"
   createdAt DateTime    @default(now()) @map("created_at")
   fixture   CopaFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1229,7 +1229,7 @@ model CopaAutoVoteQueue {
   id        String   @id @default(cuid())
   fixtureId String   @map("fixture_id")
   userId    String   @map("user_id")
-  side      String   // "A" or "B"
+  side      String // "A" or "B"
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([createdAt])
@@ -1237,15 +1237,15 @@ model CopaAutoVoteQueue {
 }
 
 model CopaLiveComment {
-  id          String   @id @default(cuid())
-  copaId      String   @map("copa_id")
-  batchOrder  Int?     @map("batch_order")
-  userId      String   @map("user_id")
-  text        String
-  likes       Int      @default(0)
-  createdAt   DateTime @default(now()) @map("created_at")
-  copa        CopaEdition @relation(fields: [copaId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id])
+  id           String                @id @default(cuid())
+  copaId       String                @map("copa_id")
+  batchOrder   Int?                  @map("batch_order")
+  userId       String                @map("user_id")
+  text         String
+  likes        Int                   @default(0)
+  createdAt    DateTime              @default(now()) @map("created_at")
+  copa         CopaEdition           @relation(fields: [copaId], references: [id], onDelete: Cascade)
+  user         User                  @relation(fields: [userId], references: [id])
   commentLikes CopaLiveCommentLike[]
 
   @@index([copaId, batchOrder])
@@ -1322,14 +1322,14 @@ enum SupportTicketStatus {
 }
 
 model SupportTicket {
-  id        String              @id @default(cuid())
-  userId    String              @map("user_id")
+  id        String                 @id @default(cuid())
+  userId    String                 @map("user_id")
   type      SupportTicketType
   subject   String
-  status    SupportTicketStatus @default(OPEN)
-  createdAt DateTime            @default(now()) @map("created_at")
-  updatedAt DateTime            @updatedAt @map("updated_at")
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    SupportTicketStatus    @default(OPEN)
+  createdAt DateTime               @default(now()) @map("created_at")
+  updatedAt DateTime               @updatedAt @map("updated_at")
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  SupportTicketMessage[]
 
   @@index([userId])
@@ -1386,13 +1386,13 @@ model SupportTicketMessage {
 /// Enquete semanal (Melhor da Semana + Flashback da Semana). Abre domingo 23:59 BRT
 /// com as indicações das paradas da semana; fecha na terça junto com o snapshot global.
 model WeeklySpotlightPoll {
-  id        String    @id @default(cuid())
-  weekIndex Int       @unique @map("week_index")
-  weekLabel String    @map("week_label")
-  dateRange String    @map("date_range")
-  status    String    @default("open") // "open" | "closed"
-  openedAt  DateTime  @default(now()) @map("opened_at")
-  closedAt  DateTime? @map("closed_at")
+  id        String                  @id @default(cuid())
+  weekIndex Int                     @unique @map("week_index")
+  weekLabel String                  @map("week_label")
+  dateRange String                  @map("date_range")
+  status    String                  @default("open") // "open" | "closed"
+  openedAt  DateTime                @default(now()) @map("opened_at")
+  closedAt  DateTime?               @map("closed_at")
   options   WeeklySpotlightOption[]
   votes     WeeklySpotlightVote[]
 
@@ -1400,13 +1400,13 @@ model WeeklySpotlightPoll {
 }
 
 model WeeklySpotlightOption {
-  id        String   @id @default(cuid())
-  pollId    String   @map("poll_id")
-  category  String // "destaque" (Melhor da Semana) | "flashback"
-  songId    String   @map("song_id")
-  voteCount Int      @default(0) @map("vote_count") // congelado na apuração
-  isWinner  Boolean  @default(false) @map("is_winner")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String                      @id @default(cuid())
+  pollId      String                      @map("poll_id")
+  category    String // "destaque" (Melhor da Semana) | "flashback"
+  songId      String                      @map("song_id")
+  voteCount   Int                         @default(0) @map("vote_count") // congelado na apuração
+  isWinner    Boolean                     @default(false) @map("is_winner")
+  createdAt   DateTime                    @default(now()) @map("created_at")
   poll        WeeklySpotlightPoll         @relation(fields: [pollId], references: [id], onDelete: Cascade)
   song        Song                        @relation(fields: [songId], references: [id], onDelete: Cascade)
   nominations WeeklySpotlightNomination[]
@@ -1419,10 +1419,10 @@ model WeeklySpotlightOption {
 
 /// Quem indicou a música na própria parada da semana (mostrado junto da vencedora).
 model WeeklySpotlightNomination {
-  id        String   @id @default(cuid())
-  optionId  String   @map("option_id")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String                @id @default(cuid())
+  optionId  String                @map("option_id")
+  userId    String                @map("user_id")
+  createdAt DateTime              @default(now()) @map("created_at")
   option    WeeklySpotlightOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
   user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1431,11 +1431,11 @@ model WeeklySpotlightNomination {
 }
 
 model WeeklySpotlightVote {
-  id        String   @id @default(cuid())
-  pollId    String   @map("poll_id")
-  optionId  String   @map("option_id")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String                @id @default(cuid())
+  pollId    String                @map("poll_id")
+  optionId  String                @map("option_id")
+  userId    String                @map("user_id")
+  createdAt DateTime              @default(now()) @map("created_at")
   poll      WeeklySpotlightPoll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option    WeeklySpotlightOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
   user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1450,14 +1450,14 @@ model WeeklySpotlightVote {
 /// `source`: "manual" (adicionado no admin, nunca removido automaticamente) ou
 /// "global" (importado do top 200 do Global da semana; sai quando sai do top).
 model ArtistReleaseWatch {
-  id            Int       @id @default(autoincrement())
-  spotifyId     String    @unique @map("spotify_id")
+  id            Int                         @id @default(autoincrement())
+  spotifyId     String                      @unique @map("spotify_id")
   name          String
-  imageUrl      String?   @map("image_url")
-  source        String    @default("manual")
-  active        Boolean   @default(true)
-  createdAt     DateTime  @default(now()) @map("created_at")
-  lastCheckedAt DateTime? @map("last_checked_at")
+  imageUrl      String?                     @map("image_url")
+  source        String                      @default("manual")
+  active        Boolean                     @default(true)
+  createdAt     DateTime                    @default(now()) @map("created_at")
+  lastCheckedAt DateTime?                   @map("last_checked_at")
   notifications ArtistReleaseNotification[]
 
   @@map("artist_release_watches")
@@ -1465,17 +1465,193 @@ model ArtistReleaseWatch {
 
 /// Lançamento já registrado pelo radar (dedupe). `announced=false` = pré-existente ao monitoramento, não avisado.
 model ArtistReleaseNotification {
-  id             Int      @id @default(autoincrement())
-  watchId        Int      @map("watch_id")
-  albumSpotifyId String   @map("album_spotify_id")
+  id             Int                @id @default(autoincrement())
+  watchId        Int                @map("watch_id")
+  albumSpotifyId String             @map("album_spotify_id")
   title          String
-  albumType      String?  @map("album_type")
-  releaseDate    String?  @map("release_date")
-  announced      Boolean  @default(true)
-  notifiedAt     DateTime @default(now()) @map("notified_at")
+  albumType      String?            @map("album_type")
+  releaseDate    String?            @map("release_date")
+  announced      Boolean            @default(true)
+  notifiedAt     DateTime           @default(now()) @map("notified_at")
   watch          ArtistReleaseWatch @relation(fields: [watchId], references: [id], onDelete: Cascade)
 
   @@unique([watchId, albumSpotifyId])
   @@index([notifiedAt], map: "idx_artist_release_notifications_notified_at")
   @@map("artist_release_notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Postagens Automáticas — fila editorial de publicação nas redes sociais
+// (Facebook, Instagram Feed/Stories, Threads, Telegram). Ver
+// sistema_postagens_automaticas_chartfm.md. Release Radar (acima) continua
+// separado, exclusivo do Telegram.
+// ---------------------------------------------------------------------------
+
+enum SocialEventType {
+  GLOBAL100_PUBLISHED
+  AIRPLAY_PUBLISHED
+  ALBUMS_CHART_PUBLISHED
+  ALBUM_REVIEW_MILESTONE
+  ALBUM_CLUB_WINNER
+  PUSH_PHASE_CHANGE
+  COPA_ROUND_START
+  COPA_ROUND_RESULT
+  COPA_FINAL_RESULT
+  WEEKLY_POLL_OPEN
+}
+
+enum SocialPostPriority {
+  CRITICAL
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum SocialPostStatus {
+  PENDING
+  SCHEDULED
+  GENERATING
+  READY
+  PUBLISHING
+  PUBLISHED
+  PARTIALLY_PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM_FEED
+  INSTAGRAM_STORY
+  THREADS
+  TELEGRAM
+}
+
+enum SocialPublishStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+  SKIPPED_CAP
+}
+
+/// Log bruto de eventos do site que podem virar conteúdo. Um SocialEvent gera no
+/// máximo um SocialPost (checar elegibilidade antes de criar).
+model SocialEvent {
+  id         String          @id @default(cuid())
+  eventType  SocialEventType @map("event_type")
+  entityType String          @map("entity_type")
+  entityId   String          @map("entity_id")
+  payload    Json
+  createdAt  DateTime        @default(now()) @map("created_at")
+  posts      SocialPost[]
+
+  @@index([eventType, entityId], map: "idx_social_events_type_entity")
+  @@map("social_events")
+}
+
+/// Item da fila editorial. Pode gerar publicações em várias plataformas
+/// (ver SocialPostPublication para o status por rede).
+model SocialPost {
+  id          String             @id @default(cuid())
+  eventId     String?            @map("event_id")
+  eventType   SocialEventType    @map("event_type")
+  entityType  String             @map("entity_type")
+  entityId    String             @map("entity_id")
+  priority    SocialPostPriority @default(NORMAL)
+  score       Int                @default(0)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  scheduledAt DateTime?          @map("scheduled_at")
+  expiresAt   DateTime?          @map("expires_at")
+  status      SocialPostStatus   @default(PENDING)
+  platforms   SocialPlatform[]
+
+  captionInstagram String? @map("caption_instagram") @db.Text
+  captionFacebook  String? @map("caption_facebook") @db.Text
+  captionThreads   String? @map("caption_threads") @db.Text
+  captionTelegram  String? @map("caption_telegram") @db.Text
+
+  imageFeed45     String? @map("image_feed_45")
+  imageTelegram11 String? @map("image_telegram_11")
+  imageStory916   String? @map("image_story_916")
+
+  hashtags String[]
+
+  publishedAt       DateTime? @map("published_at")
+  facebookPostId    String?   @map("facebook_post_id")
+  instagramMediaId  String?   @map("instagram_media_id")
+  threadsPostId     String?   @map("threads_post_id")
+  telegramMessageId String?   @map("telegram_message_id")
+
+  retryCount Int     @default(0) @map("retry_count")
+  lastError  String? @map("last_error") @db.Text
+
+  event        SocialEvent?            @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  publications SocialPostPublication[]
+
+  @@index([status], map: "idx_social_posts_status")
+  @@index([entityType, entityId], map: "idx_social_posts_entity")
+  @@index([scheduledAt], map: "idx_social_posts_scheduled_at")
+  @@map("social_posts")
+}
+
+/// Status de publicação por plataforma de um SocialPost (fonte de verdade para
+/// PARTIALLY_PUBLISHED e para mostrar SKIPPED_CAP no admin).
+model SocialPostPublication {
+  id           String              @id @default(cuid())
+  socialPostId String              @map("social_post_id")
+  platform     SocialPlatform
+  status       SocialPublishStatus @default(PENDING)
+  externalId   String?             @map("external_id")
+  error        String?             @db.Text
+  publishedAt  DateTime?           @map("published_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  post SocialPost @relation(fields: [socialPostId], references: [id], onDelete: Cascade)
+
+  @@unique([socialPostId, platform])
+  @@index([platform, publishedAt], map: "idx_social_post_publications_platform_published")
+  @@map("social_post_publications")
+}
+
+/// Limite diário e liga/desliga por plataforma (configurável no admin).
+model SocialPlatformConfig {
+  platform   SocialPlatform @id
+  dailyLimit Int            @default(2) @map("daily_limit")
+  enabled    Boolean        @default(true)
+
+  @@map("social_platform_configs")
+}
+
+/// Singleton (id fixo "default") com os horários dos slots e o fuso horário.
+model SocialScheduleConfig {
+  id       String   @id @default("default")
+  slots    String[] @default(["07:00", "09:00", "13:00", "17:00", "19:00"])
+  timezone String   @default("America/Sao_Paulo")
+
+  @@map("social_schedule_configs")
+}
+
+/// Liga/desliga a automação de um tipo de evento sem mexer em código.
+model SocialAutomationToggle {
+  eventType SocialEventType @id @map("event_type")
+  enabled   Boolean         @default(true)
+
+  @@map("social_automation_toggles")
+}
+
+/// Métricas de desempenho por publicação/plataforma, coletadas quando a API permitir.
+model SocialPostMetric {
+  id           String         @id @default(cuid())
+  socialPostId String         @map("social_post_id")
+  platform     SocialPlatform
+  likes        Int?
+  comments     Int?
+  shares       Int?
+  reach        Int?
+  impressions  Int?
+  clicks       Int?
+  fetchedAt    DateTime       @default(now()) @map("fetched_at")
+
+  @@index([socialPostId, platform], map: "idx_social_post_metrics_post_platform")
+  @@map("social_post_metrics")
 }

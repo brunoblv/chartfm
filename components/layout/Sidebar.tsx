@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper, Send } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -541,6 +541,10 @@ function SidebarContent({
               <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
                 <Sparkles size={14} />
                 <span>Lançamentos</span>
+              </Link>
+              <Link href="/admin/postagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/postagens")}>
+                <Send size={14} />
+                <span>Postagens</span>
               </Link>
               <Link href="/admin/radar-lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/radar-lancamentos")}>
                 <Radar size={14} />

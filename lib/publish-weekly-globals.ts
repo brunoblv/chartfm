@@ -8,6 +8,7 @@ import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications"
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
 import { closeWeeklySpotlightPoll } from "@/lib/weekly-spotlight-poll";
 import { syncGlobal100FixedSpotifyPlaylistSafely } from "@/lib/global-100-playlist-sync";
+import { onChartPublished } from "@/lib/social/events";
 
 /**
  * Publica rankings semanais congelados (Global 100, Airplay, Álbuns, Top Curadores) — só cria se ainda não existir.
@@ -48,6 +49,7 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
       "/global/100",
       `A Parada Global (${global.weekLabel}) foi publicada! Confira os resultados.`,
     );
+    onChartPublished("GLOBAL100", global.weekIndex).catch((e) => console.error("[publish-weekly-globals] onChartPublished GLOBAL100", e));
   }
   if (airplay.created) {
     notificationsSent += await sendGlobalWeeklyNotification(
@@ -55,6 +57,7 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
       "/global/airplay",
       `O Global 100 Air Play (${airplay.weekLabel}) foi publicado! Veja o top de reproduções da semana.`,
     );
+    onChartPublished("AIRPLAY", airplay.weekIndex).catch((e) => console.error("[publish-weekly-globals] onChartPublished AIRPLAY", e));
   }
   if (albums.created) {
     notificationsSent += await sendGlobalWeeklyNotification(
@@ -62,6 +65,7 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
       "/global/albums",
       `O Global 100 Álbuns (${albums.weekLabel}) foi publicado! Veja os discos mais ouvidos da semana.`,
     );
+    onChartPublished("ALBUMS", albums.weekIndex).catch((e) => console.error("[publish-weekly-globals] onChartPublished ALBUMS", e));
   }
 
   return {

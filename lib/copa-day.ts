@@ -4,6 +4,7 @@ import { advanceKnockout } from "@/lib/copa-knockout";
 import { generateCopaDayPlaylistsSafely, syncCopaFixedSpotifyPlaylistSafely } from "@/lib/copa-playlist-sync";
 import { notifyCopaBatchOpened } from "@/lib/copa-notifications";
 import { removePrematureKnockoutFixtures, ensureR32SecondBatchClosed } from "@/lib/copa-knockout";
+import { onCopaRoundStart, onCopaRoundResult } from "@/lib/social/events";
 
 const DAY_MS = 86_400_000;
 
@@ -43,6 +44,7 @@ export async function syncCopaToSchedule(
     });
     // Gera as fases seguintes conforme grupos/rodadas terminam.
     await advanceKnockout(copaId);
+    onCopaRoundResult(copaId).catch((e) => console.error("[copa-day] onCopaRoundResult", e));
   }
 
   // 2) Abre o lote do dia atual (refetch: advanceKnockout pode ter criado jogos).
@@ -88,6 +90,7 @@ export async function openNextBatch(copaId: string): Promise<number> {
   await generateCopaDayPlaylistsSafely(copaId, minOrder);
   await syncCopaFixedSpotifyPlaylistSafely(copaId, minOrder);
   await notifyCopaBatchOpened(copaId, minOrder);
+  onCopaRoundStart(copaId).catch((e) => console.error("[copa-day] onCopaRoundStart", e));
   return batch.length;
 }
 
@@ -107,6 +110,7 @@ export async function advanceCopaDay(copaId: string): Promise<{ closed: number; 
       data: { status: "DONE", endedAt: new Date() },
     });
     await advanceKnockout(copaId);
+    onCopaRoundResult(copaId).catch((e) => console.error("[copa-day] onCopaRoundResult", e));
   }
   const opened = await openNextBatch(copaId);
   return { closed: live.length, opened };

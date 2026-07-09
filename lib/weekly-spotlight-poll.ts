@@ -10,6 +10,7 @@ import {
   type ChartSpotlightSong,
 } from "@/lib/chart-spotlight";
 import { broadcastAdminAnnouncement } from "@/lib/admin-broadcast";
+import { onWeeklyPollOpened } from "@/lib/social/events";
 
 export const WEEKLY_POLL_PATH = "/votacao-da-semana";
 
@@ -150,6 +151,7 @@ export async function openWeeklySpotlightPoll(now: Date = new Date()): Promise<O
     notifyType: "weekly_poll_open",
     feedKind: "weekly_poll_open",
   });
+  onWeeklyPollOpened(week.weekIndex).catch((e) => console.error("[weekly-spotlight-poll] onWeeklyPollOpened", e));
 
   return { created: true, weekIndex: week.weekIndex, options: totalOptions, notified };
 }

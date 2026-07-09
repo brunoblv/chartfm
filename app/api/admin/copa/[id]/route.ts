@@ -6,6 +6,7 @@ import { GROUP_PAIRS, COPA_GROUP_LETTERS, COPA_UNASSIGNED_GROUP, drawGroups } fr
 import { openNextBatch, advanceCopaDay, syncCopaToSchedule } from "@/lib/copa-day";
 import { repairCopaKnockout, fixMislabeledGroupFixtures, realignCopaLivePhase, resetR16ForEditing, startR16Round } from "@/lib/copa-repair";
 import { announceCopaStatusChange } from "@/lib/game-announcements";
+import { onCopaFinished } from "@/lib/social/events";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -236,6 +237,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (action === "finish") {
     await prisma.copaEdition.update({ where: { id }, data: { status: "FINISHED" } });
     await announceCopaStatusChange(copa, "FINISHED");
+    onCopaFinished(id).catch((e) => console.error("[admin/copa] onCopaFinished", e));
     return NextResponse.json({ ok: true });
   }
 
