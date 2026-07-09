@@ -308,6 +308,7 @@ function SidebarContent({
 
   const footerLinks = [
     { href: "/guides", label: t("nav.guides") },
+    { href: "/editorial", label: t("nav.editorial") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
     { href: "/support", label: t("nav.support") },
