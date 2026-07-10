@@ -54,7 +54,8 @@ import { DesktopPosCell } from "@/components/chart/DesktopPosCell";
 import type { ChartDetailPayload } from "@/lib/map-db-profile";
 import { ChartSpotlightCard } from "@/components/chart/ChartSpotlightCard";
 import { ParadaCommentsToggle } from "@/components/parada/ParadaComments";
-import { canUseSpotifyFeatures } from "@/lib/mytrl-access";
+import { canUseSpotifyFeatures, isMyTrlOwner, MYTRL_WEEKLY_PARADA_ID } from "@/lib/mytrl-access";
+import { MyTrlDailyDetailsTab } from "@/components/chart/MyTrlDailyDetailsTab";
 import { TIMELINE } from "@/lib/data";
 import type {
   ChartEntry,
@@ -65,7 +66,7 @@ import type {
 
 type Variant = "list" | "grid" | "podium" | "video_clip";
 type VideoClipLayout = "table" | "stacked";
-type Tab = "chart" | "overlap" | "saidas";
+type Tab = "chart" | "overlap" | "saidas" | "detalhes";
 
 const VIDEO_CLIP_LAYOUT_KEY = "chartify-video-clip-layout";
 
@@ -158,7 +159,10 @@ export default function ChartDetailPage() {
   const [videoClipLayout, setVideoClipLayout] =
     useState<VideoClipLayout>("table");
   const rawInitialTab = searchParams?.get("tab") ?? null;
-  const initialTab: Tab = rawInitialTab === "overlap" || rawInitialTab === "saidas" ? rawInitialTab : "chart";
+  const initialTab: Tab =
+    rawInitialTab === "overlap" || rawInitialTab === "saidas" || rawInitialTab === "detalhes"
+      ? rawInitialTab
+      : "chart";
   const [tab, setTab] = useState<Tab>(initialTab);
   const [commentsOpen, setCommentsOpen] = useState(rawInitialTab === "comments");
   const [videoClips, setVideoClips] = useState<Record<string, string>>({});
@@ -295,6 +299,8 @@ export default function ChartDetailPage() {
   const isOwner =
     !!session?.user?.id && !!user?.id && session.user.id === user.id;
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
+  const canViewMyTrlDetails =
+    isMyTrlOwner(session?.user?.handle) && dbPayload?.paradaId === MYTRL_WEEKLY_PARADA_ID;
 
   useEffect(() => {
     if (variant !== "video_clip" || !id || !isDbChart) return;
@@ -1326,6 +1332,7 @@ export default function ChartDetailPage() {
                     `${t("chart.tabDropouts")}${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`,
                   ],
                   ["overlap", t("chart.tabCommon")],
+                  ...(canViewMyTrlDetails ? [["detalhes", "Detalhes"] as [Tab, string]] : []),
                 ] as [Tab, string][]
               ).map(([tabKey, label]) => (
                 <button
@@ -1483,6 +1490,9 @@ export default function ChartDetailPage() {
               isDbChart={isDbChart}
               statsLabels={statsLabels}
             />
+          )}
+          {tab === "detalhes" && canViewMyTrlDetails && (
+            <MyTrlDailyDetailsTab chartId={chart.id} entries={chart.entries} />
           )}
         </div>
       </div>

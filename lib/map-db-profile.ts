@@ -204,6 +204,7 @@ type PrismaChartOwner = {
 export type ChartDetailPayload = {
   user: User;
   chart: Chart;
+  paradaId?: string;
   imageUrl: string | null;
   paradaLogo: string | null;
   flashback?: ChartSpotlightSong | null;
