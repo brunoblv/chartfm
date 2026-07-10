@@ -711,7 +711,15 @@ export default function CreatePage() {
   const searchPanel = (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Buscar música</div>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Buscar música</div>
+        <div style={{ marginBottom: 14 }}>
+          <Link
+            href="/guides/como-criar-sua-parada"
+            style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "underline" }}
+          >
+            Não achou a música? Veja como funciona a busca
+          </Link>
+        </div>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
             Catálogo

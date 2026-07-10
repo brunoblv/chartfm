@@ -2,18 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { SocialPlatform, SocialPostPriority, SocialPostStatus, SocialPublishStatus } from "@prisma/client";
-import { upcomingSlots, brtDayKey } from "@/lib/social/slots";
+import { upcomingSlots, weekdayInBrt, timeOfDayInBrt } from "@/lib/social/slots";
 import { renderSocialPostAssets } from "@/lib/social/render";
 import { publishToPlatform, publishToTelegram } from "@/lib/social/publish";
 import { isSocialPostingEnabled } from "@/lib/social/config";
-
-const DEFAULT_DAILY_LIMITS: Record<SocialPlatform, number> = {
-  FACEBOOK: 2,
-  INSTAGRAM_FEED: 2,
-  INSTAGRAM_STORY: 9999, // sem teto, spec §16
-  THREADS: 4,
-  TELEGRAM: 3,
-};
+import { getEventSchedules } from "@/lib/social/event-schedule";
 
 const PRIORITY_ORDER: Record<SocialPostPriority, number> = { CRITICAL: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
 
@@ -26,7 +19,7 @@ async function ensureDefaultConfigs() {
   for (const platform of Object.values(SocialPlatform)) {
     await prisma.socialPlatformConfig.upsert({
       where: { platform },
-      create: { platform, dailyLimit: DEFAULT_DAILY_LIMITS[platform] },
+      create: { platform },
       update: {},
     });
   }
@@ -34,9 +27,10 @@ async function ensureDefaultConfigs() {
 
 /**
  * Passo 1: encontra posts PENDING e agenda cada um no próximo slot livre,
- * respeitando expiração, diversidade (mesma entidade/tipo não repete no mesmo
- * slot) e o limite diário por plataforma (broadcast para todas as plataformas
- * habilitadas, exceto as que já bateram o teto do dia — Stories não tem teto).
+ * respeitando expiração e diversidade (mesma entidade/tipo não repete no
+ * mesmo slot). Toda plataforma habilitada recebe a mesma publicação — não há
+ * teto diário por rede; a única plataforma com tratamento próprio é o
+ * Telegram (imagem/legenda em formato/variant diferente, ver publishPost).
  */
 export async function assignSlots(now: Date = new Date()): Promise<{ scheduled: number }> {
   await ensureDefaultConfigs();
@@ -44,6 +38,7 @@ export async function assignSlots(now: Date = new Date()): Promise<{ scheduled: 
   const schedule = await prisma.socialScheduleConfig.findUniqueOrThrow({ where: { id: "default" } });
   const platformConfigs = await prisma.socialPlatformConfig.findMany();
   const enabledPlatforms = platformConfigs.filter((p) => p.enabled);
+  const eventSchedules = await getEventSchedules();
 
   const pending = await prisma.socialPost.findMany({
     where: { status: SocialPostStatus.PENDING },
@@ -54,42 +49,49 @@ export async function assignSlots(now: Date = new Date()): Promise<{ scheduled: 
 
   const upcoming = upcomingSlots(schedule.slots, now, 7);
 
-  // Estado local desta execução: por slot, quais entidades/tipos já foram usados (diversidade);
-  // por dia, quantas publicações por plataforma já foram reservadas (teto diário).
+  // Estado local desta execução: por slot, quais entidades/tipos já foram usados (diversidade).
   const slotUsage = new Map<number, { entityIds: Set<string>; eventTypes: Set<string> }>();
-  const dayPlatformCounts = new Map<string, Map<SocialPlatform, number>>();
 
   const existingScheduled = await prisma.socialPost.findMany({
     where: { status: { in: [SocialPostStatus.SCHEDULED, SocialPostStatus.GENERATING, SocialPostStatus.READY, SocialPostStatus.PUBLISHING] }, scheduledAt: { not: null } },
-    include: { publications: true },
   });
   for (const post of existingScheduled) {
     const slotTime = post.scheduledAt!.getTime();
     if (!slotUsage.has(slotTime)) slotUsage.set(slotTime, { entityIds: new Set(), eventTypes: new Set() });
     slotUsage.get(slotTime)!.entityIds.add(post.entityId);
     slotUsage.get(slotTime)!.eventTypes.add(post.eventType);
-
-    const dayKey = brtDayKey(post.scheduledAt!);
-    if (!dayPlatformCounts.has(dayKey)) dayPlatformCounts.set(dayKey, new Map());
-    const counts = dayPlatformCounts.get(dayKey)!;
-    for (const pub of post.publications) {
-      if (pub.status === SocialPublishStatus.PUBLISHED || pub.status === SocialPublishStatus.PENDING) {
-        counts.set(pub.platform, (counts.get(pub.platform) ?? 0) + 1);
-      }
-    }
   }
 
   let scheduledCount = 0;
 
   for (const post of pending) {
     let chosenSlot: Date | null = null;
-    for (const slot of upcoming) {
-      if (post.expiresAt && slot.getTime() > post.expiresAt.getTime()) break; // não adianta olhar slots depois da expiração
-      const usage = slotUsage.get(slot.getTime());
-      const conflict = usage && (usage.entityIds.has(post.entityId) || usage.eventTypes.has(post.eventType));
-      if (!conflict) {
-        chosenSlot = slot;
-        break;
+
+    // Tipos com dia+horário fixo (ex.: as paradas oficiais — configurável em
+    // /admin/postagens, aba "Agenda das Paradas") usam o slot exato sempre
+    // que existir, mesmo que outro post já esteja lá: é intencional que
+    // saiam juntas. A checagem de diversidade só entra na busca genérica
+    // de fallback abaixo.
+    const preferredSlot = eventSchedules.get(post.eventType);
+    if (preferredSlot) {
+      chosenSlot =
+        upcoming.find(
+          (slot) =>
+            (!post.expiresAt || slot.getTime() <= post.expiresAt.getTime()) &&
+            weekdayInBrt(slot) === preferredSlot.weekday &&
+            timeOfDayInBrt(slot) === preferredSlot.time,
+        ) ?? null;
+    }
+
+    if (!chosenSlot) {
+      for (const slot of upcoming) {
+        if (post.expiresAt && slot.getTime() > post.expiresAt.getTime()) break; // não adianta olhar slots depois da expiração
+        const usage = slotUsage.get(slot.getTime());
+        const conflict = usage && (usage.entityIds.has(post.entityId) || usage.eventTypes.has(post.eventType));
+        if (!conflict) {
+          chosenSlot = slot;
+          break;
+        }
       }
     }
     // sem slot livre respeitando diversidade antes da expiração: força o primeiro slot disponível mesmo assim
@@ -101,22 +103,8 @@ export async function assignSlots(now: Date = new Date()): Promise<{ scheduled: 
     slotUsage.get(slotTime)!.entityIds.add(post.entityId);
     slotUsage.get(slotTime)!.eventTypes.add(post.eventType);
 
-    const dayKey = brtDayKey(chosenSlot);
-    if (!dayPlatformCounts.has(dayKey)) dayPlatformCounts.set(dayKey, new Map());
-    const counts = dayPlatformCounts.get(dayKey)!;
-
-    const assignedPlatforms: SocialPlatform[] = [];
-    const publicationsData: { platform: SocialPlatform; status: SocialPublishStatus }[] = [];
-    for (const cfg of enabledPlatforms) {
-      const used = counts.get(cfg.platform) ?? 0;
-      if (used < cfg.dailyLimit) {
-        counts.set(cfg.platform, used + 1);
-        assignedPlatforms.push(cfg.platform);
-        publicationsData.push({ platform: cfg.platform, status: SocialPublishStatus.PENDING });
-      } else {
-        publicationsData.push({ platform: cfg.platform, status: SocialPublishStatus.SKIPPED_CAP });
-      }
-    }
+    const assignedPlatforms = enabledPlatforms.map((p) => p.platform);
+    const publicationsData = assignedPlatforms.map((platform) => ({ platform, status: SocialPublishStatus.PENDING }));
 
     await prisma.socialPost.update({
       where: { id: post.id },
@@ -131,6 +119,29 @@ export async function assignSlots(now: Date = new Date()): Promise<{ scheduled: 
   }
 
   return { scheduled: scheduledCount };
+}
+
+/**
+ * Garante que o post tenha plataformas/publicações atribuídas antes de
+ * publicar. Necessário para posts criados manualmente (bypassam assignSlots,
+ * que é quem normalmente cria as SocialPostPublication) — sem isso, "Publicar
+ * agora"/"Tentar de novo" não tinham nada para publicar e o post ficava
+ * PUBLISHED sem nada ter sido enviado (nenhuma publicação = nenhuma falha).
+ * No-op se o post já tem publicações.
+ */
+export async function ensurePlatformsAssigned(postId: string): Promise<void> {
+  await ensureDefaultConfigs();
+  const existing = await prisma.socialPostPublication.count({ where: { socialPostId: postId } });
+  if (existing > 0) return;
+
+  const enabledPlatforms = (await prisma.socialPlatformConfig.findMany({ where: { enabled: true } })).map((p) => p.platform);
+  await prisma.socialPost.update({
+    where: { id: postId },
+    data: {
+      platforms: enabledPlatforms,
+      publications: { create: enabledPlatforms.map((platform) => ({ platform, status: SocialPublishStatus.PENDING })) },
+    },
+  });
 }
 
 /** Passo 2: gera artes/legendas e publica os posts cujo slot já chegou. */
@@ -182,8 +193,13 @@ export async function publishPost(postId: string): Promise<void> {
 
   await prisma.socialPost.update({ where: { id: postId }, data: { status: SocialPostStatus.PUBLISHING } });
 
+  const CHART_TARGET_URL: Partial<Record<string, string>> = {
+    GLOBAL100_PUBLISHED: "/global/100",
+    AIRPLAY_PUBLISHED: "/global/airplay",
+    ALBUMS_CHART_PUBLISHED: "/global/albums",
+  };
   const targetUrl =
-    post.entityType === "album" ? `/criticsfm/${post.entityId}` : "/";
+    post.entityType === "album" ? `/criticsfm/${post.entityId}` : (CHART_TARGET_URL[post.eventType] ?? "/");
 
   let telegramImageBuffer: Buffer | null = null;
   if (post.imageTelegram11) {
@@ -225,16 +241,19 @@ export async function publishPost(postId: string): Promise<void> {
   }
 
   const finalPublications = await prisma.socialPostPublication.findMany({ where: { socialPostId: postId } });
-  const relevant = finalPublications.filter((p) => p.status !== SocialPublishStatus.SKIPPED_CAP);
-  const publishedCount = relevant.filter((p) => p.status === SocialPublishStatus.PUBLISHED).length;
-  const failedCount = relevant.filter((p) => p.status === SocialPublishStatus.FAILED).length;
+  const publishedCount = finalPublications.filter((p) => p.status === SocialPublishStatus.PUBLISHED).length;
+  const failedCount = finalPublications.filter((p) => p.status === SocialPublishStatus.FAILED).length;
 
+  // Sem nenhuma publicação (ex.: post criado manualmente sem passar por
+  // assignSlots) não é sucesso — nada foi de fato enviado a rede nenhuma.
   const finalStatus =
-    publishedCount === 0 && failedCount > 0
+    finalPublications.length === 0
       ? SocialPostStatus.FAILED
-      : failedCount > 0
-        ? SocialPostStatus.PARTIALLY_PUBLISHED
-        : SocialPostStatus.PUBLISHED;
+      : publishedCount === 0 && failedCount > 0
+        ? SocialPostStatus.FAILED
+        : failedCount > 0
+          ? SocialPostStatus.PARTIALLY_PUBLISHED
+          : SocialPostStatus.PUBLISHED;
 
   await prisma.socialPost.update({
     where: { id: postId },
@@ -245,7 +264,12 @@ export async function publishPost(postId: string): Promise<void> {
       instagramMediaId: externalIds.INSTAGRAM_FEED ?? post.instagramMediaId,
       threadsPostId: externalIds.THREADS ?? post.threadsPostId,
       retryCount: failedCount > 0 ? { increment: 1 } : undefined,
-      lastError: failedCount > 0 ? finalPublications.find((p) => p.status === SocialPublishStatus.FAILED)?.error ?? null : null,
+      lastError:
+        finalPublications.length === 0
+          ? "Nenhuma plataforma atribuída a este post (ver ação 'Atribuir plataformas')."
+          : failedCount > 0
+            ? (finalPublications.find((p) => p.status === SocialPublishStatus.FAILED)?.error ?? null)
+            : null,
     },
   });
 }

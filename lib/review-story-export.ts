@@ -239,7 +239,7 @@ export async function renderReviewStoryBlob(input: ReviewExportInput): Promise<B
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   const titleLines = wrapText(ctx, input.albumTitle, W - 160, 2);
-  let y = coverY + coverSize + 64;
+  let y = coverY + coverSize + 110;
   for (const line of titleLines) {
     ctx.fillText(line, W / 2, y);
     y += 68;
@@ -427,7 +427,7 @@ export async function renderReviewSquareBlob(input: ReviewExportInput): Promise<
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   const titleLines = wrapText(ctx, input.albumTitle, SQ_W - Math.round(140 * u), 2);
-  let y = coverY + coverSize + Math.round(52 * u);
+  let y = coverY + coverSize + Math.round(90 * u);
   for (const line of titleLines) {
     ctx.fillText(line, SQ_W / 2, y);
     y += Math.round(58 * u);
@@ -586,7 +586,7 @@ export async function renderAlbumScoreStoryBlob(input: AlbumScoreExportInput): P
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   const titleLines = wrapText(ctx, input.albumTitle, W - 160, 2);
-  let y = coverY + coverSize + 64;
+  let y = coverY + coverSize + 110;
   for (const line of titleLines) {
     ctx.fillText(line, W / 2, y);
     y += 68;
@@ -654,7 +654,7 @@ export async function renderAlbumScoreSquareBlob(input: AlbumScoreExportInput): 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   const titleLines = wrapText(ctx, input.albumTitle, SQ_W - Math.round(160 * u), 2);
-  let y = coverY + coverSize + Math.round(64 * u);
+  let y = coverY + coverSize + Math.round(110 * u);
   for (const line of titleLines) {
     ctx.fillText(line, SQ_W / 2, y);
     y += Math.round(68 * u);

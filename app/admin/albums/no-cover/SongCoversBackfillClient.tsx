@@ -21,6 +21,8 @@ type BackfillResponse = {
   viaSearch?: number;
   remaining?: number;
   message?: string;
+  status?: number;
+  retryAfterMs?: number | null;
   tokenMissing?: boolean;
   failedItems?: FailedItem[];
 };
@@ -32,6 +34,9 @@ type Props = {
 
 const CLIENT_BATCH_LIMIT = 50;
 const CLIENT_BATCH_DELAY_MS = 600;
+const MAX_CONSECUTIVE_STALLS = 6;
+const STALL_BASE_DELAY_MS = 5000;
+const STALL_MAX_DELAY_MS = 60000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -64,6 +69,7 @@ export function SongCoversBackfillClient({ initialTotal, spotifyConfigured }: Pr
     let processedSum = 0;
     let updatedSum = 0;
     let searchSum = 0;
+    let consecutiveStalls = 0;
     const excludeSongIds: string[] = [];
     const failedById = new Map<string, FailedItem>();
 
@@ -77,6 +83,17 @@ export function SongCoversBackfillClient({ initialTotal, spotifyConfigured }: Pr
         const data = (await res.json()) as BackfillResponse;
 
         if (!res.ok || data.ok === false) {
+          const rateLimited = data.status === 429;
+          if (rateLimited && consecutiveStalls < MAX_CONSECUTIVE_STALLS) {
+            consecutiveStalls += 1;
+            const wait = Math.min(
+              STALL_MAX_DELAY_MS,
+              data.retryAfterMs ?? STALL_BASE_DELAY_MS * consecutiveStalls,
+            );
+            setMessage(`Spotify limitou as requisições. Tentando de novo em ${Math.ceil(wait / 1000)}s...`);
+            await sleep(wait);
+            continue;
+          }
           setMessage(data.message ?? "Não foi possível buscar capas no Spotify.");
           break;
         }
@@ -96,7 +113,6 @@ export function SongCoversBackfillClient({ initialTotal, spotifyConfigured }: Pr
         setUpdated(updatedSum);
         setViaSearch(searchSum);
         setTotal(processedSum + nextRemaining);
-        setMessage(nextRemaining > 0 ? "Vinculando capas de álbum..." : "Backfill de capas concluído.");
 
         if (data.failedItems?.length) {
           for (const item of data.failedItems) {
@@ -107,9 +123,20 @@ export function SongCoversBackfillClient({ initialTotal, spotifyConfigured }: Pr
         }
 
         if (batchProcessed === 0) {
-          setTotal(processedSum);
-          break;
+          if (nextRemaining === 0) break;
+          consecutiveStalls += 1;
+          if (consecutiveStalls > MAX_CONSECUTIVE_STALLS) {
+            setMessage("Spotify continua limitando as requisições. Tente novamente mais tarde.");
+            break;
+          }
+          const wait = Math.min(STALL_MAX_DELAY_MS, STALL_BASE_DELAY_MS * consecutiveStalls);
+          setMessage(`Nenhuma capa encontrada nesse lote. Tentando de novo em ${Math.ceil(wait / 1000)}s...`);
+          await sleep(wait);
+          continue;
         }
+
+        consecutiveStalls = 0;
+        setMessage(nextRemaining > 0 ? "Vinculando capas de álbum..." : "Backfill de capas concluído.");
         if (nextRemaining > 0) await sleep(CLIENT_BATCH_DELAY_MS);
       }
 

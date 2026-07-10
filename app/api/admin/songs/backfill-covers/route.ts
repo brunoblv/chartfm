@@ -61,7 +61,10 @@ export async function POST(req: NextRequest) {
 
   const probe = await probeSpotifyApi();
   if (!probe.ok) {
-    return NextResponse.json({ ok: false, configured: true, message: probe.error }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, configured: true, message: probe.error, status: probe.status, retryAfterMs: probe.retryAfterMs },
+      { status: 400 },
+    );
   }
 
   const body = (await req.json().catch(() => ({}))) as {

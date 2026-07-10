@@ -28,3 +28,15 @@ export function brtDayKey(date: Date): string {
   const brt = new Date(date.getTime() - BRT_OFFSET_MS);
   return `${brt.getUTCFullYear()}-${String(brt.getUTCMonth() + 1).padStart(2, "0")}-${String(brt.getUTCDate()).padStart(2, "0")}`;
 }
+
+/** Dia da semana em América/São_Paulo (0=domingo … 6=sábado). */
+export function weekdayInBrt(date: Date): number {
+  const brt = new Date(date.getTime() - BRT_OFFSET_MS);
+  return brt.getUTCDay();
+}
+
+/** Horário do dia em América/São_Paulo, formato "HH:mm". */
+export function timeOfDayInBrt(date: Date): string {
+  const brt = new Date(date.getTime() - BRT_OFFSET_MS);
+  return `${String(brt.getUTCHours()).padStart(2, "0")}:${String(brt.getUTCMinutes()).padStart(2, "0")}`;
+}

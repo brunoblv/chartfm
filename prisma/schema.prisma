@@ -1615,11 +1615,20 @@ model SocialPostPublication {
 
 /// Limite diário e liga/desliga por plataforma (configurável no admin).
 model SocialPlatformConfig {
-  platform   SocialPlatform @id
-  dailyLimit Int            @default(2) @map("daily_limit")
-  enabled    Boolean        @default(true)
+  platform SocialPlatform @id
+  enabled  Boolean        @default(true)
 
   @@map("social_platform_configs")
+}
+
+/// Dia da semana + horário fixo em que cada tipo de evento é postado (ex.: as
+/// paradas oficiais, terça 9h). 0=domingo…6=sábado, time em "HH:mm" (América/São_Paulo).
+model SocialEventSchedule {
+  eventType SocialEventType @id @map("event_type")
+  weekday   Int
+  time      String
+
+  @@map("social_event_schedules")
 }
 
 /// Singleton (id fixo "default") com os horários dos slots e o fuso horário.

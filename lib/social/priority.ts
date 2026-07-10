@@ -36,7 +36,14 @@ export function expiresAtForEventType(eventType: SocialEventType, now: Date): Da
       return new Date(now.getTime() + 72 * HOUR);
     case SocialEventType.PUSH_PHASE_CHANGE:
       return new Date(now.getTime() + 48 * HOUR);
+    // As 3 paradas oficiais têm dia/horário configurável (ver
+    // lib/social/event-schedule.ts) — precisam sair antes da próxima edição
+    // (terça seguinte), senão ficam velhas.
+    case SocialEventType.GLOBAL100_PUBLISHED:
+    case SocialEventType.AIRPLAY_PUBLISHED:
+    case SocialEventType.ALBUMS_CHART_PUBLISHED:
+      return new Date(now.getTime() + 5 * 24 * HOUR);
     default:
-      return null; // evergreen: charts, avaliações, vencedor do clube
+      return null; // evergreen: avaliações, vencedor do clube
   }
 }

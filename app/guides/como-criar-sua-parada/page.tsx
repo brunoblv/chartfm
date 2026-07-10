@@ -32,9 +32,9 @@ export default function GuideCrearParada() {
         {
           title: "Passo 2 — Busque e adicione músicas",
           body: [
-            "No editor de chart, use a barra de busca para encontrar músicas pelo nome da faixa ou do artista. O ChartFM se integra com bases de dados musicais para oferecer sugestões automáticas enquanto você digita.",
+            "No editor de chart existem dois campos de busca separados: 'Catálogo' e 'Spotify'. Comece sempre pelo campo Catálogo — ele busca entre as músicas que já existem na base do ChartFM e costuma trazer resultado mais rápido.",
+            "Se a música que você procura não aparecer no Catálogo (campo mostra 'Nenhuma música no catálogo'), use o campo Spotify logo abaixo. Ele busca direto na base do Spotify e, ao clicar na música encontrada, ela é adicionada à sua parada e cadastrada automaticamente no catálogo do ChartFM — assim, da próxima vez, ela já vai aparecer na busca do Catálogo.",
             "Clique na música desejada para adicioná-la à sua parada. Você pode adicionar até 100 faixas por chart semanal. Não há limite mínimo — se você ouviu apenas 5 músicas que valeram destaque na semana, basta listar essas 5.",
-            "Caso uma música não apareça nos resultados de busca, é possível adicioná-la manualmente informando título e artista. O sistema vai tentar identificar e vincular ao registro correto na base de dados.",
           ],
         },
         {

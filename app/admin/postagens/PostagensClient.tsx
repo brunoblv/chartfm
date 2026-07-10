@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { adminPanelScrollStyle, adminTdStyle, adminThStyle, adminInputStyle } from "@/components/admin/admin-styles";
+import { buildWeekIndexFromDate } from "@/lib/chart-week";
 
 type Publication = {
   id: string;
@@ -37,8 +38,35 @@ type SocialPostRow = {
   publications: Publication[];
 };
 
-type PlatformConfig = { platform: string; dailyLimit: number; enabled: boolean };
+type PlatformConfig = { platform: string; enabled: boolean };
 type AutomationToggle = { eventType: string; enabled: boolean };
+type PushRoundOption = { id: string; number: number };
+type CopaEditionOption = { id: string; name: string; year: number };
+type AlbumOption = { id: number; title: string; artist: { name: string } };
+type EventScheduleRow = { eventType: string; weekday: number; time: string };
+
+const WEEKDAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+/** As paradas oficiais têm dia/horário configurável (as outras automações usam o próximo slot livre). */
+const CHART_EVENT_TYPES = ["GLOBAL100_PUBLISHED", "AIRPLAY_PUBLISHED", "ALBUMS_CHART_PUBLISHED"];
+const CHART_LABELS: Record<string, string> = {
+  GLOBAL100_PUBLISHED: "Global 100",
+  AIRPLAY_PUBLISHED: "Global 100 Air Play",
+  ALBUMS_CHART_PUBLISHED: "Global 100 Álbuns",
+};
+
+/** Como preencher entityType/entityId para cada tipo de evento na criação manual. */
+const EVENT_META: Record<string, { entityType: string; mode: "album" | "week" | "push" | "copa" }> = {
+  ALBUM_REVIEW_MILESTONE: { entityType: "album", mode: "album" },
+  ALBUM_CLUB_WINNER: { entityType: "album", mode: "album" },
+  GLOBAL100_PUBLISHED: { entityType: "chart_week", mode: "week" },
+  AIRPLAY_PUBLISHED: { entityType: "chart_week", mode: "week" },
+  ALBUMS_CHART_PUBLISHED: { entityType: "chart_week", mode: "week" },
+  WEEKLY_POLL_OPEN: { entityType: "weekly_poll", mode: "week" },
+  PUSH_PHASE_CHANGE: { entityType: "push_round", mode: "push" },
+  COPA_ROUND_START: { entityType: "copa_edition", mode: "copa" },
+  COPA_ROUND_RESULT: { entityType: "copa_edition", mode: "copa" },
+  COPA_FINAL_RESULT: { entityType: "copa_edition", mode: "copa" },
+};
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "#86868B",
@@ -57,19 +85,94 @@ export default function PostagensClient({
   platformConfigs,
   automationToggles,
   scheduleConfig,
+  pushRounds,
+  copaEditions,
+  latestWeekIndex,
+  eventSchedules,
 }: {
   initialPosts: SocialPostRow[];
   platformConfigs: PlatformConfig[];
   automationToggles: AutomationToggle[];
   scheduleConfig: { slots: string[]; timezone: string };
+  pushRounds: PushRoundOption[];
+  copaEditions: CopaEditionOption[];
+  /** Última semana com snapshot congelado por eventType — pode não existir a semana calendário atual ainda. */
+  latestWeekIndex: Record<string, number | null>;
+  eventSchedules: EventScheduleRow[];
 }) {
   const [posts, setPosts] = useState(initialPosts);
   const [platforms, setPlatforms] = useState(platformConfigs);
   const [toggles, setToggles] = useState(automationToggles);
+  const [schedules, setSchedules] = useState(eventSchedules);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [platformFilter, setPlatformFilter] = useState<string>("ALL");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [manualForm, setManualForm] = useState({ eventType: "ALBUM_REVIEW_MILESTONE", entityType: "album", entityId: "" });
+  const [tab, setTab] = useState<"fila" | "agenda">("fila");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [captionDrafts, setCaptionDrafts] = useState<Record<string, string>>({});
+
+  const currentWeekIndex = useMemo(() => buildWeekIndexFromDate(new Date()), []);
+  const [manualForm, setManualForm] = useState({
+    eventType: "ALBUM_REVIEW_MILESTONE",
+    entityType: "album",
+    entityId: "",
+  });
+  const [albumQuery, setAlbumQuery] = useState("");
+  const [albumResults, setAlbumResults] = useState<AlbumOption[]>([]);
+  const [selectedAlbum, setSelectedAlbum] = useState<AlbumOption | null>(null);
+  const [albumSearchLoading, setAlbumSearchLoading] = useState(false);
+  const albumDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const manualMode = EVENT_META[manualForm.eventType]?.mode ?? "album";
+
+  function selectEventType(eventType: string) {
+    const meta = EVENT_META[eventType];
+    setSelectedAlbum(null);
+    setAlbumQuery("");
+    setAlbumResults([]);
+    const defaultWeek = latestWeekIndex[eventType] ?? currentWeekIndex;
+    setManualForm({
+      eventType,
+      entityType: meta?.entityType ?? "",
+      entityId: meta?.mode === "week" ? String(defaultWeek) : "",
+    });
+  }
+
+  useEffect(() => {
+    const q = albumQuery.trim();
+    if (manualMode !== "album" || q.length < 2) {
+      setAlbumResults([]);
+      return;
+    }
+    if (albumDebounceRef.current) clearTimeout(albumDebounceRef.current);
+    setAlbumSearchLoading(true);
+    const ctrl = new AbortController();
+    albumDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/edicao-de-dados/search?kind=albums&q=${encodeURIComponent(q)}`, {
+          signal: ctrl.signal,
+          cache: "no-store",
+        });
+        const data = res.ok ? ((await res.json()) as { items?: AlbumOption[] }) : { items: [] };
+        setAlbumResults(data.items ?? []);
+      } catch {
+        // request abortado/erro de rede — ignora
+      } finally {
+        setAlbumSearchLoading(false);
+      }
+    }, 250);
+    return () => {
+      ctrl.abort();
+      if (albumDebounceRef.current) clearTimeout(albumDebounceRef.current);
+    };
+  }, [albumQuery, manualMode]);
+
+  function pickAlbum(album: AlbumOption) {
+    setSelectedAlbum(album);
+    setAlbumQuery(`${album.title} — ${album.artist.name}`);
+    setAlbumResults([]);
+    setManualForm((prev) => ({ ...prev, entityId: String(album.id) }));
+  }
 
   const filtered = useMemo(() => {
     return posts.filter((p) => {
@@ -100,7 +203,78 @@ export default function PostagensClient({
     }
   }
 
-  async function updatePlatformConfig(platform: string, patch: { dailyLimit?: number; enabled?: boolean }) {
+  function toggleExpand(post: SocialPostRow) {
+    setExpandedId((prev) => {
+      if (prev === post.id) return null;
+      setCaptionDrafts({
+        facebook: post.captionFacebook ?? "",
+        threads: post.captionThreads ?? "",
+        telegram: post.captionTelegram ?? "",
+      });
+      return post.id;
+    });
+  }
+
+  function updateCaptionLocal(postId: string, caption: string) {
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, captionInstagram: caption } : p)));
+  }
+
+  async function saveCaptions(postId: string) {
+    setBusyId(postId);
+    try {
+      const platforms: Array<"facebook" | "threads" | "telegram"> = ["facebook", "threads", "telegram"];
+      for (const platform of platforms) {
+        await fetch(`/api/admin/social/posts/${postId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "caption", platform, caption: captionDrafts[platform] ?? "" }),
+        });
+      }
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                captionFacebook: captionDrafts.facebook ?? p.captionFacebook,
+                captionThreads: captionDrafts.threads ?? p.captionThreads,
+                captionTelegram: captionDrafts.telegram ?? p.captionTelegram,
+              }
+            : p,
+        ),
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function regenerateCaption(postId: string) {
+    setBusyId(postId);
+    try {
+      const res = await fetch(`/api/admin/social/posts/${postId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "regenerate-caption" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? "Falha ao gerar nova variação de texto");
+        return;
+      }
+      const updated = normalizePost(data.post);
+      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, ...updated } : p)));
+      if (expandedId === postId) {
+        setCaptionDrafts({
+          facebook: updated.captionFacebook ?? "",
+          threads: updated.captionThreads ?? "",
+          telegram: updated.captionTelegram ?? "",
+        });
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function updatePlatformConfig(platform: string, patch: { enabled?: boolean }) {
     const res = await fetch("/api/admin/social/config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -109,6 +283,24 @@ export default function PostagensClient({
     if (res.ok) {
       const data = await res.json();
       setPlatforms((prev) => prev.map((p) => (p.platform === platform ? data.config : p)));
+    }
+  }
+
+  async function updateEventSchedule(eventType: string, patch: { weekday?: number; time?: string }) {
+    const current = schedules.find((s) => s.eventType === eventType);
+    const weekday = patch.weekday ?? current?.weekday ?? 2;
+    const time = patch.time ?? current?.time ?? "09:00";
+    const res = await fetch("/api/admin/social/config", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "event-schedule", eventType, weekday, time }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setSchedules((prev) => {
+        const exists = prev.some((s) => s.eventType === eventType);
+        return exists ? prev.map((s) => (s.eventType === eventType ? data.config : s)) : [...prev, data.config];
+      });
     }
   }
 
@@ -128,7 +320,14 @@ export default function PostagensClient({
   }
 
   async function createManualPost() {
-    if (!manualForm.entityId.trim()) return;
+    if (!manualForm.entityType.trim() || !manualForm.entityId.trim()) {
+      alert(
+        manualMode === "album"
+          ? "Busque e selecione um álbum antes de criar."
+          : "Preencha entityType e entityId antes de criar.",
+      );
+      return;
+    }
     const res = await fetch("/api/admin/social/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -140,7 +339,7 @@ export default function PostagensClient({
       return;
     }
     setPosts((prev) => [normalizePost(data.post), ...prev]);
-    setManualForm({ ...manualForm, entityId: "" });
+    selectEventType(manualForm.eventType);
   }
 
   const eventTypes = [
@@ -158,27 +357,83 @@ export default function PostagensClient({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--divider)" }}>
+        {(
+          [
+            { id: "fila" as const, label: "Fila" },
+            { id: "agenda" as const, label: "Agenda das Paradas" },
+          ]
+        ).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{
+              padding: "10px 16px",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: 700,
+              color: tab === t.id ? "#FA243C" : "var(--text-muted)",
+              borderBottom: tab === t.id ? "2px solid #FA243C" : "2px solid transparent",
+              marginBottom: -1,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "agenda" && (
+        <section style={{ border: "1px solid var(--divider)", borderRadius: 12, padding: 16, maxWidth: 520 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>Agenda das paradas oficiais</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
+            Dia da semana e horário (América/São_Paulo) em que cada parada é postada. As 3 edições são publicadas juntas pelo cron de
+            terça — se configuradas para o mesmo dia/horário, saem juntas no mesmo slot em todas as redes.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {CHART_EVENT_TYPES.map((eventType) => {
+              const cfg = schedules.find((s) => s.eventType === eventType);
+              return (
+                <div key={eventType} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 180, fontSize: 13, fontWeight: 600 }}>{CHART_LABELS[eventType]}</div>
+                  <select
+                    value={cfg?.weekday ?? 2}
+                    onChange={(e) => updateEventSchedule(eventType, { weekday: Number(e.target.value) })}
+                    style={{ ...adminInputStyle, width: 130 }}
+                  >
+                    {WEEKDAY_LABELS.map((label, idx) => (
+                      <option key={idx} value={idx}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="time"
+                    value={cfg?.time ?? "09:00"}
+                    onChange={(e) => updateEventSchedule(eventType, { time: e.target.value })}
+                    style={{ ...adminInputStyle, width: 110 }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {tab === "fila" && (
+        <>
       <section style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
         {["FACEBOOK", "INSTAGRAM_FEED", "INSTAGRAM_STORY", "THREADS", "TELEGRAM"].map((platform) => {
           const cfg = platforms.find((p) => p.platform === platform);
           return (
-            <div key={platform} style={{ border: "1px solid var(--divider)", borderRadius: 12, padding: 12, minWidth: 180 }}>
-              <div style={{ fontWeight: 700, fontSize: 13 }}>{platform}</div>
-              <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, fontSize: 13 }}>
-                Limite/dia
-                <input
-                  type="number"
-                  min={0}
-                  value={cfg?.dailyLimit ?? 0}
-                  onChange={(e) => updatePlatformConfig(platform, { dailyLimit: Number(e.target.value) })}
-                  style={{ ...adminInputStyle, width: 70 }}
-                />
-              </label>
-              <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, fontSize: 13 }}>
-                <input type="checkbox" checked={cfg?.enabled ?? true} onChange={(e) => updatePlatformConfig(platform, { enabled: e.target.checked })} />
-                Ativo
-              </label>
-            </div>
+            <label
+              key={platform}
+              style={{ display: "flex", gap: 8, alignItems: "center", border: "1px solid var(--divider)", borderRadius: 12, padding: "10px 14px", fontSize: 13, fontWeight: 600 }}
+            >
+              <input type="checkbox" checked={cfg?.enabled ?? true} onChange={(e) => updatePlatformConfig(platform, { enabled: e.target.checked })} />
+              {platform}
+            </label>
           );
         })}
       </section>
@@ -201,16 +456,109 @@ export default function PostagensClient({
 
       <section style={{ border: "1px solid var(--divider)", borderRadius: 12, padding: 12 }}>
         <div style={{ fontWeight: 700, marginBottom: 8 }}>Criar publicação manual</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <select value={manualForm.eventType} onChange={(e) => setManualForm({ ...manualForm, eventType: e.target.value })} style={{ ...adminInputStyle, width: 220 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <select value={manualForm.eventType} onChange={(e) => selectEventType(e.target.value)} style={{ ...adminInputStyle, width: 220 }}>
             {eventTypes.map((et) => (
               <option key={et} value={et}>
                 {et}
               </option>
             ))}
           </select>
-          <input placeholder="entityType (ex.: album)" value={manualForm.entityType} onChange={(e) => setManualForm({ ...manualForm, entityType: e.target.value })} style={{ ...adminInputStyle, width: 160 }} />
-          <input placeholder="entityId" value={manualForm.entityId} onChange={(e) => setManualForm({ ...manualForm, entityId: e.target.value })} style={{ ...adminInputStyle, width: 160 }} />
+
+          {manualMode === "album" && (
+            <div style={{ position: "relative", width: 280 }}>
+              <input
+                placeholder="Buscar álbum por nome ou artista…"
+                value={albumQuery}
+                onChange={(e) => {
+                  setAlbumQuery(e.target.value);
+                  setSelectedAlbum(null);
+                  setManualForm((prev) => ({ ...prev, entityId: "" }));
+                }}
+                style={{ ...adminInputStyle, width: "100%" }}
+              />
+              {albumSearchLoading && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>Buscando…</div>}
+              {albumResults.length > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    background: "var(--surface)",
+                    border: "1px solid var(--divider-strong)",
+                    borderRadius: 8,
+                    maxHeight: 240,
+                    overflowY: "auto",
+                    marginTop: 2,
+                  }}
+                >
+                  {albumResults.map((a) => (
+                    <div
+                      key={a.id}
+                      onClick={() => pickAlbum(a)}
+                      style={{ padding: "8px 10px", fontSize: 13, cursor: "pointer", borderBottom: "1px solid var(--divider)" }}
+                    >
+                      {a.title} <span style={{ color: "var(--text-muted)" }}>— {a.artist.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selectedAlbum && (
+                <div style={{ fontSize: 11, color: "#2D7A32", marginTop: 2 }}>
+                  Selecionado: #{selectedAlbum.id} — {selectedAlbum.title}
+                </div>
+              )}
+            </div>
+          )}
+
+          {manualMode === "week" && (
+            <div>
+              <input
+                placeholder="Semana (ano*100 + semana ISO)"
+                value={manualForm.entityId}
+                onChange={(e) => setManualForm({ ...manualForm, entityId: e.target.value })}
+                style={{ ...adminInputStyle, width: 200 }}
+              />
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                {latestWeekIndex[manualForm.eventType] != null
+                  ? `Última semana com dados: ${latestWeekIndex[manualForm.eventType]} (semana calendário atual: ${currentWeekIndex})`
+                  : `Nenhuma semana com dados ainda para este evento — semana calendário atual: ${currentWeekIndex}`}
+              </div>
+            </div>
+          )}
+
+          {manualMode === "push" && (
+            <select
+              value={manualForm.entityId}
+              onChange={(e) => setManualForm({ ...manualForm, entityId: e.target.value })}
+              style={{ ...adminInputStyle, width: 200 }}
+            >
+              <option value="">Selecione a rodada…</option>
+              {pushRounds.map((r) => (
+                <option key={r.id} value={r.id}>
+                  Rodada {r.number}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {manualMode === "copa" && (
+            <select
+              value={manualForm.entityId}
+              onChange={(e) => setManualForm({ ...manualForm, entityId: e.target.value })}
+              style={{ ...adminInputStyle, width: 220 }}
+            >
+              <option value="">Selecione a edição…</option>
+              {copaEditions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.year})
+                </option>
+              ))}
+            </select>
+          )}
+
           <button onClick={createManualPost} style={{ padding: "8px 16px", borderRadius: 10, border: "none", background: "#FA243C", color: "#fff", fontWeight: 700, cursor: "pointer" }}>
             Criar
           </button>
@@ -246,12 +594,15 @@ export default function PostagensClient({
               <th style={adminThStyle}>Status</th>
               <th style={adminThStyle}>Agendado</th>
               <th style={adminThStyle}>Plataformas</th>
+              <th style={adminThStyle}>Preview da arte</th>
+              <th style={adminThStyle}>Texto</th>
               <th style={adminThStyle}>Ações</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((post) => (
-              <tr key={post.id}>
+              <Fragment key={post.id}>
+              <tr>
                 <td style={adminTdStyle}>{post.eventType}</td>
                 <td style={adminTdStyle}>
                   {post.entityType} #{post.entityId}
@@ -293,12 +644,58 @@ export default function PostagensClient({
                   ))}
                 </td>
                 <td style={adminTdStyle}>
+                  {post.imageFeed45 || post.imageStory916 || post.imageTelegram11 ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {[
+                        { label: "Feed", src: post.imageFeed45 },
+                        { label: "Story", src: post.imageStory916 },
+                        { label: "Telegram", src: post.imageTelegram11 },
+                      ]
+                        .filter((v) => v.src)
+                        .map((v) => (
+                          <a key={v.label} href={v.src!} target="_blank" rel="noreferrer" title={`Abrir ${v.label} em tamanho real`}>
+                            <img
+                              src={v.src!}
+                              alt={v.label}
+                              style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 6, border: "1px solid var(--divider-strong)", display: "block" }}
+                            />
+                          </a>
+                        ))}
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>ainda não gerada</span>
+                      <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "generate-preview" })} style={actionBtnStyle}>
+                        Gerar preview
+                      </button>
+                    </div>
+                  )}
+                </td>
+                <td style={{ ...adminTdStyle, minWidth: 260 }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {post.imageFeed45 && (
-                      <a href={post.imageFeed45} target="_blank" rel="noreferrer" style={{ fontSize: 11 }}>
-                        preview arte
-                      </a>
-                    )}
+                    <textarea
+                      value={post.captionInstagram ?? ""}
+                      onChange={(e) => updateCaptionLocal(post.id, e.target.value)}
+                      onBlur={(e) => callAction(post.id, { action: "caption", platform: "instagram", caption: e.target.value })}
+                      rows={5}
+                      placeholder="Texto ainda não gerado"
+                      style={{ ...adminInputStyle, width: "100%", minWidth: 240, fontFamily: "inherit", resize: "vertical" }}
+                    />
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button disabled={busyId === post.id} onClick={() => regenerateCaption(post.id)} style={actionBtnStyle}>
+                        {busyId === post.id ? "Gerando…" : "Regenerar texto"}
+                      </button>
+                      <button disabled={busyId === post.id} onClick={() => toggleExpand(post)} style={actionBtnStyle}>
+                        {expandedId === post.id ? "Fechar" : "Outras redes"}
+                      </button>
+                    </div>
+                  </div>
+                </td>
+                <td style={adminTdStyle}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "generate-preview" })} style={actionBtnStyle}>
+                      Regenerar preview
+                    </button>
                     <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "publish-now" })} style={actionBtnStyle}>
                       Publicar agora
                     </button>
@@ -311,10 +708,44 @@ export default function PostagensClient({
                   </div>
                 </td>
               </tr>
+              {expandedId === post.id && (
+                <tr>
+                  <td colSpan={9} style={{ ...adminTdStyle, background: "var(--surface-secondary, rgba(127,127,127,0.06))" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 8 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13 }}>Texto nas outras redes (o principal, do Instagram, é editado na coluna Texto)</div>
+                      {(
+                        [
+                          { key: "facebook" as const, label: "Facebook" },
+                          { key: "threads" as const, label: "Threads" },
+                          { key: "telegram" as const, label: "Telegram" },
+                        ]
+                      ).map((f) => (
+                        <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <label style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{f.label}</label>
+                          <textarea
+                            value={captionDrafts[f.key] ?? ""}
+                            onChange={(e) => setCaptionDrafts((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                            rows={4}
+                            style={{ ...adminInputStyle, width: "100%", fontFamily: "inherit", resize: "vertical" }}
+                          />
+                        </div>
+                      ))}
+                      <div>
+                        <button disabled={busyId === post.id} onClick={() => saveCaptions(post.id)} style={{ ...actionBtnStyle, background: "#FA243C", color: "#fff", fontWeight: 700, border: "none" }}>
+                          Salvar texto
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
           </tbody>
         </table>
       </div>
+        </>
+      )}
     </div>
   );
 }

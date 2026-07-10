@@ -406,6 +406,31 @@ export const artistPendenciasWhere: Prisma.ArtistWhereInput = {
   OR: [{ imageUrl: null }, { spotifyUrl: null }, { genres: { isEmpty: true } }],
 };
 
+export const artistSemBioWhere: Prisma.ArtistWhereInput = {
+  OR: [{ bio: null }, { bio: "" }],
+};
+
+/** Pendências de artista incluindo bio — usado pelo backfill combinado (todas as APIs). */
+export const artistPendenciasComBioWhere: Prisma.ArtistWhereInput = {
+  OR: [...(artistPendenciasWhere.OR as Prisma.ArtistWhereInput[]), ...(artistSemBioWhere.OR as Prisma.ArtistWhereInput[])],
+};
+
+export async function countArtistsSemBio(): Promise<number> {
+  return prisma.artist.count({ where: artistSemBioWhere });
+}
+
+export async function countArtistsPendenciasComBio(): Promise<number> {
+  return prisma.artist.count({ where: artistPendenciasComBioWhere });
+}
+
+export async function countSongsProblemas(): Promise<number> {
+  return prisma.song.count({ where: songProblemasWhere });
+}
+
+export async function countAlbunsPendencias(): Promise<number> {
+  return prisma.album.count({ where: albumPendenciasWhere });
+}
+
 export const ARTIST_AUDIT_SELECT = {
   id: true,
   name: true,

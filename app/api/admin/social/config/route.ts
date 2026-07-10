@@ -8,14 +8,24 @@ export async function PATCH(req: NextRequest) {
   if (!auth) return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
 
   const body = await req.json();
-  const { kind } = body as { kind: "platform" | "automation" | "schedule" };
+  const { kind } = body as { kind: "platform" | "automation" | "schedule" | "event-schedule" };
 
   if (kind === "platform") {
-    const { platform, dailyLimit, enabled } = body as { platform: SocialPlatform; dailyLimit?: number; enabled?: boolean };
+    const { platform, enabled } = body as { platform: SocialPlatform; enabled?: boolean };
     const updated = await prisma.socialPlatformConfig.upsert({
       where: { platform },
-      create: { platform, dailyLimit: dailyLimit ?? 2, enabled: enabled ?? true },
-      update: { ...(dailyLimit !== undefined ? { dailyLimit } : {}), ...(enabled !== undefined ? { enabled } : {}) },
+      create: { platform, enabled: enabled ?? true },
+      update: { ...(enabled !== undefined ? { enabled } : {}) },
+    });
+    return NextResponse.json({ ok: true, config: updated });
+  }
+
+  if (kind === "event-schedule") {
+    const { eventType, weekday, time } = body as { eventType: SocialEventType; weekday: number; time: string };
+    const updated = await prisma.socialEventSchedule.upsert({
+      where: { eventType },
+      create: { eventType, weekday, time },
+      update: { weekday, time },
     });
     return NextResponse.json({ ok: true, config: updated });
   }

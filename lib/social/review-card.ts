@@ -225,7 +225,9 @@ window.__chartfmDrawReviewCard = async function (args) {
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   var titleLines = wrapText(albumTitle, W - Math.round(160 * u), 2);
-  var y = coverY + coverSize + Math.round(64 * u);
+  // O badge da nota desce 28*u abaixo da capa — título precisa começar bem
+  // depois disso para não ficar colado nele.
+  var y = coverY + coverSize + Math.round(110 * u);
   for (var i2 = 0; i2 < titleLines.length; i2++) {
     ctx.fillText(titleLines[i2], W / 2, y);
     y += Math.round(68 * u);

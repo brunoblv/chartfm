@@ -1,6 +1,7 @@
 import { Shell } from "@/components/layout/Shell";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
+import { getEventSchedules } from "@/lib/social/event-schedule";
 import PostagensClient from "./PostagensClient";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,18 @@ export default async function AdminPostagensPage() {
     );
   }
 
-  const [posts, platformConfigs, automationToggles, scheduleConfig] = await Promise.all([
+  const [
+    posts,
+    platformConfigs,
+    automationToggles,
+    scheduleConfig,
+    pushRounds,
+    copaEditions,
+    latestGlobal100,
+    latestAirplay,
+    latestAlbums,
+    latestWeeklyPoll,
+  ] = await Promise.all([
     prisma.socialPost.findMany({
       orderBy: [{ createdAt: "desc" }],
       take: 200,
@@ -24,7 +36,25 @@ export default async function AdminPostagensPage() {
     prisma.socialPlatformConfig.findMany(),
     prisma.socialAutomationToggle.findMany(),
     prisma.socialScheduleConfig.findUnique({ where: { id: "default" } }),
+    prisma.pushRound.findMany({ select: { id: true, number: true }, orderBy: { number: "desc" }, take: 10 }),
+    prisma.copaEdition.findMany({ select: { id: true, name: true, year: true }, orderBy: { createdAt: "desc" }, take: 10 }),
+    prisma.globalSnapshot.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
+    prisma.globalAirplaySnapshot.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
+    prisma.globalAlbumsSnapshot.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
+    prisma.weeklySpotlightPoll.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
   ]);
+
+  const eventSchedulesMap = await getEventSchedules();
+  const eventSchedules = Array.from(eventSchedulesMap.entries()).map(([eventType, slot]) => ({ eventType, ...slot }));
+
+  // Última semana com dados congelados por tipo de evento — evita pré-preencher a "semana atual"
+  // calendário quando o snapshot da semana ainda não foi gerado (só sai na terça).
+  const latestWeekIndex: Record<string, number | null> = {
+    GLOBAL100_PUBLISHED: latestGlobal100?.weekIndex ?? null,
+    AIRPLAY_PUBLISHED: latestAirplay?.weekIndex ?? null,
+    ALBUMS_CHART_PUBLISHED: latestAlbums?.weekIndex ?? null,
+    WEEKLY_POLL_OPEN: latestWeeklyPoll?.weekIndex ?? null,
+  };
 
   const serializedPosts = posts.map((p) => ({
     id: p.id,
@@ -65,6 +95,10 @@ export default async function AdminPostagensPage() {
         platformConfigs={platformConfigs}
         automationToggles={automationToggles}
         scheduleConfig={scheduleConfig ? { slots: scheduleConfig.slots, timezone: scheduleConfig.timezone } : { slots: ["07:00", "09:00", "13:00", "17:00", "19:00"], timezone: "America/Sao_Paulo" }}
+        pushRounds={pushRounds}
+        copaEditions={copaEditions}
+        latestWeekIndex={latestWeekIndex}
+        eventSchedules={eventSchedules}
       />
     </Shell>
   );

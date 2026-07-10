@@ -16,6 +16,8 @@ type AlbumReviewCaptionInput = {
   rating: number;
   targetUrl: string;
   hashtags: string[];
+  /** Texto narrativo variado (nunca repete a mesma redação), já validado contra os dados reais do álbum. */
+  narrativeLine?: string;
 };
 
 /** Legendas por plataforma para o card de "nota" (avaliação/vencedor do Clube). Sem inventar fatos sobre o álbum. */
@@ -25,9 +27,11 @@ export function buildAlbumReviewCaptions(input: AlbumReviewCaptionInput): Platfo
   const tags = formatHashtags(hashtags);
 
   const isWinner = kind === "ALBUM_CLUB_WINNER";
-  const headline = isWinner
-    ? `${albumTitle}, de ${albumArtist}, é o álbum vencedor do Clube do Álbum!`
-    : `${albumTitle}, de ${albumArtist}, já tem nota da comunidade no ChartFM: ${rating} (${scoreLabelText.toLowerCase()}).`;
+  const headline = input.narrativeLine?.trim()
+    ? input.narrativeLine.trim()
+    : isWinner
+      ? `${albumTitle}, de ${albumArtist}, é o álbum vencedor do Clube do Álbum!`
+      : `${albumTitle}, de ${albumArtist}, já tem nota da comunidade no ChartFM: ${rating} (${scoreLabelText.toLowerCase()}).`;
 
   return {
     captionInstagram: `${headline}\n\nOuça e avalie você também 🎧\n${url}\n\n${tags}`,

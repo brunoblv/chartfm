@@ -1,7 +1,8 @@
 import { isInstagramConfigured } from "@/lib/social/config";
 import { timedFetch, type PublishResult } from "@/lib/social/publish/shared";
 
-const GRAPH_BASE = "https://graph.facebook.com/v21.0";
+// Instagram API with Instagram Login (token nativo "IGAA...", não é o token de Página do Facebook).
+const GRAPH_BASE = "https://graph.instagram.com/v21.0";
 const POLL_MAX_ATTEMPTS = 8;
 const POLL_DELAY_MS = 2000;
 

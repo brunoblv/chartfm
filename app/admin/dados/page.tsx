@@ -1,9 +1,20 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { MissingInfoBackfillClient } from "../missing-info/MissingInfoBackfillClient";
-import { countSongsSemDatas, fetchDadosOverview, getAdminAccess, type EscopoContadores } from "./lib";
+import {
+  countAlbunsPendencias,
+  countArtistsPendenciasComBio,
+  countArtistsSemBio,
+  countSongsProblemas,
+  countSongsSemDatas,
+  fetchDadosOverview,
+  getAdminAccess,
+  type EscopoContadores,
+} from "./lib";
 import { AccessDenied, DadosShell } from "./ui";
 import { DatesBackfillClient } from "./DatesBackfillClient";
+import { ArtistBiosBackfillClient } from "./ArtistBiosBackfillClient";
+import { SourceBatchBackfillClient } from "./SourceBatchBackfillClient";
 
 export const dynamic = "force-dynamic";
 
@@ -89,9 +100,13 @@ export default async function DadosOverviewPage() {
   const access = await getAdminAccess();
   if (!access) return <AccessDenied />;
 
-  const [ov, semDatas] = await Promise.all([
+  const [ov, semDatas, semBio, songsProblemas, albunsPendencias, artistasPendenciasComBio] = await Promise.all([
     fetchDadosOverview(access.isOwner ? access.userId : null),
     countSongsSemDatas(),
+    countArtistsSemBio(),
+    countSongsProblemas(),
+    countAlbunsPendencias(),
+    countArtistsPendenciasComBio(),
   ]);
   const totalPendencias =
     ov.catalogo.semAlbum +
@@ -129,7 +144,30 @@ export default async function DadosOverviewPage() {
       <GroupTitle>Ferramentas</GroupTitle>
       <div style={{ maxWidth: 720 }}>
         <DatesBackfillClient initialTotal={semDatas} scope="catalogo" />
+        <ArtistBiosBackfillClient initialTotal={semBio} />
         <MissingInfoBackfillClient initialTotal={totalPendencias} />
+      </div>
+
+      <GroupTitle>Buscar dados faltantes por API</GroupTitle>
+      <div style={{ maxWidth: 720 }}>
+        <SourceBatchBackfillClient
+          kind="music"
+          title="Músicas"
+          description="Roda todas as APIs juntas ou uma de cada vez para todas as músicas com pendência (álbum, capa, MBID, datas, gêneros)."
+          initialTotal={songsProblemas}
+        />
+        <SourceBatchBackfillClient
+          kind="albums"
+          title="Álbuns"
+          description="Roda todas as APIs juntas ou uma de cada vez para todos os álbuns com pendência (capa, data, tipo, faixas, link)."
+          initialTotal={albunsPendencias}
+        />
+        <SourceBatchBackfillClient
+          kind="artists"
+          title="Artistas"
+          description="Roda todas as APIs juntas ou uma de cada vez para todos os artistas com pendência (imagem, gêneros, link e bio)."
+          initialTotal={artistasPendenciasComBio}
+        />
       </div>
     </DadosShell>
   );
