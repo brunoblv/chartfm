@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
-import { normalizeLoose } from "@/lib/duplicate-utils";
+import { anchorId, normalizeLoose } from "@/lib/duplicate-utils";
 import { AdminArtistLinks, AdminArtistNameLink } from "@/components/admin/AdminEntityLinks";
 
 type ArtistRow = {
@@ -26,12 +26,14 @@ async function ensurePrivilegedUser() {
 async function mergeArtistsAction(formData: FormData) {
   "use server";
   const allowed = await ensurePrivilegedUser();
-  if (!allowed) redirect("/admin/duplicates/artists?error=forbidden");
+  const anchor = String(formData.get("anchor") ?? "").trim();
+  const hash = anchor ? `#${anchor}` : "";
+  if (!allowed) redirect(`/admin/duplicates/artists?error=forbidden${hash}`);
 
   const keepId = Number(formData.get("keepId"));
   const dropId = Number(formData.get("dropId"));
   if (!Number.isInteger(keepId) || !Number.isInteger(dropId) || keepId <= 0 || dropId <= 0 || keepId === dropId) {
-    redirect("/admin/duplicates/artists?error=invalid");
+    redirect(`/admin/duplicates/artists?error=invalid${hash}`);
   }
 
   await prisma.$transaction(async (tx) => {
@@ -76,7 +78,7 @@ async function mergeArtistsAction(formData: FormData) {
     await tx.artist.delete({ where: { id: drop.id } });
   });
 
-  redirect("/admin/duplicates/artists?ok=1");
+  redirect(`/admin/duplicates/artists?ok=1${hash}`);
 }
 
 function chooseMainArtist(rows: ArtistRow[]): ArtistRow {
@@ -129,7 +131,7 @@ export default async function AdminDuplicateArtistsPage({
         {duplicateGroups.length === 0 ? <div>Nenhuma duplicata encontrada.</div> : null}
         <div style={{ display: "grid", gap: 14 }}>
           {duplicateGroups.map((group) => (
-            <section key={group.key} style={cardStyle}>
+            <section key={group.key} id={anchorId("dup", group.key)} style={{ ...cardStyle, scrollMarginTop: 90 }}>
               <div style={{ fontSize: 12, color: "#6B6B70", marginBottom: 10 }}>
                 Chave: <code>{group.key}</code> ({group.rows.length} itens)
               </div>
@@ -151,11 +153,13 @@ export default async function AdminDuplicateArtistsPage({
                     {!isMain ? (
                       <div style={{ display: "flex", gap: 8 }}>
                         <form action={mergeArtistsAction}>
+                          <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                           <input type="hidden" name="keepId" value={group.main.id} />
                           <input type="hidden" name="dropId" value={artist.id} />
                           <button style={btnStyle} type="submit">Manter principal</button>
                         </form>
                         <form action={mergeArtistsAction}>
+                          <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                           <input type="hidden" name="keepId" value={artist.id} />
                           <input type="hidden" name="dropId" value={group.main.id} />
                           <button style={btnAltStyle} type="submit">Manter este</button>

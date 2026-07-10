@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
-import { canonicalArtistName, canonicalSongTitle } from "@/lib/duplicate-utils";
+import { anchorId, canonicalArtistName, canonicalSongTitle } from "@/lib/duplicate-utils";
 import { mergeSongs } from "@/lib/song-merge";
 import { AdminArtistLinks, AdminArtistNameLink, AdminSongLinks, AdminSongNameLink } from "@/components/admin/AdminEntityLinks";
 
@@ -29,17 +29,19 @@ async function ensurePrivilegedUser() {
 async function mergeSongsAction(formData: FormData) {
   "use server";
   const allowed = await ensurePrivilegedUser();
-  if (!allowed) redirect("/admin/duplicates/songs?error=forbidden");
+  const anchor = String(formData.get("anchor") ?? "").trim();
+  const hash = anchor ? `#${anchor}` : "";
+  if (!allowed) redirect(`/admin/duplicates/songs?error=forbidden${hash}`);
 
   const keepId = String(formData.get("keepId") ?? "").trim();
   const dropId = String(formData.get("dropId") ?? "").trim();
   if (!keepId || !dropId || keepId === dropId) {
-    redirect("/admin/duplicates/songs?error=invalid");
+    redirect(`/admin/duplicates/songs?error=invalid${hash}`);
   }
 
   await mergeSongs(keepId, dropId);
 
-  redirect("/admin/duplicates/songs?ok=1");
+  redirect(`/admin/duplicates/songs?ok=1${hash}`);
 }
 
 function chooseMainSong(rows: SongRow[]): SongRow {
@@ -92,7 +94,7 @@ export default async function AdminDuplicateSongsPage({
         {duplicateGroups.length === 0 ? <div>Nenhuma duplicata encontrada.</div> : null}
         <div style={{ display: "grid", gap: 14 }}>
           {duplicateGroups.map((group) => (
-            <section key={group.key} style={cardStyle}>
+            <section key={group.key} id={anchorId("dup", group.key)} style={{ ...cardStyle, scrollMarginTop: 90 }}>
               <div style={{ fontSize: 12, color: "#6B6B70", marginBottom: 10 }}>
                 Chave: <code>{group.key}</code> ({group.rows.length} itens)
               </div>
@@ -114,11 +116,13 @@ export default async function AdminDuplicateSongsPage({
                     {!isMain ? (
                       <div style={{ display: "flex", gap: 8 }}>
                         <form action={mergeSongsAction}>
+                          <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                           <input type="hidden" name="keepId" value={group.main.id} />
                           <input type="hidden" name="dropId" value={song.id} />
                           <button style={btnStyle} type="submit">Manter principal</button>
                         </form>
                         <form action={mergeSongsAction}>
+                          <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                           <input type="hidden" name="keepId" value={song.id} />
                           <input type="hidden" name="dropId" value={group.main.id} />
                           <button style={btnAltStyle} type="submit">Manter este</button>

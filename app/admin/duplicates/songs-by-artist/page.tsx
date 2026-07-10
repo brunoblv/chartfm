@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { canonicalArtistName, canonicalSongTitle } from "@/lib/duplicate-utils";
+import { anchorId, canonicalArtistName, canonicalSongTitle } from "@/lib/duplicate-utils";
 import { buildSongPath } from "@/lib/music-routes";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -37,21 +37,22 @@ async function ensurePrivilegedUser() {
   return isPrivilegedRole(me?.role);
 }
 
-function mergeRedirect(q: string, params: string) {
+function mergeRedirect(q: string, params: string, anchor: string) {
   const base = `/admin/duplicates/songs-by-artist${q ? `?q=${encodeURIComponent(q)}&` : "?"}`;
-  redirect(`${base}${params}`);
+  redirect(`${base}${params}${anchor ? `#${anchor}` : ""}`);
 }
 
 async function mergeArtistSongsAction(formData: FormData) {
   "use server";
   const allowed = await ensurePrivilegedUser();
   const q = String(formData.get("q") ?? "").trim();
-  if (!allowed) mergeRedirect(q, "error=forbidden");
+  const anchor = String(formData.get("anchor") ?? "").trim();
+  if (!allowed) mergeRedirect(q, "error=forbidden", anchor);
 
   const keepId = String(formData.get("keepId") ?? "").trim();
   const dropId = String(formData.get("dropId") ?? "").trim();
   if (!keepId || !dropId || keepId === dropId) {
-    mergeRedirect(q, "error=invalid");
+    mergeRedirect(q, "error=invalid", anchor);
   }
 
   let mergeError: string | null = null;
@@ -152,8 +153,8 @@ async function mergeArtistSongsAction(formData: FormData) {
     await tx.song.delete({ where: { id: drop.id } });
   });
 
-  if (mergeError) mergeRedirect(q, `error=${mergeError}`);
-  mergeRedirect(q, "ok=1");
+  if (mergeError) mergeRedirect(q, `error=${mergeError}`, anchor);
+  mergeRedirect(q, "ok=1", anchor);
 }
 
 function displayArtist(song: SongRow): string {
@@ -259,7 +260,7 @@ export default async function AdminDuplicateSongsByArtistPage({
 
         <div style={{ display: "grid", gap: 14 }}>
           {duplicateGroups.map((group) => (
-            <section key={group.key} style={cardStyle}>
+            <section key={group.key} id={anchorId("dup", group.key)} style={{ ...cardStyle, scrollMarginTop: 90 }}>
               <div style={groupHeaderStyle}>
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 800 }}>{group.title}</div>
@@ -297,12 +298,14 @@ export default async function AdminDuplicateSongsByArtistPage({
                       <div style={actionsStyle}>
                         <form action={mergeArtistSongsAction}>
                           <input type="hidden" name="q" value={query} />
+                          <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                           <input type="hidden" name="keepId" value={group.main.id} />
                           <input type="hidden" name="dropId" value={song.id} />
                           <button style={btnStyle} type="submit">Manter principal</button>
                         </form>
                         <form action={mergeArtistSongsAction}>
                           <input type="hidden" name="q" value={query} />
+                          <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                           <input type="hidden" name="keepId" value={song.id} />
                           <input type="hidden" name="dropId" value={group.main.id} />
                           <button style={btnAltStyle} type="submit">Manter esta</button>

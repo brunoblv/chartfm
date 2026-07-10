@@ -1,3 +1,11 @@
+export function anchorId(prefix: string, key: string): string {
+  const slug = key
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${prefix}-${slug}`;
+}
+
 export function normalizeLoose(input: string): string {
   return input
     .toLowerCase()

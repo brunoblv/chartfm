@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
-import { canonicalAlbumTitle, canonicalArtistName } from "@/lib/duplicate-utils";
+import { anchorId, canonicalAlbumTitle, canonicalArtistName } from "@/lib/duplicate-utils";
 import { mergeAlbums } from "@/lib/merge-albums";
 import { AdminAlbumLinks, AdminAlbumNameLink } from "@/components/admin/AdminEntityLinks";
 
@@ -32,7 +32,9 @@ async function ensurePrivilegedUser() {
 async function mergeAlbumsAction(formData: FormData) {
   "use server";
   const allowed = await ensurePrivilegedUser();
-  if (!allowed) redirect("/admin/duplicates/albums?error=forbidden");
+  const anchor = String(formData.get("anchor") ?? "").trim();
+  const hash = anchor ? `#${anchor}` : "";
+  if (!allowed) redirect(`/admin/duplicates/albums?error=forbidden${hash}`);
 
   const keepId = Number(formData.get("keepId"));
   const dropId = Number(formData.get("dropId"));
@@ -40,12 +42,12 @@ async function mergeAlbumsAction(formData: FormData) {
     !Number.isInteger(keepId) || !Number.isInteger(dropId) ||
     keepId <= 0 || dropId <= 0 || keepId === dropId
   ) {
-    redirect("/admin/duplicates/albums?error=invalid");
+    redirect(`/admin/duplicates/albums?error=invalid${hash}`);
   }
 
   await mergeAlbums(prisma, keepId, dropId);
 
-  redirect("/admin/duplicates/albums?ok=1");
+  redirect(`/admin/duplicates/albums?ok=1${hash}`);
 }
 
 function chooseMainAlbum(rows: AlbumRow[]): AlbumRow {
@@ -138,7 +140,7 @@ export default async function AdminDuplicateAlbumsPage({
 
         <div style={{ display: "grid", gap: 16 }}>
           {duplicateGroups.map((group) => (
-            <section key={group.key} style={cardStyle}>
+            <section key={group.key} id={anchorId("dup", group.key)} style={{ ...cardStyle, scrollMarginTop: 90 }}>
               <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#86868B", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   {group.rows[0]?.artist.name}
@@ -194,6 +196,7 @@ export default async function AdminDuplicateAlbumsPage({
                       ) : (
                         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                           <form action={mergeAlbumsAction}>
+                            <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                             <input type="hidden" name="keepId" value={group.main.id} />
                             <input type="hidden" name="dropId" value={album.id} />
                             <button style={btnMergeStyle} type="submit" title={`Manter "${group.main.title}" e remover este`}>
@@ -201,6 +204,7 @@ export default async function AdminDuplicateAlbumsPage({
                             </button>
                           </form>
                           <form action={mergeAlbumsAction}>
+                            <input type="hidden" name="anchor" value={anchorId("dup", group.key)} />
                             <input type="hidden" name="keepId" value={album.id} />
                             <input type="hidden" name="dropId" value={group.main.id} />
                             <button style={btnAltStyle} type="submit" title={`Manter este e remover "${group.main.title}"`}>
