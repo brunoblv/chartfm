@@ -42,6 +42,14 @@ export async function mergeSongs(keepId: string, dropId: string): Promise<void> 
       },
     });
 
+    // PushSubmission.songId é obrigatório e não tem onDelete em cascata:
+    // sem essa migração, o delete abaixo falha (FK) sempre que a música
+    // apagada já foi indicada em alguma rodada do Push.
+    await tx.pushSubmission.updateMany({
+      where: { songId: drop.id },
+      data: { songId: keep.id },
+    });
+
     if (drop.spotifyId) {
       await tx.chartEntry.updateMany({
         where: { songSpotifyId: drop.spotifyId },

@@ -7,6 +7,7 @@ import { anchorId, canonicalArtistName, canonicalSongTitle } from "@/lib/duplica
 import { buildSongPath } from "@/lib/music-routes";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { mergeSongs } from "@/lib/song-merge";
 import { Shell } from "@/components/layout/Shell";
 
 type SongRow = {
@@ -55,105 +56,29 @@ async function mergeArtistSongsAction(formData: FormData) {
     mergeRedirect(q, "error=invalid", anchor);
   }
 
-  let mergeError: string | null = null;
+  const [keep, drop] = await Promise.all([
+    prisma.song.findUnique({
+      where: { id: keepId },
+      select: { title: true, artist: true, artistRef: { select: { name: true } } },
+    }),
+    prisma.song.findUnique({
+      where: { id: dropId },
+      select: { title: true, artist: true, artistRef: { select: { name: true } } },
+    }),
+  ]);
 
-  await prisma.$transaction(async (tx) => {
-    const [keep, drop] = await Promise.all([
-      tx.song.findUnique({
-        where: { id: keepId },
-        select: {
-          id: true,
-          title: true,
-          artist: true,
-          album: true,
-          spotifyId: true,
-          albumSpotifyId: true,
-          artistSpotifyId: true,
-          artistRef: { select: { name: true } },
-        },
-      }),
-      tx.song.findUnique({
-        where: { id: dropId },
-        select: {
-          id: true,
-          title: true,
-          artist: true,
-          album: true,
-          spotifyId: true,
-          albumSpotifyId: true,
-          artistSpotifyId: true,
-          artistRef: { select: { name: true } },
-        },
-      }),
-    ]);
+  if (!keep || !drop) mergeRedirect(q, "error=missing", anchor);
 
-    if (!keep || !drop) {
-      mergeError = "missing";
-      return;
-    }
+  const keepTitleKey = canonicalSongTitle(keep!.title);
+  const dropTitleKey = canonicalSongTitle(drop!.title);
+  const keepArtistKey = canonicalArtistName(keep!.artistRef?.name ?? keep!.artist);
+  const dropArtistKey = canonicalArtistName(drop!.artistRef?.name ?? drop!.artist);
+  if (keepTitleKey !== dropTitleKey || keepArtistKey !== dropArtistKey) {
+    mergeRedirect(q, "error=mismatch", anchor);
+  }
 
-    const keepTitleKey = canonicalSongTitle(keep.title);
-    const dropTitleKey = canonicalSongTitle(drop.title);
-    const keepArtistKey = canonicalArtistName(keep.artistRef?.name ?? keep.artist);
-    const dropArtistKey = canonicalArtistName(drop.artistRef?.name ?? drop.artist);
-    if (keepTitleKey !== dropTitleKey || keepArtistKey !== dropArtistKey) {
-      mergeError = "mismatch";
-      return;
-    }
+  await mergeSongs(keepId, dropId);
 
-    let targetSpotifyId = keep.spotifyId;
-    if (!targetSpotifyId && drop.spotifyId) {
-      targetSpotifyId = drop.spotifyId;
-      await tx.song.update({
-        where: { id: keep.id },
-        data: {
-          spotifyId: drop.spotifyId,
-          album: keep.album ?? drop.album,
-          albumSpotifyId: keep.albumSpotifyId ?? drop.albumSpotifyId,
-          artistSpotifyId: keep.artistSpotifyId ?? drop.artistSpotifyId,
-        },
-      });
-    }
-
-    await tx.chartEntry.updateMany({
-      where: { songId: drop.id },
-      data: {
-        songId: keep.id,
-        ...(targetSpotifyId ? { songSpotifyId: targetSpotifyId } : {}),
-      },
-    });
-
-    if (drop.spotifyId) {
-      await tx.chartEntry.updateMany({
-        where: { songSpotifyId: drop.spotifyId },
-        data: { songSpotifyId: targetSpotifyId ?? null },
-      });
-
-      if (targetSpotifyId && targetSpotifyId !== drop.spotifyId) {
-        const feats = await tx.songFeat.findMany({
-          where: { songSpotifyId: drop.spotifyId },
-          select: { artistSpotifyId: true },
-        });
-        for (const feat of feats) {
-          await tx.songFeat.upsert({
-            where: {
-              songSpotifyId_artistSpotifyId: {
-                songSpotifyId: targetSpotifyId,
-                artistSpotifyId: feat.artistSpotifyId,
-              },
-            },
-            update: {},
-            create: { songSpotifyId: targetSpotifyId, artistSpotifyId: feat.artistSpotifyId },
-          });
-        }
-        await tx.songFeat.deleteMany({ where: { songSpotifyId: drop.spotifyId } });
-      }
-    }
-
-    await tx.song.delete({ where: { id: drop.id } });
-  });
-
-  if (mergeError) mergeRedirect(q, `error=${mergeError}`, anchor);
   mergeRedirect(q, "ok=1", anchor);
 }
 
