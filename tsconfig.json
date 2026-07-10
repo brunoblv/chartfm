@@ -41,6 +41,8 @@
     "lib/musicbrainz-local.ts",
     "fix layout",
     "push",
-    "MyTrlClient.tsx"
+    "MyTrlClient.tsx",
+    "vitest.config.ts",
+    "**/*.test.ts"
   ]
 }
