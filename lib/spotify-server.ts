@@ -526,6 +526,7 @@ export type SpotifyAlbumDetails = {
 export async function getSpotifyAlbumMetadataById(
   albumSpotifyId: string,
   market: string = "MX",
+  opts?: { maxAttempts?: number },
 ): Promise<SpotifyTrackMetadata["album"] | null> {
   const token = await getAccessToken();
   if (!token) return null;
@@ -535,6 +536,7 @@ export async function getSpotifyAlbumMetadataById(
   const res = await spotifyFetch(
     `${API_BASE}/albums/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`,
     { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 0 } },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
   );
   if (!res?.ok) return null;
   const a = (await res.json()) as SpotifyAlbumApi;

@@ -237,7 +237,7 @@ const artistMetadataMissingWhere: Prisma.ArtistWhereInput = {
 };
 
 async function backfillOneArtistMetadata(artist: { id: number; name: string; spotifyId: string; genres: string[] }): Promise<boolean> {
-  const profile = await getSpotifyArtistById(artist.spotifyId);
+  const profile = await getSpotifyArtistById(artist.spotifyId, { maxAttempts: 1 });
   let foundAnything = false;
   const data: Record<string, unknown> = {};
 
@@ -322,7 +322,7 @@ const albumMetadataMissingWhere: Prisma.AlbumWhereInput = {
 };
 
 async function backfillOneAlbumMetadata(album: { id: number; spotifyId: string }): Promise<boolean> {
-  const meta = await getSpotifyAlbumMetadataById(album.spotifyId);
+  const meta = await getSpotifyAlbumMetadataById(album.spotifyId, "MX", { maxAttempts: 1 });
   if (!meta) return false;
 
   await prisma.album.update({
