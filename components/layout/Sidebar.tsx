@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper, Send, ScrollText } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper, Send, ScrollText, Copy } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -509,6 +509,10 @@ function SidebarContent({
               <Link href="/admin/dados" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/dados")}>
                 <Database size={14} />
                 <span>{t("nav.adminDataEdit")}</span>
+              </Link>
+              <Link href="/admin/duplicates" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/duplicates")}>
+                <Copy size={14} />
+                <span>Duplicados</span>
               </Link>
               <Link href="/admin/users" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/users")}>
                 <UserCog size={14} />
