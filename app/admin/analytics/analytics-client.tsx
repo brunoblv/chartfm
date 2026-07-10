@@ -1,6 +1,7 @@
 "use client";
 
 import type { AnalyticsDashboardData } from "@/lib/analytics-metrics";
+import type { EditorialAnalytics } from "@/lib/editorial-analytics";
 import { BarChart, ChartCard, CohortGrid, HBarList, LineChart, StatTile } from "./charts";
 
 function fmtDuration(seconds: number): string {
@@ -40,7 +41,7 @@ const cardsGrid: React.CSSProperties = {
   gap: 12,
 };
 
-export function AnalyticsClient({ data }: { data: AnalyticsDashboardData }) {
+export function AnalyticsClient({ data, editorial }: { data: AnalyticsDashboardData; editorial: EditorialAnalytics }) {
   const { tiles, traffic, activity, retention } = data;
   const health = retention.paradaHealth;
 
@@ -133,6 +134,44 @@ export function AnalyticsClient({ data }: { data: AnalyticsDashboardData }) {
       <ChartCard title="Coortes de cadastro" subtitle="% da coorte que postou chart na semana">
         <CohortGrid cohorts={retention.cohorts} />
       </ChartCard>
+
+      {/* ── Editorial ── */}
+      <h2 style={sectionTitle}>Editorial</h2>
+      <p style={sectionHint}>Visualizações de artigos editoriais, consolidadas diariamente junto ao tráfego geral.</p>
+      <div style={{ ...tilesGrid, marginBottom: 12 }}>
+        <StatTile
+          label="Top da semana"
+          value={editorial.topArticleWeek ? fmtInt(editorial.topArticleWeek.views7d) : "—"}
+          hint={editorial.topArticleWeek?.title ?? "Sem dados nos últimos 7 dias"}
+        />
+        <StatTile
+          label="Top do mês"
+          value={editorial.topArticleMonth ? fmtInt(editorial.topArticleMonth.views30d) : "—"}
+          hint={editorial.topArticleMonth?.title ?? "Sem dados nos últimos 30 dias"}
+        />
+      </div>
+      <div style={cardsGrid}>
+        <ChartCard title="Artigos mais vistos" subtitle="views totais">
+          <HBarList
+            items={editorial.topArticles.slice(0, 10).map((a) => ({ label: a.title, value: a.viewsAllTime }))}
+            formatValue={fmtInt}
+          />
+        </ChartCard>
+        <ChartCard title="Tags mais vistas" subtitle="soma das views dos artigos com a tag">
+          <HBarList
+            items={editorial.tagLeaderboard.slice(0, 10).map((t) => ({ label: t.tag, value: t.views, sub: `${t.articleCount} artigo(s)` }))}
+            formatValue={fmtInt}
+            color="var(--ch2)"
+          />
+        </ChartCard>
+        <ChartCard title="Views de artigos por dia" subtitle="últimos 30 dias · todos os artigos">
+          <LineChart
+            labels={editorial.viewsOverTime.map((d) => d.day.slice(5))}
+            series={[{ name: "Views", color: "var(--ch1)", values: editorial.viewsOverTime.map((d) => d.views) }]}
+            formatValue={fmtInt}
+          />
+        </ChartCard>
+      </div>
     </div>
   );
 }

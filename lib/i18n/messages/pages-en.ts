@@ -57,6 +57,9 @@ export const pagesEn = {
     viewFullReview: "View full review →",
     seeAllNews: "See all updates →",
     recommendations: "Recommendations",
+    articles: "Articles",
+    noArticles: "No articles here yet",
+    articlesWillAppear: "Published editorial articles will appear here, in publish order.",
   },
   recommendations: {
     shareCta: "Share a song",

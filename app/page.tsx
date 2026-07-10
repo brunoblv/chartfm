@@ -25,6 +25,7 @@ import { CopaLiveFeedCarousel } from "@/components/home/CopaLiveFeedCarousel";
 import { getCopaLiveFeedFixtures } from "@/lib/copa-live-feed";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
 import { getSystemFeedPosts } from "@/lib/system-feed";
+import { getEditorialPicksSorted } from "@/lib/editorial-picks";
 import { mergeHomeFeed, filterFollowingRecommendations } from "@/lib/home-mixed-feed";
 import { getPrimaryParada } from "@/lib/paradas";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
@@ -362,7 +363,7 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed, systemFeedPosts, copaLiveFeed] =
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed, systemFeedPosts, copaLiveFeed, editorialPicks] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
@@ -390,16 +391,22 @@ export default async function HomePage() {
         console.error("[home] getCopaLiveFeedFixtures", err);
         return null;
       }),
+      getEditorialPicksSorted().catch((err) => {
+        console.error("[home] getEditorialPicksSorted", err);
+        return [] as Awaited<ReturnType<typeof getEditorialPicksSorted>>;
+      }),
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
+  const recentEditorialPicks = editorialPicks.slice(0, 10);
 
-  const forYouFeed = mergeHomeFeed(allFeed, reviewsForYou, recommendationsFeed, 30, systemFeedPosts);
+  const forYouFeed = mergeHomeFeed(allFeed, reviewsForYou, recommendationsFeed, 30, systemFeedPosts, recentEditorialPicks);
   const followingFeed = mergeHomeFeed(
     friendsFeed,
     followingReviews,
     filterFollowingRecommendations(recommendationsFeed, followingIds, session.user.id),
     30,
     systemFeedPosts,
+    recentEditorialPicks,
   );
 
   const feed = (
@@ -423,6 +430,7 @@ export default async function HomePage() {
         followingFeed={followingFeed}
         reviewsFeed={reviewsFeed}
         recommendationsFeed={recommendationsFeed}
+        editorialFeed={editorialPicks}
       />
     </div>
   );

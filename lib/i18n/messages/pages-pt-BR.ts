@@ -57,6 +57,9 @@ export const pagesPtBR = {
     viewFullReview: "Ver review completo →",
     seeAllNews: "Ver todas as novidades →",
     recommendations: "Recomendações",
+    articles: "Artigos",
+    noArticles: "Nenhum artigo por aqui ainda",
+    articlesWillAppear: "Artigos editoriais publicados aparecerão aqui, em ordem de publicação.",
   },
   recommendations: {
     shareCta: "Compartilhar música",
