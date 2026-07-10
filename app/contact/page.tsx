@@ -29,7 +29,8 @@ const CONTACT_ITEMS = [
     icon: <Shield size={20} />,
     title: "Privacidade e dados",
     description:
-      "Para solicitações de exclusão de dados, acesso a informações pessoais ou dúvidas sobre nossa política de privacidade.",
+      "Para solicitações de exclusão de dados, siga as instruções na página de exclusão. Para acesso a informações pessoais ou outras dúvidas sobre privacidade, entre em contato por e-mail.",
+    href: "/data-deletion",
   },
   {
     icon: <Bug size={20} />,
@@ -58,14 +59,15 @@ export default function ContactPage() {
             icon={item.icon}
             title={item.title}
             description={item.description}
-            email="contato@chartfm.com.br"
+            href={"href" in item ? item.href : undefined}
+            email={"href" in item ? undefined : "contato@chartfm.com.br"}
           />
         ))}
       </div>
 
       <InstitutionalMutedCallout>
         O tempo médio de resposta é de <strong style={{ color: "var(--text)" }}>2 dias úteis</strong>. Para dúvidas
-        rápidas, consulte primeiro os <InstitutionalInlineLink href="/guides">Guias</InstitutionalInlineLink> — a
+        rápidas, consulte primeiro os <InstitutionalInlineLink href="/guides">Guias</InstitutionalInlineLink> - a
         maioria das perguntas frequentes já está respondida lá.
       </InstitutionalMutedCallout>
     </InstitutionalLayout>

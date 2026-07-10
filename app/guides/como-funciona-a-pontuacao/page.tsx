@@ -37,7 +37,7 @@ export default function GuideComoFuncionaAPontuacao() {
             <InstitutionalParagraph>
               Cada posição da sua parada pessoal vale uma quantidade de pontos para o Global 100. A 1ª posição
               sempre vale 1.000 pontos. A partir daí, cada posição seguinte vale 95% dos pontos da posição
-              anterior — não um valor fixo a menos, mas uma porcentagem da posição de cima. Isso forma uma
+              anterior, não um valor fixo a menos, mas uma porcentagem da posição de cima. Isso forma uma
               curva geométrica: os pontos caem rápido logo no início da parada e cada vez mais devagar conforme
               a posição avança.
             </InstitutionalParagraph>
@@ -132,7 +132,7 @@ export default function GuideComoFuncionaAPontuacao() {
             </InstitutionalParagraph>
             <InstitutionalParagraph>
               Já uma música que aparece só na 50ª posição de uma única parada soma apenas 81 pontos com essa
-              parada — bem menos do que uma música que aparece uma única vez na 1ª posição de qualquer parada.
+              parada, bem menos do que uma música que aparece uma única vez na 1ª posição de qualquer parada.
             </InstitutionalParagraph>
           </div>
         </InstitutionalSection>
@@ -142,8 +142,8 @@ export default function GuideComoFuncionaAPontuacao() {
         <InstitutionalSection title="Por que essa curva">
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <InstitutionalParagraph>
-              A curva geométrica foi escolhida de propósito: ela premia conviction — estar bem colocado — mais
-              do que volume — aparecer em muitas paradas em posições baixas. Uma música na 1ª posição de 5
+              A curva geométrica foi escolhida de propósito: ela premia conviction (estar bem colocado) mais
+              do que volume (aparecer em muitas paradas em posições baixas). Uma música na 1ª posição de 5
               paradas diferentes soma 5 × 1.000 = 5.000 pontos.
             </InstitutionalParagraph>
             <InstitutionalParagraph>

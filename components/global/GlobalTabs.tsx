@@ -337,7 +337,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" as const }}>
               <StatPill compact label={t("global.colPeak")} value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
               <StatPill compact label={t("global.colWeeks")} value={e.weeks} />
-              <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"} />
+              <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "-"} />
             </div>
           </div>
         ))}
@@ -412,7 +412,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
             {e.peak}
           </div>
           <div style={{ fontSize: valueSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: (e.numberOnes ?? 0) > 0 ? "var(--text)" : "var(--text-disabled)" }}>
-            {(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"}
+            {(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "-"}
           </div>
           <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
             {e.points}
@@ -421,7 +421,7 @@ function SongsTable({ songs, viewSize, isMobile }: { songs: SongEntry[]; viewSiz
             fontSize: growthSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px",
             color: (e.growthPct ?? null) !== null && (e.growthPct ?? 0) >= 0 ? "var(--up-fg)" : "var(--down-fg)",
           }}>
-            {(e.growthPct ?? null) === null ? "—" : `${(e.growthPct ?? 0) >= 0 ? "+" : ""}${(e.growthPct ?? 0).toFixed(1)}%`}
+            {(e.growthPct ?? null) === null ? "-" : `${(e.growthPct ?? 0) >= 0 ? "+" : ""}${(e.growthPct ?? 0).toFixed(1)}%`}
           </div>
         </div>
       ))}
@@ -478,7 +478,7 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" as const }}>
               <StatPill compact label={t("global.colPeak")} value={e.peak} accent={e.peak === 1 ? "var(--accent)" : undefined} />
               <StatPill compact label={t("global.colWeeks")} value={e.weeks} />
-              <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"} />
+              <StatPill compact label={t("global.colNumberOnes")} value={(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "-"} />
             </div>
           </div>
         ))}
@@ -520,7 +520,7 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
             </Link>
           </div>
           <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-            {e.prevPos ?? "—"}
+            {e.prevPos ?? "-"}
           </div>
           <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
             {e.weeks}
@@ -534,7 +534,7 @@ function DropoutsGlobalTable({ songs, viewSize, isMobile }: { songs: SongEntry[]
             {e.peak}
           </div>
           <div style={{ fontSize: valueSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: (e.numberOnes ?? 0) > 0 ? "var(--text)" : "var(--text-disabled)" }}>
-            {(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "—"}
+            {(e.numberOnes ?? 0) > 0 ? `${e.numberOnes}x` : "-"}
           </div>
           <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
             {e.points}
@@ -606,10 +606,10 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" as const }}>
-                <StatPill compact label={t("global.colPrevShort")} value={a.prevPos ?? "—"} />
+                <StatPill compact label={t("global.colPrevShort")} value={a.prevPos ?? "-"} />
                 <StatPill compact label={t("global.colPeak")} value={a.peak} accent={a.peak === 1 ? "var(--accent)" : undefined} />
                 <StatPill compact label={t("global.colWeeks")} value={a.weeks} />
-                <StatPill compact label={t("global.colNumberOnes")} value={(a.numberOnes ?? 0) > 0 ? `${a.numberOnes}x` : "—"} />
+                <StatPill compact label={t("global.colNumberOnes")} value={(a.numberOnes ?? 0) > 0 ? `${a.numberOnes}x` : "-"} />
               </div>
             </Link>
           );
@@ -678,7 +678,7 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
               </div>
             </div>
             <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-              {a.prevPos ?? "—"}
+              {a.prevPos ?? "-"}
             </div>
             <div style={{ fontSize: valueSize, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {a.weeks}
@@ -692,13 +692,13 @@ function ArtistsTable({ artists, viewSize, isMobile }: { artists: ArtistEntry[];
               {a.peak}
             </div>
             <div style={{ fontSize: valueSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: (a.numberOnes ?? 0) > 0 ? "var(--text)" : "var(--text-disabled)" }}>
-              {(a.numberOnes ?? 0) > 0 ? `${a.numberOnes}x` : "—"}
+              {(a.numberOnes ?? 0) > 0 ? `${a.numberOnes}x` : "-"}
             </div>
             <div style={{ fontSize: pointsSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--accent)", padding: "0 8px" }}>
               {a.totalPoints}
             </div>
             <div style={{ fontSize: growthSize, fontWeight: 700, fontVariantNumeric: "tabular-nums", padding: "0 8px", color: a.growthPct !== null && a.growthPct >= 0 ? "var(--up-fg)" : "var(--down-fg)" }}>
-              {a.growthPct === null ? "—" : `${a.growthPct >= 0 ? "+" : ""}${a.growthPct.toFixed(1)}%`}
+              {a.growthPct === null ? "-" : `${a.growthPct >= 0 ? "+" : ""}${a.growthPct.toFixed(1)}%`}
             </div>
           </Link>
         );

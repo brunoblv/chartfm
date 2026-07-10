@@ -52,7 +52,7 @@ export async function publishWeeklyEditorialPost(now: Date = new Date()): Promis
   if (!paragraphs || paragraphs.length === 0) return null;
 
   const leader = entries[0];
-  const title = `Panorama do Global 100 — semana de ${weekLabel}`;
+  const title = `Panorama do Global 100 - semana de ${weekLabel}`;
   const excerpt = `Como foi a semana de ${weekLabel} no Global 100 do ChartFM: liderança, maiores subidas e quedas, estreias e retornos.`;
 
   await prisma.editorialPost.create({

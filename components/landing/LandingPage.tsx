@@ -28,7 +28,7 @@ function StatusBadge({ status, delta, newLabel }: { status: string; delta?: numb
   );
   return (
     <span style={{ background: "var(--same-bg)", color: "var(--same-fg)", fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 100 }}>
-      —
+      -
     </span>
   );
 }
@@ -88,7 +88,7 @@ export function LandingPage({
       items: [
         { label: t("landing.footerTerms"), href: "/terms-of-use" },
         { label: t("landing.footerPrivacy"), href: "/privacy-policy" },
-        { label: t("landing.footerLgpd"), href: "/contact" },
+        { label: t("landing.footerLgpd"), href: "/data-deletion" },
       ],
     },
   ];
@@ -501,7 +501,7 @@ export function LandingPage({
             </p>
             <p style={{ margin: 0 }}>
               O cálculo usa uma curva geométrica: a música na 1ª posição de uma parada pessoal vale 1.000
-              pontos, e cada posição abaixo vale 95% da posição anterior — a 2ª vale 950, a 5ª vale 815, a 10ª
+              pontos, e cada posição abaixo vale 95% da posição anterior - a 2ª vale 950, a 5ª vale 815, a 10ª
               vale 630. Esses pontos são somados entre todas as paradas publicadas na semana para formar o
               ranking coletivo.
             </p>
@@ -513,7 +513,7 @@ export function LandingPage({
             <p style={{ margin: 0 }}>
               A semana do Global 100 fecha toda terça-feira à meia-noite (horário de Brasília); paradas
               publicadas depois desse horário contam para a semana seguinte. O snapshot de cada semana é
-              processado horas depois e vira um registro permanente — o histórico completo fica sempre
+              processado horas depois e vira um registro permanente - o histórico completo fica sempre
               disponível para consulta.
             </p>
           </div>

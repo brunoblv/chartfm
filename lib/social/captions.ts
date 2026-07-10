@@ -56,7 +56,7 @@ type ChartTop3CaptionInput = {
 export function buildChartTop3Captions(input: ChartTop3CaptionInput): PlatformCaptions {
   const url = absoluteSocialUrl(input.targetUrl);
   const tags = formatHashtags(input.hashtags);
-  const top3Lines = input.top3.map((e) => `${e.position}. ${e.title} — ${e.artist}`).join("\n");
+  const top3Lines = input.top3.map((e) => `${e.position}. ${e.title} - ${e.artist}`).join("\n");
   const editorial = input.editorialLine ? `\n\n${input.editorialLine}` : "";
 
   return {

@@ -39,7 +39,7 @@ export async function validateCommunityCoverFile(
   const tolerance = 0.35;
   if (Math.abs(ratio - target) > tolerance) {
     return {
-      warning: `Proporção ideal 15:4 (${COMMUNITY_COVER_SIZE_LABEL}). Sua imagem é ${dims.width}×${dims.height} px — será exibida com recorte automático.`,
+      warning: `Proporção ideal 15:4 (${COMMUNITY_COVER_SIZE_LABEL}). Sua imagem é ${dims.width}×${dims.height} px, será exibida com recorte automático.`,
     };
   }
   return {};

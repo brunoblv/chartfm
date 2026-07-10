@@ -361,11 +361,11 @@ export function AlbumEditClient({
                 }}
               >
                 <span style={{ color: "#86868B", fontVariantNumeric: "tabular-nums", minWidth: 28 }}>
-                  {s.trackNumber != null ? `${s.trackNumber}.` : "—"}
+                  {s.trackNumber != null ? `${s.trackNumber}.` : "-"}
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontWeight: 600 }}>{s.title}</span>
-                  <span style={{ color: "#6B6B70" }}> — {s.artist}</span>
+                  <span style={{ color: "#6B6B70" }}> - {s.artist}</span>
                 </span>
                 {s.spotifyId ? (
                   <a

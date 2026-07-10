@@ -27,7 +27,7 @@ export default function GuideComunidades() {
           title: "Como encontrar e entrar em uma comunidade",
           body: [
             "Acesse a página de Comunidades pelo menu lateral. Lá você encontra uma lista de todas as comunidades públicas, organizadas por número de membros e atividade recente. Use a barra de busca para filtrar por nome ou tema.",
-            "Ao encontrar uma comunidade que te interessa, clique em 'Participar'. Para comunidades públicas, a entrada é imediata — você já começa a ver o feed e a parada coletiva do grupo.",
+            "Ao encontrar uma comunidade que te interessa, clique em 'Participar'. Para comunidades públicas, a entrada é imediata, você já começa a ver o feed e a parada coletiva do grupo.",
             "Você pode participar de múltiplas comunidades ao mesmo tempo. Não há limite. Muitos usuários participam de comunidades de gêneros diferentes ou de comunidades dedicadas a artistas específicos que acompanham.",
           ],
         },
@@ -36,7 +36,7 @@ export default function GuideComunidades() {
           body: [
             "O recurso mais exclusivo das comunidades no ChartFM é a parada coletiva semanal. Todo semana, o sistema agrega automaticamente as charts individuais de todos os membros e gera um ranking exclusivo para aquela comunidade.",
             "Esse ranking é calculado da mesma forma que o Global 100: cada posição nas paradas pessoais gera pontos, e a soma determina a classificação final. A diferença é que apenas as paradas dos membros da comunidade entram no cálculo.",
-            "Isso significa que a parada de uma comunidade de fãs de jazz vai refletir o que os amantes de jazz estão ouvindo — não o que domina o ranking global. É uma forma muito mais precisa de acompanhar tendências dentro de um nicho específico.",
+            "Isso significa que a parada de uma comunidade de fãs de jazz vai refletir o que os amantes de jazz estão ouvindo, não o que domina o ranking global. É uma forma muito mais precisa de acompanhar tendências dentro de um nicho específico.",
           ],
         },
         {
@@ -53,7 +53,7 @@ export default function GuideComunidades() {
             "Qualquer usuário pode criar uma comunidade no ChartFM. Acesse 'Criar Comunidade' na página de Comunidades e defina nome, descrição, ícone e as cores do tema visual.",
             "Ao criar uma comunidade, você se torna automaticamente o administrador do grupo. Isso significa que você pode editar as configurações, moderar posts e convidar novos membros.",
             "Comunidades podem ser públicas (qualquer pessoa pode entrar) ou privadas (entrada mediante convite). Para comunidades temáticas ou de fãs, o modelo público tende a crescer mais rápido. Para grupos fechados de amigos ou colegas, o modelo privado faz mais sentido.",
-            "Uma comunidade começa a ter vida quando seus membros publicam charts regularmente. Incentive quem você convida a publicar paradas semanais — é isso que alimenta a chart coletiva e torna o grupo mais dinâmico.",
+            "Uma comunidade começa a ter vida quando seus membros publicam charts regularmente. Incentive quem você convida a publicar paradas semanais, é isso que alimenta a chart coletiva e torna o grupo mais dinâmico.",
           ],
         },
         {

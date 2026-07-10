@@ -26,7 +26,7 @@ export async function notifyCopaBatchOpened(copaId: string, batchOrder: number):
   const targetUrl = `/copa/ao-vivo?copa=${copaId}&batch=${batchOrder}`;
   const text =
     batchOrder === 0
-      ? `A ${copa.name} começou! A etapa "${stageLabel}" está aberta — vote nos jogos ao vivo.`
+      ? `A ${copa.name} começou! A etapa "${stageLabel}" está aberta, vote nos jogos ao vivo.`
       : `A etapa "${stageLabel}" da ${copa.name} está aberta! Vote nos jogos ao vivo.`;
 
   return broadcastCopaNotification("copa_stage", targetUrl, text, "copa_stage", targetUrl);

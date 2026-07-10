@@ -27,7 +27,7 @@ export function MobileReorderSwapBanner({ title, onCancel }: Props) {
           whiteSpace: "nowrap",
         }}
       >
-        {title} — toque no destino
+        {title} - toque no destino
       </div>
       <button
         type="button"

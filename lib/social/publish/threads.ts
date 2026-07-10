@@ -1,4 +1,9 @@
 import { isThreadsConfigured } from "@/lib/social/config";
+import {
+  isSocialPlatformConfigured,
+  resolveSocialAccessToken,
+  resolveSocialAccountId,
+} from "@/lib/social/credentials/token-resolver";
 import { timedFetch, type PublishResult } from "@/lib/social/publish/shared";
 
 const GRAPH_BASE = "https://graph.threads.net/v1.0";
@@ -22,10 +27,13 @@ async function waitForContainerReady(containerId: string, token: string): Promis
 
 /** Publica no Threads (texto + imagem) via Threads Graph API — fluxo de container em 2 passos. */
 export async function publishToThreads(caption: string, imageUrl: string): Promise<PublishResult> {
-  if (!isThreadsConfigured()) return { ok: false, error: "Threads não configurado" };
+  if (!(await isSocialPlatformConfigured("THREADS")) && !isThreadsConfigured()) {
+    return { ok: false, error: "Threads não configurado" };
+  }
 
-  const userId = process.env.THREADS_USER_ID!.trim();
-  const token = process.env.THREADS_ACCESS_TOKEN!.trim();
+  const userId = await resolveSocialAccountId("THREADS");
+  const token = await resolveSocialAccessToken("THREADS");
+  if (!userId || !token) return { ok: false, error: "Threads não configurado" };
 
   const create = await timedFetch(`${GRAPH_BASE}/${userId}/threads`, {
     method: "POST",

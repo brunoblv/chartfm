@@ -69,6 +69,7 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
     { label: t("globalFooter.aboutChartfm"), href: "/about" },
     { label: t("landing.footerTerms"), href: "/terms-of-use" },
     { label: t("landing.footerPrivacy"), href: "/privacy-policy" },
+    { label: t("globalFooter.dataDeletion"), href: "/data-deletion" },
     { label: t("globalFooter.cookies"), href: "/privacy-policy#cookies" },
   ];
 

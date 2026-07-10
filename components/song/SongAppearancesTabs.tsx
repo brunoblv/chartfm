@@ -83,7 +83,7 @@ type Props = {
 function userStatsCards(stats: SongParadaUserStats): { label: string; value: string | number }[] {
   return [
     { label: "Semanas na parada", value: stats.appearances },
-    { label: "Melhor posição", value: stats.bestPosition === 9999 ? "—" : `#${stats.bestPosition}` },
+    { label: "Melhor posição", value: stats.bestPosition === 9999 ? "-" : `#${stats.bestPosition}` },
     { label: "Seus pontos", value: stats.points },
     { label: "#1s seus", value: stats.number1s },
   ];
@@ -338,7 +338,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
             <div style={{ fontSize: 12, color: "#86868B", marginBottom: 6 }}>Pico no Global Top 100</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 28, fontWeight: 800 }}>
               {globalStats.peak === 1 && <Star size={18} color="#FA243C" fill="#FA243C" />}
-              {globalStats.peak === 9999 ? "—" : `#${globalStats.peak}`}
+              {globalStats.peak === 9999 ? "-" : `#${globalStats.peak}`}
             </div>
           </div>
           {topUsers.length > 0 && (
@@ -374,7 +374,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
           {!isLoggedIn ? (
             <div style={{ padding: 16, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>
               <span style={{ color: "var(--text)", fontWeight: 600 }}>Suas paradas com esta música</span>
-              {" — "}
+              {" - "}
               entre na sua conta para ver posição, datas e ano em cada semana em que você publicou esta faixa.
             </div>
           ) : myParadaSections.length > 0 ? (

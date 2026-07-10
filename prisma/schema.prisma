@@ -1702,3 +1702,30 @@ model SocialPostMetric {
   @@index([socialPostId, platform], map: "idx_social_post_metrics_post_platform")
   @@map("social_post_metrics")
 }
+
+/// Credenciais criptografadas das integrações sociais da plataforma (tokens de publicação).
+enum SocialCredentialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  THREADS
+  TELEGRAM
+}
+
+model SocialCredential {
+  id              Int                      @id @default(autoincrement())
+  platform        SocialCredentialPlatform @unique
+  accessToken     String                   @map("access_token")
+  accountId       String?                  @map("account_id")
+  accountUsername String?                  @map("account_username")
+  expiresAt       DateTime?                @map("expires_at")
+  lastRefreshedAt DateTime?                @map("last_refreshed_at")
+  lastCheckedAt   DateTime?                @map("last_checked_at")
+  refreshEnabled  Boolean                  @default(false) @map("refresh_enabled")
+  refreshFailures Int                      @default(0) @map("refresh_failures")
+  lastError       String?                  @map("last_error")
+  lastErrorAt     DateTime?                @map("last_error_at")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  @@map("social_credentials")
+}

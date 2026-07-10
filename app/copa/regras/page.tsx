@@ -114,7 +114,7 @@ export default function CopaRegrasPage() {
         Regulamento Oficial
       </p>
       <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
-        Copa de Artistas — 64 Artistas
+        Copa de Artistas - 64 Artistas
       </h1>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 28 }}>
         Como funciona o torneio musical da comunidade ChartFM, do sorteio dos grupos até a final.
@@ -133,10 +133,10 @@ export default function CopaRegrasPage() {
       <Section title="2. Escalação">
         <p style={{ marginBottom: 10 }}>
           O representante define 8 músicas do artista, em ordem de utilização (Música 1 a Música 8). A ordem enviada é{" "}
-          <strong>definitiva</strong> — ela determina qual música entra em cada partida da campanha.
+          <strong>definitiva</strong> - ela determina qual música entra em cada partida da campanha.
         </p>
         <Card>
-          <p style={{ fontWeight: 700, marginBottom: 8 }}>Exemplo — Paramore</p>
+          <p style={{ fontWeight: 700, marginBottom: 8 }}>Exemplo - Paramore</p>
           <OrderedList
             items={[
               "Misery Business",
@@ -156,7 +156,7 @@ export default function CopaRegrasPage() {
         <List
           items={[
             "Os 64 artistas são divididos em 16 grupos de 4.",
-            "Cada artista enfrenta os outros três integrantes do grupo — 3 partidas por artista.",
+            "Cada artista enfrenta os outros três integrantes do grupo - 3 partidas por artista.",
             <>
               Pontuação: <strong>vitória = 3 pontos</strong>, <strong>empate = 1 ponto</strong>,{" "}
               <strong>derrota = 0 ponto</strong>.
@@ -168,7 +168,7 @@ export default function CopaRegrasPage() {
 
       <Section title="4. Utilização das Músicas">
         <p style={{ marginBottom: 10 }}>
-          A música usada em cada partida depende do número do jogo do artista na competição — as músicas não podem ser
+          A música usada em cada partida depende do número do jogo do artista na competição - as músicas não podem ser
           repetidas.
         </p>
         <MiniTable
@@ -189,7 +189,7 @@ export default function CopaRegrasPage() {
       <Section title="5. Votação das Partidas">
         <p style={{ marginBottom: 10 }}>
           Cada confronto é formado por uma música de cada artista. Os torcedores votam na música preferida. Os votos
-          são convertidos em gols no placar (conforme a configuração da edição — ex.: 2 votos = 1 gol).
+          são convertidos em gols no placar (conforme a configuração da edição - ex.: 2 votos = 1 gol).
         </p>
         <List
           items={[
@@ -198,7 +198,7 @@ export default function CopaRegrasPage() {
               artista.
             </>,
             <>
-              <strong>Eliminatórias:</strong> não há empate — se o placar em gols empatar, vence quem tiver mais votos
+              <strong>Eliminatórias:</strong> não há empate - se o placar em gols empatar, vence quem tiver mais votos
               no total (desempate nos &quot;pênaltis&quot;).
             </>,
           ]}
@@ -211,7 +211,7 @@ export default function CopaRegrasPage() {
         </div>
       </Section>
 
-      <Section title="6. Critérios de Desempate — Fase de Grupos">
+      <Section title="6. Critérios de Desempate - Fase de Grupos">
         <p style={{ marginBottom: 10 }}>Em caso de empate na tabela do grupo, a ordem de critérios é:</p>
         <OrderedList
           items={[
@@ -257,7 +257,7 @@ export default function CopaRegrasPage() {
         </p>
         <OrderedList
           items={[
-            "Placar em gols — quem tiver mais gols vence.",
+            "Placar em gols - quem tiver mais gols vence.",
             "Empate em gols: vence quem tiver mais votos no total (pênaltis).",
             "Empate também em votos: vence a música com mais pontos no Global 100.",
           ]}
@@ -275,9 +275,9 @@ export default function CopaRegrasPage() {
         <MiniTable
           head={["Fase", "Música"]}
           rows={[
-            ["Grupo — Rodada 1", "Música 1"],
-            ["Grupo — Rodada 2", "Música 2"],
-            ["Grupo — Rodada 3", "Música 3"],
+            ["Grupo - Rodada 1", "Música 1"],
+            ["Grupo - Rodada 2", "Música 2"],
+            ["Grupo - Rodada 3", "Música 3"],
             ["1/16 de Final", "Música 4"],
             ["Oitavas", "Música 5"],
             ["Quartas", "Música 6"],

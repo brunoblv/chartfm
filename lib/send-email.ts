@@ -131,7 +131,7 @@ export function passwordResetEmail(params: { resetUrl: string; name: string }) {
 }
 
 export function googleAccountResetEmail(params: { loginUrl: string; name: string }) {
-  const subject = "Sua conta usa login com Google — ChartFM";
+  const subject = "Sua conta usa login com Google - ChartFM";
   const text = [
     `Olá, ${params.name}!`,
     "",

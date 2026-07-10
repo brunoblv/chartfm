@@ -29,7 +29,7 @@ export async function loadCommunityHeader(slug: string): Promise<{
       members: row.members,
       posts: row.posts,
       founded: row.founded,
-      adminName: row.owner?.name ?? "—",
+      adminName: row.owner?.name ?? "-",
       paradaName: row.paradaName,
       isAdmin,
     },

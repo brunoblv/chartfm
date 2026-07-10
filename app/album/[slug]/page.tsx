@@ -193,7 +193,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                 <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
                 <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                   {s.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
-                  {s.peak > 0 ? `#${s.peak}` : "—"}
+                  {s.peak > 0 ? `#${s.peak}` : "-"}
                 </div>
                 <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
               </div>
@@ -256,7 +256,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               <div style={{ textAlign: "right", fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{s.weeks}</div>
               <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
                 {s.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={11} color="currentColor" fill="currentColor" /></span>}
-                {s.peak > 0 ? `#${s.peak}` : "—"}
+                {s.peak > 0 ? `#${s.peak}` : "-"}
               </div>
             </div>
           ))}
@@ -596,7 +596,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
               <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                 {s.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={12} color="currentColor" fill="currentColor" /></span>}
-                {s.peak > 0 ? `#${s.peak}` : "—"}
+                {s.peak > 0 ? `#${s.peak}` : "-"}
               </div>
               <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
             </div>
@@ -661,7 +661,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
             <div style={{ textAlign: "right", fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{s.weeks}</div>
             <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 }}>
               {s.peak === 1 && <span style={{ color: "var(--accent)", display: "inline-flex", alignItems: "center" }}><Star size={11} color="currentColor" fill="currentColor" /></span>}
-              {s.peak > 0 ? `#${s.peak}` : "—"}
+              {s.peak > 0 ? `#${s.peak}` : "-"}
             </div>
           </div>
         ))}

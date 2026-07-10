@@ -123,7 +123,7 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
           onKeyDown={(e) => {
             if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           }}
-          placeholder="—"
+          placeholder="-"
           disabled={saving}
           aria-label="Sua nota para este álbum"
           style={{

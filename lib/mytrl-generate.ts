@@ -125,7 +125,7 @@ export async function generateMyTrlSnapshot(
 ): Promise<MyTrlGenerateResult> {
   const weekday = brtWeekday(referenceDay);
   if (weekday === 0) {
-    return { ok: false, error: "Fim de semana — MyTRL só roda de segunda a sexta.", skipped: true };
+    return { ok: false, error: "Fim de semana - MyTRL só roda de segunda a sexta.", skipped: true };
   }
 
   const owner = await getMyTrlOwnerUser();

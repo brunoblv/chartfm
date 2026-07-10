@@ -10,7 +10,7 @@ const RELEASES_EN: Release[] = [
         title: "Context text on song, artist, and chart pages",
         tag: "melhoria",
         description:
-          "Song, artist, album, chart, and community pages now include an explanatory paragraph built from that entity's real data — Global 100 position, weeks on chart, ratings, and history. Helps you understand what you're looking at without knowing the platform rules upfront.",
+          "Song, artist, album, chart, and community pages now include an explanatory paragraph built from that entity's real data: Global 100 position, weeks on chart, ratings, and history. Helps you understand what you're looking at without knowing the platform rules upfront.",
       },
       {
         title: "New guides and FAQ",
@@ -34,13 +34,13 @@ const RELEASES_EN: Release[] = [
         title: "Weekly editorial from real data",
         tag: "melhoria",
         description:
-          "The Global 100 editorial is now assembled automatically from the week's numbers — leader, biggest rise, biggest fall, debuts, and returns — with no AI generation. Each sentence only appears when the data exists.",
+          "The Global 100 editorial is now assembled automatically from the week's numbers (leader, biggest rise, biggest fall, debuts, and returns), with no AI generation. Each sentence only appears when the data exists.",
       },
       {
         title: "Week calendar when creating a chart",
         tag: "novo",
         description:
-          "The create chart page now has a visual week calendar for picking the week — handy for retroactive charts or checking the exact date range before saving.",
+          "The create chart page now has a visual week calendar for picking the week, handy for retroactive charts or checking the exact date range before saving.",
       },
     ],
   },
@@ -58,7 +58,7 @@ const RELEASES_EN: Release[] = [
         title: "Communities in the main menu",
         tag: "design",
         description:
-          "Communities got a fixed shortcut in the sidebar, between Global and Push — no need to go through Discover to find your groups.",
+          "Communities got a fixed shortcut in the sidebar, between Global and Push, no need to go through Discover to find your groups.",
       },
       {
         title: "Flashback and Spotlight on charts",
@@ -70,7 +70,7 @@ const RELEASES_EN: Release[] = [
         title: "Comments panel on chart pages",
         tag: "melhoria",
         description:
-          "Chart pages now have a dedicated comments panel, with a toggle between the list and comments on mobile and a side layout on desktop — no need to scroll to the bottom of the page.",
+          "Chart pages now have a dedicated comments panel, with a toggle between the list and comments on mobile and a side layout on desktop, no need to scroll to the bottom of the page.",
       },
       {
         title: "Streak on the home screen",
@@ -112,7 +112,7 @@ const RELEASES_EN: Release[] = [
         title: "Like comments",
         tag: "novo",
         description:
-          "You can now like comments on chart pages. Tap the heart next to a comment — the author gets a notification. Tap again to remove your like.",
+          "You can now like comments on chart pages. Tap the heart next to a comment, the author gets a notification. Tap again to remove your like.",
       },
       {
         title: "Listen to charts on YouTube",
@@ -154,7 +154,7 @@ const RELEASES_EN: Release[] = [
         title: "#1 history on profile",
         tag: "novo",
         description:
-          "The profile Stats tab has a new #1s section with every song that reached number one — week counts and distinct #1 tracks. You can filter by year.",
+          "The profile Stats tab has a new #1s section with every song that reached number one: week counts and distinct #1 tracks. You can filter by year.",
       },
     ],
   },
@@ -196,7 +196,7 @@ const RELEASES_EN: Release[] = [
         title: "English language support",
         tag: "novo",
         description:
-          "ChartFM is now available in Portuguese and English. Use the language switcher in the sidebar or Settings — your choice is saved in the browser and applied across all pages, including metadata and UI text.",
+          "ChartFM is now available in Portuguese and English. Use the language switcher in the sidebar or Settings, your choice is saved in the browser and applied across all pages, including metadata and UI text.",
       },
     ],
   },
@@ -238,7 +238,7 @@ const RELEASES_EN: Release[] = [
         title: "Profile menu on mobile",
         tag: "novo",
         description:
-          "The bottom navigation bar on mobile opens a menu when you tap Profile, with a shortcut to your page and sign out — no need to open Settings.",
+          "The bottom navigation bar on mobile opens a menu when you tap Profile, with a shortcut to your page and sign out, no need to open Settings.",
       },
       {
         title: "Mobile chart layout",
@@ -262,7 +262,7 @@ const RELEASES_EN: Release[] = [
         title: "Second chart",
         tag: "novo",
         description:
-          "You can now have up to 2 charts on ChartFM. The second chart can be created in Settings, Charts tab. It works independently — with its own name, size, and genres — but earns fewer points and does not count toward the Global Chart ranking.",
+          "You can now have up to 2 charts on ChartFM. The second chart can be created in Settings, Charts tab. It works independently (with its own name, size, and genres), but earns fewer points and does not count toward the Global Chart ranking.",
       },
       {
         title: "Dropouts tab on Global Chart",
@@ -274,7 +274,7 @@ const RELEASES_EN: Release[] = [
         title: "Dropouts tab on personal charts",
         tag: "novo",
         description:
-          "Each personal chart page also has a Dropouts tab showing songs that fell off since the last publish — with weeks on chart and peak position.",
+          "Each personal chart page also has a Dropouts tab showing songs that fell off since the last publish, with weeks on chart and peak position.",
       },
       {
         title: "Comment replies",

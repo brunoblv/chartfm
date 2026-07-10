@@ -194,7 +194,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
             <ScoreSquare score={album.score} size={40} overlay />
           ) : (
             <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(0,0,0,0.55)", color: "white", display: "grid", placeItems: "center", fontSize: 15, fontWeight: 800, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
-              —
+              -
             </div>
           )}
         </div>
@@ -250,7 +250,7 @@ function CriticsFMListRow({ album }: { album: CriticsFMAlbum }) {
             fontSize: 15, fontWeight: 800, fontVariantNumeric: "tabular-nums",
             border: "1.5px solid var(--text-disabled)30",
           }}>
-            —
+            -
           </div>
         )}
       </div>
@@ -641,7 +641,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
                   boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                 }}
               >
-                Carregar mais — {Math.min(PAGE_SIZE, filtered.length - showCount)} de {filtered.length - showCount} restantes
+                Carregar mais - {Math.min(PAGE_SIZE, filtered.length - showCount)} de {filtered.length - showCount} restantes
               </button>
             </div>
           )}

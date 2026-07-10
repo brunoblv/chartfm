@@ -29,7 +29,7 @@ export default function GuideComoFuncionaACopa() {
               As partidas de cada dia ficam disponíveis em{" "}
               <InstitutionalInlineLink href="/copa/ao-vivo">/copa/ao-vivo</InstitutionalInlineLink>, junto com o placar em tempo real de quem está na frente.
             </>,
-            "Não é preciso torcer para os mesmos artistas o torneio inteiro — você pode votar partida por partida, conforme as músicas em disputa.",
+            "Não é preciso torcer para os mesmos artistas o torneio inteiro - você pode votar partida por partida, conforme as músicas em disputa.",
           ],
         },
         {
@@ -46,7 +46,7 @@ export default function GuideComoFuncionaACopa() {
           title: "Acompanhar o chaveamento",
           body: [
             <>
-              Depois da fase de grupos, a competição vira mata-mata. Para ver o chaveamento completo — quem enfrenta quem em cada fase, até a final — acesse{" "}
+              Depois da fase de grupos, a competição vira mata-mata. Para ver o chaveamento completo (quem enfrenta quem em cada fase, até a final) acesse{" "}
               <InstitutionalInlineLink href="/copa/chaveamento">/copa/chaveamento</InstitutionalInlineLink>.
             </>,
             "O chaveamento é atualizado conforme os resultados das partidas saem, então dá para acompanhar a trajetória de um artista específico até onde ele for.",

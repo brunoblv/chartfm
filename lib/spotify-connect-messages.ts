@@ -22,7 +22,7 @@ export function spotifyConnectErrorMessage(status: string, reason?: string | nul
       return (
         "Autorização negada pelo Spotify. Se você cancelou, tente de novo. " +
         "Se apareceu uma mensagem sobre conta não registrada, o app ainda está em modo de desenvolvimento " +
-        "da Spotify — entre em contato pelo contato@chartfm.com.br para solicitar acesso."
+        "da Spotify, entre em contato pelo contato@chartfm.com.br para solicitar acesso."
       );
     case "not_registered":
       return (

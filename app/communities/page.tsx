@@ -587,7 +587,7 @@ export default async function CommunitiesPage({
               <span style={{ fontSize: 14, fontWeight: 700 }}>Descubra música de verdade</span>
             </div>
             <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
-              As recomendações das comunidades são geradas por pessoas reais com gosto parecido com o seu — não por algoritmos. Isso significa descobertas mais relevantes e menos óbvias.
+              As recomendações das comunidades são geradas por pessoas reais com gosto parecido com o seu, não por algoritmos. Isso significa descobertas mais relevantes e menos óbvias.
             </p>
           </div>
           <div>

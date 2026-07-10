@@ -19,7 +19,7 @@ export default function GuideImportarHistorico() {
           title: "O que é a importação de histórico?",
           body: [
             "Na tela de criação de parada (/create), além de adicionar músicas manualmente, você pode importar automaticamente as faixas mais ouvidas da sua conta do Last.fm ou as tocadas recentemente no Spotify.",
-            "A importação preenche sua parada com uma lista pronta de músicas, que você ainda pode reordenar, remover ou completar antes de publicar. Ela não publica nada sozinha — o passo de publicação continua manual.",
+            "A importação preenche sua parada com uma lista pronta de músicas, que você ainda pode reordenar, remover ou completar antes de publicar. Ela não publica nada sozinha, o passo de publicação continua manual.",
           ],
         },
         {
@@ -57,7 +57,7 @@ export default function GuideImportarHistorico() {
         {
           title: "Dicas",
           body: [
-            "Você pode importar de novo quantas vezes quiser antes de publicar — cada nova importação substitui a lista atual.",
+            "Você pode importar de novo quantas vezes quiser antes de publicar, cada nova importação substitui a lista atual.",
             "Combine os dois métodos: importe do Last.fm para pegar o volume do mês e depois complete manualmente com músicas do Spotify que você ouviu nos últimos dias, ou vice-versa.",
             "Se uma importação falhar por erro de conexão, tente novamente. Se o Spotify pedir reconexão, o botão de conectar aparece de novo no modal.",
           ],

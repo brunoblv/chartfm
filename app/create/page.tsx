@@ -1294,12 +1294,12 @@ export default function CreatePage() {
                 <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
                   {activeParadaCadence === "daily" ? (
                     <>
-                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Dia da parada</strong> para escolher no calendário — inclusive dias passados.{" "}
+                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Dia da parada</strong> para escolher no calendário, inclusive dias passados.{" "}
                       <span style={{ whiteSpace: "nowrap" }}>Bolinha verde = já publicou;</span> cinza = ainda sem parada.
                     </>
                   ) : (
                     <>
-                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Semana da parada</strong> para escolher no calendário — inclusive semanas passadas.{" "}
+                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Semana da parada</strong> para escolher no calendário, inclusive semanas passadas.{" "}
                       <span style={{ whiteSpace: "nowrap" }}>Bolinha verde = já publicou;</span> cinza = ainda sem parada.
                     </>
                   )}

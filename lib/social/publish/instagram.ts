@@ -1,4 +1,9 @@
 import { isInstagramConfigured } from "@/lib/social/config";
+import {
+  isSocialPlatformConfigured,
+  resolveSocialAccessToken,
+  resolveSocialAccountId,
+} from "@/lib/social/credentials/token-resolver";
 import { timedFetch, type PublishResult } from "@/lib/social/publish/shared";
 
 // Instagram API with Instagram Login (token nativo "IGAA...", não é o token de Página do Facebook).
@@ -23,10 +28,13 @@ async function waitForContainerReady(containerId: string, token: string): Promis
 
 /** Publica no Instagram (Feed ou Stories) via Graph API — fluxo de container em 2 passos. imageUrl precisa ser pública. */
 export async function publishToInstagram(caption: string, imageUrl: string, target: "FEED" | "STORIES"): Promise<PublishResult> {
-  if (!isInstagramConfigured()) return { ok: false, error: "Instagram não configurado" };
+  if (!(await isSocialPlatformConfigured("INSTAGRAM")) && !isInstagramConfigured()) {
+    return { ok: false, error: "Instagram não configurado" };
+  }
 
-  const igUserId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!.trim();
-  const token = process.env.INSTAGRAM_ACCESS_TOKEN!.trim();
+  const igUserId = await resolveSocialAccountId("INSTAGRAM");
+  const token = await resolveSocialAccessToken("INSTAGRAM");
+  if (!igUserId || !token) return { ok: false, error: "Instagram não configurado" };
 
   const createBody: Record<string, string> = { image_url: imageUrl, access_token: token };
   if (target === "FEED") createBody.caption = caption;

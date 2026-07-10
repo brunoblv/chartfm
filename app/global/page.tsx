@@ -35,7 +35,7 @@ export default async function GlobalHubPage() {
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("global.hubHowTitle")}</h2>
         <ul style={{ margin: 0, paddingLeft: 20, color: "var(--text-muted)", fontSize: 14, lineHeight: 1.8 }}>
           <li>{t("global.hubHowCharts")}</li>
-          <li>Top 50 por gênero — Rock, Brasil, Urban, Asian, Pop, Alternative e Eletrônica.</li>
+          <li>Top 50 por gênero - Rock, Brasil, Urban, Asian, Pop, Alternative e Eletrônica.</li>
           <li>{t("global.hubHowAirplay")}</li>
           <li>{t("global.hubHowAlbums")}</li>
         </ul>

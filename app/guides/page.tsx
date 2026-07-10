@@ -60,7 +60,7 @@ const GUIDES = [
   {
     icon: <Lock size={20} />,
     title: "Privacidade da conta",
-    body: "Por padrão, seu perfil e suas paradas são visíveis para todos. Você pode tornar sua conta privada nas configurações — assim, apenas pessoas que você aprovar poderão ver seu conteúdo.",
+    body: "Por padrão, seu perfil e suas paradas são visíveis para todos. Você pode tornar sua conta privada nas configurações, assim, apenas pessoas que você aprovar poderão ver seu conteúdo.",
   },
   {
     icon: <Users2 size={20} />,
@@ -101,7 +101,7 @@ const GUIDES = [
   {
     icon: <BookOpen size={20} />,
     title: "Glossário do ChartFM",
-    body: "Parada, estreia, retorno, pico, snapshot, Global 100, Copa — o significado de cada termo usado na plataforma.",
+    body: "Parada, estreia, retorno, pico, snapshot, Global 100, Copa - o significado de cada termo usado na plataforma.",
     href: "/guides/glossario",
   },
 ];
@@ -129,7 +129,7 @@ export default function GuidesPage() {
         <InstitutionalMutedCallout>
           Não encontrou o que procurava? Veja também as{" "}
           <InstitutionalInlineLink href="/faq">Perguntas frequentes</InstitutionalInlineLink> ou envie sua dúvida pela
-          página <InstitutionalInlineLink href="/contact">Contato</InstitutionalInlineLink> — respondemos em até 2 dias
+          página <InstitutionalInlineLink href="/contact">Contato</InstitutionalInlineLink> - respondemos em até 2 dias
           úteis.
         </InstitutionalMutedCallout>
       </div>

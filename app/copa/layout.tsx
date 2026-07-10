@@ -6,7 +6,7 @@ import { CopaNav } from "./CopaNav";
 
 export const metadata: Metadata = {
   title: "Copa ChartFM",
-  description: "Torneio musical da comunidade ChartFM — grupos, jogos ao vivo e chaveamento",
+  description: "Torneio musical da comunidade ChartFM - grupos, jogos ao vivo e chaveamento",
 };
 
 export default async function CopaLayout({ children }: { children: React.ReactNode }) {

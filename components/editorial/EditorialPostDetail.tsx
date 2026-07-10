@@ -144,7 +144,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
         <div style={{ maxWidth: 820, marginBottom: 32 }}>
           <iframe
             src={spotifyEmbed}
-            title={`Spotify — ${pick.title}`}
+            title={`Spotify - ${pick.title}`}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
             style={{

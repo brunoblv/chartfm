@@ -418,7 +418,7 @@ export function CopaArtistSinglesEditor({
                   whiteSpace: "nowrap",
                 }}
               >
-                {isEmpty ? (editable ? "Solte uma música aqui…" : "—") : single!.songName}
+                {isEmpty ? (editable ? "Solte uma música aqui…" : "-") : single!.songName}
               </div>
             </div>
             <span

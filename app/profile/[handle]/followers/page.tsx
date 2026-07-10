@@ -115,7 +115,7 @@ export default function FollowersPage() {
               @{handle}
             </h1>
             <p style={{ margin: 0, fontSize: 13, color: "#86868B" }}>
-              {loading ? "—" : total.toLocaleString("pt-BR")} {title.toLowerCase()}
+              {loading ? "-" : total.toLocaleString("pt-BR")} {title.toLowerCase()}
             </p>
           </div>
         </div>

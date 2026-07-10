@@ -1,3 +1,5 @@
+import { isSocialPlatformConfiguredFromEnv } from "@/lib/social/credentials/token-resolver";
+
 export function isSocialPostingEnabled(): boolean {
   const flag = process.env.SOCIAL_POSTING_ENABLED?.trim().toLowerCase();
   return flag ? flag === "1" || flag === "true" || flag === "yes" : true;
@@ -14,13 +16,13 @@ export function absoluteSocialUrl(targetUrl: string): string {
 }
 
 export function isFacebookConfigured(): boolean {
-  return Boolean(process.env.FACEBOOK_PAGE_ID?.trim() && process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim());
+  return isSocialPlatformConfiguredFromEnv("FACEBOOK");
 }
 
 export function isInstagramConfigured(): boolean {
-  return Boolean(process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID?.trim() && process.env.INSTAGRAM_ACCESS_TOKEN?.trim());
+  return isSocialPlatformConfiguredFromEnv("INSTAGRAM");
 }
 
 export function isThreadsConfigured(): boolean {
-  return Boolean(process.env.THREADS_USER_ID?.trim() && process.env.THREADS_ACCESS_TOKEN?.trim());
+  return isSocialPlatformConfiguredFromEnv("THREADS");
 }

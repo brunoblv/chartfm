@@ -194,7 +194,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: game.goalsA >= game.goalsB ? "var(--text)" : "var(--text-muted)" }}>{game.goalsA}</span>
-              <span style={{ fontSize: 20, color: "var(--text-muted)" }}>—</span>
+              <span style={{ fontSize: 20, color: "var(--text-muted)" }}>-</span>
               <span style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: game.goalsB >= game.goalsA ? "var(--text)" : "var(--text-muted)" }}>{game.goalsB}</span>
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{game.votesA} × {game.votesB} votos</div>
@@ -317,7 +317,7 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: g.goalsA >= g.goalsB ? "var(--text)" : "var(--text-muted)" }}>{g.goalsA}</span>
-            <span style={{ fontSize: 18, color: "var(--text-muted)" }}>—</span>
+            <span style={{ fontSize: 18, color: "var(--text-muted)" }}>-</span>
             <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: g.goalsB >= g.goalsA ? "var(--text)" : "var(--text-muted)" }}>{g.goalsB}</span>
           </div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{g.votesA} × {g.votesB} votos</div>

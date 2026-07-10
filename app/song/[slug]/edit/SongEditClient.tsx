@@ -234,7 +234,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
                   }}
                   style={optionStyle}
                 >
-                  {a.title} — {a.artistName}
+                  {a.title} - {a.artistName}
                 </button>
               ))}
             </div>

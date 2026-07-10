@@ -1053,7 +1053,7 @@ export default async function ArtistPage({
                           <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
                           <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                             {s.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
-                            {s.peak > 0 ? `#${s.peak}` : "—"}
+                            {s.peak > 0 ? `#${s.peak}` : "-"}
                           </div>
                           <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
                         </div>

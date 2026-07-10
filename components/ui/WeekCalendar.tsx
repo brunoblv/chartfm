@@ -195,8 +195,8 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
   const periodLabel = mode === "daily" ? "Dia da parada" : "Semana da parada";
   const helpText =
     mode === "daily"
-      ? "Toque em um dia no calendário para escolher quando publicar — inclusive dias passados."
-      : "Toque em uma semana no calendário para escolher quando publicar — inclusive semanas passadas.";
+      ? "Toque em um dia no calendário para escolher quando publicar - inclusive dias passados."
+      : "Toque em uma semana no calendário para escolher quando publicar - inclusive semanas passadas.";
 
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
@@ -575,11 +575,11 @@ export function WeekCalendar({ value, onChange, label = "Semana", paradaId, mode
               <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11, color: "var(--text-muted)", lineHeight: 1.35 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#1B873F", flexShrink: 0 }} />
-                  <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>Verde</strong> — {mode === "daily" ? "dia" : "semana"} com parada publicada</span>
+                  <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>Verde</strong> - {mode === "daily" ? "dia" : "semana"} com parada publicada</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "var(--fill-subtle)", flexShrink: 0 }} />
-                  <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>Cinza</strong> — ainda sem parada (pode publicar agora)</span>
+                  <span><strong style={{ color: "var(--text)", fontWeight: 600 }}>Cinza</strong> - ainda sem parada (pode publicar agora)</span>
                 </div>
               </div>
             </div>

@@ -146,7 +146,7 @@ export async function openWeeklySpotlightPoll(now: Date = new Date()): Promise<O
   });
 
   const notified = await broadcastAdminAnnouncement({
-    text: `A votação da semana está aberta! Escolha a Melhor da Semana e o Flashback da Semana (${week.weekLabel}). Você pode votar em quantas quiser — as vencedoras aparecem na Parada Global de terça.`,
+    text: `A votação da semana está aberta! Escolha a Melhor da Semana e o Flashback da Semana (${week.weekLabel}). Você pode votar em quantas quiser, as vencedoras aparecem na Parada Global de terça.`,
     targetUrl: WEEKLY_POLL_PATH,
     notifyType: "weekly_poll_open",
     feedKind: "weekly_poll_open",

@@ -69,7 +69,7 @@ function FixtureSlide({ f }: { f: CopaLiveFeedFixture }) {
             <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: f.goalsA >= f.goalsB ? "var(--text)" : "var(--text-muted)" }}>
               {f.goalsA}
             </span>
-            <span style={{ fontSize: 16, color: "var(--text-muted)" }}>—</span>
+            <span style={{ fontSize: 16, color: "var(--text-muted)" }}>-</span>
             <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: f.goalsB >= f.goalsA ? "var(--text)" : "var(--text-muted)" }}>
               {f.goalsB}
             </span>
@@ -183,7 +183,7 @@ export function CopaLiveFeedCarousel({ initial }: { initial: CopaLiveFeedData })
             ⚽ {data.copaName}
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-            {total} {total === 1 ? "disputa ao vivo" : "disputas ao vivo"} — vote agora
+            {total} {total === 1 ? "disputa ao vivo" : "disputas ao vivo"} - vote agora
           </div>
         </div>
         <LiveBadge />

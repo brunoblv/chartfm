@@ -202,7 +202,7 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                   </div>
                   {/* ✅ Score: min-width fixo para alinhar em todas as linhas */}
                   <span style={{ fontSize: 14, fontWeight: 800, minWidth: 52, textAlign: "center", flexShrink: 0, color: f.status === "UPCOMING" ? "var(--text-muted)" : "var(--text)" }}>
-                    {f.status === "UPCOMING" ? "— vs —" : `${f.goalsA} — ${f.goalsB}`}
+                    {f.status === "UPCOMING" ? "- vs -" : `${f.goalsA} - ${f.goalsB}`}
                   </span>
                   <div style={{ flex: 1, textAlign: "right" }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{artB?.artistName}</div>

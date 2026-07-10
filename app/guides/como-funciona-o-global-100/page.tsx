@@ -19,7 +19,7 @@ export default function GuideGlobal100() {
           title: "O que é o Global 100?",
           body: [
             "O Global 100 é a parada musical coletiva do ChartFM. Diferente dos rankings de streaming, que contam reproduções automáticas e passivas, o Global 100 é construído a partir das escolhas deliberadas dos usuários: cada posição no ranking coletivo reflete o quanto uma música foi valorizada pelas pessoas que curaram suas listas pessoais naquela semana.",
-            "O resultado é uma parada que representa o gosto real da comunidade — não o que um algoritmo recomendou ou o que tocou mais vezes em modo aleatório, mas o que os usuários conscientemente escolheram como as músicas mais importantes de suas semanas.",
+            "O resultado é uma parada que representa o gosto real da comunidade, não o que um algoritmo recomendou ou o que tocou mais vezes em modo aleatório, mas o que os usuários conscientemente escolheram como as músicas mais importantes de suas semanas.",
           ],
         },
         {
@@ -56,7 +56,7 @@ export default function GuideGlobal100() {
         {
           title: "Por que o Global 100 é diferente das charts de streaming",
           body: [
-            "Nas grandes plataformas de streaming, uma música sobe no ranking quando é reproduzida — independente de ter sido escolhida conscientemente ou tocado no modo aleatório. Isso favorece músicas promovidas algoritmicamente e cria rankings que muitas vezes não refletem o que as pessoas realmente gostam.",
+            "Nas grandes plataformas de streaming, uma música sobe no ranking quando é reproduzida, independente de ter sido escolhida conscientemente ou tocado no modo aleatório. Isso favorece músicas promovidas algoritmicamente e cria rankings que muitas vezes não refletem o que as pessoas realmente gostam.",
             "No ChartFM, cada posição exige uma decisão intencional do usuário. Ninguém entra em uma parada por acidente. Isso torna o Global 100 um retrato mais próximo do que as pessoas de fato gostam, especialmente para artistas independentes que têm bases de fãs leais mas menos investimento em promoção algorítmica.",
           ],
         },

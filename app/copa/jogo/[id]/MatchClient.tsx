@@ -227,7 +227,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <span style={{ fontSize: 72, fontWeight: 900, letterSpacing: "-0.06em", lineHeight: 1, color: data.goalsA >= data.goalsB ? "var(--text)" : "var(--text-muted)" }}>{data.goalsA}</span>
-                <span style={{ fontSize: 40, color: "var(--text-muted)", margin: "0 8px" }}>—</span>
+                <span style={{ fontSize: 40, color: "var(--text-muted)", margin: "0 8px" }}>-</span>
                 <span style={{ fontSize: 72, fontWeight: 900, letterSpacing: "-0.06em", lineHeight: 1, color: data.goalsB >= data.goalsA ? "var(--text)" : "var(--text-muted)" }}>{data.goalsB}</span>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>gols (2 votos = 1 gol)</div>

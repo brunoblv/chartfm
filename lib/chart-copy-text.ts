@@ -44,7 +44,7 @@ function formatMovementCopy(
     case "down":
       return `-${Math.abs(delta ?? 0)}`;
     default:
-      return "—";
+      return "-";
   }
 }
 

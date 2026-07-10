@@ -40,27 +40,27 @@ const FAQ_ITEMS: { question: string; answer: string }[] = [
   {
     question: "Posso editar uma parada depois de publicada?",
     answer:
-      "Sim. Mas a semana do Global 100 fecha toda terça-feira à meia-noite (horário de Brasília) e o snapshot daquela semana é processado poucas horas depois. Depois que o snapshot é gerado, ele fica congelado — edições feitas após o fechamento não mudam mais o histórico da semana já fechada.",
+      "Sim. Mas a semana do Global 100 fecha toda terça-feira à meia-noite (horário de Brasília) e o snapshot daquela semana é processado poucas horas depois. Depois que o snapshot é gerado, ele fica congelado, edições feitas após o fechamento não mudam mais o histórico da semana já fechada.",
   },
   {
     question: "Minha parada pode ter qualquer gênero musical?",
     answer:
-      "Sim. Não existe restrição de gênero, época ou idioma nas paradas pessoais. Você pode misturar estilos livremente — de sertanejo a K-pop na mesma lista — porque cada usuário decide sozinho o que entra na própria parada.",
+      "Sim. Não existe restrição de gênero, época ou idioma nas paradas pessoais. Você pode misturar estilos livremente (de sertanejo a K-pop na mesma lista) porque cada usuário decide sozinho o que entra na própria parada.",
   },
   {
     question: "O que é a Copa do ChartFM?",
     answer:
-      "A Copa é o torneio eliminatório entre artistas do ChartFM, disputado em formato de chaveamento e movido a votos da comunidade em cada confronto — uma competição paralela ao Global 100. As regras completas, com grupos, fases e critérios de desempate, estão em /copa/regras.",
+      "A Copa é o torneio eliminatório entre artistas do ChartFM, disputado em formato de chaveamento e movido a votos da comunidade em cada confronto, uma competição paralela ao Global 100. As regras completas, com grupos, fases e critérios de desempate, estão em /copa/regras.",
   },
   {
     question: "Como faço para importar meu histórico do Last.fm ou Spotify?",
     answer:
-      "Na tela de criação de parada (/create), use o botão de importação do Last.fm ou do Spotify para preencher sua lista automaticamente com as músicas mais ouvidas nessas contas. Antes de importar, é preciso ter um usuário do Last.fm configurado em /settings ou ter conectado sua conta Spotify. A importação só preenche a lista — você ainda revisa e publica manualmente. O passo a passo está no guia Como importar seu histórico do Last.fm ou Spotify.",
+      "Na tela de criação de parada (/create), use o botão de importação do Last.fm ou do Spotify para preencher sua lista automaticamente com as músicas mais ouvidas nessas contas. Antes de importar, é preciso ter um usuário do Last.fm configurado em /settings ou ter conectado sua conta Spotify. A importação só preenche a lista, você ainda revisa e publica manualmente. O passo a passo está no guia Como importar seu histórico do Last.fm ou Spotify.",
   },
   {
     question: "Minhas paradas ficam públicas para todo mundo?",
     answer:
-      "Por padrão, sim: seu perfil e suas paradas ficam visíveis para qualquer pessoa no ChartFM. Se preferir mais privacidade, você pode tornar sua conta privada nas configurações — a partir daí, só quem você aprovar consegue ver seu conteúdo.",
+      "Por padrão, sim: seu perfil e suas paradas ficam visíveis para qualquer pessoa no ChartFM. Se preferir mais privacidade, você pode tornar sua conta privada nas configurações, a partir daí, só quem você aprovar consegue ver seu conteúdo.",
   },
   {
     question: "Como funcionam as comunidades?",

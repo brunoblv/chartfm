@@ -53,7 +53,7 @@ function TBDSlot() {
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px" }}>
       <div style={{ width: 22, height: 22, borderRadius: 6, background: "var(--fill-inset)", flexShrink: 0 }} />
       <span style={{ flex: 1, fontSize: 13, color: "var(--text-disabled)" }}>A definir</span>
-      <span style={{ fontSize: 13, color: "var(--text-disabled)", fontWeight: 700 }}>—</span>
+      <span style={{ fontSize: 13, color: "var(--text-disabled)", fontWeight: 700 }}>-</span>
     </div>
   );
 }
@@ -121,7 +121,7 @@ function BracketMatch({
             textAlign: "right",
           }}
         >
-          {isDone ? goals : "—"}
+          {isDone ? goals : "-"}
         </span>
       </div>
     );

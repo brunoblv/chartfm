@@ -867,7 +867,7 @@ export default function SettingsPage() {
                       style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                     />
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      Cole o link do perfil ou só o nome de usuário — o usuário é extraído automaticamente.
+                      Cole o link do perfil ou só o nome de usuário, o usuário é extraído automaticamente.
                     </span>
                   </div>
 
@@ -1640,8 +1640,8 @@ export default function SettingsPage() {
               Excluir conta?
             </div>
             <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}>
-              Essa ação é <strong style={{ color: "var(--text)" }}>permanente e irreversível</strong>. Todos os seus dados —
-              paradas, curtidas, comentários, seguidores e configurações — serão excluídos para sempre.
+              Essa ação é <strong style={{ color: "var(--text)" }}>permanente e irreversível</strong>. Todos os seus dados
+              (paradas, curtidas, comentários, seguidores e configurações) serão excluídos para sempre.
             </div>
             {deleteError && (
               <div style={{ fontSize: 13, color: "#B91C1C" }}>{deleteError}</div>

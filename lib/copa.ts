@@ -544,12 +544,12 @@ export function getCopaSinglesEditWindow(
       nextPhase: null,
       nextLabel: null,
       editableSlots: allSlots,
-      message: "Inscrições abertas — defina as 8 músicas de cada artista.",
+      message: "Inscrições abertas - defina as 8 músicas de cada artista.",
     };
   }
 
   if (copaStatus === "FINISHED") {
-    return closed("Copa encerrada — músicas não podem mais ser alteradas.");
+    return closed("Copa encerrada, músicas não podem mais ser alteradas.");
   }
 
   // Após R32 encerrado → antes das oitavas iniciarem (R16 só é gerada nesse momento)

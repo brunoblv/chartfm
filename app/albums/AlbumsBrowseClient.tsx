@@ -313,7 +313,7 @@ function ScoreBadge({ score, size = "sm" }: { score: number; size?: "sm" | "md" 
           fontWeight: 800,
         }}
       >
-        —
+        -
       </div>
     );
   }
@@ -446,7 +446,7 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
               boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
             }}
           >
-            {album.score > 0 ? album.score : "—"}
+            {album.score > 0 ? album.score : "-"}
           </div>
         </div>
         {album.reviewCount > 0 && (
@@ -500,7 +500,7 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
           </span>
           <span style={{ opacity: 0.3 }}>·</span>
           <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>
-            {album.releaseDate?.slice(0, 4) ?? "—"}
+            {album.releaseDate?.slice(0, 4) ?? "-"}
           </span>
         </div>
       </div>

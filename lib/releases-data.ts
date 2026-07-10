@@ -21,7 +21,7 @@ export const RELEASES: Release[] = [
         title: "Texto de contexto nas páginas de música, artista e parada",
         tag: "melhoria",
         description:
-          "Páginas de música, artista, álbum, parada e comunidade agora trazem um parágrafo explicativo montado a partir dos dados reais daquela entidade — posição no Global 100, semanas no ranking, avaliações e histórico. Ajuda a entender o que você está vendo sem precisar conhecer as regras da plataforma.",
+          "Páginas de música, artista, álbum, parada e comunidade agora trazem um parágrafo explicativo montado a partir dos dados reais daquela entidade: posição no Global 100, semanas no ranking, avaliações e histórico. Ajuda a entender o que você está vendo sem precisar conhecer as regras da plataforma.",
       },
       {
         title: "Novos guias e FAQ",
@@ -45,13 +45,13 @@ export const RELEASES: Release[] = [
         title: "Editorial semanal com dados reais",
         tag: "melhoria",
         description:
-          "O texto editorial da Global 100 passou a ser montado automaticamente a partir dos números da semana — líder, maior subida, maior queda, estreias e retornos — sem geração por IA. Cada frase só aparece quando o dado existe.",
+          "O texto editorial da Global 100 passou a ser montado automaticamente a partir dos números da semana (líder, maior subida, maior queda, estreias e retornos), sem geração por IA. Cada frase só aparece quando o dado existe.",
       },
       {
         title: "Calendário de semanas ao criar parada",
         tag: "novo",
         description:
-          "A página de criar parada ganhou um calendário visual para escolher a semana — útil para quem publica paradas retroativas ou quer conferir o intervalo exato antes de salvar.",
+          "A página de criar parada ganhou um calendário visual para escolher a semana, útil para quem publica paradas retroativas ou quer conferir o intervalo exato antes de salvar.",
       },
     ],
   },
@@ -69,7 +69,7 @@ export const RELEASES: Release[] = [
         title: "Comunidades no menu principal",
         tag: "design",
         description:
-          "Comunidades ganhou um atalho fixo na barra lateral, entre Global e Push — não é mais preciso ir até Descobrir para encontrar seus grupos.",
+          "Comunidades ganhou um atalho fixo na barra lateral, entre Global e Push, não é mais preciso ir até Descobrir para encontrar seus grupos.",
       },
       {
         title: "Flashback e Destaque na parada",
@@ -81,7 +81,7 @@ export const RELEASES: Release[] = [
         title: "Painel de comentários na parada",
         tag: "melhoria",
         description:
-          "A página de parada ganhou um painel dedicado de comentários, com alternância entre a lista e os comentários no mobile e layout lateral no desktop — sem precisar rolar até o fim da página.",
+          "A página de parada ganhou um painel dedicado de comentários, com alternância entre a lista e os comentários no mobile e layout lateral no desktop, sem precisar rolar até o fim da página.",
       },
       {
         title: "Streak na tela inicial",
@@ -123,7 +123,7 @@ export const RELEASES: Release[] = [
         title: "Curtir comentários",
         tag: "novo",
         description:
-          "Agora você pode curtir comentários nas páginas de parada. Toque no coração ao lado do comentário — o autor recebe uma notificação. Toque de novo para remover a curtida.",
+          "Agora você pode curtir comentários nas páginas de parada. Toque no coração ao lado do comentário, o autor recebe uma notificação. Toque de novo para remover a curtida.",
       },
       {
         title: "Ouvir paradas no YouTube",
@@ -165,7 +165,7 @@ export const RELEASES: Release[] = [
         title: "Histórico de #1s no perfil",
         tag: "novo",
         description:
-          "A aba Estatísticas do perfil ganhou a seção #1s, com todas as músicas que já ficaram em primeiro na parada — quantas semanas em #1 e total de faixas distintas. Dá para filtrar por ano.",
+          "A aba Estatísticas do perfil ganhou a seção #1s, com todas as músicas que já ficaram em primeiro na parada: quantas semanas em #1 e total de faixas distintas. Dá para filtrar por ano.",
       },
     ],
   },
@@ -207,7 +207,7 @@ export const RELEASES: Release[] = [
         title: "Site em inglês",
         tag: "novo",
         description:
-          "O ChartFM agora está disponível em português e inglês. Use o seletor de idioma na barra lateral ou nas configurações para alternar — a preferência é salva no navegador e aplicada em todas as páginas, incluindo metadados e textos da interface.",
+          "O ChartFM agora está disponível em português e inglês. Use o seletor de idioma na barra lateral ou nas configurações para alternar, a preferência é salva no navegador e aplicada em todas as páginas, incluindo metadados e textos da interface.",
       },
     ],
   },
@@ -249,7 +249,7 @@ export const RELEASES: Release[] = [
         title: "Menu de perfil no celular",
         tag: "novo",
         description:
-          "A barra de navegação inferior no mobile agora abre um menu ao tocar em Perfil, com atalho para a sua página e botão de sair da conta — sem precisar ir até as configurações.",
+          "A barra de navegação inferior no mobile agora abre um menu ao tocar em Perfil, com atalho para a sua página e botão de sair da conta, sem precisar ir até as configurações.",
       },
       {
         title: "Layout mobile das paradas",
@@ -273,7 +273,7 @@ export const RELEASES: Release[] = [
         title: "Segunda parada",
         tag: "novo",
         description:
-          "Agora é possível ter até 2 paradas no ChartFM. A segunda parada pode ser criada nas configurações, na aba Parada. Ela funciona de forma independente — com nome, tamanho e gêneros próprios — mas conta menos pontos e não entra no ranking da Parada Global.",
+          "Agora é possível ter até 2 paradas no ChartFM. A segunda parada pode ser criada nas configurações, na aba Parada. Ela funciona de forma independente (com nome, tamanho e gêneros próprios), mas conta menos pontos e não entra no ranking da Parada Global.",
       },
       {
         title: "Aba Saídas na Parada Global",
@@ -285,7 +285,7 @@ export const RELEASES: Release[] = [
         title: "Aba Saídas na parada pessoal",
         tag: "novo",
         description:
-          "A página de cada parada pessoal também ganhou a aba Saídas, mostrando as músicas que caíram da lista desde a última publicação — com quantas semanas ficaram e a posição de pico que alcançaram.",
+          "A página de cada parada pessoal também ganhou a aba Saídas, mostrando as músicas que caíram da lista desde a última publicação, com quantas semanas ficaram e a posição de pico que alcançaram.",
       },
       {
         title: "Respostas nos comentários",
@@ -360,7 +360,7 @@ export const RELEASES: Release[] = [
     label: "12 de maio de 2026",
     entries: [
       {
-        title: "CriticsFM — avalie e descubra álbuns",
+        title: "CriticsFM - avalie e descubra álbuns",
         tag: "novo",
         description:
           "Uma nova seção do site dedicada a álbuns. Você pode explorar o catálogo, ver a nota média de cada álbum com base nas avaliações dos usuários, escrever sua própria review e marcar reviews de outros como úteis. Acesse pelo menu lateral ou em /criticsfm.",
@@ -369,7 +369,7 @@ export const RELEASES: Release[] = [
         title: "Reviews de álbuns no feed da tela inicial",
         tag: "novo",
         description:
-          'A tela inicial ganhou uma segunda aba "Reviews" ao lado de "Paradas". Ela exibe as avaliações de álbuns mais recentes dos usuários do site, com nota, capa e trecho do texto — tudo sem sair da home.',
+          'A tela inicial ganhou uma segunda aba "Reviews" ao lado de "Paradas". Ela exibe as avaliações de álbuns mais recentes dos usuários do site, com nota, capa e trecho do texto, tudo sem sair da home.',
       },
       {
         title: "Logo e nome da parada aparecem no card",
@@ -399,7 +399,7 @@ export const RELEASES: Release[] = [
         title: "Logo personalizado da parada",
         tag: "novo",
         description:
-          "A nova aba Parada nas configurações permite que você faça upload de um logo exclusivo para a sua parada. Quando definido, o logo aparece no lugar do mosaico das 4 capas na página de detalhes — tanto no desktop quanto no mobile. Se nenhum logo for enviado, o comportamento atual (4 capas em grade) é mantido.",
+          "A nova aba Parada nas configurações permite que você faça upload de um logo exclusivo para a sua parada. Quando definido, o logo aparece no lugar do mosaico das 4 capas na página de detalhes, tanto no desktop quanto no mobile. Se nenhum logo for enviado, o comportamento atual (4 capas em grade) é mantido.",
       },
       {
         title: 'Nova aba "Parada" nas configurações',

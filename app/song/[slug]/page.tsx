@@ -452,7 +452,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             inclui a música em sua parada semanal, ela ganha pontos conforme a posição: 1.000 no 1º lugar, 900
             no 2º, 850 no 3º, e uma curva decrescente até a 100ª posição, que vale 10 pontos. A melhor posição
             no Global 100 (o ranking coletivo semanal) usa um cálculo separado, somando essas paradas de forma
-            diferente — veja como em{" "}
+            diferente, veja como em{" "}
             <Link href="/guides/como-funciona-o-global-100" style={{ color: "var(--accent)" }}>
               Como funciona o Global 100
             </Link>

@@ -1,7 +1,7 @@
 /** Page-level UI strings (Portuguese). */
 export const pagesPtBR = {
   home: {
-    metaTitle: "ChartFM — Sua parada musical semanal",
+    metaTitle: "ChartFM - Sua parada musical semanal",
     metaDescription:
       "Crie sua parada musical semanal, descubra novos artistas e participe de comunidades no ChartFM. Rankings, reviews e curadoria musical feitos por fãs.",
     title: "Início",
@@ -99,12 +99,12 @@ export const pagesPtBR = {
     hubTitle: "Paradas Globais",
     hubSubtitle: "Rankings coletivos da comunidade ChartFM",
     hubMetaTitle: "Paradas Globais | ChartFM",
-    hubMetaDescription: "Global 100, Global Air Play e Global 100 Álbuns — os rankings coletivos do ChartFM.",
+    hubMetaDescription: "Global 100, Global Air Play e Global 100 Álbuns - os rankings coletivos do ChartFM.",
     hubIntro: "Escolha uma das paradas globais do ChartFM.",
     hubHowTitle: "As paradas",
-    hubHowCharts: "Global 100 — as músicas mais populares com base nas paradas pessoais da comunidade.",
-    hubHowAirplay: "Global 100 Air Play — as músicas mais ouvidas pelos usuários na semana.",
-    hubHowAlbums: "Global 100 Álbuns — os álbuns mais ouvidos pelos usuários na semana.",
+    hubHowCharts: "Global 100 - as músicas mais populares com base nas paradas pessoais da comunidade.",
+    hubHowAirplay: "Global 100 Air Play - as músicas mais ouvidas pelos usuários na semana.",
+    hubHowAlbums: "Global 100 Álbuns - os álbuns mais ouvidos pelos usuários na semana.",
     hubGuideLink: "Guia do Global 100",
     backToHub: "Todas as paradas globais",
     contributorsCount: "{count} ouvintes Last.fm",
@@ -190,7 +190,7 @@ export const pagesPtBR = {
       "Usuários publicam suas paradas pessoais semanalmente. O Discover agrega essas escolhas para revelar tendências reais dentro da comunidade.",
     stepRankingsTitle: "Rankings construídos pela comunidade",
     stepRankingsDesc:
-      "Artistas e músicas sobem no ranking conforme mais usuários os incluem em suas paradas. Sem algoritmo opaco — só o gosto real das pessoas.",
+      "Artistas e músicas sobem no ranking conforme mais usuários os incluem em suas paradas. Sem algoritmo opaco - só o gosto real das pessoas.",
     stepCurationTitle: "Curadoria humana, não automática",
     stepCurationDesc:
       "Cada fã de música é uma pessoa real com um gosto musical definido. Seguir fãs de música permite descobrir músicas através de quem pensa parecido com você.",
@@ -205,7 +205,7 @@ export const pagesPtBR = {
     featuredBioFallback: "Fã de música em destaque da semana.",
     exploreGenresTitle: "Explorar por gênero",
     exploreGenresIntro:
-      "Cada gênero musical tem seu próprio espaço de descoberta no ChartFM. Filtre artistas, músicas e fãs de música por estilo para revelar tendências de cada cena — do funk ao K-Pop, do indie ao eletrônico. Os rankings por gênero são construídos a partir das paradas dos usuários que mais ouvem e engajam com cada estilo, oferecendo uma visão da comunidade sobre o que está em alta em cada gênero.",
+      "Cada gênero musical tem seu próprio espaço de descoberta no ChartFM. Filtre artistas, músicas e fãs de música por estilo para revelar tendências de cada cena - do funk ao K-Pop, do indie ao eletrônico. Os rankings por gênero são construídos a partir das paradas dos usuários que mais ouvem e engajam com cada estilo, oferecendo uma visão da comunidade sobre o que está em alta em cada gênero.",
     hotIntro:
       "Ranking semanal consolidado toda terça-feira às 6h00 (BRT). Artistas e músicas são ranqueados com base no número de usuários que os incluíram em suas paradas pessoais na {weekLabel}.",
     faqTitle: "Perguntas frequentes",
@@ -245,7 +245,7 @@ export const pagesPtBR = {
     curatorsScoringFrozen:
       "O ranking é consolidado toda terça-feira às 6h00 (BRT), junto com a Parada Global.",
     curatorsEmpty:
-      "O ranking de pontos de interação desta semana ainda não está disponível. Participe publicando paradas, curtindo e comentando — a consolidação é toda terça às 6h (horário de Brasília).",
+      "O ranking de pontos de interação desta semana ainda não está disponível. Participe publicando paradas, curtindo e comentando - a consolidação é toda terça às 6h (horário de Brasília).",
     colCurator: "Fã",
     colCuratorChart: "Parada",
     colCuratorLikes: "Curtidas",
@@ -325,7 +325,7 @@ export const pagesPtBR = {
     phaseResult: "Resultado",
     themeThisWeek: "Tema desta semana",
     signInToVote: "Entre na sua conta",
-    yourNominations: "Suas indicações — escolha 2 álbuns",
+    yourNominations: "Suas indicações - escolha 2 álbuns",
     confirmNominations: "Confirmar indicações",
     waitingSignups: "Aguardando inscrições",
     signupsOpen: "Inscrições abertas",
@@ -469,9 +469,9 @@ export const pagesPtBR = {
       daySuffix: "dias",
       weekSuffix: "sem.",
       noDropoutsDay:
-        "Nenhuma saída neste dia — primeira parada ou todas as músicas permaneceram.",
+        "Nenhuma saída neste dia - primeira parada ou todas as músicas permaneceram.",
       noDropoutsWeek:
-        "Nenhuma saída nesta semana — primeira parada ou todas as músicas permaneceram.",
+        "Nenhuma saída nesta semana - primeira parada ou todas as músicas permaneceram.",
       overlapLoadingDay: "Calculando afinidade do dia...",
       overlapLoadingWeek: "Calculando afinidade da semana...",
       overlapEmptyDay: "Nenhuma afinidade encontrada neste dia.",
@@ -587,17 +587,17 @@ export const pagesPtBR = {
   },
   landingEditorial: {
     eyebrow: "Parada Global · ChartFM",
-    title: "Global 100 — {week}",
+    title: "Global 100 - {week}",
     leaderHolds:
-      "Na {week}, {artist} mantém \"{title}\" no topo do Global 100 — a {numberOnes}ª semana consecutiva no #1.",
+      "Na {week}, {artist} mantém \"{title}\" no topo do Global 100 - a {numberOnes}ª semana consecutiva no #1.",
     leaderDebut:
       "Na {week}, \"{title}\", de {artist}, estreia no Global 100 já na liderança.",
     leaderDefault:
-      "Na {week}, \"{title}\", de {artist}, lidera o Global 100 — a faixa que mais fãs colocaram em destaque nas paradas da comunidade.",
+      "Na {week}, \"{title}\", de {artist}, lidera o Global 100 - a faixa que mais fãs colocaram em destaque nas paradas da comunidade.",
     introEmpty:
       "O Global 100 é a parada musical coletiva do ChartFM: um ranking semanal construído a partir das paradas pessoais publicadas por fãs de música. Quando a comunidade publicar novas paradas, esta página exibirá automaticamente o top 10 atualizado.",
     moversUp:
-      "Entre as maiores subidas desta semana, \"{title}\" ({artist}) avançou {delta} posições — sinal de que mais fãs estão colocando essa faixa em destaque nas suas paradas.",
+      "Entre as maiores subidas desta semana, \"{title}\" ({artist}) avançou {delta} posições - sinal de que mais fãs estão colocando essa faixa em destaque nas suas paradas.",
     moversNew:
       "{count} faixa(s) estreiam no top 10 esta semana, incluindo {names}.",
     debutSingle:
@@ -607,18 +607,18 @@ export const pagesPtBR = {
     returnsVerbSingular: "retorna",
     returnsVerbPlural: "retornam",
     artistMultiple:
-      "{artist} aparece com {count} faixas no top 10 desta semana — um domínio raro no ranking.",
+      "{artist} aparece com {count} faixas no top 10 desta semana - um domínio raro no ranking.",
     longestRun:
       "\"{title}\" ({artist}) completa {weeks} semanas no Global 100, entre as permanências mais longas do top 10 atual.",
     newPeak:
       "\"{title}\" ({artist}) alcança a #{position}, sua melhor posição histórica no chart.",
-    listHeading: "Top 10 do Global 100 — {week}",
+    listHeading: "Top 10 do Global 100 - {week}",
     pts: "pts",
     statusNew: "estreia",
     statusReturn: "retorno",
     statusUp: "↑ {delta}",
     statusDown: "↓ {delta}",
-    statusSame: "—",
+    statusSame: "-",
     outro:
       "O ChartFM reúne paradas pessoais, reviews de álbuns, comunidades temáticas e rankings globais em um só lugar. Explore o ranking completo, leia o guia sobre o cálculo do Global 100 ou conheça a história da plataforma.",
     navLabel: "Links sobre o Global 100",

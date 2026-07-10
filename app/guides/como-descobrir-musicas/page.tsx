@@ -19,7 +19,7 @@ export default function GuideDescobrir() {
           title: "Por que descobrir música pelo ChartFM?",
           body: [
             "Plataformas de streaming recomendam músicas com base em algoritmos que analisam seu histórico de reprodução. O resultado é muitas vezes uma câmara de eco: você descobre mais do mesmo, raramente algo que verdadeiramente surpreende.",
-            "O ChartFM oferece uma alternativa baseada em pessoas reais. Ao seguir fãs de música com gosto musical parecido com o seu, você descobre músicas através de alguém que deliberadamente escolheu incluí-las em sua lista da semana — não porque um algoritmo as recomendou, mas porque genuinamente as valorizou.",
+            "O ChartFM oferece uma alternativa baseada em pessoas reais. Ao seguir fãs de música com gosto musical parecido com o seu, você descobre músicas através de alguém que deliberadamente escolheu incluí-las em sua lista da semana, não porque um algoritmo as recomendou, mas porque genuinamente as valorizou.",
             "Essa forma de descoberta é mais lenta, mas mais rica. As músicas que você encontra pelo ChartFM tendem a ser escolhas com mais contexto e significado por trás.",
           ],
         },
@@ -50,8 +50,8 @@ export default function GuideDescobrir() {
         {
           title: "Usando o Global 100 como ferramenta de descoberta",
           body: [
-            "O Global 100 não serve apenas para acompanhar o ranking — é também uma excelente ferramenta de descoberta. Músicas que aparecem no ranking foram colocadas ali por múltiplos usuários diferentes, o que indica relevância genuína.",
-            "Preste atenção especialmente nas entradas marcadas como 'nova' ou 'retorno'. Estreias no ranking muitas vezes indicam artistas ou músicas que estão ganhando força rapidamente dentro da comunidade — potenciais descobertas antes que se tornem amplamente conhecidas.",
+            "O Global 100 não serve apenas para acompanhar o ranking, é também uma excelente ferramenta de descoberta. Músicas que aparecem no ranking foram colocadas ali por múltiplos usuários diferentes, o que indica relevância genuína.",
+            "Preste atenção especialmente nas entradas marcadas como 'nova' ou 'retorno'. Estreias no ranking muitas vezes indicam artistas ou músicas que estão ganhando força rapidamente dentro da comunidade, potenciais descobertas antes que se tornem amplamente conhecidas.",
             "Navegue também pelo histórico de semanas anteriores. Acompanhar como um artista cresceu no ranking ao longo de meses revela trajetórias interessantes e ajuda a entender quais artistas têm bases de fãs sólidas versus aqueles que tiveram apenas um momento viral.",
           ],
         },
@@ -59,7 +59,7 @@ export default function GuideDescobrir() {
           title: "Dica: explore o perfil dos artistas",
           body: [
             "Cada artista no ChartFM tem uma página de perfil com informações sobre sua discografia, histórico de aparições no ranking global e avaliações de álbuns feitas pela comunidade. Visitar o perfil de um artista que você acabou de descobrir é um bom jeito de entender rapidamente como a comunidade o percebe.",
-            "A página de perfil também mostra quais usuários mais chartaram aquele artista — o que pode ajudar a encontrar fãs de música com gosto parecido com o seu para seguir.",
+            "A página de perfil também mostra quais usuários mais chartaram aquele artista, o que pode ajudar a encontrar fãs de música com gosto parecido com o seu para seguir.",
           ],
         },
         {

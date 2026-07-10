@@ -148,7 +148,7 @@ function SearchModal({
       albumId,
       title: hit.title,
       artist: hit.artist,
-      year: hit.releaseDate?.slice(0, 4) ?? "—",
+      year: hit.releaseDate?.slice(0, 4) ?? "-",
       coverUrl: hit.coverUrl,
     });
   }
@@ -410,7 +410,7 @@ function HowItWorks() {
         <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
           {steps.map((s) => (
             <div key={s.num} style={{ background: "var(--fill-inset)", borderRadius: 12, padding: "12px 14px", border: "1px solid var(--divider)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", marginBottom: 5 }}>Fase {s.num} — {s.title}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", marginBottom: 5 }}>Fase {s.num} - {s.title}</div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{s.desc}</div>
             </div>
           ))}
@@ -611,7 +611,7 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
 
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>
-          {submitted ? "Suas indicações ✓" : "Suas indicações — escolha 2 álbuns"}
+          {submitted ? "Suas indicações ✓" : "Suas indicações - escolha 2 álbuns"}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
           {[0, 1].map((i) => (
@@ -695,7 +695,7 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
                   <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{a.artist} · {a.year}</div>
                 </div>
                 <span style={{ fontSize: 11, color: "var(--text-disabled)", whiteSpace: "nowrap" }}>
-                  {a.nominatedBy ? `@${a.nominatedBy}` : "—"}
+                  {a.nominatedBy ? `@${a.nominatedBy}` : "-"}
                 </span>
               </div>
             ))}
@@ -789,7 +789,7 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
 
       {hasVoted && !isDirty && (
         <div style={{ background: "rgba(27,135,63,0.08)", border: "1px solid rgba(27,135,63,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 20, color: "#1B873F", fontSize: 13, fontWeight: 600, lineHeight: 1.5 }}>
-          Voto registrado em {savedVotes.length} álbuns. Toque nos cards para alterar — você pode editar até {round.pollDeadline}.
+          Voto registrado em {savedVotes.length} álbuns. Toque nos cards para alterar - você pode editar até {round.pollDeadline}.
         </div>
       )}
 

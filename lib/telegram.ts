@@ -1,11 +1,17 @@
 import { renderEventCard } from "@/lib/telegram-card";
+import {
+  isSocialPlatformConfigured,
+  isSocialPlatformConfiguredFromEnv,
+  resolveSocialAccessToken,
+  resolveSocialAccountId,
+} from "@/lib/social/credentials/token-resolver";
 
 const API_BASE = "https://api.telegram.org";
 const REQUEST_TIMEOUT_MS = 20000;
 
 type TelegramConfig = { token: string; chatId: string; enabled: boolean };
 
-function readConfig(): TelegramConfig | null {
+function readConfigFromEnv(): TelegramConfig | null {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
   if (!token || !chatId) return null;
@@ -15,8 +21,23 @@ function readConfig(): TelegramConfig | null {
   return { token, chatId, enabled };
 }
 
+async function readConfig(): Promise<TelegramConfig | null> {
+  const token = await resolveSocialAccessToken("TELEGRAM");
+  const chatId = (await resolveSocialAccountId("TELEGRAM")) ?? process.env.TELEGRAM_CHAT_ID?.trim() ?? null;
+  if (!token || !chatId) return readConfigFromEnv();
+
+  const flag = process.env.TELEGRAM_ENABLED?.trim().toLowerCase();
+  const enabled = flag ? flag === "1" || flag === "true" || flag === "yes" : true;
+  return { token, chatId, enabled };
+}
+
 export function isTelegramConfigured(): boolean {
-  return readConfig() !== null;
+  return isSocialPlatformConfiguredFromEnv("TELEGRAM");
+}
+
+export async function isTelegramConfiguredAsync(): Promise<boolean> {
+  if (isSocialPlatformConfiguredFromEnv("TELEGRAM")) return true;
+  return isSocialPlatformConfigured("TELEGRAM");
 }
 
 /** Base pública usada para montar os links das mensagens (não a URL interna dos crons). */
@@ -68,7 +89,7 @@ function buildCaption(text: string, url: string | null, linkLabel: string = DEFA
 
 /** Envia uma mensagem de texto simples ao grupo. */
 export async function sendTelegramMessage(text: string, targetUrl?: string | null, linkLabel?: string): Promise<boolean> {
-  const config = readConfig();
+  const config = await readConfig();
   if (!config || !config.enabled) return false;
 
   const body = JSON.stringify({
@@ -82,7 +103,7 @@ export async function sendTelegramMessage(text: string, targetUrl?: string | nul
 
 /** Envia uma foto (PNG) com legenda ao grupo. */
 export async function sendTelegramPhoto(png: Buffer, caption: string, targetUrl?: string | null, linkLabel?: string): Promise<boolean> {
-  const config = readConfig();
+  const config = await readConfig();
   if (!config || !config.enabled) return false;
 
   const form = new FormData();
@@ -119,7 +140,7 @@ export type TelegramEventInput = {
  * Nunca lança — pensada para ser chamada como fire-and-forget.
  */
 export async function notifyTelegramEvent(input: TelegramEventInput): Promise<void> {
-  if (!isTelegramConfigured()) return;
+  if (!(await isTelegramConfiguredAsync())) return;
 
   const style = styleForKind(input.kind);
   try {

@@ -209,7 +209,7 @@ export default async function CriticsFMAlbumPage({
                     border: reviewCount > 0 ? `2px solid ${scoreColor(avgScore)}30` : "2px solid rgba(0,0,0,0.08)",
                   }}
                 >
-                  {reviewCount > 0 ? avgScore : "—"}
+                  {reviewCount > 0 ? avgScore : "-"}
                 </div>
                 <div>
                   {reviewCount > 0 && (

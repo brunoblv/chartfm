@@ -123,7 +123,7 @@ export function CommunityPageClient({
   const community = {
     ...dbCommunity,
     cover: [dbCommunity.coverA, dbCommunity.coverB] as [string, string],
-    adminName: dbCommunity.ownerName ?? "—",
+    adminName: dbCommunity.ownerName ?? "-",
   };
   const [postMode, setPostMode] = useState<"text" | "image" | "youtube">("text");
   const [postText, setPostText] = useState("");

@@ -65,7 +65,7 @@ export function CopaSinglesMobileSlotRow({
             {phaseLabel}
           </div>
           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {isEmpty ? "—" : songName}
+            {isEmpty ? "-" : songName}
           </div>
         </div>
         <SlotStatusBadge

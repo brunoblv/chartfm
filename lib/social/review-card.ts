@@ -42,6 +42,7 @@ window.__chartfmDrawReviewCard = async function (args) {
   var rating = args.rating, reviewCount = args.reviewCount, sc = args.scoreColor, scoreLabelText = args.scoreLabelText;
   var FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif";
   var u = W / 1080;
+  var vh = H / 1920;
 
   var canvas = document.getElementById("c");
   var ctx = canvas.getContext("2d");
@@ -119,12 +120,40 @@ window.__chartfmDrawReviewCard = async function (args) {
     ctx.fillText(text, x, y);
   }
 
-  function drawScorePill(text, color, x, y) {
-    ctx.font = "700 " + Math.round(28 * u) + "px " + FONT;
+  function measureScorePill(text, fontSize) {
+    ctx.font = "700 " + fontSize + "px " + FONT;
+    var tw = ctx.measureText(text).width;
+    var padX = 22 * u;
+    return { w: tw + padX * 2, h: fontSize + 20 * u };
+  }
+
+  function measureReviewCountPill(count, fontSize) {
+    var text = count + " " + (count === 1 ? "review" : "reviews");
+    ctx.font = "700 " + fontSize + "px " + FONT;
+    var tw = ctx.measureText(text).width;
+    var padX = 18 * u;
+    return { w: tw + padX * 2, h: fontSize + 20 * u };
+  }
+
+  function drawScoreAndReviewCountRow(scoreText, reviewCount, centerX, y, scoreFontSize, countFontSize, gap) {
+    var score = measureScorePill(scoreText, scoreFontSize);
+    var count = measureReviewCountPill(reviewCount, countFontSize);
+    var rowH = Math.max(score.h, count.h);
+    var totalW = score.w + gap + count.w;
+    var scoreCx = centerX - totalW / 2 + score.w / 2;
+    var countCx = centerX + totalW / 2 - count.w / 2;
+    drawScorePill(scoreText, sc, scoreCx, y, scoreFontSize);
+    drawReviewCountPill(reviewCount, countCx, y, countFontSize);
+    return y + rowH / 2;
+  }
+
+  function drawScorePill(text, color, x, y, fontSize) {
+    if (fontSize === undefined) fontSize = Math.round(28 * u);
+    ctx.font = "700 " + fontSize + "px " + FONT;
     var tw = ctx.measureText(text).width;
     var padX = 22 * u;
     var padY = 10 * u;
-    var h = 28 * u + padY * 2;
+    var h = fontSize + padY * 2;
     var w = tw + padX * 2;
     ctx.fillStyle = color + "22";
     ctx.beginPath();
@@ -136,9 +165,9 @@ window.__chartfmDrawReviewCard = async function (args) {
     ctx.fillText(text, x, y);
   }
 
-  function drawReviewCountPill(count, x, y) {
+  function drawReviewCountPill(count, x, y, fontSize) {
+    if (fontSize === undefined) fontSize = Math.round(24 * u);
     var text = count + " " + (count === 1 ? "review" : "reviews");
-    var fontSize = Math.round(24 * u);
     ctx.font = "700 " + fontSize + "px " + FONT;
     var tw = ctx.measureText(text).width;
     var padX = 18 * u;
@@ -191,13 +220,13 @@ window.__chartfmDrawReviewCard = async function (args) {
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#86868B";
-  ctx.fillText("NOTA DA COMUNIDADE", W - 80 * u, 120 * u);
+  ctx.fillText("NOTA DA COMUNIDADE", W - 80 * u, 120 * u * vh);
 
-  drawEyebrow("⭐  AVALIAÇÃO DA COMUNIDADE", W / 2, 248 * u);
+  drawEyebrow("⭐  AVALIAÇÃO DA COMUNIDADE", W / 2, 248 * u * vh);
 
   var coverSize = Math.round(460 * u);
   var coverX = (W - coverSize) / 2;
-  var coverY = Math.round(340 * u);
+  var coverY = Math.round(340 * u * vh);
 
   var cover = albumCoverUrl ? await loadImage(albumCoverUrl) : null;
   if (cover) {
@@ -225,26 +254,34 @@ window.__chartfmDrawReviewCard = async function (args) {
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   var titleLines = wrapText(albumTitle, W - Math.round(160 * u), 2);
-  // O badge da nota desce 28*u abaixo da capa — título precisa começar bem
-  // depois disso para não ficar colado nele.
-  var y = coverY + coverSize + Math.round(110 * u);
+  var y = coverY + coverSize + Math.round(110 * u * vh);
   for (var i2 = 0; i2 < titleLines.length; i2++) {
     ctx.fillText(titleLines[i2], W / 2, y);
-    y += Math.round(68 * u);
+    y += Math.round(68 * u * vh);
   }
 
   ctx.fillStyle = "#86868B";
   ctx.font = "500 " + Math.round(34 * u) + "px " + FONT;
-  ctx.fillText(albumArtist, W / 2, y + Math.round(8 * u));
-  y += Math.round(72 * u);
+  ctx.fillText(albumArtist, W / 2, y + Math.round(8 * u * vh));
+  y += Math.round(72 * u * vh);
 
-  drawScorePill(scoreLabelText.toUpperCase(), sc, W / 2 - Math.round(120 * u), y + Math.round(24 * u));
-  drawReviewCountPill(reviewCount, W / 2 + Math.round(120 * u), y + Math.round(24 * u));
+  var pillFont = Math.round(28 * u);
+  var countFont = Math.round(24 * u);
+  y = drawScoreAndReviewCountRow(
+    scoreLabelText.toUpperCase(),
+    reviewCount,
+    W / 2,
+    y + Math.round(24 * u * vh),
+    pillFont,
+    countFont,
+    Math.round(16 * u)
+  ) + Math.round(48 * u * vh);
 
   ctx.fillStyle = "#86868B";
   ctx.font = "700 " + Math.round(26 * u) + "px " + FONT;
   ctx.textAlign = "center";
-  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", W / 2, H - Math.round(120 * u));
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", W / 2, Math.max(y, H - Math.round(120 * u * vh)));
 };
 `;
 

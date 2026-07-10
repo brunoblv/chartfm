@@ -615,7 +615,7 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
                           openArtistEditor(art.id, i);
                         }}
                       >
-                        {isEmpty ? (canEdit ? "Escolher música…" : "—") : single!.songName}
+                        {isEmpty ? (canEdit ? "Escolher música…" : "-") : single!.songName}
                         {canEdit && (
                           <span style={{ color: "var(--text-muted)", marginLeft: 4, fontSize: 10 }}>✏</span>
                         )}

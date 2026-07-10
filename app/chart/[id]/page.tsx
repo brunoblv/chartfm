@@ -1886,7 +1886,7 @@ function ClassicList({
                 paddingLeft: MOBILE_STATS_INDENT,
               }}
             >
-              <StatPill compact label={t("chart.pillPrev")} value={e.prevPos ?? "—"} />
+              <StatPill compact label={t("chart.pillPrev")} value={e.prevPos ?? "-"} />
               <StatPill
                 compact
                 label={t("chart.pillPeak")}
@@ -2039,7 +2039,7 @@ function ClassicList({
                 padding: "0 8px",
               }}
             >
-              {e.prevPos ?? "—"}
+              {e.prevPos ?? "-"}
             </div>
             <div
               style={{
@@ -2088,7 +2088,7 @@ function ClassicList({
                 </div>
               ) : (
                 <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>
-                  —
+                  -
                 </div>
               )}
             </div>
@@ -2858,7 +2858,7 @@ function VideoClipTableVariant({
                   paddingLeft: mobileClipIndent,
                 }}
               >
-                <StatPill compact label={t("chart.pillPrev")} value={e.prevPos ?? "—"} />
+                <StatPill compact label={t("chart.pillPrev")} value={e.prevPos ?? "-"} />
                 <StatPill
                   compact
                   label={t("chart.pillPeak")}
@@ -3021,7 +3021,7 @@ function VideoClipTableVariant({
                 alignSelf: "center",
               }}
             >
-              {e.prevPos ?? "—"}
+              {e.prevPos ?? "-"}
             </div>
             <div
               style={{
@@ -3072,7 +3072,7 @@ function VideoClipTableVariant({
                 </div>
               ) : (
                 <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>
-                  —
+                  -
                 </div>
               )}
             </div>

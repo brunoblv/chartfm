@@ -160,9 +160,9 @@ ${LOGO_HEADER}
           <td align="center" style="padding: 44px 48px 40px;">
             ${icon("🔄")}
             ${heading("Aqui está seu novo link")}
-            ${paragraph(`Olá, <strong>${escapeHtml(params.name)}</strong>! Você pediu o reenvio do e-mail de confirmação. Use o botão abaixo — o link anterior deixou de valer.`)}
+            ${paragraph(`Olá, <strong>${escapeHtml(params.name)}</strong>! Você pediu o reenvio do e-mail de confirmação. Use o botão abaixo, o link anterior deixou de valer.`)}
             ${button(params.verifyUrl, "Confirmar e-mail")}
-            ${expiryNote("Válido por <strong>24 horas</strong>. Não foi você quem pediu? Ignore este e-mail — sua conta continua segura.")}
+            ${expiryNote("Válido por <strong>24 horas</strong>. Não foi você quem pediu? Ignore este e-mail, sua conta continua segura.")}
           </td>
         </tr>
       </table>
@@ -192,7 +192,7 @@ ${LOGO_HEADER}
             ${heading("Redefina sua senha")}
             ${paragraph(`Olá, <strong>${escapeHtml(params.name)}</strong>! Recebemos um pedido para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha.`)}
             ${button(params.resetUrl, "Criar nova senha")}
-            ${expiryNote("O link expira em <strong>1 hora</strong> e só pode ser usado uma vez.<br>Não foi você? Ignore este e-mail — sua senha atual continua valendo.")}
+            ${expiryNote("O link expira em <strong>1 hora</strong> e só pode ser usado uma vez.<br>Não foi você? Ignore este e-mail, sua senha atual continua valendo.")}
           </td>
         </tr>
       </table>

@@ -191,7 +191,7 @@ export function CookieConsent() {
                     <Check size={11} strokeWidth={3} />
                   </div>
                   <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    Cookies <strong style={{ color: "var(--text)" }}>funcionais</strong> — necessários
+                    Cookies <strong style={{ color: "var(--text)" }}>funcionais</strong> - necessários
                   </span>
                 </label>
                 <label
@@ -216,7 +216,7 @@ export function CookieConsent() {
                     {adsEnabled && <Check size={11} strokeWidth={3} />}
                   </div>
                   <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    Cookies de <strong style={{ color: "var(--text)" }}>publicidade</strong> — Google
+                    Cookies de <strong style={{ color: "var(--text)" }}>publicidade</strong> - Google
                     AdSense
                   </span>
                 </label>

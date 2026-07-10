@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = {
   title: "Sobre | ChartFM",
   description:
-    "Conheça o ChartFM — plataforma para criar paradas musicais, acompanhar o que a comunidade ouve e descobrir músicas novas.",
+    "Conheça o ChartFM, plataforma para criar paradas musicais, acompanhar o que a comunidade ouve e descobrir músicas novas.",
   alternates: { canonical: "/about" },
 };
 

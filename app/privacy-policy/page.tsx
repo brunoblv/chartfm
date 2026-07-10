@@ -156,7 +156,11 @@ export default function PrivacyPolicyPage() {
           </div>
           <div style={{ marginTop: 10 }}>
             <InstitutionalParagraph>
-              Para exercer esses direitos, entre em contato pelo e-mail{" "}
+              Para solicitar a exclusão da sua conta e dos seus dados, siga as instruções em nossa página de{" "}
+              <Link href="/data-deletion" style={{ color: "var(--accent)", fontWeight: 600 }}>
+                Exclusão de dados
+              </Link>
+              . Para outros direitos, entre em contato pelo e-mail{" "}
               <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span>.
             </InstitutionalParagraph>
           </div>

@@ -180,7 +180,7 @@ export function SubmissionView({
                     if (!track) return null;
                     return (
                       <button key={track.spotifyId} type="button"
-                        onClick={() => { setSelected(track); setQuery(`${track.title} — ${track.artist}`); }}
+                        onClick={() => { setSelected(track); setQuery(`${track.title} - ${track.artist}`); }}
                         style={{
                           display: "flex", alignItems: "center", gap: 11, padding: "11px 14px",
                           borderTop: "none", borderLeft: "none", borderRight: "none",

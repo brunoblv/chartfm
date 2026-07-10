@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
       { source: "/parada/setup", destination: "/chart/setup", permanent: true },
       { source: "/sobre", destination: "/about", permanent: true },
       { source: "/politica-de-privacidade", destination: "/privacy-policy", permanent: true },
+      { source: "/exclusao-de-dados", destination: "/data-deletion", permanent: true },
       { source: "/termos-de-uso", destination: "/terms-of-use", permanent: true },
       { source: "/contato", destination: "/contact", permanent: true },
       // Legacy upload path (logos stored in DB with old URL)

@@ -1,7 +1,7 @@
 /** Page-level UI strings (English). */
 export const pagesEn = {
   home: {
-    metaTitle: "ChartFM — Your weekly music chart",
+    metaTitle: "ChartFM - Your weekly music chart",
     metaDescription:
       "Create your weekly music chart, discover new artists, and join communities on ChartFM. Rankings, reviews, and curation by fans.",
     title: "Home",
@@ -99,12 +99,12 @@ export const pagesEn = {
     hubTitle: "Global Charts",
     hubSubtitle: "Collective community rankings on ChartFM",
     hubMetaTitle: "Global Charts | ChartFM",
-    hubMetaDescription: "Global 100, Global Air Play, and Global 100 Albums — ChartFM's collective rankings.",
+    hubMetaDescription: "Global 100, Global Air Play, and Global 100 Albums - ChartFM's collective rankings.",
     hubIntro: "Pick a global chart on ChartFM.",
     hubHowTitle: "The charts",
-    hubHowCharts: "Global 100 — the most popular songs based on the community's personal charts.",
-    hubHowAirplay: "Global 100 Air Play — the most-played songs by users this week.",
-    hubHowAlbums: "Global 100 Albums — the most-listened albums by users this week.",
+    hubHowCharts: "Global 100 - the most popular songs based on the community's personal charts.",
+    hubHowAirplay: "Global 100 Air Play - the most-played songs by users this week.",
+    hubHowAlbums: "Global 100 Albums - the most-listened albums by users this week.",
     hubGuideLink: "Global 100 guide",
     backToHub: "All global charts",
     contributorsCount: "{count} Last.fm listeners",
@@ -175,9 +175,9 @@ export const pagesEn = {
     metaDescription: "Discover new music, rising artists, and featured music fans on ChartFM.",
     editorialTitle: "Discover New Music on ChartFM",
     editorialP1:
-      "ChartFM Discover was created to help music fans explore new artists, albums, charts, and trends within the community. Every day, users share their personal charts, reviews, and musical discoveries, creating a dynamic environment where different styles and genres coexist in one place. The result is an authentic snapshot of what the community is actually listening to — not what an algorithm has decided to promote.",
+      "ChartFM Discover was created to help music fans explore new artists, albums, charts, and trends within the community. Every day, users share their personal charts, reviews, and musical discoveries, creating a dynamic environment where different styles and genres coexist in one place. The result is an authentic snapshot of what the community is actually listening to - not what an algorithm has decided to promote.",
     editorialP2:
-      "Unlike platforms that rely solely on automated recommendation systems, ChartFM Discover is built from real community activity. Every chart published, review written, and rating submitted helps highlight new releases, emerging artists, and classic records being revisited by users. This means the rankings you see here reflect intentional human choices — not passive streaming counts.",
+      "Unlike platforms that rely solely on automated recommendation systems, ChartFM Discover is built from real community activity. Every chart published, review written, and rating submitted helps highlight new releases, emerging artists, and classic records being revisited by users. This means the rankings you see here reflect intentional human choices - not passive streaming counts.",
     editorialP3:
       "Through the Discover page, you can follow the most talked-about artists of the moment, find music fans with musical tastes similar to yours, explore weekly charts from other users, and discover songs that are growing organically across the platform. Rankings are updated every week, so there is always something new to explore.",
     editorialP4:
@@ -190,13 +190,13 @@ export const pagesEn = {
       "Users publish their personal charts weekly. Discover aggregates those choices to reveal real trends within the community.",
     stepRankingsTitle: "Community-built rankings",
     stepRankingsDesc:
-      "Artists and songs climb the ranking as more users include them in their charts. No opaque algorithm — just real taste from real people.",
+      "Artists and songs climb the ranking as more users include them in their charts. No opaque algorithm - just real taste from real people.",
     stepCurationTitle: "Human curation, not automation",
     stepCurationDesc:
       "Every music fan is a real person with a defined musical taste. Following music fans helps you discover music through people who think like you.",
     stepGenresTitle: "Explore by genre",
     stepGenresDesc:
-      "Filter artists and songs by genre to find what's trending within a specific style — from electronic to country, funk to K-Pop.",
+      "Filter artists and songs by genre to find what's trending within a specific style - from electronic to country, funk to K-Pop.",
     featuredCuratorsTitle: "Featured music fans",
     viewTop20: "View top 20 →",
     featuredCuratorsIntro:
@@ -205,7 +205,7 @@ export const pagesEn = {
     featuredBioFallback: "Featured music fan this week.",
     exploreGenresTitle: "Explore by Genre",
     exploreGenresIntro:
-      "Every music genre has its own dedicated discovery space on ChartFM. Filter artists, songs, and music fans by style to uncover genre-specific trends — from Funk to K-Pop, from Indie to Electronic. Genre rankings are built from the charts of users who listen to and engage most with each style, providing a community-driven view of what's popular within every scene.",
+      "Every music genre has its own dedicated discovery space on ChartFM. Filter artists, songs, and music fans by style to uncover genre-specific trends - from Funk to K-Pop, from Indie to Electronic. Genre rankings are built from the charts of users who listen to and engage most with each style, providing a community-driven view of what's popular within every scene.",
     hotIntro:
       "Weekly ranking consolidated every Tuesday at 6:00 AM (BRT). Artists and songs are ranked based on the number of users who included them in their personal charts during {weekLabel}.",
     faqTitle: "Frequently asked questions",
@@ -245,7 +245,7 @@ export const pagesEn = {
     curatorsScoringFrozen:
       "The ranking is consolidated every Tuesday at 6:00 AM (BRT), along with the Global Chart.",
     curatorsEmpty:
-      "This week's interaction points ranking is not available yet. Participate by publishing charts, liking and commenting — consolidated every Tuesday at 6:00 AM (Brasília time).",
+      "This week's interaction points ranking is not available yet. Participate by publishing charts, liking and commenting - consolidated every Tuesday at 6:00 AM (Brasília time).",
     colCurator: "Fan",
     colCuratorChart: "Chart",
     colCuratorLikes: "Likes",
@@ -325,7 +325,7 @@ export const pagesEn = {
     phaseResult: "Result",
     themeThisWeek: "Theme this week",
     signInToVote: "Sign in to your account",
-    yourNominations: "Your nominations — pick 2 albums",
+    yourNominations: "Your nominations - pick 2 albums",
     confirmNominations: "Confirm nominations",
     waitingSignups: "Waiting for sign-ups",
     signupsOpen: "Sign-ups open",
@@ -469,9 +469,9 @@ export const pagesEn = {
       daySuffix: "days",
       weekSuffix: "wks",
       noDropoutsDay:
-        "No dropouts this day — first chart or every song stayed on the list.",
+        "No dropouts this day - first chart or every song stayed on the list.",
       noDropoutsWeek:
-        "No dropouts this week — first chart or every song stayed on the list.",
+        "No dropouts this week - first chart or every song stayed on the list.",
       overlapLoadingDay: "Calculating today's affinity...",
       overlapLoadingWeek: "Calculating this week's affinity...",
       overlapEmptyDay: "No affinity found for this day.",
@@ -587,17 +587,17 @@ export const pagesEn = {
   },
   landingEditorial: {
     eyebrow: "Global Chart · ChartFM",
-    title: "Global 100 — {week}",
+    title: "Global 100 - {week}",
     leaderHolds:
-      "For {week}, {artist} keeps \"{title}\" at #1 on the Global 100 — its {numberOnes} consecutive week on top.",
+      "For {week}, {artist} keeps \"{title}\" at #1 on the Global 100 - its {numberOnes} consecutive week on top.",
     leaderDebut:
       "For {week}, \"{title}\" by {artist} debuts on the Global 100 already at #1.",
     leaderDefault:
-      "For {week}, \"{title}\" by {artist} leads the Global 100 — the track fans highlighted most on their community charts.",
+      "For {week}, \"{title}\" by {artist} leads the Global 100 - the track fans highlighted most on their community charts.",
     introEmpty:
       "The Global 100 is ChartFM's collective music chart: a weekly ranking built from personal charts published by music fans. When the community publishes new charts, this page will automatically show the updated top 10.",
     moversUp:
-      "Among this week's biggest climbers, \"{title}\" ({artist}) moved up {delta} spots — a sign that more fans are highlighting this track on their charts.",
+      "Among this week's biggest climbers, \"{title}\" ({artist}) moved up {delta} spots - a sign that more fans are highlighting this track on their charts.",
     moversNew:
       "{count} track(s) debut in the top 10 this week, including {names}.",
     debutSingle:
@@ -607,18 +607,18 @@ export const pagesEn = {
     returnsVerbSingular: "re-enters",
     returnsVerbPlural: "re-enter",
     artistMultiple:
-      "{artist} lands {count} tracks in this week's top 10 — a rare showing on the chart.",
+      "{artist} lands {count} tracks in this week's top 10 - a rare showing on the chart.",
     longestRun:
       "\"{title}\" ({artist}) reaches {weeks} weeks on the Global 100, among the longest runs in the current top 10.",
     newPeak:
       "\"{title}\" ({artist}) hits #{position}, its best position ever on the chart.",
-    listHeading: "Global 100 top 10 — {week}",
+    listHeading: "Global 100 top 10 - {week}",
     pts: "pts",
     statusNew: "debut",
     statusReturn: "re-entry",
     statusUp: "↑ {delta}",
     statusDown: "↓ {delta}",
-    statusSame: "—",
+    statusSame: "-",
     outro:
       "ChartFM brings together personal charts, album reviews, themed communities, and global rankings in one place. Explore the full chart, read the Global 100 guide, or learn about the platform.",
     navLabel: "Global 100 links",

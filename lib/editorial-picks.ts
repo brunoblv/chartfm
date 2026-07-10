@@ -117,7 +117,7 @@ export function validateEditorialPostInput(body: Partial<EditorialPostInput>): s
   if (!body.title?.trim()) return "Título é obrigatório.";
   if (!body.slug?.trim()) return "Slug é obrigatório.";
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body.slug.trim())) {
-    return "Slug inválido — use apenas letras minúsculas, números e hífens.";
+    return "Slug inválido - use apenas letras minúsculas, números e hífens.";
   }
   if (!body.excerpt?.trim()) return "Resumo (excerpt) é obrigatório.";
   if (!body.paragraphs?.length || !body.paragraphs.some((p) => p.trim())) {

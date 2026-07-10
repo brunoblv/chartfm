@@ -94,7 +94,7 @@ export function buildAlbumContext(input: {
 
   if (rankedTrackCount > 0) {
     const bestPart = bestSong && bestSong.peak > 0
-      ? ` — a de melhor desempenho é "${bestSong.title}", com pico no #${bestSong.peak} do Global 100`
+      ? `, a de melhor desempenho é "${bestSong.title}", com pico no #${bestSong.peak} do Global 100`
       : "";
     sentences.push(`${rankedTrackCount} ${pluralize(rankedTrackCount, "dessas faixas já apareceu", "dessas faixas já apareceram")} em paradas de usuários${bestPart}.`);
   }

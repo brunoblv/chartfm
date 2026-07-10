@@ -53,7 +53,7 @@ export default async function GlobalRetrospective2026Page() {
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>{introText}</p>
         {hasData && (
           <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 12 }}>
-            {YEAR} é o primeiro ano de histórico do Global 100 — por isso toda música e todo artista desta lista
+            {YEAR} é o primeiro ano de histórico do Global 100 - por isso toda música e todo artista desta lista
             estreou no ranking em {YEAR}. O ranking soma os pontos de cada música e artista em todas as semanas em
             que apareceram no top 100 semanal do ano.
           </p>

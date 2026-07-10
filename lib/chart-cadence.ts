@@ -129,8 +129,8 @@ export function chartStatsLabels(isDaily: boolean): ChartStatsLabels {
     tenurePill: isDaily ? "DIA" : "SEM",
     tenureSuffix: isDaily ? "dias" : "sem.",
     noDropouts: isDaily
-      ? "Nenhuma saída neste dia — primeira parada ou todas as músicas permaneceram."
-      : "Nenhuma saída nesta semana — primeira parada ou todas as músicas permaneceram.",
+      ? "Nenhuma saída neste dia, primeira parada ou todas as músicas permaneceram."
+      : "Nenhuma saída nesta semana, primeira parada ou todas as músicas permaneceram.",
     overlapLoading: isDaily
       ? "Calculando afinidade do dia..."
       : "Calculando afinidade da semana...",
@@ -188,6 +188,6 @@ export function formatMovementProse(
     case "down":
       return `-${Math.abs(delta ?? 0)}`;
     default:
-      return "—";
+      return "-";
   }
 }

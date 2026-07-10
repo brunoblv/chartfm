@@ -81,7 +81,7 @@ export default async function CommunityParadaPage({ params, searchParams }: Comm
 
   const basePath = `/community/${slug}/parada`;
   const pointsRule = chart.usesOfficialParada
-    ? "Parada oficial da comunidade — histórico semanal importado."
+    ? "Parada oficial da comunidade - histórico semanal importado."
     : "Ranking agregado a partir das paradas primárias dos membros.";
   const statPrimaryLabel = chart.usesOfficialParada
     ? `${chart.overallChartCount} semanas no histórico`

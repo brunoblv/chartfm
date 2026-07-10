@@ -25,7 +25,7 @@ function sentenceForHighlight(h: ChartHighlight, chartName: string): string {
       }
       if (h.numberOnes != null && h.numberOnes > 1) {
         return pick([
-          `"${h.title}", de ${h.artist}, segue no topo do ${chartName} — já são ${h.numberOnes} semanas em #1.`,
+          `"${h.title}", de ${h.artist}, segue no topo do ${chartName}, já são ${h.numberOnes} semanas em #1.`,
           `${h.artist} mantém "${h.title}" na liderança do ${chartName} pela ${h.numberOnes}ª semana.`,
         ]);
       }
@@ -122,7 +122,7 @@ export function buildVariedAlbumNarrative(facts: AlbumNarrativeFacts, kind: "ALB
     sentences.push(
       pick([
         recency
-          ? `${albumTitle}, ${recency}, é o novo ${typeLabel} de ${albumArtist} — e já tem nota da crítica no ChartFM.`
+          ? `${albumTitle}, ${recency}, é o novo ${typeLabel} de ${albumArtist} e já tem nota da crítica no ChartFM.`
           : `${albumTitle}, de ${albumArtist}, já tem nota da comunidade no ChartFM.`,
         `A crítica já se manifestou sobre ${albumTitle}, de ${albumArtist}.`,
       ]),
@@ -131,7 +131,7 @@ export function buildVariedAlbumNarrative(facts: AlbumNarrativeFacts, kind: "ALB
 
   sentences.push(
     pick([
-      `Nota atual: ${rating} — ${scoreLabelText.toLowerCase()}, com base em ${reviewCount} avaliações.`,
+      `Nota atual: ${rating}, ${scoreLabelText.toLowerCase()}, com base em ${reviewCount} avaliações.`,
       `${reviewCount} avaliações já foram registradas, com média de ${rating} pontos (${scoreLabelText.toLowerCase()}).`,
     ]),
   );

@@ -352,7 +352,7 @@ export function AlbumReviewsClient({
                   flexShrink: 0,
                 }}
               >
-                —
+                -
               </div>
               <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Sem avaliações ainda</div>
             </div>

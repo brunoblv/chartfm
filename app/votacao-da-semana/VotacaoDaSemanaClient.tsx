@@ -288,7 +288,7 @@ export function VotacaoDaSemanaClient() {
           >
             {pollOpen ? (
               <>
-                Vote em quantas músicas quiser — em cada categoria, a mais votada vira o card da{" "}
+                Vote em quantas músicas quiser, em cada categoria, a mais votada vira o card da{" "}
                 <Link href="/global/100" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
                   Parada Global
                 </Link>{" "}

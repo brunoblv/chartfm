@@ -221,7 +221,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <span style={{ fontSize: 48, fontWeight: 900, letterSpacing: "-0.05em" }}>{liveFixture.goalsA}</span>
-                  <span style={{ fontSize: 26, color: "var(--text-muted)", margin: "0 8px" }}>—</span>
+                  <span style={{ fontSize: 26, color: "var(--text-muted)", margin: "0 8px" }}>-</span>
                   <span style={{ fontSize: 48, fontWeight: 900, letterSpacing: "-0.05em" }}>{liveFixture.goalsB}</span>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{liveFixture.votesA} × {liveFixture.votesB} votos</div>

@@ -89,8 +89,8 @@ async function notifyRelease(artistName: string, rel: RecentRelease): Promise<bo
   const dateBr = formatDateBr(details?.releaseDate ?? rel.releaseDate);
 
   const lines = [
-    "🎧 Lançamento novo!",
-    `${artistName} — ${details?.title ?? rel.name}`,
+    "🎧 Lançamento!",
+    `${artistName} - ${details?.title ?? rel.name}`,
     dateBr ? `${typeLabel} · ${dateBr}` : typeLabel,
   ];
   const caption = lines.join("\n");

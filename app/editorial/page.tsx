@@ -39,7 +39,7 @@ export default async function EditorialPage() {
         <InstitutionalParagraph>
           Esta seção reúne o trabalho editorial da casa: indicações de clipes e vídeos, playlists oficiais
           sincronizadas com o Global 100, a Copa e o Push, além de textos longos sobre artistas, álbuns e o
-          funcionamento da plataforma. Tudo é público — não é preciso ter conta para ler ou ouvir.
+          funcionamento da plataforma. Tudo é público, não é preciso ter conta para ler ou ouvir.
         </InstitutionalParagraph>
         <p style={{ fontSize: 15, lineHeight: 1.75, color: "var(--text-subtle)", margin: "14px 0 0 0" }}>
           Os artigos abaixo mostram uma prévia; clique em qualquer card para ver o texto completo, assistir ao

@@ -2297,7 +2297,7 @@ function NumberOnesCell({
         color: value > 0 ? "var(--text)" : "var(--text-disabled)",
       }}
     >
-      {value > 0 ? `${value}x` : "—"}
+      {value > 0 ? `${value}x` : "-"}
     </div>
   );
 }

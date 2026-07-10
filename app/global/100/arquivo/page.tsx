@@ -8,7 +8,7 @@ import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import { ChevronLeft } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Arquivo do Global 100 — todas as semanas | ChartFM",
+  title: "Arquivo do Global 100 - todas as semanas | ChartFM",
   description: "Todas as semanas já consolidadas do Global 100 do ChartFM, com a música número 1 de cada uma e link para a parada completa.",
   alternates: { canonical: "/global/100/arquivo" },
 };
@@ -144,7 +144,7 @@ export default async function GlobalArchivePage() {
                     />
                   </div>
                 ) : (
-                  <div style={{ fontSize: 13, color: "var(--text-muted)", justifySelf: "end" }}>—</div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", justifySelf: "end" }}>-</div>
                 )}
               </Link>
             );

@@ -76,12 +76,12 @@ function drawEyebrow(ctx: CanvasRenderingContext2D, text: string, x: number, y: 
   ctx.fillText(text, x, y);
 }
 
-function drawScorePill(ctx: CanvasRenderingContext2D, text: string, sc: string, x: number, y: number) {
-  ctx.font = `700 28px ${FONT}`;
+function drawScorePill(ctx: CanvasRenderingContext2D, text: string, sc: string, x: number, y: number, fontSize = 28) {
+  ctx.font = `700 ${fontSize}px ${FONT}`;
   const tw = ctx.measureText(text).width;
   const padX = 22;
   const padY = 10;
-  const h = 28 + padY * 2;
+  const h = fontSize + padY * 2;
   const w = tw + padX * 2;
   ctx.fillStyle = `${sc}22`;
   ctx.beginPath();
@@ -91,6 +91,7 @@ function drawScorePill(ctx: CanvasRenderingContext2D, text: string, sc: string, 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, x, y);
+  return h;
 }
 
 export type ReviewExportInput = {
@@ -550,6 +551,57 @@ function drawReviewCountPill(ctx: CanvasRenderingContext2D, count: number, x: nu
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(text, x, y);
+  return h;
+}
+
+function measureScorePill(ctx: CanvasRenderingContext2D, text: string, fontSize: number) {
+  ctx.font = `700 ${fontSize}px ${FONT}`;
+  const tw = ctx.measureText(text).width;
+  const padX = 22;
+  const padY = 10;
+  return { w: tw + padX * 2, h: fontSize + padY * 2 };
+}
+
+function measureReviewCountPill(ctx: CanvasRenderingContext2D, count: number, fontSize: number) {
+  const text = `${count} ${count === 1 ? "review" : "reviews"}`;
+  ctx.font = `700 ${fontSize}px ${FONT}`;
+  const tw = ctx.measureText(text).width;
+  const padX = 18;
+  const padY = 10;
+  return { w: tw + padX * 2, h: fontSize + padY * 2 };
+}
+
+/** Desenha label da nota + contagem lado a lado, centralizados, sem sobreposição. */
+function drawScoreAndReviewCountRow(
+  ctx: CanvasRenderingContext2D,
+  scoreText: string,
+  sc: string,
+  reviewCount: number,
+  centerX: number,
+  y: number,
+  scoreFontSize = 28,
+  countFontSize = 24,
+  gap = 16,
+): number {
+  const score = measureScorePill(ctx, scoreText, scoreFontSize);
+  const count = measureReviewCountPill(ctx, reviewCount, countFontSize);
+  const rowH = Math.max(score.h, count.h);
+  const totalW = score.w + gap + count.w;
+  const scoreCx = centerX - totalW / 2 + score.w / 2;
+  const countCx = centerX + totalW / 2 - count.w / 2;
+
+  drawScorePill(ctx, scoreText, sc, scoreCx, y, scoreFontSize);
+  drawReviewCountPill(ctx, reviewCount, countCx, y, countFontSize);
+
+  return y + rowH / 2;
+}
+
+function drawCommunityFooter(ctx: CanvasRenderingContext2D, centerX: number, y: number, fontSize: number) {
+  ctx.fillStyle = "#86868B";
+  ctx.font = `700 ${fontSize}px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", centerX, y);
 }
 
 export async function renderAlbumScoreStoryBlob(input: AlbumScoreExportInput): Promise<Blob | null> {
@@ -597,13 +649,8 @@ export async function renderAlbumScoreStoryBlob(input: AlbumScoreExportInput): P
   ctx.fillText(input.albumArtist, W / 2, y + 8);
   y += 72;
 
-  drawScorePill(ctx, scoreLabel(input.rating).toUpperCase(), sc, W / 2 - 120, y + 24);
-  drawReviewCountPill(ctx, input.reviewCount, W / 2 + 120, y + 24, 24);
-
-  ctx.fillStyle = "#86868B";
-  ctx.font = `700 26px ${FONT}`;
-  ctx.textAlign = "center";
-  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", W / 2, H - 120);
+  y = drawScoreAndReviewCountRow(ctx, scoreLabel(input.rating).toUpperCase(), sc, input.reviewCount, W / 2, y + 24) + 48;
+  drawCommunityFooter(ctx, W / 2, Math.max(y, H - 120), 26);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), "image/png");
@@ -665,13 +712,20 @@ export async function renderAlbumScoreSquareBlob(input: AlbumScoreExportInput): 
   ctx.fillText(input.albumArtist, SQ_W / 2, y + Math.round(8 * u));
   y += Math.round(56 * u);
 
-  drawScorePill(ctx, scoreLabel(input.rating).toUpperCase(), sc, SQ_W / 2 - Math.round(110 * u), y + Math.round(24 * u));
-  drawReviewCountPill(ctx, input.reviewCount, SQ_W / 2 + Math.round(110 * u), y + Math.round(24 * u), Math.round(24 * u));
-
-  ctx.fillStyle = "#86868B";
-  ctx.font = `700 ${Math.round(24 * u)}px ${FONT}`;
-  ctx.textAlign = "center";
-  ctx.fillText("CriticsFM · chartfm.com.br/criticsfm", SQ_W / 2, SQ_H - Math.round(72 * u));
+  const pillFont = Math.round(28 * u);
+  const countFont = Math.round(24 * u);
+  y = drawScoreAndReviewCountRow(
+    ctx,
+    scoreLabel(input.rating).toUpperCase(),
+    sc,
+    input.reviewCount,
+    SQ_W / 2,
+    y + Math.round(24 * u),
+    pillFont,
+    countFont,
+    Math.round(16 * u),
+  ) + Math.round(48 * u);
+  drawCommunityFooter(ctx, SQ_W / 2, Math.max(y, SQ_H - Math.round(72 * u)), countFont);
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), "image/png");

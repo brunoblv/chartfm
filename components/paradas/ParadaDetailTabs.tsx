@@ -640,7 +640,7 @@ function ArtistsTable({
                 color: artist.numberOnes > 0 ? "var(--text)" : "var(--text-disabled)",
               }}
             >
-              {artist.numberOnes > 0 ? artist.numberOnes : "—"}
+              {artist.numberOnes > 0 ? artist.numberOnes : "-"}
             </div>
           </div>
         ))}
@@ -748,7 +748,7 @@ function SongsTable({
                   color: song.numberOnes > 0 ? "var(--text)" : "var(--text-disabled)",
                 }}
               >
-                {song.numberOnes > 0 ? song.numberOnes : "—"}
+                {song.numberOnes > 0 ? song.numberOnes : "-"}
               </div>
             </div>
           );

@@ -168,7 +168,7 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, paddingLeft: MOBILE_STATS_INDENT, flexWrap: "wrap" }}>
-              <StatPill compact label={t("discover.colCuratorChart")} value={entry.chartCount > 0 ? "✓" : "—"} />
+              <StatPill compact label={t("discover.colCuratorChart")} value={entry.chartCount > 0 ? "✓" : "-"} />
               <StatPill compact label={t("discover.colCuratorLikes")} value={entry.likesGiven} />
               <StatPill compact label={t("discover.colCuratorComments")} value={entry.commentsWritten} />
               <StatPill compact label={t("discover.colScore")} value={entry.score} accent="var(--accent)" />
@@ -257,7 +257,7 @@ export function CuratorsRankingTable({ entries, followingIds }: Props) {
             {entry.chartCount > 0 ? (
               <span style={{ fontWeight: 700, color: "var(--accent)" }}>✓</span>
             ) : (
-              <span style={{ color: "var(--text-disabled)" }}>—</span>
+              <span style={{ color: "var(--text-disabled)" }}>-</span>
             )}
           </div>
           <div style={{ ...cellStyle(4, "body"), fontSize: 13, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>

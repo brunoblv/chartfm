@@ -22,7 +22,7 @@ export function Cover({ cover, song, size = 56, rounded = 10, className, style: 
   const variant = seed % 5;
   const angle = seed % 360;
 
-  const alt = song ? `Capa de ${song.title} — ${song.artist}` : "Capa do álbum";
+  const alt = song ? `Capa de ${song.title} - ${song.artist}` : "Capa do álbum";
 
   return (
     <div
