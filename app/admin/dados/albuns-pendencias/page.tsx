@@ -15,6 +15,7 @@ const DESCRICAO: Record<AlbumFiltro, string> = {
   "sem-capa": "Álbuns sem capa (regra: todo álbum tem uma capa).",
   "sem-data": "Álbuns sem data de lançamento.",
   "data-01-01": "Datas em 01/01 — pode indicar data incompleta na fonte.",
+  "metadados-nao-encontrados": "Backfill automático (Spotify) já tentou e não achou capa, data, tipo ou total de faixas.",
   todas: "Todos os álbuns do catálogo.",
 };
 

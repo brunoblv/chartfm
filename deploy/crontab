@@ -68,3 +68,9 @@ TZ=America/Sao_Paulo
 
 # Postagens Automáticas — agenda a fila editorial e publica os posts do slot atual (Facebook/Instagram/Threads/Telegram)
 */15 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-scheduler >> /root/chartfm/logs/cron.log 2>&1
+
+# 1h — completa músicas/álbuns/artistas pendentes via Wikipedia/MusicBrainz/Last.fm/Spotify.
+# Itens sem resultado em nenhuma fonte são marcados (*NotFoundAt) e não reentram na fila em
+# dias seguintes — só saem de lá com correção manual. Não mexe em metadados de música via
+# Spotify (já coberto pelo backfill-covers de 2/2h), evitando sobreposição.
+0 1 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/nightly-catalog-backfill >> /root/chartfm/logs/cron.log 2>&1

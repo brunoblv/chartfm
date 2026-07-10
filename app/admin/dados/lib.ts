@@ -292,13 +292,14 @@ export async function fetchSongAudit(opts: {
 // Pendências de álbuns
 // ---------------------------------------------------------------------------
 
-export type AlbumFiltro = "pendencias" | "sem-capa" | "sem-data" | "data-01-01" | "todas";
+export type AlbumFiltro = "pendencias" | "sem-capa" | "sem-data" | "data-01-01" | "metadados-nao-encontrados" | "todas";
 
 export const ALBUM_FILTROS: { key: AlbumFiltro; label: string }[] = [
   { key: "pendencias", label: "Com pendência" },
   { key: "sem-capa", label: "Sem capa" },
   { key: "sem-data", label: "Sem data" },
   { key: "data-01-01", label: "Data 01/01 (suspeita)" },
+  { key: "metadados-nao-encontrados", label: "Metadados não encontrados" },
   { key: "todas", label: "Todos" },
 ];
 
@@ -320,6 +321,9 @@ export const albumPendenciasWhere: Prisma.AlbumWhereInput = {
     { totalTracks: null },
   ],
 };
+
+/** Backfill (Spotify) já tentou e não achou capa/data/tipo/faixas — não reentra na fila automática. */
+export const albumMetadataNaoEncontradoWhere: Prisma.AlbumWhereInput = { metadataNotFoundAt: { not: null } };
 
 export const ALBUM_AUDIT_SELECT = {
   id: true,
@@ -383,7 +387,9 @@ export async function fetchAlbumAudit(opts: {
         ? albumSemCapaAlbumWhere
         : opts.filtro === "sem-data"
           ? { releaseDate: null }
-          : albumPendenciasWhere;
+          : opts.filtro === "metadados-nao-encontrados"
+            ? albumMetadataNaoEncontradoWhere
+            : albumPendenciasWhere;
 
   const total = await prisma.album.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / DADOS_PAGE_SIZE));
@@ -431,6 +437,42 @@ export async function countAlbunsPendencias(): Promise<number> {
   return prisma.album.count({ where: albumPendenciasWhere });
 }
 
+export type ArtistFiltro = "pendencias" | "sem-bio" | "bio-nao-encontrada" | "metadados-nao-encontrados" | "todas";
+
+export const ARTIST_FILTROS: { key: ArtistFiltro; label: string }[] = [
+  { key: "pendencias", label: "Com pendência" },
+  { key: "sem-bio", label: "Sem bio" },
+  { key: "bio-nao-encontrada", label: "Bio não encontrada" },
+  { key: "metadados-nao-encontrados", label: "Metadados não encontrados" },
+  { key: "todas", label: "Todos" },
+];
+
+export function parseArtistFiltro(raw: string | undefined): ArtistFiltro {
+  const v = (raw ?? "").toLowerCase();
+  return ARTIST_FILTROS.some((f) => f.key === v) ? (v as ArtistFiltro) : "pendencias";
+}
+
+/** Backfill (Wikipedia) já tentou e não achou bio — não reentra na fila automática até correção manual. */
+export const artistBioNaoEncontradaWhere: Prisma.ArtistWhereInput = { bioNotFoundAt: { not: null } };
+
+/** Backfill (Spotify/MusicBrainz) já tentou e não achou imagem/link/gêneros. */
+export const artistMetadataNaoEncontradoWhere: Prisma.ArtistWhereInput = { metadataNotFoundAt: { not: null } };
+
+function artistFiltroWhere(filtro: ArtistFiltro): Prisma.ArtistWhereInput {
+  switch (filtro) {
+    case "todas":
+      return {};
+    case "sem-bio":
+      return artistSemBioWhere;
+    case "bio-nao-encontrada":
+      return artistBioNaoEncontradaWhere;
+    case "metadados-nao-encontrados":
+      return artistMetadataNaoEncontradoWhere;
+    case "pendencias":
+      return artistPendenciasWhere;
+  }
+}
+
 export const ARTIST_AUDIT_SELECT = {
   id: true,
   name: true,
@@ -438,16 +480,20 @@ export const ARTIST_AUDIT_SELECT = {
   imageUrl: true,
   spotifyUrl: true,
   genres: true,
+  bio: true,
+  bioNotFoundAt: true,
+  metadataNotFoundAt: true,
 } satisfies Prisma.ArtistSelect;
 
 export type ArtistAuditRow = Prisma.ArtistGetPayload<{ select: typeof ARTIST_AUDIT_SELECT }>;
 
-export async function fetchArtistPendencias(page: number) {
-  const total = await prisma.artist.count({ where: artistPendenciasWhere });
+export async function fetchArtistPendencias(opts: { filtro: ArtistFiltro; page: number }) {
+  const where = artistFiltroWhere(opts.filtro);
+  const total = await prisma.artist.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / DADOS_PAGE_SIZE));
-  const clamped = Math.min(page, totalPages);
+  const clamped = Math.min(opts.page, totalPages);
   const rows = await prisma.artist.findMany({
-    where: artistPendenciasWhere,
+    where,
     select: ARTIST_AUDIT_SELECT,
     orderBy: { name: "asc" },
     skip: (clamped - 1) * DADOS_PAGE_SIZE,
