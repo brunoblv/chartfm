@@ -1,4 +1,18 @@
 User-agent: *
 Allow: /
+Disallow: /login
+Disallow: /signup
+Disallow: /settings
+Disallow: /notifications
+Disallow: /onboarding
+Disallow: /admin
+Disallow: /manutencao
+Disallow: /community/create
+Disallow: /community/*/settings
+Disallow: /artist/*/edit
+Disallow: /song/*/edit
+Disallow: /album/*/edit
+Disallow: /chart/*/edit
+Disallow: /*?*tab=
 
 Sitemap: https://chartfm.com.br/sitemap.xml

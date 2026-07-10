@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Como participar de comunidades | Guias ChartFM",
@@ -53,6 +54,18 @@ export default function GuideComunidades() {
             "Ao criar uma comunidade, você se torna automaticamente o administrador do grupo. Isso significa que você pode editar as configurações, moderar posts e convidar novos membros.",
             "Comunidades podem ser públicas (qualquer pessoa pode entrar) ou privadas (entrada mediante convite). Para comunidades temáticas ou de fãs, o modelo público tende a crescer mais rápido. Para grupos fechados de amigos ou colegas, o modelo privado faz mais sentido.",
             "Uma comunidade começa a ter vida quando seus membros publicam charts regularmente. Incentive quem você convida a publicar paradas semanais — é isso que alimenta a chart coletiva e torna o grupo mais dinâmico.",
+          ],
+        },
+        {
+          title: "Leia também",
+          body: [
+            <>
+              Veja a lista de comunidades ativas em{" "}
+              <InstitutionalInlineLink href="/communities">/communities</InstitutionalInlineLink>, aprenda a{" "}
+              <InstitutionalInlineLink href="/guides/como-criar-sua-parada">montar sua parada semanal</InstitutionalInlineLink>{" "}
+              e confira o{" "}
+              <InstitutionalInlineLink href="/guides/glossario">glossário de termos</InstitutionalInlineLink> do ChartFM.
+            </>,
           ],
         },
       ]}

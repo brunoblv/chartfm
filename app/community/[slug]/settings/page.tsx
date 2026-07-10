@@ -1,8 +1,13 @@
 import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { loadCommunityHeader } from "@/lib/community-page-data";
 import { getCommunityBySlug } from "@/lib/community-auth";
 import { CommunitySettingsClient } from "./CommunitySettingsClient";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 function parseCustomPoints(raw: unknown): number[] | null {
   if (!Array.isArray(raw)) return null;

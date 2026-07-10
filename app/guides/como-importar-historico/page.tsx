@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Como importar seu histórico do Last.fm ou Spotify | Guias ChartFM",
@@ -59,6 +60,21 @@ export default function GuideImportarHistorico() {
             "Você pode importar de novo quantas vezes quiser antes de publicar — cada nova importação substitui a lista atual.",
             "Combine os dois métodos: importe do Last.fm para pegar o volume do mês e depois complete manualmente com músicas do Spotify que você ouviu nos últimos dias, ou vice-versa.",
             "Se uma importação falhar por erro de conexão, tente novamente. Se o Spotify pedir reconexão, o botão de conectar aparece de novo no modal.",
+          ],
+        },
+        {
+          title: "Leia também",
+          body: [
+            <>
+              Comece a criação em{" "}
+              <InstitutionalInlineLink href="/create">/create</InstitutionalInlineLink>, veja o passo a passo
+              completo em{" "}
+              <InstitutionalInlineLink href="/guides/como-criar-sua-parada">
+                como criar sua parada semanal
+              </InstitutionalInlineLink>{" "}
+              e conecte suas contas em{" "}
+              <InstitutionalInlineLink href="/settings">/settings</InstitutionalInlineLink>.
+            </>,
           ],
         },
       ]}

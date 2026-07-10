@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import type { Metadata } from "next";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
@@ -7,6 +8,10 @@ import { parseSongSlug } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { Shell } from "@/components/layout/Shell";
 import { SongEditClient } from "./SongEditClient";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function SongEditPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);

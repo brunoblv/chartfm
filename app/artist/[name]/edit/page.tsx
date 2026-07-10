@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import type { Metadata } from "next";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { parseArtistSlug } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
 import { ArtistEditClient } from "./ArtistEditClient";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function ArtistEditPage({ params }: { params: Promise<{ name: string }> }) {
   const session = await getServerSession(authOptions);

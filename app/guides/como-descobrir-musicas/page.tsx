@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Como descobrir músicas no ChartFM | Guias ChartFM",
@@ -59,6 +60,19 @@ export default function GuideDescobrir() {
           body: [
             "Cada artista no ChartFM tem uma página de perfil com informações sobre sua discografia, histórico de aparições no ranking global e avaliações de álbuns feitas pela comunidade. Visitar o perfil de um artista que você acabou de descobrir é um bom jeito de entender rapidamente como a comunidade o percebe.",
             "A página de perfil também mostra quais usuários mais chartaram aquele artista — o que pode ajudar a encontrar fãs de música com gosto parecido com o seu para seguir.",
+          ],
+        },
+        {
+          title: "Leia também",
+          body: [
+            <>
+              Explore o{" "}
+              <InstitutionalInlineLink href="/discover">Discover</InstitutionalInlineLink>, entenda{" "}
+              <InstitutionalInlineLink href="/guides/como-funciona-o-global-100">como funciona o Global 100</InstitutionalInlineLink>{" "}
+              e veja como{" "}
+              <InstitutionalInlineLink href="/guides/como-participar-de-comunidades">participar de comunidades</InstitutionalInlineLink>{" "}
+              para descobrir fãs de música com gosto parecido com o seu.
+            </>,
           ],
         },
       ]}

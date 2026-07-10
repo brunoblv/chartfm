@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Como funciona o Global 100 | Guias ChartFM",
@@ -57,6 +58,24 @@ export default function GuideGlobal100() {
           body: [
             "Nas grandes plataformas de streaming, uma música sobe no ranking quando é reproduzida — independente de ter sido escolhida conscientemente ou tocado no modo aleatório. Isso favorece músicas promovidas algoritmicamente e cria rankings que muitas vezes não refletem o que as pessoas realmente gostam.",
             "No ChartFM, cada posição exige uma decisão intencional do usuário. Ninguém entra em uma parada por acidente. Isso torna o Global 100 um retrato mais próximo do que as pessoas de fato gostam, especialmente para artistas independentes que têm bases de fãs leais mas menos investimento em promoção algorítmica.",
+          ],
+        },
+        {
+          title: "Leia também",
+          body: [
+            <>
+              Veja o ranking ao vivo em{" "}
+              <InstitutionalInlineLink href="/global/100">/global/100</InstitutionalInlineLink>, entenda o
+              detalhe da{" "}
+              <InstitutionalInlineLink href="/guides/como-funciona-a-pontuacao">
+                fórmula de pontuação
+              </InstitutionalInlineLink>{" "}
+              e aprenda a{" "}
+              <InstitutionalInlineLink href="/guides/como-criar-sua-parada">
+                criar sua parada semanal
+              </InstitutionalInlineLink>
+              .
+            </>,
           ],
         },
       ]}

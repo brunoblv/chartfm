@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Como criar sua parada semanal | Guias ChartFM",
@@ -59,6 +60,23 @@ export default function GuideCrearParada() {
             "Publique regularmente: usuários que publicam toda semana constroem um histórico mais rico e tendem a ganhar mais visibilidade dentro da comunidade.",
             "Varie os gêneros: não existe restrição de estilo. Uma semana pode ter só K-Pop, outra pode misturar sertanejo com indie. A diversidade do seu gosto é o que torna sua curadoria única.",
             "Adicione músicas menos óbvias: além dos hits do momento, inclua descobertas pessoais, álbuns que você revisitou ou faixas que outros usuários provavelmente não conhecem. Assim outros usuários encontram músicas que não chegariam até eles de outra forma.",
+          ],
+        },
+        {
+          title: "Leia também",
+          body: [
+            <>
+              Comece agora em{" "}
+              <InstitutionalInlineLink href="/create">/create</InstitutionalInlineLink>, entenda{" "}
+              <InstitutionalInlineLink href="/guides/como-funciona-o-global-100">
+                como funciona o Global 100
+              </InstitutionalInlineLink>{" "}
+              e veja como{" "}
+              <InstitutionalInlineLink href="/guides/como-importar-historico">
+                importar seu histórico do Last.fm ou Spotify
+              </InstitutionalInlineLink>{" "}
+              para montar a lista mais rápido.
+            </>,
           ],
         },
       ]}

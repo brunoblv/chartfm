@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Glossário do ChartFM | Guias ChartFM",
@@ -46,14 +47,40 @@ export default function GuideGlossario() {
           title: "Global 100",
           body: [
             "Global 100 é o ranking coletivo do ChartFM, calculado a partir da soma dos pontos de todas as paradas publicadas pelos usuários durante a semana. Cada posição em cada parada pessoal vale uma quantidade de pontos, e a soma por música determina o ranking final.",
-            "A semana fecha toda terça-feira à meia-noite (horário de Brasília) e o snapshot correspondente é processado poucas horas depois. Para entender a fórmula por trás dos pontos, veja o guia /guides/como-funciona-a-pontuacao; para entender o ranking como um todo, veja /guides/como-funciona-o-global-100.",
+            <>
+              A semana fecha toda terça-feira à meia-noite (horário de Brasília) e o snapshot correspondente é
+              processado poucas horas depois. Para entender a fórmula por trás dos pontos, veja o guia{" "}
+              <InstitutionalInlineLink href="/guides/como-funciona-a-pontuacao">
+                como funciona a pontuação
+              </InstitutionalInlineLink>
+              ; para entender o ranking como um todo, veja{" "}
+              <InstitutionalInlineLink href="/guides/como-funciona-o-global-100">
+                como funciona o Global 100
+              </InstitutionalInlineLink>
+              .
+            </>,
           ],
         },
         {
           title: "Copa",
           body: [
             "Copa é o torneio eliminatório entre artistas do ChartFM, disputado em formato de chaveamento — parecido com uma copa de futebol. É uma competição paralela ao Global 100, movida a votos da comunidade em cada confronto, em vez de pontos de parada.",
-            "Os detalhes completos de formato, grupos, fases e critérios de desempate estão nas páginas /copa e /copa/regras. Este glossário não repete essas regras — é só um ponteiro para onde encontrá-las.",
+            <>
+              Os detalhes completos de formato, grupos, fases e critérios de desempate estão nas páginas{" "}
+              <InstitutionalInlineLink href="/copa">/copa</InstitutionalInlineLink> e{" "}
+              <InstitutionalInlineLink href="/copa/regras">/copa/regras</InstitutionalInlineLink>. Este glossário não
+              repete essas regras — é só um ponteiro para onde encontrá-las.
+            </>,
+          ],
+        },
+        {
+          title: "Leia também",
+          body: [
+            <>
+              Veja o índice completo de{" "}
+              <InstitutionalInlineLink href="/guides">guias do ChartFM</InstitutionalInlineLink> ou confira o{" "}
+              <InstitutionalInlineLink href="/global/100">Global 100</InstitutionalInlineLink> ao vivo.
+            </>,
           ],
         },
       ]}

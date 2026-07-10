@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 
 export const metadata: Metadata = {
   title: "Como avaliar álbuns no CriticsFM | Guias ChartFM",
@@ -53,6 +54,20 @@ export default function GuideAvaliarAlbuns() {
             "Use a busca dentro do CriticsFM para encontrar um álbum específico pelo nome ou pelo artista. Se o álbum não existir na base de dados, você pode sugeri-lo para inclusão.",
             "A página inicial do CriticsFM exibe lançamentos recentes, álbuns em tendência e projetos com muitas avaliações novas — o que facilita descobrir o que a comunidade está discutindo naquele momento.",
             "Você também pode chegar a um álbum através do perfil de um artista, onde todos os projetos cadastrados ficam listados. Isso é especialmente útil para quem quer avaliar toda a discografia de um artista favorito.",
+          ],
+        },
+        {
+          title: "Leia também",
+          body: [
+            <>
+              Acesse o{" "}
+              <InstitutionalInlineLink href="/criticsfm">CriticsFM</InstitutionalInlineLink> para começar a avaliar,
+              use o{" "}
+              <InstitutionalInlineLink href="/discover">Discover</InstitutionalInlineLink> para encontrar novos
+              álbuns e confira o{" "}
+              <InstitutionalInlineLink href="/guides/glossario">glossário de termos</InstitutionalInlineLink> do
+              ChartFM.
+            </>,
           ],
         },
       ]}
