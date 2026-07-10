@@ -34,6 +34,16 @@ export function DuplicateConflictNotice({
         <Link href={conflict.editHref} style={secondaryLinkStyle}>
           {isSong ? "Editar música existente" : "Editar álbum existente"}
         </Link>
+        <Link
+          href={
+            isSong
+              ? `/admin/duplicates/songs-by-artist?q=${encodeURIComponent(conflict.artist)}`
+              : "/admin/duplicates/albums"
+          }
+          style={secondaryLinkStyle}
+        >
+          Ver duplicatas do artista
+        </Link>
         {onDismiss && (
           <button type="button" onClick={onDismiss} style={dismissStyle}>
             Continuar aqui
