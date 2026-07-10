@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { ensureCanonicalAppOrigin, ensureDevLocalhostRedirect } from "@/lib/app-url";
 import {
@@ -26,13 +26,14 @@ function isRscOrPrefetch(request: NextRequest): boolean {
   );
 }
 
-function ensureLocaleCookie(request: NextRequest): NextResponse {
+function ensureLocaleCookie(request: NextRequest, extraHeaders?: Headers): NextResponse {
+  const nextOptions = extraHeaders ? { request: { headers: extraHeaders } } : undefined;
   const existingLocale = request.cookies.get(LOCALE_COOKIE)?.value;
   if (isLocale(existingLocale)) {
-    return NextResponse.next();
+    return NextResponse.next(nextOptions);
   }
 
-  const response = NextResponse.next();
+  const response = NextResponse.next(nextOptions);
   const detected = localeFromAcceptLanguage(request.headers.get("accept-language"));
   response.cookies.set(LOCALE_COOKIE, detected, {
     path: "/",
@@ -40,6 +41,55 @@ function ensureLocaleCookie(request: NextRequest): NextResponse {
     sameSite: "lax",
   });
   return response;
+}
+
+type ApiCallSource = "user" | "system" | "anonymous";
+
+function shouldLogApiCall(pathname: string): boolean {
+  return pathname.startsWith("/api") && pathname !== "/api/internal/log-request";
+}
+
+/**
+ * Registra toda chamada de API (ver app/admin/logs) — quem fez, quando, e se
+ * é o próprio sistema (cron) chamando. O middleware roda em edge runtime e não
+ * pode falar com o Prisma diretamente, então delega a escrita a uma rota Node
+ * (/api/internal/log-request) via fetch "fire and forget" (event.waitUntil).
+ * O status de erro real (crash/exceção) é preenchido depois por
+ * instrumentation.ts:onRequestError, correlacionado pelo header x-log-id.
+ */
+function logApiCall(
+  request: NextRequest,
+  event: NextFetchEvent,
+  token: { prismaUserId?: string; name?: string; handle?: string } | null,
+): string {
+  const id = crypto.randomUUID();
+  const secret = process.env.CRON_SECRET;
+  const isSystem = Boolean(secret) && request.headers.get("authorization") === `Bearer ${secret}`;
+  const source: ApiCallSource = isSystem ? "system" : token?.prismaUserId ? "user" : "anonymous";
+
+  const payload = {
+    id,
+    method: request.method,
+    path: request.nextUrl.pathname,
+    source,
+    userId: token?.prismaUserId ?? null,
+    userName: token?.name ?? null,
+    userHandle: token?.handle ?? null,
+  };
+
+  const logUrl = new URL("/api/internal/log-request", request.nextUrl.origin);
+  event.waitUntil(
+    fetch(logUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => null),
+  );
+
+  return id;
 }
 
 /** Redireciona visitantes para /manutencao quando MAINTENANCE_MODE está ativo. */
@@ -76,7 +126,7 @@ function handleMaintenance(request: NextRequest): NextResponse | null {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   const pathname = request.nextUrl.pathname;
   const isOAuthConnect =
     pathname.startsWith("/api/spotify/connect") ||
@@ -111,6 +161,17 @@ export async function middleware(request: NextRequest) {
   // funcionar enquanto needsHandle ainda é true.
   if (token?.needsHandle && token.prismaUserId && !pathname.startsWith("/api")) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
+  }
+
+  if (shouldLogApiCall(pathname)) {
+    const logId = logApiCall(request, event, {
+      prismaUserId: token?.prismaUserId as string | undefined,
+      name: token?.name as string | undefined,
+      handle: token?.handle as string | undefined,
+    });
+    const headersWithLogId = new Headers(request.headers);
+    headersWithLogId.set("x-log-id", logId);
+    return ensureLocaleCookie(request, headersWithLogId);
   }
 
   return ensureLocaleCookie(request);

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { purgeOldApiRequestLogs } from "@/lib/api-request-log";
 
 // Dias em horário de Brasília (UTC-3 fixo, sem horário de verão desde 2019)
 const BRT_OFFSET_MS = 3 * 60 * 60 * 1000;
@@ -27,6 +28,7 @@ export async function rollupAnalyticsDay(dayKey: string) {
   const sessions = new Map<string, { min: number; max: number }>();
   const loggedUsers = new Set<string>();
   const pathViews = new Map<string, number>();
+  const editorialViews = new Map<string, number>();
   let pageviews = 0;
 
   for (const ev of events) {
@@ -42,6 +44,10 @@ export async function rollupAnalyticsDay(dayKey: string) {
     if (ev.type === "pageview") {
       pageviews++;
       pathViews.set(ev.path, (pathViews.get(ev.path) ?? 0) + 1);
+      const editorialSlug = ev.path.match(/^\/editorial\/([^/]+)/)?.[1];
+      if (editorialSlug) {
+        editorialViews.set(editorialSlug, (editorialViews.get(editorialSlug) ?? 0) + 1);
+      }
     }
   }
 
@@ -76,6 +82,16 @@ export async function rollupAnalyticsDay(dayKey: string) {
     update: data,
   });
 
+  await Promise.all(
+    [...editorialViews.entries()].map(([slug, views]) =>
+      prisma.editorialPostDailyView.upsert({
+        where: { slug_date: { slug, date } },
+        create: { slug, date, views },
+        update: { views },
+      }),
+    ),
+  );
+
   return { day: dayKey, ...data };
 }
 
@@ -89,6 +105,7 @@ export async function runAnalyticsRollup(now = new Date(), days = 1) {
 
   const cutoff = new Date(now.getTime() - EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
   const purged = await prisma.analyticsEvent.deleteMany({ where: { createdAt: { lt: cutoff } } });
+  const purgedApiLogs = await purgeOldApiRequestLogs();
 
-  return { days: results, purgedEvents: purged.count };
+  return { days: results, purgedEvents: purged.count, purgedApiLogs };
 }

@@ -1345,6 +1345,24 @@ model SupportTicket {
   @@map("support_tickets")
 }
 
+model ApiRequestLog {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now()) @map("created_at")
+  method       String
+  path         String
+  source       String // "user" | "system" | "anonymous"
+  ok           Boolean  @default(true)
+  statusCode   Int?     @map("status_code")
+  errorMessage String?  @map("error_message") @db.Text
+  userId       String?  @map("user_id")
+  userName     String?  @map("user_name")
+  userHandle   String?  @map("user_handle")
+
+  @@index([createdAt])
+  @@index([path, createdAt])
+  @@map("api_request_logs")
+}
+
 model AnalyticsEvent {
   id        BigInt   @id @default(autoincrement())
   sessionId String   @map("session_id")
@@ -1375,6 +1393,18 @@ model AnalyticsDailyStat {
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@map("analytics_daily_stats")
+}
+
+model EditorialPostDailyView {
+  id    Int      @id @default(autoincrement())
+  slug  String
+  date  DateTime @db.Date
+  views Int      @default(0)
+
+  @@unique([slug, date])
+  @@index([slug])
+  @@index([date])
+  @@map("editorial_post_daily_views")
 }
 
 model SupportTicketMessage {

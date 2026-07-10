@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper, Send } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper, Send, ScrollText } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -501,6 +501,10 @@ function SidebarContent({
               <Link href="/admin/analytics" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/analytics")}>
                 <BarChart3 size={14} />
                 <span>Analytics</span>
+              </Link>
+              <Link href="/admin/logs" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/logs")}>
+                <ScrollText size={14} />
+                <span>Logs de API</span>
               </Link>
               <Link href="/admin/dados" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/dados")}>
                 <Database size={14} />
