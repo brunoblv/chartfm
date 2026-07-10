@@ -1,0 +1,27 @@
+---
+description: Padrão de tabelas no painel admin — compactas e com paginação numerada
+globs: app/admin/**/*.tsx,components/admin/**/*.tsx
+alwaysApply: false
+---
+
+# Tabelas admin
+
+Toda tabela no painel admin deve seguir este padrão:
+
+1. **Compacta** — cabe na tela sem scroll horizontal desnecessário:
+   - `adminCompactTableStyle` + `tableLayout: "fixed"` + `<colgroup>` com larguras fixas
+   - `adminCompactThStyle` / `adminCompactTdStyle` (padding e fonte menores)
+   - Texto longo com `adminCellEllipsis` + `title` para tooltip
+   - Imagens/thumbs pequenos (32–40px)
+   - Inputs e botões reduzidos na linha da tabela
+
+2. **Paginação com números de página** — usar `AdminTablePagination`:
+   - Botões numerados (1, 2, 3 …) com página ativa destacada em `#FA243C`
+   - Setas anterior/próxima
+   - Contador "X–Y de N" resultados
+   - ~10–15 linhas por página (client-side ou server-side)
+   - Resetar para página 1 ao mudar filtros
+
+3. **Container** — envolver em `AdminPanel` quando fizer sentido.
+
+Referência: `app/admin/postagens/PostagensClient.tsx`, `components/admin/AdminTablePagination.tsx`.

@@ -1442,7 +1442,8 @@ model WeeklySpotlightOption {
   pollId      String                      @map("poll_id")
   category    String // "destaque" (Melhor da Semana) | "flashback"
   songId      String                      @map("song_id")
-  voteCount   Int                         @default(0) @map("vote_count") // congelado na apuração
+  voteCount   Int                         @default(0) @map("vote_count") // congelado na apuração: nº de ranqueadores que incluíram a opção
+  totalPoints Int                         @default(0) @map("total_points") // congelado na apuração: soma dos pontos de posição (20→1, mesma curva do Push)
   isWinner    Boolean                     @default(false) @map("is_winner")
   createdAt   DateTime                    @default(now()) @map("created_at")
   poll        WeeklySpotlightPoll         @relation(fields: [pollId], references: [id], onDelete: Cascade)
@@ -1473,6 +1474,7 @@ model WeeklySpotlightVote {
   pollId    String                @map("poll_id")
   optionId  String                @map("option_id")
   userId    String                @map("user_id")
+  position  Int // posição dada pelo usuário no ranking da categoria (1 = melhor), mesma curva de pontos do Push
   createdAt DateTime              @default(now()) @map("created_at")
   poll      WeeklySpotlightPoll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option    WeeklySpotlightOption @relation(fields: [optionId], references: [id], onDelete: Cascade)

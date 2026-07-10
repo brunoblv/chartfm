@@ -1,11 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, Crown, ExternalLink, History, Loader2, Star } from "lucide-react";
+import { Crown, ExternalLink, History, Loader2, Music, Star } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
-import { Cover } from "@/components/ui/Cover";
-import { Avatar } from "@/components/ui/Avatar";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { useMobileReorder } from "@/hooks/useMobileReorder";
+import {
+  MobileReorderPositionSheet,
+  MobileReorderToolbar,
+} from "@/components/mobile-reorder";
+import { MobileReorderRowControls } from "@/components/mobile-reorder/MobileReorderRowControls";
+import { TrackCover, RankBadge, CheckIcon } from "@/components/push/PushAtoms";
+import { pushPoints } from "@/lib/push-scoring";
 import type {
   SpotlightCategory,
   WeeklyPollOptionView,
@@ -35,21 +42,25 @@ const CATEGORY_META: Record<
   },
 };
 
-function OptionCard({
-  option,
-  color,
-  loggedIn,
-  pollOpen,
-  onToggle,
-  pending,
-}: {
-  option: WeeklyPollOptionView;
-  color: string;
-  loggedIn: boolean;
-  pollOpen: boolean;
-  onToggle: (optionId: string) => void;
-  pending: boolean;
-}) {
+function NominatorsRow({ nominators }: { nominators: WeeklyPollOptionView["nominators"] }) {
+  if (nominators.length === 0) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Indicada por</span>
+      {nominators.map((n) => (
+        <Link
+          key={n.id}
+          href={`/profile/${encodeURIComponent(n.handle)}`}
+          style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", textDecoration: "none" }}
+        >
+          @{n.handle}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function ResultRow({ option, color, rank }: { option: WeeklyPollOptionView; color: string; rank: number }) {
   const spotifyUrl =
     option.song.spotifyUrl ??
     (option.song.spotifyId ? `https://open.spotify.com/track/${option.song.spotifyId}` : null);
@@ -63,19 +74,11 @@ function OptionCard({
         padding: 16,
         display: "flex",
         gap: 14,
-        alignItems: "flex-start",
+        alignItems: "center",
       }}
     >
-      <Cover
-        cover={option.song.cover}
-        song={{
-          title: option.song.title,
-          artist: option.song.artist,
-          imageUrl: option.song.cover.imageUrl ?? undefined,
-        }}
-        size={72}
-        rounded={12}
-      />
+      <RankBadge pos={rank} />
+      <TrackCover imageUrl={option.song.cover.imageUrl ?? null} size={56} />
       <div style={{ flex: 1, minWidth: 0 }}>
         {option.isWinner && (
           <div
@@ -96,100 +99,405 @@ function OptionCard({
         )}
         <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.35 }}>{option.song.title}</div>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{option.song.artist}</div>
-
-        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            Indicada por
-          </span>
-          {option.nominators.map((n) => (
-            <Link
-              key={n.id}
-              href={`/profile/${encodeURIComponent(n.handle)}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                textDecoration: "none",
-                color: "var(--text)",
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            >
-              <Avatar user={{ name: n.name, avatar: n.avatarColor }} imageUrl={n.image} size={20} />
-              @{n.handle}
-            </Link>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
-          {pollOpen && (
-            loggedIn ? (
-              <button
-                onClick={() => onToggle(option.id)}
-                disabled={pending}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "8px 14px",
-                  borderRadius: 999,
-                  border: option.votedByMe ? "none" : "1px solid var(--divider)",
-                  background: option.votedByMe ? color : "transparent",
-                  color: option.votedByMe ? "#fff" : "var(--text)",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: pending ? "wait" : "pointer",
-                }}
-              >
-                {pending ? <Loader2 size={14} className="animate-spin" /> : option.votedByMe ? <Check size={14} /> : null}
-                {option.votedByMe ? "Votado" : "Votar"}
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color,
-                  textDecoration: "none",
-                }}
-              >
-                Entre para votar →
-              </Link>
-            )
-          )}
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            {option.voteCount} {option.voteCount === 1 ? "voto" : "votos"}
-          </span>
-          {spotifyUrl && (
-            <a
-              href={spotifyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#1DB954",
-                textDecoration: "none",
-              }}
-            >
-              <ExternalLink size={13} />
-              Ouvir
-            </a>
-          )}
-        </div>
+        <NominatorsRow nominators={option.nominators} />
+        {spotifyUrl && (
+          <a
+            href={spotifyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#1DB954",
+              textDecoration: "none",
+              marginTop: 8,
+            }}
+          >
+            <ExternalLink size={13} />
+            Ouvir
+          </a>
+        )}
+      </div>
+      <div style={{ textAlign: "center", flexShrink: 0 }}>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>{option.totalPoints ?? 0}</div>
+        <div style={{ fontSize: 9, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 2 }}>PTS</div>
       </div>
     </div>
+  );
+}
+
+function CategoryRanking({
+  poll,
+  category,
+  loggedIn,
+  onSaved,
+}: {
+  poll: WeeklyPollView;
+  category: SpotlightCategory;
+  loggedIn: boolean;
+  onSaved: () => void;
+}) {
+  const meta = CATEGORY_META[category];
+  const isMobile = useIsMobile();
+  const options = poll.options.filter((o) => o.category === category);
+  const myOption = options.find((o) => o.excludedForMe) ?? null;
+  const toRank = options.filter((o) => !o.excludedForMe);
+  const pollOpen = poll.status === "open";
+
+  const initialOrder = useCallback((): WeeklyPollOptionView[] => {
+    const ranked = toRank.some((o) => o.myPosition !== null);
+    if (ranked) {
+      return [...toRank].sort((a, b) => (a.myPosition ?? 999) - (b.myPosition ?? 999));
+    }
+    return toRank;
+  }, [toRank]);
+
+  const [ranking, setRanking] = useState<WeeklyPollOptionView[]>(initialOrder);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const dragItem = useRef<number | null>(null);
+
+  useEffect(() => {
+    setRanking(initialOrder());
+    setSaved(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poll.id, poll.status, category]);
+
+  const mobileReorder = useMobileReorder({
+    items: ranking,
+    onChange: (next) => {
+      setRanking(next);
+      setSaved(false);
+    },
+    getItemLabel: (item) => item.song.title,
+  });
+
+  const hasVoted = toRank.some((o) => o.myPosition !== null);
+  const total = toRank.length;
+
+  function handleDragStart(idx: number) {
+    dragItem.current = idx;
+  }
+  function handleDragEnter(idx: number) {
+    if (dragItem.current === null || dragItem.current === idx) return;
+    setRanking((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragItem.current!, 1);
+      next.splice(idx, 0, moved);
+      dragItem.current = idx;
+      return next;
+    });
+    setSaved(false);
+  }
+  function handleDragEnd() {
+    dragItem.current = null;
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const positions = ranking.map((o, i) => ({ optionId: o.id, position: i + 1 }));
+    try {
+      const res = await fetch("/api/weekly-poll/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, positions }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao salvar");
+        return;
+      }
+      setSaved(true);
+      onSaved();
+    } catch {
+      setError("Erro de conexão.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section style={{ marginBottom: 40 }}>
+      <h2
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 18,
+          fontWeight: 700,
+          letterSpacing: "-0.025em",
+          marginBottom: 6,
+          color: "var(--text)",
+        }}
+      >
+        <span style={{ color: meta.color, display: "inline-flex" }}>{meta.icon}</span>
+        {meta.title}
+      </h2>
+      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>{meta.description}</p>
+
+      {options.length === 0 ? (
+        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Nenhuma indicação nesta categoria esta semana.</div>
+      ) : !pollOpen ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {options.map((option, i) => (
+            <ResultRow key={option.id} option={option} color={meta.color} rank={i + 1} />
+          ))}
+        </div>
+      ) : !loggedIn ? (
+        <>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
+            <Link href="/login" style={{ color: meta.color, fontWeight: 600, textDecoration: "none" }}>
+              Entre para ranquear →
+            </Link>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {toRank.map((sub) => (
+              <div
+                key={sub.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 12px",
+                  borderRadius: 13,
+                  background: "var(--surface)",
+                  border: "1px solid var(--divider)",
+                }}
+              >
+                <TrackCover imageUrl={sub.song.cover.imageUrl ?? null} size={38} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700 }}>{sub.song.title}</div>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{sub.song.artist}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : total === 0 ? (
+        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+          Só há a sua própria indicação nesta categoria — nada para ranquear.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {myOption && (
+            <div style={{ marginBottom: 16 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "var(--text-muted)",
+                  letterSpacing: ".07em",
+                  textTransform: "uppercase" as const,
+                  marginBottom: 8,
+                }}
+              >
+                Sua indicação
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 12px",
+                  borderRadius: 13,
+                  background: "color-mix(in srgb, var(--accent) 6%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--accent) 18%, transparent)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 7,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "color-mix(in srgb, var(--accent) 18%, transparent)",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Music size={12} color="var(--accent)" />
+                </div>
+                <TrackCover imageUrl={myOption.song.cover.imageUrl ?? null} size={38} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{myOption.song.title}</div>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{myOption.song.artist}</div>
+                </div>
+                <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>Fora do ranking</span>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              {!isMobile && "Arraste para ordenar · "}#1 = 20 pts · #{total} = 1 pt
+              {hasVoted && <span style={{ color: "#10b981", fontWeight: 600 }}> · ✓ Ranking salvo</span>}
+            </span>
+          </div>
+
+          {isMobile && ranking.length > 0 ? (
+            <div style={{ position: "relative", marginBottom: 16, borderRadius: 13, border: "1px solid var(--divider)", overflow: "hidden" }}>
+              <MobileReorderToolbar
+                mode={mobileReorder.mode}
+                onModeChange={mobileReorder.setMode}
+                hint={mobileReorder.hint}
+                showSwapBanner={mobileReorder.showSwapBanner}
+                swapBannerTitle={mobileReorder.selectedTitle ?? undefined}
+                onCancelSwap={mobileReorder.cancelSelection}
+              />
+              {ranking.map((option, idx) => {
+                const pts = pushPoints(idx + 1, total);
+                const rowProps = mobileReorder.getRowProps(idx);
+                return (
+                  <div
+                    key={option.id}
+                    onClick={rowProps.onRowClick}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 12px",
+                      borderBottom: "1px solid var(--divider)",
+                      background: "var(--surface)",
+                      userSelect: "none",
+                      WebkitTapHighlightColor: "transparent",
+                      ...rowProps.rowStyle,
+                    }}
+                  >
+                    <RankBadge pos={idx + 1} />
+                    <TrackCover imageUrl={option.song.cover.imageUrl ?? null} size={38} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {option.song.title}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {option.song.artist}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "center", flexShrink: 0, minWidth: 34 }}>
+                      <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, letterSpacing: "-.02em" }}>{pts}</div>
+                      <div style={{ fontSize: 8, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 1 }}>PTS</div>
+                    </div>
+                    <MobileReorderRowControls
+                      mode={mobileReorder.mode}
+                      canMoveUp={rowProps.canMoveUp}
+                      canMoveDown={rowProps.canMoveDown}
+                      onMoveUp={rowProps.onMoveUp}
+                      onMoveDown={rowProps.onMoveDown}
+                      isSelected={rowProps.isSelected}
+                      isSwapTarget={rowProps.isSwapTarget}
+                    />
+                  </div>
+                );
+              })}
+              {mobileReorder.showPositionSheet && mobileReorder.editTargetTitle ? (
+                <MobileReorderPositionSheet
+                  title={mobileReorder.editTargetTitle}
+                  currentPosition={(mobileReorder.editTargetIndex ?? 0) + 1}
+                  maxPosition={mobileReorder.itemCount}
+                  onConfirm={mobileReorder.confirmPosition}
+                  onClose={mobileReorder.closePositionSheet}
+                />
+              ) : null}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              {ranking.map((option, idx) => {
+                const pts = pushPoints(idx + 1, total);
+                return (
+                  <div
+                    key={option.id}
+                    draggable
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragEnter={() => handleDragEnter(idx)}
+                    onDragEnd={handleDragEnd}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "9px 12px",
+                      borderRadius: 13,
+                      background: "var(--surface)",
+                      border: "1.5px solid var(--divider)",
+                      cursor: "grab",
+                      userSelect: "none",
+                      boxShadow: "0 1px 2px rgba(0,0,0,.04)",
+                    }}
+                  >
+                    <RankBadge pos={idx + 1} />
+                    <TrackCover imageUrl={option.song.cover.imageUrl ?? null} size={38} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {option.song.title}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {option.song.artist}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "center" as const, flexShrink: 0, minWidth: 34 }}>
+                      <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1, letterSpacing: "-.02em" }}>{pts}</div>
+                      <div style={{ fontSize: 8, fontWeight: 600, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 1 }}>PTS</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {error && (
+            <div style={{ padding: "12px 14px", borderRadius: 10, background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontSize: 13, marginBottom: 12 }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={saved ? undefined : handleSave}
+            disabled={saving}
+            style={{
+              padding: "14px",
+              borderRadius: 14,
+              border: "none",
+              background: saved ? "#10b981" : meta.color,
+              color: "white",
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: saving || saved ? "default" : "pointer",
+              fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "background 200ms",
+            }}
+          >
+            {saved ? (
+              <>
+                <div style={{ width: 20, height: 20, borderRadius: 10, background: "rgba(255,255,255,.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <CheckIcon size={10} />
+                </div>
+                Ranking enviado com sucesso!
+              </>
+            ) : saving ? (
+              "Salvando…"
+            ) : (
+              "Confirmar meu ranking"
+            )}
+          </button>
+        </div>
+      )}
+    </section>
   );
 }
 
 export function VotacaoDaSemanaClient() {
   const [data, setData] = useState<PollResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -207,43 +515,6 @@ export function VotacaoDaSemanaClient() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const toggleVote = useCallback(
-    async (optionId: string) => {
-      if (!data?.poll || pendingId) return;
-      setPendingId(optionId);
-      setError(null);
-      try {
-        const res = await fetch("/api/weekly-poll/vote", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ optionId }),
-        });
-        const json = (await res.json()) as { voted?: boolean; voteCount?: number; error?: string };
-        if (!res.ok) throw new Error(json.error || "Falha ao registrar o voto.");
-        setData((prev) =>
-          prev?.poll
-            ? {
-                ...prev,
-                poll: {
-                  ...prev.poll,
-                  options: prev.poll.options.map((o) =>
-                    o.id === optionId
-                      ? { ...o, votedByMe: Boolean(json.voted), voteCount: json.voteCount ?? o.voteCount }
-                      : o,
-                  ),
-                },
-              }
-            : prev,
-        );
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Falha ao registrar o voto.");
-      } finally {
-        setPendingId(null);
-      }
-    },
-    [data, pendingId],
-  );
 
   const poll = data?.poll ?? null;
   const pollOpen = poll?.status === "open";
@@ -288,7 +559,8 @@ export function VotacaoDaSemanaClient() {
           >
             {pollOpen ? (
               <>
-                Vote em quantas músicas quiser, em cada categoria, a mais votada vira o card da{" "}
+                Arraste para ordenar sua preferência em cada categoria — a 1ª posição vale 20 pontos, a
+                última vale 1. A música com mais pontos no total vence e vira o card da{" "}
                 <Link href="/global/100" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
                   Parada Global
                 </Link>{" "}
@@ -309,55 +581,15 @@ export function VotacaoDaSemanaClient() {
             <div style={{ color: "#FA243C", fontSize: 13, fontWeight: 600, marginBottom: 16 }}>{error}</div>
           )}
 
-          {(Object.keys(CATEGORY_META) as SpotlightCategory[]).map((category) => {
-            const meta = CATEGORY_META[category];
-            const options = poll.options.filter((o) => o.category === category);
-            return (
-              <section key={category} style={{ marginBottom: 40 }}>
-                <h2
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    fontSize: 18,
-                    fontWeight: 700,
-                    letterSpacing: "-0.025em",
-                    marginBottom: 6,
-                    color: "var(--text)",
-                  }}
-                >
-                  <span style={{ color: meta.color, display: "inline-flex" }}>{meta.icon}</span>
-                  {meta.title}
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>{meta.description}</p>
-                {options.length === 0 ? (
-                  <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                    Nenhuma indicação nesta categoria esta semana.
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                      gap: 14,
-                    }}
-                  >
-                    {options.map((option) => (
-                      <OptionCard
-                        key={option.id}
-                        option={option}
-                        color={meta.color}
-                        loggedIn={Boolean(data?.loggedIn)}
-                        pollOpen={pollOpen}
-                        onToggle={toggleVote}
-                        pending={pendingId === option.id}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-            );
-          })}
+          {(Object.keys(CATEGORY_META) as SpotlightCategory[]).map((category) => (
+            <CategoryRanking
+              key={category}
+              poll={poll}
+              category={category}
+              loggedIn={Boolean(data?.loggedIn)}
+              onSaved={() => void load()}
+            />
+          ))}
         </>
       )}
     </Shell>

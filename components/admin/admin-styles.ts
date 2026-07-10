@@ -57,3 +57,29 @@ export const adminPanelScrollStyle: CSSProperties = {
   overflowX: "auto",
   WebkitOverflowScrolling: "touch",
 };
+
+/** Tabelas admin compactas — cabem na viewport sem scroll horizontal desnecessário. */
+export const adminCompactTableStyle: CSSProperties = {
+  width: "100%",
+  tableLayout: "fixed",
+  borderCollapse: "collapse",
+};
+
+export const adminCompactThStyle: CSSProperties = {
+  ...adminThStyle,
+  padding: "6px 8px",
+  fontSize: 11,
+};
+
+export const adminCompactTdStyle: CSSProperties = {
+  ...adminTdStyle,
+  padding: "6px 8px",
+  fontSize: 12,
+  verticalAlign: "top",
+};
+
+export const adminCellEllipsis: CSSProperties = {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};

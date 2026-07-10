@@ -11,6 +11,7 @@ import {
 } from "@/lib/chart-spotlight";
 import { broadcastAdminAnnouncement } from "@/lib/admin-broadcast";
 import { onWeeklyPollOpened } from "@/lib/social/events";
+import { aggregatePushVotePoints } from "@/lib/push-scoring";
 
 export const WEEKLY_POLL_PATH = "/votacao-da-semana";
 
@@ -114,6 +115,16 @@ export async function openWeeklySpotlightPoll(now: Date = new Date()): Promise<O
     }
   }
 
+  // Música que já venceu a categoria (destaque ou flashback) uma vez não compete de novo nela.
+  const priorWinners = await prisma.weeklySpotlightOption.findMany({
+    where: { isWinner: true },
+    select: { category: true, songId: true },
+  });
+  for (const winner of priorWinners) {
+    const category = winner.category as SpotlightCategory;
+    grouped[category].delete(winner.songId);
+  }
+
   const totalOptions = grouped.destaque.size + grouped.flashback.size;
   if (totalOptions === 0) {
     return { created: false, weekIndex: week.weekIndex, options: 0, notified: 0, reason: "sem indicações" };
@@ -164,8 +175,9 @@ export type CloseWeeklyPollResult = {
 };
 
 /**
- * Fecha a enquete da semana e apura: congela voteCount por opção e marca como
- * vencedora(s) a(s) mais votada(s) de cada categoria (empate = todas; 0 votos = sem vencedora).
+ * Fecha a enquete da semana e apura: congela voteCount/totalPoints por opção e marca
+ * como vencedora(s) a(s) de maior pontuação de cada categoria (ranking com pontos
+ * 20→1 por posição, mesma curva do Push — empate = todas; ninguém ranqueou = sem vencedora).
  */
 export async function closeWeeklySpotlightPoll(weekIndex: number): Promise<CloseWeeklyPollResult> {
   const poll = await prisma.weeklySpotlightPoll.findUnique({
@@ -175,19 +187,27 @@ export async function closeWeeklySpotlightPoll(weekIndex: number): Promise<Close
   if (!poll) return { closed: false, weekIndex, winners: 0, reason: "enquete não existe" };
   if (poll.status === "closed") return { closed: false, weekIndex, winners: 0, reason: "já fechada" };
 
-  const voteCounts = await prisma.weeklySpotlightVote.groupBy({
-    by: ["optionId"],
+  const allVotes = await prisma.weeklySpotlightVote.findMany({
     where: { pollId: poll.id },
-    _count: { optionId: true },
+    select: { userId: true, optionId: true, position: true },
   });
-  const countByOption = new Map(voteCounts.map((v) => [v.optionId, v._count.optionId]));
+  const countByOption = new Map<string, number>();
+  for (const v of allVotes) countByOption.set(v.optionId, (countByOption.get(v.optionId) ?? 0) + 1);
 
   const winnerIds: string[] = [];
+  const pointsByOption = new Map<string, number>();
   for (const category of ["destaque", "flashback"] as const) {
     const options = poll.options.filter((o) => o.category === category);
-    const max = Math.max(0, ...options.map((o) => countByOption.get(o.id) ?? 0));
+    const optionIds = new Set(options.map((o) => o.id));
+    const categoryVotes = allVotes
+      .filter((v) => optionIds.has(v.optionId))
+      .map((v) => ({ userId: v.userId, submissionId: v.optionId, position: v.position }));
+    const totals = aggregatePushVotePoints(categoryVotes);
+    for (const [optionId, pts] of totals) pointsByOption.set(optionId, pts);
+
+    const max = Math.max(0, ...options.map((o) => totals.get(o.id) ?? 0));
     if (max <= 0) continue;
-    winnerIds.push(...options.filter((o) => (countByOption.get(o.id) ?? 0) === max).map((o) => o.id));
+    winnerIds.push(...options.filter((o) => (totals.get(o.id) ?? 0) === max).map((o) => o.id));
   }
 
   await prisma.$transaction(async (tx) => {
@@ -196,6 +216,7 @@ export async function closeWeeklySpotlightPoll(weekIndex: number): Promise<Close
         where: { id: option.id },
         data: {
           voteCount: countByOption.get(option.id) ?? 0,
+          totalPoints: pointsByOption.get(option.id) ?? 0,
           isWinner: winnerIds.includes(option.id),
         },
       });
@@ -242,7 +263,12 @@ export type WeeklyPollOptionView = {
   song: ChartSpotlightSong;
   nominators: SpotlightNominator[];
   voteCount: number;
-  votedByMe: boolean;
+  /** Pontuação total do ranking (soma de pontos por posição, 20→1) — null enquanto a enquete está aberta. */
+  totalPoints: number | null;
+  /** Posição que o usuário logado deu a essa opção no ranking já salvo, ou null se ainda não ranqueou. */
+  myPosition: number | null;
+  /** Foi indicada pelo próprio usuário logado (fica de fora do ranking dele). */
+  excludedForMe: boolean;
   isWinner: boolean;
 };
 
@@ -255,7 +281,7 @@ export type WeeklyPollView = {
   options: WeeklyPollOptionView[];
 };
 
-/** Enquete mais recente (aberta ou fechada) com opções, indicadores e votos — para a página de votação. */
+/** Enquete mais recente (aberta ou fechada) com opções, indicadores e ranking — para a página de votação. */
 export async function getLatestWeeklyPollView(userId: string | null): Promise<WeeklyPollView | null> {
   const poll = await prisma.weeklySpotlightPoll.findFirst({
     orderBy: { weekIndex: "desc" },
@@ -274,10 +300,10 @@ export async function getLatestWeeklyPollView(userId: string | null): Promise<We
   const myVotes = userId
     ? await prisma.weeklySpotlightVote.findMany({
         where: { pollId: poll.id, userId },
-        select: { optionId: true },
+        select: { optionId: true, position: true },
       })
     : [];
-  const mySet = new Set(myVotes.map((v) => v.optionId));
+  const myPositionByOption = new Map(myVotes.map((v) => [v.optionId, v.position]));
 
   const options = poll.options
     .map((option) => ({
@@ -286,10 +312,16 @@ export async function getLatestWeeklyPollView(userId: string | null): Promise<We
       song: mapPrismaSpotlightSong(option.song),
       nominators: option.nominations.map((n) => n.user),
       voteCount: poll.status === "closed" ? option.voteCount : option._count.votes,
-      votedByMe: mySet.has(option.id),
+      totalPoints: poll.status === "closed" ? option.totalPoints : null,
+      myPosition: myPositionByOption.get(option.id) ?? null,
+      excludedForMe: userId ? option.nominations.some((n) => n.userId === userId) : false,
       isWinner: option.isWinner,
     }))
-    .sort((a, b) => b.voteCount - a.voteCount || a.song.title.localeCompare(b.song.title));
+    .sort((a, b) =>
+      poll.status === "closed"
+        ? (b.totalPoints ?? 0) - (a.totalPoints ?? 0) || a.song.title.localeCompare(b.song.title)
+        : a.song.title.localeCompare(b.song.title),
+    );
 
   return {
     id: poll.id,
@@ -301,31 +333,56 @@ export async function getLatestWeeklyPollView(userId: string | null): Promise<We
   };
 }
 
-/** Alterna o voto do usuário numa opção da enquete aberta. */
-export async function toggleWeeklyPollVote(
+/** Salva o ranking completo do usuário para uma categoria da enquete aberta (excluindo a própria indicação). */
+export async function submitWeeklyPollRanking(
   userId: string,
-  optionId: string,
-): Promise<{ ok: true; voted: boolean; voteCount: number } | { ok: false; error: string }> {
-  const option = await prisma.weeklySpotlightOption.findUnique({
-    where: { id: optionId },
-    select: { id: true, pollId: true, poll: { select: { status: true } } },
+  pollId: string,
+  category: SpotlightCategory,
+  positions: { optionId: string; position: number }[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const poll = await prisma.weeklySpotlightPoll.findUnique({
+    where: { id: pollId },
+    select: {
+      status: true,
+      options: {
+        where: { category },
+        select: { id: true, nominations: { select: { userId: true } } },
+      },
+    },
   });
-  if (!option) return { ok: false, error: "Opção não encontrada." };
-  if (option.poll.status !== "open") return { ok: false, error: "A votação desta semana já foi encerrada." };
+  if (!poll) return { ok: false, error: "Enquete não encontrada." };
+  if (poll.status !== "open") return { ok: false, error: "A votação desta semana já foi encerrada." };
 
-  const existing = await prisma.weeklySpotlightVote.findUnique({
-    where: { optionId_userId: { optionId, userId } },
-    select: { id: true },
-  });
+  const eligibleIds = new Set(
+    poll.options.filter((o) => !o.nominations.some((n) => n.userId === userId)).map((o) => o.id),
+  );
 
-  if (existing) {
-    await prisma.weeklySpotlightVote.delete({ where: { id: existing.id } });
-  } else {
-    await prisma.weeklySpotlightVote.create({
-      data: { pollId: option.pollId, optionId, userId },
-    });
+  const submittedIds = positions.map((p) => p.optionId);
+  if (submittedIds.some((id) => !eligibleIds.has(id))) {
+    return { ok: false, error: "Opção inválida para o seu ranking." };
   }
 
-  const voteCount = await prisma.weeklySpotlightVote.count({ where: { optionId } });
-  return { ok: true, voted: !existing, voteCount };
+  const total = eligibleIds.size;
+  const posValues = positions.map((p) => p.position);
+  const expectedPositions = new Set(Array.from({ length: total }, (_, i) => i + 1));
+  const valid =
+    submittedIds.length === total &&
+    new Set(submittedIds).size === total &&
+    posValues.every((p) => expectedPositions.has(p)) &&
+    new Set(posValues).size === posValues.length;
+  if (!valid) {
+    return { ok: false, error: "Posições inválidas — todas as músicas elegíveis devem ser ranqueadas uma vez." };
+  }
+
+  await prisma.$transaction(
+    positions.map((p) =>
+      prisma.weeklySpotlightVote.upsert({
+        where: { optionId_userId: { optionId: p.optionId, userId } },
+        create: { pollId, optionId: p.optionId, userId, position: p.position },
+        update: { position: p.position },
+      }),
+    ),
+  );
+
+  return { ok: true };
 }

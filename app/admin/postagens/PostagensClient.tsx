@@ -1,7 +1,15 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { adminPanelScrollStyle, adminTdStyle, adminThStyle, adminInputStyle } from "@/components/admin/admin-styles";
+import { AdminPanel } from "@/components/admin/AdminPanel";
+import { AdminTablePagination } from "@/components/admin/AdminTablePagination";
+import {
+  adminCellEllipsis,
+  adminCompactTableStyle,
+  adminCompactTdStyle,
+  adminCompactThStyle,
+  adminInputStyle,
+} from "@/components/admin/admin-styles";
 import { buildWeekIndexFromDate } from "@/lib/chart-week";
 
 type Publication = {
@@ -80,6 +88,8 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: "#86868B",
 };
 
+const PAGE_SIZE = 10;
+
 export default function PostagensClient({
   initialPosts,
   platformConfigs,
@@ -106,6 +116,7 @@ export default function PostagensClient({
   const [schedules, setSchedules] = useState(eventSchedules);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [platformFilter, setPlatformFilter] = useState<string>("ALL");
+  const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [tab, setTab] = useState<"fila" | "agenda">("fila");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -181,6 +192,20 @@ export default function PostagensClient({
       return true;
     });
   }, [posts, statusFilter, platformFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, platformFilter]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   async function callAction(id: string, payload: Record<string, unknown>) {
     setBusyId(id);
@@ -584,34 +609,47 @@ export default function PostagensClient({
         </select>
       </section>
 
-      <div style={adminPanelScrollStyle}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <AdminPanel maxWidth={1200} scroll={false}>
+        <table style={adminCompactTableStyle}>
+          <colgroup>
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "12%" }} />
+          </colgroup>
           <thead>
-            <tr>
-              <th style={adminThStyle}>Tipo</th>
-              <th style={adminThStyle}>Entidade</th>
-              <th style={adminThStyle}>Prioridade</th>
-              <th style={adminThStyle}>Status</th>
-              <th style={adminThStyle}>Agendado</th>
-              <th style={adminThStyle}>Plataformas</th>
-              <th style={adminThStyle}>Preview da arte</th>
-              <th style={adminThStyle}>Texto</th>
-              <th style={adminThStyle}>Ações</th>
+            <tr style={{ background: "var(--fill-inset)" }}>
+              <th style={adminCompactThStyle}>Tipo</th>
+              <th style={adminCompactThStyle}>Entidade</th>
+              <th style={adminCompactThStyle}>Prior.</th>
+              <th style={adminCompactThStyle}>Status</th>
+              <th style={adminCompactThStyle}>Agendado</th>
+              <th style={adminCompactThStyle}>Plataformas</th>
+              <th style={adminCompactThStyle}>Arte</th>
+              <th style={adminCompactThStyle}>Texto</th>
+              <th style={adminCompactThStyle}>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((post) => (
+            {paginated.map((post) => (
               <Fragment key={post.id}>
               <tr>
-                <td style={adminTdStyle}>{post.eventType}</td>
-                <td style={adminTdStyle}>
+                <td style={{ ...adminCompactTdStyle, ...adminCellEllipsis }} title={post.eventType}>
+                  {post.eventType}
+                </td>
+                <td style={{ ...adminCompactTdStyle, ...adminCellEllipsis }} title={`${post.entityType} #${post.entityId}`}>
                   {post.entityType} #{post.entityId}
                 </td>
-                <td style={adminTdStyle}>
+                <td style={adminCompactTdStyle}>
                   <select
                     value={post.priority}
                     onChange={(e) => callAction(post.id, { action: "priority", priority: e.target.value })}
-                    style={{ ...adminInputStyle, width: 110 }}
+                    style={{ ...compactInputStyle, width: "100%" }}
                   >
                     {["CRITICAL", "HIGH", "NORMAL", "LOW"].map((p) => (
                       <option key={p} value={p}>
@@ -620,32 +658,32 @@ export default function PostagensClient({
                     ))}
                   </select>
                 </td>
-                <td style={adminTdStyle}>
-                  <span style={{ color: STATUS_COLORS[post.status] ?? "var(--text)", fontWeight: 700 }}>{post.status}</span>
+                <td style={adminCompactTdStyle}>
+                  <span style={{ color: STATUS_COLORS[post.status] ?? "var(--text)", fontWeight: 700, fontSize: 11 }}>{post.status}</span>
                   {post.lastError && (
-                    <div title={post.lastError} style={{ fontSize: 11, color: "#FF3B30", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div title={post.lastError} style={{ fontSize: 10, color: "#FF3B30", ...adminCellEllipsis }}>
                       {post.lastError}
                     </div>
                   )}
                 </td>
-                <td style={adminTdStyle}>
+                <td style={adminCompactTdStyle}>
                   <input
                     type="datetime-local"
                     defaultValue={post.scheduledAt ? toDatetimeLocal(post.scheduledAt) : ""}
                     onBlur={(e) => e.target.value && callAction(post.id, { action: "reschedule", scheduledAt: new Date(e.target.value).toISOString() })}
-                    style={{ ...adminInputStyle, width: 190 }}
+                    style={{ ...compactInputStyle, width: "100%" }}
                   />
                 </td>
-                <td style={adminTdStyle}>
+                <td style={adminCompactTdStyle}>
                   {post.publications.map((pub) => (
-                    <div key={pub.id} style={{ fontSize: 11 }}>
+                    <div key={pub.id} style={{ fontSize: 10, ...adminCellEllipsis }} title={`${pub.platform}: ${pub.status}`}>
                       {pub.platform}: <span style={{ color: pub.status === "PUBLISHED" ? "#2EB550" : pub.status === "FAILED" ? "#FF3B30" : "var(--text-muted)" }}>{pub.status}</span>
                     </div>
                   ))}
                 </td>
-                <td style={adminTdStyle}>
+                <td style={adminCompactTdStyle}>
                   {post.imageFeed45 || post.imageStory916 || post.imageTelegram11 ? (
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 4 }}>
                       {[
                         { label: "Feed", src: post.imageFeed45 },
                         { label: "Story", src: post.imageStory916 },
@@ -657,50 +695,50 @@ export default function PostagensClient({
                             <img
                               src={v.src!}
                               alt={v.label}
-                              style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 6, border: "1px solid var(--divider-strong)", display: "block" }}
+                              style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4, border: "1px solid var(--divider-strong)", display: "block" }}
                             />
                           </a>
                         ))}
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>ainda não gerada</span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-start" }}>
+                      <span style={{ fontSize: 10, color: "var(--text-muted)" }}>sem arte</span>
                       <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "generate-preview" })} style={actionBtnStyle}>
-                        Gerar preview
+                        Gerar
                       </button>
                     </div>
                   )}
                 </td>
-                <td style={{ ...adminTdStyle, minWidth: 260 }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <td style={adminCompactTdStyle}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     <textarea
                       value={post.captionInstagram ?? ""}
                       onChange={(e) => updateCaptionLocal(post.id, e.target.value)}
                       onBlur={(e) => callAction(post.id, { action: "caption", platform: "instagram", caption: e.target.value })}
-                      rows={5}
+                      rows={2}
                       placeholder="Texto ainda não gerado"
-                      style={{ ...adminInputStyle, width: "100%", minWidth: 240, fontFamily: "inherit", resize: "vertical" }}
+                      style={{ ...compactInputStyle, width: "100%", fontFamily: "inherit", resize: "vertical", minHeight: 44 }}
                     />
-                    <div style={{ display: "flex", gap: 4 }}>
+                    <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
                       <button disabled={busyId === post.id} onClick={() => regenerateCaption(post.id)} style={actionBtnStyle}>
-                        {busyId === post.id ? "Gerando…" : "Regenerar texto"}
+                        {busyId === post.id ? "…" : "Regenerar"}
                       </button>
                       <button disabled={busyId === post.id} onClick={() => toggleExpand(post)} style={actionBtnStyle}>
-                        {expandedId === post.id ? "Fechar" : "Outras redes"}
+                        {expandedId === post.id ? "Fechar" : "Redes"}
                       </button>
                     </div>
                   </div>
                 </td>
-                <td style={adminTdStyle}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <td style={adminCompactTdStyle}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "generate-preview" })} style={actionBtnStyle}>
-                      Regenerar preview
+                      Preview
                     </button>
                     <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "publish-now" })} style={actionBtnStyle}>
-                      Publicar agora
+                      Publicar
                     </button>
                     <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "retry" })} style={actionBtnStyle}>
-                      Tentar de novo
+                      Retry
                     </button>
                     <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "cancel" })} style={{ ...actionBtnStyle, color: "#FF3B30" }}>
                       Cancelar
@@ -710,9 +748,9 @@ export default function PostagensClient({
               </tr>
               {expandedId === post.id && (
                 <tr>
-                  <td colSpan={9} style={{ ...adminTdStyle, background: "var(--surface-secondary, rgba(127,127,127,0.06))" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 8 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>Texto nas outras redes (o principal, do Instagram, é editado na coluna Texto)</div>
+                  <td colSpan={9} style={{ ...adminCompactTdStyle, background: "var(--surface-secondary, rgba(127,127,127,0.06))" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 4 }}>
+                      <div style={{ fontWeight: 700, fontSize: 12 }}>Texto nas outras redes</div>
                       {(
                         [
                           { key: "facebook" as const, label: "Facebook" },
@@ -720,13 +758,13 @@ export default function PostagensClient({
                           { key: "telegram" as const, label: "Telegram" },
                         ]
                       ).map((f) => (
-                        <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          <label style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{f.label}</label>
+                        <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          <label style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{f.label}</label>
                           <textarea
                             value={captionDrafts[f.key] ?? ""}
                             onChange={(e) => setCaptionDrafts((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                            rows={4}
-                            style={{ ...adminInputStyle, width: "100%", fontFamily: "inherit", resize: "vertical" }}
+                            rows={3}
+                            style={{ ...compactInputStyle, width: "100%", fontFamily: "inherit", resize: "vertical" }}
                           />
                         </div>
                       ))}
@@ -743,7 +781,17 @@ export default function PostagensClient({
             ))}
           </tbody>
         </table>
-      </div>
+        {filtered.length === 0 && (
+          <div style={{ padding: 12, fontSize: 12, color: "var(--text-muted)" }}>Nenhuma publicação encontrada.</div>
+        )}
+        <AdminTablePagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onChange={setPage}
+        />
+      </AdminPanel>
         </>
       )}
     </div>
@@ -751,13 +799,21 @@ export default function PostagensClient({
 }
 
 const actionBtnStyle: React.CSSProperties = {
-  fontSize: 11,
-  padding: "4px 8px",
-  borderRadius: 8,
+  fontSize: 10,
+  padding: "3px 6px",
+  borderRadius: 6,
   border: "1px solid var(--divider-strong)",
   background: "var(--surface)",
   color: "var(--text)",
   cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
+const compactInputStyle: React.CSSProperties = {
+  ...adminInputStyle,
+  padding: "4px 6px",
+  fontSize: 11,
+  borderRadius: 6,
 };
 
 function toDatetimeLocal(iso: string): string {

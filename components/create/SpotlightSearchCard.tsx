@@ -6,6 +6,7 @@ import { Cover } from "@/components/ui/Cover";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
 import { COVER_PALETTES } from "@/lib/data";
 import type { Cover as CoverModel, Song } from "@/lib/types";
+import type { SpotlightCategory } from "@/lib/weekly-spotlight-poll";
 
 type DbSong = {
   id: string;
@@ -28,17 +29,39 @@ function coverForSong(song: Song): CoverModel {
 type Props = {
   label: string;
   accentColor: string;
+  category: SpotlightCategory;
   song: Song | null;
   onSelect: (song: Song) => void;
   onClear: () => void;
 };
 
-export function SpotlightSearchCard({ label, accentColor, song, onSelect, onClear }: Props) {
+export function SpotlightSearchCard({ label, accentColor, category, song, onSelect, onClear }: Props) {
   const [dbQuery, setDbQuery] = useState("");
   const [dbSongs, setDbSongs] = useState<Song[]>([]);
   const [dbLoading, setDbLoading] = useState(false);
   const [spotifyQuery, setSpotifyQuery] = useState("");
   const { tracks: spotifyTracks, loading: spotifyLoading } = useSpotifySearch(spotifyQuery);
+  const [wonBefore, setWonBefore] = useState(false);
+
+  useEffect(() => {
+    if (!song) {
+      setWonBefore(false);
+      return;
+    }
+    const ac = new AbortController();
+    const params = new URLSearchParams({ category });
+    if (song.id) params.set("songId", song.id);
+    if (song.spotifyId) params.set("spotifyId", song.spotifyId);
+    fetch(`/api/weekly-poll/prior-winner?${params.toString()}`, { signal: ac.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : { wonBefore: false }))
+      .then((data: { wonBefore?: boolean }) => {
+        if (!ac.signal.aborted) setWonBefore(Boolean(data.wonBefore));
+      })
+      .catch(() => {
+        if (!ac.signal.aborted) setWonBefore(false);
+      });
+    return () => ac.abort();
+  }, [song, category]);
 
   useEffect(() => {
     const q = dbQuery.trim();
@@ -114,36 +137,44 @@ export function SpotlightSearchCard({ label, accentColor, song, onSelect, onClea
       </div>
 
       {song ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Cover cover={coverForSong(song)} song={song} size={44} rounded={8} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {song.title}
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Cover cover={coverForSong(song)} song={song} size={44} rounded={8} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {song.title}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {song.artist}
+              </div>
             </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {song.artist}
-            </div>
+            <button
+              type="button"
+              onClick={onClear}
+              aria-label={`Remover ${label.toLowerCase()}`}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                border: "none",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              <X size={14} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClear}
-            aria-label={`Remover ${label.toLowerCase()}`}
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              border: "none",
-              background: "var(--surface)",
-              color: "var(--text-muted)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            <X size={14} />
-          </button>
+          {wonBefore && (
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
+              Essa música já venceu {label.toLowerCase()} da Votação da Semana antes — ela pode ser indicada,
+              mas não vai entrar na enquete de novo.
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

@@ -878,6 +878,7 @@ export default function CreatePage() {
           <SpotlightSearchCard
             label="Flashback"
             accentColor="#7C3AED"
+            category="flashback"
             song={flashbackSong}
             onSelect={setFlashbackSong}
             onClear={() => setFlashbackSong(null)}
@@ -885,6 +886,7 @@ export default function CreatePage() {
           <SpotlightSearchCard
             label="Destaque"
             accentColor="var(--accent)"
+            category="destaque"
             song={destaqueSong}
             onSelect={setDestaqueSong}
             onClear={() => setDestaqueSong(null)}
