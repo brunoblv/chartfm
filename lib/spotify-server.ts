@@ -553,6 +553,7 @@ export async function getSpotifyAlbumMetadataById(
 export async function getSpotifyAlbumDetails(
   albumSpotifyId: string,
   market: string = "BR",
+  opts?: { maxAttempts?: number },
 ): Promise<SpotifyAlbumDetails | null> {
   const token = await getAccessToken();
   if (!token) return null;
@@ -562,6 +563,7 @@ export async function getSpotifyAlbumDetails(
   const res = await spotifyFetch(
     `${API_BASE}/albums/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`,
     { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 3600 } },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
   );
   if (!res?.ok) return null;
   const a = (await res.json()) as SpotifyAlbumApi;
@@ -852,6 +854,7 @@ export async function searchSpotifyAlbums(
   query: string,
   limit = 8,
   market: string = "BR",
+  opts?: { maxAttempts?: number },
 ): Promise<SpotifyAlbumSearchResult[]> {
   const q = query.trim();
   if (!q) return [];
@@ -866,10 +869,14 @@ export async function searchSpotifyAlbums(
   url.searchParams.set("limit", String(fetchLimit));
   url.searchParams.set("market", market);
 
-  const res = await spotifyFetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 0 },
-  });
+  const res = await spotifyFetch(
+    url.toString(),
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 0 },
+    },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+  );
   if (!res?.ok) return [];
 
   const json = (await res.json()) as SpotifyAlbumSearchJson;

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (!q) return NextResponse.json({ results: [] });
 
-  const spotifyResults = await searchSpotifyAlbums(q, 8);
+  const spotifyResults = await searchSpotifyAlbums(q, 8, "BR", { maxAttempts: 1 });
   if (!spotifyResults.length) return NextResponse.json({ results: [] });
 
   const spotifyIds = spotifyResults.map((r) => r.spotifyId);
@@ -49,30 +49,38 @@ export async function POST(req: NextRequest) {
   if (existing) return NextResponse.json({ id: existing.id });
 
   // Busca detalhes completos do álbum no Spotify (inclui artistSpotifyId)
-  const details = await getSpotifyAlbumDetails(spotifyAlbumId);
+  const details = await getSpotifyAlbumDetails(spotifyAlbumId, "BR", { maxAttempts: 1 });
   if (!details) return NextResponse.json({ error: "not_found_on_spotify" }, { status: 404 });
 
   const artistSpotifyId = details.artistSpotifyId;
   if (!artistSpotifyId) return NextResponse.json({ error: "artist_not_resolved" }, { status: 422 });
 
-  // Upsert artista
-  const artistProfile = await getSpotifyArtistById(artistSpotifyId);
-  await prisma.artist.upsert({
+  // Se o artista já existe localmente, evita nova chamada ao Spotify
+  const existingArtist = await prisma.artist.findUnique({
     where: { spotifyId: artistSpotifyId },
-    update: {
-      name: artistProfile?.name ?? details.artistName ?? "Artista",
-      genres: artistProfile?.genres ?? [],
-      ...(artistProfile?.spotifyUrl ? { spotifyUrl: artistProfile.spotifyUrl } : {}),
-      ...(artistProfile?.imageUrl ? { imageUrl: artistProfile.imageUrl } : {}),
-    },
-    create: {
-      spotifyId: artistSpotifyId,
-      name: artistProfile?.name ?? details.artistName ?? "Artista",
-      genres: artistProfile?.genres ?? [],
-      spotifyUrl: artistProfile?.spotifyUrl ?? null,
-      imageUrl: artistProfile?.imageUrl ?? null,
-    },
+    select: { name: true, genres: true, spotifyUrl: true, imageUrl: true },
   });
+
+  // Upsert artista (pula chamada ao Spotify se já existe localmente)
+  if (!existingArtist) {
+    const artistProfile = await getSpotifyArtistById(artistSpotifyId, { maxAttempts: 1 });
+    await prisma.artist.upsert({
+      where: { spotifyId: artistSpotifyId },
+      update: {
+        name: artistProfile?.name ?? details.artistName ?? "Artista",
+        genres: artistProfile?.genres ?? [],
+        ...(artistProfile?.spotifyUrl ? { spotifyUrl: artistProfile.spotifyUrl } : {}),
+        ...(artistProfile?.imageUrl ? { imageUrl: artistProfile.imageUrl } : {}),
+      },
+      create: {
+        spotifyId: artistSpotifyId,
+        name: artistProfile?.name ?? details.artistName ?? "Artista",
+        genres: artistProfile?.genres ?? [],
+        spotifyUrl: artistProfile?.spotifyUrl ?? null,
+        imageUrl: artistProfile?.imageUrl ?? null,
+      },
+    });
+  }
 
   // Já existe um álbum do mesmo artista com o mesmo nome (spotifyId diferente, ex.: outra edição)?
   const conflicting = await findConflictingAlbum(prisma, {
