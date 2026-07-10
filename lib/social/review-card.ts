@@ -256,7 +256,7 @@ export async function renderReviewCard(input: ReviewCardInput, variant: ReviewCa
 
   let browser: import("playwright").Browser | null = null;
   try {
-    const { chromium } = await import("playwright");
+    const { chromium } = await import(/* webpackIgnore: true, turbopackIgnore: true */ "playwright");
     browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
     await page.setContent(`<!DOCTYPE html><html><body style="margin:0;padding:0;"><canvas id="c" width="${width}" height="${height}"></canvas></body></html>`);

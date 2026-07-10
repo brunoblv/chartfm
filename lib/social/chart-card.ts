@@ -238,7 +238,7 @@ export async function renderChartTop3Card(input: ChartTop3CardInput, variant: Ch
 
   let browser: import("playwright").Browser | null = null;
   try {
-    const { chromium } = await import("playwright");
+    const { chromium } = await import(/* webpackIgnore: true, turbopackIgnore: true */ "playwright");
     browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
     const page = await browser.newPage({ viewport: { width: cfg.width, height: cfg.height }, deviceScaleFactor: 1 });
     await page.setContent(`<!DOCTYPE html><html><body style="margin:0;padding:0;"><canvas id="c" width="${cfg.width}" height="${cfg.height}"></canvas></body></html>`);
