@@ -46,6 +46,7 @@ export async function GET() {
         id: p.id,
         name: p.name,
         logo: p.logo,
+        description: p.description,
         genres: p.genres,
         isPrimary: p.isPrimary,
         sortOrder: p.sortOrder,
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
     genres?: string[];
     chartSize?: number | null;
     cadence?: unknown;
+    description?: string | null;
   };
   const name = typeof body.name === "string" ? body.name.trim() : "";
   if (name.length < 2) {
@@ -97,6 +99,9 @@ export async function POST(req: Request) {
   const genres = Array.isArray(body.genres)
     ? body.genres.map((g) => String(g).trim()).filter(Boolean).slice(0, 15)
     : [];
+
+  const description =
+    typeof body.description === "string" ? body.description.trim().slice(0, 500) || null : null;
 
   const chartSize =
     typeof body.chartSize === "number"
@@ -123,6 +128,7 @@ export async function POST(req: Request) {
       sortOrder,
       chartSize,
       cadence,
+      description,
     },
   });
 
@@ -131,6 +137,7 @@ export async function POST(req: Request) {
       id: parada.id,
       name: parada.name,
       logo: parada.logo,
+      description: parada.description,
       genres: parada.genres,
       isPrimary: parada.isPrimary,
       sortOrder: parada.sortOrder,
@@ -154,6 +161,7 @@ export async function PATCH(req: Request) {
     setPrimary?: boolean;
     chartSize?: number | null;
     cadence?: unknown;
+    description?: string | null;
   };
 
   const paradaId = typeof body.paradaId === "string" ? body.paradaId.trim() : "";
@@ -174,6 +182,12 @@ export async function PATCH(req: Request) {
     : undefined;
   const logo =
     body.logo === null ? null : typeof body.logo === "string" ? body.logo.trim() || null : undefined;
+  const description =
+    body.description === null
+      ? null
+      : typeof body.description === "string"
+        ? body.description.trim().slice(0, 500) || null
+        : undefined;
 
   if (name !== undefined && name.length > 0 && name.length < 2) {
     return NextResponse.json({ error: "Nome muito curto" }, { status: 400 });
@@ -201,6 +215,7 @@ export async function PATCH(req: Request) {
       ...(name !== undefined && name.length >= 2 ? { name } : {}),
       ...(genres !== undefined ? { genres } : {}),
       ...(logo !== undefined ? { logo } : {}),
+      ...(description !== undefined ? { description } : {}),
       ...(patchChartSize !== undefined ? { chartSize: patchChartSize } : {}),
       ...(patchCadence !== null ? { cadence: patchCadence } : {}),
     },
@@ -215,6 +230,7 @@ export async function PATCH(req: Request) {
       id: updated.id,
       name: updated.name,
       logo: updated.logo,
+      description: updated.description,
       genres: updated.genres,
       isPrimary: updated.isPrimary,
       sortOrder: updated.sortOrder,

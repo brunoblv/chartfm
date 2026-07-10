@@ -88,8 +88,6 @@ function useIsMobile() {
   return isMobile;
 }
 
-type ParadaNomeResponse = { paradaNome?: string | null };
-
 type ChartDetailExtended = ChartDetailPayload & {
   liked?: boolean;
   reposted?: boolean;
@@ -155,7 +153,6 @@ export default function ChartDetailPage() {
   );
   const [dbPayload, setDbPayload] = useState<ChartDetailExtended | null>(null);
   const [mockItem, setMockItem] = useState<TimelineItem | null>(null);
-  const [ownerParadaNome, setOwnerParadaNome] = useState<string | null>(null);
 
   const [variant, setVariant] = useState<Variant>("list");
   const [videoClipLayout, setVideoClipLayout] =
@@ -298,31 +295,6 @@ export default function ChartDetailPage() {
   const isOwner =
     !!session?.user?.id && !!user?.id && session.user.id === user.id;
   const canUseSpotifyImport = canUseSpotifyFeatures(session?.user?.handle);
-
-  useEffect(() => {
-    if (!user?.handle) return;
-    let cancelled = false;
-    const profileHandle = user.handle;
-    (async () => {
-      try {
-        const res = await fetch(
-          `/api/profile/${encodeURIComponent(profileHandle)}`,
-        );
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as ParadaNomeResponse;
-        const nome =
-          typeof data.paradaNome === "string" && data.paradaNome.trim()
-            ? data.paradaNome.trim()
-            : null;
-        if (!cancelled) setOwnerParadaNome(nome);
-      } catch {
-        if (!cancelled) setOwnerParadaNome(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.handle]);
 
   useEffect(() => {
     if (variant !== "video_clip" || !id || !isDbChart) return;
@@ -523,7 +495,7 @@ export default function ChartDetailPage() {
 
   const composeImageUrl = session?.user?.image ?? null;
   const tituloDetalheParada = t("chart.titleTop", {
-    name: ownerParadaNome ?? t("chart.title"),
+    name: chart?.paradaNome ?? t("chart.title"),
     count: chart?.entries.length ?? 0,
   });
 
@@ -1295,6 +1267,20 @@ export default function ChartDetailPage() {
                 gap: 10,
               }}
             >
+              {dbPayload.paradaDescription && (
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    fontWeight: 600,
+                    color: "var(--text)",
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {dbPayload.paradaDescription}
+                </p>
+              )}
               <p
                 style={{
                   margin: 0,

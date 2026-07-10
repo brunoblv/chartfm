@@ -282,6 +282,8 @@ model Parada {
   userId              String        @map("user_id")
   name                String
   logo                String?       @map("logo")
+  // Descrição livre, opcional, definida pelo usuário — exibida acima do texto autogerado no detalhe do chart.
+  description         String?       @map("description")
   genres              String[]      @default([])
   isPrimary           Boolean       @default(true) @map("is_primary")
   sortOrder           Int           @default(0) @map("sort_order")

@@ -50,6 +50,7 @@ type ParadaDraft = {
   id: string;
   name: string;
   logo: string | null;
+  description: string | null;
   isPrimary: boolean;
   genres: string[];
   sortOrder: number;
@@ -246,7 +247,7 @@ export default function SettingsPage() {
 
   function updateParadaDraft(
     paradaId: string,
-    patch: Partial<Pick<ParadaDraft, "name" | "genres" | "chartSize" | "cadence">>,
+    patch: Partial<Pick<ParadaDraft, "name" | "description" | "genres" | "chartSize" | "cadence">>,
   ) {
     setParadaDrafts((prev) =>
       prev.map((p) => (p.id === paradaId ? { ...p, ...patch } : p)),
@@ -317,6 +318,7 @@ export default function SettingsPage() {
             body: JSON.stringify({
               paradaId: p.id,
               name: p.name.trim(),
+              description: p.description?.trim() || null,
               genres: p.genres,
               chartSize: p.chartSize,
               cadence: p.cadence,
@@ -1126,6 +1128,30 @@ export default function SettingsPage() {
                             fontSize: 14,
                             background: "var(--fill-subtle)",
                             color: "var(--text)",
+                          }}
+                        />
+                      </label>
+
+                      {/* Descrição */}
+                      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>
+                          Descrição (opcional)
+                        </span>
+                        <textarea
+                          value={p.description ?? ""}
+                          onChange={(e) => updateParadaDraft(p.id, { description: e.target.value })}
+                          maxLength={500}
+                          rows={3}
+                          placeholder="Conte um pouco sobre esta parada…"
+                          style={{
+                            border: "1px solid var(--divider-strong)",
+                            borderRadius: 10,
+                            padding: "10px 12px",
+                            fontSize: 14,
+                            background: "var(--fill-subtle)",
+                            color: "var(--text)",
+                            fontFamily: "inherit",
+                            resize: "vertical",
                           }}
                         />
                       </label>

@@ -93,6 +93,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       destaqueSongId: true,
       flashbackSong: { include: SPOTLIGHT_SONG_INCLUDE },
       destaqueSong: { include: SPOTLIGHT_SONG_INCLUDE },
+      parada: { select: { name: true, description: true } },
       user: {
         select: {
           id: true,
@@ -366,6 +367,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
       reposted,
       dropouts: hydratedDropouts,
       contextText,
+      paradaDescription: row.parada.description,
     },
     { headers: NO_CACHE_HEADERS },
   );

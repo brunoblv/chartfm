@@ -177,7 +177,7 @@ export function ChartCard({
   const totalTracks = chart.entryCount ?? chart.entries.length;
   const remaining = totalTracks - preview.length;
   const formattedPeriod = formatChartPeriod(chart);
-  const chartName = user.paradaNome || `Top ${totalTracks}`;
+  const chartName = chart.paradaNome || user.paradaNome || `Top ${totalTracks}`;
   const [liked, setLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(chart.likes);
   const [liking, setLiking] = useState(false);

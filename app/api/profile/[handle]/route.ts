@@ -92,6 +92,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     likes: true,
     comments: true,
     reposts: true,
+    parada: { select: { name: true } },
     entries: {
       orderBy: { position: "asc" as const },
       select: {

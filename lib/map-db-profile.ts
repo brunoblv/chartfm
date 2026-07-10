@@ -70,6 +70,7 @@ type PrismaChartRow = {
   likes: number;
   comments: number;
   reposts: number;
+  parada?: { name: string } | null;
   entries: Array<{
     songId: string;
     position: number;
@@ -103,6 +104,7 @@ export function mapPrismaChartRowToChart(c: PrismaChartRow): Chart {
     week: c.weekIndex,
     weekLabel: c.weekLabel,
     dateRange: c.dateRange,
+    paradaNome: c.parada?.name ?? null,
     likes: c.likes,
     comments: c.comments,
     reposts: c.reposts,
@@ -212,6 +214,7 @@ export type ChartDetailPayload = {
   globalNumberOnes?: Record<string, number>;
   dropouts?: PersonalDropoutEntry[];
   contextText?: string;
+  paradaDescription?: string | null;
 };
 
 /** Uma parada com autor (para página de detalhe). */

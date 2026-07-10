@@ -128,6 +128,7 @@ async function getTimelineFeed(
       likes: true,
       comments: true,
       reposts: true,
+      parada: { select: { name: true } },
       user: {
         select: {
           id: true,
@@ -204,6 +205,7 @@ function mapChartRow(
   c: {
     id: string; weekLabel: string; dateRange: string; weekIndex: number;
     postedAt: Date; likes: number; comments: number; reposts: number;
+    parada: { name: string };
     user: {
       id: string; handle: string; name: string; avatarColor: string; image: string | null;
       followers: number; verified: boolean; streak: number; bio: string | null;
@@ -245,6 +247,7 @@ function mapChartRow(
       week: c.weekIndex,
       weekLabel: c.weekLabel,
       dateRange: c.dateRange,
+      paradaNome: c.parada.name,
       likes: c.likes,
       comments: c.comments,
       reposts: c.reposts,

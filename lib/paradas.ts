@@ -10,6 +10,7 @@ export type ParadaRow = {
   userId: string;
   name: string;
   logo: string | null;
+  description: string | null;
   genres: string[];
   isPrimary: boolean;
   sortOrder: number;

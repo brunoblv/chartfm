@@ -72,6 +72,8 @@ export interface Chart {
   week: number;
   weekLabel: string;
   dateRange: string;
+  /** Nome real da parada que gerou este chart específico (pode diferir da parada primária atual do autor). */
+  paradaNome?: string | null;
   entries: ChartEntry[];
   /** Total de faixas na parada (pode ser maior que `entries.length` em previews do feed). */
   entryCount?: number;
