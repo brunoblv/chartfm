@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { SocialPlatform, SocialPostPriority, SocialPostStatus, SocialPublishStatus } from "@prisma/client";
 import { upcomingSlots, weekdayInBrt, timeOfDayInBrt } from "@/lib/social/slots";
 import { renderSocialPostAssets } from "@/lib/social/render";
 import { publishToPlatform, publishToTelegram } from "@/lib/social/publish";
 import { isSocialPostingEnabled } from "@/lib/social/config";
+import { socialImageDiskPath } from "@/lib/social/image-path";
 import { getEventSchedules } from "@/lib/social/event-schedule";
 
 const PRIORITY_ORDER: Record<SocialPostPriority, number> = { CRITICAL: 0, HIGH: 1, NORMAL: 2, LOW: 3 };
@@ -203,10 +203,13 @@ export async function publishPost(postId: string): Promise<void> {
 
   let telegramImageBuffer: Buffer | null = null;
   if (post.imageTelegram11) {
-    try {
-      telegramImageBuffer = await fs.readFile(path.join(process.cwd(), "public", post.imageTelegram11.replace(/^\//, "")));
-    } catch {
-      telegramImageBuffer = null;
+    const diskPath = socialImageDiskPath(post.imageTelegram11);
+    if (diskPath) {
+      try {
+        telegramImageBuffer = await fs.readFile(diskPath);
+      } catch {
+        telegramImageBuffer = null;
+      }
     }
   }
 

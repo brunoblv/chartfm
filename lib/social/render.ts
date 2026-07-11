@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { SocialEventType } from "@prisma/client";
+import { SOCIAL_IMAGE_ROOT, socialImageUrl } from "@/lib/social/image-path";
 import { renderReviewCard } from "@/lib/social/review-card";
 import { renderChartTop3Card } from "@/lib/social/chart-card";
 import { loadAlbumReviewContent, toReviewCardInput } from "@/lib/social/content/album-review";
@@ -18,17 +19,19 @@ const CHART_TOP3_EVENT_TYPES: SocialEventType[] = [
 export type RenderedAssets = {
   captions: PlatformCaptions;
   hashtags: string[];
-  imageFeed45: string; // caminho público (/generated/social/...)
+  imageFeed45: string; // URL pública servida em runtime (/api/social-image/...)
   imageTelegram11: string;
   imageStory916: string;
 };
 
 async function saveVariant(postId: string, variant: "feed45" | "story916" | "telegram11", png: Buffer): Promise<string> {
-  const dir = path.join(process.cwd(), "public", "generated", "social", postId);
+  const dir = path.join(SOCIAL_IMAGE_ROOT, postId);
   await fs.mkdir(dir, { recursive: true });
   const fileName = `${variant}.png`;
   await fs.writeFile(path.join(dir, fileName), png);
-  return `/generated/social/${postId}/${fileName}`;
+  // Servida por /api/social-image (não pelo estático do Next): em produção o
+  // Next não serve arquivos criados em public/ depois do build.
+  return socialImageUrl(postId, fileName);
 }
 
 /** Gera as 3 artes + legendas para um SocialPost, de acordo com o tipo de evento. Retorna null se o tipo não tem template implementado ainda. */
