@@ -11,6 +11,7 @@ import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-poi
 import { resolveParadaForPublish } from "@/lib/paradas";
 import {
   finalizeSongsForChartPublish,
+  finalizeSongsForChartPublishWithFeedback,
   resolveSongsForFastPublish,
   sanitizeChartEntrySpotifyRefs,
 } from "@/lib/resolve-publish-songs";
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
 
   // Upsert songs/artists/albums — publicação rápida evita timeout do Spotify
   let songs: ResolvedSongRow[];
+  let enrichmentStats: { withCover: number; withoutCover: number; missingCoverIndices: number[] } | null = null;
 
   // Caminho lento faz dezenas de chamadas Spotify; sob rate limit (429), degrada para o
   // caminho rápido (só banco local) — a parada salva com o que se sabe e o cron de
@@ -128,7 +130,9 @@ export async function POST(req: NextRequest) {
 
   if (useFastPath) {
     const resolved = await resolveSongsForFastPublish(prisma, entries);
-    songs = await finalizeSongsForChartPublish(prisma, entries, resolved);
+    const result = await finalizeSongsForChartPublishWithFeedback(prisma, entries, resolved);
+    songs = result.songs;
+    enrichmentStats = result.enrichmentStats;
   } else {
   songs = [];
   const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
@@ -458,7 +462,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ id: chart.id }, { status: 201 });
+  const response: {
+    id: string;
+    enrichmentWarning?: {
+      missingCovers: number;
+      message: string;
+    };
+  } = {
+    id: chart.id,
+  };
+
+  // Aviso se mais de 10% das faixas ficaram sem capa — serão enriquecidas pelo cron noturno
+  if (enrichmentStats && enrichmentStats.withoutCover > 0) {
+    const ratio = enrichmentStats.withoutCover / entries.length;
+    if (ratio > 0.1 || enrichmentStats.withoutCover >= 5) {
+      response.enrichmentWarning = {
+        missingCovers: enrichmentStats.withoutCover,
+        message: `${enrichmentStats.withoutCover} faixa(s) ainda não têm capa. O sistema vai completar automaticamente nas próximas horas.`,
+      };
+    }
+  }
+
+  return NextResponse.json(response, { status: 201 });
   } catch (err) {
     console.error("[POST /api/charts]", err);
 

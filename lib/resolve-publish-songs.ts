@@ -332,11 +332,20 @@ function searchQueriesForRow(row: { title: string; artist: string }): string[] {
   const artist = primaryArtistName(row.artist);
   const titles = titleSearchVariants(row.title);
   const out = new Set<string>();
+
   for (const title of titles) {
+    // Estratégias principais: title + artist
     out.add(`${title} ${artist}`);
     out.add(`${artist} ${title}`);
     out.add(`track:${title} artist:${artist}`);
+
+    // Fallback: só título (para covers/versões)
+    out.add(title);
+
+    // Fallback: só artista + título simplificado
+    out.add(`artist:${artist} track:${title}`);
   }
+
   return [...out];
 }
 
@@ -578,7 +587,8 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
         continue;
       }
       try {
-        const ok = await enrichSongRowFallback(db, row, { maxAttempts: 1 });
+        // Aumentar maxAttempts: 3 tentativas para buscas (vs 1 para batch Spotify)
+        const ok = await enrichSongRowFallback(db, row, { maxAttempts: 3 });
         if (!ok) continue;
         const fresh = await db.song.findUnique({
           where: { id: row.id },
@@ -735,16 +745,70 @@ export async function finalizeSongsForChartPublish(
   songs: ResolvedPublishSong[],
 ): Promise<ResolvedPublishSong[]> {
   let resolved = await promoteEntrySpotifyIds(db, entries, songs);
-  // Só lote Spotify (até 50 IDs por request). searchFallback faz buscas sequenciais por faixa
-  // e estoura maxDuration na publicação — capas faltantes podem ser corrigidas depois no admin.
-  // deadlineAt força maxAttempts 1 no lote: sob 429 a publicação nunca fica presa esperando
-  // retry-after — salva sem capa e o cron de backfill corrige depois.
+  // Lote Spotify (até 50 IDs por request) + searchFallback para fórmulas sem capa.
+  // Deadline de 90s permite mais buscas para usuários com muitas faixas.
+  // deadlineAt força maxAttempts 1 no lote: sob 429 a publicação não fica presa,
+  // mas searchFallback tenta mais estratégias em paralelo (30s no fallback).
   resolved = await enrichResolvedSongsWithSpotifyMetadata(db, resolved, {
-    searchFallback: false,
-    deadlineAt: Date.now() + 30_000,
+    searchFallback: true,
+    deadlineAt: Date.now() + 90_000,
   });
   await applyEntryCoverHints(db, entries, resolved);
   return reloadResolvedSongs(db, resolved);
+}
+
+/**
+ * Versão com feedback: retorna músicas + metadados sobre enriquecimento.
+ * Útil para diagnosticar quais faixas não conseguiram capas/metadados.
+ */
+export async function finalizeSongsForChartPublishWithFeedback(
+  db: Db,
+  entries: PublishEntryInput[],
+  songs: ResolvedPublishSong[],
+): Promise<{
+  songs: ResolvedPublishSong[];
+  enrichmentStats: {
+    withCover: number;
+    withoutCover: number;
+    missingCoverIndices: number[];
+  };
+}> {
+  let resolved = await promoteEntrySpotifyIds(db, entries, songs);
+
+  const deferredIds = new Set<string>();
+  resolved = await enrichResolvedSongsWithSpotifyMetadata(db, resolved, {
+    searchFallback: true,
+    deadlineAt: Date.now() + 90_000,
+    deferredIds,
+  });
+
+  await applyEntryCoverHints(db, entries, resolved);
+  resolved = await reloadResolvedSongs(db, resolved);
+
+  // Carregar informação de capas para feedback
+  const final = await db.song.findMany({
+    where: { id: { in: resolved.map((s) => s.id) } },
+    select: { id: true, albumSpotifyId: true, albumRef: { select: { coverUrl: true } } },
+  });
+
+  const hasCovers = new Set(
+    final
+      .filter((s) => s.albumRef?.coverUrl?.trim())
+      .map((s) => s.id),
+  );
+
+  const missingCoverIndices = resolved
+    .map((s, idx) => (!hasCovers.has(s.id) ? idx : -1))
+    .filter((idx) => idx >= 0);
+
+  return {
+    songs: resolved,
+    enrichmentStats: {
+      withCover: hasCovers.size,
+      withoutCover: resolved.length - hasCovers.size,
+      missingCoverIndices,
+    },
+  };
 }
 
 const SONG_COVER_SELECT = {
