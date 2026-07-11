@@ -67,9 +67,10 @@ TZ=America/Sao_Paulo
 20 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
 
 # Postagens Automáticas — agenda a fila editorial e publica os posts do slot atual (Facebook/Instagram/Threads/Telegram)
+# Rodando a cada 1h para melhor estabilidade (antes era 15 min: `*/15 * * * *`)
 # (esteve desativado 2026-07-11 a 2026-07-11 por instabilidade na VPS — causa raiz era o
 # Playwright/Chromium usado nas artes de social, substituído por @napi-rs/canvas)
-*/15 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-scheduler >> /root/chartfm/logs/cron.log 2>&1
+0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-scheduler >> /root/chartfm/logs/cron.log 2>&1
 
 # 1h — completa músicas/álbuns/artistas pendentes via Wikipedia/MusicBrainz/Last.fm/Spotify.
 # Itens sem resultado em nenhuma fonte são marcados (*NotFoundAt) e não reentram na fila em
