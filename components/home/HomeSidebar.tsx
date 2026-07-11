@@ -209,7 +209,7 @@ export function TrendingArtists({
   artists,
   weekLabel,
 }: {
-  artists: { name: string; totalPoints: number; chartCount: number; imageUrl: string | null }[];
+  artists: { name: string; totalPoints: number; chartCount: number; imageUrl: string | null; spotifyId?: string | null }[];
   weekLabel: string;
 }) {
   const { t } = useTranslations();
@@ -223,7 +223,7 @@ export function TrendingArtists({
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {artists.map((a, i) => (
-          <Link key={a.name} href={buildArtistPath(a.name)} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
+          <Link key={a.name} href={buildArtistPath(a.name, a.spotifyId ?? undefined)} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", width: 20, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
             <div
               style={{

@@ -134,7 +134,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
           artistSpotifyId: artist.spotifyId,
           titles: titlesToCheck,
           excludeSongId: id,
-        })) ?? (await findSongConflictByTitleArtist(prisma, title, artist.name));
+        })) ?? (await findSongConflictByTitleArtist(prisma, title, artist.name, artist.spotifyId));
       if (raceConflict) return NextResponse.json(songConflictBody(raceConflict), { status: 409 });
       return NextResponse.json({ error: "song_already_exists_same_title_artist" }, { status: 409 });
     }

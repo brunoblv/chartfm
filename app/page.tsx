@@ -26,6 +26,7 @@ import { getCopaLiveFeedFixtures } from "@/lib/copa-live-feed";
 import { getRecommendationsFeed } from "@/lib/recommendations-feed";
 import { getSystemFeedPosts } from "@/lib/system-feed";
 import { getEditorialPicksSorted } from "@/lib/editorial-picks";
+import { resolveEditorialPreviewImages } from "@/lib/editorial-preview-image";
 import { mergeHomeFeed, filterFollowingRecommendations } from "@/lib/home-mixed-feed";
 import { getPrimaryParada } from "@/lib/paradas";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
@@ -397,7 +398,16 @@ export default async function HomePage() {
       }),
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
-  const recentEditorialPicks = editorialPicks.slice(0, 10);
+  // Resolve capa (YouTube/Spotify) dos picks sem previewImage para o card do feed mostrar foto.
+  const editorialPreviewImages = await resolveEditorialPreviewImages(editorialPicks).catch((err) => {
+    console.error("[home] resolveEditorialPreviewImages", err);
+    return new Map<string, string | null>();
+  });
+  const editorialPicksWithImages = editorialPicks.map((pick) => ({
+    ...pick,
+    previewImage: editorialPreviewImages.get(pick.slug) ?? pick.previewImage,
+  }));
+  const recentEditorialPicks = editorialPicksWithImages.slice(0, 10);
 
   const forYouFeed = mergeHomeFeed(allFeed, reviewsForYou, recommendationsFeed, 30, systemFeedPosts, recentEditorialPicks);
   const followingFeed = mergeHomeFeed(
@@ -430,7 +440,7 @@ export default async function HomePage() {
         followingFeed={followingFeed}
         reviewsFeed={reviewsFeed}
         recommendationsFeed={recommendationsFeed}
-        editorialFeed={editorialPicks}
+        editorialFeed={editorialPicksWithImages}
       />
     </div>
   );
@@ -585,6 +595,7 @@ async function getTrendingArtists(weekIdx: number, limit = 4) {
     name,
     totalPoints,
     chartCount,
+    spotifyId: spotifyId ?? null,
     imageUrl: (spotifyId ? bySpotifyId.get(spotifyId) : null) ?? byName.get(name.toLowerCase()) ?? null,
   }));
 }

@@ -253,8 +253,14 @@ export default async function ArtistPage({
   if (artistRef?.name?.trim()) nameCandidates.add(artistRef.name.trim());
   if (slugNameHint) nameCandidates.add(slugNameHint);
   if (spotifyProfile?.name?.trim()) nameCandidates.add(spotifyProfile.name.trim());
+  // Correspondência por nome só vale para músicas legadas sem artistSpotifyId vinculado —
+  // do contrário, artistas homônimos com spotifyId diferente ficariam misturados.
   for (const n of nameCandidates) {
-    if (n) entryOrFilters.push({ song: { artist: { equals: n, mode: "insensitive" } } });
+    if (n) {
+      entryOrFilters.push({
+        song: { artist: { equals: n, mode: "insensitive" }, artistSpotifyId: null },
+      });
+    }
   }
   // Músicas onde o artista aparece como feat
   if (artistRef?.id != null) {
@@ -350,7 +356,7 @@ export default async function ArtistPage({
   for (const sid of spotifyIdsForSong) songCatalogOr.push({ artistSpotifyId: sid });
   for (const n of nameCandidates) {
     const t = n?.trim();
-    if (t) songCatalogOr.push({ artist: { equals: t, mode: "insensitive" } });
+    if (t) songCatalogOr.push({ artist: { equals: t, mode: "insensitive" }, artistSpotifyId: null });
   }
   // Músicas onde o artista aparece como feat
   if (artistRef?.id != null) {
@@ -390,8 +396,9 @@ export default async function ArtistPage({
     const key = songKey(e.song.title, e.song.artist);
     const manual = e.song.albumRef?.coverUrl?.trim() || null;
     const isPrimary =
-      (e.song.artistSpotifyId != null && spotifyIdsForSong.has(e.song.artistSpotifyId)) ||
-      [...nameCandidates].some((n) => n.toLowerCase() === e.song.artist.trim().toLowerCase());
+      e.song.artistSpotifyId != null
+        ? spotifyIdsForSong.has(e.song.artistSpotifyId)
+        : [...nameCandidates].some((n) => n.toLowerCase() === e.song.artist.trim().toLowerCase());
     const cur = songsMap.get(key) ?? {
       key,
       songId: e.song.id,
@@ -505,8 +512,9 @@ export default async function ArtistPage({
           albumRefId: db.albumRef?.id ?? null,
           points: 0,
           isFeat: !(
-            (db.artistSpotifyId != null && spotifyIdsForSong.has(db.artistSpotifyId)) ||
-            [...nameCandidates].some((n) => n.toLowerCase() === db.artist.trim().toLowerCase())
+            db.artistSpotifyId != null
+              ? spotifyIdsForSong.has(db.artistSpotifyId)
+              : [...nameCandidates].some((n) => n.toLowerCase() === db.artist.trim().toLowerCase())
           ),
           cover: catalogSongCover(db.id, manual),
           weeks: 0,

@@ -249,21 +249,31 @@ window.__chartfmDrawReviewCard = async function (args) {
     Math.round(70 * u)
   );
 
+  // Bloco de texto: espaçamento NÃO comprime por vh (senão as linhas do título
+  // se sobrepõem e invadem o badge nos formatos baixos); em canvas curto
+  // (telegram 1:1) só reduzimos o corpo das fontes.
+  var compact = vh < 0.65;
+  var titleFont = Math.round((compact ? 52 : 60) * u);
+  var titleLineH = Math.round(titleFont * 1.12);
+  var artistFont = Math.round((compact ? 30 : 34) * u);
+
   ctx.fillStyle = "#1D1D1F";
-  ctx.font = "800 " + Math.round(60 * u) + "px " + FONT;
+  ctx.font = "800 " + titleFont + "px " + FONT;
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   var titleLines = wrapText(albumTitle, W - Math.round(160 * u), 2);
-  var y = coverY + coverSize + Math.round(110 * u * vh);
+  // 44*u abaixo da capa limpa o badge, que desce 28*u além dela (+ sombra).
+  var y = coverY + coverSize + Math.round(44 * u) + titleFont;
   for (var i2 = 0; i2 < titleLines.length; i2++) {
     ctx.fillText(titleLines[i2], W / 2, y);
-    y += Math.round(68 * u * vh);
+    y += titleLineH;
   }
+  y -= titleLineH;
 
   ctx.fillStyle = "#86868B";
-  ctx.font = "500 " + Math.round(34 * u) + "px " + FONT;
-  ctx.fillText(albumArtist, W / 2, y + Math.round(8 * u * vh));
-  y += Math.round(72 * u * vh);
+  ctx.font = "500 " + artistFont + "px " + FONT;
+  y += Math.round(artistFont * 1.7);
+  ctx.fillText(albumArtist, W / 2, y);
 
   var pillFont = Math.round(28 * u);
   var countFont = Math.round(24 * u);
@@ -271,11 +281,11 @@ window.__chartfmDrawReviewCard = async function (args) {
     scoreLabelText.toUpperCase(),
     reviewCount,
     W / 2,
-    y + Math.round(24 * u * vh),
+    y + Math.round((compact ? 56 : 72) * u),
     pillFont,
     countFont,
     Math.round(16 * u)
-  ) + Math.round(48 * u * vh);
+  ) + Math.round(64 * u);
 
   ctx.fillStyle = "#86868B";
   ctx.font = "700 " + Math.round(26 * u) + "px " + FONT;

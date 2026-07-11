@@ -308,10 +308,18 @@ export type WikipediaArtistBio = {
 
 const MAX_BIO_LENGTH = 1500;
 
+/** A página tem infobox de artista/banda musical? Evita futebolista, flor, etc. com o mesmo nome. */
+function isMusicArtistPage(wikitext: string): boolean {
+  return /\{\{\s*infobox (musical artist|banda|artista musical|conjunto musical)\b/i.test(wikitext);
+}
+
 /** Bio do artista: intro da Wikipedia em pt (preferido) ou en. */
 export async function getWikipediaArtistBio(name: string): Promise<WikipediaArtistBio | null> {
   for (const lang of ["pt", "en"] as const) {
     for (const pageTitle of await searchTitles(lang, name, 3)) {
+      const wikitext = await getWikitext(lang, pageTitle);
+      if (!wikitext || !isMusicArtistPage(wikitext)) continue;
+
       const extract = (await getPlainExtract(lang, pageTitle, true))?.trim();
       if (!extract || extract.length < 80) continue;
       if (!normalizeLoose(extract.slice(0, 400)).includes(normalizeLoose(name).split(" ")[0] ?? "")) continue;

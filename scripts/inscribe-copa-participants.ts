@@ -51,10 +51,17 @@ type Resolved = {
 };
 
 async function resolveArtist(name: string): Promise<Resolved | null> {
-  const local = await prisma.artist.findFirst({
+  const locals = await prisma.artist.findMany({
     where: { name: { equals: name, mode: "insensitive" } },
     orderBy: { id: "asc" },
   });
+  const distinctSpotifyIds = new Set(locals.map((a) => a.spotifyId).filter(Boolean));
+  if (distinctSpotifyIds.size > 1) {
+    throw new Error(
+      `Nome ambíguo "${name}": ${distinctSpotifyIds.size} artistas homônimos no catálogo (spotifyIds: ${[...distinctSpotifyIds].join(", ")}). Resolva manualmente informando o spotifyId correto.`,
+    );
+  }
+  const local = locals[0];
   if (local?.spotifyId) {
     return { spotifyId: local.spotifyId, name: local.name, imageUrl: local.imageUrl, source: "catálogo" };
   }

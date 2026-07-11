@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("Unique constraint")) {
-      const conflict = await findSongConflictByTitleArtist(prisma, title, artist.name);
+      const conflict = await findSongConflictByTitleArtist(prisma, title, artist.name, artist.spotifyId);
       if (conflict) return NextResponse.json(songConflictBody(conflict), { status: 409 });
       return NextResponse.json({ error: "song_already_exists_same_title_artist" }, { status: 409 });
     }

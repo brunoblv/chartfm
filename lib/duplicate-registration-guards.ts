@@ -110,11 +110,13 @@ export async function findSongConflictByTitleArtist(
   db: Db,
   title: string,
   artistName: string,
+  artistSpotifyId: string,
 ): Promise<DuplicateSongConflict | null> {
   const song = await db.song.findFirst({
     where: {
       title: { equals: title, mode: "insensitive" },
       artist: { equals: artistName, mode: "insensitive" },
+      artistSpotifyId,
     },
     select: {
       id: true,

@@ -152,7 +152,7 @@ export function TimelineTabs({
         ) : activeTab === "artigos" ? (
           editorialFeed.length > 0 ? (
             editorialFeed.map((pick) => (
-              <EditorialPostPreviewCard key={pick.slug} pick={pick} previewImage={pick.previewImage ?? null} />
+              <EditorialPostPreviewCard key={pick.slug} pick={pick} previewImage={pick.previewImage ?? null} variant="compact" />
             ))
           ) : (
             <EmptyState message={t("timeline.noArticles")} sub={t("timeline.articlesWillAppear")} />
