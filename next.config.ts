@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pg", "@napi-rs/canvas"],
   allowedDevOrigins: ["127.0.0.1", "localhost"],
+  // A VPS tem só 1.9 GB de RAM: a checagem de tipos DENTRO do `next build` dá um
+  // pico que o OOM killer corta (o build compila e morre em "Running TypeScript
+  // ...Killed"). Rodamos o type-check separado (npm run typecheck) antes de subir
+  // — o build da VPS não precisa repetir isso.
+  typescript: { ignoreBuildErrors: true },
   experimental: {
     serverActions: {
       bodySizeLimit: "5mb",
