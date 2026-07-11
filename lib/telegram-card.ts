@@ -1,3 +1,5 @@
+import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas";
+
 export type TelegramCardInput = {
   /** Etiqueta curta acima do texto, ex.: "Copa ChartFM", "Parada Global". */
   eyebrow: string;
@@ -7,194 +9,247 @@ export type TelegramCardInput = {
   accent: string;
 };
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+// Sem Apple/Segoe (não existem em fontconfig na VPS Linux) — fontconfig resolve
+// para a sans-serif padrão do sistema (ex.: DejaVu Sans/Liberation Sans).
+const FONT = "sans-serif";
+const W = 1080;
+const H = 1080;
+
+function hexWithAlpha(hex: string, alphaHex: string): string {
+  return `${hex}${alphaHex}`;
 }
 
-/** HTML de um card quadrado 1080x1080 com a identidade visual do ChartFM. */
-export function buildCardHtml({ eyebrow, text, accent }: TelegramCardInput): string {
-  const safeEyebrow = escapeHtml(eyebrow);
-  const safeText = escapeHtml(text);
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 1080px; height: 1080px; background: #FCFCFD; }
-    .canvas {
-      position: relative;
-      width: 1080px;
-      height: 1080px;
-      background: #FCFCFD;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
     }
-    .pill {
-      position: absolute;
-      left: -40px;
-      top: 150px;
-      width: 92px;
-      height: 780px;
-      border-radius: 9999px;
-      background: linear-gradient(180deg, ${accent} 0%, #FF7098 55%, #FFBCCA 100%);
-    }
-    .logo {
-      position: absolute;
-      top: 72px;
-      left: 96px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .logo-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: ${accent};
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .logo-text { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; color: #1D1D1F; }
-    .content {
-      position: absolute;
-      left: 96px;
-      right: 96px;
-      top: 300px;
-      display: flex;
-      flex-direction: column;
-      gap: 28px;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-self: flex-start;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 22px;
-      border-radius: 9999px;
-      background: ${accent}1A;
-      color: ${accent};
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-    }
-    .eyebrow .dot { width: 12px; height: 12px; border-radius: 50%; background: ${accent}; }
-    .headline {
-      font-size: 62px;
-      line-height: 1.14;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #1D1D1F;
-      max-width: 860px;
-    }
-    .footer {
-      position: absolute;
-      left: 96px;
-      bottom: 72px;
-      font-size: 26px;
-      font-weight: 700;
-      color: #86868B;
-    }
-    .bars {
-      position: absolute;
-      right: 40px;
-      bottom: 0;
-      display: flex;
-      align-items: flex-end;
-      gap: 16px;
-    }
-    .bar { width: 60px; border-radius: 100px 100px 0 0; }
-    .dots {
-      position: absolute;
-      top: 72px;
-      right: 72px;
-      display: grid;
-      grid-template-columns: repeat(6, 13px);
-      gap: 9px;
-    }
-    .dot-bg { width: 5px; height: 5px; border-radius: 50%; background: ${accent}; opacity: 0.18; }
-  </style>
-</head>
-<body>
-  <div class="canvas">
-    <svg style="position:absolute;top:0;right:0;" width="560" height="440" viewBox="0 0 560 460">
-      <defs>
-        <linearGradient id="blob1" x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="${accent}" stop-opacity="0.14"/>
-          <stop offset="100%" stop-color="#FFB8C2" stop-opacity="0.02"/>
-        </linearGradient>
-      </defs>
-      <path d="M560,0 L560,270 Q510,460 390,420 Q200,368 222,175 Q248,-38 560,0Z" fill="url(#blob1)"/>
-    </svg>
-    <svg style="position:absolute;bottom:0;left:0;" width="1080" height="220" viewBox="0 0 1080 230" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="wave1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#FFD0D8" stop-opacity="0.18"/>
-          <stop offset="100%" stop-color="#FFB8C8" stop-opacity="0.45"/>
-        </linearGradient>
-      </defs>
-      <path d="M0,150 Q270,75 540,118 Q810,158 1080,90 L1080,230 L0,230Z" fill="url(#wave1)"/>
-    </svg>
+  }
+  if (current) lines.push(current);
+  return lines;
+}
 
-    <div class="pill"></div>
+/** Blob decorativo do canto superior direito (mesmo path do card HTML original). */
+function drawTopRightBlob(ctx: SKRSContext2D, accent: string) {
+  const boxX = W - 560; // width:560, positioned right:0
+  const scaleY = 440 / 460; // width/height do <svg> vs viewBox
+  const tx = (x: number) => boxX + x;
+  const ty = (y: number) => y * scaleY;
 
-    <div class="logo">
-      <div class="logo-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
-          <rect x="3" y="13" width="4" height="8" rx="1.5"/>
-          <rect x="10" y="8" width="4" height="13" rx="1.5"/>
-          <rect x="17" y="4" width="4" height="17" rx="1.5"/>
-        </svg>
-      </div>
-      <span class="logo-text">ChartFM</span>
-    </div>
+  const grad = ctx.createLinearGradient(tx(560), ty(0), tx(0), ty(460));
+  grad.addColorStop(0, hexWithAlpha(accent, "24")); // ~0.14 opacity
+  grad.addColorStop(1, "#FFB8C205"); // ~0.02 opacity
 
-    <div class="content">
-      <span class="eyebrow"><span class="dot"></span>${safeEyebrow}</span>
-      <div class="headline">${safeText}</div>
-    </div>
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(tx(560), ty(0));
+  ctx.lineTo(tx(560), ty(270));
+  ctx.quadraticCurveTo(tx(510), ty(460), tx(390), ty(420));
+  ctx.quadraticCurveTo(tx(200), ty(368), tx(222), ty(175));
+  ctx.quadraticCurveTo(tx(248), ty(-38), tx(560), ty(0));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
 
-    <div class="footer">chartfm.com.br</div>
+/** Onda decorativa do rodapé (mesmo path do card HTML original). */
+function drawBottomWave(ctx: SKRSContext2D) {
+  const boxY = H - 220; // height:220, positioned bottom:0
+  const scaleY = 220 / 230;
+  const ty = (y: number) => boxY + y * scaleY;
 
-    <div class="bars">
-      <div class="bar" style="height:240px;background:linear-gradient(180deg,#FFB8C8,#FFD8E2);opacity:0.45;"></div>
-      <div class="bar" style="height:360px;background:linear-gradient(180deg,#FF88A8,#FFB8C8);opacity:0.62;"></div>
-      <div class="bar" style="height:520px;background:linear-gradient(180deg,${accent},#FF88A8);opacity:0.80;"></div>
-    </div>
+  const grad = ctx.createLinearGradient(0, boxY, 0, H);
+  grad.addColorStop(0, "#FFD0D82E"); // ~0.18 opacity
+  grad.addColorStop(1, "#FFB8C873"); // ~0.45 opacity
 
-    <div class="dots" id="dots"></div>
-  </div>
-  <script>
-    var el = document.getElementById('dots');
-    for (var i = 0; i < 54; i++) { var d = document.createElement('div'); d.className = 'dot-bg'; el.appendChild(d); }
-  </script>
-</body>
-</html>`;
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(0, ty(150));
+  ctx.quadraticCurveTo(270, ty(75), 540, ty(118));
+  ctx.quadraticCurveTo(810, ty(158), 1080, ty(90));
+  ctx.lineTo(1080, ty(230));
+  ctx.lineTo(0, ty(230));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPill(ctx: SKRSContext2D, accent: string) {
+  const x = -40, y = 150, w = 92, h = 780;
+  const grad = ctx.createLinearGradient(0, y, 0, y + h);
+  grad.addColorStop(0, accent);
+  grad.addColorStop(0.55, "#FF7098");
+  grad.addColorStop(1, "#FFBCCA");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, w / 2);
+  ctx.fill();
+}
+
+function drawLogo(ctx: SKRSContext2D, accent: string) {
+  const boxX = 96, boxY = 72, boxSize = 48;
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxSize, boxSize, 12);
+  ctx.fill();
+
+  // Ícone de barras (mesmo viewBox 24x24 do SVG original), escalado para 26x26 centralizado na box.
+  const iconSize = 26;
+  const scale = iconSize / 24;
+  const iconX = boxX + (boxSize - iconSize) / 2;
+  const iconY = boxY + (boxSize - iconSize) / 2;
+  const bar = (x: number, y: number, w: number, h: number, r: number) => {
+    ctx.beginPath();
+    ctx.roundRect(iconX + x * scale, iconY + y * scale, w * scale, h * scale, r * scale);
+    ctx.fill();
+  };
+  ctx.fillStyle = "#fff";
+  bar(3, 13, 4, 8, 1.5);
+  bar(10, 8, 4, 13, 1.5);
+  bar(17, 4, 4, 17, 1.5);
+
+  ctx.fillStyle = "#1D1D1F";
+  ctx.font = `800 30px ${FONT}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText("ChartFM", boxX + boxSize + 12, boxY + boxSize / 2);
+}
+
+function drawEyebrow(ctx: SKRSContext2D, text: string, accent: string, x: number, y: number): number {
+  const fontSize = 26;
+  ctx.font = `700 ${fontSize}px ${FONT}`;
+  const dotSize = 12;
+  const gap = 10;
+  const padX = 22, padY = 12;
+  const textW = ctx.measureText(text).width;
+  const w = dotSize + gap + textW + padX * 2;
+  const h = fontSize + padY * 2;
+
+  ctx.fillStyle = hexWithAlpha(accent, "1A");
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 9999);
+  ctx.fill();
+
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(x + padX + dotSize / 2, y + h / 2, dotSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + padX + dotSize + gap, y + h / 2 + 1);
+
+  return h;
+}
+
+function drawBars(ctx: SKRSContext2D, accent: string) {
+  const bars = [
+    { h: 240, from: "#FFB8C8", to: "#FFD8E2", opacity: "73" }, // ~0.45
+    { h: 360, from: "#FF88A8", to: "#FFB8C8", opacity: "9E" }, // ~0.62
+    { h: 520, from: accent, to: "#FF88A8", opacity: "CC" }, // ~0.80
+  ];
+  const barW = 60, gap = 16;
+  const containerRight = W - 40;
+  const containerW = bars.length * barW + (bars.length - 1) * gap;
+  const containerLeft = containerRight - containerW;
+
+  bars.forEach((bar, i) => {
+    const x = containerLeft + i * (barW + gap);
+    const y = H - bar.h;
+    const grad = ctx.createLinearGradient(0, y, 0, H);
+    grad.addColorStop(0, bar.from);
+    grad.addColorStop(1, bar.to);
+    ctx.save();
+    ctx.globalAlpha = parseInt(bar.opacity, 16) / 255;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, bar.h, [barW / 2, barW / 2, 0, 0]);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawDotsGrid(ctx: SKRSContext2D, accent: string) {
+  const cell = 13, gap = 9, cols = 6, count = 54;
+  const rows = Math.ceil(count / cols);
+  const width = cols * cell + (cols - 1) * gap;
+  const left = W - 72 - width;
+  const top = 72;
+
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = accent;
+  for (let i = 0; i < count; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = left + col * (cell + gap);
+    const y = top + row * (cell + gap);
+    ctx.beginPath();
+    ctx.arc(x + 2.5, y + 2.5, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  void rows;
 }
 
 /**
- * Renderiza o card do evento como PNG usando o Chromium do Playwright.
- * Best-effort: retorna null se o Playwright/Chromium não estiver disponível.
+ * Renderiza o card do evento como PNG com @napi-rs/canvas (Skia nativo, sem
+ * browser). Antes usava Chromium via Playwright — um processo pesado por
+ * chamada, que chegou a derrubar a VPS/o build.
  */
 export async function renderEventCard(input: TelegramCardInput): Promise<Buffer | null> {
-  let browser: import("playwright").Browser | null = null;
   try {
-    const { chromium } = await import("playwright");
-    browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-    const page = await browser.newPage({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 1 });
-    await page.setContent(buildCardHtml(input), { waitUntil: "networkidle" });
-    const png = await page.screenshot({ type: "png" });
-    return Buffer.from(png);
+    const canvas = createCanvas(W, H);
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#FCFCFD";
+    ctx.fillRect(0, 0, W, H);
+
+    drawTopRightBlob(ctx, input.accent);
+    drawBottomWave(ctx);
+    drawPill(ctx, input.accent);
+    drawLogo(ctx, input.accent);
+
+    const contentLeft = 96;
+    const contentRight = W - 96;
+    let y = 300;
+    const eyebrowH = drawEyebrow(ctx, input.eyebrow, input.accent, contentLeft, y);
+    y += eyebrowH + 28;
+
+    ctx.fillStyle = "#1D1D1F";
+    ctx.font = `800 62px ${FONT}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    const maxWidth = Math.min(860, contentRight - contentLeft);
+    const lines = wrapText(ctx, input.text, maxWidth);
+    const lineH = Math.round(62 * 1.14);
+    y += 62; // primeira linha usa baseline alphabetic
+    for (const line of lines) {
+      ctx.fillText(line, contentLeft, y);
+      y += lineH;
+    }
+
+    ctx.fillStyle = "#86868B";
+    ctx.font = `700 26px ${FONT}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("chartfm.com.br", contentLeft, H - 72);
+
+    drawBars(ctx, input.accent);
+    drawDotsGrid(ctx, input.accent);
+
+    return canvas.toBuffer("image/png");
   } catch (err) {
     console.error("[telegram-card] falha ao renderizar card", err);
     return null;
-  } finally {
-    await browser?.close().catch(() => {});
   }
 }

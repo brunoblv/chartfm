@@ -66,11 +66,14 @@ TZ=America/Sao_Paulo
 # Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora)
 20 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
 
-# Copa — drena a fila de votos automáticos (@bruno), 1 voto a cada 10 minutos
-*/10 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-bruno-auto-vote >> /root/chartfm/logs/cron.log 2>&1
+# Copa — voto automático (@bruno) DESATIVADO 2026-07-11 (instabilidade na VPS). Código intacto em
+# /api/cron/copa-bruno-auto-vote. Reativar: descomentar a linha abaixo e rodar `crontab deploy/crontab` na VPS.
+# */10 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-bruno-auto-vote >> /root/chartfm/logs/cron.log 2>&1
 
-# Postagens Automáticas — agenda a fila editorial e publica os posts do slot atual (Facebook/Instagram/Threads/Telegram)
-*/15 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-scheduler >> /root/chartfm/logs/cron.log 2>&1
+# Postagens Automáticas — DESATIVADO 2026-07-11 (instabilidade na VPS). Código intacto em
+# lib/social/scheduler.ts; publicação manual pelo admin (/admin/postagens) continua funcionando.
+# Reativar: descomentar a linha abaixo e rodar `crontab deploy/crontab` na VPS.
+# */15 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-scheduler >> /root/chartfm/logs/cron.log 2>&1
 
 # 1h — completa músicas/álbuns/artistas pendentes via Wikipedia/MusicBrainz/Last.fm/Spotify.
 # Itens sem resultado em nenhuma fonte são marcados (*NotFoundAt) e não reentram na fila em

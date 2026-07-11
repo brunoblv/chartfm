@@ -31,6 +31,7 @@
     "db:down": "docker compose down"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^1.0.2",
     "@next/third-parties": "^16.2.5",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
@@ -41,7 +42,6 @@
     "next-auth": "^4.24.11",
     "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
-    "playwright": "^1.60.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

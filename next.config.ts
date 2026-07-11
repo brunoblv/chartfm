@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["pg"],
+  serverExternalPackages: ["pg", "@napi-rs/canvas"],
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   experimental: {
     serverActions: {
