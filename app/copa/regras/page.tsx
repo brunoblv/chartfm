@@ -216,9 +216,9 @@ export default function CopaRegrasPage() {
         <OrderedList
           items={[
             "Maior número de pontos",
-            "Confronto direto",
-            "Saldo de votos",
-            "Maior número de votos recebidos",
+            "Confronto direto (apenas em empate entre dois artistas)",
+            "Saldo de gols",
+            "Maior número de gols marcados",
             "Número de vitórias",
             "Sorteio",
           ]}

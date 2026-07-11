@@ -648,7 +648,7 @@ export type StandingRow = {
   GF: number;
   GA: number;
   GD: number;
-  /** Votos recebidos/sofridos/saldo — usados nos critérios de desempate (regulamento §6). */
+  /** Votos recebidos/sofridos/saldo — exibidos na tabela (o desempate usa gols, regulamento §6). */
   VF: number;
   VA: number;
   VD: number;
@@ -711,17 +711,25 @@ export function computeStandings(
 
   Object.values(t).forEach((r) => { r.GD = r.GF - r.GA; r.VD = r.VF - r.VA; });
 
-  // Regulamento §6: pontos → confronto direto → saldo de votos → votos recebidos
+  // Quantos artistas empatam em cada total de pontos — o confronto direto só é
+  // critério quando o empate é entre exatamente DOIS artistas.
+  const ptsGroupSize = new Map<number, number>();
+  Object.values(t).forEach((r) => ptsGroupSize.set(r.Pts, (ptsGroupSize.get(r.Pts) ?? 0) + 1));
+
+  // Regulamento §6: pontos → confronto direto → saldo de gols → gols marcados
   // → número de vitórias → sorteio. O confronto direto só decide empates diretos
-  // entre dois artistas; com 3+ artistas empatados, passa direto para os critérios
-  // seguintes (convenção padrão de tabelas de futebol).
+  // entre dois artistas; com 3+ artistas empatados (onde o confronto direto pode
+  // ser cíclico), passa direto para os critérios seguintes — convenção padrão de
+  // tabelas de futebol.
   return Object.values(t).sort((a, b) => {
     if (b.Pts !== a.Pts) return b.Pts - a.Pts;
-    const h2hResult = h2h.get(`${a.artistId}:${b.artistId}`);
-    if (h2hResult && h2hResult !== "DRAW") return h2hResult === a.artistId ? -1 : 1;
-    if (b.VD !== a.VD) return b.VD - a.VD;
-    if (b.VF !== a.VF) return b.VF - a.VF;
-    if (b.W !== a.W) return b.W - a.W;
+    if ((ptsGroupSize.get(a.Pts) ?? 0) === 2) {
+      const h2hResult = h2h.get(`${a.artistId}:${b.artistId}`);
+      if (h2hResult && h2hResult !== "DRAW") return h2hResult === a.artistId ? -1 : 1;
+    }
+    if (b.GD !== a.GD) return b.GD - a.GD; // saldo de gols
+    if (b.GF !== a.GF) return b.GF - a.GF; // gols marcados
+    if (b.W !== a.W) return b.W - a.W;     // número de vitórias
     return 0; // Sorteio — sem critério objetivo restante.
   });
 }
