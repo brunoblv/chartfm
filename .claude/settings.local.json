@@ -121,7 +121,8 @@
       "Bash(curl -s -o /tmp/flags.html -w \"%{http_code}\\\\n\" http://localhost:3000/admin/dados/flags)",
       "Bash(grep -o \"Acesso negado\\\\|Faça login\\\\|Application error\\\\|Internal Server Error\" /tmp/flags.html | sort -u)",
       "Bash(curl -s -o /tmp/song.html -w \"%{http_code}\\\\n\" \"http://localhost:3000/song/cmqvc77d00009rx0u3uxgtckf-lose-control-teddy-swims\")",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'fix: correct indentation in chart publication slow path *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",
