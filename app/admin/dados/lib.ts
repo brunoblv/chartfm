@@ -404,6 +404,7 @@ export const ALBUM_AUDIT_SELECT = {
   albumType: true,
   totalTracks: true,
   sourcesNotFound: true,
+  metadataNotFoundAt: true,
   artist: { select: { id: true, name: true } },
   _count: { select: { songs: true } },
 } satisfies Prisma.AlbumSelect;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   Heart,
   MessageCircle,
@@ -13,6 +14,7 @@ import {
   MoreHorizontal,
   Music,
   ChevronRight,
+  Lock,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
@@ -37,6 +39,44 @@ interface ChartCardProps {
   showUserHeader?: boolean;
   variant?: "default" | "feed";
   actionLabel?: string;
+}
+
+function LockedActionBar({ likeCount, comments, feedStyle }: { likeCount: number; comments: number; feedStyle?: boolean }) {
+  const lockBtnStyle = {
+    display: "flex" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: "var(--text-muted)",
+    background: "none" as const,
+    border: "none" as const,
+    padding: "6px 8px",
+    borderRadius: 8,
+    textDecoration: "none",
+    cursor: "pointer" as const,
+  };
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        padding: feedStyle ? "14px 0 0" : "8px 14px 14px 14px",
+        borderTop: "1px solid var(--divider-soft)",
+        marginTop: feedStyle ? 18 : 0,
+      }}
+    >
+      <Link href="/login" title="Entre para curtir" style={lockBtnStyle}>
+        <Lock size={14} />
+        {likeCount > 0 ? `${likeCount} curtida${likeCount === 1 ? "" : "s"}` : "Curtir"}
+      </Link>
+      <Link href="/login" title="Entre para comentar" style={lockBtnStyle}>
+        <Lock size={14} />
+        {comments > 0 ? `${comments} comentário${comments === 1 ? "" : "s"}` : "Comentar"}
+      </Link>
+    </div>
+  );
 }
 
 function ActionBar({
@@ -171,6 +211,8 @@ export function ChartCard({
   const router = useRouter();
   const isMobile = useIsMobile();
   const { t } = useTranslations();
+  const { data: session } = useSession();
+  const authed = Boolean(session?.user?.id);
   const isFeed = variant === "feed";
   const topN = highlightTop ?? (isFeed ? 3 : 5);
   const preview = chart.entries.slice(0, topN);
@@ -463,16 +505,20 @@ export function ChartCard({
           </div>
         </div>
 
-        <ActionBar
-          feedStyle
-          liked={liked}
-          liking={liking}
-          likeCount={likeCount}
-          comments={chart.comments}
-          reposts={chart.reposts}
-          onLike={toggleLike}
-          onComment={openComments}
-        />
+        {authed ? (
+          <ActionBar
+            feedStyle
+            liked={liked}
+            liking={liking}
+            likeCount={likeCount}
+            comments={chart.comments}
+            reposts={chart.reposts}
+            onLike={toggleLike}
+            onComment={openComments}
+          />
+        ) : (
+          <LockedActionBar feedStyle likeCount={likeCount} comments={chart.comments} />
+        )}
       </article>
     );
   }
@@ -669,15 +715,19 @@ export function ChartCard({
         )}
       </div>
 
-      <ActionBar
-        liked={liked}
-        liking={liking}
-        likeCount={likeCount}
-        comments={chart.comments}
-        reposts={chart.reposts}
-        onLike={toggleLike}
-        onComment={openComments}
-      />
+      {authed ? (
+        <ActionBar
+          liked={liked}
+          liking={liking}
+          likeCount={likeCount}
+          comments={chart.comments}
+          reposts={chart.reposts}
+          onLike={toggleLike}
+          onComment={openComments}
+        />
+      ) : (
+        <LockedActionBar likeCount={likeCount} comments={chart.comments} />
+      )}
     </article>
   );
 }

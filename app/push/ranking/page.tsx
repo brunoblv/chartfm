@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
 import RankingClient from "./RankingClient";
+import { PushNav } from "../PushNav";
 
 export const revalidate = 60;
 
@@ -33,6 +34,9 @@ export default async function PushRankingPage() {
         </div>
       }
     >
+      <div style={{ maxWidth: 560, marginBottom: 24 }}>
+        <PushNav />
+      </div>
       <div style={{ maxWidth: 560 }}>
         <RankingClient seasons={seasons} />
       </div>

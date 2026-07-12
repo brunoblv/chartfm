@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { computePushRoundScores } from "@/lib/push-scoring";
 import { pushRoundTitle } from "@/lib/push-format";
 import { ExternalLink, Trophy } from "lucide-react";
+import { PushNav } from "../PushNav";
 
 export const revalidate = 60;
 
@@ -62,6 +63,9 @@ export default async function PushHistoricoPage() {
         </Link>
       }
     >
+      <div style={{ maxWidth: 680, marginBottom: 24 }}>
+        <PushNav />
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 32, maxWidth: 680 }}>
         {rounds.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>

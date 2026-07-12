@@ -15,8 +15,13 @@ TZ=America/Sao_Paulo
 # 0h — pontos das paradas + stats globais do app (artista/música/álbum nas páginas)
 0 0 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/daily-app-stats >> /root/chartfm/logs/cron.log 2>&1
 
-# Terça 5h — Global 100 + Airplay + Álbuns (congelado até próxima terça) + playlists YouTube
-0 5 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/publish-weekly-globals >> /root/chartfm/logs/cron.log 2>&1
+# Global 100 + Airplay + Álbuns — reconcilia de hora em hora (mesmo padrão do copa-advance/
+# push-advance): só congela quando o horário configurado em /admin/parada-global já passou.
+0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/publish-weekly-globals >> /root/chartfm/logs/cron.log 2>&1
+
+# Terça 6h — fecha a Votação da Semana (Melhor da Semana + Flashback); horário fixo,
+# independente do horário de publicação da Parada Global escolhido em /admin/parada-global
+0 6 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-close >> /root/chartfm/logs/cron.log 2>&1
 
 # Terça 5h20 — publica o panorama editorial semanal do Global 100 (conteúdo real, sem IA)
 20 5 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-editorial-post >> /root/chartfm/logs/cron.log 2>&1

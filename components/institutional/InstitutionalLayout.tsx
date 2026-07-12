@@ -13,11 +13,11 @@ export function InstitutionalLayout({ children }: { children: React.ReactNode })
 
   const tabs = [
     { href: "/about", label: t("nav.about") },
-    { href: "/guides", label: t("nav.guides") },
+    { href: "/ajuda", label: t("nav.helpCenter") },
     { href: "/editorial", label: t("nav.editorial") },
     { href: "/whats-new", label: t("nav.whatsNew") },
     { href: "/contact", label: t("nav.contact") },
-    { href: "/support", label: t("nav.support") },
+    { href: "/apoie", label: t("nav.donate") },
     { href: "/terms-of-use", label: t("nav.terms") },
     { href: "/privacy-policy", label: t("nav.privacy") },
   ];
@@ -39,9 +39,9 @@ export function InstitutionalLayout({ children }: { children: React.ReactNode })
         {tabs.map((tab) => {
           const active =
             pathname === tab.href ||
-            (tab.href === "/guides" && pathname.startsWith("/guides/")) ||
-            (tab.href === "/editorial" && pathname.startsWith("/editorial/")) ||
-            (tab.href === "/support" && pathname.startsWith("/support"));
+            (tab.href === "/ajuda" &&
+              (pathname.startsWith("/guides") || pathname.startsWith("/faq") || pathname.startsWith("/support"))) ||
+            (tab.href === "/editorial" && pathname.startsWith("/editorial/"));
           return (
             <Link
               key={tab.href}

@@ -11,6 +11,7 @@ import { SubmissionView } from "@/components/push/PushSubmissionView";
 import { ListenAndRankView } from "@/components/push/PushListenRankView";
 import { ResultView, NoRoundView } from "@/components/push/PushResultView";
 import { PushIntroView, dismissPushIntro, getPushIntroDismissed } from "@/components/push/PushIntroView";
+import { PushNav } from "./PushNav";
 
 export type { RoundData, SongData } from "@/components/push/push-types";
 
@@ -101,6 +102,7 @@ export default function PushClient({ initialRound }: { initialRound: RoundData |
 
   return (
     <Shell noPadding>
+      <PushNav />
       <div style={{ padding: isMobile ? "16px 16px 88px" : "28px 40px 60px" }}>
         <RoundHeader round={round} isMobile={isMobile} />
         {isMobile ? (

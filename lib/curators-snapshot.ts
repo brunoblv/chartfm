@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getGlobalSnapshotDeadline, getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   GLOBAL_RANKING_FIRST_WEEK_INDEX,
   globalPrevWeekIndex,
@@ -195,7 +196,7 @@ function applyCuratorRankingStats(
 }
 
 export async function computeCuratorsSnapshotData(weekIndex: number): Promise<CuratorRankingEntry[]> {
-  const publishedBefore = getGlobalSnapshotDeadline(weekIndex);
+  const publishedBefore = getGlobalSnapshotDeadline(weekIndex, await getGlobalPublishSlot());
   const ranked = await loadCuratorScoresForWeek(weekIndex, publishedBefore);
 
   const prevWeekIndex = globalPrevWeekIndex(weekIndex);

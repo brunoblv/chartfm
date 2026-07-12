@@ -29,7 +29,17 @@ export default async function MinhasParadasAuditPage({
       <div style={{ maxWidth: 720 }}>
         <DatesBackfillClient initialTotal={semDatas} scope="minhas" />
       </div>
-      <SongAuditView basePath="/admin/dados/minhas-paradas" userId={access.userId} filtro={filtro} page={page} q={q} />
+      <SongAuditView
+        basePath="/admin/dados/minhas-paradas"
+        userId={access.userId}
+        filtro={filtro}
+        page={page}
+        q={q}
+        scopeToggle={{
+          href: `/admin/dados/catalogo?filtro=${filtro}&page=1${q ? `&q=${encodeURIComponent(q)}` : ""}`,
+          checked: true,
+        }}
+      />
     </DadosShell>
   );
 }

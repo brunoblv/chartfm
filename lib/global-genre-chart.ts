@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getGlobalSnapshotDeadline } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   GLOBAL_RANKING_FIRST_WEEK_INDEX,
   globalPrevWeekIndex,
@@ -109,9 +110,10 @@ export async function computeGlobalGenreChartData(
   const limit = GLOBAL_GENRE_CHART_LIMIT;
   const prevWeekIdx = globalPrevWeekIndex(weekIdx);
   const FAR_FUTURE = new Date("2099-12-31T23:59:59Z");
-  const deadline = options?.skipDeadline ? FAR_FUTURE : getGlobalSnapshotDeadline(weekIdx);
+  const publishSlot = options?.skipDeadline ? null : await getGlobalPublishSlot();
+  const deadline = options?.skipDeadline || !publishSlot ? FAR_FUTURE : getGlobalSnapshotDeadline(weekIdx, publishSlot);
   const prevDeadline = prevWeekIdx
-    ? (options?.skipDeadline ? FAR_FUTURE : getGlobalSnapshotDeadline(prevWeekIdx))
+    ? (options?.skipDeadline || !publishSlot ? FAR_FUTURE : getGlobalSnapshotDeadline(prevWeekIdx, publishSlot))
     : null;
 
   const [weeklyRaw, prevWeekRaw] = await Promise.all([

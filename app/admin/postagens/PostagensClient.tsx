@@ -51,16 +51,6 @@ type AutomationToggle = { eventType: string; enabled: boolean };
 type PushRoundOption = { id: string; number: number };
 type CopaEditionOption = { id: string; name: string; year: number };
 type AlbumOption = { id: number; title: string; artist: { name: string } };
-type EventScheduleRow = { eventType: string; weekday: number; time: string };
-
-const WEEKDAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-/** As paradas oficiais têm dia/horário configurável (as outras automações usam o próximo slot livre). */
-const CHART_EVENT_TYPES = ["GLOBAL100_PUBLISHED", "AIRPLAY_PUBLISHED", "ALBUMS_CHART_PUBLISHED"];
-const CHART_LABELS: Record<string, string> = {
-  GLOBAL100_PUBLISHED: "Global 100",
-  AIRPLAY_PUBLISHED: "Global 100 Air Play",
-  ALBUMS_CHART_PUBLISHED: "Global 100 Álbuns",
-};
 
 /** Como preencher entityType/entityId para cada tipo de evento na criação manual. */
 const EVENT_META: Record<string, { entityType: string; mode: "album" | "week" | "push" | "copa" }> = {
@@ -98,7 +88,6 @@ export default function PostagensClient({
   pushRounds,
   copaEditions,
   latestWeekIndex,
-  eventSchedules,
 }: {
   initialPosts: SocialPostRow[];
   platformConfigs: PlatformConfig[];
@@ -108,17 +97,14 @@ export default function PostagensClient({
   copaEditions: CopaEditionOption[];
   /** Última semana com snapshot congelado por eventType — pode não existir a semana calendário atual ainda. */
   latestWeekIndex: Record<string, number | null>;
-  eventSchedules: EventScheduleRow[];
 }) {
   const [posts, setPosts] = useState(initialPosts);
   const [platforms, setPlatforms] = useState(platformConfigs);
   const [toggles, setToggles] = useState(automationToggles);
-  const [schedules, setSchedules] = useState(eventSchedules);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [platformFilter, setPlatformFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"fila" | "agenda">("fila");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [captionDrafts, setCaptionDrafts] = useState<Record<string, string>>({});
 
@@ -314,24 +300,6 @@ export default function PostagensClient({
     }
   }
 
-  async function updateEventSchedule(eventType: string, patch: { weekday?: number; time?: string }) {
-    const current = schedules.find((s) => s.eventType === eventType);
-    const weekday = patch.weekday ?? current?.weekday ?? 2;
-    const time = patch.time ?? current?.time ?? "09:00";
-    const res = await fetch("/api/admin/social/config", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind: "event-schedule", eventType, weekday, time }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setSchedules((prev) => {
-        const exists = prev.some((s) => s.eventType === eventType);
-        return exists ? prev.map((s) => (s.eventType === eventType ? data.config : s)) : [...prev, data.config];
-      });
-    }
-  }
-
   async function updateToggle(eventType: string, enabled: boolean) {
     const res = await fetch("/api/admin/social/config", {
       method: "PATCH",
@@ -385,72 +353,6 @@ export default function PostagensClient({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--divider)" }}>
-        {(
-          [
-            { id: "fila" as const, label: "Fila" },
-            { id: "agenda" as const, label: "Agenda das Paradas" },
-          ]
-        ).map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: "10px 16px",
-              border: "none",
-              background: "none",
-              cursor: "pointer",
-              fontSize: 14,
-              fontWeight: 700,
-              color: tab === t.id ? "#FA243C" : "var(--text-muted)",
-              borderBottom: tab === t.id ? "2px solid #FA243C" : "2px solid transparent",
-              marginBottom: -1,
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "agenda" && (
-        <section style={{ border: "1px solid var(--divider)", borderRadius: 12, padding: 16, maxWidth: 520 }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>Agenda das paradas oficiais</div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-            Dia da semana e horário (América/São_Paulo) em que cada parada é postada. As 3 edições são publicadas juntas pelo cron de
-            terça — se configuradas para o mesmo dia/horário, saem juntas no mesmo slot em todas as redes.
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {CHART_EVENT_TYPES.map((eventType) => {
-              const cfg = schedules.find((s) => s.eventType === eventType);
-              return (
-                <div key={eventType} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 180, fontSize: 13, fontWeight: 600 }}>{CHART_LABELS[eventType]}</div>
-                  <select
-                    value={cfg?.weekday ?? 2}
-                    onChange={(e) => updateEventSchedule(eventType, { weekday: Number(e.target.value) })}
-                    style={{ ...adminInputStyle, width: 130 }}
-                  >
-                    {WEEKDAY_LABELS.map((label, idx) => (
-                      <option key={idx} value={idx}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="time"
-                    value={cfg?.time ?? "09:00"}
-                    onChange={(e) => updateEventSchedule(eventType, { time: e.target.value })}
-                    style={{ ...adminInputStyle, width: 110 }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {tab === "fila" && (
-        <>
       <section style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
         {["FACEBOOK", "INSTAGRAM_FEED", "INSTAGRAM_STORY", "THREADS", "TELEGRAM"].map((platform) => {
           const cfg = platforms.find((p) => p.platform === platform);
@@ -795,8 +697,6 @@ export default function PostagensClient({
           onChange={setPage}
         />
       </AdminPanel>
-        </>
-      )}
     </div>
   );
 }

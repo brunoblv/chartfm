@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Users, BarChart2, MessageCircle, Star, Music2, Headphones, Radio } from "lucide-react";
+import { Search, Users, BarChart2, MessageCircle, Star } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
@@ -99,24 +99,24 @@ const GENRES = [
 
 const HOW_IT_WORKS = [
   {
-    icon: <Users size={20} />,
-    title: "Entre ou crie uma comunidade",
-    desc: "Qualquer usuário pode entrar em comunidades públicas ou criar a sua própria. Defina nome, ícone, descrição e convide quem quiser.",
+    icon: <Users size={18} />,
+    title: "Entre ou crie",
+    desc: "Qualquer pessoa pode entrar em comunidades públicas ou criar a sua.",
   },
   {
-    icon: <BarChart2 size={20} />,
-    title: "A parada coletiva é gerada automaticamente",
-    desc: "Toda semana o ChartFM agrega os charts de todos os membros e gera uma parada coletiva única para a comunidade, refletindo o que o grupo está ouvindo.",
+    icon: <BarChart2 size={18} />,
+    title: "Parada coletiva",
+    desc: "Toda semana, uma parada é gerada a partir dos charts dos membros.",
   },
   {
-    icon: <MessageCircle size={20} />,
-    title: "Discuta, compartilhe e explore",
-    desc: "Poste suas opiniões sobre lançamentos, álbuns e artistas. Veja o que outros membros estão ouvindo e descubra músicas através de quem tem o mesmo gosto que você.",
+    icon: <MessageCircle size={18} />,
+    title: "Discuta e compartilhe",
+    desc: "Poste, comente lançamentos e descubra o que os membros ouvem.",
   },
   {
-    icon: <Star size={20} />,
-    title: "Acompanhe tendências em tempo real",
-    desc: "Monitore quais artistas estão subindo no ranking da comunidade, quais faixas estão em alta e como o gosto coletivo do grupo evolui semana a semana.",
+    icon: <Star size={18} />,
+    title: "Acompanhe tendências",
+    desc: "Veja artistas subindo e como o gosto do grupo muda semana a semana.",
   },
 ];
 
@@ -208,95 +208,6 @@ export default async function CommunitiesPage({
 
   return (
     <Shell title={t("communities.title")} subtitle={t("communities.subtitle")}>
-
-      {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
-      <section style={{ marginBottom: 48 }}>
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          As comunidades são espaços para encontrar pessoas que compartilham os mesmos interesses musicais que você. Entre para conversar sobre seus artistas favoritos, lançamentos, álbuns, paradas e tudo o que movimenta o mundo da música.
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Explore comunidades dedicadas a diferentes gêneros, artistas e cenas musicais. Do pop ao rock, do indie à música eletrônica, cada grupo reúne pessoas com algo em comum e cria seu próprio espaço para conversas, descobertas e troca de recomendações.
-        </p>
-
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", margin: "28px 0 14px 0" }}>
-          Uma parada para cada comunidade
-        </h2>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Cada comunidade tem sua própria parada musical, formada a partir das paradas pessoais publicadas por seus membros. Assim, é possível acompanhar quais músicas estão em alta dentro de cada grupo e comparar como os gostos mudam de uma comunidade para outra.
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Uma música pode dominar a parada de uma comunidade de fãs de pop enquanto outra cresce entre os fãs de rock alternativo. É uma maneira diferente de descobrir música: através do gosto coletivo de pessoas que compartilham interesses com você.
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          Além das paradas, você pode participar das conversas, compartilhar músicas, comentar lançamentos e conhecer as paradas pessoais de outros membros.
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>
-          Não encontrou a comunidade que procurava? Crie a sua, escolha um nome e uma identidade, convide pessoas e comece a construir um novo espaço dentro do ChartFM.
-        </p>
-      </section>
-
-      {/* ===== COMO FUNCIONAM ===== */}
-      <section style={{ marginBottom: 52 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 20 }}>
-          Como funcionam as comunidades
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-          {HOW_IT_WORKS.map((step) => (
-            <div
-              key={step.title}
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--divider)",
-                borderRadius: 14,
-                padding: "18px 20px",
-              }}
-            >
-              <div style={{ color: "#FA243C", marginBottom: 10 }}>{step.icon}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{step.title}</div>
-              <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>{step.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== GÊNEROS EM DESTAQUE ===== */}
-      <section style={{ marginBottom: 52 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>
-          Gêneros mais discutidos
-        </h2>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.6 }}>
-          Encontre comunidades organizadas por estilo musical. Cada gênero tem seu próprio espaço com fãs, debates, rankings e descobertas específicas.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {GENRES.map((g) => (
-            <Link
-              key={g.label}
-              href={`/communities?q=${encodeURIComponent(g.label)}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                background: "var(--surface)",
-                border: "1px solid var(--divider-strong)",
-                borderRadius: 20,
-                padding: "8px 16px",
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--text)",
-                textDecoration: "none",
-              }}
-            >
-              <span>{g.icon}</span>
-              {g.label}
-            </Link>
-          ))}
-        </div>
-      </section>
 
       {/* ===== SEARCH + CREATE ===== */}
       <div style={{ display: "flex", gap: 12, marginBottom: 36, alignItems: "center" }}>
@@ -569,49 +480,67 @@ export default async function CommunitiesPage({
         )}
       </section>
 
-      {/* ===== EDITORIAL FINAL ===== */}
-      <section
-        style={{
-          borderTop: "1px solid var(--divider)",
-          paddingTop: 40,
-        }}
-      >
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 18 }}>
-          Por que participar de uma comunidade musical?
+      {/* ===== GÊNEROS: pills compactos ===== */}
+      <section style={{ marginBottom: 48 }}>
+        <h2
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            color: "var(--text-muted)",
+            marginBottom: 12,
+          }}
+        >
+          Buscar por gênero
         </h2>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24, marginBottom: 28 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <Music2 size={16} color="#FA243C" />
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Descubra música de verdade</span>
-            </div>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
-              As recomendações das comunidades são geradas por pessoas reais com gosto parecido com o seu, não por algoritmos. Isso significa descobertas mais relevantes e menos óbvias.
-            </p>
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <Headphones size={16} color="#FA243C" />
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Acompanhe charts coletivos</span>
-            </div>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
-              Cada comunidade gera sua própria parada semanal automaticamente, refletindo o que os membros estão ouvindo. É o jeito mais honesto de ver o que um grupo realmente ouve.
-            </p>
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <Radio size={16} color="#FA243C" />
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Participe de debates culturais</span>
-            </div>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
-              De discussões sobre lançamentos aguardados a debates sobre álbuns clássicos, as comunidades são o espaço certo para quem leva música a sério e quer conversar com quem pensa igual.
-            </p>
-          </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
+          {GENRES.map((g) => (
+            <Link
+              key={g.label}
+              href={`/communities?q=${encodeURIComponent(g.label)}`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "var(--surface)",
+                border: "1px solid var(--divider-strong)",
+                borderRadius: 100,
+                padding: "8px 15px",
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: "var(--text)",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span>{g.icon}</span>
+              {g.label}
+            </Link>
+          ))}
         </div>
+      </section>
 
-        <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>
-          O ChartFM acredita que música é melhor quando compartilhada. As comunidades são a forma que encontramos de tornar isso possível: conectando pessoas, cruzando gostos e construindo um espaço onde cada faixa ouvida se transforma em parte de algo maior. Junte-se a uma comunidade hoje, ou crie a sua e convide quem você quiser.
+      {/* ===== EDITORIAL: condensado, no fim ===== */}
+      <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 32 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 14px 0" }}>
+          Como funcionam as comunidades
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
+          {HOW_IT_WORKS.map((step) => (
+            <div key={step.title}>
+              <div style={{ color: "#FA243C", marginBottom: 8 }}>{step.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{step.title}</div>
+              <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.55 }}>{step.desc}</div>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
+          Não encontrou a comunidade certa?{" "}
+          <Link href="/community/create" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+            Crie a sua
+          </Link>{" "}
+          e convide quem você quiser.
         </p>
       </section>
     </Shell>

@@ -43,7 +43,20 @@ export default async function CatalogoAuditPage({
           />
         </div>
       )}
-      <SongAuditView basePath="/admin/dados/catalogo" filtro={filtro} page={page} q={q} />
+      <SongAuditView
+        basePath="/admin/dados/catalogo"
+        filtro={filtro}
+        page={page}
+        q={q}
+        scopeToggle={
+          access.isOwner
+            ? {
+                href: `/admin/dados/minhas-paradas?filtro=${filtro}&page=1${q ? `&q=${encodeURIComponent(q)}` : ""}`,
+                checked: false,
+              }
+            : undefined
+        }
+      />
     </DadosShell>
   );
 }

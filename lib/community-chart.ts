@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   buildDateRangeFromDate,
   buildWeekLabelFromDate,
@@ -180,8 +181,8 @@ export async function getCommunityAvailableWeeks(
   return [...byWeek.values()].sort((a, b) => b.weekIndex - a.weekIndex);
 }
 
-function weekMetaFromIndex(weekIndex: number): Pick<CommunityChartWeekMeta, "weekLabel" | "dateRange"> {
-  const ref = getWeeklySnapshotReferenceDate(weekIndex);
+async function weekMetaFromIndex(weekIndex: number): Promise<Pick<CommunityChartWeekMeta, "weekLabel" | "dateRange">> {
+  const ref = getWeeklySnapshotReferenceDate(weekIndex, await getGlobalPublishSlot());
   return {
     weekLabel: buildWeekLabelFromDate(ref),
     dateRange: buildDateRangeFromDate(ref),
@@ -266,7 +267,7 @@ async function computeOfficialCommunityChartData(
 ): Promise<CommunityChartPayload> {
   const weekChart = await resolveOfficialCommunityWeekChart(communityId, requestedWeekIndex);
   if (!weekChart) {
-    const fallback = weekMetaFromIndex(requestedWeekIndex ?? getRankingWeekReference().weekIndex);
+    const fallback = await weekMetaFromIndex(requestedWeekIndex ?? getRankingWeekReference().weekIndex);
     return {
       weekIndex: requestedWeekIndex ?? getRankingWeekReference().weekIndex,
       weekLabel: fallback.weekLabel,
@@ -452,7 +453,7 @@ export async function computeCommunityChartData(
         ...publishedPrimaryParadaChartWhere,
       },
       select: { weekLabel: true, dateRange: true },
-    })) ?? weekMetaFromIndex(weekIndex);
+    })) ?? (await weekMetaFromIndex(weekIndex));
 
   return {
     weekIndex,

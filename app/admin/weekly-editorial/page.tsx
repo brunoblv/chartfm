@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   buildWeekLabelFromDate,
   getRankingWeekReference,
@@ -40,7 +41,7 @@ export default async function AdminWeeklyEditorialPage() {
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const rankingWeek = getRankingWeekReference(nowBRT);
   const weekIndex = (await getLatestAvailableWeekIndex(rankingWeek.weekIndex)) ?? rankingWeek.weekIndex;
-  const weekRefDate = getWeeklySnapshotReferenceDate(weekIndex);
+  const weekRefDate = getWeeklySnapshotReferenceDate(weekIndex, await getGlobalPublishSlot());
   const weekLabel = buildWeekLabelFromDate(weekRefDate);
 
   const stored = await prisma.weeklyEditorial.findUnique({

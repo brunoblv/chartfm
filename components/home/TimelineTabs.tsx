@@ -11,6 +11,7 @@ import type { RecommendationItem } from "@/lib/recommendations-feed";
 import type { HomeFeedItem } from "@/lib/home-mixed-feed";
 import type { EditorialPick } from "@/lib/editorial-picks-data";
 import { useTranslations } from "@/hooks/useTranslations";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export type ReviewItem = {
   id: string;
@@ -80,6 +81,7 @@ export function TimelineTabs({
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("paraVoce");
   const { t } = useTranslations();
+  const isMobile = useIsMobile();
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: "6px 14px",
@@ -151,9 +153,17 @@ export function TimelineTabs({
           )
         ) : activeTab === "artigos" ? (
           editorialFeed.length > 0 ? (
-            editorialFeed.map((pick) => (
-              <EditorialPostPreviewCard key={pick.slug} pick={pick} previewImage={pick.previewImage ?? null} variant="compact" />
-            ))
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
+              {editorialFeed.map((pick, i) => (
+                <EditorialPostPreviewCard
+                  key={pick.slug}
+                  pick={pick}
+                  previewImage={pick.previewImage ?? null}
+                  variant={i === 0 ? "featured" : i < 3 ? "grid" : "row"}
+                  stacked={isMobile}
+                />
+              ))}
+            </div>
           ) : (
             <EmptyState message={t("timeline.noArticles")} sub={t("timeline.articlesWillAppear")} />
           )

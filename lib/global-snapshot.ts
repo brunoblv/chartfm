@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getRankingWeekReference, getGlobalSnapshotDeadline } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   GLOBAL_RANKING_FIRST_WEEK_INDEX,
   globalPrevWeekIndex,
@@ -269,10 +270,11 @@ export async function computeGlobalSnapshotData(
   const prevWeekIdx = globalPrevWeekIndex(weekIdx);
 
   const FAR_FUTURE = new Date("2099-12-31T23:59:59Z");
-  // Apenas paradas publicadas antes de terça 00h BRT entram no cálculo (a menos que skipDeadline)
-  const deadline = options?.skipDeadline ? FAR_FUTURE : getGlobalSnapshotDeadline(weekIdx);
+  // Apenas paradas publicadas antes do corte (1h antes da publicação configurada) entram no cálculo
+  const publishSlot = options?.skipDeadline ? null : await getGlobalPublishSlot();
+  const deadline = options?.skipDeadline || !publishSlot ? FAR_FUTURE : getGlobalSnapshotDeadline(weekIdx, publishSlot);
   const prevDeadline = prevWeekIdx
-    ? (options?.skipDeadline ? FAR_FUTURE : getGlobalSnapshotDeadline(prevWeekIdx))
+    ? (options?.skipDeadline || !publishSlot ? FAR_FUTURE : getGlobalSnapshotDeadline(prevWeekIdx, publishSlot))
     : null;
 
   const [weeklyEntries, prevWeekEntries, historicalStats, prevFrozenSnapshot] =
@@ -358,7 +360,7 @@ export async function computeLatestWeeklyTopArtists(limit: number): Promise<{
   });
   if (!latest) return null;
 
-  const deadline = getGlobalSnapshotDeadline(latest.weekIndex);
+  const deadline = getGlobalSnapshotDeadline(latest.weekIndex, await getGlobalPublishSlot());
   const entries = await loadWeeklyGlobalEntries(latest.weekIndex, deadline);
   return {
     weekIndex: latest.weekIndex,

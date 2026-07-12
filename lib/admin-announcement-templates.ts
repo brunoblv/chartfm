@@ -1,6 +1,7 @@
 import type { AlbumClubPhase, CopaStatus, PushPhase } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCopaIncompleteSinglesRecipients } from "@/lib/copa-incomplete-singles";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   buildWeekLabelFromDate,
   getRankingWeekReference,
@@ -213,7 +214,7 @@ export async function getAnnouncementContext(): Promise<AnnouncementContext> {
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const rankingWeek = getRankingWeekReference(nowBRT);
   const weekIndex = rankingWeek.weekIndex;
-  const weekRefDate = getWeeklySnapshotReferenceDate(weekIndex);
+  const weekRefDate = getWeeklySnapshotReferenceDate(weekIndex, await getGlobalPublishSlot());
   const weekLabel = buildWeekLabelFromDate(weekRefDate);
 
   const [globalSnap, airplaySnap, albumsSnap, pushRounds, copas, clubeRounds] = await Promise.all([

@@ -4,36 +4,10 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Avatar } from "@/components/ui/Avatar";
 import type { RoundData } from "./push-types";
-import { isListenAndRankPhase, pushPoints, useTimeRemaining } from "./push-helpers";
+import { isListenAndRankPhase, useTimeRemaining } from "./push-helpers";
+import { STEPS, SCORE_ROWS } from "./push-content";
 
-const STEPS = [
-  {
-    num: "01",
-    title: "Indique uma música",
-    desc: "Envie a música que você quer que a comunidade conheça nesta semana",
-  },
-  {
-    num: "02",
-    title: "Ouça a playlist",
-    desc: "Uma playlist no Spotify é criada com todas as indicações da rodada",
-  },
-  {
-    num: "03",
-    title: "Rankeie as músicas",
-    desc: "Coloque as músicas em ordem de preferência. Do 1º ao último",
-  },
-  {
-    num: "04",
-    title: "Confira o ranking",
-    desc: "Os pontos são somados e o ranking da semana é revelado para todos",
-  },
-] as const;
-
-const SCORE_ROWS = [
-  { rank: "#1", label: "1º no ranking de alguém", pts: 20, variant: "accent" as const },
-  { rank: "#10", label: "10º no ranking de alguém", pts: pushPoints(10, 20), variant: "muted" as const },
-  { rank: "#20", label: "Último no ranking (20º)", pts: 1, variant: "dim" as const },
-];
+export { STEPS, SCORE_ROWS } from "./push-content";
 
 function BackIcon() {
   return (
@@ -171,7 +145,7 @@ function StepRow({ step, isFirst, isLast, isMobile }: { step: typeof STEPS[numbe
   );
 }
 
-function StepCard({ step, isFirst }: { step: typeof STEPS[number]; isFirst: boolean }) {
+export function StepCard({ step, isFirst }: { step: typeof STEPS[number]; isFirst: boolean }) {
   return (
     <div style={{
       background: "var(--surface)", borderRadius: 14, padding: 20,
@@ -200,7 +174,7 @@ function StepCard({ step, isFirst }: { step: typeof STEPS[number]; isFirst: bool
   );
 }
 
-function ScoreTable({ isMobile }: { isMobile: boolean }) {
+export function ScoreTable({ isMobile }: { isMobile: boolean }) {
   if (isMobile) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 14, overflow: "hidden", border: "1px solid var(--divider)" }}>

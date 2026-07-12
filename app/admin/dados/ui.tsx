@@ -5,14 +5,17 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 import { adminTdStyle, adminThStyle } from "@/components/admin/admin-styles";
 import {
   AdminAlbumLinks,
+  AdminArtistLinks,
+  AdminArtistNameLink,
   AdminSongLinks,
   AdminSongNameLink,
 } from "@/components/admin/AdminEntityLinks";
-import type { AlbumAuditRow, SongAuditRow } from "./lib";
+import type { AlbumAuditRow, ArtistAuditRow, SongAuditRow } from "./lib";
 import { SourceFetchButtons } from "./SourceFetchButtons";
 import { InlineDate } from "./InlineEdit";
 import { AlbumPicker } from "./AlbumPicker";
 import { YouTubeClipFetchButton } from "./YouTubeClipFetchButton";
+import { ArtistRefreshImageButton } from "../artists/ArtistRefreshImageButton";
 
 // ---------------------------------------------------------------------------
 // Navegação da seção
@@ -29,17 +32,44 @@ export type DadosTab =
   | "artistas-pendencias"
   | "flags";
 
-const NAV: { key: DadosTab; label: string; href: string }[] = [
+/** Cada aba pertence a um grupo de 1ª classe — a nav mostra 5 grupos, não 9 abas soltas. */
+type DadosGroup = "geral" | "musicas" | "albuns" | "artistas" | "flags";
+
+const GROUP_OF: Record<DadosTab, DadosGroup> = {
+  geral: "geral",
+  "minhas-paradas": "musicas",
+  catalogo: "musicas",
+  musicas: "musicas",
+  albuns: "albuns",
+  "albuns-pendencias": "albuns",
+  artistas: "artistas",
+  "artistas-pendencias": "artistas",
+  flags: "flags",
+};
+
+const GROUPS: { key: DadosGroup; label: string; href: string }[] = [
   { key: "geral", label: "Visão geral", href: "/admin/dados" },
-  { key: "minhas-paradas", label: "Minhas paradas", href: "/admin/dados/minhas-paradas" },
-  { key: "catalogo", label: "Catálogo", href: "/admin/dados/catalogo" },
-  { key: "musicas", label: "Músicas", href: "/admin/dados/musicas" },
-  { key: "albuns", label: "Álbuns", href: "/admin/dados/albuns" },
-  { key: "artistas", label: "Artistas", href: "/admin/dados/artistas" },
-  { key: "albuns-pendencias", label: "Álbuns · pendências", href: "/admin/dados/albuns-pendencias" },
-  { key: "artistas-pendencias", label: "Artistas · pendências", href: "/admin/dados/artistas-pendencias" },
+  { key: "musicas", label: "Músicas", href: "/admin/dados/catalogo" },
+  { key: "albuns", label: "Álbuns", href: "/admin/dados/albuns-pendencias" },
+  { key: "artistas", label: "Artistas", href: "/admin/dados/artistas-pendencias" },
   { key: "flags", label: "Sinalizações", href: "/admin/dados/flags" },
 ];
+
+/** Dentro de cada grupo com 2 modos: pendências (auditoria, paginada) e busca livre (edição por texto). */
+const SUB_TABS: Partial<Record<DadosGroup, { key: DadosTab; label: string; href: string }[]>> = {
+  musicas: [
+    { key: "catalogo", label: "Pendências", href: "/admin/dados/catalogo" },
+    { key: "musicas", label: "Busca livre", href: "/admin/dados/musicas" },
+  ],
+  albuns: [
+    { key: "albuns-pendencias", label: "Pendências", href: "/admin/dados/albuns-pendencias" },
+    { key: "albuns", label: "Busca livre", href: "/admin/dados/albuns" },
+  ],
+  artistas: [
+    { key: "artistas-pendencias", label: "Pendências", href: "/admin/dados/artistas-pendencias" },
+    { key: "artistas", label: "Busca livre", href: "/admin/dados/artistas" },
+  ],
+};
 
 function navChipStyle(active: boolean): CSSProperties {
   return {
@@ -56,15 +86,42 @@ function navChipStyle(active: boolean): CSSProperties {
   };
 }
 
-export function DadosNav({ active, showMinhasParadas }: { active: DadosTab; showMinhasParadas: boolean }) {
-  const items = showMinhasParadas ? NAV : NAV.filter((item) => item.key !== "minhas-paradas");
+function subTabStyle(active: boolean): CSSProperties {
+  return {
+    display: "inline-block",
+    padding: "6px 13px",
+    borderRadius: 999,
+    fontSize: 12.5,
+    fontWeight: 700,
+    textDecoration: "none",
+    whiteSpace: "nowrap",
+    border: active ? "1px solid rgba(250,36,60,0.35)" : "1px solid var(--divider-strong)",
+    color: active ? "#FA243C" : "var(--text-muted)",
+    background: active ? "rgba(250,36,60,0.1)" : "var(--surface)",
+  };
+}
+
+export function DadosNav({ active }: { active: DadosTab }) {
+  const group = GROUP_OF[active];
+  const subTabs = SUB_TABS[group];
   return (
-    <nav style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-      {items.map((item) => (
-        <Link key={item.key} href={item.href} style={navChipStyle(item.key === active)}>
-          {item.label}
-        </Link>
-      ))}
+    <nav style={{ marginBottom: 20 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {GROUPS.map((g) => (
+          <Link key={g.key} href={g.href} style={navChipStyle(g.key === group)}>
+            {g.label}
+          </Link>
+        ))}
+      </div>
+      {subTabs && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          {subTabs.map((tab) => (
+            <Link key={tab.key} href={tab.href} style={subTabStyle(tab.key === active)}>
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }
@@ -72,19 +129,18 @@ export function DadosNav({ active, showMinhasParadas }: { active: DadosTab; show
 export function DadosShell({
   active,
   subtitle,
-  showMinhasParadas,
   children,
 }: {
   active: DadosTab;
   subtitle: string;
-  /** A aba "Minhas paradas" é exclusiva do dono (@bruno). */
-  showMinhasParadas: boolean;
+  /** A seção "Minhas paradas" hoje é acessada via toggle dentro de Músicas (não é mais aba própria). */
+  showMinhasParadas?: boolean;
   children: ReactNode;
 }) {
   return (
     <Shell title="Edição de dados" subtitle={subtitle}>
       <div style={{ width: "100%" }}>
-        <DadosNav active={active} showMinhasParadas={showMinhasParadas} />
+        <DadosNav active={active} />
         {children}
       </div>
     </Shell>
@@ -292,7 +348,7 @@ export function OkFlag({ ok, okLabel = "OK", missLabel = "falta" }: {
   return <span style={ok ? okStyle : missStyle}>{ok ? okLabel : missLabel}</span>;
 }
 
-export function CoverThumb({ url, size = 32 }: { url: string | null | undefined; size?: number }) {
+export function CoverThumb({ url, size = 32, round = false }: { url: string | null | undefined; size?: number; round?: boolean }) {
   if (url?.trim()) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -301,7 +357,7 @@ export function CoverThumb({ url, size = 32 }: { url: string | null | undefined;
         alt=""
         width={size}
         height={size}
-        style={{ borderRadius: 6, objectFit: "cover", display: "block", flexShrink: 0 }}
+        style={{ borderRadius: round ? 999 : 6, objectFit: "cover", display: "block", flexShrink: 0 }}
       />
     );
   }
@@ -311,12 +367,110 @@ export function CoverThumb({ url, size = 32 }: { url: string | null | undefined;
       style={{
         width: size,
         height: size,
-        borderRadius: 6,
+        borderRadius: round ? 999 : 6,
         border: "1.5px dashed #C41E3A",
         flexShrink: 0,
       }}
     />
   );
+}
+
+// ---------------------------------------------------------------------------
+// Coluna única "Pendências" — mostra só o que falta, em vez de uma coluna por campo
+// ---------------------------------------------------------------------------
+
+const pendOkPillStyle: CSSProperties = {
+  fontSize: 11,
+  fontWeight: 800,
+  color: "#2D7A32",
+  background: "var(--up-bg, #e8f6ee)",
+  padding: "3px 9px",
+  borderRadius: 99,
+  whiteSpace: "nowrap",
+};
+
+const pendMissPillStyle: CSSProperties = {
+  fontSize: 10.5,
+  fontWeight: 800,
+  letterSpacing: "0.02em",
+  color: "#C41E3A",
+  background: "var(--down-bg, #fdeeee)",
+  padding: "3px 8px",
+  borderRadius: 99,
+  whiteSpace: "nowrap",
+};
+
+const pendWarnPillStyle: CSSProperties = {
+  fontSize: 10.5,
+  fontWeight: 800,
+  color: "#B45309",
+  background: "rgba(180,83,9,0.1)",
+  padding: "3px 8px",
+  borderRadius: 99,
+  whiteSpace: "nowrap",
+};
+
+function isJan1(d: Date | string | null | undefined): boolean {
+  if (!d) return false;
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getUTCMonth() === 0 && date.getUTCDate() === 1;
+}
+
+/** Chips de pendência: "✓ completa" quando ok, senão um chip por campo faltando. */
+export function PendBadges({
+  missing,
+  suspeita,
+  esgotada,
+}: {
+  missing: string[];
+  /** Data suspeita (01/01) — o MusicBrainz pode ter tido só o ano. */
+  suspeita?: boolean;
+  /** Backfill automático já tentou todas as fontes sem resultado. */
+  esgotada?: boolean;
+}) {
+  if (missing.length === 0 && !suspeita && !esgotada) {
+    return <span style={pendOkPillStyle}>✓ completa</span>;
+  }
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      {missing.map((label) => (
+        <span key={label} style={pendMissPillStyle}>
+          {label}
+        </span>
+      ))}
+      {suspeita && (
+        <span style={pendWarnPillStyle} title="Data em 01/01 — pode ser só o ano">
+          01/01?
+        </span>
+      )}
+      {esgotada && (
+        <span style={pendWarnPillStyle} title="Backfill automático já tentou todas as fontes sem resultado">
+          busca esgotada
+        </span>
+      )}
+    </div>
+  );
+}
+
+function songMissing(s: SongAuditRow): string[] {
+  const missing: string[] = [];
+  const semAlbum = !s.albumSpotifyId || !s.albumRef;
+  if (semAlbum) missing.push(s.album?.trim() ? "álbum não vinculado" : "sem álbum");
+  else if (!s.albumRef?.coverUrl?.trim()) missing.push("capa");
+  if (!s.recordingMbid?.trim()) missing.push("MBID");
+  if (!s.singleReleaseDate) missing.push("single");
+  if (!s.musicVideoReleaseDate && !s.youtubeReleaseDate) missing.push("clipe");
+  return missing;
+}
+
+function albumMissing(a: AlbumAuditRow): string[] {
+  const missing: string[] = [];
+  if (!a.coverUrl?.trim()) missing.push("capa");
+  if (!a.releaseDate) missing.push("data");
+  if (!a.albumType) missing.push("tipo");
+  if (a.totalTracks == null) missing.push("faixas");
+  return missing;
 }
 
 // ---------------------------------------------------------------------------
@@ -343,38 +497,61 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
     <AdminPanel maxWidth={1240}>
       <table style={fixedTableStyle}>
         <colgroup>
-          <col style={{ width: 230 }} />
-          <col style={{ width: 160 }} />
-          <col style={{ width: 230 }} />
-          <col style={{ width: 56 }} />
-          <col style={{ width: 64 }} />
+          <col style={{ width: 260 }} />
+          <col style={{ width: 190 }} />
+          <col style={{ width: 210 }} />
           <col style={{ width: 118 }} />
           <col style={{ width: 118 }} />
-          <col style={{ width: 110 }} />
+          <col style={{ width: 220 }} />
         </colgroup>
         <thead>
           <tr style={{ background: "var(--fill-inset)" }}>
             <th style={adminThStyle}>Música</th>
-            <th style={adminThStyle}>Artista</th>
+            <th style={adminThStyle}>Pendências</th>
             <th style={adminThStyle}>Álbum</th>
-            <th style={adminThStyle}>Capa</th>
-            <th style={adminThStyle}>MBID</th>
             <th style={adminThStyle}>Single</th>
             <th style={adminThStyle}>Clipe</th>
-            <th style={adminThStyle}>Ações</th>
+            <th style={adminThStyle}>Corrigir</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((s) => {
+            const missing = songMissing(s);
+            const suspeita = isJan1(s.singleReleaseDate) || isJan1(s.musicVideoReleaseDate);
             return (
               <tr key={s.id}>
-                <td style={cellEllipsis} title={s.title}>
-                  <span style={{ fontWeight: 650 }}>
-                    <AdminSongNameLink song={s} />
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }} title={s.title}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                    <CoverThumb url={s.albumRef?.coverUrl} size={32} />
+                    <span style={{ minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: "block",
+                          fontWeight: 650,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <AdminSongNameLink song={s} />
+                      </span>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 12,
+                          color: "var(--text-muted)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {s.artist}
+                      </span>
+                    </span>
                   </span>
                 </td>
-                <td style={cellEllipsis} title={s.artist}>
-                  {s.artist}
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
+                  <PendBadges missing={missing} suspeita={suspeita} esgotada={Boolean(s.releaseDatesNotFoundAt)} />
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "top" }} title={s.albumRef?.title ?? s.album ?? undefined}>
                   <AlbumPicker
@@ -384,18 +561,7 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                   />
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                  <CoverThumb url={s.albumRef?.coverUrl} />
-                </td>
-                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                  <OkFlag ok={Boolean(s.recordingMbid?.trim())} />
-                </td>
-                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <InlineDate kind="music" id={s.id} field="singleReleaseDate" value={s.singleReleaseDate} />
-                  {s.releaseDatesNotFoundAt && (
-                    <div style={{ marginTop: 3, fontSize: 10, fontWeight: 700, color: "#B45309" }} title="Backfill automático sem resultado">
-                      busca esgotada
-                    </div>
-                  )}
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <InlineDate
@@ -433,57 +599,191 @@ export function AlbumAuditTable({ rows, emptyLabel }: { rows: AlbumAuditRow[]; e
     <AdminPanel maxWidth={1240}>
       <table style={{ ...fixedTableStyle, minWidth: 1000 }}>
         <colgroup>
-          <col style={{ width: 56 }} />
           <col style={{ width: 260 }} />
-          <col style={{ width: 180 }} />
+          <col style={{ width: 190 }} />
           <col style={{ width: 100 }} />
           <col style={{ width: 118 }} />
           <col style={{ width: 70 }} />
           <col style={{ width: 90 }} />
-          <col style={{ width: 110 }} />
+          <col style={{ width: 160 }} />
         </colgroup>
         <thead>
           <tr style={{ background: "var(--fill-inset)" }}>
-            <th style={adminThStyle}>Capa</th>
             <th style={adminThStyle}>Álbum</th>
-            <th style={adminThStyle}>Artista</th>
+            <th style={adminThStyle}>Pendências</th>
             <th style={adminThStyle}>Tipo</th>
             <th style={adminThStyle}>Lançamento</th>
             <th style={adminThStyle}>Faixas</th>
             <th style={adminThStyle}>Músicas</th>
-            <th style={adminThStyle}>Ações</th>
+            <th style={adminThStyle}>Corrigir</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((a) => (
-            <tr key={a.id}>
-              <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                <CoverThumb url={a.coverUrl} />
-              </td>
-              <td style={cellEllipsis} title={a.title}>
-                <span style={{ fontWeight: 650 }}>{a.title}</span>
-              </td>
-              <td style={cellEllipsis} title={a.artist.name}>
-                {a.artist.name}
-              </td>
-              <td style={{ ...adminTdStyle, verticalAlign: "middle", fontSize: 12 }}>
-                {a.albumType ?? <span style={missStyle}>falta</span>}
-              </td>
-              <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                <InlineDate kind="albums" id={a.id} field="releaseDate" value={a.releaseDate} />
-              </td>
-              <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                {a.totalTracks ?? <span style={missStyle}>falta</span>}
-              </td>
-              <td style={{ ...adminTdStyle, verticalAlign: "middle", color: "var(--text-muted)", fontSize: 13 }}>
-                {a._count.songs}
-              </td>
-              <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
-                <AdminAlbumLinks album={a} />
-                <SourceFetchButtons kind="albums" id={a.id} notFound={a.sourcesNotFound} />
-              </td>
-            </tr>
-          ))}
+          {rows.map((a) => {
+            const missing = albumMissing(a);
+            const suspeita = isJan1(a.releaseDate);
+            return (
+              <tr key={a.id}>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }} title={a.title}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                    <CoverThumb url={a.coverUrl} size={32} />
+                    <span style={{ minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: "block",
+                          fontWeight: 650,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {a.title}
+                      </span>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 12,
+                          color: "var(--text-muted)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {a.artist.name}
+                      </span>
+                    </span>
+                  </span>
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
+                  <PendBadges missing={missing} suspeita={suspeita} esgotada={Boolean(a.metadataNotFoundAt)} />
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle", fontSize: 12 }}>
+                  {a.albumType ?? <span style={missStyle}>falta</span>}
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
+                  <InlineDate kind="albums" id={a.id} field="releaseDate" value={a.releaseDate} />
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
+                  {a.totalTracks ?? <span style={missStyle}>falta</span>}
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle", color: "var(--text-muted)", fontSize: 13 }}>
+                  {a._count.songs}
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
+                  <AdminAlbumLinks album={a} />
+                  <SourceFetchButtons kind="albums" id={a.id} notFound={a.sourcesNotFound} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {rows.length === 0 && (
+        <div style={{ padding: 16, color: "var(--text-muted)" }}>{emptyLabel}</div>
+      )}
+    </AdminPanel>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tabela de pendências de artistas (layout fixo)
+// ---------------------------------------------------------------------------
+
+export function ArtistAuditTable({ rows, emptyLabel }: { rows: ArtistAuditRow[]; emptyLabel: string }) {
+  return (
+    <AdminPanel maxWidth={1240}>
+      <table style={{ ...fixedTableStyle, minWidth: 1000 }}>
+        <colgroup>
+          <col style={{ width: 240 }} />
+          <col style={{ width: 190 }} />
+          <col style={{ width: 220 }} />
+          <col style={{ width: 260 }} />
+          <col style={{ width: 190 }} />
+        </colgroup>
+        <thead>
+          <tr style={{ background: "var(--fill-inset)" }}>
+            <th style={adminThStyle}>Artista</th>
+            <th style={adminThStyle}>Pendências</th>
+            <th style={adminThStyle}>Gêneros</th>
+            <th style={adminThStyle}>Bio</th>
+            <th style={adminThStyle}>Corrigir</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const missing: string[] = [];
+            if (!r.imageUrl) missing.push("imagem");
+            if (!r.spotifyUrl) missing.push("link Spotify");
+            if (r.genres.length === 0) missing.push("gêneros");
+            if (!r.bio?.trim()) missing.push("bio");
+            const esgotada = Boolean(r.bioNotFoundAt) || Boolean(r.metadataNotFoundAt);
+            return (
+              <tr key={r.id}>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }} title={r.name}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                    <CoverThumb url={r.imageUrl} size={32} round />
+                    <span
+                      style={{
+                        fontWeight: 650,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        minWidth: 0,
+                      }}
+                    >
+                      <AdminArtistNameLink artist={r} />
+                    </span>
+                  </span>
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
+                  <PendBadges missing={missing} esgotada={esgotada} />
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle", maxWidth: 220 }}>
+                  {r.genres.length > 0 ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {r.genres.map((g) => (
+                        <span
+                          key={g}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "var(--text-muted)",
+                            background: "var(--fill-subtle)",
+                            padding: "3px 9px",
+                            borderRadius: 99,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {g}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 12, color: "var(--text-disabled)" }}>—</span>
+                  )}
+                </td>
+                <td
+                  style={{
+                    ...adminTdStyle,
+                    verticalAlign: "middle",
+                    fontSize: 12.5,
+                    color: "var(--text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={r.bio ?? undefined}
+                >
+                  {r.bio?.trim() ? r.bio : <span style={{ color: "var(--text-disabled)" }}>—</span>}
+                </td>
+                <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
+                  <AdminArtistLinks artist={r} />
+                  <ArtistRefreshImageButton artistId={r.id} />
+                  <SourceFetchButtons kind="artists" id={r.id} notFound={r.sourcesNotFound} />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {rows.length === 0 && (

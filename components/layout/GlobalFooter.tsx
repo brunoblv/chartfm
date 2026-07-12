@@ -63,6 +63,7 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
     { label: t("nav.guides"), href: "/guides" },
     { label: t("nav.contact"), href: "/contact" },
     { label: t("nav.support"), href: "/support" },
+    { label: t("nav.donate"), href: "/apoie" },
   ];
 
   const legalLinks: LinkItem[] = [

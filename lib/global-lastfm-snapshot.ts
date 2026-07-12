@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   buildDateRangeFromDate,
   buildWeekLabelFromDate,
@@ -43,14 +44,14 @@ async function loadPrevEntries(mode: GlobalLastfmMode, weekIndex: number): Promi
 }
 
 async function computeSnapshot(mode: GlobalLastfmMode, referenceDate: Date, weekIndex?: number) {
-  const meta = weekIndex != null ? weekMetaFromWeekIndex(weekIndex) : resolveGlobalLastfmWeekMeta(referenceDate);
+  const meta = weekIndex != null ? await weekMetaFromWeekIndex(weekIndex) : resolveGlobalLastfmWeekMeta(referenceDate);
   const prevEntries = await loadPrevEntries(mode, meta.weekIndex);
   const computed = await computeGlobalLastfmRanking(mode, referenceDate, prevEntries);
   return { ...meta, ...computed };
 }
 
-function weekMetaFromWeekIndex(weekIndex: number) {
-  const referenceDate = getWeeklySnapshotReferenceDate(weekIndex);
+async function weekMetaFromWeekIndex(weekIndex: number) {
+  const referenceDate = getWeeklySnapshotReferenceDate(weekIndex, await getGlobalPublishSlot());
   return {
     weekIndex,
     weekLabel: buildWeekLabelFromDate(referenceDate),
@@ -68,7 +69,7 @@ export function resolveGlobalLastfmWeekMeta(referenceDate: Date = new Date()) {
 }
 
 export async function saveGlobalLastfmSnapshotForWeek(mode: GlobalLastfmMode, weekIndex: number) {
-  const referenceDate = getWeeklySnapshotReferenceDate(weekIndex);
+  const referenceDate = getWeeklySnapshotReferenceDate(weekIndex, await getGlobalPublishSlot());
   const computed = await computeSnapshot(mode, referenceDate, weekIndex);
   const data = {
     weekLabel: computed.weekLabel,

@@ -10,6 +10,7 @@ import { FriendsRow, GlobalTeaser, SuggestedUsers, TrendingArtists } from "@/com
 import { formatRelativeTime } from "@/lib/i18n/format";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   buildWeekIndexFromDate,
   buildWeekLabelFromDate,
@@ -297,7 +298,7 @@ export default async function HomePage() {
     // A semana fechada de referência pode ainda não ter parada consolidada.
     // Para a landing usamos a semana mais recente que de fato tem dados.
     const dataWeekIndex = (await getLatestAvailableWeekIndex(rankingWeek.weekIndex)) ?? rankingWeek.weekIndex;
-    const weekRefDate = getWeeklySnapshotReferenceDate(dataWeekIndex);
+    const weekRefDate = getWeeklySnapshotReferenceDate(dataWeekIndex, await getGlobalPublishSlot());
     const weekLabel = buildWeekLabelFromDate(weekRefDate);
     const [globalChart, userCount, recentUsers, chartsThisWeek, publishersThisWeek] = await Promise.all([
       getGlobalTopSongs(dataWeekIndex, 100),

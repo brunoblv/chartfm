@@ -5,8 +5,9 @@ export type EventSlot = { weekday: number; time: string };
 
 /**
  * Valor inicial das paradas oficiais — terça, 9h, todas juntas (as 3 edições
- * são publicadas juntas pelo cron publish-weekly-globals). Editável em
- * /admin/postagens, aba "Agenda das Paradas".
+ * são publicadas juntas pelo cron publish-weekly-globals, que reconcilia contra
+ * esse horário). GLOBAL100_PUBLISHED também define o corte de envio das paradas
+ * pessoais (1h antes). Editável em /admin/parada-global.
  */
 const DEFAULT_SCHEDULE: Partial<Record<SocialEventType, EventSlot>> = {
   [SocialEventType.GLOBAL100_PUBLISHED]: { weekday: 2, time: "09:00" },

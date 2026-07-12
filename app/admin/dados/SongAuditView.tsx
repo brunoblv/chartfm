@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   SONG_FILTROS,
   SONG_FILTRO_DESCRICAO,
@@ -16,12 +17,15 @@ export async function SongAuditView({
   filtro,
   page,
   q = "",
+  scopeToggle,
 }: {
   basePath: string;
   userId?: string;
   filtro: SongFiltro;
   page: number;
   q?: string;
+  /** Alterna entre catálogo completo e "minhas paradas" — só aparece para o dono. */
+  scopeToggle?: { href: string; checked: boolean };
 }) {
   const result = await fetchSongAudit({ userId, filtro, page, q });
   const hrefFor = (f: SongFiltro, p: number) =>
@@ -29,7 +33,33 @@ export async function SongAuditView({
 
   return (
     <>
-      <SearchBox action={basePath} q={q} filtro={filtro} />
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <SearchBox action={basePath} q={q} filtro={filtro} />
+        </div>
+        {scopeToggle && (
+          <Link
+            href={scopeToggle.href}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 13,
+              fontWeight: 600,
+              color: scopeToggle.checked ? "#FA243C" : "var(--text-muted)",
+              textDecoration: "none",
+              padding: "8px 12px",
+              borderRadius: 10,
+              border: scopeToggle.checked ? "1px solid rgba(250,36,60,0.35)" : "1px solid var(--divider-strong)",
+              background: scopeToggle.checked ? "rgba(250,36,60,0.1)" : "var(--surface)",
+              marginBottom: 14,
+            }}
+          >
+            <input type="checkbox" readOnly checked={scopeToggle.checked} style={{ accentColor: "#FA243C" }} />
+            Só minhas paradas
+          </Link>
+        )}
+      </div>
       <FilterChips
         items={SONG_FILTROS.map((f) => ({
           key: f.key,

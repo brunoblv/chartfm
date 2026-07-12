@@ -261,12 +261,21 @@ export function chartWeekUnixRangeFromAnchor(weekAnchor: Date): { from: number; 
   };
 }
 
+/** Dia da semana (0=domingo…6=sábado) e horário BRT ("HH:MM") de publicação da Parada Global. */
+export type GlobalPublishSlot = { weekday: number; time: string };
+
+/** Slot padrão (terça 09:00 BRT) usado quando nada foi configurado em /admin/parada-global. */
+export const DEFAULT_GLOBAL_PUBLISH_SLOT: GlobalPublishSlot = { weekday: 2, time: "09:00" };
+
 /**
- * Prazo para paradas contarem no snapshot global de uma semana.
- * Retorna terça-feira 00:00 BRT (= 03:00 UTC) da semana seguinte ao weekIndex.
- * Charts com publishedAt >= este valor não entram no cálculo.
+ * Prazo para paradas contarem no snapshot global de uma semana: 1h antes do horário
+ * configurado de publicação (dia+hora BRT, ver lib/global-publish-schedule.ts e
+ * /admin/parada-global). Charts com publishedAt >= este valor não entram no cálculo.
  */
-export function getGlobalSnapshotDeadline(weekIndex: number): Date {
+export function getGlobalSnapshotDeadline(
+  weekIndex: number,
+  slot: GlobalPublishSlot = DEFAULT_GLOBAL_PUBLISH_SLOT,
+): Date {
   const year = Math.floor(weekIndex / 100);
   const week = weekIndex % 100;
   // Jan 4 está sempre na semana ISO 1
@@ -274,26 +283,30 @@ export function getGlobalSnapshotDeadline(weekIndex: number): Date {
   const jan4Dow = jan4.getUTCDay() || 7; // Segunda=1 … Domingo=7
   const monday = new Date(jan4);
   monday.setUTCDate(jan4.getUTCDate() - jan4Dow + 1 + (week - 1) * 7);
-  // Terça da semana seguinte = segunda + 8 dias, às 03:00 UTC (= 00:00 BRT)
-  const deadline = new Date(monday);
-  deadline.setUTCDate(monday.getUTCDate() + 8);
-  deadline.setUTCHours(3, 0, 0, 0);
-  return deadline;
+
+  // Dia configurado (0=domingo…6=sábado) na semana seguinte à monday, como offset a partir dela.
+  const daysFromMonday = (slot.weekday + 6) % 7; // terça(2) -> 1
+  const [hh, mm] = slot.time.split(":").map(Number);
+  const publishAt = new Date(monday);
+  publishAt.setUTCDate(monday.getUTCDate() + 7 + daysFromMonday);
+  publishAt.setUTCHours(hh + 3, mm, 0, 0); // BRT -> UTC
+
+  return new Date(publishAt.getTime() - 60 * 60 * 1000); // corte = 1h antes da publicação
 }
 
-/** Segunda 01:00 BRT após o fechamento da semana ISO — referência para snapshots semanais. */
-export function getWeeklySnapshotReferenceDate(weekIndex: number): Date {
-  const deadline = getGlobalSnapshotDeadline(weekIndex);
+/** ~1 dia antes do corte configurado — referência para snapshots semanais. */
+export function getWeeklySnapshotReferenceDate(weekIndex: number, slot?: GlobalPublishSlot): Date {
+  const deadline = getGlobalSnapshotDeadline(weekIndex, slot);
   return new Date(deadline.getTime() - 23 * 60 * 60 * 1000);
 }
 
-/** Paradas principais publicadas antes do corte da semana (terça 0h BRT). */
-export function frozenPrimaryParadaChartWhere(weekIndex: number) {
+/** Paradas principais publicadas antes do corte configurado da semana. */
+export function frozenPrimaryParadaChartWhere(weekIndex: number, slot?: GlobalPublishSlot) {
   return {
     weekIndex,
     isPublished: true as const,
     parada: { isPrimary: true as const },
-    publishedAt: { lt: getGlobalSnapshotDeadline(weekIndex) },
+    publishedAt: { lt: getGlobalSnapshotDeadline(weekIndex, slot) },
   };
 }
 

@@ -76,11 +76,12 @@ export function LandingPage({
     {
       title: t("landing.footerResources"),
       items: [
-        { label: t("landing.footerGuides"), href: "/guides" },
+        { label: t("landing.discover"), href: "/discover" },
+        { label: t("landing.feed"), href: "/feed" },
+        { label: t("landing.helpCenter"), href: "/ajuda" },
         { label: t("landing.footerEditorial"), href: "/editorial" },
-        { label: t("landing.footerFaq"), href: "/faq" },
-        { label: t("landing.footerImportSpotify"), href: "/login" },
         { label: t("landing.communities"), href: "/communities" },
+        { label: t("landing.footerDonate"), href: "/apoie" },
       ],
     },
     {
@@ -111,9 +112,11 @@ export function LandingPage({
         {!isMobile && (
           <div style={{ display: "flex", gap: 28, fontSize: 14, color: "var(--text)", fontWeight: 500 }}>
             <Link href="#como-funciona" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.howItWorks")}</Link>
+            <Link href="/discover" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.discover")}</Link>
             <Link href="#comunidades" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.communities")}</Link>
             <Link href="#parada-global" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.globalChart")}</Link>
             <Link href="/about" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.about")}</Link>
+            <Link href="/ajuda" style={{ color: "inherit", textDecoration: "none" }}>{t("landing.helpCenter")}</Link>
           </div>
         )}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -511,7 +514,7 @@ export function LandingPage({
               música que aparece em muitas paradas só nas posições finais.
             </p>
             <p style={{ margin: 0 }}>
-              A semana do Global 100 fecha toda terça-feira à meia-noite (horário de Brasília); paradas
+              A semana do Global 100 fecha toda segunda-feira às 17:00 (horário de Brasília); paradas
               publicadas depois desse horário contam para a semana seguinte. O snapshot de cada semana é
               processado horas depois e vira um registro permanente - o histórico completo fica sempre
               disponível para consulta.

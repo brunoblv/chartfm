@@ -304,17 +304,17 @@ function SidebarContent({
     { href: "/copa", label: "Copa ChartFM", icon: Flame },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
     { href: profileHref, label: t("nav.profile"), icon: User, requiresAuth: true },
+    { href: "/ajuda", label: t("nav.helpCenter"), icon: LifeBuoy },
   ];
 
   const footerLinks = [
-    { href: "/guides", label: t("nav.guides") },
     { href: "/editorial", label: t("nav.editorial") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
-    { href: "/support", label: t("nav.support") },
     { href: "/terms-of-use", label: t("nav.terms") },
     { href: "/whats-new", label: t("nav.whatsNew") },
     { href: "/privacy-policy", label: t("nav.privacy") },
+    { href: "/apoie", label: t("nav.donate") },
   ];
 
   return (
@@ -549,6 +549,10 @@ function SidebarContent({
               <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
                 <Sparkles size={14} />
                 <span>Lançamentos</span>
+              </Link>
+              <Link href="/admin/parada-global" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/parada-global")}>
+                <Globe size={14} />
+                <span>Parada Global</span>
               </Link>
               <Link href="/admin/postagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/postagens")}>
                 <Send size={14} />

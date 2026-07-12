@@ -1,7 +1,6 @@
 import { Shell } from "@/components/layout/Shell";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
-import { getEventSchedules } from "@/lib/social/event-schedule";
 import PostagensClient from "./PostagensClient";
 
 export const dynamic = "force-dynamic";
@@ -43,9 +42,6 @@ export default async function AdminPostagensPage() {
     prisma.globalAlbumsSnapshot.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
     prisma.weeklySpotlightPoll.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
   ]);
-
-  const eventSchedulesMap = await getEventSchedules();
-  const eventSchedules = Array.from(eventSchedulesMap.entries()).map(([eventType, slot]) => ({ eventType, ...slot }));
 
   // Última semana com dados congelados por tipo de evento — evita pré-preencher a "semana atual"
   // calendário quando o snapshot da semana ainda não foi gerado (só sai na terça).
@@ -98,7 +94,6 @@ export default async function AdminPostagensPage() {
         pushRounds={pushRounds}
         copaEditions={copaEditions}
         latestWeekIndex={latestWeekIndex}
-        eventSchedules={eventSchedules}
       />
     </Shell>
   );

@@ -48,7 +48,7 @@ export default function GuideGlobal100() {
         {
           title: "Quando o ranking é atualizado",
           body: [
-            "A semana do Global 100 fecha toda terça-feira à meia-noite (horário de Brasília): paradas publicadas até esse horário contam para a semana que está terminando. Pouco depois, por volta das 6h de terça, o snapshot da semana é processado e vira um registro permanente, preservando o histórico completo de todos os rankings anteriores.",
+            "A semana do Global 100 fecha toda segunda-feira às 17:00 (horário de Brasília): paradas publicadas até esse horário contam para a semana que está terminando. Pouco depois, por volta das 6h de terça, o snapshot da semana é processado e vira um registro permanente, preservando o histórico completo de todos os rankings anteriores.",
             "Paradas publicadas depois da meia-noite de terça contam para a semana seguinte, não para a que acabou de fechar. Se você publicar na terça-feira de manhã, sua chart contribui para o ranking que só será consolidado na terça seguinte.",
             "O histórico completo de semanas anteriores está disponível na página do Global 100. É possível navegar entre semanas e ver como o ranking evoluiu ao longo do tempo.",
           ],

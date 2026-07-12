@@ -280,7 +280,19 @@ export function InlineDate({
           ) : null}
         </span>
       ) : (
-        <span style={{ color: "#C41E3A", fontWeight: 700, fontSize: 12 }}>falta</span>
+        <span
+          style={{
+            display: "inline-block",
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--text-disabled)",
+            border: "1.5px dashed var(--divider-strong)",
+            borderRadius: 8,
+            padding: "4px 9px",
+          }}
+        >
+          dd/mm/aaaa
+        </span>
       )}
       {status === "saving" && <span style={{ ...statusStyle, color: "var(--text-muted)", display: "block" }}>salvando…</span>}
       {status === "error" && <span style={{ ...statusStyle, color: "#C41E3A", display: "block" }}>erro ao salvar</span>}

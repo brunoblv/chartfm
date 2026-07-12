@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference, frozenPrimaryParadaChartWhere } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { AdSlot } from "@/components/ui/AdSlot";
 import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
@@ -138,7 +139,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
   const topArtists = snapshot.payload.weeklyArtists;
   const topArtistsOverall = snapshot.payload.overallArtists;
   const uniqueParadas = await prisma.chart.count({
-    where: frozenPrimaryParadaChartWhere(weekIndex),
+    where: frozenPrimaryParadaChartWhere(weekIndex, await getGlobalPublishSlot()),
   });
   const currentIndexInList = availableWeekIndexes.indexOf(weekIndex);
   const newerWeek = currentIndexInList > 0 ? availableWeekIndexes[currentIndexInList - 1] : null;
