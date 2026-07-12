@@ -371,7 +371,7 @@ export function YouTubeClipsBackfillClient({ initialTotal }: Props) {
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, marginBottom: 2 }}>
-                    <AdminSongNameLink songId={item.id} title={item.title} artist={item.artist} />
+                    <AdminSongNameLink song={{ id: item.id, title: item.title, artist: item.artist }} />
                   </div>
                   <div style={{ color: "var(--text-muted)", fontSize: 11 }}>
                     {item.reason}
