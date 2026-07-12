@@ -182,6 +182,47 @@ export async function resolveBrunoNewHitsImportTracks(
 }
 
 /**
+ * Import ponderado — scrobbles dos últimos 7 dias, sem filtro de playlist.
+ */
+export async function resolveBrunoLastfm7DaysImportTracks(
+  weekDateInput: unknown,
+  limit: number,
+  username: string,
+  handle?: string | null,
+): Promise<LastfmImportResult> {
+  const anchor = parseChartWeekPickerDate(weekDateInput) ?? new Date();
+  const toExclusive = Math.floor(
+    Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), anchor.getUTCDate() + 1) / 1000,
+  );
+  const from = toExclusive - 7 * 86400;
+  const trackPlays = await fetchTracksBetweenUnix(from, toExclusive, username);
+  const scored = trackPlays
+    .map((tp) => ({
+      track: tp.track,
+      artist: tp.artist,
+      album: tp.album,
+      score: tp.dayPlays.reduce((acc, p) => acc + p.plays, 0),
+    }))
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  const tracks = scored
+    .slice(0, limit)
+    .map((t) => ({
+      track: t.track,
+      artist: t.artist,
+      album: t.album,
+      playcount: t.score,
+    }));
+
+  return {
+    tracks,
+    periodLabel: "últimos 7 dias",
+    source: "rolling_30day_weighted",
+  };
+}
+
+/**
  * Import ponderado — scrobbles dos últimos 30 dias, sem filtro de playlist.
  */
 export async function resolveBrunoLastfmImportTracks(

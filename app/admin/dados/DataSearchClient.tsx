@@ -16,6 +16,7 @@ import { chartGenreSlugsForTags, getChartGenreBySlug } from "@/lib/genre-taxonom
 import { ArtistRefreshImageButton } from "../artists/ArtistRefreshImageButton";
 import { InlineField, InlineTags } from "./InlineEdit";
 import { SourceFetchButtons } from "./SourceFetchButtons";
+import { YouTubeClipFetchButton } from "./YouTubeClipFetchButton";
 
 type Kind = "music" | "albums" | "artists";
 
@@ -237,6 +238,7 @@ function MusicTable({ rows }: { rows: SongRow[] }) {
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminSongLinks song={s} />
               <SourceFetchButtons kind="music" id={s.id} />
+              <YouTubeClipFetchButton songId={s.id} title={s.title} artist={s.artist} />
             </td>
           </tr>
         ))}

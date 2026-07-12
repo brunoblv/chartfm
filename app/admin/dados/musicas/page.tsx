@@ -24,6 +24,9 @@ export default async function DadosMusicasPage({
         <Link href="/admin/song-genres" style={adminNavChipStyle}>
           Tags de gênero
         </Link>
+        <Link href="/admin/songs/youtube-clips" style={adminNavChipStyle}>
+          Video Clipes (YouTube)
+        </Link>
         <Link
           href="/admin/music/new"
           style={{

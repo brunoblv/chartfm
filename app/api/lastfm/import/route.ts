@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import {
-  resolveLastfmImportTracks,
   resolveBrunoNewHitsImportTracks,
   resolveBrunoLastfmImportTracks,
+  resolveBrunoLastfm7DaysImportTracks,
   resolveWeightedLastfmUsername,
 } from "@/lib/lastfm-import";
-import { getWeightedLastfmImportConfig, hasWeightedLastfmImport } from "@/lib/mytrl-access";
+import { getWeightedLastfmImportConfig } from "@/lib/mytrl-access";
 import { probeSpotifyApi, searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 import { getLastfmImportPlaylistTracks } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
@@ -165,9 +165,10 @@ async function preferExistingSongs(items: EnrichedSong[]): Promise<EnrichedSong[
 }
 
 // POST /api/lastfm/import
-// Body: { limit?: number; weekDate?: string; filterNewHits?: boolean }
-// Import ponderado (@bruno, @bringtheleo): filterNewHits true (padrão) → 30d + playlist-fonte; false → 30d sem filtro.
-// Demais usuários: semana atual top `1month`; outras semanas → mês civil anterior.
+// Body: { limit?: number; weekDate?: string; filterNewHits?: boolean; period?: "7days" | "30days" }
+// filterNewHits (apenas @bruno/@bringtheleo, com config de playlist-fonte): 30d + filtro por playlist.
+// Todos os demais casos: import ponderado por período (7 ou 30 dias, pesos recentPlayWeight/olderPlayWeight;
+// padrão 20/10, iguais aos do @bruno, salvo config específica como @bringtheleo).
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -177,7 +178,7 @@ export async function POST(req: NextRequest) {
   const weightedConfig = getWeightedLastfmImportConfig(session.user.handle);
   const isWeightedImport = weightedConfig !== null;
 
-  let body: { limit?: unknown; weekDate?: unknown; filterNewHits?: unknown } = {};
+  let body: { limit?: unknown; weekDate?: unknown; filterNewHits?: unknown; period?: unknown } = {};
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -185,6 +186,7 @@ export async function POST(req: NextRequest) {
   }
 
   const filterNewHits = isWeightedImport && body.filterNewHits !== false;
+  const period = body.period === "7days" ? "7days" : "30days";
 
   const userRecord = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -244,30 +246,6 @@ export async function POST(req: NextRequest) {
   const limit = typeof body.limit === "number" && body.limit > 0 && body.limit <= 200 ? Math.round(body.limit) : 200;
 
   try {
-    if (isWeightedImport && !filterNewHits) {
-      const { tracks: topTracks, periodLabel } = await resolveBrunoLastfmImportTracks(
-        body.weekDate,
-        limit,
-        lastfmUsername,
-        session.user.handle,
-      );
-
-      const BATCH = 20;
-      const spotifyOk = (await probeSpotifyApi()).ok;
-      const enriched: EnrichedSong[] = [];
-      for (let i = 0; i < topTracks.length; i += BATCH) {
-        const slice = topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album }));
-        const batch = await enrichBatch(slice, spotifyOk);
-        enriched.push(...batch);
-      }
-
-      const songs = (await preferExistingSongs(enriched)).slice(0, limit);
-      return NextResponse.json(
-        { songs, total: topTracks.length, periodLabel, filteredNewHits: false },
-        { headers: NO_CACHE_HEADERS },
-      );
-    }
-
     if (filterNewHits && playlistTracks) {
       const { tracks: newHitsTracks, periodLabel } = await resolveBrunoNewHitsImportTracks(
         body.weekDate,
@@ -289,7 +267,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { tracks: topTracks, periodLabel } = await resolveLastfmImportTracks(body.weekDate, limit, lastfmUsername);
+    // Import ponderado por período (7 ou 30 dias, com pesos) — disponível para todos os usuários,
+    // usando a conta Last.fm resolvida (própria ou, no caso do @bringtheleo, a do @bruno).
+    const { tracks: topTracks, periodLabel } = period === "7days"
+      ? await resolveBrunoLastfm7DaysImportTracks(
+          body.weekDate,
+          limit,
+          lastfmUsername,
+          session.user.handle,
+        )
+      : await resolveBrunoLastfmImportTracks(
+          body.weekDate,
+          limit,
+          lastfmUsername,
+          session.user.handle,
+        );
 
     const BATCH = 20;
     const spotifyOk = (await probeSpotifyApi()).ok;
