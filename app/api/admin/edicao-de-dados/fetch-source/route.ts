@@ -27,20 +27,22 @@ export async function POST(req: NextRequest) {
     kind?: unknown;
     id?: unknown;
     source?: unknown;
+    force?: unknown;
   };
   const source = body.source as Source;
   if (source !== "lastfm" && source !== "spotify" && source !== "musicbrainz" && source !== "wikipedia") {
     return NextResponse.json({ error: "invalid_source" }, { status: 400 });
   }
+  const force = body.force === true;
 
   try {
     let result: FetchResult | { error: string };
     if (body.kind === "music" && typeof body.id === "string" && body.id.trim()) {
-      result = await fetchForSong(body.id.trim(), source);
+      result = await fetchForSong(body.id.trim(), source, { force });
     } else if (body.kind === "albums" && Number.isInteger(Number(body.id))) {
-      result = await fetchForAlbum(Number(body.id), source);
+      result = await fetchForAlbum(Number(body.id), source, { force });
     } else if (body.kind === "artists" && Number.isInteger(Number(body.id))) {
-      result = await fetchForArtist(Number(body.id), source);
+      result = await fetchForArtist(Number(body.id), source, { force });
     } else {
       return NextResponse.json({ error: "invalid_kind" }, { status: 400 });
     }

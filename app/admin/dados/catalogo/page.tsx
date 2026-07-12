@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { spotifyConfigured } from "@/lib/spotify-server";
 import { SongCoversBackfillClient } from "../../albums/no-cover/SongCoversBackfillClient";
-import { countSongsSemDatas, getAdminAccess, parsePage, parseSongFiltro, semCapaWhere } from "../lib";
+import { countSongsSemDatas, getAdminAccess, parsePage, parseQuery, parseSongFiltro, semCapaWhere } from "../lib";
 import { AccessDenied, DadosShell } from "../ui";
 import { SongAuditView } from "../SongAuditView";
 import { DatesBackfillClient } from "../DatesBackfillClient";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function CatalogoAuditPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filtro?: string; page?: string }>;
+  searchParams: Promise<{ filtro?: string; page?: string; q?: string }>;
 }) {
   const access = await getAdminAccess();
   if (!access) return <AccessDenied />;
@@ -19,6 +19,7 @@ export default async function CatalogoAuditPage({
   const params = await searchParams;
   const filtro = parseSongFiltro(params.filtro, "problemas");
   const page = parsePage(params.page);
+  const q = parseQuery(params.q);
 
   const mostrarBackfillCapas = filtro === "sem-album" || filtro === "album-sem-capa";
   const [totalSemCapa, semDatas] = await Promise.all([
@@ -42,7 +43,7 @@ export default async function CatalogoAuditPage({
           />
         </div>
       )}
-      <SongAuditView basePath="/admin/dados/catalogo" filtro={filtro} page={page} />
+      <SongAuditView basePath="/admin/dados/catalogo" filtro={filtro} page={page} q={q} />
     </DadosShell>
   );
 }

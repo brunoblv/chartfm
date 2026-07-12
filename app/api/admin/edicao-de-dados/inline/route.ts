@@ -8,9 +8,10 @@ import { withReleaseDatesNotFoundCleared } from "@/app/admin/dados/lib";
 export const runtime = "nodejs";
 
 /**
- * Edição inline da tela /admin/dados: atualiza UM campo por vez (salvo no blur).
- * Só campos da whitelist abaixo — mudanças relacionais (trocar artista/álbum de
- * uma música) continuam no formulário de edição completo.
+ * Edição inline da tela /admin/dados: atualiza UM campo por vez (salvo ao sair
+ * do campo ou, no caso do álbum, na seleção do resultado de busca). Só campos
+ * da whitelist abaixo — trocar o artista de uma música continua no formulário
+ * de edição completo.
  */
 
 type Body = {
@@ -92,6 +93,26 @@ export async function PATCH(req: NextRequest) {
           data: { genres, genreSource: genres.length > 0 ? "manual" : null },
         });
         return NextResponse.json({ ok: true, genres });
+      }
+      if (field === "albumSpotifyId") {
+        const albumSpotifyId = asTrimmed(body.value);
+        if (!albumSpotifyId) {
+          await prisma.song.update({
+            where: { id },
+            data: withReleaseDatesNotFoundCleared({ albumSpotifyId: null }),
+          });
+          return NextResponse.json({ ok: true, album: null });
+        }
+        const album = await prisma.album.findUnique({
+          where: { spotifyId: albumSpotifyId },
+          select: { spotifyId: true, title: true },
+        });
+        if (!album) return NextResponse.json({ error: "album_not_found" }, { status: 404 });
+        await prisma.song.update({
+          where: { id },
+          data: withReleaseDatesNotFoundCleared({ albumSpotifyId: album.spotifyId, album: album.title }),
+        });
+        return NextResponse.json({ ok: true, album });
       }
       if (field === "singleReleaseDate" || field === "musicVideoReleaseDate") {
         const date = asDateOrNull(body.value);

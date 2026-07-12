@@ -82,10 +82,10 @@ async function loadBatch(kind: Kind, exclude: (string | number)[], limit: number
   return rows.map((a) => ({ id: a.id, label: a.name, href: `/artist/${a.id}/edit` }));
 }
 
-async function runSource(kind: Kind, id: string | number, source: Source) {
-  if (kind === "music") return fetchForSong(id as string, source);
-  if (kind === "albums") return fetchForAlbum(id as number, source);
-  return fetchForArtist(id as number, source);
+async function runSource(kind: Kind, id: string | number, source: Source, force: boolean) {
+  if (kind === "music") return fetchForSong(id as string, source, { force });
+  if (kind === "albums") return fetchForAlbum(id as number, source, { force });
+  return fetchForArtist(id as number, source, { force });
 }
 
 async function countRemaining(kind: Kind): Promise<number> {
@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
     source?: unknown;
     limit?: unknown;
     exclude?: unknown;
+    force?: unknown;
   };
 
   const kind = body.kind;
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "invalid_source" }, { status: 400 });
   }
 
+  const force = body.force === true;
   const maxBatch = runAll ? MAX_BATCH_ALL_SOURCES : MAX_BATCH_SINGLE_SOURCE;
   const limit = Math.min(maxBatch, Math.max(1, typeof body.limit === "number" ? Math.floor(body.limit) : maxBatch));
   const exclude = Array.isArray(body.exclude)
@@ -142,7 +144,7 @@ export async function POST(req: NextRequest) {
 
     for (const src of sources) {
       try {
-        const result = await runSource(kind, item.id, src);
+        const result = await runSource(kind, item.id, src, force);
         if ("error" in result) {
           if (result.error !== "spotify_nao_configurado") hadError = true;
           continue;

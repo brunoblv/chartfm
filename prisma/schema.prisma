@@ -133,6 +133,8 @@ model Artist {
   bioNotFoundAt  DateTime?  @map("bio_not_found_at")
   /// Backfill automático (Spotify/MusicBrainz) não achou imagem/link/gêneros — não tentar de novo até correção manual.
   metadataNotFoundAt DateTime? @map("metadata_not_found_at")
+  /// Fontes (spotify/lastfm/musicbrainz/wikipedia) já consultadas para este artista sem retorno — não tentar de novo até forçar.
+  sourcesNotFound String[]   @default([]) @map("sources_not_found")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
   albums         Album[]
@@ -166,6 +168,8 @@ model Album {
   label               String?               @map("label")
   /// Backfill automático (Spotify) não achou capa/data/tipo/faixas — não tentar de novo até correção manual.
   metadataNotFoundAt  DateTime?             @map("metadata_not_found_at")
+  /// Fontes (spotify/lastfm/musicbrainz/wikipedia) já consultadas para este álbum sem retorno — não tentar de novo até forçar.
+  sourcesNotFound     String[]              @default([]) @map("sources_not_found")
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
   artist              Artist                @relation(fields: [artistSpotifyId], references: [spotifyId])
@@ -208,6 +212,8 @@ model Song {
   /// Backfill automático (Wikipedia/MB) não achou datas — não tentar de novo até correção manual.
   releaseDatesNotFoundAt     DateTime?                 @map("release_dates_not_found_at")
   releaseDatesVersion        Int                       @default(0) @map("release_dates_version")
+  /// Fontes (spotify/lastfm/musicbrainz/wikipedia) já consultadas para esta música sem retorno — não tentar de novo até forçar.
+  sourcesNotFound            String[]                  @default([]) @map("sources_not_found")
   editorialNote              String?                   @map("editorial_note")
   createdAt                  DateTime                  @default(now()) @map("created_at")
   artistRef                  Artist?                   @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])

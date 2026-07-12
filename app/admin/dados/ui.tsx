@@ -11,6 +11,8 @@ import {
 import type { AlbumAuditRow, SongAuditRow } from "./lib";
 import { SourceFetchButtons } from "./SourceFetchButtons";
 import { InlineDate } from "./InlineEdit";
+import { AlbumPicker } from "./AlbumPicker";
+import { YouTubeClipFetchButton } from "./YouTubeClipFetchButton";
 
 // ---------------------------------------------------------------------------
 // Navegação da seção
@@ -100,6 +102,69 @@ export function AccessDenied({ message }: { message?: string }) {
 // ---------------------------------------------------------------------------
 // Filtros e paginação
 // ---------------------------------------------------------------------------
+
+const searchFormInputStyle: CSSProperties = {
+  flex: 1,
+  minWidth: 220,
+  maxWidth: 420,
+  padding: "8px 12px",
+  borderRadius: 10,
+  border: "1px solid var(--divider-strong)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontSize: 13,
+  boxSizing: "border-box",
+};
+
+const searchFormButtonStyle: CSSProperties = {
+  padding: "8px 14px",
+  borderRadius: 10,
+  border: "1px solid var(--divider-strong)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontWeight: 700,
+  fontSize: 13,
+  cursor: "pointer",
+};
+
+/** Busca por texto (título/artista/álbum) via query string — GET simples, sem JS. */
+export function SearchBox({
+  action,
+  q,
+  filtro,
+  placeholder = "Buscar por música, artista ou álbum",
+}: {
+  action: string;
+  q: string;
+  /** Filtro atual, preservado como campo oculto ao pesquisar. */
+  filtro?: string;
+  placeholder?: string;
+}) {
+  return (
+    <form
+      action={action}
+      method="GET"
+      style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}
+    >
+      {filtro && <input type="hidden" name="filtro" value={filtro} />}
+      <input
+        type="search"
+        name="q"
+        defaultValue={q}
+        placeholder={placeholder}
+        style={searchFormInputStyle}
+      />
+      <button type="submit" style={searchFormButtonStyle}>
+        Buscar
+      </button>
+      {q && (
+        <Link href={action} style={{ ...pageLinkStyle, padding: "8px 14px" }}>
+          Limpar
+        </Link>
+      )}
+    </form>
+  );
+}
 
 export function FilterChips({
   items,
@@ -311,17 +376,12 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                 <td style={cellEllipsis} title={s.artist}>
                   {s.artist}
                 </td>
-                <td style={cellEllipsis} title={s.albumRef?.title ?? s.album ?? undefined}>
-                  {s.albumRef ? (
-                    s.albumRef.title
-                  ) : s.album?.trim() ? (
-                    <>
-                      {s.album}{" "}
-                      <span style={{ ...missStyle, fontSize: 11 }}>(só texto)</span>
-                    </>
-                  ) : (
-                    <span style={missStyle}>sem álbum</span>
-                  )}
+                <td style={{ ...adminTdStyle, verticalAlign: "top" }} title={s.albumRef?.title ?? s.album ?? undefined}>
+                  <AlbumPicker
+                    songId={s.id}
+                    album={s.albumRef ? { title: s.albumRef.title, spotifyId: s.albumSpotifyId ?? "" } : null}
+                    albumText={s.album}
+                  />
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <CoverThumb url={s.albumRef?.coverUrl} />
@@ -349,7 +409,8 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                 </td>
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <AdminSongLinks song={s} />
-                  <SourceFetchButtons kind="music" id={s.id} />
+                  <SourceFetchButtons kind="music" id={s.id} notFound={s.sourcesNotFound} />
+                  <YouTubeClipFetchButton songId={s.id} title={s.title} artist={s.artist} />
                 </td>
               </tr>
             );
@@ -419,7 +480,7 @@ export function AlbumAuditTable({ rows, emptyLabel }: { rows: AlbumAuditRow[]; e
               </td>
               <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                 <AdminAlbumLinks album={a} />
-                <SourceFetchButtons kind="albums" id={a.id} />
+                <SourceFetchButtons kind="albums" id={a.id} notFound={a.sourcesNotFound} />
               </td>
             </tr>
           ))}

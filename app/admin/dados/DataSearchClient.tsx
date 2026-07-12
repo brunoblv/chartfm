@@ -28,6 +28,7 @@ type SongRow = {
   spotifyId: string | null;
   genres: string[];
   genreSource: string | null;
+  sourcesNotFound: string[];
   artistGenres: string[];
 };
 
@@ -35,6 +36,7 @@ type AlbumRow = {
   id: number;
   title: string;
   spotifyId: string | null;
+  sourcesNotFound: string[];
   artist: { id: number; name: string; spotifyId: string | null; genres: string[] };
   artistGenres: string[];
   songs: { id: string; title: string; artist: string }[];
@@ -47,6 +49,7 @@ type ArtistRow = {
   spotifyId: string | null;
   imageUrl: string | null;
   genres: string[];
+  sourcesNotFound: string[];
 };
 
 const searchInputStyle: CSSProperties = {
@@ -237,7 +240,7 @@ function MusicTable({ rows }: { rows: SongRow[] }) {
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminSongLinks song={s} />
-              <SourceFetchButtons kind="music" id={s.id} />
+              <SourceFetchButtons kind="music" id={s.id} notFound={s.sourcesNotFound} />
               <YouTubeClipFetchButton songId={s.id} title={s.title} artist={s.artist} />
             </td>
           </tr>
@@ -288,7 +291,7 @@ function AlbumTable({ rows }: { rows: AlbumRow[] }) {
             </td>
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminAlbumLinks album={a} />
-              <SourceFetchButtons kind="albums" id={a.id} />
+              <SourceFetchButtons kind="albums" id={a.id} notFound={a.sourcesNotFound} />
             </td>
           </tr>
         ))}
@@ -352,7 +355,7 @@ function ArtistTable({ rows }: { rows: ArtistRow[] }) {
             <td style={{ ...adminTdStyle, verticalAlign: "top" }}>
               <AdminArtistLinks artist={a} />
               <ArtistRefreshImageButton artistId={a.id} />
-              <SourceFetchButtons kind="artists" id={a.id} />
+              <SourceFetchButtons kind="artists" id={a.id} notFound={a.sourcesNotFound} />
             </td>
           </tr>
         ))}

@@ -90,7 +90,7 @@ export default async function ArtistasPendenciasPage({
                 <td style={{ ...adminTdStyle, verticalAlign: "middle" }}>
                   <AdminArtistLinks artist={a} />
                   <ArtistRefreshImageButton artistId={a.id} />
-                  <SourceFetchButtons kind="artists" id={a.id} />
+                  <SourceFetchButtons kind="artists" id={a.id} notFound={a.sourcesNotFound} />
                 </td>
               </tr>
             ))}

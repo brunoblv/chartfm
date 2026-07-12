@@ -30,6 +30,10 @@ export function parsePage(raw: string | undefined): number {
   return Number.isFinite(p) && p > 0 ? p : 1;
 }
 
+export function parseQuery(raw: string | undefined): string {
+  return (raw ?? "").trim();
+}
+
 // ---------------------------------------------------------------------------
 // Auditoria de músicas
 // Regra do catálogo: toda música tem um álbum, todo álbum tem uma capa.
@@ -40,6 +44,7 @@ export type SongFiltro =
   | "problemas"
   | "sem-album"
   | "album-sem-capa"
+  | "album-outro-dono"
   | "sem-mbid"
   | "sem-single"
   | "sem-clipe"
@@ -51,6 +56,7 @@ export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "problemas", label: "Com pendência" },
   { key: "sem-album", label: "Sem álbum" },
   { key: "album-sem-capa", label: "Álbum sem capa" },
+  { key: "album-outro-dono", label: "Álbum de outro artista" },
   { key: "sem-mbid", label: "Sem MBID" },
   { key: "sem-single", label: "Sem data do single" },
   { key: "sem-clipe", label: "Sem data do clipe" },
@@ -63,6 +69,8 @@ export const SONG_FILTRO_DESCRICAO: Record<SongFiltro, string> = {
   problemas: "Músicas com pelo menos uma pendência (álbum, capa, MBID ou datas).",
   "sem-album": "Músicas sem álbum vinculado no catálogo (regra: toda música tem um álbum).",
   "album-sem-capa": "Músicas cujo álbum vinculado está sem capa (regra: todo álbum tem uma capa).",
+  "album-outro-dono":
+    "Músicas cujo álbum vinculado pertence a um artista diferente do artista da música — provável álbum errado.",
   "sem-mbid": "Músicas sem MBID (MusicBrainz Recording ID).",
   "sem-single": "Músicas sem data de lançamento do single.",
   "sem-clipe": "Músicas sem data de lançamento do clipe (nem YouTube).",
@@ -147,10 +155,24 @@ export function minhasParadasWhere(userId: string): Prisma.SongWhereInput {
   };
 }
 
+/** Busca por texto: título, artista ou álbum (contains, case-insensitive). */
+function songSearchWhere(q: string): Prisma.SongWhereInput | null {
+  const term = q.trim();
+  if (!term) return null;
+  return {
+    OR: [
+      { title: { contains: term, mode: "insensitive" } },
+      { artist: { contains: term, mode: "insensitive" } },
+      { album: { contains: term, mode: "insensitive" } },
+    ],
+  };
+}
+
 function songFiltroWhere(filtro: SongFiltro): Prisma.SongWhereInput | null {
   switch (filtro) {
     case "todas":
     case "data-01-01":
+    case "album-outro-dono":
       return null;
     case "problemas":
       return songProblemasWhere;
@@ -181,6 +203,7 @@ export const SONG_AUDIT_SELECT = {
   musicVideoReleaseDate: true,
   youtubeReleaseDate: true,
   releaseDatesNotFoundAt: true,
+  sourcesNotFound: true,
   albumRef: {
     select: {
       id: true,
@@ -227,6 +250,40 @@ export async function countSongsComData0101(userId?: string): Promise<number> {
   return (await songIdsComData0101(userId)).length;
 }
 
+/** IDs de músicas cujo álbum vinculado pertence a um artista diferente do artista da música. */
+async function songIdsAlbumOutroDono(userId?: string): Promise<string[]> {
+  const scopeSql = userId
+    ? Prisma.sql`AND EXISTS (
+        SELECT 1 FROM "ChartEntry" ce
+        JOIN "Chart" c ON c.id = ce."chartId"
+        JOIN "paradas" p ON p.id = c."parada_id"
+        WHERE ce."songId" = s.id
+          AND p."user_id" = ${userId}
+          AND p."deleted_at" IS NULL
+          AND p."is_community_official" = false
+      )`
+    : Prisma.empty;
+  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT s.id FROM "Song" s
+    JOIN "albums" a ON a.spotify_id = s.album_spotify_id
+    WHERE s.artist_spotify_id IS NOT NULL
+      AND a.artist_spotify_id IS NOT NULL
+      AND a.artist_spotify_id <> s.artist_spotify_id
+    ${scopeSql}
+    ORDER BY s.artist ASC, s.title ASC
+  `);
+  return rows.map((r) => r.id);
+}
+
+export async function countSongsAlbumOutroDono(userId?: string): Promise<number> {
+  return (await songIdsAlbumOutroDono(userId)).length;
+}
+
+const ID_LIST_FILTROS: Record<string, (userId?: string) => Promise<string[]>> = {
+  "data-01-01": songIdsComData0101,
+  "album-outro-dono": songIdsAlbumOutroDono,
+};
+
 /** Quantas músicas ainda estão sem data de single ou de clipe (alvo do backfill). */
 export async function countSongsSemDatas(userId?: string): Promise<number> {
   const scope = userId ? minhasParadasWhere(userId) : null;
@@ -252,16 +309,29 @@ export async function fetchSongAudit(opts: {
   userId?: string;
   filtro: SongFiltro;
   page: number;
+  q?: string;
 }): Promise<SongAuditPage> {
   const { userId, filtro } = opts;
   const scope = userId ? minhasParadasWhere(userId) : null;
+  const searchWhere = songSearchWhere(opts.q ?? "");
 
-  if (filtro === "data-01-01") {
-    const allIds = await songIdsComData0101(userId);
-    const total = allIds.length;
+  const idListFetcher = ID_LIST_FILTROS[filtro];
+  if (idListFetcher) {
+    const allIds = await idListFetcher(userId);
+    const filteredIds = searchWhere
+      ? (
+          await prisma.song.findMany({
+            where: { AND: [{ id: { in: allIds } }, searchWhere] },
+            select: { id: true },
+          })
+        ).map((s) => s.id)
+      : allIds;
+    const idOrder = new Map(allIds.map((id, i) => [id, i]));
+    filteredIds.sort((a, b) => (idOrder.get(a) ?? 0) - (idOrder.get(b) ?? 0));
+    const total = filteredIds.length;
     const totalPages = Math.max(1, Math.ceil(total / DADOS_PAGE_SIZE));
     const page = Math.min(opts.page, totalPages);
-    const ids = allIds.slice((page - 1) * DADOS_PAGE_SIZE, page * DADOS_PAGE_SIZE);
+    const ids = filteredIds.slice((page - 1) * DADOS_PAGE_SIZE, page * DADOS_PAGE_SIZE);
     const unordered = await prisma.song.findMany({
       where: { id: { in: ids } },
       select: SONG_AUDIT_SELECT,
@@ -272,7 +342,7 @@ export async function fetchSongAudit(opts: {
   }
 
   const filtroWhere = songFiltroWhere(filtro);
-  const and = [scope, filtroWhere].filter((w): w is Prisma.SongWhereInput => Boolean(w));
+  const and = [scope, filtroWhere, searchWhere].filter((w): w is Prisma.SongWhereInput => Boolean(w));
   const where: Prisma.SongWhereInput = and.length > 0 ? { AND: and } : {};
 
   const total = await prisma.song.count({ where });
@@ -333,6 +403,7 @@ export const ALBUM_AUDIT_SELECT = {
   releaseDate: true,
   albumType: true,
   totalTracks: true,
+  sourcesNotFound: true,
   artist: { select: { id: true, name: true } },
   _count: { select: { songs: true } },
 } satisfies Prisma.AlbumSelect;
@@ -483,6 +554,7 @@ export const ARTIST_AUDIT_SELECT = {
   bio: true,
   bioNotFoundAt: true,
   metadataNotFoundAt: true,
+  sourcesNotFound: true,
 } satisfies Prisma.ArtistSelect;
 
 export type ArtistAuditRow = Prisma.ArtistGetPayload<{ select: typeof ARTIST_AUDIT_SELECT }>;

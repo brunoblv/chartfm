@@ -58,6 +58,7 @@ export function SourceBatchBackfillClient({
   initialTotal: number;
 }) {
   const [running, setRunning] = useState<Source | null>(null);
+  const [force, setForce] = useState(false);
   const [total, setTotal] = useState(initialTotal);
   const [processed, setProcessed] = useState(0);
   const [updated, setUpdated] = useState(0);
@@ -91,7 +92,7 @@ export function SourceBatchBackfillClient({
         const res = await fetch("/api/admin/edicao-de-dados/backfill-source", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind, source, exclude }),
+          body: JSON.stringify({ kind, source, exclude, force }),
         });
         const data = (await res.json().catch(() => ({}))) as BatchResponse;
 
@@ -166,6 +167,27 @@ export function SourceBatchBackfillClient({
         {title}
       </div>
       <div style={{ marginTop: 5, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.45 }}>{description}</div>
+
+      <label
+        style={{
+          marginTop: 10,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 12,
+          color: "var(--text-muted)",
+          cursor: running ? "default" : "pointer",
+        }}
+        title="Por padrão cada fonte só é consultada uma vez por registro — se não achar nada, fica marcada e é pulada nas próximas rodadas. Marque para forçar todas de novo."
+      >
+        <input
+          type="checkbox"
+          checked={force}
+          disabled={running != null}
+          onChange={(e) => setForce(e.target.checked)}
+        />
+        Forçar (ignora marcações de &quot;sem resultado&quot; e consulta tudo de novo — geral)
+      </label>
 
       <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
         {SOURCES.map((s) => {

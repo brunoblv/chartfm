@@ -4,7 +4,7 @@ import {
   fetchSongAudit,
   type SongFiltro,
 } from "./lib";
-import { FilterChips, Pagination, ResultInfo, SongAuditTable } from "./ui";
+import { FilterChips, Pagination, ResultInfo, SearchBox, SongAuditTable } from "./ui";
 
 /**
  * Corpo compartilhado das telas de auditoria de músicas
@@ -15,17 +15,21 @@ export async function SongAuditView({
   userId,
   filtro,
   page,
+  q = "",
 }: {
   basePath: string;
   userId?: string;
   filtro: SongFiltro;
   page: number;
+  q?: string;
 }) {
-  const result = await fetchSongAudit({ userId, filtro, page });
-  const hrefFor = (f: SongFiltro, p: number) => `${basePath}?filtro=${f}&page=${p}`;
+  const result = await fetchSongAudit({ userId, filtro, page, q });
+  const hrefFor = (f: SongFiltro, p: number) =>
+    `${basePath}?filtro=${f}&page=${p}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
 
   return (
     <>
+      <SearchBox action={basePath} q={q} filtro={filtro} />
       <FilterChips
         items={SONG_FILTROS.map((f) => ({
           key: f.key,

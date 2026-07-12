@@ -1,4 +1,4 @@
-import { countSongsSemDatas, getAdminAccess, parsePage, parseSongFiltro } from "../lib";
+import { countSongsSemDatas, getAdminAccess, parsePage, parseQuery, parseSongFiltro } from "../lib";
 import { AccessDenied, DadosShell } from "../ui";
 import { SongAuditView } from "../SongAuditView";
 import { DatesBackfillClient } from "../DatesBackfillClient";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function MinhasParadasAuditPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filtro?: string; page?: string }>;
+  searchParams: Promise<{ filtro?: string; page?: string; q?: string }>;
 }) {
   const access = await getAdminAccess();
   if (!access) return <AccessDenied />;
@@ -17,6 +17,7 @@ export default async function MinhasParadasAuditPage({
   const params = await searchParams;
   const filtro = parseSongFiltro(params.filtro, "todas");
   const page = parsePage(params.page);
+  const q = parseQuery(params.q);
   const semDatas = await countSongsSemDatas(access.userId);
 
   return (
@@ -28,7 +29,7 @@ export default async function MinhasParadasAuditPage({
       <div style={{ maxWidth: 720 }}>
         <DatesBackfillClient initialTotal={semDatas} scope="minhas" />
       </div>
-      <SongAuditView basePath="/admin/dados/minhas-paradas" userId={access.userId} filtro={filtro} page={page} />
+      <SongAuditView basePath="/admin/dados/minhas-paradas" userId={access.userId} filtro={filtro} page={page} q={q} />
     </DadosShell>
   );
 }
