@@ -58,8 +58,25 @@ type SquadParticipant = {
   artists: SquadArtist[];
 };
 
+type ArtistMini = { artistName: string; artistInitials: string; artistColor: string; artistImage: string | null };
+
+type ManualVoteData = {
+  users: { userId: string; name: string; handle: string; avatarColor: string }[];
+  fixtures: {
+    id: string;
+    phase: string;
+    groupLetter: string | null;
+    round: number | null;
+    day: number;
+    artistA: ArtistMini;
+    artistB: ArtistMini;
+  }[];
+  existingVotes: Record<string, Record<string, "A" | "B">>;
+};
+
 type Props = {
   viewerHandle: string | null;
+  manualVote: ManualVoteData | null;
   editions: Edition[];
   activeEditionId: string | null;
   activeVotesPerGoal: number;
@@ -85,9 +102,10 @@ const PHASE_LABELS: Record<string, string> = {
   FINAL: "FIN",
 };
 
-export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activeVotesPerGoal, fixturesByStatus, knockoutControls, activeFixtures }: Props) {
+export function CopaAdminClient({ viewerHandle, manualVote, editions, activeEditionId, activeVotesPerGoal, fixturesByStatus, knockoutControls, activeFixtures }: Props) {
   const router = useRouter();
-  const [autoVoting, setAutoVoting] = useState(false);
+  const isBruno = viewerHandle?.toLowerCase() === "bruno";
+  const [tab, setTab] = useState<"manage" | "manual">("manage");
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("Copa ChartFM");
   const [newYear, setNewYear] = useState(new Date().getFullYear());
@@ -108,6 +126,68 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
   const startRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const votesPerGoalRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  // Aba de votos manuais (@bruno): seleção de lado por usuário e disputa.
+  const [manualSel, setManualSel] = useState<Record<string, Record<string, "A" | "B" | "">>>(() => {
+    const init: Record<string, Record<string, "A" | "B" | "">> = {};
+    if (manualVote) {
+      for (const u of manualVote.users) {
+        const ev = manualVote.existingVotes[u.userId] ?? {};
+        const row: Record<string, "A" | "B" | ""> = {};
+        for (const f of manualVote.fixtures) row[f.id] = ev[f.id] ?? "";
+        init[u.userId] = row;
+      }
+    }
+    return init;
+  });
+  const [sendingUser, setSendingUser] = useState<string | null>(null);
+
+  function setManual(userId: string, fixtureId: string, side: "A" | "B" | "") {
+    setManualSel((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? {}), [fixtureId]: side } }));
+  }
+
+  function randomizeUser(userId: string) {
+    if (!manualVote) return;
+    const ev = manualVote.existingVotes[userId] ?? {};
+    setManualSel((prev) => {
+      const row = { ...(prev[userId] ?? {}) };
+      for (const f of manualVote.fixtures) {
+        if (ev[f.id]) continue; // já votou nesta disputa — mantém
+        row[f.id] = Math.random() < 0.5 ? "A" : "B";
+      }
+      return { ...prev, [userId]: row };
+    });
+  }
+
+  async function sendManualVotes(userId: string) {
+    if (!manualVote || !activeEditionId || sendingUser) return;
+    const ev = manualVote.existingVotes[userId] ?? {};
+    const row = manualSel[userId] ?? {};
+    const votes = manualVote.fixtures
+      .filter((f) => !ev[f.id] && (row[f.id] === "A" || row[f.id] === "B"))
+      .map((f) => ({ fixtureId: f.id, side: row[f.id] as "A" | "B" }));
+    if (votes.length === 0) {
+      alert("Selecione ao menos uma opção em uma disputa ainda não votada.");
+      return;
+    }
+    setSendingUser(userId);
+    try {
+      const res = await fetch(`/api/admin/copa/${activeEditionId}/manual-votes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, votes }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(json.error ?? "Erro ao enviar votos");
+        return;
+      }
+      alert(`Votos registrados: ${json.created}` + (json.skipped ? ` · ignorados: ${json.skipped}` : ""));
+      router.refresh();
+    } finally {
+      setSendingUser(null);
+    }
+  }
 
   // ISO (UTC) → valor de <input datetime-local> no fuso do navegador.
   function toLocalInput(iso: string): string {
@@ -181,33 +261,6 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
       router.refresh();
     } finally {
       setCreating(false);
-    }
-  }
-
-  async function brunoAutoVote() {
-    if (autoVoting) return;
-    if (!confirm("Enfileirar votos aleatórios dos 22 usuários das paradas de estilo para todos os jogos abertos? Um voto é registrado a cada 10 minutos (cron), para não caírem todos juntos.")) return;
-    setAutoVoting(true);
-    try {
-      const res = await fetch("/api/admin/copa/bruno-auto-vote", { method: "POST" });
-      const json = await res.json();
-      if (!res.ok) {
-        alert(json.error ?? "Erro");
-        return;
-      }
-      alert(
-        `Votos enfileirados.\n\n` +
-          `Jogos abertos: ${json.fixturesOpen}\n` +
-          `Usuários: ${json.usersConsidered}\n` +
-          `Novos na fila: ${json.queued}\n` +
-          `Já votados antes: ${json.alreadyVoted}\n` +
-          `Já estavam na fila: ${json.alreadyQueued}\n` +
-          (json.missingHandles.length ? `Handles não encontrados: ${json.missingHandles.join(", ")}\n` : "") +
-          `\nO cron dá 1 voto da fila a cada 10 minutos.`,
-      );
-      router.refresh();
-    } finally {
-      setAutoVoting(false);
     }
   }
 
@@ -569,6 +622,37 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
 
   return (
     <>
+      {isBruno && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 20, borderBottom: "1px solid var(--divider)" }}>
+          {([["manage", "Gerenciar"], ["manual", "Votos manuais"]] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                padding: "10px 16px", border: "none", background: "transparent", cursor: "pointer",
+                fontSize: 14, fontWeight: 700,
+                color: tab === key ? "var(--text)" : "var(--text-muted)",
+                borderBottom: `2px solid ${tab === key ? "#FFD426" : "transparent"}`,
+                marginBottom: -1,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isBruno && tab === "manual" ? (
+        <ManualVotePanel
+          manualVote={manualVote}
+          manualSel={manualSel}
+          sendingUser={sendingUser}
+          onSelect={setManual}
+          onRandomize={randomizeUser}
+          onSend={sendManualVotes}
+        />
+      ) : (
+      <>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
         <button
           onClick={() => setShowCreate(true)}
@@ -890,16 +974,6 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
                 style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#FFD426", color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: actioning ? 0.5 : 1 }}
               >
                 ⏭️ Avançar Dia
-              </button>
-            )}
-            {viewerHandle === "bruno" && (e.status === "GROUP_STAGE" || e.status === "KNOCKOUT") && (
-              <button
-                onClick={brunoAutoVote}
-                disabled={autoVoting}
-                title="Enfileira votos aleatórios dos 22 usuários das paradas de estilo para todos os jogos abertos — 1 voto a cada 10 minutos"
-                style={{ padding: "8px 14px", borderRadius: 8, border: "none", background: "#AF52DE", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: autoVoting ? 0.5 : 1 }}
-              >
-                🎲 Votar automático (bruno)
               </button>
             )}
             {(e.status === "GROUP_STAGE" || e.status === "KNOCKOUT") && (
@@ -1282,6 +1356,143 @@ export function CopaAdminClient({ viewerHandle, editions, activeEditionId, activ
           </div>
         </div>
       )}
+      </>
+      )}
     </>
+  );
+}
+
+/* -------------------------- Painel de votos manuais -------------------------- */
+
+const MANUAL_PHASE_LABELS: Record<string, string> = {
+  GROUP: "Grupos",
+  R32: "1/16",
+  R16: "Oitavas",
+  QF: "Quartas",
+  SF: "Semi",
+  THIRD_PLACE: "3º lugar",
+  FINAL: "Final",
+};
+
+function manualFixtureLabel(f: ManualVoteData["fixtures"][number]): string {
+  const phase = MANUAL_PHASE_LABELS[f.phase] ?? f.phase;
+  const group = f.groupLetter ? ` ${f.groupLetter}` : "";
+  const round = f.round ? ` · R${f.round}` : "";
+  return `Dia ${f.day} · ${phase}${group}${round}`;
+}
+
+function ManualVotePanel({
+  manualVote,
+  manualSel,
+  sendingUser,
+  onSelect,
+  onRandomize,
+  onSend,
+}: {
+  manualVote: ManualVoteData | null;
+  manualSel: Record<string, Record<string, "A" | "B" | "">>;
+  sendingUser: string | null;
+  onSelect: (userId: string, fixtureId: string, side: "A" | "B" | "") => void;
+  onRandomize: (userId: string) => void;
+  onSend: (userId: string) => void;
+}) {
+  if (!manualVote) {
+    return (
+      <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "16px", background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12 }}>
+        Nenhuma Copa ativa no momento.
+      </div>
+    );
+  }
+
+  const { users, fixtures, existingVotes } = manualVote;
+
+  if (fixtures.length === 0) {
+    return (
+      <div style={{ fontSize: 13, color: "var(--text-muted)", padding: "16px", background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12 }}>
+        Nenhuma disputa Ao vivo aberta. Abra jogos na aba <strong>Gerenciar</strong> para votar aqui.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+        Defina em qual opção cada um dos {users.length} usuários vota nas {fixtures.length} disputa(s) Ao vivo e clique em <strong>Enviar votos</strong>. Disputas já votadas ficam travadas.
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {users.map((u) => {
+          const ev = existingVotes[u.userId] ?? {};
+          const row = manualSel[u.userId] ?? {};
+          const pending = fixtures.filter((f) => !ev[f.id] && (row[f.id] === "A" || row[f.id] === "B")).length;
+          const remaining = fixtures.filter((f) => !ev[f.id]).length;
+          const sending = sendingUser === u.userId;
+          return (
+            <div key={u.userId} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14, overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: "1px solid var(--divider)" }}>
+                <span style={{ width: 28, height: 28, borderRadius: "50%", background: u.avatarColor, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800 }}>{u.name}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    @{u.handle} · {pending} selecionado(s) · {remaining} sem voto
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRandomize(u.userId)}
+                  disabled={sending || remaining === 0}
+                  style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--divider)", background: "var(--fill-inset)", color: "var(--text)", fontSize: 12, fontWeight: 700, cursor: sending || remaining === 0 ? "not-allowed" : "pointer", opacity: remaining === 0 ? 0.5 : 1, flexShrink: 0 }}
+                >
+                  🎲 Sortear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSend(u.userId)}
+                  disabled={sending || pending === 0}
+                  style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: pending === 0 ? "var(--fill-inset)" : "#34C759", color: pending === 0 ? "var(--text-muted)" : "#fff", fontSize: 12, fontWeight: 700, cursor: sending || pending === 0 ? "not-allowed" : "pointer", flexShrink: 0 }}
+                >
+                  {sending ? "Enviando…" : "Enviar votos"}
+                </button>
+              </div>
+
+              <div style={{ padding: "8px 14px", display: "flex", flexDirection: "column", gap: 6 }}>
+                {fixtures.map((f) => {
+                  const voted = ev[f.id];
+                  const value = voted ?? row[f.id] ?? "";
+                  return (
+                    <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderTop: "1px solid var(--divider)" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-disabled)" }}>
+                          {manualFixtureLabel(f)}
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {f.artistA.artistName} <span style={{ color: "var(--text-disabled)" }}>×</span> {f.artistB.artistName}
+                        </div>
+                      </div>
+                      {voted ? (
+                        <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 99, background: "rgba(52,199,89,.12)", color: "#34C759" }}>
+                          ✓ {(voted === "A" ? f.artistA : f.artistB).artistName.split(" ")[0]}
+                        </span>
+                      ) : (
+                        <select
+                          value={value}
+                          onChange={(e) => onSelect(u.userId, f.id, e.target.value as "A" | "B" | "")}
+                          disabled={sending}
+                          style={{ flexShrink: 0, maxWidth: 160, background: "var(--fill-inset)", border: "1px solid var(--divider)", borderRadius: 8, padding: "6px 8px", color: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        >
+                          <option value="">— não votar</option>
+                          <option value="A">{f.artistA.artistName}</option>
+                          <option value="B">{f.artistB.artistName}</option>
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

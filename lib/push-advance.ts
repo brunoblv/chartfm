@@ -98,6 +98,8 @@ export async function syncPushRoundToSchedule(
   if (!round) return null;
 
   const phase = normalizePushPhase(round.phase);
+  if (phase === "RESULT") return null;
+
   const deadline =
     phase === "SUBMISSION" ? round.submissionEndsAt
     : phase === "LISTENING" ? round.rankingEndsAt

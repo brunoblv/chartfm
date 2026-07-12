@@ -4,6 +4,7 @@ import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { fixtureBatchOrder } from "@/lib/copa";
+import { COPA_MANUAL_VOTE_HANDLES } from "@/lib/copa-manual-vote-users";
 import { CopaAdminClient } from "./CopaAdminClient";
 
 export const dynamic = "force-dynamic";
@@ -64,10 +65,76 @@ export default async function CopaAdminPage() {
       })
     : [];
 
+  // Aba de votos manuais (só @bruno): os 22 usuários de estilo + disputas Ao vivo.
+  const isBruno = (session.user.handle ?? "").toLowerCase() === "bruno";
+  let manualVote: {
+    users: { userId: string; name: string; handle: string; avatarColor: string }[];
+    fixtures: {
+      id: string;
+      phase: string;
+      groupLetter: string | null;
+      round: number | null;
+      day: number;
+      artistA: { artistName: string; artistInitials: string; artistColor: string; artistImage: string | null };
+      artistB: { artistName: string; artistInitials: string; artistColor: string; artistImage: string | null };
+    }[];
+    existingVotes: Record<string, Record<string, "A" | "B">>;
+  } | null = null;
+
+  if (isBruno && activeEdition) {
+    const [manualUsers, liveFixtures] = await Promise.all([
+      prisma.user.findMany({
+        where: { handle: { in: COPA_MANUAL_VOTE_HANDLES } },
+        select: { id: true, name: true, handle: true, avatarColor: true },
+      }),
+      prisma.copaFixture.findMany({
+        where: { copaId: activeEdition.id, status: "LIVE" },
+        include: {
+          artistA: { select: { artistName: true, artistInitials: true, artistColor: true, artistImage: true } },
+          artistB: { select: { artistName: true, artistInitials: true, artistColor: true, artistImage: true } },
+        },
+        orderBy: [{ phase: "asc" }, { groupLetter: "asc" }, { round: "asc" }, { matchIndex: "asc" }],
+      }),
+    ]);
+
+    const userIds = manualUsers.map((u) => u.id);
+    const fixtureIds = liveFixtures.map((f) => f.id);
+    const existing =
+      userIds.length && fixtureIds.length
+        ? await prisma.copaVote.findMany({
+            where: { userId: { in: userIds }, fixtureId: { in: fixtureIds } },
+            select: { userId: true, fixtureId: true, side: true },
+          })
+        : [];
+    const existingVotes: Record<string, Record<string, "A" | "B">> = {};
+    for (const v of existing) {
+      (existingVotes[v.userId] ??= {})[v.fixtureId] = v.side as "A" | "B";
+    }
+
+    // Ordena os usuários na ordem dos handles configurados.
+    const orderByHandle = new Map(COPA_MANUAL_VOTE_HANDLES.map((h, i) => [h.toLowerCase(), i]));
+    manualVote = {
+      users: manualUsers
+        .map((u) => ({ userId: u.id, name: u.name, handle: u.handle, avatarColor: u.avatarColor }))
+        .sort((a, b) => (orderByHandle.get(a.handle.toLowerCase()) ?? 99) - (orderByHandle.get(b.handle.toLowerCase()) ?? 99)),
+      fixtures: liveFixtures.map((f) => ({
+        id: f.id,
+        phase: f.phase as string,
+        groupLetter: f.groupLetter,
+        round: f.round,
+        day: fixtureBatchOrder(f) + 1,
+        artistA: { artistName: f.artistA.artistName, artistInitials: f.artistA.artistInitials, artistColor: f.artistA.artistColor, artistImage: f.artistA.artistImage },
+        artistB: { artistName: f.artistB.artistName, artistInitials: f.artistB.artistInitials, artistColor: f.artistB.artistColor, artistImage: f.artistB.artistImage },
+      })),
+      existingVotes,
+    };
+  }
+
   return (
     <Shell title="Copa ChartFM" subtitle="Gerencie edições, fases e jogos">
       <CopaAdminClient
       viewerHandle={session.user.handle ?? null}
+      manualVote={manualVote}
       editions={editions.map((e) => ({
         id: e.id,
         name: e.name,

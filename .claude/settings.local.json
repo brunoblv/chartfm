@@ -124,7 +124,8 @@
       "Bash(git commit -m ' *)",
       "Bash(git commit -m 'fix: correct indentation in chart publication slow path *)",
       "Bash(git commit -m 'feat: remove copa-bruno-auto-vote functionality *)",
-      "Bash(git commit -m 'chore: reduce social-scheduler frequency from 15min to 1h *)"
+      "Bash(git commit -m 'chore: reduce social-scheduler frequency from 15min to 1h *)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",
