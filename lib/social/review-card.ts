@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
 import { scoreBadgeColor, scoreLabel } from "@/lib/album-score";
+import { absoluteSocialUrl } from "@/lib/social/config";
 
 /**
  * Renderer nativo (Skia via @napi-rs/canvas, sem browser) do template de
@@ -231,7 +232,12 @@ export async function renderReviewCard(input: ReviewCardInput, variant: ReviewCa
     const coverX = (W - coverSize) / 2;
     const coverY = Math.round(340 * u * vh);
 
-    const cover = input.albumCoverUrl ? await loadImage(input.albumCoverUrl).catch(() => null) : null;
+    const cover = input.albumCoverUrl
+      ? await loadImage(absoluteSocialUrl(input.albumCoverUrl)).catch((err) => {
+          console.error("[social/review-card] falha ao carregar capa", input.albumCoverUrl, err);
+          return null;
+        })
+      : null;
     if (cover) {
       ctx.save();
       ctx.beginPath();

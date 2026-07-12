@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
+import { absoluteSocialUrl } from "@/lib/social/config";
 
 /**
  * Renderer nativo (Skia via @napi-rs/canvas, sem browser) do card de "Top" de
@@ -190,7 +191,12 @@ export async function renderChartTop3Card(input: ChartTop3CardInput, variant: Ch
       const rowY = startY + i * rowH;
       const rowCenterY = rowY + coverSize / 2;
 
-      const cover = entry.coverUrl ? await loadImage(entry.coverUrl).catch(() => null) : null;
+      const cover = entry.coverUrl
+        ? await loadImage(absoluteSocialUrl(entry.coverUrl)).catch((err) => {
+            console.error("[social/chart-card] falha ao carregar capa", entry.coverUrl, err);
+            return null;
+          })
+        : null;
       if (cover) {
         ctx.save();
         ctx.beginPath();

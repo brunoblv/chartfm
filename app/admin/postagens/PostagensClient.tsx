@@ -215,14 +215,17 @@ export default function PostagensClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        alert(data.error ?? "Falha na ação");
+        alert(data?.error ?? `Falha na ação (HTTP ${res.status})`);
         return;
       }
-      if (data.post) {
+      if (data?.post) {
         setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...normalizePost(data.post) } : p)));
       }
+    } catch (err) {
+      console.error(err);
+      alert("Erro de rede/servidor ao executar ação");
     } finally {
       setBusyId(null);
     }
@@ -704,7 +707,7 @@ export default function PostagensClient({
                     <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-start" }}>
                       <span style={{ fontSize: 10, color: "var(--text-muted)" }}>sem arte</span>
                       <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "generate-preview" })} style={actionBtnStyle}>
-                        Gerar
+                        {busyId === post.id ? "Gerando…" : "Gerar"}
                       </button>
                     </div>
                   )}
@@ -732,7 +735,7 @@ export default function PostagensClient({
                 <td style={adminCompactTdStyle}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "generate-preview" })} style={actionBtnStyle}>
-                      Preview
+                      {busyId === post.id ? "Gerando…" : "Preview"}
                     </button>
                     <button disabled={busyId === post.id} onClick={() => callAction(post.id, { action: "publish-now" })} style={actionBtnStyle}>
                       Publicar

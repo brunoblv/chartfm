@@ -22,6 +22,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const post = await prisma.socialPost.findUnique({ where: { id } });
   if (!post) return NextResponse.json({ error: "Post não encontrado" }, { status: 404 });
 
+  try {
+    return await runAction(action, id, post, body);
+  } catch (err) {
+    console.error(`[api/social/posts/${id}] falha ao executar ação "${action}"`, err);
+    return NextResponse.json({ error: "Erro interno ao executar ação" }, { status: 500 });
+  }
+}
+
+async function runAction(
+  action: string,
+  id: string,
+  post: NonNullable<Awaited<ReturnType<typeof prisma.socialPost.findUnique>>>,
+  body: Record<string, unknown>,
+) {
   switch (action) {
     case "reschedule": {
       const { scheduledAt } = body as { scheduledAt: string };
