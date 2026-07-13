@@ -20,6 +20,7 @@ import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
 import { buildSongContext } from "@/lib/entity-context-text";
 import { SongFlagButton } from "@/components/song/SongFlagButton";
+import { SongMergeButton } from "@/components/song/SongMergeButton";
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);
@@ -389,6 +390,9 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
                 <Link href={`/song/${slug}/edit`} style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>
                   Editar música
                 </Link>
+                <div style={{ marginTop: 6 }}>
+                  <SongMergeButton songId={songId} title={title} artist={artist} />
+                </div>
               </div>
             )}
             <div style={{ marginTop: 10 }}>

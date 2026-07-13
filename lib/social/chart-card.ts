@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createCanvas, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
-import { absoluteSocialUrl } from "@/lib/social/config";
+import { loadRemoteImage } from "@/lib/social/remote-image";
 
 /**
  * Renderer nativo (Skia via @napi-rs/canvas, sem browser) do card de "Top" de
@@ -186,17 +186,15 @@ export async function renderChartTop3Card(input: ChartTop3CardInput, variant: Ch
     const rowW = W - rowX - Math.round(90 * u);
     const badgeReserve = Math.round(130 * u);
 
+    // Capas baixadas em paralelo, com timeout e dedupe (ver lib/social/remote-image.ts).
+    const covers = await Promise.all(top3.map((e) => (e.coverUrl ? loadRemoteImage(e.coverUrl) : Promise.resolve(null))));
+
     for (let i = 0; i < top3.length; i++) {
       const entry = top3[i];
       const rowY = startY + i * rowH;
       const rowCenterY = rowY + coverSize / 2;
 
-      const cover = entry.coverUrl
-        ? await loadImage(absoluteSocialUrl(entry.coverUrl)).catch((err) => {
-            console.error("[social/chart-card] falha ao carregar capa", entry.coverUrl, err);
-            return null;
-          })
-        : null;
+      const cover = covers[i];
       if (cover) {
         ctx.save();
         ctx.beginPath();
