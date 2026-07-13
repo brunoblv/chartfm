@@ -29,6 +29,7 @@ export type WeeklySpotlightWinner = {
   category: SpotlightCategory;
   song: ChartSpotlightSong;
   voteCount: number;
+  totalPoints: number;
   nominators: SpotlightNominator[];
 };
 
@@ -252,9 +253,10 @@ export async function getWeeklySpotlightWinners(weekIndex: number): Promise<Week
       category: option.category as SpotlightCategory,
       song: mapPrismaSpotlightSong(option.song),
       voteCount: option.voteCount,
+      totalPoints: option.totalPoints,
       nominators: option.nominations.map((n) => n.user),
     }))
-    .sort((a, b) => (a.category === b.category ? b.voteCount - a.voteCount : a.category === "destaque" ? -1 : 1));
+    .sort((a, b) => (a.category === b.category ? b.totalPoints - a.totalPoints : a.category === "destaque" ? -1 : 1));
 }
 
 export type WeeklyPollOptionView = {

@@ -13,7 +13,7 @@ export function GlobalSpotlightWinnerCard({ winner }: Props) {
   const isFlashback = winner.category === "flashback";
   const label = isFlashback ? "Flashback da Semana" : "Melhor da Semana";
   const color = isFlashback ? "#7C3AED" : "var(--accent)";
-  const { song, nominators, voteCount } = winner;
+  const { song, nominators, totalPoints } = winner;
   const spotifyUrl =
     song.spotifyUrl ?? (song.spotifyId ? `https://open.spotify.com/track/${song.spotifyId}` : null);
 
@@ -102,7 +102,7 @@ export function GlobalSpotlightWinnerCard({ winner }: Props) {
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            {voteCount} {voteCount === 1 ? "voto" : "votos"} da comunidade
+            {totalPoints} {totalPoints === 1 ? "ponto" : "pontos"} da comunidade
           </span>
           {spotifyUrl && (
             <a
