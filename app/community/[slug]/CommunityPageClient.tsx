@@ -49,6 +49,9 @@ export type CommunityReplySerializable = {
   id: string;
   text: string;
   likes: number;
+  hasLiked: boolean;
+  replyToId: string | null;
+  replyToUser: { handle: string; name: string } | null;
   createdAt: string;
   user: DbUser;
 };
@@ -133,6 +136,8 @@ export function CommunityPageClient({
   const [posting, setPosting] = useState(false);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replyingFor, setReplyingFor] = useState<string | null>(null);
+  const [replyTarget, setReplyTarget] = useState<Record<string, CommunityReplySerializable | null>>({});
+  const [likingReplyId, setLikingReplyId] = useState<string | null>(null);
   const [timelinePosts, setTimelinePosts] = useState<CommunityPostSerializable[]>(dbPosts);
   const [isMember, setIsMember] = useState(community.isMember);
   const [memberCount, setMemberCount] = useState(community.members);
@@ -229,7 +234,7 @@ export function CommunityPageClient({
       const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/replies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, replyToId: replyTarget[postId]?.id ?? null }),
       });
       const data = (await res.json()) as CommunityReplySerializable & { error?: string };
       if (!res.ok) return;
@@ -245,8 +250,39 @@ export function CommunityPageClient({
         ),
       );
       setReplyDrafts((prev) => ({ ...prev, [postId]: "" }));
+      setReplyTarget((prev) => ({ ...prev, [postId]: null }));
     } finally {
       setReplyingFor(null);
+    }
+  }
+
+  async function handleLikeReply(postId: string, replyId: string) {
+    if (!session?.user?.id) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(`/community/${community.slug}`)}`);
+      return;
+    }
+    if (likingReplyId) return;
+    setLikingReplyId(replyId);
+    try {
+      const res = await fetch(`/api/posts/replies/${encodeURIComponent(replyId)}/like`, {
+        method: "POST",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { liked: boolean; likes: number };
+      setTimelinePosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? {
+                ...p,
+                repliesList: p.repliesList.map((r) =>
+                  r.id === replyId ? { ...r, likes: data.likes, hasLiked: data.liked } : r,
+                ),
+              }
+            : p,
+        ),
+      );
+    } finally {
+      setLikingReplyId(null);
     }
   }
 
@@ -627,22 +663,82 @@ export function CommunityPageClient({
 
                     <div style={{ marginTop: 12, borderTop: "1px solid var(--divider-soft)", paddingTop: 10, display: "grid", gap: 10 }}>
                       {post.repliesList.map((reply) => (
-                        <div key={reply.id} style={{ display: "flex", gap: 8 }}>
+                        <div
+                          key={reply.id}
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            marginLeft: reply.replyToId ? 24 : 0,
+                          }}
+                        >
                           <Avatar user={{ name: reply.user.name, avatar: reply.user.avatarColor }} imageUrl={reply.user.image} size={30} />
-                          <div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                               <strong style={{ color: "var(--text)" }}>{reply.user.name}</strong> @{reply.user.handle} · {formatSince(reply.createdAt)}
                             </div>
+                            {reply.replyToUser && (
+                              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                                respondendo a @{reply.replyToUser.handle}
+                              </div>
+                            )}
                             <div style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text)" }}>{reply.text}</div>
+                            <div style={{ marginTop: 4, display: "flex", gap: 14, color: "var(--text-muted)", fontSize: 12 }}>
+                              <button
+                                type="button"
+                                onClick={() => void handleLikeReply(post.id, reply.id)}
+                                disabled={likingReplyId === reply.id}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                  border: "none",
+                                  background: "none",
+                                  padding: 0,
+                                  color: reply.hasLiked ? "#FA243C" : "var(--text-muted)",
+                                  cursor: likingReplyId === reply.id ? "wait" : "pointer",
+                                  fontSize: 12,
+                                }}
+                              >
+                                <Heart size={13} fill={reply.hasLiked ? "#FA243C" : "none"} /> {reply.likes}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setReplyTarget((prev) => ({ ...prev, [post.id]: reply }))}
+                                style={{
+                                  border: "none",
+                                  background: "none",
+                                  padding: 0,
+                                  color: "var(--text-muted)",
+                                  cursor: "pointer",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                Responder
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
+
+                      {replyTarget[post.id] && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-muted)" }}>
+                          Respondendo a <strong style={{ color: "var(--text)" }}>@{replyTarget[post.id]?.user.handle}</strong>
+                          <button
+                            type="button"
+                            onClick={() => setReplyTarget((prev) => ({ ...prev, [post.id]: null }))}
+                            style={{ border: "none", background: "none", color: "var(--accent)", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: 0 }}
+                          >
+                            cancelar
+                          </button>
+                        </div>
+                      )}
 
                       <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                         <input
                           value={replyDrafts[post.id] ?? ""}
                           onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                          placeholder="Responder este post..."
+                          placeholder={replyTarget[post.id] ? `Responder @${replyTarget[post.id]?.user.handle}...` : "Responder este post..."}
                           style={{
                             flex: 1,
                             border: "1px solid var(--divider)",

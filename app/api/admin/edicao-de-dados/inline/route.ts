@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { withReleaseDatesNotFoundCleared } from "@/app/admin/dados/lib";
+import { refreshSnapshotsForSong } from "@/lib/entity-page-snapshot/refresh-song";
 
 export const runtime = "nodejs";
 
@@ -96,11 +97,16 @@ export async function PATCH(req: NextRequest) {
       }
       if (field === "albumSpotifyId") {
         const albumSpotifyId = asTrimmed(body.value);
+        const previous = await prisma.song.findUnique({
+          where: { id },
+          select: { albumRef: { select: { id: true } } },
+        });
         if (!albumSpotifyId) {
           await prisma.song.update({
             where: { id },
             data: withReleaseDatesNotFoundCleared({ albumSpotifyId: null }),
           });
+          void refreshSnapshotsForSong(id, { previousAlbumId: previous?.albumRef?.id ?? null });
           return NextResponse.json({ ok: true, album: null });
         }
         const album = await prisma.album.findUnique({
@@ -112,6 +118,7 @@ export async function PATCH(req: NextRequest) {
           where: { id },
           data: withReleaseDatesNotFoundCleared({ albumSpotifyId: album.spotifyId, album: album.title }),
         });
+        void refreshSnapshotsForSong(id, { previousAlbumId: previous?.albumRef?.id ?? null });
         return NextResponse.json({ ok: true, album });
       }
       if (field === "singleReleaseDate" || field === "musicVideoReleaseDate") {

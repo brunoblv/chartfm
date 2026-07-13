@@ -55,19 +55,22 @@ const GROUPS: { key: DadosGroup; label: string; href: string }[] = [
   { key: "flags", label: "Sinalizações", href: "/admin/dados/flags" },
 ];
 
-/** Dentro de cada grupo com 2 modos: pendências (auditoria, paginada) e busca livre (edição por texto). */
-const SUB_TABS: Partial<Record<DadosGroup, { key: DadosTab; label: string; href: string }[]>> = {
+/** Dentro de cada grupo: pendências (auditoria), busca livre (edição por texto) e cadastro (páginas fora de /admin/dados). */
+const SUB_TABS: Partial<Record<DadosGroup, { key: DadosTab | "criar"; label: string; href: string }[]>> = {
   musicas: [
     { key: "catalogo", label: "Pendências", href: "/admin/dados/catalogo" },
     { key: "musicas", label: "Busca livre", href: "/admin/dados/musicas" },
+    { key: "criar", label: "+ Criar música", href: "/admin/music/new" },
   ],
   albuns: [
     { key: "albuns-pendencias", label: "Pendências", href: "/admin/dados/albuns-pendencias" },
     { key: "albuns", label: "Busca livre", href: "/admin/dados/albuns" },
+    { key: "criar", label: "+ Criar álbum", href: "/admin/albums" },
   ],
   artistas: [
     { key: "artistas-pendencias", label: "Pendências", href: "/admin/dados/artistas-pendencias" },
     { key: "artistas", label: "Busca livre", href: "/admin/dados/artistas" },
+    { key: "criar", label: "+ Criar artista", href: "/admin/artists" },
   ],
 };
 

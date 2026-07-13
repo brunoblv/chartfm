@@ -65,6 +65,7 @@ model User {
   posts                            Post[]
   postLikes                        PostLike[]
   postReplies                      PostReply[]
+  postReplyLikes                   PostReplyLike[]
   albumReviews                     AlbumReview[]
   albumReviewHelpful               AlbumReviewHelpful[]
   ownedCommunities                 Community[]                      @relation("CommunityOwner")
@@ -121,25 +122,25 @@ model EmailVerificationToken {
 }
 
 model Artist {
-  id             Int        @id @default(autoincrement())
-  spotifyId      String     @unique @map("spotify_id")
-  name           String
-  exhibitionName String?    @map("exhibition_name")
-  genres         String[]   @default([])
-  imageUrl       String?    @map("image_url")
-  spotifyUrl     String?    @map("spotify_url")
-  bio            String?
+  id                 Int        @id @default(autoincrement())
+  spotifyId          String     @unique @map("spotify_id")
+  name               String
+  exhibitionName     String?    @map("exhibition_name")
+  genres             String[]   @default([])
+  imageUrl           String?    @map("image_url")
+  spotifyUrl         String?    @map("spotify_url")
+  bio                String?
   /// Backfill automático (Wikipedia) não achou bio — não tentar de novo até correção manual.
-  bioNotFoundAt  DateTime?  @map("bio_not_found_at")
+  bioNotFoundAt      DateTime?  @map("bio_not_found_at")
   /// Backfill automático (Spotify/MusicBrainz) não achou imagem/link/gêneros — não tentar de novo até correção manual.
-  metadataNotFoundAt DateTime? @map("metadata_not_found_at")
+  metadataNotFoundAt DateTime?  @map("metadata_not_found_at")
   /// Fontes (spotify/lastfm/musicbrainz/wikipedia) já consultadas para este artista sem retorno — não tentar de novo até forçar.
-  sourcesNotFound String[]   @default([]) @map("sources_not_found")
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
-  albums         Album[]
-  songs          Song[]     @relation("PrimarySongArtist")
-  feats          SongFeat[]
+  sourcesNotFound    String[]   @default([]) @map("sources_not_found")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  albums             Album[]
+  songs              Song[]     @relation("PrimarySongArtist")
+  feats              SongFeat[]
 
   @@index([spotifyId], map: "idx_artists_spotify_id")
   @@map("artists")
@@ -558,15 +559,32 @@ model PostLike {
 }
 
 model PostReply {
-  id        String   @id @default(cuid())
-  postId    String
+  id           String          @id @default(cuid())
+  postId       String
+  userId       String
+  text         String
+  likes        Int             @default(0)
+  replyToId    String?
+  createdAt    DateTime        @default(now())
+  post         Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id])
+  replyTo      PostReply?      @relation("PostReplyToReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  childReplies PostReply[]     @relation("PostReplyToReply")
+  replyLikes   PostReplyLike[]
+
+  @@index([postId])
+  @@index([replyToId])
+}
+
+model PostReplyLike {
+  id        String    @id @default(cuid())
   userId    String
-  text      String
-  likes     Int      @default(0)
-  replyToId String?
-  createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id])
+  replyId   String
+  createdAt DateTime  @default(now())
+  reply     PostReply @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, replyId])
 }
 
 model Notification {

@@ -66,6 +66,19 @@ function StatCard({ label, value, href, alert }: {
   );
 }
 
+function CreateCard({ label, description, href }: { label: string; description: string; href: string }) {
+  return (
+    <Link href={href} style={cardStyle}>
+      <div style={{ fontSize: 15, fontWeight: 750, color: "#FA243C", letterSpacing: "-0.01em" }}>
+        + {label}
+      </div>
+      <div style={{ marginTop: 4, fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.45 }}>
+        {description}
+      </div>
+    </Link>
+  );
+}
+
 function GroupTitle({ children }: { children: React.ReactNode }) {
   return (
     <h2 style={{ margin: "22px 0 10px", fontSize: 17, fontWeight: 750, color: "var(--text)", letterSpacing: "-0.02em" }}>
@@ -120,6 +133,27 @@ export default async function DadosOverviewPage() {
         Regra do catálogo: <strong>toda música tem um álbum, e todo álbum tem uma capa</strong>.
         Clique em um cartão para abrir a lista correspondente.
       </p>
+
+      <GroupTitle>Criação</GroupTitle>
+      <div style={{ ...gridStyle, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", maxWidth: 720 }}>
+        <CreateCard
+          label="Nova música"
+          description="Cadastro manual: artista (e álbum) entre os já cadastrados; Spotify ID opcional."
+          href="/admin/music/new"
+        />
+        <CreateCard
+          label="Novo artista"
+          description="Cadastro manual de artista, com ou sem Spotify ID."
+          href="/admin/artists"
+        />
+        <CreateCard
+          label="Novo álbum"
+          description="Cadastro manual de álbum vinculado a um artista."
+          href="/admin/albums"
+        />
+      </div>
+
+      <GroupTitle>Edição</GroupTitle>
 
       {ov.minhas && (
         <>

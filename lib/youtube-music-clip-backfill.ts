@@ -77,6 +77,23 @@ export async function searchAndCreateYouTubeClip(
       adminUserId,
     );
 
+    // Preenche as datas de clipe da música se estiverem vazias (nunca sobrescreve).
+    if (result.date) {
+      const song = await prisma.song.findUnique({
+        where: { id: songId },
+        select: { musicVideoReleaseDate: true, youtubeReleaseDate: true },
+      });
+      if (song && (!song.musicVideoReleaseDate || !song.youtubeReleaseDate)) {
+        await prisma.song.update({
+          where: { id: songId },
+          data: {
+            ...(song.musicVideoReleaseDate ? {} : { musicVideoReleaseDate: result.date }),
+            ...(song.youtubeReleaseDate ? {} : { youtubeReleaseDate: result.date }),
+          },
+        });
+      }
+    }
+
     return {
       found: true,
       videoId: result.videoId,

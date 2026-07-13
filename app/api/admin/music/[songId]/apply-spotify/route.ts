@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { getSpotifyTrackMetadataById, spotifyConfigured } from "@/lib/spotify-server";
 import { applySpotifyMetadataToSong } from "@/lib/apply-spotify-metadata-to-song";
+import { refreshSnapshotsForSong } from "@/lib/entity-page-snapshot/refresh-song";
 
 export const runtime = "nodejs";
 
@@ -90,6 +91,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ songId
         await tx.song.delete({ where: { id } });
       });
 
+      void refreshSnapshotsForSong(conflictId);
+
       return NextResponse.json({
         ok: true,
         merged: true,
@@ -105,6 +108,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ songId
     }
     return NextResponse.json({ error: result.reason }, { status: 400 });
   }
+
+  void refreshSnapshotsForSong(id);
 
   return NextResponse.json({
     ok: true,

@@ -25,6 +25,8 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
           orderBy: { createdAt: "asc" },
           include: {
             user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+            replyTo: { select: { id: true, user: { select: { handle: true, name: true } } } },
+            replyLikes: { where: { userId: userId ?? "" }, select: { id: true } },
           },
         },
       },
@@ -82,6 +84,11 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       id: reply.id,
       text: reply.text,
       likes: reply.likes,
+      hasLiked: reply.replyLikes.length > 0,
+      replyToId: reply.replyToId,
+      replyToUser: reply.replyTo
+        ? { handle: reply.replyTo.user.handle, name: reply.replyTo.user.name }
+        : null,
       createdAt: reply.createdAt.toISOString(),
       user: {
         id: reply.user.id,

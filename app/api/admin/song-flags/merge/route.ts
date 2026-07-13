@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { mergeSongs } from "@/lib/song-merge";
+import { refreshSnapshotsForSong } from "@/lib/entity-page-snapshot/refresh-song";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   await mergeSongs(keepId, songId);
+  void refreshSnapshotsForSong(keepId);
 
   return NextResponse.json({ ok: true });
 }

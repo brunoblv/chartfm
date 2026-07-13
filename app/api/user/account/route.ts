@@ -15,6 +15,7 @@ export async function DELETE() {
     prisma.notification.deleteMany({
       where: { OR: [{ actorId: userId }, { recipientId: userId }] },
     }),
+    prisma.postReplyLike.deleteMany({ where: { userId } }),
     prisma.postReply.deleteMany({ where: { userId } }),
     prisma.postLike.deleteMany({ where: { userId } }),
     prisma.communityMember.deleteMany({ where: { userId } }),

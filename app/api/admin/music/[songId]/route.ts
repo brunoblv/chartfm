@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { findConflictingSong, findSongConflictByTitleArtist } from "@/lib/duplicate-registration-guards";
 import { songConflictBody } from "@/lib/duplicate-conflict-payload";
 import { isPrivilegedRole } from "@/lib/permissions";
+import { refreshSnapshotsForSong } from "@/lib/entity-page-snapshot/refresh-song";
 
 export const runtime = "nodejs";
 
@@ -71,7 +72,12 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
 
   const existing = await prisma.song.findUnique({
     where: { id },
-    select: { id: true, spotifyId: true },
+    select: {
+      id: true,
+      spotifyId: true,
+      albumRef: { select: { id: true } },
+      artistRef: { select: { id: true } },
+    },
   });
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
@@ -124,6 +130,10 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ songI
         albumSpotifyId: true,
         editorialNote: true,
       },
+    });
+    void refreshSnapshotsForSong(id, {
+      previousAlbumId: existing.albumRef?.id ?? null,
+      previousArtistId: existing.artistRef?.id ?? null,
     });
     return NextResponse.json({ song: updated });
   } catch (err: unknown) {
