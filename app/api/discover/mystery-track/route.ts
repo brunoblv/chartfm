@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import type { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
 
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
   const where: Prisma.ChartEntryWhereInput = {
     chart: {
       isPublished: true,

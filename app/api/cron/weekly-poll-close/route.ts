@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizedCron } from "@/lib/cron-auth";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { closeWeeklySpotlightPoll } from "@/lib/weekly-spotlight-poll";
 
 export const runtime = "nodejs";
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const rankingWeek = getRankingWeekReference(now);
+    const rankingWeek = getRankingWeekReference(now, await getGlobalPublishSlot());
     const result = await closeWeeklySpotlightPoll(rankingWeek.weekIndex);
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

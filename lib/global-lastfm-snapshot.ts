@@ -44,7 +44,7 @@ async function loadPrevEntries(mode: GlobalLastfmMode, weekIndex: number): Promi
 }
 
 async function computeSnapshot(mode: GlobalLastfmMode, referenceDate: Date, weekIndex?: number) {
-  const meta = weekIndex != null ? await weekMetaFromWeekIndex(weekIndex) : resolveGlobalLastfmWeekMeta(referenceDate);
+  const meta = weekIndex != null ? await weekMetaFromWeekIndex(weekIndex) : await resolveGlobalLastfmWeekMeta(referenceDate);
   const prevEntries = await loadPrevEntries(mode, meta.weekIndex);
   const computed = await computeGlobalLastfmRanking(mode, referenceDate, prevEntries);
   return { ...meta, ...computed };
@@ -59,8 +59,8 @@ async function weekMetaFromWeekIndex(weekIndex: number) {
   };
 }
 
-export function resolveGlobalLastfmWeekMeta(referenceDate: Date = new Date()) {
-  const rankingWeek = getRankingWeekReference(referenceDate);
+export async function resolveGlobalLastfmWeekMeta(referenceDate: Date = new Date()) {
+  const rankingWeek = getRankingWeekReference(referenceDate, await getGlobalPublishSlot());
   return {
     weekIndex: rankingWeek.weekIndex,
     weekLabel: rankingWeek.weekLabel,
@@ -244,7 +244,7 @@ export async function refreshAllGlobalLastfmSnapshots(referenceDate: Date = new 
 }
 
 export async function listGlobalLastfmWeekIndexes(mode: GlobalLastfmMode): Promise<number[]> {
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
   if (mode === "airplay") {
     const rows = await prisma.globalAirplaySnapshot.findMany({
       where: { weekIndex: { lte: rankingWeek.weekIndex } },

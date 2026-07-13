@@ -4,6 +4,7 @@ import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { calcularPontosPrimary } from "@/lib/parada-points";
 import {
   effectiveSongGenreTags,
@@ -29,7 +30,7 @@ export default async function DiscoverGenrePage({
   if (!selectedGenre) notFound();
 
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  const rankingWeek = getRankingWeekReference(nowBRT);
+  const rankingWeek = getRankingWeekReference(nowBRT, await getGlobalPublishSlot());
 
   const weeklyEntries = await prisma.chartEntry.findMany({
     where: { chart: { weekIndex: rankingWeek.weekIndex, isPublished: true } },

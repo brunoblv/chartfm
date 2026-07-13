@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 
 /** Sincroniza campo `points` das entradas da semana de ranking atual com a tabela de pontos. */
 export async function syncChartEntryPointsForRankingWeek(now: Date = new Date()) {
-  const rankingWeek = getRankingWeekReference(now);
+  const rankingWeek = getRankingWeekReference(now, await getGlobalPublishSlot());
 
   const entries = await prisma.chartEntry.findMany({
     where: { chart: { weekIndex: rankingWeek.weekIndex } },

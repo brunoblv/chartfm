@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { HotTabs } from "./HotTabs";
 import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { BookOpen } from "lucide-react";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { formatWeekLabel } from "@/lib/i18n/format";
@@ -37,7 +38,7 @@ function buildFaq(t: (key: string) => string) {
 export default async function DiscoverPage() {
   const { t, locale } = await getServerTranslations();
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  const rankingWeek = getRankingWeekReference(nowBRT);
+  const rankingWeek = getRankingWeekReference(nowBRT, await getGlobalPublishSlot());
   const prevWeekDate = new Date(getPreviousClosedWeekDate(nowBRT).getTime() - 7 * 24 * 60 * 60 * 1000);
   const prevWeekIndex = buildWeekIndexFromDate(prevWeekDate);
   return loadPageData(rankingWeek.weekIndex, rankingWeek.weekLabel, prevWeekIndex, t, locale);

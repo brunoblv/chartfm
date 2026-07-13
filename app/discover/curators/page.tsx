@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { CuratorsRankingTable } from "@/components/discover/CuratorsRankingTable";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { formatWeekLabel } from "@/lib/i18n/format";
 import type { CuratorRankingEntry } from "@/lib/curators-snapshot";
@@ -22,7 +23,7 @@ export default async function CuratorsRankingPage({ searchParams }: PageProps) {
   const { t, locale } = await getServerTranslations();
   const params = searchParams ? ("then" in searchParams ? await searchParams : searchParams) : {};
   const requestedWeek = Number(params.week ?? "");
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
   const session = await getServerSession(authOptions);
 
   const availableSnapshots = await prisma.curatorsSnapshot.findMany({

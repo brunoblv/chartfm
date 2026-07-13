@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   computeGlobalGenreChartData,
   type GlobalGenreChartPayload,
@@ -71,7 +72,7 @@ export async function saveGlobalGenreSnapshotForWeek(weekIndex: number, genreSlu
 
 /** Congela todas as paradas por gênero da semana de ranking corrente (rodar na terça). */
 export async function publishGlobalGenreSnapshotsForRankingWeek(now: Date = new Date()) {
-  const rankingWeek = getRankingWeekReference(now);
+  const rankingWeek = getRankingWeekReference(now, await getGlobalPublishSlot());
   const results: Array<{ genreSlug: string; created: boolean }> = [];
 
   for (const chart of GLOBAL_GENRE_CHARTS) {

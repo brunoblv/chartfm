@@ -39,9 +39,10 @@ export default async function AdminWeeklyEditorialPage() {
   }
 
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  const rankingWeek = getRankingWeekReference(nowBRT);
+  const publishSlot = await getGlobalPublishSlot();
+  const rankingWeek = getRankingWeekReference(nowBRT, publishSlot);
   const weekIndex = (await getLatestAvailableWeekIndex(rankingWeek.weekIndex)) ?? rankingWeek.weekIndex;
-  const weekRefDate = getWeeklySnapshotReferenceDate(weekIndex, await getGlobalPublishSlot());
+  const weekRefDate = getWeeklySnapshotReferenceDate(weekIndex, publishSlot);
   const weekLabel = buildWeekLabelFromDate(weekRefDate);
 
   const stored = await prisma.weeklyEditorial.findUnique({

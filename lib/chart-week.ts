@@ -65,6 +65,12 @@ export function prevChartWeekIndex(weekIndex: number): number {
   return prevYear * 100 + isoWeeksInYear(prevYear);
 }
 
+/** Dia da semana (0=domingo…6=sábado) e horário BRT ("HH:MM") de publicação da Parada Global. */
+export type GlobalPublishSlot = { weekday: number; time: string };
+
+/** Slot padrão (terça 09:00 BRT) usado quando nada foi configurado em /admin/parada-global. */
+export const DEFAULT_GLOBAL_PUBLISH_SLOT: GlobalPublishSlot = { weekday: 2, time: "09:00" };
+
 /**
  * Rankings semanais (global/trending) sempre exibem a semana encerrada.
  * Ex.: na terça da semana 18, mostramos resultados da semana 17.
@@ -76,21 +82,29 @@ export function getPreviousClosedWeekDate(now: Date = new Date()): Date {
 }
 
 /**
- * A parada global e as paradas de comunidade atualizam na terça-feira às 5h BRT.
- * Antes do corte: exibe a semana anterior à semana que acabou de fechar (14 dias atrás).
- * Depois do corte: exibe a semana que acabou de fechar (7 dias atrás).
+ * A parada global e as paradas de comunidade atualizam no dia/horário configurado em
+ * /admin/parada-global (BRT). Antes do corte: exibe a semana anterior à semana que acabou
+ * de fechar (14 dias atrás). Depois do corte: exibe a semana que acabou de fechar (7 dias atrás).
  *
  * Sempre espera um timestamp UTC padrão (new Date()). Faz a conversão para BRT internamente.
+ * `slot` deve ser o valor real de /admin/parada-global (via getGlobalPublishSlot()) sempre que
+ * disponível — usar o padrão (terça 09:00) quando o horário configurado for diferente faz esta
+ * função "virar a semana" no dia errado.
  */
-export function getRankingWeekReference(nowUtc: Date = new Date()) {
+export function getRankingWeekReference(nowUtc: Date = new Date(), slot: GlobalPublishSlot = DEFAULT_GLOBAL_PUBLISH_SLOT) {
   const brt = new Date(nowUtc.getTime() - 3 * 60 * 60 * 1000);
   const day = brt.getUTCDay();    // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
   const hour = brt.getUTCHours();
-  // Corte: terça-feira (2) às 5h BRT, ou qualquer dia posterior dentro da semana
+  const minute = brt.getUTCMinutes();
+  // Semana começando na segunda: domingo (0) vira 7, para comparar em ordem seg..dom.
+  const mondayIndexed = (d: number) => (d === 0 ? 7 : d);
+  const dayIdx = mondayIndexed(day);
+  const slotDayIdx = mondayIndexed(slot.weekday);
+  const [slotHour, slotMinute] = slot.time.split(":").map(Number);
+  // Corte: dia/horário configurado em /admin/parada-global, ou qualquer dia posterior dentro da semana
   const cutoffPassed =
-    (day === 2 && hour >= 5) ||
-    (day >= 3 && day <= 6) ||
-    day === 0;
+    dayIdx > slotDayIdx ||
+    (dayIdx === slotDayIdx && (hour > slotHour || (hour === slotHour && minute >= slotMinute)));
   const daysBack = cutoffPassed ? 7 : 14;
   const ref = new Date(nowUtc.getTime() - daysBack * 24 * 60 * 60 * 1000);
   return {
@@ -260,12 +274,6 @@ export function chartWeekUnixRangeFromAnchor(weekAnchor: Date): { from: number; 
     toExclusive: Math.floor(dayAfter.getTime() / 1000),
   };
 }
-
-/** Dia da semana (0=domingo…6=sábado) e horário BRT ("HH:MM") de publicação da Parada Global. */
-export type GlobalPublishSlot = { weekday: number; time: string };
-
-/** Slot padrão (terça 09:00 BRT) usado quando nada foi configurado em /admin/parada-global. */
-export const DEFAULT_GLOBAL_PUBLISH_SLOT: GlobalPublishSlot = { weekday: 2, time: "09:00" };
 
 /**
  * Prazo para paradas contarem no snapshot global de uma semana: 1h antes do horário

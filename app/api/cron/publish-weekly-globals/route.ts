@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
     const slot = await getGlobalPublishSlot();
-    const rankingWeek = getRankingWeekReference(now);
+    const rankingWeek = getRankingWeekReference(now, slot);
     const publishAt = new Date(getGlobalSnapshotDeadline(rankingWeek.weekIndex, slot).getTime() + 60 * 60 * 1000);
     if (now < publishAt) {
       return NextResponse.json({ ok: true, skipped: true, reason: "horário de publicação configurado ainda não chegou", publishAt });

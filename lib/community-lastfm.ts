@@ -1,4 +1,5 @@
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import {
   computeGlobalLastfmRanking,
   type GlobalLastfmEntry,
@@ -20,7 +21,7 @@ export async function computeCommunityLastfmRanking(
   chartLimit = 50,
   referenceDate: Date = new Date(),
 ): Promise<CommunityLastfmPayload> {
-  const rankingWeek = getRankingWeekReference(referenceDate);
+  const rankingWeek = getRankingWeekReference(referenceDate, await getGlobalPublishSlot());
   const memberIds = await getCommunityMemberUserIds(communityId);
 
   const { entries, contributorCount, scoringWindow } = await computeGlobalLastfmRanking(

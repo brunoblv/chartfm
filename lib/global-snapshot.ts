@@ -370,7 +370,7 @@ export async function computeLatestWeeklyTopArtists(limit: number): Promise<{
 }
 
 export async function getOrCreateRankingWeekSnapshot(now: Date = new Date()) {
-  const rankingWeek = getRankingWeekReference(now);
+  const rankingWeek = getRankingWeekReference(now, await getGlobalPublishSlot());
   const existing = await prisma.globalSnapshot.findUnique({
     where: { weekIndex: rankingWeek.weekIndex },
   });
@@ -481,7 +481,7 @@ export async function rebuildAllGlobalSnapshotsFrom2026(options?: {
 }
 
 export async function refreshRankingWeekSnapshot(now: Date = new Date()) {
-  const rankingWeek = getRankingWeekReference(now);
+  const rankingWeek = getRankingWeekReference(now, await getGlobalPublishSlot());
   if (!isGlobalRankingWeek(rankingWeek.weekIndex)) {
     throw new Error(`Semana ${rankingWeek.weekIndex} está fora da era Global 100 (2026+).`);
   }

@@ -6,6 +6,7 @@ import { AdSlot } from "@/components/ui/AdSlot";
 import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { prisma } from "@/lib/prisma";
 import type { GlobalChartEntry } from "@/lib/types";
 import { ChevronLeft } from "lucide-react";
@@ -20,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function getGlobal100Preview(limit = 5): Promise<{ weekLabel: string; songs: GlobalChartEntry[] }> {
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
   const latest = await prisma.globalSnapshot.findFirst({
     where: { weekIndex: { lte: rankingWeek.weekIndex } },
     orderBy: { weekIndex: "desc" },

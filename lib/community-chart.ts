@@ -267,9 +267,10 @@ async function computeOfficialCommunityChartData(
 ): Promise<CommunityChartPayload> {
   const weekChart = await resolveOfficialCommunityWeekChart(communityId, requestedWeekIndex);
   if (!weekChart) {
-    const fallback = await weekMetaFromIndex(requestedWeekIndex ?? getRankingWeekReference().weekIndex);
+    const fallbackWeekIndex = requestedWeekIndex ?? getRankingWeekReference(new Date(), await getGlobalPublishSlot()).weekIndex;
+    const fallback = await weekMetaFromIndex(fallbackWeekIndex);
     return {
-      weekIndex: requestedWeekIndex ?? getRankingWeekReference().weekIndex,
+      weekIndex: fallbackWeekIndex,
       weekLabel: fallback.weekLabel,
       dateRange: fallback.dateRange,
       contributorCount: 0,
@@ -392,7 +393,7 @@ export async function computeCommunityChartData(
     return { ...official, usesOfficialParada: true };
   }
 
-  const rankingWeek = getRankingWeekReference(referenceDate);
+  const rankingWeek = getRankingWeekReference(referenceDate, await getGlobalPublishSlot());
   const weekIndex = requestedWeekIndex ?? rankingWeek.weekIndex;
   const prevWeek = prevChartWeekIndex(weekIndex);
 

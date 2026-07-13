@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { GlobalHero } from "@/components/global/GlobalHero";
 import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
@@ -93,7 +94,7 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
 
   const sp = searchParams ? ("then" in searchParams ? await searchParams : searchParams) : {};
   const requestedWeek = Number(sp.week ?? "");
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
 
   const availableSnapshots = await prisma.globalSnapshot.findMany({
     where: { weekIndex: { lte: rankingWeek.weekIndex } },

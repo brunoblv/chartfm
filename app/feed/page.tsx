@@ -14,6 +14,7 @@ import { mergeHomeFeed } from "@/lib/home-mixed-feed";
 import { getEditorialPicksSorted } from "@/lib/editorial-picks";
 import { resolveEditorialPreviewImages } from "@/lib/editorial-preview-image";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { aggregateTopArtists, type WeeklyChartEntryRow } from "@/lib/weekly-chart-aggregate";
 import type { UserWithCharts, GlobalChartEntry } from "@/lib/types";
 import type { ReviewItem, TimelineItem } from "@/components/home/TimelineTabs";
@@ -258,7 +259,7 @@ async function getPublicReviewsFeed(locale: Awaited<ReturnType<typeof getServerL
 
 /** Top 3 do Global 100 — mesma quantidade usada no teaser da home logada. */
 async function getGlobalTeaserData(limit = 3): Promise<{ weekLabel: string; songs: GlobalChartEntry[] }> {
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
   const latest = await prisma.globalSnapshot.findFirst({
     where: { weekIndex: { lte: rankingWeek.weekIndex } },
     orderBy: { weekIndex: "desc" },
@@ -271,7 +272,7 @@ async function getGlobalTeaserData(limit = 3): Promise<{ weekLabel: string; song
 
 /** Artistas em alta da semana — mesma quantidade (4) usada na sidebar da home logada. */
 async function getTrendingArtistsData(limit = 4) {
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
   const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
     where: { chart: { weekIndex: rankingWeek.weekIndex } },
     select: {

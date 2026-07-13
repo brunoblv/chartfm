@@ -106,7 +106,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
     ? ("then" in searchParams ? await searchParams : searchParams)
     : {};
   const requestedWeek = Number(params.week ?? "");
-  const rankingWeek = getRankingWeekReference(new Date());
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
   const availableSnapshots = await prisma.globalSnapshot.findMany({
     where: { weekIndex: { lte: rankingWeek.weekIndex } },
     select: { weekIndex: true, weekLabel: true, dateRange: true },

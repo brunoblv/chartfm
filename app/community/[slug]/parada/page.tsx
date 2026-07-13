@@ -13,6 +13,7 @@ import {
 } from "@/lib/community-chart";
 import { getCommunityBySlug } from "@/lib/community-auth";
 import { getRankingWeekReference } from "@/lib/chart-week";
+import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 
 async function resolveArtistImages(artists: { name: string; spotifyId: string | null }[]) {
   const imageMap = new Map<string, string | null>();
@@ -55,7 +56,7 @@ export default async function CommunityParadaPage({ params, searchParams }: Comm
   const availableWeekIndexes = availableWeeks.map((w) => w.weekIndex);
 
   const defaultWeekIndex =
-    availableWeekIndexes[0] ?? getRankingWeekReference().weekIndex;
+    availableWeekIndexes[0] ?? getRankingWeekReference(new Date(), await getGlobalPublishSlot()).weekIndex;
   const weekIndex =
     Number.isFinite(requestedWeek) && availableWeekIndexes.includes(requestedWeek)
       ? requestedWeek

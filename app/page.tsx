@@ -294,11 +294,12 @@ export default async function HomePage() {
 
   if (!session || !session.user?.id) {
     const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
-    const rankingWeek = getRankingWeekReference(nowBRT);
+    const publishSlot = await getGlobalPublishSlot();
+    const rankingWeek = getRankingWeekReference(nowBRT, publishSlot);
     // A semana fechada de referência pode ainda não ter parada consolidada.
     // Para a landing usamos a semana mais recente que de fato tem dados.
     const dataWeekIndex = (await getLatestAvailableWeekIndex(rankingWeek.weekIndex)) ?? rankingWeek.weekIndex;
-    const weekRefDate = getWeeklySnapshotReferenceDate(dataWeekIndex, await getGlobalPublishSlot());
+    const weekRefDate = getWeeklySnapshotReferenceDate(dataWeekIndex, publishSlot);
     const weekLabel = buildWeekLabelFromDate(weekRefDate);
     const [globalChart, userCount, recentUsers, chartsThisWeek, publishersThisWeek] = await Promise.all([
       getGlobalTopSongs(dataWeekIndex, 100),
@@ -332,7 +333,7 @@ export default async function HomePage() {
 
   const nowBRT = new Date(Date.now() - 3 * 60 * 60 * 1000);
   const currentWeekIdx = buildWeekIndexFromDate(nowBRT);
-  const rankingWeek = getRankingWeekReference();
+  const rankingWeek = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
 
   if (session?.user?.id) {
     const userId = session.user.id;

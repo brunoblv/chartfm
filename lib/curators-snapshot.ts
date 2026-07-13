@@ -266,7 +266,7 @@ export async function saveCuratorsSnapshotForWeek(weekIndex: number) {
 }
 
 export async function getOrCreateCuratorsSnapshot(now: Date = new Date()) {
-  const rankingWeek = getRankingWeekReference(now);
+  const rankingWeek = getRankingWeekReference(now, await getGlobalPublishSlot());
   const existing = await prisma.curatorsSnapshot.findUnique({
     where: { weekIndex: rankingWeek.weekIndex },
   });
@@ -285,7 +285,7 @@ export async function getOrCreateCuratorsSnapshot(now: Date = new Date()) {
 }
 
 export async function getLatestCuratorsSnapshot(maxWeekIndex?: number) {
-  const weekIndex = maxWeekIndex ?? getRankingWeekReference(new Date()).weekIndex;
+  const weekIndex = maxWeekIndex ?? getRankingWeekReference(new Date(), await getGlobalPublishSlot()).weekIndex;
   const row = await prisma.curatorsSnapshot.findFirst({
     where: { weekIndex: { lte: weekIndex } },
     orderBy: { weekIndex: "desc" },
