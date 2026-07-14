@@ -37,12 +37,24 @@ async function main() {
   const weekLabel = buildWeekLabelFromDate(date);
   console.log(`Data ${dateArg} → weekIndex ${weekIndex} (${weekLabel})`);
 
-  const started = Date.now();
-  const result = await saveGlobalLastfmSnapshotForWeek("albums", weekIndex);
-  const count = (result.payload.entries as unknown[]).length;
-  const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+  const lastfmUsers = await prisma.user.count({ where: { lastfmUser: { not: null } } });
+  console.log(
+    `Vai buscar scrobbles de até ${lastfmUsers} usuário(s) com Last.fm ligado e enriquecer faixas via Spotify — pode levar alguns minutos.`,
+  );
 
-  console.log(`Semana ${weekIndex} recalculada em ${elapsed}s → ${count} álbum(ns).`);
+  const started = Date.now();
+  const heartbeat = setInterval(() => {
+    console.log(`… ainda processando (${((Date.now() - started) / 1000).toFixed(0)}s)`);
+  }, 15_000);
+
+  try {
+    const result = await saveGlobalLastfmSnapshotForWeek("albums", weekIndex);
+    const count = (result.payload.entries as unknown[]).length;
+    const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+    console.log(`Semana ${weekIndex} recalculada em ${elapsed}s → ${count} álbum(ns).`);
+  } finally {
+    clearInterval(heartbeat);
+  }
 }
 
 main()
