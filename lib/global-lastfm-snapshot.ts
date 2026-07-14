@@ -43,10 +43,17 @@ async function loadPrevEntries(mode: GlobalLastfmMode, weekIndex: number): Promi
   return row ? (row.entries as GlobalLastfmEntry[]) : [];
 }
 
-async function computeSnapshot(mode: GlobalLastfmMode, referenceDate: Date, weekIndex?: number) {
+async function computeSnapshot(
+  mode: GlobalLastfmMode,
+  referenceDate: Date,
+  weekIndex?: number,
+  options?: { skipSpotifyFallback?: boolean },
+) {
   const meta = weekIndex != null ? await weekMetaFromWeekIndex(weekIndex) : await resolveGlobalLastfmWeekMeta(referenceDate);
   const prevEntries = await loadPrevEntries(mode, meta.weekIndex);
-  const computed = await computeGlobalLastfmRanking(mode, referenceDate, prevEntries);
+  const computed = await computeGlobalLastfmRanking(mode, referenceDate, prevEntries, {
+    skipSpotifyFallback: options?.skipSpotifyFallback,
+  });
   return { ...meta, ...computed };
 }
 
@@ -68,9 +75,13 @@ export async function resolveGlobalLastfmWeekMeta(referenceDate: Date = new Date
   };
 }
 
-export async function saveGlobalLastfmSnapshotForWeek(mode: GlobalLastfmMode, weekIndex: number) {
+export async function saveGlobalLastfmSnapshotForWeek(
+  mode: GlobalLastfmMode,
+  weekIndex: number,
+  options?: { skipSpotifyFallback?: boolean },
+) {
   const referenceDate = getWeeklySnapshotReferenceDate(weekIndex, await getGlobalPublishSlot());
-  const computed = await computeSnapshot(mode, referenceDate, weekIndex);
+  const computed = await computeSnapshot(mode, referenceDate, weekIndex, options);
   const data = {
     weekLabel: computed.weekLabel,
     dateRange: computed.dateRange,

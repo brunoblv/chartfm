@@ -163,7 +163,10 @@ async function enrichTrack(tp: TrackPlays, needAlbumMeta: boolean): Promise<Enri
 
 const albumTypeCache = new Map<string, boolean>();
 
-export async function isFullAlbumType(albumSpotifyId: string | null | undefined): Promise<boolean> {
+export async function isFullAlbumType(
+  albumSpotifyId: string | null | undefined,
+  skipSpotifyFallback = false,
+): Promise<boolean> {
   const id = albumSpotifyId?.trim();
   if (!id) return false;
   if (albumTypeCache.has(id)) return albumTypeCache.get(id)!;
@@ -186,6 +189,12 @@ export async function isFullAlbumType(albumSpotifyId: string | null | undefined)
     const ok = viaSong.albumRef.albumType === "ALBUM";
     albumTypeCache.set(id, ok);
     return ok;
+  }
+
+  if (skipSpotifyFallback) {
+    // Sem dado local e sem consultar o Spotify: não descartar álbum já vinculado a faixas ouvidas.
+    albumTypeCache.set(id, true);
+    return true;
   }
 
   const meta = await getSpotifyAlbumMetadataById(id);
@@ -348,7 +357,11 @@ async function mapPool<T, R>(items: T[], concurrency: number, fn: (item: T) => P
   return out;
 }
 
-async function enrichTracksBatch(tracks: TrackPlays[], needAlbumMeta: boolean): Promise<Map<string, EnrichedTrack | null>> {
+async function enrichTracksBatch(
+  tracks: TrackPlays[],
+  needAlbumMeta: boolean,
+  skipSpotifyFallback = false,
+): Promise<Map<string, EnrichedTrack | null>> {
   const unique = new Map<string, TrackPlays>();
   for (const tp of tracks) {
     const key = trackPlaysKey(tp.track, tp.artist);
@@ -357,6 +370,7 @@ async function enrichTracksBatch(tracks: TrackPlays[], needAlbumMeta: boolean): 
   const entries = [...unique.entries()];
 
   if (!needAlbumMeta) {
+    if (skipSpotifyFallback) return new Map(entries.map(([key]) => [key, null]));
     const enriched = await mapPool(entries, SPOTIFY_ENRICH_CONCURRENCY, async ([key, tp]) => [
       key,
       await enrichTrack(tp, false),
@@ -407,6 +421,11 @@ async function enrichTracksBatch(tracks: TrackPlays[], needAlbumMeta: boolean): 
 
   for (const entry of entries) {
     if (!out.has(entry[0])) needSpotify.push(entry);
+  }
+
+  if (skipSpotifyFallback) {
+    for (const [key] of needSpotify) out.set(key, null);
+    return out;
   }
 
   const matched = await mapPool(needSpotify, SPOTIFY_ENRICH_CONCURRENCY, async ([key, tp]) => {
@@ -496,7 +515,7 @@ export async function computeGlobalLastfmRanking(
   mode: GlobalLastfmMode,
   referenceDate: Date = new Date(),
   prevEntries: GlobalLastfmEntry[] = [],
-  options?: { userIds?: string[]; chartLimit?: number },
+  options?: { userIds?: string[]; chartLimit?: number; skipSpotifyFallback?: boolean },
 ): Promise<{ entries: GlobalLastfmEntry[]; contributorCount: number; scoringWindow: string }> {
   const users = await loadLastfmUsers(options?.userIds);
   const { fromUnix, toUnix } = myTrlFetchWindow(referenceDate);
@@ -525,9 +544,10 @@ export async function computeGlobalLastfmRanking(
     })
   ).filter((x): x is UserPlays => x != null);
 
+  const skipSpotifyFallback = options?.skipSpotifyFallback ?? false;
   const contributorCount = userPlaysList.length;
   const allTracks = userPlaysList.flatMap((u) => u.rows.map((r) => r.tp));
-  const enrichMap = await enrichTracksBatch(allTracks, mode === "albums");
+  const enrichMap = await enrichTracksBatch(allTracks, mode === "albums", skipSpotifyFallback);
 
   let allowedAlbumIds: Set<string> | null = null;
   if (mode === "albums") {
@@ -538,7 +558,9 @@ export async function computeGlobalLastfmRanking(
           .filter((id): id is string => Boolean(id)),
       ),
     ];
-    const ok = await mapPool(albumIds, 12, async (id) => ((await isFullAlbumType(id)) ? id : null));
+    const ok = await mapPool(albumIds, 12, async (id) =>
+      (await isFullAlbumType(id, skipSpotifyFallback)) ? id : null,
+    );
     allowedAlbumIds = new Set(ok.filter((id): id is string => id != null));
   }
 

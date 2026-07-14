@@ -39,7 +39,7 @@ async function main() {
 
   const lastfmUsers = await prisma.user.count({ where: { lastfmUser: { not: null } } });
   console.log(
-    `Vai buscar scrobbles de até ${lastfmUsers} usuário(s) com Last.fm ligado e enriquecer faixas via Spotify — pode levar alguns minutos.`,
+    `Vai buscar scrobbles de até ${lastfmUsers} usuário(s) com Last.fm ligado, identificando álbuns só pelo banco de dados local (sem consultar o Spotify). Faixas sem álbum já cadastrado ficam de fora — enriqueça-as manualmente e rode de novo.`,
   );
 
   const started = Date.now();
@@ -48,7 +48,7 @@ async function main() {
   }, 15_000);
 
   try {
-    const result = await saveGlobalLastfmSnapshotForWeek("albums", weekIndex);
+    const result = await saveGlobalLastfmSnapshotForWeek("albums", weekIndex, { skipSpotifyFallback: true });
     const count = (result.payload.entries as unknown[]).length;
     const elapsed = ((Date.now() - started) / 1000).toFixed(1);
     console.log(`Semana ${weekIndex} recalculada em ${elapsed}s → ${count} álbum(ns).`);
