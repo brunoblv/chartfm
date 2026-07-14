@@ -29,6 +29,7 @@ type MyArtist = {
 type Props = {
   copaId: string;
   copaStatus: string;
+  copaType: string;
   maxArtists: number;
   editWindow: CopaSinglesEditWindow;
   myArtists: MyArtist[];
@@ -43,7 +44,7 @@ type SpotifyArtist = {
   genres: string[];
 };
 
-export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myArtists: initArtists, takenSpotifyIds }: Props) {
+export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWindow, myArtists: initArtists, takenSpotifyIds }: Props) {
   const router = useRouter();
   const [artists, setArtists] = useState(initArtists);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -701,6 +702,11 @@ export function MySquadClient({ copaId, copaStatus, maxArtists, editWindow, myAr
               <button onClick={closeAddModal} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
             </div>
             <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
+              {copaType === "PUSH" && (
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", background: "var(--fill-inset)", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+                  Copa Push: só artistas com menos de 1.500.000 ouvintes mensais no Spotify podem ser escolhidos.
+                </div>
+              )}
               <input
                 autoFocus
                 placeholder="Buscar artista no Spotify…"

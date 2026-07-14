@@ -3,8 +3,24 @@ import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { getArtistColor, getArtistInitials, COPA_UNASSIGNED_GROUP } from "@/lib/copa";
+import { getArtistColor, getArtistInitials, COPA_UNASSIGNED_GROUP, COPA_PUSH_MAX_MONTHLY_LISTENERS } from "@/lib/copa";
 import { getSpotifyArtistById } from "@/lib/spotify-server";
+import { getArtistMonthlyListeners } from "@/lib/spotify-listeners";
+
+async function checkCopaPushEligibility(
+  copaType: string,
+  artistSpotifyId: string,
+): Promise<string | null> {
+  if (copaType !== "PUSH") return null;
+  const listeners = await getArtistMonthlyListeners(artistSpotifyId);
+  if (listeners == null) {
+    return "Não foi possível verificar a audiência deste artista agora. Tente novamente em instantes.";
+  }
+  if (listeners >= COPA_PUSH_MAX_MONTHLY_LISTENERS) {
+    return `Este artista tem ${listeners.toLocaleString("pt-BR")} ouvintes mensais no Spotify — acima do limite de 1.500.000 da Copa Push.`;
+  }
+  return null;
+}
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,6 +64,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   });
   if (!participant) {
     return NextResponse.json({ error: "Not a participant" }, { status: 403 });
+  }
+
+  const eligibilityError = await checkCopaPushEligibility(copa.type, artistSpotifyId);
+  if (eligibilityError) {
+    return NextResponse.json({ error: eligibilityError }, { status: 400 });
   }
 
   // Check artist not already claimed
@@ -173,6 +194,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
   if (oldArtist.artistSpotifyId === artistSpotifyId) {
     return NextResponse.json({ error: "Esse já é o artista atual" }, { status: 400 });
+  }
+
+  const eligibilityError = await checkCopaPushEligibility(copa.type, artistSpotifyId);
+  if (eligibilityError) {
+    return NextResponse.json({ error: eligibilityError }, { status: 400 });
   }
 
   const existingClaim = await prisma.copaArtist.findFirst({

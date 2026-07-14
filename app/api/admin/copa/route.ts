@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { announceCopaRegistrationOpen } from "@/lib/game-announcements";
-import { COPA_PARTICIPANT_OPTIONS, COPA_TOTAL_ARTISTS } from "@/lib/copa";
+import { COPA_PARTICIPANT_OPTIONS, COPA_TOTAL_ARTISTS, COPA_TYPE_OPTIONS, type CopaTypeOption } from "@/lib/copa";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -35,10 +35,11 @@ export async function POST(req: Request) {
   if (!adminId) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
   const body = await req.json();
-  const { name, year, maxParticipants } = body as {
+  const { name, year, maxParticipants, type } = body as {
     name: string;
     year: number;
     maxParticipants?: number;
+    type?: CopaTypeOption;
   };
 
   if (!name || !year) {
@@ -53,12 +54,21 @@ export async function POST(req: Request) {
     );
   }
 
+  const resolvedType = type ?? "NORMAL";
+  if (!(COPA_TYPE_OPTIONS as readonly string[]).includes(resolvedType)) {
+    return NextResponse.json(
+      { error: `type must be one of ${COPA_TYPE_OPTIONS.join(", ")}` },
+      { status: 400 },
+    );
+  }
+
   // Editions open in REGISTRATION with no participants — users sign themselves up.
   const copa = await prisma.copaEdition.create({
     data: {
       name,
       year,
       status: "REGISTRATION",
+      type: resolvedType,
       maxParticipants: resolvedMaxParticipants,
       artistsPerUser: COPA_TOTAL_ARTISTS / resolvedMaxParticipants,
     },

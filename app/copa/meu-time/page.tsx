@@ -110,6 +110,7 @@ export default async function MeuTimePage() {
     <MySquadClient
       copaId={copa.id}
       copaStatus={copa.status as string}
+      copaType={copa.type as string}
       maxArtists={copa.artistsPerUser}
       editWindow={editWindow}
       myArtists={myArtists.map((a) => ({

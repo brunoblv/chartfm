@@ -282,3 +282,94 @@ export async function syncCopaFixedSpotifyPlaylistSafely(copaId: string, batchOr
     console.error("[copa-playlist-sync] falha ao atualizar playlist fixa", copaId, batchOrder, e);
   }
 }
+
+// Reúne os singles de TODOS os CopaArtist da edição (todas as rodadas, desde o
+// início) — usado pela playlist "tudo desde o começo" da Copa Push.
+async function collectAllCopaTracks(copaId: string): Promise<DayTrack[]> {
+  const artists = await prisma.copaArtist.findMany({
+    where: { copaId },
+    select: { artistName: true, singles: { select: { slotIndex: true, songName: true, songId: true } } },
+  });
+
+  const tracks: DayTrack[] = [];
+  const seen = new Set<string>();
+  for (const artist of artists) {
+    for (const single of artist.singles) {
+      if (!single.songName) continue;
+      const key = (single.songId ?? `${artist.artistName}::${single.songName}`).toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      tracks.push({ songName: single.songName, artistName: artist.artistName, songId: single.songId });
+    }
+  }
+  return tracks;
+}
+
+export type SyncCopaPushFullPlaylistResult =
+  | { ok: true; playlistId: string; trackCount: number }
+  | { ok: false; message: string };
+
+/**
+ * Playlist fixa da Copa Push (@bruno), separada da playlist fixa da Copa normal:
+ * em vez de trocar diariamente, contém TODAS as faixas de TODAS as rodadas desde
+ * o início. Criada automaticamente na 1ª sincronização e o ID fica salvo em
+ * `CopaEdition.pushSpotifyPlaylistId` (escopo por edição — não é reaproveitada
+ * entre anos, diferente da playlist fixa global da Copa normal).
+ */
+export async function syncCopaPushFullSpotifyPlaylist(copaId: string): Promise<SyncCopaPushFullPlaylistResult> {
+  const copa = await prisma.copaEdition.findUnique({
+    where: { id: copaId },
+    select: { name: true, pushSpotifyPlaylistId: true },
+  });
+  if (!copa) return { ok: false, message: "Copa não encontrada." };
+
+  const owner = await getMyTrlOwnerUser();
+  const token = owner?.id ? await getSpotifyUserAccessToken(owner.id) : null;
+  if (!token) {
+    return { ok: false, message: "Conta Spotify (@bruno) não conectada." };
+  }
+
+  const tracks = await collectAllCopaTracks(copaId);
+  if (tracks.length === 0) {
+    return { ok: false, message: "Nenhuma faixa cadastrada ainda." };
+  }
+
+  const uris = await resolveSpotifyUris(tracks);
+  if (uris.length === 0) {
+    return { ok: false, message: "Nenhuma faixa encontrada no Spotify." };
+  }
+
+  const title = `${copa.name} · Todas as músicas`.slice(0, 100);
+  const description = `Todas as faixas em disputa na ${copa.name} (Copa Push) desde o início.`.slice(0, 300);
+
+  let playlistId = copa.pushSpotifyPlaylistId;
+  if (!playlistId) {
+    const created = await createBrunoAutoSpotifyPlaylist(token, title, description);
+    if (!created.ok) return { ok: false, message: created.message };
+    playlistId = created.id;
+    await prisma.copaEdition.update({ where: { id: copaId }, data: { pushSpotifyPlaylistId: playlistId } });
+    const added = await addTracksToSpotifyPlaylist(token, playlistId, uris);
+    if (!added.ok) return { ok: false, message: added.message };
+    return { ok: true, playlistId, trackCount: uris.length };
+  }
+
+  const replaced = await replaceTracksInSpotifyPlaylist(token, playlistId, uris);
+  if (!replaced.ok) return { ok: false, message: replaced.message };
+  const renamed = await updateSpotifyPlaylistDetails(token, playlistId, title, description);
+  if (!renamed.ok) return { ok: false, message: renamed.message };
+
+  return { ok: true, playlistId, trackCount: uris.length };
+}
+
+// Wrapper que nunca lança: a atualização da playlist da Copa Push é "best
+// effort" e não pode quebrar o agendamento/avanço da Copa.
+export async function syncCopaPushFullSpotifyPlaylistSafely(copaId: string): Promise<void> {
+  try {
+    const result = await syncCopaPushFullSpotifyPlaylist(copaId);
+    if (!result.ok) {
+      console.error("[copa-playlist-sync]", result.message);
+    }
+  } catch (e) {
+    console.error("[copa-playlist-sync] falha ao atualizar playlist da Copa Push", copaId, e);
+  }
+}

@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
 import { CopaArtistSinglesEditor } from "@/components/copa/CopaArtistSinglesEditor";
-import { COPA_DAY_LABELS, COPA_PARTICIPANT_OPTIONS, COPA_SINGLES_COUNT, COPA_TOTAL_ARTISTS, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles, votesToGoals } from "@/lib/copa";
+import { COPA_DAY_LABELS, COPA_PARTICIPANT_OPTIONS, COPA_SINGLES_COUNT, COPA_TOTAL_ARTISTS, COPA_TYPE_LABELS, COPA_TYPE_OPTIONS, SLOT_LABELS, applyCopaSingleMoveFromEditable, findDuplicateSongInSingles, mergeArtistSingles, votesToGoals, type CopaTypeOption } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 import { searchCopaSongs } from "@/lib/copa-song-search-client";
 import { GripVertical } from "lucide-react";
@@ -14,6 +14,7 @@ type Edition = {
   name: string;
   year: number;
   status: string;
+  type: string;
   startsAt: string | null;
   votesPerGoal: number;
   artistCount: number;
@@ -110,6 +111,7 @@ export function CopaAdminClient({ viewerHandle, manualVote, editions, activeEdit
   const [newName, setNewName] = useState("Copa ChartFM");
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [newMaxParticipants, setNewMaxParticipants] = useState(8);
+  const [newType, setNewType] = useState<CopaTypeOption>("NORMAL");
   const [creating, setCreating] = useState(false);
   const [actioning, setActioning] = useState<string | null>(null);
   const [fixtureFilter, setFixtureFilter] = useState("ALL");
@@ -250,7 +252,7 @@ export function CopaAdminClient({ viewerHandle, manualVote, editions, activeEdit
       const res = await fetch("/api/admin/copa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName, year: newYear, maxParticipants: newMaxParticipants }),
+        body: JSON.stringify({ name: newName, year: newYear, maxParticipants: newMaxParticipants, type: newType }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -667,7 +669,14 @@ export function CopaAdminClient({ viewerHandle, manualVote, editions, activeEdit
         <div key={e.id} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14, padding: "18px", marginBottom: 14 }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>{e.name} {e.year}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
+                {e.name} {e.year}
+                {e.type === "PUSH" && (
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em", background: "rgba(255,212,38,.12)", color: "#FFD426" }}>
+                    Push
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
                 {STATUS_LABELS[e.status]} · {e.artistCount} artistas · {e.fixtureCount} jogos
               </div>
@@ -1336,6 +1345,26 @@ export function CopaAdminClient({ viewerHandle, manualVote, editions, activeEdit
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
                 Cada participante deverá escolher <strong>{COPA_TOTAL_ARTISTS / newMaxParticipants} artista{COPA_TOTAL_ARTISTS / newMaxParticipants > 1 ? "s" : ""}</strong> ({COPA_TOTAL_ARTISTS} artistas ÷ {newMaxParticipants} participantes). Os próprios usuários se inscrevem enquanto a Copa está em Inscrições.
               </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+                Tipo da Copa
+              </label>
+              <select
+                value={newType}
+                onChange={(e) => setNewType(e.target.value as CopaTypeOption)}
+                style={{ width: "100%", background: "var(--fill-inset)", border: "1.5px solid var(--divider)", borderRadius: 10, padding: "10px 14px", color: "var(--text)", fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box" }}
+              >
+                {COPA_TYPE_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{COPA_TYPE_LABELS[t]}</option>
+                ))}
+              </select>
+              {newType === "PUSH" && (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
+                  Só artistas com menos de 1.500.000 ouvintes mensais no Spotify poderão ser escolhidos.
+                </div>
+              )}
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>

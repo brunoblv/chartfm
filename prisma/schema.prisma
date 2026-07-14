@@ -122,25 +122,28 @@ model EmailVerificationToken {
 }
 
 model Artist {
-  id                 Int        @id @default(autoincrement())
-  spotifyId          String     @unique @map("spotify_id")
-  name               String
-  exhibitionName     String?    @map("exhibition_name")
-  genres             String[]   @default([])
-  imageUrl           String?    @map("image_url")
-  spotifyUrl         String?    @map("spotify_url")
-  bio                String?
+  id                        Int        @id @default(autoincrement())
+  spotifyId                 String     @unique @map("spotify_id")
+  name                      String
+  exhibitionName            String?    @map("exhibition_name")
+  genres                    String[]   @default([])
+  imageUrl                  String?    @map("image_url")
+  spotifyUrl                String?    @map("spotify_url")
+  bio                       String?
   /// Backfill automático (Wikipedia) não achou bio — não tentar de novo até correção manual.
-  bioNotFoundAt      DateTime?  @map("bio_not_found_at")
+  bioNotFoundAt             DateTime?  @map("bio_not_found_at")
   /// Backfill automático (Spotify/MusicBrainz) não achou imagem/link/gêneros — não tentar de novo até correção manual.
-  metadataNotFoundAt DateTime?  @map("metadata_not_found_at")
+  metadataNotFoundAt        DateTime?  @map("metadata_not_found_at")
   /// Fontes (spotify/lastfm/musicbrainz/wikipedia) já consultadas para este artista sem retorno — não tentar de novo até forçar.
-  sourcesNotFound    String[]   @default([]) @map("sources_not_found")
-  createdAt          DateTime   @default(now()) @map("created_at")
-  updatedAt          DateTime   @updatedAt @map("updated_at")
-  albums             Album[]
-  songs              Song[]     @relation("PrimarySongArtist")
-  feats              SongFeat[]
+  sourcesNotFound           String[]   @default([]) @map("sources_not_found")
+  /// Ouvintes mensais no Spotify (scraping de open.spotify.com) — usado pelo limite de audiência da Copa Push.
+  monthlyListeners          Int?       @map("monthly_listeners")
+  monthlyListenersFetchedAt DateTime?  @map("monthly_listeners_fetched_at")
+  createdAt                 DateTime   @default(now()) @map("created_at")
+  updatedAt                 DateTime   @updatedAt @map("updated_at")
+  albums                    Album[]
+  songs                     Song[]     @relation("PrimarySongArtist")
+  feats                     SongFeat[]
 
   @@index([spotifyId], map: "idx_artists_spotify_id")
   @@map("artists")
@@ -215,6 +218,8 @@ model Song {
   releaseDatesVersion        Int                       @default(0) @map("release_dates_version")
   /// Fontes (spotify/lastfm/musicbrainz/wikipedia) já consultadas para esta música sem retorno — não tentar de novo até forçar.
   sourcesNotFound            String[]                  @default([]) @map("sources_not_found")
+  /// Cadastrada à mão na tela de criar parada (Spotify indisponível) — artista/álbum podem ser texto livre, sem vínculo Spotify ainda.
+  createdManually            Boolean                   @default(false) @map("created_manually")
   editorialNote              String?                   @map("editorial_note")
   createdAt                  DateTime                  @default(now()) @map("created_at")
   artistRef                  Artist?                   @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
@@ -1134,22 +1139,31 @@ enum CopaFixtureStatus {
   DONE
 }
 
+enum CopaEditionType {
+  NORMAL
+  PUSH
+}
+
 model CopaEdition {
-  id              String            @id @default(cuid())
-  name            String
-  year            Int
-  status          CopaStatus        @default(REGISTRATION)
-  maxParticipants Int               @default(8) @map("max_participants")
-  artistsPerUser  Int               @default(8) @map("artists_per_user")
-  votesPerGoal    Int               @default(2) @map("votes_per_goal")
-  startsAt        DateTime?         @map("starts_at")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  participants    CopaParticipant[]
-  copaArtists     CopaArtist[]
-  fixtures        CopaFixture[]
-  dayPlaylists    CopaDayPlaylist[]
-  liveComments    CopaLiveComment[]
+  id                    String            @id @default(cuid())
+  name                  String
+  year                  Int
+  status                CopaStatus        @default(REGISTRATION)
+  type                  CopaEditionType   @default(NORMAL)
+  maxParticipants       Int               @default(8) @map("max_participants")
+  artistsPerUser        Int               @default(8) @map("artists_per_user")
+  votesPerGoal          Int               @default(2) @map("votes_per_goal")
+  startsAt              DateTime?         @map("starts_at")
+  /// ID da playlist fixa "todas as músicas" da Copa Push (criada automaticamente na
+  /// 1ª sincronização). Não usado por edições NORMAL, que usam a playlist fixa global.
+  pushSpotifyPlaylistId String?           @map("push_spotify_playlist_id")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  participants          CopaParticipant[]
+  copaArtists           CopaArtist[]
+  fixtures              CopaFixture[]
+  dayPlaylists          CopaDayPlaylist[]
+  liveComments          CopaLiveComment[]
 
   @@map("copa_editions")
 }

@@ -18,6 +18,18 @@ export const COPA_UNASSIGNED_GROUP = "?";
 
 export const COPA_DEFAULT_VOTES_PER_GOAL = 2;
 
+// Copa Push: variação restrita a artistas emergentes (ouvintes mensais no Spotify
+// abaixo do teto). Validado só no momento do claim (lib/spotify-listeners.ts).
+export const COPA_PUSH_MAX_MONTHLY_LISTENERS = 1_500_000;
+
+export const COPA_TYPE_OPTIONS = ["NORMAL", "PUSH"] as const;
+export type CopaTypeOption = (typeof COPA_TYPE_OPTIONS)[number];
+
+export const COPA_TYPE_LABELS: Record<CopaTypeOption, string> = {
+  NORMAL: "Normal",
+  PUSH: "Push",
+};
+
 /** Converte votos brutos em gols do placar exibido. */
 export function votesToGoals(votes: number, votesPerGoal = COPA_DEFAULT_VOTES_PER_GOAL): number {
   const divisor = Math.max(1, votesPerGoal);

@@ -49,7 +49,8 @@ export type SongFiltro =
   | "sem-single"
   | "sem-clipe"
   | "data-01-01"
-  | "datas-nao-encontradas";
+  | "datas-nao-encontradas"
+  | "criadas-manualmente";
 
 export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "todas", label: "Todas" },
@@ -62,6 +63,7 @@ export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "sem-clipe", label: "Sem data do clipe" },
   { key: "data-01-01", label: "Data 01/01 (suspeita)" },
   { key: "datas-nao-encontradas", label: "Datas não encontradas" },
+  { key: "criadas-manualmente", label: "Criadas manualmente" },
 ];
 
 export const SONG_FILTRO_DESCRICAO: Record<SongFiltro, string> = {
@@ -77,7 +79,11 @@ export const SONG_FILTRO_DESCRICAO: Record<SongFiltro, string> = {
   "data-01-01": "Datas em 01/01 — pode indicar que o MusicBrainz só tinha o ano, sem dia/mês.",
   "datas-nao-encontradas":
     "Backfill automático já tentou Wikipedia e MusicBrainz sem resultado — corrija manualmente ou edite título/artista e use WIKI/MB na linha.",
+  "criadas-manualmente":
+    "Cadastradas à mão na tela de criar parada (Spotify indisponível) — ainda sem busca no Spotify. Use o botão de forçar busca na linha.",
 };
+
+export const criadasManualmenteWhere: Prisma.SongWhereInput = { createdManually: true };
 
 export function parseSongFiltro(raw: string | undefined, fallback: SongFiltro): SongFiltro {
   const v = (raw ?? "").toLowerCase();
@@ -188,6 +194,8 @@ function songFiltroWhere(filtro: SongFiltro): Prisma.SongWhereInput | null {
       return semClipeWhere;
     case "datas-nao-encontradas":
       return datasNaoEncontradasWhere;
+    case "criadas-manualmente":
+      return criadasManualmenteWhere;
   }
 }
 

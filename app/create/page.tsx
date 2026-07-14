@@ -24,6 +24,7 @@ import { describeLastfmImportOrder, describeLastfmImportPeriod } from "@/lib/las
 import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
 import { canUseSpotifyFeatures, getWeightedLastfmImportConfig, isMyTrlOwner } from "@/lib/mytrl-access";
 import { SpotlightSearchCard } from "@/components/create/SpotlightSearchCard";
+import { ManualSongCreateModal } from "@/components/create/ManualSongCreateModal";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -144,6 +145,7 @@ export default function CreatePage() {
   const [globalTopSongs, setGlobalTopSongs] = useState<Song[]>([]);
   const lastfmImportRunRef = useRef(0);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
+  const [showManualCreate, setShowManualCreate] = useState(false);
   const [showSpotifyModal, setShowSpotifyModal] = useState(false);
   const [spotifyImportCount, setSpotifyImportCount] = useState(20);
   const [importingSpotify, setImportingSpotify] = useState(false);
@@ -712,7 +714,31 @@ export default function CreatePage() {
   const searchPanel = (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Buscar música</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Buscar música</div>
+          <button
+            type="button"
+            onClick={() => setShowManualCreate(true)}
+            title="Cadastrar música manualmente (quando o Spotify estiver indisponível)"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              border: "1px solid var(--divider-strong)",
+              background: "var(--fill-subtle)",
+              color: "var(--text)",
+              borderRadius: 999,
+              padding: "5px 10px",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            <Plus size={12} />
+            Criar música
+          </button>
+        </div>
         <div style={{ marginBottom: 14 }}>
           <Link
             href="/guides/como-criar-sua-parada"
@@ -1728,6 +1754,12 @@ export default function CreatePage() {
             </div>
           </div>
         </div>
+      )}
+      {showManualCreate && (
+        <ManualSongCreateModal
+          onClose={() => setShowManualCreate(false)}
+          onCreated={(song) => addSong(song)}
+        />
       )}
     </Shell>
   );

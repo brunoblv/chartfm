@@ -140,6 +140,7 @@ export default async function CopaAdminPage() {
         name: e.name,
         year: e.year,
         status: e.status as string,
+        type: e.type as string,
         startsAt: e.startsAt ? e.startsAt.toISOString() : null,
         votesPerGoal: e.votesPerGoal,
         artistCount: e._count.copaArtists,
