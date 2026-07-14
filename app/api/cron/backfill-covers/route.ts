@@ -16,7 +16,8 @@ export const maxDuration = 300;
 const CRON_BATCH = 100;
 const CRON_TIME_BUDGET_MS = 240_000;
 
-// GET /api/cron/backfill-covers — a cada 2h: completa capas/metadados de músicas pendentes
+// GET /api/cron/backfill-covers — 1x/dia às 12h: completa capas/metadados de músicas pendentes.
+// Músicas sem match no Spotify ganham sourcesNotFound=["spotify"] e saem da fila (ver findSongsMissingCovers).
 export async function GET(req: NextRequest) {
   if (!authorizedCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
     const result = await enrichSongsWithSpotifyMetadataByIds(
       prisma,
       pending.map((s) => s.id),
-      { searchFallback: true, deadlineAt: Date.now() + CRON_TIME_BUDGET_MS },
+      { searchFallback: true, deadlineAt: Date.now() + CRON_TIME_BUDGET_MS, markNotFoundOnFail: true },
     );
     const remaining = await countSongsMissingCovers(prisma);
 

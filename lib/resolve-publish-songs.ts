@@ -283,6 +283,7 @@ const SONG_ENRICH_SELECT = {
   artist: true,
   spotifyId: true,
   albumSpotifyId: true,
+  sourcesNotFound: true,
   albumRef: { select: { coverUrl: true } },
 } as const;
 
@@ -541,6 +542,8 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
     deadlineAt?: number;
     /** Coletor de ids pulados por falta de tempo (preenchido quando `deadlineAt` estoura). */
     deferredIds?: Set<string>;
+    /** Marca `sourcesNotFound: ["spotify"]` quando a busca não acha nada (não usado no fluxo de publicação, só no backfill em lote). */
+    markNotFoundOnFail?: boolean;
   },
 ): Promise<ResolvedPublishSong[]> {
   if (songs.length === 0) return songs;
@@ -589,7 +592,15 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
       try {
         // Aumentar maxAttempts: 3 tentativas para buscas (vs 1 para batch Spotify)
         const ok = await enrichSongRowFallback(db, row, { maxAttempts: 3 });
-        if (!ok) continue;
+        if (!ok) {
+          if (opts?.markNotFoundOnFail && !row.sourcesNotFound.includes("spotify")) {
+            await db.song.update({
+              where: { id: row.id },
+              data: { sourcesNotFound: { push: "spotify" } },
+            });
+          }
+          continue;
+        }
         const fresh = await db.song.findUnique({
           where: { id: row.id },
           select: { spotifyId: true, albumSpotifyId: true },
@@ -820,8 +831,8 @@ const SONG_COVER_SELECT = {
   albumRef: { select: { coverUrl: true } },
 } as const;
 
-/** Músicas sem capa vinculada (com ou sem spotifyId válido). */
-export async function findSongsMissingCovers(db: Db, limit?: number) {
+/** Músicas sem capa vinculada (com ou sem spotifyId válido). Por padrão pula as já marcadas como não encontradas no Spotify. */
+export async function findSongsMissingCovers(db: Db, limit?: number, opts?: { includeNotFound?: boolean }) {
   const rows = await db.song.findMany({
     where: {
       OR: [
@@ -830,6 +841,7 @@ export async function findSongsMissingCovers(db: Db, limit?: number) {
         { albumRef: { coverUrl: null } },
         { albumRef: { coverUrl: "" } },
       ],
+      ...(opts?.includeNotFound ? {} : { NOT: { sourcesNotFound: { has: "spotify" } } }),
     },
     select: SONG_COVER_SELECT,
     orderBy: { id: "asc" },
@@ -838,7 +850,7 @@ export async function findSongsMissingCovers(db: Db, limit?: number) {
   return rows.filter((r) => !r.albumRef?.coverUrl?.trim());
 }
 
-export async function countSongsMissingCovers(db: Db): Promise<number> {
+export async function countSongsMissingCovers(db: Db, opts?: { includeNotFound?: boolean }): Promise<number> {
   const rows = await db.song.findMany({
     where: {
       OR: [
@@ -847,6 +859,7 @@ export async function countSongsMissingCovers(db: Db): Promise<number> {
         { albumRef: { coverUrl: null } },
         { albumRef: { coverUrl: "" } },
       ],
+      ...(opts?.includeNotFound ? {} : { NOT: { sourcesNotFound: { has: "spotify" } } }),
     },
     select: { albumRef: { select: { coverUrl: true } } },
   });
@@ -857,7 +870,7 @@ export async function countSongsMissingCovers(db: Db): Promise<number> {
 export async function enrichSongsWithSpotifyMetadataByIds(
   db: Db,
   songIds: string[],
-  opts?: { searchFallback?: boolean; deadlineAt?: number },
+  opts?: { searchFallback?: boolean; deadlineAt?: number; markNotFoundOnFail?: boolean },
 ): Promise<EnrichSongsResult> {
   if (songIds.length === 0) {
     return { updated: 0, skipped: 0, viaBatch: 0, viaSearch: 0, invalidSpotifyIds: 0, tokenMissing: false, deferredIds: [] };

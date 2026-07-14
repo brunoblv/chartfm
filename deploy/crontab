@@ -57,16 +57,16 @@ TZ=America/Sao_Paulo
 59 23 * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
 
 # Radar de Lançamentos — checa artistas monitorados no Spotify e avisa no Telegram
-# 4x/dia (não de hora em hora): ~200 artistas x 24h estourava a cota do app no Spotify
+# 1x/dia às 8h (era 4x/dia): ~200 artistas x 24h estourava a cota do app no Spotify
 # e derrubava busca/capas com 429 prolongado (retry-after de horas). Incidente 2026-07-08.
-15 0,6,12,18 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar >> /root/chartfm/logs/cron.log 2>&1
+0 8 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar >> /root/chartfm/logs/cron.log 2>&1
 
 # Radar de Lançamentos — terça 12h: sincroniza a lista com o top 200 do Global da semana
 0 12 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar-import >> /root/chartfm/logs/cron.log 2>&1
 
-# Backfill de capas — a cada 2h: completa metadados/capas de músicas salvas em modo degradado (Spotify em 429).
-# Seguro sob rate limit: a rota faz probe antes e desiste (1 request) se a API ainda estiver em 429.
-0 */2 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
+# Backfill de capas — 1x/dia às 12h (era a cada 2h): completa metadados/capas de músicas
+# salvas em modo degradado (Spotify em 429). Faz probe antes e desiste se ainda em 429.
+0 12 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
 
 # Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora)
 20 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
