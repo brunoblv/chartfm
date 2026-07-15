@@ -63,21 +63,19 @@ TZ=America/Sao_Paulo
 # Domingo 23:59 — abre a Votação da Semana (Melhor da Semana + Flashback) e notifica todos
 59 23 * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
 
-# Radar de Lançamentos — checa artistas monitorados no Spotify e avisa no Telegram
-# 1x/dia às 5h (era 4x/dia, depois 8h): ~200 artistas x 24h estourava a cota do app no
-# Spotify e derrubava busca/capas com 429 prolongado (retry-after de horas). Incidente
-# 2026-07-08. Movido de 8h para 5h em 2026-07-14 para não colidir com daily-user-stats/
-# mytrl (ambos por volta das 8h) — madrugada, ninguém editando músicas na hora.
-0 5 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar >> /root/chartfm/logs/cron.log 2>&1
+# Radar de Lançamentos — só às sextas (dia mundial de lançamento), de hora em hora, em
+# lotes de ~15 artistas por execução (RELEASE_RADAR_BATCH_PER_RUN), 2s entre artistas e
+# cada artista checado no máximo 1x/dia. Espalha os ~200 artistas pelas 24h da sexta em
+# vez de uma varredura única — sem risco de soft ban (incidentes 2026-07-08 e 2026-07-14).
+40 * * * 5 /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar >> /root/chartfm/logs/cron.log 2>&1
 
 # Radar de Lançamentos — terça 12h: sincroniza a lista com o top 200 do Global da semana
 0 12 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar-import >> /root/chartfm/logs/cron.log 2>&1
 
-# Backfill de capas — 1x/dia às 6h (era 12h, antes a cada 2h): completa metadados/capas de
-# músicas salvas em modo degradado (Spotify em 429). Faz probe antes e desiste se ainda em
-# 429. Movido de 12h para 6h em 2026-07-14 para ficar na madrugada, depois do release-radar
-# (5h) e antes do pileup das 8h.
-0 6 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
+# Backfill de capas — DESATIVADO 2026-07-15 para poupar cota do Spotify (era 1x/dia).
+# Reativar descomentando quando necessário; capas pendentes podem ser resolvidas pelo
+# botão de backfill no admin.
+#0 6 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
 
 # Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora, minuto :45)
 45 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
@@ -88,8 +86,6 @@ TZ=America/Sao_Paulo
 # Playwright/Chromium usado nas artes de social, substituído por @napi-rs/canvas)
 0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-scheduler >> /root/chartfm/logs/cron.log 2>&1
 
-# 1h — completa músicas/álbuns/artistas pendentes via Wikipedia/MusicBrainz/Last.fm/Spotify.
-# Itens sem resultado em nenhuma fonte são marcados (*NotFoundAt) e não reentram na fila em
-# dias seguintes — só saem de lá com correção manual. Não mexe em metadados de música via
-# Spotify (já coberto pelo backfill-covers de 2/2h), evitando sobreposição.
-0 1 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/nightly-catalog-backfill >> /root/chartfm/logs/cron.log 2>&1
+# Backfill noturno de catálogo — DESATIVADO 2026-07-15 para poupar cota do Spotify.
+# Reativar descomentando; pendências podem ser resolvidas manualmente em /admin/dados.
+#0 1 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/nightly-catalog-backfill >> /root/chartfm/logs/cron.log 2>&1

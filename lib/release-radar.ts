@@ -20,7 +20,10 @@ import { isTelegramConfigured, sendTelegramMessage, sendTelegramPhoto } from "@/
 
 /** Janela (em dias) considerada "lançamento novo". */
 const WINDOW_DAYS = Math.max(1, Number(process.env.RELEASE_RADAR_WINDOW_DAYS) || 14);
-const DELAY_BETWEEN_ARTISTS_MS = 400;
+const DELAY_BETWEEN_ARTISTS_MS = 2000;
+// Lote por execução: com o cron de hora em hora às sextas, ~200 artistas ÷ 24 execuções.
+// Cada artista é checado no máximo 1x/dia (filtro por lastCheckedAt < início do dia BRT).
+const BATCH_PER_RUN = Math.max(1, Number(process.env.RELEASE_RADAR_BATCH_PER_RUN) || 15);
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -128,9 +131,22 @@ export async function runReleaseRadar(): Promise<ReleaseRadarRunResult> {
     return { ok: false, watches: 0, checked: 0, announced: 0, errors: [...errors, probe.error ?? "Spotify indisponível"] };
   }
 
+  // Lote rotativo: só artistas ainda não checados hoje (BRT), os mais "atrasados" primeiro.
+  // Com o cron horário de sexta, a lista inteira se espalha ao longo do dia em vez de
+  // uma varredura única — cada execução faz no máximo BATCH_PER_RUN chamadas ao Spotify.
+  const now = new Date();
+  const brtNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  const todayStartBrt = new Date(
+    Date.UTC(brtNow.getUTCFullYear(), brtNow.getUTCMonth(), brtNow.getUTCDate(), 3, 0, 0),
+  );
+
   const watches = await prisma.artistReleaseWatch.findMany({
-    where: { active: true },
-    orderBy: { name: "asc" },
+    where: {
+      active: true,
+      OR: [{ lastCheckedAt: null }, { lastCheckedAt: { lt: todayStartBrt } }],
+    },
+    orderBy: [{ lastCheckedAt: { sort: "asc", nulls: "first" } }],
+    take: BATCH_PER_RUN,
   });
 
   let checked = 0;
