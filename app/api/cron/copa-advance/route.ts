@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { syncCopaToSchedule } from "@/lib/copa-day";
+import { probeSpotifyApi } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +18,13 @@ function authorized(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   if (!authorized(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  }
+
+  // Sob rate limit, não insiste — a sincronização de playlist do dia é a parte que usa
+  // Spotify; a próxima hora tenta de novo.
+  const probe = await probeSpotifyApi();
+  if (!probe.ok) {
+    return NextResponse.json({ ok: true, skipped: true, error: probe.error });
   }
 
   const copas = await prisma.copaEdition.findMany({

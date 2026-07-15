@@ -7,6 +7,11 @@
 #
 # .env: CRON_SECRET, APP_BASE_URL (ex. http://127.0.0.1:3000)
 # Horários: America/Sao_Paulo
+#
+# Crons que chamam a API do Spotify estão espalhados de propósito (minutos/horas
+# diferentes) para nunca disparar juntos e evitar rajadas que geram 429. Ver
+# incidente 2026-07-14: daily-user-stats + release-radar (ambos 8h) + mytrl (8h02)
+# colidiam, e vários hourly jobs caíam todos no minuto :00.
 
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
@@ -29,20 +34,22 @@ TZ=America/Sao_Paulo
 # 8h — stats por usuário/parada nas páginas de artista/música/álbum
 0 8 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/daily-user-stats >> /root/chartfm/logs/cron.log 2>&1
 
-# MyTRL → UMS Request Live (@bruno) — seg–sex 8h (após daily-user-stats)
-2 8 * * 1-5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl >> /root/chartfm/logs/cron.log 2>&1
+# MyTRL → UMS Request Live (@bruno) — seg–sex 8h10 (depois do release-radar/backfill-covers
+# da madrugada, cota do Spotify "descansada")
+10 8 * * 1-5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl >> /root/chartfm/logs/cron.log 2>&1
 
-# MyTRL semanal — sexta 8:05
-5 8 * * 5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl-weekly >> /root/chartfm/logs/cron.log 2>&1
+# MyTRL semanal — sexta 8:15
+15 8 * * 5 /root/chartfm/scripts/cron-hit.sh /api/cron/mytrl-weekly >> /root/chartfm/logs/cron.log 2>&1
 
-# Copa — reconcilia fases agendadas (de hora em hora)
-0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-advance >> /root/chartfm/logs/cron.log 2>&1
+# Copa — reconcilia fases agendadas (de hora em hora, minuto :15 para não colidir com
+# publish-weekly-globals/social-scheduler em :00)
+15 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/copa-advance >> /root/chartfm/logs/cron.log 2>&1
 
 # Clube do Álbum — reconcilia fases agendadas (de hora em hora)
 5 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/clube-advance >> /root/chartfm/logs/cron.log 2>&1
 
-# Push — reconcilia a rodada com os prazos (de hora em hora)
-10 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/push-advance >> /root/chartfm/logs/cron.log 2>&1
+# Push — reconcilia a rodada com os prazos (de hora em hora, minuto :30)
+30 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/push-advance >> /root/chartfm/logs/cron.log 2>&1
 
 # 3h — purga definitivamente paradas na lixeira há mais de 7 dias
 0 3 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/purge-deleted-paradas >> /root/chartfm/logs/cron.log 2>&1
@@ -57,19 +64,23 @@ TZ=America/Sao_Paulo
 59 23 * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
 
 # Radar de Lançamentos — checa artistas monitorados no Spotify e avisa no Telegram
-# 1x/dia às 8h (era 4x/dia): ~200 artistas x 24h estourava a cota do app no Spotify
-# e derrubava busca/capas com 429 prolongado (retry-after de horas). Incidente 2026-07-08.
-0 8 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar >> /root/chartfm/logs/cron.log 2>&1
+# 1x/dia às 5h (era 4x/dia, depois 8h): ~200 artistas x 24h estourava a cota do app no
+# Spotify e derrubava busca/capas com 429 prolongado (retry-after de horas). Incidente
+# 2026-07-08. Movido de 8h para 5h em 2026-07-14 para não colidir com daily-user-stats/
+# mytrl (ambos por volta das 8h) — madrugada, ninguém editando músicas na hora.
+0 5 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar >> /root/chartfm/logs/cron.log 2>&1
 
 # Radar de Lançamentos — terça 12h: sincroniza a lista com o top 200 do Global da semana
 0 12 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar-import >> /root/chartfm/logs/cron.log 2>&1
 
-# Backfill de capas — 1x/dia às 12h (era a cada 2h): completa metadados/capas de músicas
-# salvas em modo degradado (Spotify em 429). Faz probe antes e desiste se ainda em 429.
-0 12 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
+# Backfill de capas — 1x/dia às 6h (era 12h, antes a cada 2h): completa metadados/capas de
+# músicas salvas em modo degradado (Spotify em 429). Faz probe antes e desiste se ainda em
+# 429. Movido de 12h para 6h em 2026-07-14 para ficar na madrugada, depois do release-radar
+# (5h) e antes do pileup das 8h.
+0 6 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
 
-# Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora)
-20 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
+# Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora, minuto :45)
+45 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
 
 # Postagens Automáticas — agenda a fila editorial e publica os posts do slot atual (Facebook/Instagram/Threads/Telegram)
 # Rodando a cada 1h para melhor estabilidade (antes era 15 min: `*/15 * * * *`)

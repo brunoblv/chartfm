@@ -49,6 +49,11 @@ function scoreMatch(item: SpotifyDirectItem, words: string[]): number {
   return titleHits * 5 + artistHits * 5;
 }
 
+// Cooldown compartilhado entre todas as instâncias do hook: um 429 desliga a Fase 2
+// (busca direta no browser) por um tempo, pra não realimentar o rate limit do Spotify.
+let phase2CooldownUntil = 0;
+const PHASE2_COOLDOWN_MS = 5 * 60_000;
+
 export function useSpotifySearch(query: string, disabled = false): SpotifySearchResult {
   const [tracks, setTracks] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
@@ -116,16 +121,15 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
         // Fase 2: busca direto no Spotify pelo browser (evita timeout do servidor)
         const accessToken = serverData.accessToken;
         if (!accessToken || serverData.configured === false) return;
+        if (Date.now() < phase2CooldownUntil) return;
 
         try {
           const words = q.toLowerCase().split(/\s+/);
           const extraQueries: string[] = [];
           if (words.length === 2) {
             extraQueries.push(`artist:${words[0]} track:${words[1]}`);
-            extraQueries.push(`track:${words[0]} artist:${words[1]}`);
           } else if (words.length >= 3) {
             extraQueries.push(`artist:${words[0]} track:${words.slice(1).join(" ")}`);
-            extraQueries.push(`artist:${words[words.length - 1]} track:${words.slice(0, -1).join(" ")}`);
           }
 
           const fetchQuery = (qStr: string) =>
@@ -133,7 +137,10 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
               `https://api.spotify.com/v1/search?q=${encodeURIComponent(qStr)}&type=track&limit=20&market=BR`,
               { headers: { Authorization: `Bearer ${accessToken}` }, signal: ac.signal },
             )
-              .then((r) => (r.ok ? r.json() : { tracks: { items: [] } }))
+              .then((r) => {
+                if (r.status === 429) phase2CooldownUntil = Date.now() + PHASE2_COOLDOWN_MS;
+                return r.ok ? r.json() : { tracks: { items: [] } };
+              })
               .then((d: { tracks?: { items: SpotifyDirectItem[] } }) => d.tracks?.items ?? [])
               .catch(() => [] as SpotifyDirectItem[]);
 
@@ -177,7 +184,7 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
       } finally {
         if (!ac.signal.aborted) setLoading(false);
       }
-    }, 220);
+    }, 350);
     return () => {
       ac.abort();
       clearTimeout(timer);
