@@ -42,6 +42,20 @@ const tokenState: { accessToken: string | null; expiresAt: number } = {
   expiresAt: 0,
 };
 
+// App de backup (SPOTIFY_CLIENT_ID_BACKUP/_SECRET_BACKUP): assume as chamadas quando o
+// app principal recebe 429. O principal fica marcado como limitado pelo prazo do
+// Retry-After (ou 5min) e getAccessToken passa a entregar o token do backup nesse período.
+const backupTokenState: { accessToken: string | null; expiresAt: number } = {
+  accessToken: null,
+  expiresAt: 0,
+};
+let primaryLimitedUntil = 0;
+const PRIMARY_LIMITED_DEFAULT_MS = 5 * 60_000;
+
+function backupSpotifyConfigured(): boolean {
+  return Boolean(process.env.SPOTIFY_CLIENT_ID_BACKUP && process.env.SPOTIFY_CLIENT_SECRET_BACKUP);
+}
+
 const coverCache = new Map<string, string | null>();
 const COVER_CACHE_MAX = 500;
 
@@ -68,6 +82,7 @@ async function spotifyFetch(
   init: RequestInit,
   maxAttempts: number = SPOTIFY_RETRY_MAX_ATTEMPTS,
 ): Promise<Response | null> {
+  let triedBackup = false;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     let res: Response;
     const timeoutSignal = AbortSignal.timeout(SPOTIFY_FETCH_TIMEOUT_MS);
@@ -84,6 +99,29 @@ async function spotifyFetch(
     }
 
     if (res.status !== 429) return res;
+
+    // Failover: 429 com o token do app principal → marca o principal como limitado e
+    // refaz na hora com o app de backup (não conta como retry). Se a chamada já estava
+    // no backup (ou é a rota de token), segue o fluxo normal de retry/espera.
+    const authHeader = (init.headers as Record<string, string> | undefined)?.Authorization;
+    if (
+      !triedBackup &&
+      backupSpotifyConfigured() &&
+      tokenState.accessToken &&
+      authHeader === `Bearer ${tokenState.accessToken}`
+    ) {
+      triedBackup = true;
+      const limitMs = parseRetryAfterMs(res.headers.get("retry-after")) ?? PRIMARY_LIMITED_DEFAULT_MS;
+      primaryLimitedUntil = Date.now() + limitMs;
+      const backupToken = await getBackupAccessToken();
+      if (backupToken) {
+        console.warn(`[spotify] 429 no app principal — usando app de backup por ${Math.ceil(limitMs / 1000)}s`);
+        init = { ...init, headers: { ...init.headers, Authorization: `Bearer ${backupToken}` } };
+        attempt -= 1;
+        continue;
+      }
+    }
+
     if (attempt >= maxAttempts) return res;
 
     const retryAfterMs = parseRetryAfterMs(res.headers.get("retry-after"));
@@ -126,13 +164,13 @@ export function isSpotifyTrackId(id: string): boolean {
   return /^[A-Za-z0-9]{22}$/.test(s) && /[A-Z]/.test(s);
 }
 
-export async function getAccessToken(): Promise<string | null> {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
-
-  if (tokenState.accessToken && Date.now() < tokenState.expiresAt) {
-    return tokenState.accessToken;
+async function fetchClientCredentialsToken(
+  clientId: string,
+  clientSecret: string,
+  state: { accessToken: string | null; expiresAt: number },
+): Promise<string | null> {
+  if (state.accessToken && Date.now() < state.expiresAt) {
+    return state.accessToken;
   }
 
   const res = await spotifyFetch(
@@ -154,9 +192,30 @@ export async function getAccessToken(): Promise<string | null> {
   }
 
   const data = (await res.json()) as { access_token: string; expires_in: number };
-  tokenState.accessToken = data.access_token;
-  tokenState.expiresAt = Date.now() + (data.expires_in - 60) * 1000;
-  return tokenState.accessToken;
+  state.accessToken = data.access_token;
+  state.expiresAt = Date.now() + (data.expires_in - 60) * 1000;
+  return state.accessToken;
+}
+
+async function getBackupAccessToken(): Promise<string | null> {
+  const clientId = process.env.SPOTIFY_CLIENT_ID_BACKUP;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET_BACKUP;
+  if (!clientId || !clientSecret) return null;
+  return fetchClientCredentialsToken(clientId, clientSecret, backupTokenState);
+}
+
+export async function getAccessToken(): Promise<string | null> {
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return null;
+
+  // App principal em 429 recente: entrega o token do backup enquanto durar o prazo.
+  if (Date.now() < primaryLimitedUntil && backupSpotifyConfigured()) {
+    const backupToken = await getBackupAccessToken();
+    if (backupToken) return backupToken;
+  }
+
+  return fetchClientCredentialsToken(clientId, clientSecret, tokenState);
 }
 
 export type SpotifyProbeResult = {
