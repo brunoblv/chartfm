@@ -84,7 +84,7 @@ export const TIKTOK_NICHES: { key: string; label: string }[] = [
   { key: "receitas", label: "🍳 Receitas" },
   { key: "beleza", label: "💄 Beleza" },
   { key: "educacao", label: "📚 Educação" },
-  { key: "fotografia", label: "📷 Fotografia" },
+  { key: "tiktokshop", label: "🛍 TikTok Shop" },
   { key: "outro", label: "✨ Outro" },
 ];
 
