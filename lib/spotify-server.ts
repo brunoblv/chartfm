@@ -197,7 +197,9 @@ async function fetchClientCredentialsToken(
   return state.accessToken;
 }
 
-async function getBackupAccessToken(): Promise<string | null> {
+/** Token do app de backup — exportado para o /api/spotify/search entregar ao browser
+ * como fallback quando a busca direta tomar 429 no token principal. */
+export async function getBackupAccessToken(): Promise<string | null> {
   const clientId = process.env.SPOTIFY_CLIENT_ID_BACKUP;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET_BACKUP;
   if (!clientId || !clientSecret) return null;

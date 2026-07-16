@@ -16,6 +16,7 @@ type SpotifySearchResponse = {
   tracks?: SpotifyApiTrack[];
   configured?: boolean;
   accessToken?: string | null;
+  accessTokenBackup?: string | null;
 };
 
 type SpotifyDirectItem = {
@@ -53,6 +54,10 @@ function scoreMatch(item: SpotifyDirectItem, words: string[]): number {
 // (busca direta no browser) por um tempo, pra não realimentar o rate limit do Spotify.
 let phase2CooldownUntil = 0;
 const PHASE2_COOLDOWN_MS = 5 * 60_000;
+// 429 no token principal → as buscas passam pro token do app de backup por este prazo;
+// o cooldown total só entra se o backup também tomar 429 (ou não existir).
+let preferBackupUntil = 0;
+const PREFER_BACKUP_MS = 5 * 60_000;
 
 export function useSpotifySearch(query: string, disabled = false): SpotifySearchResult {
   const [tracks, setTracks] = useState<Song[]>([]);
@@ -120,6 +125,7 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
 
         // Fase 2: busca direto no Spotify pelo browser (evita timeout do servidor)
         const accessToken = serverData.accessToken;
+        const backupToken = serverData.accessTokenBackup ?? null;
         if (!accessToken || serverData.configured === false) return;
         if (Date.now() < phase2CooldownUntil) return;
 
@@ -132,17 +138,34 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
             extraQueries.push(`artist:${words[0]} track:${words.slice(1).join(" ")}`);
           }
 
-          const fetchQuery = (qStr: string) =>
+          const searchDirect = (qStr: string, token: string) =>
             fetch(
               `https://api.spotify.com/v1/search?q=${encodeURIComponent(qStr)}&type=track&limit=20&market=BR`,
-              { headers: { Authorization: `Bearer ${accessToken}` }, signal: ac.signal },
-            )
-              .then((r) => {
-                if (r.status === 429) phase2CooldownUntil = Date.now() + PHASE2_COOLDOWN_MS;
-                return r.ok ? r.json() : { tracks: { items: [] } };
-              })
-              .then((d: { tracks?: { items: SpotifyDirectItem[] } }) => d.tracks?.items ?? [])
-              .catch(() => [] as SpotifyDirectItem[]);
+              { headers: { Authorization: `Bearer ${token}` }, signal: ac.signal },
+            );
+
+          const fetchQuery = async (qStr: string): Promise<SpotifyDirectItem[]> => {
+            try {
+              const useBackupFirst = Date.now() < preferBackupUntil && backupToken;
+              let r = await searchDirect(qStr, useBackupFirst ? backupToken : accessToken);
+
+              // 429 no principal → tenta o app de backup na hora e prefere ele por 5min
+              if (r.status === 429 && !useBackupFirst && backupToken) {
+                preferBackupUntil = Date.now() + PREFER_BACKUP_MS;
+                r = await searchDirect(qStr, backupToken);
+              }
+              // Backup também em 429 (ou sem backup) → desliga a Fase 2 por 5min
+              if (r.status === 429) {
+                phase2CooldownUntil = Date.now() + PHASE2_COOLDOWN_MS;
+                return [];
+              }
+              if (!r.ok) return [];
+              const d = (await r.json()) as { tracks?: { items: SpotifyDirectItem[] } };
+              return d.tracks?.items ?? [];
+            } catch {
+              return [];
+            }
+          };
 
           const allResults = await Promise.all([fetchQuery(q), ...extraQueries.map(fetchQuery)]);
           if (ac.signal.aborted) return;

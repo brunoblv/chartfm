@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
-import { spotifyConfigured, getAccessToken } from "@/lib/spotify-server";
+import { spotifyConfigured, getAccessToken, getBackupAccessToken } from "@/lib/spotify-server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -73,19 +73,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ tracks: [], configured, accessToken: null }, { headers: NO_CACHE });
   }
 
-  // DB search + token fetch em paralelo (ambos rápidos)
-  const [dbTracks, accessToken] = await Promise.all([
+  // DB search + tokens em paralelo (ambos rápidos)
+  const [dbTracks, accessToken, accessTokenBackup] = await Promise.all([
     searchLocalCatalog(q, limit, artist),
     configured ? getAccessToken() : Promise.resolve(null),
+    configured ? getBackupAccessToken() : Promise.resolve(null),
   ]);
 
   return NextResponse.json(
     {
       tracks: dbTracks.slice(0, limit),
       configured,
-      // Token de curta duração — o browser usa para chamar a API do Spotify diretamente,
-      // evitando a latência do servidor para api.spotify.com
+      // Tokens de curta duração — o browser usa para chamar a API do Spotify diretamente,
+      // evitando a latência do servidor; o backup entra quando o principal responde 429.
       accessToken: accessToken ?? null,
+      accessTokenBackup: accessTokenBackup ?? null,
     },
     { headers: NO_CACHE },
   );
