@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireBruno } from "@/lib/require-bruno";
-import { getTiktokBotAdminData } from "@/lib/tiktok-bot";
+import { getTiktokBotAdminData, TIKTOK_NICHES } from "@/lib/tiktok-bot";
 
 // Painel do TikTok Growth Bot — exclusivo do @bruno.
 
@@ -34,6 +34,16 @@ export async function PATCH(req: Request) {
       .map((v) => String(v).trim())
       .filter((v) => /^\d{3,20}$/.test(v));
   }
+  if ("nicheFilter" in body) {
+    const v = body.nicheFilter;
+    data.nicheFilter = typeof v === "string" && TIKTOK_NICHES.some((n) => n.key === v) ? v : null;
+  }
+  if (typeof body.followFridayEnabled === "boolean") data.followFridayEnabled = body.followFridayEnabled;
+  if (typeof body.followFridayCount === "number" && body.followFridayCount >= 5 && body.followFridayCount <= 50) {
+    data.followFridayCount = Math.floor(body.followFridayCount);
+  }
+  if (typeof body.surveyEnabled === "boolean") data.surveyEnabled = body.surveyEnabled;
+  if (typeof body.confirmationEnabled === "boolean") data.confirmationEnabled = body.confirmationEnabled;
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "nada para atualizar" }, { status: 400 });
   }

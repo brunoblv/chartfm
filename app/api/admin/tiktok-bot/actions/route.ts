@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requireBruno } from "@/lib/require-bruno";
 import {
   getTiktokBotInfo,
+  runFollowFriday,
+  runTiktokAccountCheck,
   runTiktokShareRound,
   sendTiktokBotBroadcast,
   setTiktokBotWebhook,
@@ -19,6 +21,14 @@ export async function POST(req: Request) {
     case "run-share": {
       const result = await runTiktokShareRound({ force: true });
       return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+    }
+    case "run-follow-friday": {
+      const result = await runFollowFriday();
+      return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+    }
+    case "run-account-check": {
+      const result = await runTiktokAccountCheck();
+      return NextResponse.json(result);
     }
     case "set-webhook": {
       const base =

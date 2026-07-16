@@ -28,12 +28,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     data.tiktokUsername = v;
   }
+  // Revisão de denúncias: liberar o perfil limpa as denúncias acumuladas.
+  const clearReports = body.pendingReview === false;
+  if (typeof body.pendingReview === "boolean") data.pendingReview = body.pendingReview;
+
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "nada para atualizar" }, { status: 400 });
   }
 
   try {
     await prisma.tiktokBotUser.update({ where: { id: userId }, data });
+    if (clearReports) {
+      await prisma.tiktokBotReport.deleteMany({ where: { targetUserId: userId } });
+    }
   } catch {
     return NextResponse.json({ error: "usuário não encontrado ou TikTok já cadastrado" }, { status: 400 });
   }

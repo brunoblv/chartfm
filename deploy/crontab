@@ -90,6 +90,17 @@ TZ=America/Sao_Paulo
 # colidir com os hourly jobs; a rota respeita o intervalo configurado em /admin/tiktok-bot)
 10,40 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-share >> /root/chartfm/logs/cron.log 2>&1
 
+# TikTok Growth Bot — manutenção horária: pesquisa de retorno pós-divulgação (DM) e
+# confirmação de participação a cada 15 dias (sem resposta em 7 dias → pausa)
+25 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-maintenance >> /root/chartfm/logs/cron.log 2>&1
+
+# TikTok Growth Bot — Follow Friday: sexta 19h, lote grande de perfis (idempotente, 1x/dia)
+0 19 * * 5 /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-follow-friday >> /root/chartfm/logs/cron.log 2>&1
+
+# TikTok Growth Bot — domingo, de hora em hora: verifica contas 404 no TikTok em lotes
+# de ~30 perfis com 3s entre cada (cada perfil no máx. 1x/semana — sem risco de bloqueio)
+55 * * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-verify >> /root/chartfm/logs/cron.log 2>&1
+
 # Backfill noturno de catálogo — DESATIVADO 2026-07-15 para poupar cota do Spotify.
 # Reativar descomentando; pendências podem ser resolvidas manualmente em /admin/dados.
 #0 1 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/nightly-catalog-backfill >> /root/chartfm/logs/cron.log 2>&1

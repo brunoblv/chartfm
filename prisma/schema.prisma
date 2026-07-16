@@ -1759,23 +1759,61 @@ enum SocialCredentialPlatform {
 // ---------------------------------------------------------------------------
 
 model TiktokBotUser {
-  id               Int              @id @default(autoincrement())
-  telegramId       BigInt           @unique @map("telegram_id")
-  telegramUsername String?          @map("telegram_username")
-  telegramName     String?          @map("telegram_name")
-  tiktokUsername   String?          @unique @map("tiktok_username")
-  active           Boolean          @default(true)
-  banned           Boolean          @default(false)
+  id                      Int               @id @default(autoincrement())
+  telegramId              BigInt            @unique @map("telegram_id")
+  telegramUsername        String?           @map("telegram_username")
+  telegramName            String?           @map("telegram_name")
+  tiktokUsername          String?           @unique @map("tiktok_username")
+  /// Nicho de conteúdo (musica, humor, games, receitas, beleza, educacao, fotografia, outro).
+  niche                   String?
+  active                  Boolean           @default(true)
+  banned                  Boolean           @default(false)
+  /// true quando atingiu o limite de denúncias — sai da fila até revisão manual no admin.
+  pendingReview           Boolean           @default(false) @map("pending_review")
   /// Estado da conversa: "register" | "edit" quando o bot aguarda o usuário do TikTok.
-  pendingAction    String?          @map("pending_action")
-  lastSharedAt     DateTime?        @map("last_shared_at")
-  shareCount       Int              @default(0) @map("share_count")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-  shares           TiktokBotShare[]
+  pendingAction           String?           @map("pending_action")
+  lastSharedAt            DateTime?         @map("last_shared_at")
+  shareCount              Int               @default(0) @map("share_count")
+  /// Confirmação periódica de participação (a cada 15 dias, via DM).
+  lastConfirmedAt         DateTime?         @map("last_confirmed_at")
+  confirmationRequestedAt DateTime?         @map("confirmation_requested_at")
+  /// Verificação semanal do perfil no TikTok: quando checou e se retornou 404.
+  accountCheckedAt        DateTime?         @map("account_checked_at")
+  notFoundAt              DateTime?         @map("not_found_at")
+  createdAt               DateTime          @default(now()) @map("created_at")
+  updatedAt               DateTime          @updatedAt @map("updated_at")
+  shares                  TiktokBotShare[]
+  reports                 TiktokBotReport[]
+  surveys                 TiktokBotSurvey[]
 
   @@index([active, lastSharedAt], map: "idx_tiktok_bot_users_active_last_shared")
   @@map("tiktok_bot_users")
+}
+
+/// Denúncia de perfil (conta fake, conteúdo adulto, spam) — 1 por denunciante/alvo.
+model TiktokBotReport {
+  id                 Int           @id @default(autoincrement())
+  targetUserId       Int           @map("target_user_id")
+  reporterTelegramId BigInt        @map("reporter_telegram_id")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  target             TiktokBotUser @relation(fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@unique([targetUserId, reporterTelegramId])
+  @@map("tiktok_bot_reports")
+}
+
+/// Pesquisa de retorno pós-divulgação: "quantos seguidores você ganhou?" via DM.
+model TiktokBotSurvey {
+  id         Int           @id @default(autoincrement())
+  userId     Int           @map("user_id")
+  askedAt    DateTime      @default(now()) @map("asked_at")
+  answeredAt DateTime?     @map("answered_at")
+  /// Faixa respondida: "0-5" | "6-20" | "21-50" | "50+".
+  bucket     String?
+  user       TiktokBotUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, askedAt], map: "idx_tiktok_bot_surveys_user_asked")
+  @@map("tiktok_bot_surveys")
 }
 
 model TiktokBotGroup {
@@ -1813,6 +1851,15 @@ model TiktokBotSettings {
   /// Telegram IDs (numéricos) com acesso aos comandos de admin do bot.
   adminTelegramIds     String[]  @default([]) @map("admin_telegram_ids")
   lastShareAt          DateTime? @map("last_share_at")
+  /// Divulgar só um nicho (null = misturar todos).
+  nicheFilter          String?   @map("niche_filter")
+  /// Follow Friday: mensagem especial de sexta 19h com um lote grande de perfis.
+  followFridayEnabled  Boolean   @default(true) @map("follow_friday_enabled")
+  followFridayCount    Int       @default(25) @map("follow_friday_count")
+  lastFollowFridayAt   DateTime? @map("last_follow_friday_at")
+  /// Pesquisa de retorno pós-divulgação (DM) e confirmação periódica de participação.
+  surveyEnabled        Boolean   @default(true) @map("survey_enabled")
+  confirmationEnabled  Boolean   @default(true) @map("confirmation_enabled")
 
   @@map("tiktok_bot_settings")
 }
