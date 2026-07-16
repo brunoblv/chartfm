@@ -674,6 +674,25 @@ model GlobalSnapshot {
   @@map("global_snapshots")
 }
 
+model CommunityLastfmSnapshot {
+  id               String   @id @default(cuid())
+  communityId      String   @map("community_id")
+  mode             String // "airplay" | "albums"
+  weekIndex        Int      @map("week_index")
+  weekLabel        String   @map("week_label")
+  dateRange        String   @map("date_range")
+  scoringWindow    String   @map("scoring_window")
+  entries          Json
+  contributorCount Int      @map("contributor_count")
+  frozenAt         DateTime @default(now()) @map("frozen_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([communityId, mode, weekIndex])
+  @@index([communityId, mode, weekIndex], map: "idx_community_lastfm_snapshots_lookup")
+  @@map("community_lastfm_snapshots")
+}
+
 model GlobalAirplaySnapshot {
   id                String   @id @default(cuid())
   weekIndex         Int      @unique @map("week_index")

@@ -3,6 +3,7 @@ import {
   getOrCreateGlobalLastfmSnapshot,
 } from "@/lib/global-lastfm-snapshot";
 import { getOrCreateCuratorsSnapshot } from "@/lib/curators-snapshot";
+import { publishAllCommunityLastfmSnapshots } from "@/lib/community-lastfm";
 import { publishGlobalGenreSnapshotsForRankingWeek } from "@/lib/global-genre-snapshot";
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
@@ -31,6 +32,14 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
     getOrCreateCuratorsSnapshot(now),
     publishGlobalGenreSnapshotsForRankingWeek(now),
   ]);
+
+  // Airplay/Álbuns das comunidades: mesmo modelo do Global — congela na publicação
+  // (create-only; se a semana já tem snapshot, não recalcula). Sequencial de propósito
+  // pra não somar rajada de Spotify ao cálculo do Global que acabou de rodar.
+  const communityLastfm = await publishAllCommunityLastfmSnapshots(now).catch((e) => {
+    console.error("[publish-weekly-globals] publishAllCommunityLastfmSnapshots", e);
+    return { communities: 0, created: 0, errors: [String(e)] };
+  });
 
   syncGlobal100YouTubePlaylist(global.weekIndex, global.weekLabel).catch((e) =>
     console.error("[publish-weekly-globals] syncGlobal100YouTube", e),
@@ -91,6 +100,7 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
       count: curators.entries.length,
     },
     genreSnapshots,
+    communityLastfm,
     weeklyPoll,
     notificationsSent,
   };

@@ -4,7 +4,7 @@ import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { GlobalLastfmRanking } from "@/components/global/GlobalLastfmRanking";
 import { GlobalLastfmHero } from "@/components/global/GlobalLastfmHero";
 import { loadCommunityHeader } from "@/lib/community-page-data";
-import { computeCommunityLastfmRanking } from "@/lib/community-lastfm";
+import { getOrCreateCommunityLastfmSnapshot } from "@/lib/community-lastfm";
 import { getCommunityBySlug } from "@/lib/community-auth";
 import { parseCommunityPointsConfig } from "@/lib/community-chart";
 
@@ -17,7 +17,8 @@ export default async function CommunityAirplayPage({ params }: { params: Promise
   if (!row) notFound();
 
   const config = parseCommunityPointsConfig(row);
-  const data = await computeCommunityLastfmRanking(row.id, "airplay", config.maxSongs);
+  // Snapshot congelado da semana (create-only) — nunca recalcula em visita.
+  const data = await getOrCreateCommunityLastfmSnapshot(row.id, "airplay", config.maxSongs);
 
   return (
     <Shell title="" noPadding>
