@@ -16,7 +16,9 @@ export const GLOBAL_LASTFM_POINTS_MULTIPLIER = 10;
 const MAX_TRACKS_PER_USER = 80;
 const MAX_TRACKS_PER_USER_ALBUMS = 300;
 const LASTFM_USER_CONCURRENCY = 4;
-const SPOTIFY_ENRICH_CONCURRENCY = 10;
+// Concorrência baixa de propósito: 10 buscas paralelas no /search eram gatilho de 429
+// (rajada dentro da janela de 30s do Spotify). 3 mantém o throughput aceitável sem rajada.
+const SPOTIFY_ENRICH_CONCURRENCY = 3;
 
 export type GlobalLastfmEntryStatus = "new" | "return" | "up" | "down" | "same";
 
