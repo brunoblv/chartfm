@@ -62,7 +62,9 @@ type SpotifySearchJson = {
   tracks?: { items: SpotifyTrackApi[] };
 };
 
-const tokenState: { accessToken: string | null; expiresAt: number } = {
+type TokenState = { accessToken: string | null; expiresAt: number; failedUntil?: number };
+
+const tokenState: TokenState = {
   accessToken: null,
   expiresAt: 0,
 };
@@ -70,10 +72,13 @@ const tokenState: { accessToken: string | null; expiresAt: number } = {
 // App de backup (SPOTIFY_CLIENT_ID_BACKUP/_SECRET_BACKUP): assume as chamadas quando o
 // app principal recebe 429. O principal fica marcado como limitado pelo prazo do
 // Retry-After (ou 5min) e getAccessToken passa a entregar o token do backup nesse período.
-const backupTokenState: { accessToken: string | null; expiresAt: number } = {
+const backupTokenState: TokenState = {
   accessToken: null,
   expiresAt: 0,
 };
+// Falha ao obter token fica cacheada por 60s: sem isso, com credencial quebrada cada
+// chamada re-tenta o endpoint de token (até 10s de timeout cada) e estoura o prazo da rota.
+const TOKEN_FAILURE_CACHE_MS = 60_000;
 let primaryLimitedUntil = 0;
 const PRIMARY_LIMITED_DEFAULT_MS = 5 * 60_000;
 
@@ -125,6 +130,9 @@ async function spotifyFetch(
   input: string | URL,
   init: RequestInit,
   maxAttempts: number = SPOTIFY_RETRY_MAX_ATTEMPTS,
+  // Prazo absoluto (epoch ms): não inicia espera de retry que ultrapasse o prazo —
+  // essencial em rotas atrás do nginx (~60s), onde dormir 120s num 429 vira 504.
+  deadlineAt?: number,
 ): Promise<Response | null> {
   let triedBackup = false;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -189,6 +197,8 @@ async function spotifyFetch(
       retryAfterMs != null
         ? Math.min(120_000, retryAfterMs)
         : Math.min(SPOTIFY_RETRY_MAX_DELAY_MS, SPOTIFY_RETRY_BASE_DELAY_MS * attempt);
+    // Com prazo, desiste em vez de dormir além dele (quem chamou trata o 429).
+    if (deadlineAt !== undefined && Date.now() + delay >= deadlineAt) return res;
     await sleep(delay);
   }
   return null;
@@ -227,10 +237,13 @@ export function isSpotifyTrackId(id: string): boolean {
 async function fetchClientCredentialsToken(
   clientId: string,
   clientSecret: string,
-  state: { accessToken: string | null; expiresAt: number },
+  state: TokenState,
 ): Promise<string | null> {
   if (state.accessToken && Date.now() < state.expiresAt) {
     return state.accessToken;
+  }
+  if (state.failedUntil && Date.now() < state.failedUntil) {
+    return null;
   }
 
   const res = await spotifyFetch(
@@ -248,12 +261,14 @@ async function fetchClientCredentialsToken(
 
   if (!res?.ok) {
     console.error(`[spotify] getAccessToken failed: status=${res?.status ?? "no_response"}`);
+    state.failedUntil = Date.now() + TOKEN_FAILURE_CACHE_MS;
     return null;
   }
 
   const data = (await res.json()) as { access_token: string; expires_in: number };
   state.accessToken = data.access_token;
   state.expiresAt = Date.now() + (data.expires_in - 60) * 1000;
+  state.failedUntil = 0;
   return state.accessToken;
 }
 
@@ -430,7 +445,7 @@ export async function searchSpotifyTracks(
   limit = 10,
   market: string = "BR",
   signal?: AbortSignal,
-  opts?: { maxAttempts?: number },
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ) {
   const q = query.trim();
   const lim = Math.min(50, Math.max(1, limit));
@@ -447,7 +462,7 @@ async function searchSpotifyTracksUncached(
   lim: number,
   market: string,
   signal?: AbortSignal,
-  opts?: { maxAttempts?: number },
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ) {
   const cacheKey = `${q}|${lim}|${market}`;
   const token = await getAccessToken();
@@ -471,6 +486,7 @@ async function searchSpotifyTracksUncached(
       signal,
     },
     opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+    opts?.deadlineAt,
   );
 
   if (!res?.ok) return [];
@@ -796,7 +812,7 @@ function trackMetadataCacheSet(key: string, meta: SpotifyTrackMetadata | null) {
 export async function getSpotifyTrackMetadataById(
   trackId: string,
   market: string = "BR",
-  opts?: { maxAttempts?: number },
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ): Promise<SpotifyTrackMetadata | null> {
   const id = trackId.trim();
   if (!id) return null;
@@ -811,7 +827,7 @@ export async function getSpotifyTrackMetadataById(
 async function getSpotifyTrackMetadataByIdUncached(
   id: string,
   market: string,
-  opts?: { maxAttempts?: number },
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ): Promise<SpotifyTrackMetadata | null> {
   const token = await getAccessToken();
   if (!token) return null;
@@ -823,6 +839,7 @@ async function getSpotifyTrackMetadataByIdUncached(
       next: { revalidate: 0 },
     },
     opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+    opts?.deadlineAt,
   );
   if (!res?.ok) return null;
   const track = (await res.json()) as SpotifyTrackApi;
@@ -843,7 +860,7 @@ export type SpotifyBatchMetadataResult = {
 export async function getSpotifyTracksMetadataByIds(
   trackIds: string[],
   market: string = "BR",
-  opts?: { maxAttempts?: number },
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ): Promise<SpotifyBatchMetadataResult> {
   const metadata = new Map<string, SpotifyTrackMetadata>();
   const unique = [...new Set(trackIds.map((id) => id.trim()).filter(Boolean))];
@@ -865,6 +882,7 @@ export async function getSpotifyTracksMetadataByIds(
       `${API_BASE}/tracks?ids=${batch.join(",")}&market=${encodeURIComponent(market)}`,
       { headers: { Authorization: `Bearer ${token}` } },
       opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+      opts?.deadlineAt,
     );
     if (!res?.ok) {
       batchErrors += batch.length;

@@ -478,7 +478,7 @@ async function enrichSongRowFromExistingTwin(
 async function enrichSongRowBySearch(
   db: Db,
   row: { id: string; title: string; artist: string; spotifyId: string | null },
-  opts?: { maxAttempts?: number },
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ): Promise<boolean> {
   const invalidId = row.spotifyId != null && !isSpotifyTrackId(row.spotifyId);
   const minScore = invalidId ? 100 : 120;
@@ -515,7 +515,7 @@ async function enrichSongRowBySearch(
 async function enrichSongRowFallback(
   db: Db,
   row: { id: string; title: string; artist: string; spotifyId: string | null },
-  opts?: { maxAttempts?: number },
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ): Promise<boolean> {
   if (await enrichSongRowFromExistingTwin(db, row)) return true;
   return enrichSongRowBySearch(db, row, opts);
@@ -560,7 +560,7 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
     needsEnrich.map((r) => r.spotifyId).filter((id): id is string => Boolean(id && isSpotifyTrackId(id))),
     "BR",
     // Com deadline (backfill interativo), falha rápido; sem deadline (publicação), mantém retries.
-    opts?.deadlineAt ? { maxAttempts: 1 } : undefined,
+    opts?.deadlineAt ? { maxAttempts: 1, deadlineAt: opts.deadlineAt } : undefined,
   );
   const updatedById = new Map<string, ResolvedPublishSong>();
 
@@ -590,8 +590,10 @@ export async function enrichResolvedSongsWithSpotifyMetadata(
         continue;
       }
       try {
-        // Aumentar maxAttempts: 3 tentativas para buscas (vs 1 para batch Spotify)
-        const ok = await enrichSongRowFallback(db, row, { maxAttempts: 3 });
+        // Aumentar maxAttempts: 3 tentativas para buscas (vs 1 para batch Spotify).
+        // deadlineAt limita também as esperas de retry dentro de UMA música — sem ele,
+        // um 429 com Retry-After alto dorme até 120s por tentativa e a rota vira 504.
+        const ok = await enrichSongRowFallback(db, row, { maxAttempts: 3, deadlineAt: opts?.deadlineAt });
         if (!ok) {
           if (opts?.markNotFoundOnFail && !row.sourcesNotFound.includes("spotify")) {
             await db.song.update({

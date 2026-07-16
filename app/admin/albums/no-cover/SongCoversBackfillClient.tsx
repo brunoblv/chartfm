@@ -75,12 +75,28 @@ export function SongCoversBackfillClient({ initialTotal, spotifyConfigured }: Pr
 
     try {
       while (nextRemaining > 0) {
-        const res = await fetch("/api/admin/songs/backfill-covers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ limit: CLIENT_BATCH_LIMIT, excludeSongIds }),
-        });
-        const data = (await res.json()) as BackfillResponse;
+        // 504 do proxy (lote demorou) ou queda de rede não abortam o backfill:
+        // o servidor pode ter processado parte do lote — espera e tenta o próximo.
+        let data: BackfillResponse;
+        let res: Response;
+        try {
+          res = await fetch("/api/admin/songs/backfill-covers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ limit: CLIENT_BATCH_LIMIT, excludeSongIds }),
+          });
+          data = (await res.json()) as BackfillResponse;
+        } catch {
+          consecutiveStalls += 1;
+          if (consecutiveStalls > MAX_CONSECUTIVE_STALLS) {
+            setMessage("Erro de conexão durante o backfill. Tente novamente mais tarde.");
+            break;
+          }
+          const wait = Math.min(STALL_MAX_DELAY_MS, STALL_BASE_DELAY_MS * consecutiveStalls);
+          setMessage(`O servidor demorou para responder. Tentando de novo em ${Math.ceil(wait / 1000)}s...`);
+          await sleep(wait);
+          continue;
+        }
 
         if (!res.ok || data.ok === false) {
           const rateLimited = data.status === 429;
