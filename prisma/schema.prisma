@@ -1751,6 +1751,72 @@ enum SocialCredentialPlatform {
   TELEGRAM
 }
 
+// ---------------------------------------------------------------------------
+// TikTok Growth Bot — bot de Telegram (token próprio, separado do bot do
+// ChartFM) que gerencia uma comunidade de crescimento mútuo no TikTok:
+// cadastro de perfis via chat e divulgação automática em intervalos regulares.
+// Ver Planejamento_TikTok_Growth_Bot.md. Admin em /admin/tiktok-bot (@bruno).
+// ---------------------------------------------------------------------------
+
+model TiktokBotUser {
+  id               Int              @id @default(autoincrement())
+  telegramId       BigInt           @unique @map("telegram_id")
+  telegramUsername String?          @map("telegram_username")
+  telegramName     String?          @map("telegram_name")
+  tiktokUsername   String?          @unique @map("tiktok_username")
+  active           Boolean          @default(true)
+  banned           Boolean          @default(false)
+  /// Estado da conversa: "register" | "edit" quando o bot aguarda o usuário do TikTok.
+  pendingAction    String?          @map("pending_action")
+  lastSharedAt     DateTime?        @map("last_shared_at")
+  shareCount       Int              @default(0) @map("share_count")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  shares           TiktokBotShare[]
+
+  @@index([active, lastSharedAt], map: "idx_tiktok_bot_users_active_last_shared")
+  @@map("tiktok_bot_users")
+}
+
+model TiktokBotGroup {
+  id              Int              @id @default(autoincrement())
+  telegramGroupId BigInt           @unique @map("telegram_group_id")
+  title           String?
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  shares          TiktokBotShare[]
+
+  @@map("tiktok_bot_groups")
+}
+
+model TiktokBotShare {
+  id        Int            @id @default(autoincrement())
+  userId    Int            @map("user_id")
+  groupId   Int            @map("group_id")
+  sharedAt  DateTime       @default(now()) @map("shared_at")
+  messageId BigInt?        @map("message_id")
+  user      TiktokBotUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     TiktokBotGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([sharedAt], map: "idx_tiktok_bot_shares_shared_at")
+  @@map("tiktok_bot_shares")
+}
+
+/// Singleton (id fixo "default") com a configuração do bot.
+model TiktokBotSettings {
+  id                   String    @id @default("default")
+  enabled              Boolean   @default(true)
+  /// Intervalo mínimo entre divulgações automáticas (o cron roda a cada 30 min e respeita isto).
+  shareIntervalMinutes Int       @default(30) @map("share_interval_minutes")
+  profilesPerPost      Int       @default(5) @map("profiles_per_post")
+  welcomeMessage       String    @default("👋 Bem-vindo ao TikTok Growth!\n\nPara participar das divulgações automáticas, cadastre seu usuário do TikTok.") @map("welcome_message")
+  /// Telegram IDs (numéricos) com acesso aos comandos de admin do bot.
+  adminTelegramIds     String[]  @default([]) @map("admin_telegram_ids")
+  lastShareAt          DateTime? @map("last_share_at")
+
+  @@map("tiktok_bot_settings")
+}
+
 model SocialCredential {
   id              Int                      @id @default(autoincrement())
   platform        SocialCredentialPlatform @unique
