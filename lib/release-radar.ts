@@ -8,6 +8,7 @@ import {
   spotifyConfigured,
 } from "@/lib/spotify-server";
 import { isTelegramConfigured, sendTelegramMessage, sendTelegramPhoto } from "@/lib/telegram";
+import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
 
 /**
  * Radar de Lançamentos — monitora artistas no Spotify e avisa no Telegram
@@ -153,6 +154,12 @@ export async function runReleaseRadar(): Promise<ReleaseRadarRunResult> {
   let announced = 0;
 
   for (const watch of watches) {
+    // Orçamento diário do radar esgotado → para aqui; artistas restantes ficam
+    // pro próximo cron (lastCheckedAt não foi atualizado, então voltam primeiro).
+    if (!tryConsumeSpotifyBudget("radar")) {
+      errors.push("Orçamento diário do radar esgotado — varredura continua no próximo dia");
+      break;
+    }
     try {
       // maxAttempts 1: se o rate limit chegar no meio da varredura, não dormir
       // em retries por artista — o próximo cron recomeça do zero de qualquer forma.

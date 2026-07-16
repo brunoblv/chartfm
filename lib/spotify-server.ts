@@ -12,6 +12,30 @@ const SPOTIFY_RETRY_MAX_ATTEMPTS = 4;
 const SPOTIFY_RETRY_BASE_DELAY_MS = 450;
 const SPOTIFY_RETRY_MAX_DELAY_MS = 15000;
 
+// Espaçamento global entre chamadas à API (gateway): serializa a saída num ritmo
+// constante em vez de rajadas — o perfil de rajada é o que dispara 429, não o volume.
+const SPOTIFY_MIN_CALL_SPACING_MS = 250;
+let nextCallAt = 0;
+
+async function acquireCallSlot(): Promise<void> {
+  const now = Date.now();
+  const slot = Math.max(now, nextCallAt);
+  nextCallAt = slot + SPOTIFY_MIN_CALL_SPACING_MS;
+  if (slot > now) await sleep(slot - now);
+}
+
+// Dedup de chamadas em voo: várias requisições simultâneas pelo mesmo recurso
+// compartilham uma única chamada à API (versão in-process do "lock distribuído").
+const inFlight = new Map<string, Promise<unknown>>();
+
+function dedupeInFlight<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const existing = inFlight.get(key);
+  if (existing) return existing as Promise<T>;
+  const p = fn().finally(() => inFlight.delete(key));
+  inFlight.set(key, p);
+  return p;
+}
+
 type SpotifyImage = { url: string; height: number | null; width: number | null };
 
 type SpotifyTrackApi = {
@@ -62,25 +86,14 @@ export function getPrimaryLimitedUntil(): number {
   return primaryLimitedUntil;
 }
 
-/**
- * Marca o app principal como limitado (mesmo efeito de um 429 detectado em `spotifyFetch`),
- * pra fluxos que não passam por lá — ex.: o browser reportando 429 na busca direta (Fase 2
- * do `useSpotifySearch`), que nunca chega a bater no servidor.
- */
-export function markPrimaryLimited(retryAfterMs?: number | null): void {
-  const ms = retryAfterMs != null && Number.isFinite(retryAfterMs)
-    ? Math.min(Math.max(retryAfterMs, 0), 15 * 60_000)
-    : PRIMARY_LIMITED_DEFAULT_MS;
-  primaryLimitedUntil = Math.max(primaryLimitedUntil, Date.now() + ms);
-}
-
 const coverCache = new Map<string, string | null>();
 const COVER_CACHE_MAX = 500;
 
 type SearchCacheEntry = { tracks: { spotifyId: string; title: string; artist: string; album: string; imageUrl: string | null; previewUrl: string | null; externalUrl: string }[]; expiresAt: number };
 const searchCache = new Map<string, SearchCacheEntry>();
-const SEARCH_CACHE_MAX = 200;
-const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const SEARCH_CACHE_MAX = 5000;
+// Resultados de busca mudam devagar — cache longo elimina re-consultas dos mesmos termos.
+const SEARCH_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -110,6 +123,7 @@ async function spotifyFetch(
 ): Promise<Response | null> {
   let triedBackup = false;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    await acquireCallSlot();
     let res: Response;
     const timeoutSignal = AbortSignal.timeout(SPOTIFY_FETCH_TIMEOUT_MS);
     const mergedSignal =
@@ -410,6 +424,17 @@ export async function searchSpotifyTracks(
   const cached = searchCache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) return cached.tracks;
 
+  return dedupeInFlight(`search:${cacheKey}`, () => searchSpotifyTracksUncached(q, lim, market, signal, opts));
+}
+
+async function searchSpotifyTracksUncached(
+  q: string,
+  lim: number,
+  market: string,
+  signal?: AbortSignal,
+  opts?: { maxAttempts?: number },
+) {
+  const cacheKey = `${q}|${lim}|${market}`;
   const token = await getAccessToken();
   if (!token) return [];
 
@@ -739,15 +764,42 @@ function mapTrackApiToMetadata(track: SpotifyTrackApi): SpotifyTrackMetadata {
   };
 }
 
+// Metadados de faixa mudam quase nunca — cache curto (1h) segura repetições
+// (ex.: usuário reenviando a mesma parada) sem atrasar correções no Spotify.
+const trackMetadataCache = new Map<string, { meta: SpotifyTrackMetadata | null; expiresAt: number }>();
+const TRACK_METADATA_CACHE_MAX = 2000;
+const TRACK_METADATA_CACHE_TTL_MS = 60 * 60 * 1000;
+
+function trackMetadataCacheSet(key: string, meta: SpotifyTrackMetadata | null) {
+  if (trackMetadataCache.size >= TRACK_METADATA_CACHE_MAX) {
+    const first = trackMetadataCache.keys().next().value;
+    if (first !== undefined) trackMetadataCache.delete(first);
+  }
+  trackMetadataCache.set(key, { meta, expiresAt: Date.now() + TRACK_METADATA_CACHE_TTL_MS });
+}
+
 export async function getSpotifyTrackMetadataById(
   trackId: string,
   market: string = "BR",
   opts?: { maxAttempts?: number },
 ): Promise<SpotifyTrackMetadata | null> {
-  const token = await getAccessToken();
-  if (!token) return null;
   const id = trackId.trim();
   if (!id) return null;
+
+  const cacheKey = `${id}|${market}`;
+  const cached = trackMetadataCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) return cached.meta;
+
+  return dedupeInFlight(`track:${cacheKey}`, () => getSpotifyTrackMetadataByIdUncached(id, market, opts));
+}
+
+async function getSpotifyTrackMetadataByIdUncached(
+  id: string,
+  market: string,
+  opts?: { maxAttempts?: number },
+): Promise<SpotifyTrackMetadata | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
 
   const res = await spotifyFetch(
     `${API_BASE}/tracks/${encodeURIComponent(id)}?market=${encodeURIComponent(market)}`,
@@ -760,7 +812,9 @@ export async function getSpotifyTrackMetadataById(
   if (!res?.ok) return null;
   const track = (await res.json()) as SpotifyTrackApi;
   if (!track?.id) return null;
-  return mapTrackApiToMetadata(track);
+  const meta = mapTrackApiToMetadata(track);
+  trackMetadataCacheSet(`${id}|${market}`, meta);
+  return meta;
 }
 
 export type SpotifyBatchMetadataResult = {
@@ -838,15 +892,39 @@ function mapArtistApiToProfile(artist: SpotifyArtistApi): SpotifyArtistProfile {
   };
 }
 
-/** Perfil oficial do artista (GET /artists/{id}), incluindo fotos. */
+// Perfis de artista mudam raramente (nome/foto/gêneros) — cache de 30 dias por processo.
+const artistProfileCache = new Map<string, { profile: SpotifyArtistProfile | null; expiresAt: number }>();
+const ARTIST_PROFILE_CACHE_MAX = 3000;
+const ARTIST_PROFILE_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function artistProfileCacheSet(id: string, profile: SpotifyArtistProfile | null) {
+  if (artistProfileCache.size >= ARTIST_PROFILE_CACHE_MAX) {
+    const first = artistProfileCache.keys().next().value;
+    if (first !== undefined) artistProfileCache.delete(first);
+  }
+  artistProfileCache.set(id, { profile, expiresAt: Date.now() + ARTIST_PROFILE_CACHE_TTL_MS });
+}
+
+/** Perfil oficial do artista (GET /artists/{id}), incluindo fotos. Cache de 30 dias + dedup em voo. */
 export async function getSpotifyArtistById(
   spotifyId: string,
   opts?: { maxAttempts?: number },
 ): Promise<SpotifyArtistProfile | null> {
-  const token = await getAccessToken();
-  if (!token) return null;
   const id = spotifyId.trim();
   if (!id) return null;
+
+  const cached = artistProfileCache.get(id);
+  if (cached && Date.now() < cached.expiresAt) return cached.profile;
+
+  return dedupeInFlight(`artist:${id}`, () => getSpotifyArtistByIdUncached(id, opts));
+}
+
+async function getSpotifyArtistByIdUncached(
+  id: string,
+  opts?: { maxAttempts?: number },
+): Promise<SpotifyArtistProfile | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
 
   const res = await spotifyFetch(
     `${API_BASE}/artists/${encodeURIComponent(id)}`,
@@ -860,7 +938,9 @@ export async function getSpotifyArtistById(
 
   const artist = (await res.json()) as SpotifyArtistApi;
   if (!artist?.id) return null;
-  return mapArtistApiToProfile(artist);
+  const profile = mapArtistApiToProfile(artist);
+  artistProfileCacheSet(id, profile);
+  return profile;
 }
 
 type SpotifyArtistSearchJson = {

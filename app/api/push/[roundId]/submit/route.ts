@@ -49,26 +49,47 @@ export async function POST(
     return NextResponse.json({ error: "Esta música já foi indicada em outra rodada" }, { status: 400 });
   }
 
-  const metadata = await getSpotifyTrackMetadataById(spotifyTrackId);
-  if (!metadata) {
-    return NextResponse.json({ error: "Música não encontrada no Spotify" }, { status: 404 });
-  }
+  // Catálogo Confiável: música já completa no banco (com álbum e data de
+  // lançamento) resolve tudo localmente, sem nenhuma chamada ao Spotify.
+  const catalogSong = await prisma.song.findUnique({
+    where: { spotifyId: spotifyTrackId },
+    select: {
+      id: true,
+      albumRef: { select: { releaseDate: true } },
+    },
+  });
 
-  if (!isWithinOneYear(metadata.album.releaseDate)) {
-    return NextResponse.json({
-      error: "A música deve ter sido lançada nos últimos 12 meses",
-    }, { status: 400 });
-  }
+  let songId: string;
+  if (catalogSong?.albumRef?.releaseDate) {
+    if (!isWithinOneYear(catalogSong.albumRef.releaseDate)) {
+      return NextResponse.json({
+        error: "A música deve ter sido lançada nos últimos 12 meses",
+      }, { status: 400 });
+    }
+    songId = catalogSong.id;
+  } else {
+    const metadata = await getSpotifyTrackMetadataById(spotifyTrackId);
+    if (!metadata) {
+      return NextResponse.json({ error: "Música não encontrada no Spotify" }, { status: 404 });
+    }
 
-  const upserted = await upsertSongFromSpotifyMetadata(metadata);
-  if (!upserted.ok) {
-    return NextResponse.json({ error: upserted.error }, { status: upserted.status });
+    if (!isWithinOneYear(metadata.album.releaseDate)) {
+      return NextResponse.json({
+        error: "A música deve ter sido lançada nos últimos 12 meses",
+      }, { status: 400 });
+    }
+
+    const upserted = await upsertSongFromSpotifyMetadata(metadata);
+    if (!upserted.ok) {
+      return NextResponse.json({ error: upserted.error }, { status: upserted.status });
+    }
+    songId = upserted.song.id;
   }
 
   const submission = existing
     ? await prisma.pushSubmission.update({
         where: { id: existing.id },
-        data: { songId: upserted.song.id, spotifyTrackId },
+        data: { songId, spotifyTrackId },
         include: {
           song: { select: { title: true, artist: true, spotifyUrl: true } },
         },
@@ -77,7 +98,7 @@ export async function POST(
         data: {
           roundId,
           userId: session.user.id,
-          songId: upserted.song.id,
+          songId,
           spotifyTrackId,
         },
         include: {

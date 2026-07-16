@@ -140,6 +140,14 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     );
   }
 
+  // Linhas [CLIP_REVIEW_NEEDED] são marcação interna de admin (backfill de clipes) — nunca exibir ao público.
+  const publicEditorialNote =
+    songRow.editorialNote
+      ?.split("\n")
+      .filter((line) => !line.includes("[CLIP_REVIEW_NEEDED]"))
+      .join("\n")
+      .trim() || null;
+
   const first = entries[0];
   let title = songRow.title;
   let artist = songRow.artist;
@@ -433,7 +441,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           >
             Desempenho da comunidade
           </h2>
-          <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: songRow?.editorialNote ? 16 : 0 }}>
+          <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: publicEditorialNote ? 16 : 0 }}>
             {buildSongContext({
               title,
               artist,
@@ -446,9 +454,9 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
               firstAppearanceRange,
             })}
           </p>
-          {songRow?.editorialNote && (
+          {publicEditorialNote && (
             <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", margin: 0 }}>
-              {songRow.editorialNote}
+              {publicEditorialNote}
             </p>
           )}
           <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 16 }}>

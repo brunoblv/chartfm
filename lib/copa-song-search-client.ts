@@ -8,13 +8,6 @@ export type CopaSongSearchResult = {
 type SpotifySearchResponse = {
   tracks?: Array<{ spotifyId: string; title: string; artist: string }>;
   configured?: boolean;
-  accessToken?: string | null;
-};
-
-type SpotifyDirectTrackItem = {
-  id: string;
-  name: string;
-  artists?: Array<{ name: string }>;
 };
 
 function normalizeName(s: string): string {
@@ -58,55 +51,29 @@ export async function searchCopaSongs(query: string, artistName: string): Promis
   const q = query.trim();
   if (q.length < COPA_SONG_SEARCH_MIN_CHARS) return [];
 
-  let dbTracks: CopaSongSearchResult[] = [];
-  let accessToken: string | null = null;
-  let configured = true;
-
   try {
+    // O backend resolve tudo: catálogo local primeiro e, se vazio, Spotify pelo
+    // servidor com `q artist:"nome"` (cache compartilhado + dedup — sem token no browser).
     const res = await fetch(
       `/api/spotify/search?q=${encodeURIComponent(q)}&artist=${encodeURIComponent(artistName)}&limit=20`,
       { cache: "no-store" },
     );
     if (!res.ok) return [];
     const json = (await res.json()) as SpotifySearchResponse;
-    dbTracks = (json.tracks ?? []).map((t) => ({
-      id: null,
-      title: t.title,
-      artist: t.artist,
-      spotifyId: t.spotifyId,
-    }));
-    accessToken = json.accessToken ?? null;
-    configured = json.configured !== false;
-  } catch {
-    return [];
-  }
-
-  // Achou no catálogo local → não precisa do Spotify.
-  if (dbTracks.length > 0) return dedupeExactTitles(dbTracks, 20);
-  if (!accessToken || !configured) return [];
-
-  try {
-    const fieldQuery = `${q} artist:"${artistName}"`;
-    const sres = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(fieldQuery)}&type=track&limit=20&market=BR`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    if (!sres.ok) return [];
-    const sjson = (await sres.json()) as { tracks?: { items?: SpotifyDirectTrackItem[] } };
-    const items = sjson.tracks?.items ?? [];
 
     // O filtro artist: do Spotify é fuzzy — confirma que o artista selecionado
     // está mesmo entre os artistas da faixa antes de exibir.
     const target = normalizeName(artistName);
     const results: CopaSongSearchResult[] = [];
-    for (const item of items) {
-      if (!item?.id) continue;
-      if (!item.artists?.some((a) => normalizeName(a.name) === target)) continue;
+    for (const t of json.tracks ?? []) {
+      if (!t.spotifyId) continue;
+      const artistNames = t.artist.split(",").map((a) => normalizeName(a));
+      if (!artistNames.some((a) => a === target || a.includes(target) || target.includes(a))) continue;
       results.push({
         id: null,
-        title: item.name,
-        artist: item.artists?.map((a) => a.name).join(", ") || artistName,
-        spotifyId: item.id,
+        title: t.title,
+        artist: t.artist,
+        spotifyId: t.spotifyId,
       });
     }
     return dedupeExactTitles(results, 20);

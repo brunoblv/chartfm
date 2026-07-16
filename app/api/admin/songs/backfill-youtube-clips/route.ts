@@ -114,14 +114,14 @@ export async function POST(req: NextRequest) {
       found += 1;
     } else if (result.needsManualReview) {
       needsReview += 1;
-      await createManualReviewFlag(song.id, `Nenhum video clipe encontrado para "${song.title}" por ${song.artist}`);
+      await createManualReviewFlag(song.id);
     }
   }
 
   // Marcar para revisão manual se solicitado
   for (const songId of markForReview) {
     if (batchIds.has(songId)) {
-      await createManualReviewFlag(songId, "Marcado para revisão manual pelo admin");
+      await createManualReviewFlag(songId);
     }
   }
 

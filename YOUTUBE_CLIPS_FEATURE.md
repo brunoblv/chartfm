@@ -141,8 +141,9 @@ enum ClipType {
 
 ### Campo para Revisão Manual
 
-- Usa `Song.editorialNote` com prefixo `[CLIP_REVIEW_NEEDED]`
-- Exemplo: `"[CLIP_REVIEW_NEEDED] Nenhum video clipe encontrado para \"Bohemian Rhapsody\" por Queen"`
+- Usa `Song.sourcesNotFound` com o valor `"youtube_clip"` (mesmo padrão das fontes Spotify/Last.fm/MusicBrainz/Wikipedia)
+- Músicas marcadas são puladas pelo backfill (não gastam quota de novo); encontrar um clipe limpa a marcação
+- Histórico: antes a flag era anexada em `Song.editorialNote` como `[CLIP_REVIEW_NEEDED] ...`, o que duplicava a cada rodada e vazava na página pública da música — corrigido em 2026-07-16 (`scripts/clean-clip-review-flags.ts` limpa os dados antigos)
 
 ## Configuração de Ambiente
 
@@ -237,7 +238,7 @@ R: Verifique o `clipType` na tabela. Se estiver errado, admin pode editar via ba
 R: Não atualmente, mas a função de scoring já prioriza canais confiáveis (VEVO, artista oficial).
 
 **P: O que acontece se a música não tem clipe oficial?**
-R: É marcada para revisão manual com nota `[CLIP_REVIEW_NEEDED]`. Admin pode then escolher entre:
+R: É marcada para revisão manual em `sourcesNotFound` (`"youtube_clip"`) e o backfill passa a pulá-la. Admin pode then escolher entre:
 - Pular/ignorar
 - Marcar como "sem clipe"
 - Buscar manualmente e criar entrada

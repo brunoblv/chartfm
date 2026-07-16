@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { probeSpotifyApi, probeSpotifyBackupApi } from "@/lib/spotify-server";
 import { getSpotifyUsageSummary } from "@/lib/spotify-usage-log";
+import { getSpotifyBudgetStatus } from "@/lib/spotify-budget";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   if (target === "usage") {
     const hours = Math.min(48, Math.max(1, Number(req.nextUrl.searchParams.get("hours")) || 24));
-    return NextResponse.json({ target, ...getSpotifyUsageSummary(hours) });
+    return NextResponse.json({ target, ...getSpotifyUsageSummary(hours), budgets: getSpotifyBudgetStatus() });
   }
 
   if (target !== "primary" && target !== "backup") {

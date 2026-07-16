@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
-import { spotifyConfigured, getAccessToken, getBackupAccessToken } from "@/lib/spotify-server";
-import { recordSpotifyCall } from "@/lib/spotify-usage-log";
+import { spotifyConfigured, searchSpotifyTracks } from "@/lib/spotify-server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -62,6 +61,11 @@ async function searchLocalCatalog(q: string, limit: number, artist?: string): Pr
   }));
 }
 
+/**
+ * Busca de músicas: catálogo local + Spotify pelo SERVIDOR (cache de 30 dias +
+ * dedup de chamadas em voo no spotify-server). O browser não recebe mais tokens
+ * nem fala com api.spotify.com — todo acesso passa pelo backend.
+ */
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, 200) ?? "";
   const artist = req.nextUrl.searchParams.get("artist")?.trim().slice(0, 120) || undefined;
@@ -71,37 +75,37 @@ export async function GET(req: NextRequest) {
   const configured = spotifyConfigured();
 
   if (q.length < 1) {
-    return NextResponse.json({ tracks: [], configured, accessToken: null }, { headers: NO_CACHE });
+    return NextResponse.json({ tracks: [], configured }, { headers: NO_CACHE });
   }
 
-  // DB search + tokens em paralelo (ambos rápidos)
-  const [dbTracks, accessToken, accessTokenBackup] = await Promise.all([
-    searchLocalCatalog(q, limit, artist),
-    configured ? getAccessToken() : Promise.resolve(null),
-    configured ? getBackupAccessToken() : Promise.resolve(null),
-  ]);
+  const dbTracks = await searchLocalCatalog(q, limit, artist);
 
-  // Cada token entregue ≈ 1–2 buscas diretas do browser em api.spotify.com que o
-  // servidor não enxerga — registrado aqui como proxy desse consumo invisível.
-  if (accessToken) {
-    recordSpotifyCall({
-      input: req.nextUrl.toString(),
-      app: "browser",
-      status: 200,
-      caller: "useSpotifySearch (browser fase 2)",
-      endpointOverride: "browser-token",
+  // Catálogo cheio (ou filtro por artista com resultados) → não bate no Spotify.
+  if (!configured || dbTracks.length >= limit || (artist && dbTracks.length > 0)) {
+    return NextResponse.json({ tracks: dbTracks.slice(0, limit), configured }, { headers: NO_CACHE });
+  }
+
+  // Complementa com o Spotify no servidor. maxAttempts 2: latência limitada; sob 429
+  // o failover pro app de backup dentro do spotifyFetch não conta como retry.
+  const spotifyQuery = artist ? `${q} artist:"${artist}"` : q;
+  const spotifyTracks = await searchSpotifyTracks(spotifyQuery, limit, "BR", req.signal, { maxAttempts: 2 });
+
+  const seen = new Set(dbTracks.map((t) => t.spotifyId));
+  const merged: TrackResult[] = [...dbTracks];
+  for (const t of spotifyTracks) {
+    if (seen.has(t.spotifyId) || isInstrumentalTitle(t.title)) continue;
+    seen.add(t.spotifyId);
+    merged.push({
+      spotifyId: t.spotifyId,
+      title: t.title,
+      artist: t.artist,
+      album: t.album,
+      imageUrl: t.imageUrl,
+      previewUrl: t.previewUrl,
+      externalUrl: t.externalUrl,
     });
+    if (merged.length >= limit) break;
   }
 
-  return NextResponse.json(
-    {
-      tracks: dbTracks.slice(0, limit),
-      configured,
-      // Tokens de curta duração — o browser usa para chamar a API do Spotify diretamente,
-      // evitando a latência do servidor; o backup entra quando o principal responde 429.
-      accessToken: accessToken ?? null,
-      accessTokenBackup: accessTokenBackup ?? null,
-    },
-    { headers: NO_CACHE },
-  );
+  return NextResponse.json({ tracks: merged, configured }, { headers: NO_CACHE });
 }

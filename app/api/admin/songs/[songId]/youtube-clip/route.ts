@@ -64,7 +64,7 @@ export async function POST(
       message: `Clipe encontrado: ${result.title}`,
     });
   } else if (result.needsManualReview) {
-    await createManualReviewFlag(songId, `Nenhum video clipe encontrado para "${song.title}" por ${song.artist}`);
+    await createManualReviewFlag(songId);
     return NextResponse.json({
       ok: true,
       found: false,

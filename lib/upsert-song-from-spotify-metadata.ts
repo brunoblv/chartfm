@@ -34,28 +34,48 @@ export async function upsertSongFromSpotifyMetadata(
   const resolvedTitle = metadata.title;
   const mainArtistName = primaryArtist?.name?.trim() || metadata.artists?.[0]?.name?.trim() || metadata.artistDisplay;
 
+  // Catálogo Confiável: artista já completo (foto + gêneros) e atualizado há menos
+  // de 30 dias não gera chamada ao Spotify nem reescrita da linha.
+  const ARTIST_FRESH_MS = 30 * 24 * 60 * 60 * 1000;
+  async function artistIsFreshInCatalog(spotifyId: string): Promise<boolean> {
+    const existing = await prisma.artist.findUnique({
+      where: { spotifyId },
+      select: { imageUrl: true, genres: true, updatedAt: true },
+    });
+    return Boolean(
+      existing?.imageUrl &&
+        existing.genres.length > 0 &&
+        Date.now() - existing.updatedAt.getTime() < ARTIST_FRESH_MS,
+    );
+  }
+
   async function spotifyArtistProfile(spotifyId: string) {
     return getSpotifyArtistById(spotifyId);
   }
 
-  if (primaryArtist) {
-    const profile = await spotifyArtistProfile(primaryArtist.spotifyId);
+  async function upsertArtistFromSpotify(artist: { spotifyId: string; name: string; spotifyUrl?: string | null }) {
+    if (await artistIsFreshInCatalog(artist.spotifyId)) return;
+    const profile = await spotifyArtistProfile(artist.spotifyId);
     await prisma.artist.upsert({
-      where: { spotifyId: primaryArtist.spotifyId },
+      where: { spotifyId: artist.spotifyId },
       update: {
-        name: profile?.name ?? primaryArtist.name,
+        name: profile?.name ?? artist.name,
         genres: profile?.genres ?? [],
-        spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? undefined,
+        spotifyUrl: (profile?.spotifyUrl ?? artist.spotifyUrl) ?? undefined,
         ...(profile?.imageUrl ? { imageUrl: profile.imageUrl } : {}),
       },
       create: {
-        spotifyId: primaryArtist.spotifyId,
-        name: profile?.name ?? primaryArtist.name,
+        spotifyId: artist.spotifyId,
+        name: profile?.name ?? artist.name,
         genres: profile?.genres ?? [],
-        spotifyUrl: (profile?.spotifyUrl ?? primaryArtist.spotifyUrl) ?? null,
+        spotifyUrl: (profile?.spotifyUrl ?? artist.spotifyUrl) ?? null,
         imageUrl: profile?.imageUrl ?? null,
       },
     });
+  }
+
+  if (primaryArtist) {
+    await upsertArtistFromSpotify(primaryArtist);
   }
 
   if (primaryArtist && albumSpotifyId) {
@@ -148,23 +168,7 @@ export async function upsertSongFromSpotifyMetadata(
     const featIds = new Set<string>();
     for (const feat of featured) {
       featIds.add(feat.spotifyId);
-      const featProfile = await spotifyArtistProfile(feat.spotifyId);
-      await prisma.artist.upsert({
-        where: { spotifyId: feat.spotifyId },
-        update: {
-          name: featProfile?.name ?? feat.name,
-          genres: featProfile?.genres ?? [],
-          spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? undefined,
-          ...(featProfile?.imageUrl ? { imageUrl: featProfile.imageUrl } : {}),
-        },
-        create: {
-          spotifyId: feat.spotifyId,
-          name: featProfile?.name ?? feat.name,
-          genres: featProfile?.genres ?? [],
-          spotifyUrl: (featProfile?.spotifyUrl ?? feat.spotifyUrl) ?? null,
-          imageUrl: featProfile?.imageUrl ?? null,
-        },
-      });
+      await upsertArtistFromSpotify(feat);
       await prisma.songFeat.upsert({
         where: {
           songSpotifyId_artistSpotifyId: {

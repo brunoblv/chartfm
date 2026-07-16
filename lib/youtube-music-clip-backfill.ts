@@ -7,6 +7,9 @@
 import { prisma } from "@/lib/prisma";
 import { getYouTubeMusicVideoReleaseDate } from "@/lib/youtube-music-video-date";
 
+/** Marcação em Song.sourcesNotFound: YouTube já consultado sem clipe válido — o backfill pula até correção manual. */
+export const YOUTUBE_CLIP_SOURCE = "youtube_clip";
+
 export type YouTubeClipSearchResult = {
   found: boolean;
   videoId: string | null;
@@ -77,6 +80,8 @@ export async function searchAndCreateYouTubeClip(
       adminUserId,
     );
 
+    await clearManualReviewFlag(songId);
+
     // Preenche as datas de clipe da música se estiverem vazias (nunca sobrescreve).
     if (result.date) {
       const song = await prisma.song.findUnique({
@@ -126,6 +131,7 @@ export async function findSongsWithoutClips(
   const query = await prisma.song.findMany({
     where: {
       videoClips: { none: {} },
+      NOT: { sourcesNotFound: { has: YOUTUBE_CLIP_SOURCE } },
     },
     select: {
       id: true,
@@ -142,24 +148,35 @@ export async function findSongsWithoutClips(
 
 export async function countSongsWithoutClips(): Promise<number> {
   return prisma.song.count({
-    where: { videoClips: { none: {} } },
+    where: {
+      videoClips: { none: {} },
+      NOT: { sourcesNotFound: { has: YOUTUBE_CLIP_SOURCE } },
+    },
   });
 }
 
-export async function createManualReviewFlag(
-  songId: string,
-  reason: string,
-): Promise<void> {
+export async function createManualReviewFlag(songId: string): Promise<void> {
   const song = await prisma.song.findUnique({
     where: { id: songId },
-    select: { editorialNote: true },
+    select: { sourcesNotFound: true },
   });
+  if (!song || song.sourcesNotFound.includes(YOUTUBE_CLIP_SOURCE)) return;
 
-  const currentNote = song?.editorialNote || "";
   await prisma.song.update({
     where: { id: songId },
-    data: {
-      editorialNote: `${currentNote}\n[CLIP_REVIEW_NEEDED] ${reason}`.trim(),
-    },
+    data: { sourcesNotFound: [...song.sourcesNotFound, YOUTUBE_CLIP_SOURCE] },
+  });
+}
+
+async function clearManualReviewFlag(songId: string): Promise<void> {
+  const song = await prisma.song.findUnique({
+    where: { id: songId },
+    select: { sourcesNotFound: true },
+  });
+  if (!song || !song.sourcesNotFound.includes(YOUTUBE_CLIP_SOURCE)) return;
+
+  await prisma.song.update({
+    where: { id: songId },
+    data: { sourcesNotFound: song.sourcesNotFound.filter((s) => s !== YOUTUBE_CLIP_SOURCE) },
   });
 }
