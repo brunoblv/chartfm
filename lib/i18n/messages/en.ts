@@ -141,7 +141,9 @@ export const messagesEn = {
   signup: {
     badge: "New here",
     headline: "Create your account",
-    subhead: "Sign up with email and password. We'll send a confirmation link to activate your account.",
+    subhead: "Use your Google account or sign up with email and password.",
+    continueGoogle: "Sign up with Google",
+    orEmail: "or sign up with email",
     name: "Name (optional)",
     namePlaceholder: "What should we call you",
     confirmPassword: "Confirm password",

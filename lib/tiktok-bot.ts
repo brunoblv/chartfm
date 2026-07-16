@@ -606,6 +606,13 @@ export async function handleTiktokBotUpdate(update: TgUpdate): Promise<void> {
   const msg = update.message;
   if (!msg) return;
 
+  // Qualquer mensagem vinda de grupo (re)registra o grupo — cobre o caso do bot
+  // adicionado antes do webhook existir, quando o evento de entrada se perdeu.
+  // Só chegam mensagens de grupos em que o bot está, então reativar é seguro.
+  if (msg.chat.type === "group" || msg.chat.type === "supergroup") {
+    await upsertGroup(msg.chat, true);
+  }
+
   // Boas-vindas a novos membros via mensagem de serviço (fallback quando o bot
   // não é admin; alguns grupos ocultam essa mensagem — daí o chat_member acima).
   const newcomers = (msg.new_chat_members ?? []).filter((u) => !u.is_bot && !alreadyWelcomed(u.id));

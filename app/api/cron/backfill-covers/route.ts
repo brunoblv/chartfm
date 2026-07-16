@@ -6,7 +6,12 @@ import {
   countSongsMissingCovers,
   findSongsMissingCovers,
 } from "@/lib/resolve-publish-songs";
-import { probeSpotifyApi, spotifyConfigured } from "@/lib/spotify-server";
+import {
+  markPrimaryLimited,
+  probeSpotifyApi,
+  probeSpotifyBackupApi,
+  spotifyConfigured,
+} from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -28,10 +33,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Spotify não configurado" }, { status: 500 });
     }
 
-    // Sob rate limit, não insiste — o próximo cron tenta de novo.
+    // Principal com erro → tenta o app de backup antes de pular; só desiste se os dois
+    // falharem (o próximo cron tenta de novo).
     const probe = await probeSpotifyApi();
     if (!probe.ok) {
-      return NextResponse.json({ ok: false, skipped: true, error: probe.error }, { status: 200 });
+      const backupProbe = await probeSpotifyBackupApi();
+      if (!backupProbe.ok) {
+        return NextResponse.json(
+          { ok: false, skipped: true, error: probe.error, backupError: backupProbe.error },
+          { status: 200 },
+        );
+      }
+      // Backup ok: marca o principal como limitado para o lote inteiro rodar no backup.
+      markPrimaryLimited(probe.retryAfterMs ?? undefined);
+      console.warn(`[cron/backfill-covers] app principal com erro (${probe.error}) — rodando no backup`);
     }
 
     const pending = await findSongsMissingCovers(prisma, CRON_BATCH);

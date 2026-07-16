@@ -86,6 +86,11 @@ export function getPrimaryLimitedUntil(): number {
   return primaryLimitedUntil;
 }
 
+/** Marca o app principal como limitado — getAccessToken passa a entregar o token do backup no período. */
+export function markPrimaryLimited(ms: number = PRIMARY_LIMITED_DEFAULT_MS): void {
+  primaryLimitedUntil = Math.max(primaryLimitedUntil, Date.now() + ms);
+}
+
 const coverCache = new Map<string, string | null>();
 const COVER_CACHE_MAX = 500;
 
@@ -147,13 +152,17 @@ async function spotifyFetch(
         res.status === 429 ? Math.round((parseRetryAfterMs(res.headers.get("retry-after")) ?? 0) / 1000) || null : null,
     });
 
-    if (res.status !== 429) return res;
+    if (res.ok) return res;
 
-    // Failover: 429 com o token do app principal → marca o principal como limitado e
-    // refaz na hora com o app de backup (não conta como retry). Se a chamada já estava
-    // no backup (ou é a rota de token), segue o fluxo normal de retry/espera.
+    // Failover: erro de limite/credencial/servidor (429, 401, 403, 5xx) com o token do app
+    // principal → marca o principal como limitado e refaz na hora com o app de backup (não
+    // conta como retry). 400/404 ficam de fora: são "recurso não encontrado", não problema
+    // do app. Se a chamada já estava no backup (ou é a rota de token), segue o fluxo normal.
+    const failoverEligible =
+      res.status === 429 || res.status === 401 || res.status === 403 || res.status >= 500;
     const authHeader = (init.headers as Record<string, string> | undefined)?.Authorization;
     if (
+      failoverEligible &&
       !triedBackup &&
       backupSpotifyConfigured() &&
       tokenState.accessToken &&
@@ -164,12 +173,14 @@ async function spotifyFetch(
       primaryLimitedUntil = Date.now() + limitMs;
       const backupToken = await getBackupAccessToken();
       if (backupToken) {
-        console.warn(`[spotify] 429 no app principal — usando app de backup por ${Math.ceil(limitMs / 1000)}s`);
+        console.warn(`[spotify] HTTP ${res.status} no app principal — usando app de backup por ${Math.ceil(limitMs / 1000)}s`);
         init = { ...init, headers: { ...init.headers, Authorization: `Bearer ${backupToken}` } };
         attempt -= 1;
         continue;
       }
     }
+
+    if (res.status !== 429) return res;
 
     if (attempt >= maxAttempts) return res;
 
@@ -266,7 +277,11 @@ export async function getAccessToken(): Promise<string | null> {
     if (backupToken) return backupToken;
   }
 
-  return fetchClientCredentialsToken(clientId, clientSecret, tokenState);
+  const primaryToken = await fetchClientCredentialsToken(clientId, clientSecret, tokenState);
+  if (primaryToken) return primaryToken;
+
+  // Token do principal falhou (credencial inválida/rede) → tenta o backup na hora.
+  return getBackupAccessToken();
 }
 
 export type SpotifyProbeResult = {

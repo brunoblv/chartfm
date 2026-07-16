@@ -141,7 +141,9 @@ export const messagesPtBR = {
   signup: {
     badge: "Novo por aqui",
     headline: "Crie sua conta",
-    subhead: "Cadastre-se com email e senha. Enviaremos um link de confirmação para ativar sua conta.",
+    subhead: "Use sua conta do Google ou cadastre-se com email e senha.",
+    continueGoogle: "Cadastrar com Google",
+    orEmail: "ou cadastre com email",
     name: "Nome (opcional)",
     namePlaceholder: "Como quer ser chamado",
     confirmPassword: "Confirmar senha",

@@ -8,7 +8,13 @@ import {
   enrichSongsWithSpotifyMetadataByIds,
   findSongsMissingCovers,
 } from "@/lib/resolve-publish-songs";
-import { isSpotifyTrackId, probeSpotifyApi, spotifyConfigured } from "@/lib/spotify-server";
+import {
+  isSpotifyTrackId,
+  markPrimaryLimited,
+  probeSpotifyApi,
+  probeSpotifyBackupApi,
+  spotifyConfigured,
+} from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,12 +65,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Principal com erro → tenta o app de backup; só recusa o lote se os dois falharem.
   const probe = await probeSpotifyApi();
   if (!probe.ok) {
-    return NextResponse.json(
-      { ok: false, configured: true, message: probe.error, status: probe.status, retryAfterMs: probe.retryAfterMs },
-      { status: 400 },
-    );
+    const backupProbe = await probeSpotifyBackupApi();
+    if (!backupProbe.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          configured: true,
+          message: `${probe.error}; backup: ${backupProbe.error}`,
+          status: probe.status,
+          retryAfterMs: probe.retryAfterMs,
+        },
+        { status: 400 },
+      );
+    }
+    // Backup ok: marca o principal como limitado para o lote rodar no backup.
+    markPrimaryLimited(probe.retryAfterMs ?? undefined);
   }
 
   const body = (await req.json().catch(() => ({}))) as {

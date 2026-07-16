@@ -3,10 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import {
   AuthShell,
   AuthError,
   AuthTermsFooter,
+  AuthDivider,
+  GoogleAuthButton,
   authInputStyle,
   authPrimaryButtonStyle,
   useCuratorCount,
@@ -26,7 +29,7 @@ function registerErrorMessage(code: string, t: (k: string) => string): string {
   }
 }
 
-export default function SignupClient() {
+export default function SignupClient({ googleConfigured }: { googleConfigured: boolean }) {
   const { t } = useTranslations();
   const router = useRouter();
   const curatorCount = useCuratorCount();
@@ -36,7 +39,17 @@ export default function SignupClient() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleGoogle = () => {
+    setLoadingGoogle(true);
+    setError(null);
+    signIn("google", { callbackUrl: "/" }).catch(() => {
+      setLoadingGoogle(false);
+      setError(t("login.errGoogleStart"));
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +81,8 @@ export default function SignupClient() {
     router.push(`/verify-email?${q}`);
   };
 
-  const canSubmit = email.trim() && password && confirmPassword && !loading;
+  const busy = loading || loadingGoogle;
+  const canSubmit = email.trim() && password && confirmPassword && !busy;
 
   return (
     <AuthShell curatorCount={curatorCount}>
@@ -84,6 +98,17 @@ export default function SignupClient() {
 
       {error && <AuthError message={error} />}
 
+      {googleConfigured && (
+        <>
+          <GoogleAuthButton
+            label={loadingGoogle ? t("login.redirecting") : t("signup.continueGoogle")}
+            onClick={handleGoogle}
+            disabled={busy}
+          />
+          <AuthDivider label={t("signup.orEmail")} />
+        </>
+      )}
+
       <form onSubmit={handleSubmit}>
         <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
           {t("signup.name")}
@@ -94,7 +119,7 @@ export default function SignupClient() {
           placeholder={t("signup.namePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          disabled={loading}
+          disabled={busy}
           style={authInputStyle}
         />
 
@@ -107,7 +132,7 @@ export default function SignupClient() {
           placeholder="voce@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          disabled={loading}
+          disabled={busy}
           required
           style={authInputStyle}
         />
@@ -121,7 +146,7 @@ export default function SignupClient() {
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          disabled={loading}
+          disabled={busy}
           required
           minLength={8}
           style={authInputStyle}
@@ -136,7 +161,7 @@ export default function SignupClient() {
           placeholder="••••••••"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          disabled={loading}
+          disabled={busy}
           required
           minLength={8}
           style={authInputStyle}
