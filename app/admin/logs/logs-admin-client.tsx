@@ -33,6 +33,248 @@ function formatBrasilia(iso: string) {
   });
 }
 
+type SpotifyProbeResult = {
+  ok: boolean;
+  status?: number;
+  retryAfterMs?: number | null;
+  error?: string;
+};
+
+function formatWaitTime(ms: number | null | undefined): string {
+  if (!ms || ms <= 0) return "";
+  const totalMinutes = Math.ceil(ms / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}min`;
+}
+
+function SpotifyProbeButton({ target, label }: { target: "primary" | "backup"; label: string }) {
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<SpotifyProbeResult | null>(null);
+
+  async function test() {
+    setTesting(true);
+    setResult(null);
+    try {
+      const res = await fetch(`/api/admin/spotify-status?target=${target}`, { cache: "no-store" });
+      const data = (await res.json().catch(() => null)) as SpotifyProbeResult | { error: string } | null;
+      if (!data || "error" in data) {
+        setResult({ ok: false, error: (data as { error?: string })?.error ?? "Erro ao testar." });
+      } else {
+        setResult(data);
+      }
+    } catch {
+      setResult({ ok: false, error: "Erro de conexão ao testar." });
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <button
+        type="button"
+        onClick={test}
+        disabled={testing}
+        style={{
+          border: "1px solid var(--divider-strong)",
+          background: "var(--fill-subtle)",
+          color: "var(--text)",
+          borderRadius: 8,
+          padding: "7px 12px",
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: testing ? "not-allowed" : "pointer",
+          opacity: testing ? 0.6 : 1,
+        }}
+      >
+        {testing ? "Testando…" : `Testar ${label}`}
+      </button>
+      {result && (
+        result.ok ? (
+          <span style={{ color: "#16a34a", fontSize: 13, fontWeight: 600 }}>OK — sem rate limit</span>
+        ) : result.status === 429 ? (
+          <span style={{ color: "#dc2626", fontSize: 13, fontWeight: 600 }}>
+            429 — esperar {formatWaitTime(result.retryAfterMs) || "alguns minutos"}
+          </span>
+        ) : (
+          <span style={{ color: "#dc2626", fontSize: 13, fontWeight: 600 }}>
+            Erro{result.status ? ` (${result.status})` : ""}{result.error ? `: ${result.error}` : ""}
+          </span>
+        )
+      )}
+    </div>
+  );
+}
+
+type UsageSummary = {
+  totalCalls: number;
+  total429: number;
+  byEndpoint: { endpoint: string; total: number; e429: number; topCallers: { caller: string; count: number }[] }[];
+  byHour: { hourIso: string; total: number; e429: number }[];
+  recent429s: { ts: number; endpoint: string; app: string; retryAfterS: number | null; caller: string }[];
+  recentCalls: { ts: number; endpoint: string; app: string; status: number | null; caller: string }[];
+};
+
+function SpotifyUsagePanel() {
+  const [hours, setHours] = useState(24);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<UsageSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load(h: number) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/spotify-status?target=usage&hours=${h}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setData((await res.json()) as UsageSummary);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AdminPanel maxWidth={1200}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>Uso da API do Spotify</div>
+        <select
+          value={hours}
+          onChange={(e) => setHours(Number(e.target.value))}
+          style={{ ...adminInputStyle, width: "auto", padding: "4px 8px", fontSize: 13 }}
+        >
+          <option value={6}>Últimas 6h</option>
+          <option value={24}>Últimas 24h</option>
+          <option value={48}>Últimas 48h</option>
+        </select>
+        <button
+          type="button"
+          onClick={() => load(hours)}
+          disabled={loading}
+          style={{
+            border: "1px solid var(--divider-strong)",
+            background: "var(--fill-subtle)",
+            color: "var(--text)",
+            borderRadius: 8,
+            padding: "6px 12px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          {loading ? "Carregando…" : "Atualizar"}
+        </button>
+        {data && (
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {data.totalCalls} chamadas, {data.total429} × 429 — desde o último restart do app
+          </span>
+        )}
+      </div>
+
+      {error && <div style={{ color: "#dc2626", fontSize: 13 }}>{error}</div>}
+
+      {data && data.byEndpoint.length === 0 && (
+        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+          Nenhuma chamada registrada na janela (o log zera quando o app reinicia).
+        </div>
+      )}
+
+      {data && data.byEndpoint.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={adminThStyle}>Endpoint</th>
+                <th style={adminThStyle}>Chamadas</th>
+                <th style={adminThStyle}>429</th>
+                <th style={adminThStyle}>Principais origens</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.byEndpoint.map((e) => (
+                <tr key={e.endpoint}>
+                  <td style={{ ...adminTdStyle, fontFamily: "monospace", fontSize: 12 }}>{e.endpoint}</td>
+                  <td style={adminTdStyle}>{e.total}</td>
+                  <td style={{ ...adminTdStyle, color: e.e429 > 0 ? "#dc2626" : undefined, fontWeight: e.e429 > 0 ? 700 : undefined }}>
+                    {e.e429}
+                  </td>
+                  <td style={{ ...adminTdStyle, fontSize: 12 }}>
+                    {e.topCallers.map((c) => `${c.caller} (${c.count})`).join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {data.byHour.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Por hora</div>
+              <div style={{ display: "flex", gap: 4, alignItems: "flex-end", flexWrap: "wrap" }}>
+                {data.byHour.map((h) => {
+                  const max = Math.max(...data.byHour.map((x) => x.total), 1);
+                  const height = Math.max(4, Math.round((h.total / max) * 60));
+                  const hourLabel = new Date(h.hourIso).toLocaleTimeString("pt-BR", {
+                    timeZone: "America/Sao_Paulo",
+                    hour: "2-digit",
+                  });
+                  return (
+                    <div key={h.hourIso} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                      <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{h.total}</span>
+                      <div
+                        title={`${hourLabel}h — ${h.total} chamadas, ${h.e429} × 429`}
+                        style={{
+                          width: 18,
+                          height,
+                          borderRadius: 3,
+                          background: h.e429 > 0 ? "#dc2626" : "var(--accent, #2563eb)",
+                        }}
+                      />
+                      <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{hourLabel}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {data.recent429s.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: "#dc2626" }}>Últimos 429</div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={adminThStyle}>Horário</th>
+                    <th style={adminThStyle}>Endpoint</th>
+                    <th style={adminThStyle}>App</th>
+                    <th style={adminThStyle}>Retry-After</th>
+                    <th style={adminThStyle}>Origem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.recent429s.map((r, i) => (
+                    <tr key={`${r.ts}-${i}`}>
+                      <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>{formatBrasilia(new Date(r.ts).toISOString())}</td>
+                      <td style={{ ...adminTdStyle, fontFamily: "monospace", fontSize: 12 }}>{r.endpoint}</td>
+                      <td style={adminTdStyle}>{r.app}</td>
+                      <td style={adminTdStyle}>{r.retryAfterS ? formatWaitTime(r.retryAfterS * 1000) : "—"}</td>
+                      <td style={{ ...adminTdStyle, fontSize: 12 }}>{r.caller}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </AdminPanel>
+  );
+}
+
 function sourceLabel(source: string): string {
   if (source === "system") return "Sistema (cron)";
   if (source === "user") return "Usuário";
@@ -98,6 +340,16 @@ export function LogsAdminClient({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <AdminPanel maxWidth={1200}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Status do Spotify</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <SpotifyProbeButton target="primary" label="API principal" />
+          <SpotifyProbeButton target="backup" label="API reserva" />
+        </div>
+      </AdminPanel>
+
+      <SpotifyUsagePanel />
+
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <form onSubmit={onSearchSubmit} style={{ flex: 1, minWidth: 220 }}>
           <input

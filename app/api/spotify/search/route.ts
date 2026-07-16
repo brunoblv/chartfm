@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { spotifyConfigured, getAccessToken, getBackupAccessToken } from "@/lib/spotify-server";
+import { recordSpotifyCall } from "@/lib/spotify-usage-log";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -79,6 +80,18 @@ export async function GET(req: NextRequest) {
     configured ? getAccessToken() : Promise.resolve(null),
     configured ? getBackupAccessToken() : Promise.resolve(null),
   ]);
+
+  // Cada token entregue ≈ 1–2 buscas diretas do browser em api.spotify.com que o
+  // servidor não enxerga — registrado aqui como proxy desse consumo invisível.
+  if (accessToken) {
+    recordSpotifyCall({
+      input: req.nextUrl.toString(),
+      app: "browser",
+      status: 200,
+      caller: "useSpotifySearch (browser fase 2)",
+      endpointOverride: "browser-token",
+    });
+  }
 
   return NextResponse.json(
     {

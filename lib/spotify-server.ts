@@ -4,6 +4,7 @@
  */
 
 import { isInstrumentalTitle } from "./is-instrumental-title";
+import { recordSpotifyCall } from "./spotify-usage-log";
 
 const AUTH_URL = "https://accounts.spotify.com/api/token";
 const API_BASE = "https://api.spotify.com/v1";
@@ -52,8 +53,25 @@ const backupTokenState: { accessToken: string | null; expiresAt: number } = {
 let primaryLimitedUntil = 0;
 const PRIMARY_LIMITED_DEFAULT_MS = 5 * 60_000;
 
-function backupSpotifyConfigured(): boolean {
+export function backupSpotifyConfigured(): boolean {
   return Boolean(process.env.SPOTIFY_CLIENT_ID_BACKUP && process.env.SPOTIFY_CLIENT_SECRET_BACKUP);
+}
+
+/** Epoch ms até quando o app principal está marcado como limitado (0 = não limitado). */
+export function getPrimaryLimitedUntil(): number {
+  return primaryLimitedUntil;
+}
+
+/**
+ * Marca o app principal como limitado (mesmo efeito de um 429 detectado em `spotifyFetch`),
+ * pra fluxos que não passam por lá — ex.: o browser reportando 429 na busca direta (Fase 2
+ * do `useSpotifySearch`), que nunca chega a bater no servidor.
+ */
+export function markPrimaryLimited(retryAfterMs?: number | null): void {
+  const ms = retryAfterMs != null && Number.isFinite(retryAfterMs)
+    ? Math.min(Math.max(retryAfterMs, 0), 15 * 60_000)
+    : PRIMARY_LIMITED_DEFAULT_MS;
+  primaryLimitedUntil = Math.max(primaryLimitedUntil, Date.now() + ms);
 }
 
 const coverCache = new Map<string, string | null>();
@@ -77,6 +95,14 @@ function parseRetryAfterMs(value: string | null): number | null {
 
 const SPOTIFY_FETCH_TIMEOUT_MS = 10000;
 
+function appForAuthHeader(init: RequestInit, input: string | URL): "primary" | "backup" | "token" {
+  const raw = typeof input === "string" ? input : input.toString();
+  if (raw.includes("accounts.spotify.com")) return "token";
+  const authHeader = (init.headers as Record<string, string> | undefined)?.Authorization;
+  if (backupTokenState.accessToken && authHeader === `Bearer ${backupTokenState.accessToken}`) return "backup";
+  return "primary";
+}
+
 async function spotifyFetch(
   input: string | URL,
   init: RequestInit,
@@ -93,10 +119,19 @@ async function spotifyFetch(
     try {
       res = await fetch(input, { ...init, signal: mergedSignal });
     } catch {
+      recordSpotifyCall({ input, app: appForAuthHeader(init, input), status: null });
       if (attempt >= maxAttempts) return null;
       await sleep(SPOTIFY_RETRY_BASE_DELAY_MS * attempt);
       continue;
     }
+
+    recordSpotifyCall({
+      input,
+      app: appForAuthHeader(init, input),
+      status: res.status,
+      retryAfterS:
+        res.status === 429 ? Math.round((parseRetryAfterMs(res.headers.get("retry-after")) ?? 0) / 1000) || null : null,
+    });
 
     if (res.status !== 429) return res;
 
@@ -249,6 +284,33 @@ export async function probeSpotifyApi(): Promise<SpotifyProbeResult> {
       status,
       retryAfterMs,
       error: `API Spotify respondeu HTTP ${status ?? "sem resposta"}`,
+    };
+  }
+  return { ok: true };
+}
+
+/** Testa credenciais e conectividade do app de backup (SPOTIFY_CLIENT_ID_BACKUP), sem tocar o app principal. */
+export async function probeSpotifyBackupApi(): Promise<SpotifyProbeResult> {
+  if (!backupSpotifyConfigured()) {
+    return { ok: false, error: "SPOTIFY_CLIENT_ID_BACKUP ou SPOTIFY_CLIENT_SECRET_BACKUP ausentes no ambiente" };
+  }
+  const token = await getBackupAccessToken();
+  if (!token) {
+    return { ok: false, error: "Não foi possível obter access token do backup (credenciais inválidas ou rede)" };
+  }
+  const res = await spotifyFetch(
+    `${API_BASE}/tracks/11dFghVXANMlKmJXsNCbNl?market=BR`,
+    { headers: { Authorization: `Bearer ${token}` } },
+    1,
+  );
+  if (!res?.ok) {
+    const status = res?.status;
+    const retryAfterMs = status === 429 ? parseRetryAfterMs(res?.headers.get("retry-after") ?? null) : null;
+    return {
+      ok: false,
+      status,
+      retryAfterMs,
+      error: `API Spotify (backup) respondeu HTTP ${status ?? "sem resposta"}`,
     };
   }
   return { ok: true };
