@@ -63,7 +63,8 @@ const MONTH_MAP: Record<string, number> = {
   july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
 };
 
-const URL_DATE_RE = /chart-(\d{4})-([a-z]+)-(\d{1,2})/i;
+// Aceita "chart-2026-january-10", "chart-25-january-11" e a URL de 13/09/25 sem "chart" ("the-fifofu-25-september-13").
+const URL_DATE_RE = /(?:chart|fifofu)-(\d{2}|\d{4})-([a-z]+)-(\d{1,2})/i;
 const DROPOUTS_RE = /^DROPOUTS:?/i;
 const ENTRY_LINE_RE = /^(\d+|NE|RE)\s+(\d+)\s+(.+?)\s+[–—-]\s+"([^"]+)"\s+(\d+)(?:\(×\d+\))?\s+(\d+)\s*$/;
 
@@ -142,7 +143,8 @@ function parseCrownnoteText(content: string): RawWeek[] {
         console.warn(`[parse] Não foi possível extrair data da URL: ${line}`);
         continue;
       }
-      const year = Number(dateMatch[1]);
+      const yearRaw = Number(dateMatch[1]);
+      const year = yearRaw < 100 ? 2000 + yearRaw : yearRaw;
       const month = MONTH_MAP[dateMatch[2].toLowerCase()];
       const day = Number(dateMatch[3]);
       if (month === undefined) {

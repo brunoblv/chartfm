@@ -549,6 +549,10 @@ export function TiktokBotClient({ initialData }: { initialData: TiktokBotAdminDa
         <div style={sectionTitleStyle}>
           Grupos <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>({data.groups.length})</span>
         </div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
+          ⚠ Deixe o bot como <b>administrador</b> do grupo: é o que garante as boas-vindas em
+          supergrupos que ocultam as mensagens de entrada (evento chat_member).
+        </div>
         {data.groups.length === 0 ? (
           <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
             Nenhum grupo ainda — adicione o bot a um grupo do Telegram que ele se registra sozinho.

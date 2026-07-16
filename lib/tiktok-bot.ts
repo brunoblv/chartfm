@@ -187,6 +187,7 @@ type TgMessage = {
 type TgCallbackQuery = { id: string; from: TgUser; message?: TgMessage; data?: string };
 type TgChatMemberUpdated = {
   chat: TgChat;
+  old_chat_member?: { status: string; user: TgUser };
   new_chat_member: { status: string; user: TgUser };
 };
 
@@ -194,7 +195,10 @@ export type TgUpdate = {
   update_id: number;
   message?: TgMessage;
   callback_query?: TgCallbackQuery;
+  /** Status do PRÓPRIO bot num chat (adicionado/removido de grupo). */
   my_chat_member?: TgChatMemberUpdated;
+  /** Entrada/saída de membros — só chega se estiver no allowed_updates E o bot for admin do grupo. */
+  chat_member?: TgChatMemberUpdated;
 };
 
 // ---------------------------------------------------------------------------
@@ -535,6 +539,30 @@ async function handleCallback(cb: TgCallbackQuery): Promise<void> {
 // Entrada principal do webhook
 // ---------------------------------------------------------------------------
 
+/**
+ * Dedupe de boas-vindas: a entrada de um membro pode chegar por DOIS caminhos
+ * (mensagem de serviço new_chat_members E update chat_member, quando o bot é
+ * admin). Guarda quem foi saudado nos últimos minutos para não repetir.
+ */
+const recentWelcomes = new Map<number, number>();
+const WELCOME_DEDUPE_MS = 10 * 60 * 1000;
+
+function markWelcomed(users: TgUser[]) {
+  const now = Date.now();
+  for (const [id, ts] of recentWelcomes) {
+    if (now - ts > WELCOME_DEDUPE_MS) recentWelcomes.delete(id);
+  }
+  for (const u of users) recentWelcomes.set(u.id, now);
+}
+
+function alreadyWelcomed(userId: number): boolean {
+  const ts = recentWelcomes.get(userId);
+  return ts != null && Date.now() - ts <= WELCOME_DEDUPE_MS;
+}
+
+const MEMBER_STATUSES = ["member", "administrator", "creator", "restricted"];
+const GONE_STATUSES = ["left", "kicked"];
+
 export async function handleTiktokBotUpdate(update: TgUpdate): Promise<void> {
   // Bot adicionado/removido de grupo
   const mcm = update.my_chat_member;
@@ -547,6 +575,29 @@ export async function handleTiktokBotUpdate(update: TgUpdate): Promise<void> {
     }
   }
 
+  // Entrada/saída de membros via chat_member — o caminho confiável (chega mesmo
+  // quando o grupo oculta as mensagens de serviço, mas exige bot admin).
+  const cm = update.chat_member;
+  if (cm && (cm.chat.type === "group" || cm.chat.type === "supergroup") && !cm.new_chat_member.user.is_bot) {
+    const oldStatus = cm.old_chat_member?.status ?? "left";
+    const newStatus = cm.new_chat_member.status;
+    const member = cm.new_chat_member.user;
+
+    if (GONE_STATUSES.includes(oldStatus) && MEMBER_STATUSES.includes(newStatus)) {
+      await upsertGroup(cm.chat, true);
+      await upsertBotUser(member);
+      if (!alreadyWelcomed(member.id)) {
+        markWelcomed([member]);
+        await sendWelcome(cm.chat.id, [member]);
+      }
+    } else if (MEMBER_STATUSES.includes(oldStatus) && GONE_STATUSES.includes(newStatus)) {
+      await prisma.tiktokBotUser
+        .update({ where: { telegramId: BigInt(member.id) }, data: { active: false } })
+        .catch(() => null);
+    }
+    return;
+  }
+
   if (update.callback_query) {
     await handleCallback(update.callback_query);
     return;
@@ -555,11 +606,13 @@ export async function handleTiktokBotUpdate(update: TgUpdate): Promise<void> {
   const msg = update.message;
   if (!msg) return;
 
-  // Boas-vindas a novos membros (ignora bots)
-  const newcomers = (msg.new_chat_members ?? []).filter((u) => !u.is_bot);
+  // Boas-vindas a novos membros via mensagem de serviço (fallback quando o bot
+  // não é admin; alguns grupos ocultam essa mensagem — daí o chat_member acima).
+  const newcomers = (msg.new_chat_members ?? []).filter((u) => !u.is_bot && !alreadyWelcomed(u.id));
   if (newcomers.length > 0) {
     await upsertGroup(msg.chat, true);
     for (const u of newcomers) await upsertBotUser(u);
+    markWelcomed(newcomers);
     await sendWelcome(msg.chat.id, newcomers);
     return;
   }
@@ -1262,10 +1315,13 @@ export async function getTiktokBotAdminData(): Promise<TiktokBotAdminData> {
 /** Registra o webhook do bot no Telegram apontando para a URL pública informada. */
 export async function setTiktokBotWebhook(publicBaseUrl: string): Promise<{ ok: boolean; detail: string }> {
   const url = `${publicBaseUrl.replace(/\/$/, "")}/api/tiktok-bot/webhook`;
+  // "chat_member" precisa ser pedido explicitamente (o Telegram não o entrega
+  // por padrão) e só chega nos grupos em que o bot é ADMINISTRADOR — é o
+  // caminho confiável das boas-vindas quando o grupo oculta mensagens de serviço.
   const res = await tgCall("setWebhook", {
     url,
     secret_token: tiktokBotWebhookSecret() ?? undefined,
-    allowed_updates: ["message", "callback_query", "my_chat_member"],
+    allowed_updates: ["message", "callback_query", "my_chat_member", "chat_member"],
     drop_pending_updates: false,
   });
   return { ok: res.ok, detail: res.ok ? url : (res.description ?? "falha") };
