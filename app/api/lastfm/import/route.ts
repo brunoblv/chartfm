@@ -8,7 +8,8 @@ import {
   resolveWeightedLastfmUsername,
 } from "@/lib/lastfm-import";
 import { getWeightedLastfmImportConfig } from "@/lib/mytrl-access";
-import { probeSpotifyApi, runWithSpotifyUserChartsPool, searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
+import { probeSpotifyApi, searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
+import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
 import { getLastfmImportPlaylistTracks } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
 
@@ -284,7 +285,7 @@ export async function POST(req: NextRequest) {
         );
 
     const BATCH = 20;
-    const { songs, total, periodLabel, filteredNewHits } = await runWithSpotifyUserChartsPool(async () => {
+    const { songs, total, filteredNewHits } = await runWithSpotifyUserChartsPool(async () => {
       const spotifyOk = (await probeSpotifyApi()).ok;
       const enriched: EnrichedSong[] = [];
       for (let i = 0; i < topTracks.length; i += BATCH) {
@@ -297,7 +298,6 @@ export async function POST(req: NextRequest) {
       return {
         songs: resolved,
         total: topTracks.length,
-        periodLabel,
         filteredNewHits: false as const,
       };
     });

@@ -19,7 +19,7 @@ import {
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import { lookupNumberOnes } from "@/lib/song-stats-key";
 import { buildChartContext } from "@/lib/entity-context-text";
-import { runWithSpotifyUserChartsPool } from "@/lib/spotify-server";
+import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;

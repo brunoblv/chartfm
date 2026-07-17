@@ -5,23 +5,25 @@
  * Apps:
  * - principal (SPOTIFY_CLIENT_ID) + backup (…_BACKUP): uso geral
  * - backup2 (…_BACKUP2): só na criação de paradas de usuário, se os dois acima estiverem fora
- *   (ver runWithSpotifyUserChartsPool)
+ *   (ver lib/spotify-user-charts-pool.ts — não importar async_hooks aqui: este arquivo
+ *   também é puxado por componentes client via lib/copa.ts)
  */
 
-import { AsyncLocalStorage } from "node:async_hooks";
 import { isInstrumentalTitle } from "./is-instrumental-title";
 import { recordSpotifyCall } from "./spotify-usage-log";
 
 type SpotifyAppPool = "default" | "user-charts";
-const spotifyPoolStorage = new AsyncLocalStorage<{ pool: SpotifyAppPool }>();
 
-/** Escopo para publicação/import de paradas de usuário — libera failover no BACKUP2. */
-export function runWithSpotifyUserChartsPool<T>(fn: () => Promise<T>): Promise<T> {
-  return spotifyPoolStorage.run({ pool: "user-charts" }, fn);
+/** Injetado por lib/spotify-user-charts-pool.ts (server-only) no boot das rotas de parada. */
+let spotifyAppPoolGetter: () => SpotifyAppPool = () => "default";
+
+/** @internal — só para spotify-user-charts-pool.ts */
+export function __setSpotifyAppPoolGetter(getter: () => SpotifyAppPool): void {
+  spotifyAppPoolGetter = getter;
 }
 
 function currentSpotifyPool(): SpotifyAppPool {
-  return spotifyPoolStorage.getStore()?.pool ?? "default";
+  return spotifyAppPoolGetter();
 }
 
 const AUTH_URL = "https://accounts.spotify.com/api/token";
@@ -477,11 +479,6 @@ export async function probeSpotifyBackup2Api(): Promise<SpotifyProbeResult> {
     };
   }
   return { ok: true };
-}
-
-/** Probe no pool de paradas de usuário (principal → backup → BACKUP2). */
-export async function probeSpotifyApiForUserCharts(): Promise<SpotifyProbeResult> {
-  return runWithSpotifyUserChartsPool(() => probeSpotifyApi());
 }
 
 /** Aguarda rate limit (429) antes de scripts em lote. */

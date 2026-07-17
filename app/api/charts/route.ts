@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@/lib/chart-cadence";
-import { getSpotifyArtistById, getSpotifyTrackMetadataById, probeSpotifyApi, runWithSpotifyUserChartsPool, searchSpotifyArtist } from "@/lib/spotify-server";
+import { getSpotifyArtistById, getSpotifyTrackMetadataById, probeSpotifyApi, searchSpotifyArtist } from "@/lib/spotify-server";
+import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
 import {
@@ -120,23 +121,27 @@ export async function POST(req: NextRequest) {
   }
 
   // Upsert songs/artists/albums — publicação rápida evita timeout do Spotify
-  let songs: ResolvedSongRow[] = [];
-  let enrichmentStats: { withCover: number; withoutCover: number; missingCoverIndices: number[] } | null = null;
-
+  // Pool user-charts: principal → backup → BACKUP2 (só aqui; BACKUP2 não serve o resto do app).
   // Caminho lento faz dezenas de chamadas Spotify; sob rate limit (429), degrada para o
   // caminho rápido (só banco local) — a parada salva com o que se sabe e o cron de
   // backfill completa capas/metadados depois.
-  // Pool user-charts: principal → backup → BACKUP2 (só aqui; BACKUP2 não serve o resto do app).
-  await runWithSpotifyUserChartsPool(async () => {
+  const { songs, enrichmentStats } = await runWithSpotifyUserChartsPool(async () => {
+  let songsInner: ResolvedSongRow[] = [];
+  let enrichmentStatsInner: {
+    withCover: number;
+    withoutCover: number;
+    missingCoverIndices: number[];
+  } | null = null;
+
   const useFastPath = fastPublish || !(await probeSpotifyApi()).ok;
 
   if (useFastPath) {
     const resolved = await resolveSongsForFastPublish(prisma, entries);
     const result = await finalizeSongsForChartPublishWithFeedback(prisma, entries, resolved);
-    songs = result.songs;
-    enrichmentStats = result.enrichmentStats;
+    songsInner = result.songs;
+    enrichmentStatsInner = result.enrichmentStats;
   } else {
-    songs = [];
+    songsInner = [];
     const spotifyArtistCache = new Map<string, Awaited<ReturnType<typeof getSpotifyArtistById>>>();
     const spotifyArtistNameCache = new Map<string, Awaited<ReturnType<typeof searchSpotifyArtist>>>();
 
@@ -200,7 +205,7 @@ export async function POST(req: NextRequest) {
                 artistSpotifyId: resolvedArtist?.spotifyId ?? null,
               },
             });
-        songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
+        songsInner.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
         continue;
       }
 
@@ -345,9 +350,11 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
+      songsInner.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
     }
   }
+
+  return { songs: songsInner, enrichmentStats: enrichmentStatsInner };
   });
 
   const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);

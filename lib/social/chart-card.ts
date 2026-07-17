@@ -162,7 +162,7 @@ export async function renderChartTop3Card(input: ChartTop3CardInput, variant: Ch
   const top3 = input.top3.slice(0, cfg.topN);
 
   try {
-    const bgBuffer = await fs.readFile(path.join(process.cwd(), cfg.bg));
+    const bgBuffer = await fs.readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), cfg.bg));
     const canvas = createCanvas(W, H);
     const ctx = canvas.getContext("2d");
 
