@@ -10,13 +10,16 @@
  * consumam a API sem teto, não contabilidade exata.
  */
 
-export type SpotifyBudgetCategory = "radar" | "backfill" | "mytrl" | "admin";
+export type SpotifyBudgetCategory = "radar" | "backfill" | "mytrl" | "admin" | "lastfm";
 
 const DAILY_LIMITS: Record<SpotifyBudgetCategory, number> = {
   radar: 250,
   backfill: 150,
   mytrl: 100,
   admin: 50,
+  // Enriquecimento de rankings Last.fm (Global/comunidades) — só álbuns sem match no DB.
+  // Airplay não consome: resolve pelo catálogo local + metadados do Last.fm.
+  lastfm: 80,
 };
 
 const usage = new Map<SpotifyBudgetCategory, { day: string; used: number }>();

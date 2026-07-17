@@ -2,10 +2,12 @@ import type { TrackPlays } from "@/lib/lastfm";
 import { fetchTracksBetweenUnix } from "@/lib/lastfm";
 import { prisma } from "@/lib/prisma";
 import {
+  getPrimaryLimitedUntil,
   getSpotifyAlbumMetadataById,
   getSpotifyTrackMetadataById,
   searchSpotifyTracks,
 } from "@/lib/spotify-server";
+import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
 import { COVER_PALETTES } from "@/lib/data";
 import { canonicalAlbumTitle, canonicalArtistName } from "@/lib/duplicate-utils";
 import { brtDateKey, buildMyTrlScoringWindow, myTrlFetchWindow } from "@/lib/mytrl-chart-engine";
@@ -17,8 +19,10 @@ const MAX_TRACKS_PER_USER = 80;
 const MAX_TRACKS_PER_USER_ALBUMS = 300;
 const LASTFM_USER_CONCURRENCY = 4;
 // Concorrência baixa de propósito: 10 buscas paralelas no /search eram gatilho de 429
-// (rajada dentro da janela de 30s do Spotify). 3 mantém o throughput aceitável sem rajada.
-const SPOTIFY_ENRICH_CONCURRENCY = 3;
+// (rajada dentro da janela de 30s do Spotify). 2 mantém o throughput sem rajada.
+const SPOTIFY_ENRICH_CONCURRENCY = 2;
+/** Teto duro de /search por cálculo de ranking (álbuns sem match no DB). */
+const MAX_SPOTIFY_SEARCHES_PER_RANKING = 40;
 
 export type GlobalLastfmEntryStatus = "new" | "return" | "up" | "down" | "same";
 
@@ -96,71 +100,61 @@ function countPlaysInWindow(dayPlays: TrackPlays["dayPlays"]): number {
   return dayPlays.reduce((sum, d) => sum + d.plays, 0);
 }
 
-async function enrichTrackFromDb(spotifyId: string): Promise<EnrichedTrack | null> {
-  const song = await prisma.song.findUnique({
-    where: { spotifyId },
+/** Metadados do Last.fm — suficiente p/ pontuar airplay sem bater no Spotify. */
+function enrichFromLastfm(tp: TrackPlays): EnrichedTrack {
+  return {
+    track: tp.track,
+    artist: tp.artist,
+    album: tp.album ?? "",
+    spotifyId: null,
+    albumSpotifyId: null,
+    artistSpotifyId: null,
+    imageUrl: null,
+  };
+}
+
+async function lookupSongsInDb(
+  chunk: Array<[string, TrackPlays]>,
+  requireAlbumSpotifyId: boolean,
+): Promise<Map<string, EnrichedTrack>> {
+  const found = new Map<string, EnrichedTrack>();
+  if (!chunk.length) return found;
+
+  const rows = await prisma.song.findMany({
+    where: {
+      ...(requireAlbumSpotifyId ? { albumSpotifyId: { not: null } } : {}),
+      OR: chunk.map(([, tp]) => ({
+        AND: [
+          { title: { equals: tp.track, mode: "insensitive" as const } },
+          { artist: { equals: tp.artist, mode: "insensitive" as const } },
+        ],
+      })),
+    },
     select: {
       title: true,
       artist: true,
       album: true,
-      artistSpotifyId: true,
+      spotifyId: true,
       albumSpotifyId: true,
-      albumRef: { select: { spotifyId: true, coverUrl: true, albumType: true } },
+      artistSpotifyId: true,
+      albumRef: { select: { spotifyId: true, coverUrl: true } },
     },
   });
-  if (!song) return null;
-  const albumSpotifyId = song.albumRef?.spotifyId ?? song.albumSpotifyId;
-  return {
-    track: song.title,
-    artist: song.artist,
-    album: song.album ?? "",
-    spotifyId,
-    albumSpotifyId,
-    artistSpotifyId: song.artistSpotifyId,
-    imageUrl: song.albumRef?.coverUrl ?? null,
-  };
-}
 
-async function enrichTrack(tp: TrackPlays, needAlbumMeta: boolean): Promise<EnrichedTrack | null> {
-  const matches = await searchSpotifyTracks(`${tp.track} ${tp.artist}`, 8);
-  let best: (typeof matches)[number] | null = null;
-  let bestScore = -1;
-  for (const m of matches) {
-    const sc = scoreTrackMatch(tp.track, tp.artist, m.title, m.artist);
-    if (sc > bestScore) {
-      best = m;
-      bestScore = sc;
-    }
+  for (const s of rows) {
+    const key = trackPlaysKey(s.title, s.artist);
+    if (found.has(key)) continue;
+    found.set(key, {
+      track: s.title,
+      artist: s.artist,
+      album: s.album ?? "",
+      spotifyId: s.spotifyId,
+      albumSpotifyId: s.albumRef?.spotifyId ?? s.albumSpotifyId,
+      artistSpotifyId: s.artistSpotifyId,
+      imageUrl: s.albumRef?.coverUrl ?? null,
+    });
   }
-  if (!best || bestScore < 120) return null;
-
-  if (needAlbumMeta) {
-    const fromDb = await enrichTrackFromDb(best.spotifyId);
-    if (fromDb?.albumSpotifyId) return fromDb;
-  }
-
-  if (!needAlbumMeta) {
-    return {
-      track: best.title,
-      artist: best.artist,
-      album: best.album,
-      spotifyId: best.spotifyId,
-      albumSpotifyId: null,
-      artistSpotifyId: null,
-      imageUrl: best.imageUrl ?? null,
-    };
-  }
-
-  const meta = await getSpotifyTrackMetadataById(best.spotifyId);
-  return {
-    track: meta?.title ?? best.title,
-    artist: meta?.artistDisplay ?? best.artist,
-    album: meta?.album.title ?? best.album,
-    spotifyId: best.spotifyId,
-    albumSpotifyId: meta?.album.spotifyId ?? null,
-    artistSpotifyId: meta?.primaryArtist?.spotifyId ?? null,
-    imageUrl: meta?.album.coverUrl ?? best.imageUrl ?? null,
-  };
+  return found;
 }
 
 const albumTypeCache = new Map<string, boolean>();
@@ -370,68 +364,64 @@ async function enrichTracksBatch(
     if (!unique.has(key)) unique.set(key, tp);
   }
   const entries = [...unique.entries()];
-
-  if (!needAlbumMeta) {
-    if (skipSpotifyFallback) return new Map(entries.map(([key]) => [key, null]));
-    const enriched = await mapPool(entries, SPOTIFY_ENRICH_CONCURRENCY, async ([key, tp]) => [
-      key,
-      await enrichTrack(tp, false),
-    ] as const);
-    return new Map(enriched);
-  }
-
   const out = new Map<string, EnrichedTrack | null>();
-  const needSpotify: Array<[string, TrackPlays]> = [];
   const DB_LOOKUP_CHUNK = 40;
 
+  // Sempre DB-first (airplay e álbuns). Antes o airplay ia direto pro /search
+  // por faixa única — milhares de chamadas e a maior fonte de 429 (2026-07-17).
   for (let c = 0; c < entries.length; c += DB_LOOKUP_CHUNK) {
     const chunk = entries.slice(c, c + DB_LOOKUP_CHUNK);
-    const rows = await prisma.song.findMany({
-      where: {
-        albumSpotifyId: { not: null },
-        OR: chunk.map(([, tp]) => ({
-          AND: [
-            { title: { equals: tp.track, mode: "insensitive" as const } },
-            { artist: { equals: tp.artist, mode: "insensitive" as const } },
-          ],
-        })),
-      },
-      select: {
-        title: true,
-        artist: true,
-        album: true,
-        spotifyId: true,
-        albumSpotifyId: true,
-        artistSpotifyId: true,
-        albumRef: { select: { spotifyId: true, coverUrl: true } },
-      },
-    });
-    for (const s of rows) {
-      const key = trackPlaysKey(s.title, s.artist);
-      if (out.has(key)) continue;
-      out.set(key, {
-        track: s.title,
-        artist: s.artist,
-        album: s.album ?? "",
-        spotifyId: s.spotifyId,
-        albumSpotifyId: s.albumRef?.spotifyId ?? s.albumSpotifyId,
-        artistSpotifyId: s.artistSpotifyId,
-        imageUrl: s.albumRef?.coverUrl ?? null,
-      });
+    const found = await lookupSongsInDb(chunk, needAlbumMeta);
+    for (const [key, enriched] of found) {
+      if (!out.has(key)) out.set(key, enriched);
     }
   }
 
+  const needFallback: Array<[string, TrackPlays]> = [];
   for (const entry of entries) {
-    if (!out.has(entry[0])) needSpotify.push(entry);
+    if (!out.has(entry[0])) needFallback.push(entry);
   }
 
-  if (skipSpotifyFallback) {
-    for (const [key] of needSpotify) out.set(key, null);
+  // Airplay: metadados do Last.fm bastam p/ pontuar (song_local / song_spotify do DB).
+  // Nunca /search aqui — era o caminho que estourava a cota.
+  if (!needAlbumMeta) {
+    for (const [key, tp] of needFallback) out.set(key, enrichFromLastfm(tp));
     return out;
   }
 
-  const matched = await mapPool(needSpotify, SPOTIFY_ENRICH_CONCURRENCY, async ([key, tp]) => {
-    const matches = await searchSpotifyTracks(`${tp.track} ${tp.artist}`, 8);
+  if (skipSpotifyFallback || needFallback.length === 0) {
+    for (const [key] of needFallback) out.set(key, null);
+    return out;
+  }
+
+  // Álbuns sem match no DB: poucas buscas, com orçamento diário + abort se já em 429.
+  const spotifyLimited = Date.now() < getPrimaryLimitedUntil();
+  if (spotifyLimited) {
+    console.warn(
+      `[global-lastfm] Spotify limitado até ${new Date(getPrimaryLimitedUntil()).toISOString()} — pulando ${needFallback.length} buscas de álbum`,
+    );
+    for (const [key] of needFallback) out.set(key, null);
+    return out;
+  }
+
+  const toSearch: Array<[string, TrackPlays]> = [];
+  for (const entry of needFallback) {
+    if (toSearch.length >= MAX_SPOTIFY_SEARCHES_PER_RANKING) break;
+    if (!tryConsumeSpotifyBudget("lastfm")) break;
+    toSearch.push(entry);
+  }
+  for (const [key] of needFallback.slice(toSearch.length)) out.set(key, null);
+
+  if (toSearch.length < needFallback.length) {
+    console.warn(
+      `[global-lastfm] teto/orçamento Spotify: buscando ${toSearch.length}/${needFallback.length} faixas sem match no DB`,
+    );
+  }
+
+  const matched = await mapPool(toSearch, SPOTIFY_ENRICH_CONCURRENCY, async ([key, tp]) => {
+    const matches = await searchSpotifyTracks(`${tp.track} ${tp.artist}`, 8, "BR", undefined, {
+      maxAttempts: 1,
+    });
     let best: (typeof matches)[number] | null = null;
     let bestScore = -1;
     for (const m of matches) {
@@ -465,7 +455,7 @@ async function enrichTracksBatch(
     : [];
   const dbBySpotifyId = new Map(dbSongs.map((s) => [s.spotifyId as string, s]));
 
-  const metaQueue: Array<{ key: string; spotifyId: string; fallback: (typeof matched)[number] }> = [];
+  const metaQueue: Array<{ key: string; spotifyId: string }> = [];
 
   for (const item of matched) {
     const key = item[0];
@@ -486,7 +476,7 @@ async function enrichTracksBatch(
         imageUrl: db.albumRef?.coverUrl ?? null,
       });
     } else {
-      metaQueue.push({ key, spotifyId, fallback: item });
+      metaQueue.push({ key, spotifyId });
     }
   }
 
