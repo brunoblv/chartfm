@@ -82,6 +82,34 @@ function loadMappedExport(path: string): CrownnoteMappedExport {
   return data;
 }
 
+/** Garante posições únicas 1..N (Crownnote às vezes duplica posição / pula número). */
+function normalizeEntryPositions(
+  rows: Array<{ position: number; artist: string; title: string }>,
+  slug: string,
+): Array<{ position: number; artist: string; title: string }> {
+  const sorted = [...rows].sort((a, b) => a.position - b.position);
+  const seen = new Set<number>();
+  let hasDup = false;
+  for (const row of sorted) {
+    if (seen.has(row.position)) hasDup = true;
+    seen.add(row.position);
+  }
+  const hasGap =
+    sorted.length > 0 &&
+    (Math.min(...sorted.map((r) => r.position)) !== 1 ||
+      Math.max(...sorted.map((r) => r.position)) !== sorted.length ||
+      seen.size !== sorted.length);
+
+  if (!hasDup && !hasGap) return sorted;
+
+  const before = sorted.map((r) => r.position).join(",");
+  const fixed = sorted.map((row, index) => ({ ...row, position: index + 1 }));
+  console.warn(
+    `[warn] ${slug}: posições normalizadas (${hasDup ? "duplicata" : "gap"}) [${before}] → 1..${fixed.length}`,
+  );
+  return fixed;
+}
+
 function buildWeeks(data: CrownnoteMappedExport): RawWeek[] {
   const weeks: RawWeek[] = [];
   let previousDate: string | null = null;
@@ -92,13 +120,14 @@ function buildWeeks(data: CrownnoteMappedExport): RawWeek[] {
       throw new Error(`Não foi possível extrair data do slug: ${chart.slug}`);
     }
 
-    const entries = [...chart.entries]
-      .map((e) => ({
+    const entries = normalizeEntryPositions(
+      chart.entries.map((e) => ({
         position: e.position,
         artist: e.artist,
         title: e.title,
-      }))
-      .sort((a, b) => a.position - b.position);
+      })),
+      chart.slug,
+    );
 
     if (!entries.length) {
       console.warn(`[warn] Chart sem entradas, pulando: ${chart.slug}`);
@@ -318,10 +347,16 @@ async function importWeeks() {
       });
       createdCharts += 1;
     } else {
-      await prisma.$transaction([
-        prisma.chartEntry.deleteMany({ where: { chartId: existing.id } }),
-        prisma.chart.update({ where: { id: existing.id }, data: chartPayload }),
-      ]);
+      // delete + createMany explícitos: nested create no update falha se houver
+      // duplicata de position no payload (P2002 em chartId+position).
+      const { entries: _entries, ...chartFields } = chartPayload;
+      await prisma.$transaction(async (tx) => {
+        await tx.chartEntry.deleteMany({ where: { chartId: existing.id } });
+        await tx.chart.update({ where: { id: existing.id }, data: chartFields });
+        await tx.chartEntry.createMany({
+          data: entryPayload.map((e) => ({ ...e, chartId: existing.id })),
+        });
+      });
       updatedCharts += 1;
     }
 
