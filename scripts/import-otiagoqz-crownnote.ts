@@ -2,14 +2,14 @@
  * Importa a Personal Chart do @otiagoqz a partir do JSON Crownnote já mapeado
  * (songMappings com songId/spotifyId).
  *
- * Fonte padrão:
- *   C:\Users\d854440\Downloads\crownnote-heytiago-mapped-2026-07-17.json
+ * Fonte padrão (relativa ao cwd do repo):
+ *   public/jsons/crownnote-heytiago-mapped-2026-07-17.json
  *
  * Usage:
  *   npx tsx scripts/import-otiagoqz-crownnote.ts --dry-run
  *   npx tsx scripts/import-otiagoqz-crownnote.ts --dry-run --verbose
  *   npx tsx scripts/import-otiagoqz-crownnote.ts
- *   npx tsx scripts/import-otiagoqz-crownnote.ts --file="C:\path\to\mapped.json"
+ *   npx tsx scripts/import-otiagoqz-crownnote.ts --file=/path/to/mapped.json
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -53,8 +53,12 @@ if (existsSync(envPath)) {
 const prisma = new PrismaClient();
 
 const HANDLE = "otiagoqz";
-const DEFAULT_JSON =
-  "C:\\Users\\d854440\\Downloads\\crownnote-heytiago-mapped-2026-07-17.json";
+const DEFAULT_JSON = join(
+  process.cwd(),
+  "public",
+  "jsons",
+  "crownnote-heytiago-mapped-2026-07-17.json",
+);
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const VERBOSE = process.argv.includes("--verbose");
