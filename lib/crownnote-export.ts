@@ -4,29 +4,52 @@ const USER_AGENT = "ChartFM-CrownnoteExport/1.0 (+https://chartfm.com)";
 const MONTH_MAP: Record<string, number> = {
   january: 0,
   jan: 0,
+  janeiro: 0,
   february: 1,
   feb: 1,
+  fev: 1,
+  fevereiro: 1,
   march: 2,
   mar: 2,
+  marco: 2,
+  março: 2,
   april: 3,
   apr: 3,
+  abr: 3,
+  abril: 3,
   may: 4,
+  maio: 4,
+  mai: 4,
   june: 5,
   jun: 5,
+  junho: 5,
   july: 6,
   jul: 6,
+  julho: 6,
   august: 7,
   aug: 7,
+  ago: 7,
+  agosto: 7,
   september: 8,
   sep: 8,
   sept: 8,
+  set: 8,
+  setembro: 8,
   october: 9,
   oct: 9,
+  out: 9,
+  outubro: 9,
   november: 10,
   nov: 10,
+  novembro: 10,
   december: 11,
   dec: 11,
+  dez: 11,
+  dezembro: 11,
 };
+
+/** Sufixo ordinal EN (`15th`) e typo comum (`7h` no lugar de `7th`). */
+const ORDINAL_RE = "(?:st|nd|rd|th|h)?";
 
 const DROPOUTS_RE = /^DROPOUTS:?/i;
 const ENTRY_LINE_RE =
@@ -129,7 +152,8 @@ function toYmd(year: number, month: number, day: number): string {
 export function parseDateFromChartSlug(slug: string): string | null {
   const patterns: Array<{ re: RegExp; pick: (m: RegExpMatchArray) => string | null }> = [
     {
-      re: /(\d{4})-([a-z]+)-(\d{1,2})(?:\D|$)/i,
+      // 2024-set-15th / 2024-sep-15
+      re: new RegExp(`(\\d{4})-([a-z]+)-(\\d{1,2})${ORDINAL_RE}(?:\\D|$)`, "i"),
       pick: (m) => {
         const month = MONTH_MAP[m[2]!.toLowerCase()];
         if (month === undefined) return null;
@@ -137,7 +161,8 @@ export function parseDateFromChartSlug(slug: string): string | null {
       },
     },
     {
-      re: /(\d{1,2})-([a-z]+)-(\d{4})(?:\D|$)/i,
+      // 15th-set-2024 / 15-sep-2024
+      re: new RegExp(`(\\d{1,2})${ORDINAL_RE}-([a-z]+)-(\\d{4})(?:\\D|$)`, "i"),
       pick: (m) => {
         const month = MONTH_MAP[m[2]!.toLowerCase()];
         if (month === undefined) return null;
@@ -145,7 +170,8 @@ export function parseDateFromChartSlug(slug: string): string | null {
       },
     },
     {
-      re: /([a-z]+)-(\d{1,2})-(\d{4})(?:\D|$)/i,
+      // set-15th-2024 / jun-5th-2026 / out-4th-2024 / july-31st-2025
+      re: new RegExp(`([a-z]+)-(\\d{1,2})${ORDINAL_RE}-(\\d{4})(?:\\D|$)`, "i"),
       pick: (m) => {
         const month = MONTH_MAP[m[1]!.toLowerCase()];
         if (month === undefined) return null;
@@ -153,11 +179,14 @@ export function parseDateFromChartSlug(slug: string): string | null {
       },
     },
     {
-      re: /([a-z]+)-(\d{1,2})-(\d{4})/i,
+      // MMDDYY no fim do slug: personal-chart-031425 / personal-chart-052325-0
+      re: /(?:^|-)(\d{2})(\d{2})(\d{2})(?:-\d+)?$/i,
       pick: (m) => {
-        const month = MONTH_MAP[m[1]!.toLowerCase()];
-        if (month === undefined) return null;
-        return toYmd(Number(m[3]), month, Number(m[2]));
+        const month = Number(m[1]) - 1;
+        const day = Number(m[2]);
+        const year = 2000 + Number(m[3]);
+        if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+        return toYmd(year, month, day);
       },
     },
   ];
@@ -170,6 +199,42 @@ export function parseDateFromChartSlug(slug: string): string | null {
     }
   }
   return null;
+}
+
+/** Extrai mês/dia de slugs sem ano (`personal-chart-mar-20th`). */
+export function parseMonthDayFromChartSlug(slug: string): { month: number; day: number } | null {
+  const match = slug.match(new RegExp(`([a-z]+)-(\\d{1,2})${ORDINAL_RE}$`, "i"));
+  if (!match) return null;
+  const month = MONTH_MAP[match[1]!.toLowerCase()];
+  if (month === undefined) return null;
+  const day = Number(match[2]);
+  if (day < 1 || day > 31) return null;
+  return { month, day };
+}
+
+/**
+ * Completa data Crownnote: usa `parseDateFromChartSlug`, ou infere o ano a partir
+ * da semana anterior quando o slug só tem mês/dia.
+ */
+export function resolveCrownnoteChartDate(
+  slug: string,
+  explicitDate: string | null,
+  previousYmd: string | null,
+): string | null {
+  if (explicitDate && /^\d{4}-\d{2}-\d{2}$/.test(explicitDate)) return explicitDate;
+
+  const full = parseDateFromChartSlug(slug);
+  if (full) return full;
+
+  const md = parseMonthDayFromChartSlug(slug);
+  if (!md || !previousYmd) return null;
+
+  const prevYear = Number(previousYmd.slice(0, 4));
+  let candidate = toYmd(prevYear, md.month, md.day);
+  if (candidate <= previousYmd) {
+    candidate = toYmd(prevYear + 1, md.month, md.day);
+  }
+  return candidate;
 }
 
 function parsePlainTextChart(plainText: string, url: string): Omit<CrownnoteChartExport, "url" | "slug"> {
