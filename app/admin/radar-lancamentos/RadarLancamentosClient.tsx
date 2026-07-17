@@ -151,18 +151,45 @@ export function RadarLancamentosClient({ initialData }: { initialData: ReleaseRa
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!q.trim()) { setResults([]); return; }
+    if (!q.trim()) {
+      setResults([]);
+      setNotice(null);
+      return;
+    }
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
         const res = await fetch(`/api/admin/release-radar/search?q=${encodeURIComponent(q.trim())}`);
-        const data = (await res.json()) as { artists: SpotifyArtistHit[] };
+        const text = await res.text();
+        let data: { artists?: SpotifyArtistHit[]; error?: string } = {};
+        try {
+          data = text ? (JSON.parse(text) as { artists?: SpotifyArtistHit[]; error?: string }) : {};
+        } catch {
+          setResults([]);
+          setNotice(
+            res.status === 504 || res.status === 502
+              ? "Busca demorou demais (Spotify lento/rate limit). Tente de novo em alguns minutos."
+              : "Resposta inválida do servidor na busca.",
+          );
+          return;
+        }
+        if (!res.ok) {
+          setResults([]);
+          setNotice(data.error ?? `Busca falhou (HTTP ${res.status}).`);
+          return;
+        }
         setResults(data.artists ?? []);
+        setNotice(data.error && !(data.artists?.length) ? data.error : null);
+      } catch {
+        setResults([]);
+        setNotice("Erro de conexão na busca do radar.");
       } finally {
         setSearching(false);
       }
     }, 400);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [q]);
 
   async function addArtist(hit: SpotifyArtistHit) {

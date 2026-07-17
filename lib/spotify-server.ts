@@ -230,6 +230,12 @@ async function spotifyFetch(
       }
     }
 
+    // Marca backup1 como limitado sempre que ele falhar (mesmo fora do pool) —
+    // assim getAccessToken no pool user-charts pode pular direto pro BACKUP2.
+    if (failoverEligible && onBackup) {
+      backupLimitedUntil = Math.max(backupLimitedUntil, Date.now() + limitMs);
+    }
+
     if (
       failoverEligible &&
       !triedBackup2 &&
@@ -238,7 +244,6 @@ async function spotifyFetch(
       (onBackup || (onPrimary && triedBackup))
     ) {
       triedBackup2 = true;
-      if (onBackup) backupLimitedUntil = Date.now() + limitMs;
       const backup2Token = await getBackup2AccessToken();
       if (backup2Token) {
         console.warn(
@@ -358,6 +363,17 @@ export async function getAccessToken(): Promise<string | null> {
 
   const pool = currentSpotifyPool();
   const now = Date.now();
+
+  // Principal e/ou backup em 429: no pool de paradas, pula direto pro BACKUP2
+  // quando os dois estão marcados como limitados.
+  if (pool === "user-charts" && backup2SpotifyConfigured()) {
+    const primaryDown = now < primaryLimitedUntil;
+    const backupDown = !backupSpotifyConfigured() || now < backupLimitedUntil;
+    if (primaryDown && backupDown) {
+      const backup2Token = await getBackup2AccessToken();
+      if (backup2Token) return backup2Token;
+    }
+  }
 
   // App principal em 429 recente: entrega o token do backup enquanto durar o prazo.
   if (now < primaryLimitedUntil) {
@@ -1114,6 +1130,7 @@ export async function searchSpotifyArtists(
   name: string,
   limit = 5,
   market: string = "US",
+  opts?: { maxAttempts?: number; deadlineAt?: number },
 ): Promise<SpotifyArtistProfile[]> {
   const token = await getAccessToken();
   if (!token) return [];
@@ -1125,10 +1142,15 @@ export async function searchSpotifyArtists(
   url.searchParams.set("limit", String(lim));
   url.searchParams.set("market", market);
 
-  const res = await spotifyFetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 3600 },
-  });
+  const res = await spotifyFetch(
+    url.toString(),
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      next: { revalidate: 3600 },
+    },
+    opts?.maxAttempts ?? SPOTIFY_RETRY_MAX_ATTEMPTS,
+    opts?.deadlineAt,
+  );
   if (!res?.ok) return [];
 
   const json = (await res.json()) as SpotifyArtistSearchJson;

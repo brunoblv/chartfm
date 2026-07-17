@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
-import { spotifyConfigured, searchSpotifyTracks } from "@/lib/spotify-server";
+import {
+  getBackupLimitedUntil,
+  getPrimaryLimitedUntil,
+  spotifyConfigured,
+  searchSpotifyTracks,
+} from "@/lib/spotify-server";
+import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 20;
 
 const NO_CACHE = { "Cache-Control": "no-store, no-cache, must-revalidate", Pragma: "no-cache", Expires: "0" };
 
@@ -51,20 +58,22 @@ async function searchLocalCatalog(q: string, limit: number, artist?: string): Pr
   return rows
     .filter((r) => !isInstrumentalTitle(r.title))
     .map((r) => ({
-    spotifyId: r.spotifyId!,
-    title: r.title,
-    artist: r.artist,
-    album: r.album ?? "",
-    imageUrl: r.albumRef?.coverUrl ?? null,
-    previewUrl: r.previewUrl ?? null,
-    externalUrl: r.spotifyUrl ?? null,
-  }));
+      spotifyId: r.spotifyId!,
+      title: r.title,
+      artist: r.artist,
+      album: r.album ?? "",
+      imageUrl: r.albumRef?.coverUrl ?? null,
+      previewUrl: r.previewUrl ?? null,
+      externalUrl: r.spotifyUrl ?? null,
+    }));
 }
 
 /**
  * Busca de músicas: catálogo local + Spotify pelo SERVIDOR (cache de 30 dias +
  * dedup de chamadas em voo no spotify-server). O browser não recebe mais tokens
  * nem fala com api.spotify.com — todo acesso passa pelo backend.
+ *
+ * Pool user-charts: se principal + BACKUP estiverem fora, usa BACKUP2 (paradas).
  */
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, 200) ?? "";
@@ -85,10 +94,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ tracks: dbTracks.slice(0, limit), configured }, { headers: NO_CACHE });
   }
 
-  // Complementa com o Spotify no servidor. maxAttempts 2: latência limitada; sob 429
-  // o failover pro app de backup dentro do spotifyFetch não conta como retry.
   const spotifyQuery = artist ? `${q} artist:"${artist}"` : q;
-  const spotifyTracks = await searchSpotifyTracks(spotifyQuery, limit, "BR", req.signal, { maxAttempts: 2 });
+  const bothLimited =
+    Date.now() < getPrimaryLimitedUntil() && Date.now() < getBackupLimitedUntil();
+
+  // Complementa com Spotify no pool de paradas (principal → backup → BACKUP2).
+  // maxAttempts 1 + prazo curto: evita 504 no nginx quando a API está em 429.
+  const spotifyTracks = await runWithSpotifyUserChartsPool(() =>
+    searchSpotifyTracks(spotifyQuery, limit, "BR", req.signal, {
+      maxAttempts: 1,
+      deadlineAt: Date.now() + 8_000,
+    }),
+  );
 
   const seen = new Set(dbTracks.map((t) => t.spotifyId));
   const merged: TrackResult[] = [...dbTracks];
@@ -107,5 +124,14 @@ export async function GET(req: NextRequest) {
     if (merged.length >= limit) break;
   }
 
-  return NextResponse.json({ tracks: merged, configured }, { headers: NO_CACHE });
+  return NextResponse.json(
+    {
+      tracks: merged,
+      configured,
+      ...(merged.length === 0 && bothLimited
+        ? { unavailable: true, error: "Spotify em rate limit. Tente de novo em alguns minutos." }
+        : {}),
+    },
+    { headers: NO_CACHE },
+  );
 }
