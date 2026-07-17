@@ -71,12 +71,14 @@ export async function getOrCreateCommunityLastfmSnapshot(
   mode: GlobalLastfmMode,
   chartLimit = 50,
   referenceDate: Date = new Date(),
+  options?: { weekIndex?: number },
 ): Promise<CommunityLastfmPayload & { created: boolean }> {
   const rankingWeek = getRankingWeekReference(referenceDate, await getGlobalPublishSlot());
+  const weekIndex = options?.weekIndex ?? rankingWeek.weekIndex;
 
   const existing = await prisma.communityLastfmSnapshot.findUnique({
     where: {
-      communityId_mode_weekIndex: { communityId, mode, weekIndex: rankingWeek.weekIndex },
+      communityId_mode_weekIndex: { communityId, mode, weekIndex },
     },
   });
   if (existing) return { ...asPayload(existing), created: false };
@@ -89,7 +91,7 @@ export async function getOrCreateCommunityLastfmSnapshot(
       data: {
         communityId,
         mode,
-        weekIndex: rankingWeek.weekIndex,
+        weekIndex,
         weekLabel: computed.weekLabel,
         dateRange: computed.dateRange,
         scoringWindow: computed.scoringWindow,
@@ -101,7 +103,7 @@ export async function getOrCreateCommunityLastfmSnapshot(
   } catch {
     const raced = await prisma.communityLastfmSnapshot.findUnique({
       where: {
-        communityId_mode_weekIndex: { communityId, mode, weekIndex: rankingWeek.weekIndex },
+        communityId_mode_weekIndex: { communityId, mode, weekIndex },
       },
     });
     if (raced) return { ...asPayload(raced), created: false };
@@ -113,7 +115,10 @@ export async function getOrCreateCommunityLastfmSnapshot(
  * Congela os snapshots da semana de todas as comunidades — chamado pelo
  * publish-weekly-globals logo após os snapshots do Global.
  */
-export async function publishAllCommunityLastfmSnapshots(referenceDate: Date = new Date()) {
+export async function publishAllCommunityLastfmSnapshots(
+  referenceDate: Date = new Date(),
+  options?: { weekIndex?: number },
+) {
   const communities = await prisma.community.findMany({
     select: { id: true, slug: true, maxSongs: true },
   });
@@ -123,7 +128,13 @@ export async function publishAllCommunityLastfmSnapshots(referenceDate: Date = n
   for (const c of communities) {
     for (const mode of ["airplay", "albums"] as const) {
       try {
-        const result = await getOrCreateCommunityLastfmSnapshot(c.id, mode, c.maxSongs, referenceDate);
+        const result = await getOrCreateCommunityLastfmSnapshot(
+          c.id,
+          mode,
+          c.maxSongs,
+          referenceDate,
+          options,
+        );
         if (result.created) created += 1;
       } catch (err) {
         errors.push(`${c.slug}/${mode}: ${String(err)}`);

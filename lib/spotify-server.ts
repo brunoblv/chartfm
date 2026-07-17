@@ -1,10 +1,28 @@
 /**
  * Integração com a Web API do Spotify (client credentials).
  * Usar apenas em Route Handlers / Server Components — nunca no bundle do cliente.
+ *
+ * Apps:
+ * - principal (SPOTIFY_CLIENT_ID) + backup (…_BACKUP): uso geral
+ * - backup2 (…_BACKUP2): só na criação de paradas de usuário, se os dois acima estiverem fora
+ *   (ver runWithSpotifyUserChartsPool)
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import { isInstrumentalTitle } from "./is-instrumental-title";
 import { recordSpotifyCall } from "./spotify-usage-log";
+
+type SpotifyAppPool = "default" | "user-charts";
+const spotifyPoolStorage = new AsyncLocalStorage<{ pool: SpotifyAppPool }>();
+
+/** Escopo para publicação/import de paradas de usuário — libera failover no BACKUP2. */
+export function runWithSpotifyUserChartsPool<T>(fn: () => Promise<T>): Promise<T> {
+  return spotifyPoolStorage.run({ pool: "user-charts" }, fn);
+}
+
+function currentSpotifyPool(): SpotifyAppPool {
+  return spotifyPoolStorage.getStore()?.pool ?? "default";
+}
 
 const AUTH_URL = "https://accounts.spotify.com/api/token";
 const API_BASE = "https://api.spotify.com/v1";
@@ -76,14 +94,25 @@ const backupTokenState: TokenState = {
   accessToken: null,
   expiresAt: 0,
 };
+// BACKUP2 — exclusivo para paradas de usuário (pool user-charts), só se principal + backup
+// estiverem limitados/indisponíveis.
+const backup2TokenState: TokenState = {
+  accessToken: null,
+  expiresAt: 0,
+};
 // Falha ao obter token fica cacheada por 60s: sem isso, com credencial quebrada cada
 // chamada re-tenta o endpoint de token (até 10s de timeout cada) e estoura o prazo da rota.
 const TOKEN_FAILURE_CACHE_MS = 60_000;
 let primaryLimitedUntil = 0;
+let backupLimitedUntil = 0;
 const PRIMARY_LIMITED_DEFAULT_MS = 5 * 60_000;
 
 export function backupSpotifyConfigured(): boolean {
   return Boolean(process.env.SPOTIFY_CLIENT_ID_BACKUP && process.env.SPOTIFY_CLIENT_SECRET_BACKUP);
+}
+
+export function backup2SpotifyConfigured(): boolean {
+  return Boolean(process.env.SPOTIFY_CLIENT_ID_BACKUP2 && process.env.SPOTIFY_CLIENT_SECRET_BACKUP2);
 }
 
 /** Epoch ms até quando o app principal está marcado como limitado (0 = não limitado). */
@@ -91,9 +120,18 @@ export function getPrimaryLimitedUntil(): number {
   return primaryLimitedUntil;
 }
 
+/** Epoch ms até quando o backup1 está marcado como limitado (0 = não limitado). */
+export function getBackupLimitedUntil(): number {
+  return backupLimitedUntil;
+}
+
 /** Marca o app principal como limitado — getAccessToken passa a entregar o token do backup no período. */
 export function markPrimaryLimited(ms: number = PRIMARY_LIMITED_DEFAULT_MS): void {
   primaryLimitedUntil = Math.max(primaryLimitedUntil, Date.now() + ms);
+}
+
+export function markBackupLimited(ms: number = PRIMARY_LIMITED_DEFAULT_MS): void {
+  backupLimitedUntil = Math.max(backupLimitedUntil, Date.now() + ms);
 }
 
 const coverCache = new Map<string, string | null>();
@@ -118,10 +156,11 @@ function parseRetryAfterMs(value: string | null): number | null {
 
 const SPOTIFY_FETCH_TIMEOUT_MS = 10000;
 
-function appForAuthHeader(init: RequestInit, input: string | URL): "primary" | "backup" | "token" {
+function appForAuthHeader(init: RequestInit, input: string | URL): "primary" | "backup" | "backup2" | "token" {
   const raw = typeof input === "string" ? input : input.toString();
   if (raw.includes("accounts.spotify.com")) return "token";
   const authHeader = (init.headers as Record<string, string> | undefined)?.Authorization;
+  if (backup2TokenState.accessToken && authHeader === `Bearer ${backup2TokenState.accessToken}`) return "backup2";
   if (backupTokenState.accessToken && authHeader === `Bearer ${backupTokenState.accessToken}`) return "backup";
   return "primary";
 }
@@ -135,6 +174,7 @@ async function spotifyFetch(
   deadlineAt?: number,
 ): Promise<Response | null> {
   let triedBackup = false;
+  let triedBackup2 = false;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     await acquireCallSlot();
     let res: Response;
@@ -166,23 +206,43 @@ async function spotifyFetch(
     // principal → marca o principal como limitado e refaz na hora com o app de backup (não
     // conta como retry). 400/404 ficam de fora: são "recurso não encontrado", não problema
     // do app. Se a chamada já estava no backup (ou é a rota de token), segue o fluxo normal.
+    // BACKUP2 só entra no pool user-charts (criação de paradas), quando backup1 também falha.
     const failoverEligible =
       res.status === 429 || res.status === 401 || res.status === 403 || res.status >= 500;
     const authHeader = (init.headers as Record<string, string> | undefined)?.Authorization;
-    if (
-      failoverEligible &&
-      !triedBackup &&
-      backupSpotifyConfigured() &&
-      tokenState.accessToken &&
-      authHeader === `Bearer ${tokenState.accessToken}`
-    ) {
+    const limitMs = parseRetryAfterMs(res.headers.get("retry-after")) ?? PRIMARY_LIMITED_DEFAULT_MS;
+    const onPrimary =
+      Boolean(tokenState.accessToken) && authHeader === `Bearer ${tokenState.accessToken}`;
+    const onBackup =
+      Boolean(backupTokenState.accessToken) && authHeader === `Bearer ${backupTokenState.accessToken}`;
+
+    if (failoverEligible && !triedBackup && backupSpotifyConfigured() && onPrimary) {
       triedBackup = true;
-      const limitMs = parseRetryAfterMs(res.headers.get("retry-after")) ?? PRIMARY_LIMITED_DEFAULT_MS;
       primaryLimitedUntil = Date.now() + limitMs;
       const backupToken = await getBackupAccessToken();
       if (backupToken) {
         console.warn(`[spotify] HTTP ${res.status} no app principal — usando app de backup por ${Math.ceil(limitMs / 1000)}s`);
         init = { ...init, headers: { ...init.headers, Authorization: `Bearer ${backupToken}` } };
+        attempt -= 1;
+        continue;
+      }
+    }
+
+    if (
+      failoverEligible &&
+      !triedBackup2 &&
+      currentSpotifyPool() === "user-charts" &&
+      backup2SpotifyConfigured() &&
+      (onBackup || (onPrimary && triedBackup))
+    ) {
+      triedBackup2 = true;
+      if (onBackup) backupLimitedUntil = Date.now() + limitMs;
+      const backup2Token = await getBackup2AccessToken();
+      if (backup2Token) {
+        console.warn(
+          `[spotify] HTTP ${res.status} no backup — usando BACKUP2 (paradas de usuário) por ${Math.ceil(limitMs / 1000)}s`,
+        );
+        init = { ...init, headers: { ...init.headers, Authorization: `Bearer ${backup2Token}` } };
         attempt -= 1;
         continue;
       }
@@ -281,21 +341,47 @@ export async function getBackupAccessToken(): Promise<string | null> {
   return fetchClientCredentialsToken(clientId, clientSecret, backupTokenState);
 }
 
+/** Token do BACKUP2 — só usado no pool user-charts (paradas de usuário). */
+export async function getBackup2AccessToken(): Promise<string | null> {
+  const clientId = process.env.SPOTIFY_CLIENT_ID_BACKUP2;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET_BACKUP2;
+  if (!clientId || !clientSecret) return null;
+  return fetchClientCredentialsToken(clientId, clientSecret, backup2TokenState);
+}
+
 export async function getAccessToken(): Promise<string | null> {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
   if (!clientId || !clientSecret) return null;
 
+  const pool = currentSpotifyPool();
+  const now = Date.now();
+
   // App principal em 429 recente: entrega o token do backup enquanto durar o prazo.
-  if (Date.now() < primaryLimitedUntil && backupSpotifyConfigured()) {
-    const backupToken = await getBackupAccessToken();
-    if (backupToken) return backupToken;
+  if (now < primaryLimitedUntil) {
+    if (backupSpotifyConfigured() && now >= backupLimitedUntil) {
+      const backupToken = await getBackupAccessToken();
+      if (backupToken) return backupToken;
+    }
+    if (pool === "user-charts" && backup2SpotifyConfigured()) {
+      const backup2Token = await getBackup2AccessToken();
+      if (backup2Token) return backup2Token;
+    }
   }
 
   const primaryToken = await fetchClientCredentialsToken(clientId, clientSecret, tokenState);
   if (primaryToken) return primaryToken;
 
   // Token do principal falhou (credencial inválida/rede) → tenta o backup na hora.
+  if (backupSpotifyConfigured() && now >= backupLimitedUntil) {
+    const backupToken = await getBackupAccessToken();
+    if (backupToken) return backupToken;
+  }
+
+  if (pool === "user-charts" && backup2SpotifyConfigured()) {
+    return getBackup2AccessToken();
+  }
+
   return getBackupAccessToken();
 }
 
@@ -358,6 +444,44 @@ export async function probeSpotifyBackupApi(): Promise<SpotifyProbeResult> {
     };
   }
   return { ok: true };
+}
+
+/** Testa o BACKUP2 (paradas de usuário), sem failover para os outros apps. */
+export async function probeSpotifyBackup2Api(): Promise<SpotifyProbeResult> {
+  if (!backup2SpotifyConfigured()) {
+    return {
+      ok: false,
+      error: "SPOTIFY_CLIENT_ID_BACKUP2 ou SPOTIFY_CLIENT_SECRET_BACKUP2 ausentes no ambiente",
+    };
+  }
+  const token = await getBackup2AccessToken();
+  if (!token) {
+    return {
+      ok: false,
+      error: "Não foi possível obter access token do BACKUP2 (credenciais inválidas ou rede)",
+    };
+  }
+  const res = await spotifyFetch(
+    `${API_BASE}/tracks/11dFghVXANMlKmJXsNCbNl?market=BR`,
+    { headers: { Authorization: `Bearer ${token}` } },
+    1,
+  );
+  if (!res?.ok) {
+    const status = res?.status;
+    const retryAfterMs = status === 429 ? parseRetryAfterMs(res?.headers.get("retry-after") ?? null) : null;
+    return {
+      ok: false,
+      status,
+      retryAfterMs,
+      error: `API Spotify (BACKUP2) respondeu HTTP ${status ?? "sem resposta"}`,
+    };
+  }
+  return { ok: true };
+}
+
+/** Probe no pool de paradas de usuário (principal → backup → BACKUP2). */
+export async function probeSpotifyApiForUserCharts(): Promise<SpotifyProbeResult> {
+  return runWithSpotifyUserChartsPool(() => probeSpotifyApi());
 }
 
 /** Aguarda rate limit (429) antes de scripts em lote. */

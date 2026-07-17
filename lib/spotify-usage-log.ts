@@ -9,7 +9,7 @@
 export type SpotifyCallRecord = {
   ts: number;
   endpoint: string; // normalizado: /search, /tracks/{id}, token, browser-token, ...
-  app: "primary" | "backup" | "token" | "browser";
+  app: "primary" | "backup" | "backup2" | "token" | "browser";
   status: number | null; // null = falha de rede/timeout
   retryAfterS: number | null;
   caller: string; // função/arquivo de origem (melhor esforço via stack)

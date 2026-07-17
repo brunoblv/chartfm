@@ -50,7 +50,13 @@ function formatWaitTime(ms: number | null | undefined): string {
   return `${minutes}min`;
 }
 
-function SpotifyProbeButton({ target, label }: { target: "primary" | "backup"; label: string }) {
+function SpotifyProbeButton({
+  target,
+  label,
+}: {
+  target: "primary" | "backup" | "backup2";
+  label: string;
+}) {
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<SpotifyProbeResult | null>(null);
 
@@ -342,9 +348,14 @@ export function LogsAdminClient({
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <AdminPanel maxWidth={1200}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Status do Spotify</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
+          Principal e reserva (BACKUP) servem o app inteiro. BACKUP2 só entra na criação/import de paradas de
+          usuário, quando as duas primeiras estão fora.
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <SpotifyProbeButton target="primary" label="API principal" />
-          <SpotifyProbeButton target="backup" label="API reserva" />
+          <SpotifyProbeButton target="backup" label="API reserva (BACKUP)" />
+          <SpotifyProbeButton target="backup2" label="API reserva 2 (paradas)" />
         </div>
       </AdminPanel>
 

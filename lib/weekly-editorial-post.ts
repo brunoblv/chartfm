@@ -33,11 +33,18 @@ function buildWeeklyEditorialParagraphs(
  * dados reais da semana já congelada — sem IA, 100% derivado de aggregateGlobalSongs.
  * Idempotente: usa slug único por weekIndex, então rodar de novo não duplica.
  */
-export async function publishWeeklyEditorialPost(now: Date = new Date()): Promise<
-  { created: boolean; slug: string } | null
-> {
-  const { weekIndex, weekLabel, payload } = await getOrCreateRankingWeekSnapshot(now);
-  const entries = payload.weeklySongs as unknown as GlobalChartEntry[];
+export async function publishWeeklyEditorialPostForWeek(
+  weekIndex: number,
+  publishedAt: Date = new Date(),
+): Promise<{ created: boolean; slug: string } | null> {
+  const row = await prisma.globalSnapshot.findUnique({
+    where: { weekIndex },
+    select: { weekLabel: true, weeklySongs: true },
+  });
+  if (!row) return null;
+
+  const weekLabel = row.weekLabel;
+  const entries = row.weeklySongs as unknown as GlobalChartEntry[];
   if (!entries.length) return null;
 
   const slug = `panorama-global-100-semana-${weekIndex}`;
@@ -60,7 +67,7 @@ export async function publishWeeklyEditorialPost(now: Date = new Date()): Promis
       slug,
       title,
       category: "editorial",
-      publishedAt: now,
+      publishedAt,
       author: "Equipe ChartFM",
       excerpt,
       paragraphs,
@@ -90,4 +97,11 @@ export async function publishWeeklyEditorialPost(now: Date = new Date()): Promis
 
   await revalidateEditorialPaths(slug);
   return { created: true, slug };
+}
+
+export async function publishWeeklyEditorialPost(now: Date = new Date()): Promise<
+  { created: boolean; slug: string } | null
+> {
+  const { weekIndex } = await getOrCreateRankingWeekSnapshot(now);
+  return publishWeeklyEditorialPostForWeek(weekIndex, now);
 }

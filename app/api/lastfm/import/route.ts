@@ -8,7 +8,7 @@ import {
   resolveWeightedLastfmUsername,
 } from "@/lib/lastfm-import";
 import { getWeightedLastfmImportConfig } from "@/lib/mytrl-access";
-import { probeSpotifyApi, searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
+import { probeSpotifyApi, runWithSpotifyUserChartsPool, searchSpotifyTracks, spotifyConfigured } from "@/lib/spotify-server";
 import { getLastfmImportPlaylistTracks } from "@/lib/spotify-user";
 import { prisma } from "@/lib/prisma";
 
@@ -284,17 +284,25 @@ export async function POST(req: NextRequest) {
         );
 
     const BATCH = 20;
-    const spotifyOk = (await probeSpotifyApi()).ok;
-    const enriched: EnrichedSong[] = [];
-    for (let i = 0; i < topTracks.length; i += BATCH) {
-      const slice = topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album }));
-      const batch = await enrichBatch(slice, spotifyOk);
-      enriched.push(...batch);
-    }
+    const { songs, total, periodLabel, filteredNewHits } = await runWithSpotifyUserChartsPool(async () => {
+      const spotifyOk = (await probeSpotifyApi()).ok;
+      const enriched: EnrichedSong[] = [];
+      for (let i = 0; i < topTracks.length; i += BATCH) {
+        const slice = topTracks.slice(i, i + BATCH).map((t) => ({ track: t.track, artist: t.artist, album: t.album }));
+        const batch = await enrichBatch(slice, spotifyOk);
+        enriched.push(...batch);
+      }
 
-    const songs = (await preferExistingSongs(enriched)).slice(0, limit);
+      const resolved = (await preferExistingSongs(enriched)).slice(0, limit);
+      return {
+        songs: resolved,
+        total: topTracks.length,
+        periodLabel,
+        filteredNewHits: false as const,
+      };
+    });
     return NextResponse.json(
-      { songs, total: topTracks.length, periodLabel, filteredNewHits: false },
+      { songs, total, periodLabel, filteredNewHits },
       { headers: NO_CACHE_HEADERS },
     );
   } catch (err) {

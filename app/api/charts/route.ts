@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@/lib/chart-cadence";
-import { getSpotifyArtistById, getSpotifyTrackMetadataById, probeSpotifyApi, searchSpotifyArtist } from "@/lib/spotify-server";
+import { getSpotifyArtistById, getSpotifyTrackMetadataById, probeSpotifyApi, runWithSpotifyUserChartsPool, searchSpotifyArtist } from "@/lib/spotify-server";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
 import {
@@ -120,12 +120,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Upsert songs/artists/albums — publicação rápida evita timeout do Spotify
-  let songs: ResolvedSongRow[];
+  let songs: ResolvedSongRow[] = [];
   let enrichmentStats: { withCover: number; withoutCover: number; missingCoverIndices: number[] } | null = null;
 
   // Caminho lento faz dezenas de chamadas Spotify; sob rate limit (429), degrada para o
   // caminho rápido (só banco local) — a parada salva com o que se sabe e o cron de
   // backfill completa capas/metadados depois.
+  // Pool user-charts: principal → backup → BACKUP2 (só aqui; BACKUP2 não serve o resto do app).
+  await runWithSpotifyUserChartsPool(async () => {
   const useFastPath = fastPublish || !(await probeSpotifyApi()).ok;
 
   if (useFastPath) {
@@ -346,6 +348,7 @@ export async function POST(req: NextRequest) {
       songs.push({ id: song.id, spotifyId: song.spotifyId ?? null, albumSpotifyId: song.albumSpotifyId ?? null });
     }
   }
+  });
 
   const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);
 

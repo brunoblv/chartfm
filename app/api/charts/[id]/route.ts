@@ -19,6 +19,7 @@ import {
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import { lookupNumberOnes } from "@/lib/song-stats-key";
 import { buildChartContext } from "@/lib/entity-context-text";
+import { runWithSpotifyUserChartsPool } from "@/lib/spotify-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -499,8 +500,10 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     songId: e.songId?.trim() || null,
   }));
 
-  const resolved = await resolveSongsForFastPublish(prisma, normalizedEntries);
-  const songs = await finalizeSongsForChartPublish(prisma, normalizedEntries, resolved);
+  const songs = await runWithSpotifyUserChartsPool(async () => {
+    const resolvedInner = await resolveSongsForFastPublish(prisma, normalizedEntries);
+    return finalizeSongsForChartPublish(prisma, normalizedEntries, resolvedInner);
+  });
   if (songs.length !== entries.length || songs.some((s) => !s?.id)) {
     return NextResponse.json({ error: "Não foi possível resolver todas as músicas." }, { status: 400 });
   }

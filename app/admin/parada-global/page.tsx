@@ -4,6 +4,7 @@ import { getEventSchedules } from "@/lib/social/event-schedule";
 import { getRankingWeekReference, getGlobalSnapshotDeadline } from "@/lib/chart-week";
 import { prisma } from "@/lib/prisma";
 import { SocialEventType } from "@prisma/client";
+import { getGlobalWeekStatus, listAdminGlobalWeekOptions } from "@/lib/admin-global-ops";
 import ParadaGlobalClient from "./ParadaGlobalClient";
 
 export const dynamic = "force-dynamic";
@@ -26,19 +27,26 @@ export default async function AdminParadaGlobalPage() {
   const deadline = getGlobalSnapshotDeadline(rankingWeek.weekIndex, slot);
   const publishAt = new Date(deadline.getTime() + 60 * 60 * 1000);
 
-  const existingSnapshot = await prisma.globalSnapshot.findUnique({
-    where: { weekIndex: rankingWeek.weekIndex },
-    select: { weekIndex: true },
-  });
+  const [existingSnapshot, weeks, status] = await Promise.all([
+    prisma.globalSnapshot.findUnique({
+      where: { weekIndex: rankingWeek.weekIndex },
+      select: { weekIndex: true },
+    }),
+    listAdminGlobalWeekOptions(24),
+    getGlobalWeekStatus(rankingWeek.weekIndex),
+  ]);
 
   return (
-    <Shell title="Parada Global" subtitle="Horário de publicação e data limite para envio das paradas">
+    <Shell title="Parada Global" subtitle="Horário, publicação manual e recuperação de falhas">
       <ParadaGlobalClient
         initialSlot={slot}
         weekLabel={rankingWeek.weekLabel}
         deadlineIso={deadline.toISOString()}
         publishAtIso={publishAt.toISOString()}
         alreadyPublished={Boolean(existingSnapshot)}
+        initialWeekIndex={rankingWeek.weekIndex}
+        initialWeeks={weeks}
+        initialStatus={status}
       />
     </Shell>
   );
