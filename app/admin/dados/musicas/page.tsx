@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function DadosMusicasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; semSpotify?: string }>;
 }) {
   const access = await getAdminAccess();
   if (!access) return <AccessDenied />;
@@ -46,7 +46,11 @@ export default async function DadosMusicasPage({
           + Adicionar música
         </Link>
       </div>
-      <DataSearchClient kind="music" initialQuery={(params.q ?? "").trim()} />
+      <DataSearchClient
+        kind="music"
+        initialQuery={(params.q ?? "").trim()}
+        initialNoSpotify={params.semSpotify === "1"}
+      />
     </DadosShell>
   );
 }

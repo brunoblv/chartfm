@@ -112,25 +112,40 @@ function placeholderFor(kind: Kind): string {
   return "Buscar artista por nome ou romanização";
 }
 
-export function DataSearchClient({ kind, initialQuery }: { kind: Kind; initialQuery: string }) {
+export function DataSearchClient({
+  kind,
+  initialQuery,
+  initialNoSpotify = false,
+}: {
+  kind: Kind;
+  initialQuery: string;
+  initialNoSpotify?: boolean;
+}) {
   const [query, setQuery] = useState(initialQuery);
+  const [noSpotify, setNoSpotify] = useState(kind === "music" && initialNoSpotify);
   const [items, setItems] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const filterActive = kind === "music" && noSpotify;
 
   useEffect(() => {
     const q = query.trim();
 
-    // mantém o ?q na URL para refresh/compartilhamento
+    // mantém o ?q / ?semSpotify na URL para refresh/compartilhamento
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       if (q) url.searchParams.set("q", q);
       else url.searchParams.delete("q");
+      if (filterActive) url.searchParams.set("semSpotify", "1");
+      else url.searchParams.delete("semSpotify");
       window.history.replaceState(null, "", url.toString());
     }
 
-    if (!isAdminMusicTypeaheadQueryReady(q)) {
+    // com o filtro "sem Spotify ID" ligado, busca mesmo sem texto digitado
+    if (!isAdminMusicTypeaheadQueryReady(q) && !filterActive) {
       setItems([]);
       setHasSearched(false);
       setLoading(false);
@@ -143,7 +158,7 @@ export function DataSearchClient({ kind, initialQuery }: { kind: Kind; initialQu
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/admin/edicao-de-dados/search?kind=${kind}&q=${encodeURIComponent(q)}`,
+          `/api/admin/edicao-de-dados/search?kind=${kind}&q=${encodeURIComponent(q)}${filterActive ? "&noSpotify=1" : ""}`,
           { signal: ctrl.signal, cache: "no-store" },
         );
         if (!res.ok) {
@@ -164,9 +179,9 @@ export function DataSearchClient({ kind, initialQuery }: { kind: Kind; initialQu
       ctrl.abort();
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, kind]);
+  }, [query, kind, filterActive, refreshKey]);
 
-  const ready = isAdminMusicTypeaheadQueryReady(query.trim());
+  const ready = isAdminMusicTypeaheadQueryReady(query.trim()) || filterActive;
 
   return (
     <>
@@ -179,6 +194,24 @@ export function DataSearchClient({ kind, initialQuery }: { kind: Kind; initialQu
           style={searchInputStyle}
         />
         {loading && <span style={{ ...mutedSmall, marginLeft: 10 }}>Buscando…</span>}
+        {kind === "music" && (
+          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text)", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={noSpotify}
+                onChange={(e) => setNoSpotify(e.target.checked)}
+              />
+              Somente sem Spotify ID
+            </label>
+            {filterActive && (
+              <BatchSpotifySearch
+                rows={(items as SongRow[]).filter((s) => !s.spotifyId)}
+                onDone={() => setRefreshKey((k) => k + 1)}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <AdminPanel maxWidth={kind === "music" ? 1180 : 1040}>
@@ -196,6 +229,87 @@ export function DataSearchClient({ kind, initialQuery }: { kind: Kind; initialQu
         )}
       </AdminPanel>
     </>
+  );
+}
+
+/**
+ * Busca no Spotify, uma a uma, todas as músicas listadas sem Spotify ID.
+ * Usa o mesmo endpoint do botão SPT por linha (preenche só campos vazios);
+ * músicas já marcadas como "sem resultado" no Spotify são puladas pelo
+ * servidor sem bater na API. Chamadas sequenciais com pausa para respeitar
+ * o rate limit do Spotify.
+ */
+function BatchSpotifySearch({ rows, onDone }: { rows: SongRow[]; onDone: () => void }) {
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+
+  async function run() {
+    if (running || rows.length === 0) return;
+    setRunning(true);
+    setSummary(null);
+    let applied = 0;
+    let skipped = 0;
+    let notFound = 0;
+    let errors = 0;
+    for (let i = 0; i < rows.length; i++) {
+      setProgress({ done: i, total: rows.length });
+      try {
+        const res = await fetch("/api/admin/edicao-de-dados/fetch-source", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "music", id: rows[i].id, source: "spotify", force: false }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          applied?: string[];
+          found?: string[];
+          skipped?: boolean;
+        };
+        if (!res.ok || !data.ok) errors++;
+        else if (data.skipped) skipped++;
+        else if ((data.applied?.length ?? 0) > 0) applied++;
+        else notFound++;
+      } catch {
+        errors++;
+      }
+      if (i < rows.length - 1) await new Promise((r) => setTimeout(r, 400));
+    }
+    setProgress(null);
+    setRunning(false);
+    const parts = [`${applied} preenchida${applied === 1 ? "" : "s"}`];
+    if (notFound > 0) parts.push(`${notFound} sem resultado`);
+    if (skipped > 0) parts.push(`${skipped} pulada${skipped === 1 ? "" : "s"} (já sem resultado — use FORÇAR na linha)`);
+    if (errors > 0) parts.push(`${errors} com erro`);
+    setSummary(parts.join(" · "));
+    onDone();
+  }
+
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+      <button
+        type="button"
+        onClick={run}
+        disabled={running || rows.length === 0}
+        title="Consulta o Spotify para cada música listada sem ID e preenche o que encontrar"
+        style={{
+          padding: "5px 12px",
+          borderRadius: 999,
+          border: "1px solid rgba(250,36,60,0.35)",
+          background: running ? "var(--fill-inset)" : "rgba(250,36,60,0.08)",
+          color: "#C41E3A",
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: running || rows.length === 0 ? "default" : "pointer",
+          opacity: rows.length === 0 ? 0.5 : 1,
+        }}
+      >
+        {running && progress
+          ? `Buscando no Spotify… ${progress.done + 1}/${progress.total}`
+          : `Buscar no Spotify (${rows.length} listada${rows.length === 1 ? "" : "s"})`}
+      </button>
+      {summary && <span style={mutedSmall}>{summary}</span>}
+    </span>
   );
 }
 

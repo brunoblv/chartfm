@@ -20,15 +20,23 @@ export async function GET(req: NextRequest) {
 
   const kind = req.nextUrl.searchParams.get("kind");
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
-  if (!q) return NextResponse.json({ items: [] });
+  const noSpotify = req.nextUrl.searchParams.get("noSpotify") === "1";
+  if (!q && !(kind === "music" && noSpotify)) return NextResponse.json({ items: [] });
 
   if (kind === "music") {
     const rows = await prisma.song.findMany({
       where: {
-        OR: [
-          { title: { contains: q, mode: "insensitive" } },
-          { artist: { contains: q, mode: "insensitive" } },
-          { album: { contains: q, mode: "insensitive" } },
+        AND: [
+          q
+            ? {
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  { artist: { contains: q, mode: "insensitive" } },
+                  { album: { contains: q, mode: "insensitive" } },
+                ],
+              }
+            : {},
+          noSpotify ? { OR: [{ spotifyId: null }, { spotifyId: "" }] } : {},
         ],
       },
       select: {

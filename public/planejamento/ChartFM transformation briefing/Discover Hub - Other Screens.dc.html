@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+<script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+<style>
+  body{margin:0}
+  a{color:var(--accent)}
+  a:hover{color:var(--accent-hover)}
+  ::placeholder{color:var(--text-muted)}
+</style>
+</helmet>
+<div data-theme="dark" style="min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',system-ui,sans-serif">
+
+  <div style="position:sticky;top:0;z-index:10;display:flex;gap:8px;padding:16px 24px;border-bottom:1px solid var(--divider);background:var(--bg-topbar);backdrop-filter:blur(12px);overflow-x:auto">
+    <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="5">
+      <button onClick="{{ tab.select }}" style="flex:none;padding:9px 16px;border-radius:100px;border:1px solid {{ tab.borderColor }};background:{{ tab.bg }};color:{{ tab.color }};font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">{{ tab.label }}</button>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Discover Mobile" style="display:flex;justify-content:center;padding:32px 16px 80px">
+      <div style="width:390px;background:var(--sidebar-bg);border-radius:36px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+        <div style="background:var(--bg);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;min-height:720px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--divider)">
+            <x-import component-from-global-scope="ChartFM.ChartFMLogo" hint-size="24px,24px" size="24"></x-import>
+            <div style="display:flex;gap:10px;align-items:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text)"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text)"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </div>
+          </div>
+
+          <div style="padding:14px 0 4px">
+            <div style="padding:0 16px 10px;font-size:20px;font-weight:800">Discover</div>
+            <div style="display:flex;gap:10px;overflow-x:auto;padding:0 16px 14px">
+              <div style="flex:none;width:150px;background:var(--gradient-hero);border-radius:14px;padding:12px;color:#fff">
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;opacity:0.9"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>Música da Semana</div>
+                <div style="font-size:13px;font-weight:800;margin-top:16px">Espresso</div>
+                <div style="font-size:11px;opacity:0.85">Sabrina Carpenter</div>
+              </div>
+              <div style="flex:none;width:150px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:12px">
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text-subtle)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Em Alta</div>
+                <div style="font-size:13px;font-weight:700;margin-top:16px">Chappell Roan</div>
+                <div style="font-size:11px;color:var(--text-muted)">241 menções</div>
+              </div>
+              <div style="flex:none;width:150px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:12px">
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text-subtle)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path></svg>Playlist</div>
+                <div style="font-size:13px;font-weight:700;margin-top:16px">42 contribuições</div>
+                <div style="font-size:11px;color:var(--accent);font-weight:700">+ adicionar</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:0 16px 10px;display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--gradient-hero);flex:none"></div>
+            <div style="flex:1;padding:8px 14px;border-radius:100px;background:var(--fill-subtle);color:var(--text-muted);font-size:13px">Compartilhe um momento…</div>
+          </div>
+
+          <div style="padding:0 16px 10px;display:flex;gap:6px">
+            <div style="padding:6px 14px;border-radius:100px;background:var(--surface);font-size:12px;font-weight:700">Seguindo</div>
+            <div style="padding:6px 14px;border-radius:100px;color:var(--text-subtle);font-size:12px;font-weight:700">Todos</div>
+          </div>
+
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px;padding:4px 16px 16px">
+            <sc-for list="{{ mobilePosts }}" as="mp" hint-placeholder-count="4">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:28px;height:28px;border-radius:50%;background:{{ mp.avatarBg }};flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">{{ mp.initials }}</div>
+                  <div style="flex:1;font-size:12.5px;font-weight:700">{{ mp.author }}</div>
+                  <div style="display:flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:100px;background:var(--accent-tint);color:var(--accent);font-weight:700"><span style="display:flex" dangerouslySetInnerHTML="{{ mp.chipIconHtml }}"></span><span>{{ mp.chipLabel }}</span></div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;background:var(--fill-inset);border-radius:10px;padding:8px">
+                  <x-import component-from-global-scope="ChartFM.Cover" hint-size="40px,40px" cover="{{ mp.cover }}" size="40" rounded="8"></x-import>
+                  <div style="min-width:0">
+                    <div style="font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mp.song }}</div>
+                    <div style="font-size:11px;color:var(--text-subtle)">{{ mp.artist }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:14px;font-size:12px;color:var(--text-subtle)"><span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>{{ mp.likes }}</span><span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>{{ mp.comments }}</span><span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>{{ mp.shares }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;justify-content:space-around;align-items:center;padding:12px 0;border-top:1px solid var(--divider)">
+            <span style="display:flex;color:var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg></span>
+            <span style="display:flex;color:var(--accent)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-3 6-3-3z"></path></svg></span>
+            <span style="display:flex;color:var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10"></path><path d="M12 20V4"></path><path d="M18 20v-7"></path></svg></span>
+            <span style="display:flex;color:var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M2 20c0-3.3 3-6 7-6s7 2.7 7 6"></path><circle cx="18" cy="9" r="2.5"></circle><path d="M16 14c2.8.3 5 2.3 5 5"></path></svg></span>
+            <span style="display:flex;color:var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"></path></svg></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isComposer }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Composer Expandido" style="display:flex;justify-content:center;padding:60px 24px">
+      <div style="width:520px;background:var(--surface);border:1px solid var(--divider);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:16px;font-weight:800">Novo Momento Musical</div>
+          <span style="color:var(--text-muted);cursor:pointer">✕</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{ composerTypes }}" as="ct" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:100px;border:1px solid {{ ct.borderColor }};background:{{ ct.bg }};color:{{ ct.color }};font-size:13px;font-weight:600"><span style="display:flex" dangerouslySetInnerHTML="{{ ct.iconHtml }}"></span><span>{{ ct.label }}</span></div>
+          </sc-for>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:600">DESCOBRI HOJE · 1 por dia</div>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--fill-subtle);border-radius:12px;padding:11px 14px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex:none"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span style="color:var(--text);font-size:13px">Cassandra</span>
+        </div>
+        <div style="border:1px solid var(--divider);border-radius:12px;overflow:hidden">
+          <sc-for list="{{ suggestions }}" as="sg" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--divider-soft)">
+              <x-import component-from-global-scope="ChartFM.Cover" hint-size="32px,32px" cover="{{ sg.cover }}" size="32" rounded="7"></x-import>
+              <div><div style="font-size:12.5px;font-weight:700">{{ sg.title }}</div><div style="font-size:11px;color:var(--text-muted)">{{ sg.artist }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;padding:10px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-tint)">
+          <x-import component-from-global-scope="ChartFM.Cover" hint-size="52px,52px" cover="{{ selectedEntity.cover }}" size="52" rounded="10"></x-import>
+          <div><div style="font-size:14px;font-weight:700">{{ selectedEntity.title }}</div><div style="font-size:12.5px;color:var(--text-subtle)">{{ selectedEntity.artist }}</div></div>
+        </div>
+        <textarea placeholder="Escreva algo curto sobre esse momento… (280 caracteres)" style="width:100%;min-height:70px;resize:none;border:1px solid var(--divider);border-radius:12px;padding:12px;background:var(--bg);color:var(--text);font-family:inherit;font-size:14px"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button style="padding:9px 18px;border-radius:100px;border:1px solid var(--divider);background:transparent;color:var(--text);font-weight:600;font-size:13px;cursor:pointer">Cancelar</button>
+          <button style="padding:9px 22px;border-radius:100px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(250,36,60,0.25)">Publicar</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Variacoes de Card" style="padding:40px 24px 80px;display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div style="font-size:20px;font-weight:800">Anatomia do Card — variações por tipo</div>
+      <div style="color:var(--text-subtle);font-size:13px;margin-bottom:16px">Mesmo componente, header e anexo mudam conforme o tipo</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:1200px">
+        <sc-for list="{{ variantCards }}" as="vc" hint-placeholder-count="4">
+          <div style="width:280px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:12px;font-weight:700;color:var(--text-subtle)">{{ vc.variantLabel }}</div>
+            <div style="background:{{ vc.cardBg }};border:1px solid var(--divider);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:flex-start;gap:8px">
+                <sc-if value="{{ vc.isConsolidated }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex">
+                    <div style="width:28px;height:28px;border-radius:50%;background:#FA243C;border:2px solid var(--surface);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">AN</div>
+                    <div style="width:28px;height:28px;border-radius:50%;background:#7B61FF;border:2px solid var(--surface);margin-left:-8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700">BR</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ vc.isNotConsolidated }}" hint-placeholder-val="{{ true }}">
+                  <div style="width:32px;height:32px;border-radius:50%;background:{{ vc.avatarBg }};flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">{{ vc.initials }}</div>
+                </sc-if>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700">{{ vc.headerName }}</div>
+                  <div style="font-size:11.5px;color:var(--text-muted)">{{ vc.time }}</div>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:100px;background:{{ vc.chipBg }};color:{{ vc.chipColor }};font-size:11px;font-weight:700"><span style="display:flex" dangerouslySetInnerHTML="{{ vc.chipIconHtml }}"></span><span>{{ vc.chipLabel }}</span></div>
+              </div>
+              <sc-if value="{{ vc.hasBody }}" hint-placeholder-val="{{ false }}">
+                <p style="margin:0;font-size:13px;line-height:1.4">{{ vc.body }}</p>
+              </sc-if>
+              <div style="display:flex;gap:10px;align-items:center;background:var(--fill-inset);border-radius:12px;padding:9px">
+                <x-import component-from-global-scope="ChartFM.Cover" hint-size="48px,48px" cover="{{ vc.cover }}" size="48" rounded="8"></x-import>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ vc.song }}</div>
+                  <div style="font-size:11.5px;color:var(--text-subtle)">{{ vc.artist }}</div>
+                </div>
+                <sc-if value="{{ vc.showScore }}" hint-placeholder-val="{{ false }}">
+                  <div style="width:32px;height:32px;border-radius:8px;background:var(--up-bg);color:var(--up-fg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:none">{{ vc.score }}</div>
+                </sc-if>
+                <sc-if value="{{ vc.showMovement }}" hint-placeholder-val="{{ false }}">
+                  <x-import component-from-global-scope="ChartFM.MovementBadge" hint-size="auto,24px" status="up" delta="5"></x-import>
+                </sc-if>
+              </div>
+              <div style="display:flex;gap:14px;font-size:12px;color:var(--text-subtle)"><span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>{{ vc.likes }}</span><span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>{{ vc.comments }}</span><span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>{{ vc.shares }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Estado Vazio" style="display:flex;justify-content:center;padding:32px 32px 80px">
+      <div style="width:100%;max-width:1000px;display:flex;gap:28px;align-items:flex-start">
+        <div style="width:640px;flex:none;display:flex;flex-direction:column;gap:20px">
+          <div>
+            <h1 style="margin:0 0 4px;font-size:26px;font-weight:800">Discover</h1>
+            <p style="margin:0;color:var(--text-subtle);font-size:14px;font-style:italic">O que está acontecendo na comunidade ChartFM agora?</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;background:var(--fill-subtle);border-radius:100px;padding:4px;width:fit-content">
+            <div style="padding:8px 18px;border-radius:100px;background:var(--surface);font-size:13px;font-weight:700">Seguindo</div>
+            <div style="padding:8px 18px;border-radius:100px;color:var(--text-subtle);font-size:13px;font-weight:700">Todos</div>
+          </div>
+          <div style="background:var(--surface);border:1px dashed var(--divider-strong);border-radius:18px;padding:40px 28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
+            <div style="display:flex;color:var(--text-muted)"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-3a8 8 0 0 1 16 0v3"></path><rect x="3" y="14" width="4" height="6" rx="2"></rect><rect x="17" y="14" width="4" height="6" rx="2"></rect></svg></div>
+            <div style="font-size:16px;font-weight:800">Você ainda não segue ninguém</div>
+            <div style="color:var(--text-subtle);font-size:13.5px;max-width:360px">Siga pessoas para ver os momentos musicais delas aqui. Enquanto isso, aqui vão sugestões e o que está rolando na comunidade:</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+              <sc-for list="{{ emptySuggestions }}" as="es" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:8px;background:var(--fill-subtle);border-radius:14px;padding:14px;width:120px">
+                  <div style="width:44px;height:44px;border-radius:50%;background:{{ es.avatarBg }};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">{{ es.initials }}</div>
+                  <div style="font-size:12px;font-weight:700;text-align:center">{{ es.name }}</div>
+                  <button style="padding:5px 14px;border-radius:100px;border:none;background:var(--accent);color:#fff;font-size:11.5px;font-weight:700;cursor:pointer">Seguir</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-subtle);margin-top:4px">Ou veja o que a comunidade toda está publicando:</div>
+          <div style="background:var(--fill-inset);border:1px solid var(--divider-soft);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:32px;height:32px;border-radius:50%;background:#0A84FF;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">RL</div>
+              <div style="font-size:13px;font-weight:700">Rafael Lima</div>
+              <div style="margin-left:auto;display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:100px;background:var(--accent-tint);color:var(--accent);font-size:11px;font-weight:700"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.8 6.3.8-4.6 4.3 1.2 6.1L12 17l-5.6 3 1.2-6.1L3 9.6l6.3-.8z"></path></svg><span>Review</span></div>
+            </div>
+            <div style="font-size:13px;color:var(--text-subtle)">Produção impecável, letras cruas — Hit Me Hard and Soft, Billie Eilish</div>
+          </div>
+        </div>
+        <div style="width:320px;flex:none;background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px">
+          <div style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800;margin-bottom:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Em Alta na comunidade</div>
+          <div style="color:var(--text-subtle);font-size:13px">Enquanto você não segue ninguém, veja as tendências gerais aqui — nunca ficamos de tela vazia.</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLoggedOut }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Versao Deslogada" style="display:flex;justify-content:center;padding:32px 32px 80px">
+      <div style="width:100%;max-width:1000px;display:flex;gap:28px;align-items:flex-start">
+        <div style="width:640px;flex:none;display:flex;flex-direction:column;gap:20px">
+          <div>
+            <h1 style="margin:0 0 4px;font-size:26px;font-weight:800">Discover</h1>
+            <p style="margin:0;color:var(--text-subtle);font-size:14px;font-style:italic">O que está acontecendo na comunidade ChartFM agora?</p>
+          </div>
+          <div style="background:var(--gradient-hero);border-radius:18px;padding:20px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:var(--shadow-hero)">
+            <div>
+              <div style="font-size:16px;font-weight:800">Entre para curtir, comentar e postar seus momentos</div>
+              <div style="font-size:13px;opacity:0.85;margin-top:2px">Junte-se à comunidade ChartFM — é grátis</div>
+            </div>
+            <button style="flex:none;padding:11px 22px;border-radius:100px;border:none;background:#fff;color:var(--accent);font-weight:800;font-size:13.5px;cursor:pointer">Criar conta</button>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div style="padding:8px 18px;border-radius:100px;background:var(--surface);border:1px solid var(--divider);font-size:13px;font-weight:700">Todos os momentos</div>
+          </div>
+          <sc-for list="{{ loggedOutPosts }}" as="lp" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px;position:relative;opacity:0.92">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:38px;height:38px;border-radius:50%;background:{{ lp.avatarBg }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700">{{ lp.initials }}</div>
+                <div style="flex:1"><div style="font-weight:700;font-size:14px">{{ lp.author }}</div><div style="font-size:12px;color:var(--text-muted)">{{ lp.time }}</div></div>
+                <div style="display:flex;align-items:center;gap:4px;padding:5px 11px;border-radius:100px;background:var(--accent-tint);color:var(--accent);font-size:12px;font-weight:700"><span style="display:flex" dangerouslySetInnerHTML="{{ lp.chipIconHtml }}"></span><span>{{ lp.chipLabel }}</span></div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:center;background:var(--fill-inset);border-radius:14px;padding:10px">
+                <x-import component-from-global-scope="ChartFM.Cover" hint-size="56px,56px" cover="{{ lp.cover }}" size="56" rounded="9"></x-import>
+                <div><div style="font-size:14px;font-weight:700">{{ lp.song }}</div><div style="font-size:12.5px;color:var(--text-subtle)">{{ lp.artist }}</div></div>
+              </div>
+              <div style="display:flex;gap:16px;color:var(--text-disabled);font-size:13px;cursor:not-allowed">
+                <span style="display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>{{ lp.likes }}</span><span style="display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>{{ lp.comments }}</span><span style="display:flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>{{ lp.shares }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="width:320px;flex:none;display:flex;flex-direction:column;gap:16px">
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center">
+            <x-import component-from-global-scope="ChartFM.ChartFMLogo" hint-size="32px,32px" size="32"></x-import>
+            <div style="font-size:13.5px;font-weight:700">Descubra música através de pessoas de verdade</div>
+            <button style="width:100%;padding:10px;border-radius:100px;border:none;background:var(--accent);color:#fff;font-weight:800;font-size:13px;cursor:pointer">Criar conta grátis</button>
+            <button style="width:100%;padding:10px;border-radius:100px;border:1px solid var(--divider);background:transparent;color:var(--text);font-weight:700;font-size:13px;cursor:pointer">Já tenho conta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const ICON_PATHS = {
+  headphones: '<path d="M4 14v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/>',
+  search: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  disc: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/>',
+  megaphone: '<path d="M3 11l14-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  star: '<path d="M12 3l2.7 5.8 6.3.8-4.6 4.3 1.2 6.1L12 17l-5.6 3 1.2-6.1L3 9.6l6.3-.8z"/>',
+  trendingUp: '<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
+  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'
+};
+
+function icon(name, size = 14, fill = 'none') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name]}</svg>`;
+}
+
+const TYPE_META = {
+  loop: { icon: 'headphones', label: 'Em Loop' },
+  descobri: { icon: 'search', label: 'Descobri Hoje' },
+  recomendo: { icon: 'disc', label: 'Recomendo' },
+  lancamento: { icon: 'megaphone', label: 'Lançamento' },
+  review: { icon: 'star', label: 'Review' },
+  throwback: { icon: 'music', label: 'Throwback' }
+};
+const AVATAR_COLORS = ['#FA243C', '#7B61FF', '#00A870', '#0A84FF', '#FF9F0A', '#BF5AF2'];
+function colorFor(seed) { return AVATAR_COLORS[seed % AVATAR_COLORS.length]; }
+
+const SCREENS = [
+  { key: 'mobile', label: 'Mobile' },
+  { key: 'composer', label: 'Composer Expandido' },
+  { key: 'cards', label: 'Variações de Card' },
+  { key: 'empty', label: 'Estado Vazio' },
+  { key: 'loggedout', label: 'Deslogado' }
+];
+
+class Component extends DCLogic {
+  state = { screen: 'mobile' };
+  selectScreen = (k) => this.setState({ screen: k });
+
+  renderVals() {
+    const s = this.state;
+    const tabs = SCREENS.map(sc => ({
+      label: sc.label,
+      select: () => this.selectScreen(sc.key),
+      bg: s.screen === sc.key ? 'var(--accent)' : 'var(--surface)',
+      color: s.screen === sc.key ? '#fff' : 'var(--text-subtle)',
+      borderColor: s.screen === sc.key ? 'var(--accent)' : 'var(--divider)'
+    }));
+
+    const mobilePosts = [
+      { author: 'Marina Alves', seed: 1, chipIcon: 'headphones', chipLabel: 'Em Loop', song: 'Houdini', artist: 'Dua Lipa', likes: 24, comments: 3, shares: 1 },
+      { author: 'Bianca Souza', seed: 3, chipIcon: 'disc', chipLabel: 'Recomendo', song: 'COWBOY CARTER', artist: 'Beyoncé', likes: 58, comments: 11, shares: 6 },
+      { author: 'Rafael Lima', seed: 5, chipIcon: 'star', chipLabel: 'Review', song: 'Hit Me Hard and Soft', artist: 'Billie Eilish', likes: 33, comments: 5, shares: 2 },
+      { author: 'Camila Torres', seed: 8, chipIcon: 'music', chipLabel: 'Throwback', song: 'Thriller', artist: 'Michael Jackson', likes: 47, comments: 9, shares: 3 }
+    ].map(p => ({ ...p, chipIconHtml: { __html: icon(p.chipIcon, 11) }, initials: p.author.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase(), avatarBg: colorFor(p.seed), cover: { palette: [colorFor(p.seed), colorFor(p.seed + 1)], seed: p.seed } }));
+
+    const composerTypes = Object.keys(TYPE_META).map((k, i) => ({
+      iconHtml: { __html: icon(TYPE_META[k].icon) }, label: TYPE_META[k].label,
+      bg: k === 'descobri' ? 'var(--accent-tint)' : 'var(--fill-subtle)',
+      color: k === 'descobri' ? 'var(--accent)' : 'var(--text-subtle)',
+      borderColor: k === 'descobri' ? 'var(--accent)' : 'var(--divider)'
+    }));
+
+    const suggestions = [
+      { title: 'Cassandra', artist: 'FKA twigs', seed: 2 },
+      { title: 'Cassandra (Live)', artist: 'FKA twigs', seed: 9 },
+      { title: 'Home With You', artist: 'FKA twigs', seed: 10 }
+    ].map(x => ({ ...x, cover: { palette: [colorFor(x.seed), colorFor(x.seed + 1)], seed: x.seed } }));
+
+    const variantCards = [
+      { variantLabel: 'Manual — Em Loop', headerName: 'Marina Alves', time: 'há 12min', chipIcon: 'headphones', chipLabel: 'Em Loop', chipBg: 'var(--accent-tint)', chipColor: 'var(--accent)', cardBg: 'var(--surface)', hasBody: true, body: 'Não consigo parar de ouvir essa desde ontem.', song: 'Houdini', artist: 'Dua Lipa', seed: 1, likes: 24, comments: 3, shares: 1, isConsolidated: false, isNotConsolidated: true, showScore: false, showMovement: false },
+      { variantLabel: 'Review Rápida', headerName: 'Rafael Lima', time: 'há 3h', chipIcon: 'star', chipLabel: 'Review', chipBg: 'var(--accent-tint)', chipColor: 'var(--accent)', cardBg: 'var(--surface)', hasBody: true, body: 'Produção impecável, letras cruas.', song: 'Hit Me Hard and Soft', artist: 'Billie Eilish', seed: 5, likes: 33, comments: 5, shares: 2, isConsolidated: false, isNotConsolidated: true, showScore: true, score: 9, showMovement: false },
+      { variantLabel: 'Automático — Subiu na Parada', headerName: 'ChartFM', time: 'há 4h', chipIcon: 'trendingUp', chipLabel: 'Subiu', chipBg: 'var(--fill-subtle)', chipColor: 'var(--text-subtle)', cardBg: 'var(--fill-inset)', hasBody: false, song: 'Blinding Lights', artist: 'The Weeknd', seed: 6, likes: 8, comments: 0, shares: 0, isConsolidated: false, isNotConsolidated: true, showScore: false, showMovement: true },
+      { variantLabel: 'Lançamento Consolidado', headerName: 'Ana, Bruno e +5 compartilharam', time: 'há 2h', chipIcon: 'megaphone', chipLabel: 'Lançamento', chipBg: 'var(--accent-tint)', chipColor: 'var(--accent)', cardBg: 'var(--surface)', hasBody: false, song: 'Not Like Us', artist: 'Kendrick Lamar', seed: 4, likes: 91, comments: 20, shares: 14, isConsolidated: true, isNotConsolidated: false, showScore: false, showMovement: false }
+    ].map(c => ({ ...c, chipIconHtml: { __html: icon(c.chipIcon, 11) }, initials: c.headerName.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase(), avatarBg: colorFor(c.seed), cover: { palette: [colorFor(c.seed), colorFor(c.seed + 1)], seed: c.seed } }));
+
+    const emptySuggestions = [
+      { name: 'Diego Ramos', seed: 2 }, { name: 'Bianca Souza', seed: 3 }, { name: 'Rafael Lima', seed: 5 }, { name: 'Camila Torres', seed: 8 }
+    ].map(x => ({ ...x, initials: x.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase(), avatarBg: colorFor(x.seed) }));
+
+    const loggedOutPosts = [
+      { author: 'Marina Alves', seed: 1, chipIcon: 'headphones', chipLabel: 'Em Loop', song: 'Houdini', artist: 'Dua Lipa', likes: 24, comments: 3, shares: 1, time: 'há 12min' },
+      { author: 'Bianca Souza', seed: 3, chipIcon: 'disc', chipLabel: 'Recomendo', song: 'COWBOY CARTER', artist: 'Beyoncé', likes: 58, comments: 11, shares: 6, time: 'há 1h' }
+    ].map(p => ({ ...p, chipIconHtml: { __html: icon(p.chipIcon, 12) }, initials: p.author.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase(), avatarBg: colorFor(p.seed), cover: { palette: [colorFor(p.seed), colorFor(p.seed + 1)], seed: p.seed } }));
+
+    return {
+      tabs,
+      isMobile: s.screen === 'mobile',
+      isComposer: s.screen === 'composer',
+      isCards: s.screen === 'cards',
+      isEmpty: s.screen === 'empty',
+      isLoggedOut: s.screen === 'loggedout',
+      mobilePosts,
+      composerTypes,
+      suggestions,
+      selectedEntity: { title: 'Cassandra', artist: 'FKA twigs', cover: { palette: [colorFor(2), colorFor(3)], seed: 2 } },
+      variantCards,
+      emptySuggestions,
+      loggedOutPosts
+    };
+  }
+}
+</script>
+</body>
+</html>

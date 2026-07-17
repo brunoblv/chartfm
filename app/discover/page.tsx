@@ -4,17 +4,24 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
+import { HomeGrid } from "@/components/layout/HomeGrid";
 import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
-import { HotTabs } from "./HotTabs";
+import { buildArtistPath } from "@/lib/music-routes";
+import { Crown, Flame, Sparkles } from "lucide-react";
 import { getPreviousClosedWeekDate, getRankingWeekReference, buildWeekIndexFromDate } from "@/lib/chart-week";
 import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
-import { BookOpen } from "lucide-react";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
-import { formatWeekLabel } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/config";
 import { getLatestCuratorsSnapshot } from "@/lib/curators-snapshot";
-import { MysteryTrackCard } from "@/components/discover/MysteryTrackCard";
+import { MomentsFeed } from "@/components/discover/MomentsFeed";
+import { getAutoMoments, getMomentsFeed } from "@/lib/moments-feed";
+import { Cover } from "@/components/ui/Cover";
+import { ScoreSquare } from "@/components/ui/ScoreSquare";
+import { buildAlbumPath } from "@/lib/music-routes";
+import { getWeeklySpotlightWinners, WEEKLY_POLL_PATH } from "@/lib/weekly-spotlight-poll";
+import { Disc3, Globe2, Music2, Radio } from "lucide-react";
+import { GLOBAL_100_FIXED_SPOTIFY_PLAYLIST_ID } from "@/lib/mytrl-access";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -23,16 +30,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description: t("discover.metaDescription"),
     alternates: { canonical: "/discover" },
   };
-}
-
-function buildFaq(t: (key: string) => string) {
-  return [
-    { q: t("discover.faq1Q"), a: t("discover.faq1A") },
-    { q: t("discover.faq2Q"), a: t("discover.faq2A") },
-    { q: t("discover.faq3Q"), a: t("discover.faq3A") },
-    { q: t("discover.faq4Q"), a: t("discover.faq4A") },
-    { q: t("discover.faq5Q"), a: t("discover.faq5A") },
-  ];
 }
 
 export default async function DiscoverPage() {
@@ -49,16 +46,6 @@ type ArtistWeekRow = {
   spotifyId?: string | null;
   imageUrl?: string | null;
   listeners: number;
-  users: number;
-  status: "new" | "return" | "up" | "down" | "same";
-  delta: number | null;
-};
-
-type SongWeekRow = {
-  title: string;
-  artist: string;
-  spotifyId?: string | null;
-  artistSpotifyId?: string | null;
   users: number;
   status: "new" | "return" | "up" | "down" | "same";
   delta: number | null;
@@ -122,7 +109,6 @@ async function loadPageData(
   t: (key: string, params?: Record<string, string | number>) => string,
   locale: Locale,
 ) {
-  const weekLabelDisplay = formatWeekLabel(locale, weekLabel);
   const session = await getServerSession(authOptions);
   const [curatorsSnapshot, followRows, myGenres, weeklyEntries, previousEntries] = await Promise.all([
     getLatestCuratorsSnapshot(weekIndex),
@@ -177,10 +163,49 @@ async function loadPageData(
 
   const followingIds = new Set(followRows.map((r) => r.followingId));
 
-  const tasteMatches = await getTasteMatches(session?.user?.id ?? null, myGenres?.genres ?? [], followingIds, 3);
+  const [tasteMatches, momentsPage, autoMoments, openPoll, latestClosedPoll, topCommunities, latestReviews] =
+    await Promise.all([
+      getTasteMatches(session?.user?.id ?? null, myGenres?.genres ?? [], followingIds, 3),
+      getMomentsFeed({ viewerId: session?.user?.id ?? null, locale, scope: "all", limit: 10 }),
+      getAutoMoments(locale, 4),
+      prisma.weeklySpotlightPoll.findFirst({ where: { status: "open" }, select: { id: true } }),
+      prisma.weeklySpotlightPoll.findFirst({
+        where: { status: "closed" },
+        orderBy: { weekIndex: "desc" },
+        select: { weekIndex: true },
+      }),
+      prisma.community.findMany({
+        where: { privacy: "public" },
+        orderBy: { members: "desc" },
+        take: 5,
+        select: { slug: true, name: true, icon: true, members: true },
+      }),
+      prisma.albumReview.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: {
+          id: true,
+          rating: true,
+          user: { select: { name: true, avatarColor: true, image: true, handle: true } },
+          album: {
+            select: {
+              id: true,
+              title: true,
+              coverUrl: true,
+              artist: { select: { id: true, name: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+  const spotlightWinners = latestClosedPoll
+    ? await getWeeklySpotlightWinners(latestClosedPoll.weekIndex)
+    : [];
+  const spotlightWinner = spotlightWinners.find((w) => w.category === "destaque") ?? null;
+  const flashbackWinner = spotlightWinners.find((w) => w.category === "flashback") ?? null;
 
   const rankedCurators = (curatorsSnapshot?.entries ?? []).slice(0, 5);
-  const curatorsWeekLabelDisplay = formatWeekLabel(locale, curatorsSnapshot?.weekLabel ?? weekLabel);
 
   const aggregateArtists = (rows: typeof weeklyEntries) => {
     const map = new Map<string, { points: number; chartIds: Set<string>; userIds: Set<string>; spotifyId: string | null; imageUrl: string | null }>();
@@ -195,19 +220,6 @@ async function loadPageData(
       if (sid) cur.spotifyId = cur.spotifyId ?? sid;
       if (img) cur.imageUrl = cur.imageUrl ?? img;
       map.set(name, cur);
-    }
-    return map;
-  };
-
-  const aggregateSongsByUsers = (rows: typeof weeklyEntries) => {
-    const map = new Map<string, { title: string; artist: string; spotifyId: string | null; artistSpotifyId: string | null; users: Set<string> }>();
-    for (const row of rows) {
-      const title = row.song.title.trim();
-      const artist = normalizeArtistName(row.song.artistRef?.name || row.song.artist);
-      const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
-      const cur = map.get(key) ?? { title, artist, spotifyId: row.song.spotifyId ?? null, artistSpotifyId: row.song.artistRef?.spotifyId ?? row.song.artistSpotifyId ?? null, users: new Set<string>() };
-      cur.users.add(row.chart.userId);
-      map.set(key, cur);
     }
     return map;
   };
@@ -243,240 +255,379 @@ async function loadPageData(
     return { name: row.name, spotifyId: row.spotifyId, imageUrl: row.imageUrl, listeners: row.listeners, users: row.users, status, delta };
   });
 
-  const currentSongsMap = aggregateSongsByUsers(weeklyEntries);
-  const previousSongsMap = aggregateSongsByUsers(previousEntries);
-  const currentSongsSorted = [...currentSongsMap.entries()]
-    .map(([key, v]) => ({ key, title: v.title, artist: v.artist, spotifyId: v.spotifyId, artistSpotifyId: v.artistSpotifyId, users: v.users.size }))
-    .sort((a, b) => b.users - a.users || a.title.localeCompare(b.title, "pt-BR"))
-    .slice(0, 10);
-  const prevSongsPosByKey = new Map(
-    [...previousSongsMap.entries()]
-      .map(([key, v]) => ({ key, users: v.users.size, title: v.title }))
-      .sort((a, b) => b.users - a.users || a.title.localeCompare(b.title, "pt-BR"))
-      .map((row, idx) => [row.key, idx + 1]),
-  );
-  const trendingSongs: SongWeekRow[] = currentSongsSorted.map((row, idx) => {
-    const position = idx + 1;
-    const prevPos = prevSongsPosByKey.get(row.key) ?? null;
-    const delta = prevPos === null ? null : prevPos - position;
-    const status: SongWeekRow["status"] =
-      prevPos === null ? "new" : delta === 0 ? "same" : (delta ?? 0) > 0 ? "up" : "down";
-    return { title: row.title, artist: row.artist, spotifyId: row.spotifyId, artistSpotifyId: row.artistSpotifyId, users: row.users, status, delta };
-  });
-
-  const faq = buildFaq(t);
+  const sidebarCard: React.CSSProperties = {
+    background: "var(--surface)",
+    border: "1px solid var(--divider)",
+    borderRadius: 16,
+    padding: 16,
+  };
+  const sidebarTitle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 7,
+    fontSize: 14,
+    fontWeight: 800,
+    marginBottom: 12,
+  };
 
   return (
-    <Shell title={t("discover.title")} subtitle={t("discover.subtitle")}>
+    <Shell title={t("discover.title")} subtitle={t("moments.hubQuestion")}>
 
-      {/* ===== BLOCO EDITORIAL PRINCIPAL ===== */}
+      {/* ===== HUB SOCIAL: FEED + SIDEBAR ===== */}
       <section style={{ marginBottom: 52 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 16 }}>
-          {t("discover.editorialTitle")}
-        </h2>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          {t("discover.editorialP1")}
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          {t("discover.editorialP2")}
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: "0 0 14px 0" }}>
-          {t("discover.editorialP3")}
-        </p>
-
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>
-          {t("discover.editorialP4")}
-        </p>
-      </section>
-
-      {/* ===== PESSOAS COM O SEU GOSTO ===== */}
-      {tasteMatches.length > 0 && (
-        <section style={{ marginBottom: 52 }}>
-          <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.02em", margin: "0 0 6px 0" }}>
-            Pessoas com o seu gosto
-          </h2>
-          <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: "0 0 18px 0", lineHeight: 1.6 }}>
-            Calculado a partir dos gêneros que mais aparecem nas suas paradas.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-            {tasteMatches.map((match) => (
-              <div
-                key={match.id}
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--divider)",
-                  borderRadius: 18,
-                  padding: 20,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                  <Avatar user={{ name: match.name, avatar: match.avatarColor }} imageUrl={match.image} size={44} />
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <Link
-                      href={`/profile/${match.handle}`}
-                      style={{
-                        display: "block",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: "var(--text)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        textDecoration: "none",
-                      }}
-                    >
-                      {match.name}
-                    </Link>
-                    <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>@{match.handle}</div>
-                  </div>
-                  <div
-                    style={{
-                      flexShrink: 0,
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: match.overlapPct >= 70 ? "#1B873F" : "#E09F00",
-                    }}
-                  >
-                    {match.overlapPct}%
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-                  {match.commonGenres.slice(0, 3).map((g) => (
-                    <span
-                      key={g}
-                      style={{
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        padding: "4px 10px",
-                        borderRadius: 100,
-                        background: "var(--fill-subtle)",
-                        color: "var(--text-subtle)",
-                      }}
-                    >
-                      {g}
+        <HomeGrid
+          feed={
+            <MomentsFeed
+              initialItems={momentsPage.items}
+              initialNextCursor={momentsPage.nextCursor}
+              autoItems={autoMoments}
+              isLoggedIn={!!session?.user?.id}
+            />
+          }
+          sidebar={
+            <>
+              {/* 🔥 Em Alta */}
+              {trendingArtists.length > 0 && (
+                <div style={sidebarCard}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <span style={{ ...sidebarTitle, marginBottom: 0 }}>
+                      <Flame size={15} color="var(--accent)" />
+                      {t("moments.sidebarTrending")}
                     </span>
-                  ))}
+                    <Link href="/global" style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
+                      {t("moments.viewAll")}
+                    </Link>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {trendingArtists.slice(0, 5).map((a) => (
+                      <Link
+                        key={a.name}
+                        href={buildArtistPath(a.name, a.spotifyId)}
+                        style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}
+                      >
+                        {a.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={a.imageUrl}
+                            alt={a.name}
+                            width={36}
+                            height={36}
+                            style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
+                          />
+                        ) : (
+                          <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--fill-subtle)", flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {a.name}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+                            {t("moments.sidebarTrendingCount", { count: a.users })}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-                <FollowButton targetId={match.id} variant="dark" size="sm" label="Seguir" />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              )}
 
-      {/* ===== DESCUBRA MÚSICA NOVA ===== */}
-      <section style={{ marginBottom: 52 }}>
-        <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.02em", margin: "0 0 6px 0" }}>
-          Descubra música nova
-        </h2>
-        <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: "0 0 18px 0", lineHeight: 1.6 }}>
-          Uma faixa por vez, tirada de paradas reais da comunidade — sem saber quem indicou até você reagir.
-        </p>
-        <MysteryTrackCard />
-        <div style={{ textAlign: "center", marginTop: 14 }}>
-          <span style={{ fontSize: 12.5, color: "var(--text-muted)" }}>
-            Ao curtir, você vê o nome da música, quem colocou na parada dela/dele — e pode seguir na hora.
-          </span>
-        </div>
-      </section>
-
-      {/* ===== CURADORES EM DESTAQUE ===== */}
-      <section style={{ marginBottom: 52 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>{t("discover.featuredCuratorsTitle")}</h2>
-          <Link href="/discover/curators" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-            {t("discover.viewTop20")}
-          </Link>
-        </div>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          {t("discover.featuredCuratorsIntro", { weekLabel: curatorsWeekLabelDisplay })}
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 14 }}>
-          {rankedCurators.map((row) => (
-            <div
-              key={row.userId}
-              style={{
-                background: "var(--surface)",
-                borderRadius: 18,
-                border: "1px solid var(--divider)",
-                padding: 18,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 8,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ position: "relative" }}>
-                <Avatar user={{ name: row.name, avatar: row.avatarColor }} imageUrl={row.image} size={52} />
+              {/* 🎶 Música da Semana */}
+              {(spotlightWinner || openPoll) && (
                 <div
                   style={{
-                    position: "absolute",
-                    bottom: -3,
-                    right: -3,
-                    background: "var(--accent)",
-                    color: "white",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: "2px 5px",
-                    borderRadius: 6,
-                    border: "2px solid var(--surface)",
+                    background: "var(--gradient-hero)",
+                    borderRadius: 16,
+                    padding: 16,
+                    color: "#fff",
                   }}
                 >
-                  #{row.position}
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, fontWeight: 800, opacity: 0.92, marginBottom: 10 }}>
+                    <Music2 size={14} />
+                    {t("moments.sidebarSongOfWeek")}
+                  </div>
+                  {spotlightWinner ? (
+                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                      <Cover
+                        cover={spotlightWinner.song.cover}
+                        song={{ title: spotlightWinner.song.title, artist: spotlightWinner.song.artist }}
+                        size={64}
+                        rounded={12}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {spotlightWinner.song.title}
+                        </div>
+                        <div style={{ fontSize: 12.5, opacity: 0.88 }}>{spotlightWinner.song.artist}</div>
+                        {openPoll && (
+                          <Link
+                            href={WEEKLY_POLL_PATH}
+                            style={{
+                              display: "inline-block",
+                              marginTop: 8,
+                              padding: "6px 14px",
+                              borderRadius: 100,
+                              background: "#fff",
+                              color: "var(--accent)",
+                              fontWeight: 800,
+                              fontSize: 12,
+                              textDecoration: "none",
+                            }}
+                          >
+                            {t("moments.sidebarVote")}
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ fontSize: 13.5, lineHeight: 1.5, opacity: 0.92 }}>{t("moments.sidebarPollOpen")}</div>
+                      <Link
+                        href={WEEKLY_POLL_PATH}
+                        style={{
+                          alignSelf: "flex-start",
+                          padding: "7px 16px",
+                          borderRadius: 100,
+                          background: "#fff",
+                          color: "var(--accent)",
+                          fontWeight: 800,
+                          fontSize: 12.5,
+                          textDecoration: "none",
+                        }}
+                      >
+                        {t("moments.sidebarVote")}
+                      </Link>
+                    </div>
+                  )}
+                  {flashbackWinner && (
+                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.25)" }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, opacity: 0.85, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        {t("moments.sidebarFlashback")}
+                      </div>
+                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                        <Cover
+                          cover={flashbackWinner.song.cover}
+                          song={{ title: flashbackWinner.song.title, artist: flashbackWinner.song.artist }}
+                          size={40}
+                          rounded={9}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {flashbackWinner.song.title}
+                          </div>
+                          <div style={{ fontSize: 11.5, opacity: 0.85 }}>{flashbackWinner.song.artist}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* 📻 Playlist da Semana (Global 100 fixa no Spotify) */}
+              <div style={sidebarCard}>
+                <span style={sidebarTitle}>
+                  <Radio size={15} />
+                  {t("moments.sidebarPlaylist")}
+                </span>
+                <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: "0 0 12px 0", lineHeight: 1.5 }}>
+                  {t("moments.sidebarPlaylistDesc")}
+                </p>
+                <a
+                  href={`https://open.spotify.com/playlist/${GLOBAL_100_FIXED_SPOTIFY_PLAYLIST_ID}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "block",
+                    textAlign: "center",
+                    padding: "9px 16px",
+                    borderRadius: 100,
+                    background: "#1DB954",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 12.5,
+                    textDecoration: "none",
+                  }}
+                >
+                  {t("moments.sidebarPlaylistCta")}
+                </a>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{row.name}</div>
-              <FollowButton
-                targetId={row.userId}
-                initialFollowing={followingIds.has(row.userId)}
-                variant="outline"
-                size="sm"
-              />
-            </div>
-          ))}
-        </div>
+
+              {/* 👑 Membros em Destaque */}
+              {rankedCurators.length > 0 && (
+                <div style={sidebarCard}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <span style={{ ...sidebarTitle, marginBottom: 0 }}>
+                      <Crown size={15} />
+                      {t("moments.sidebarMembers")}
+                    </span>
+                    <Link href="/discover/curators" style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
+                      {t("moments.viewAll")}
+                    </Link>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {rankedCurators.map((row) => (
+                      <div key={row.userId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ position: "relative", flexShrink: 0 }}>
+                          <Avatar user={{ name: row.name, avatar: row.avatarColor }} imageUrl={row.image} size={32} />
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: -4,
+                              right: -4,
+                              background: "var(--accent)",
+                              color: "white",
+                              fontSize: 9,
+                              fontWeight: 700,
+                              padding: "1px 4px",
+                              borderRadius: 5,
+                              border: "2px solid var(--surface)",
+                            }}
+                          >
+                            #{row.position}
+                          </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {row.name}
+                        </div>
+                        <FollowButton
+                          targetId={row.userId}
+                          initialFollowing={followingIds.has(row.userId)}
+                          variant="outline"
+                          size="sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 🌎 Comunidades em Alta */}
+              {topCommunities.length > 0 && (
+                <div style={sidebarCard}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <span style={{ ...sidebarTitle, marginBottom: 0 }}>
+                      <Globe2 size={15} />
+                      {t("moments.sidebarCommunities")}
+                    </span>
+                    <Link href="/communities" style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
+                      {t("moments.viewAll")}
+                    </Link>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {topCommunities.map((c) => (
+                      <Link
+                        key={c.slug}
+                        href={`/community/${c.slug}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          padding: "6px 12px",
+                          borderRadius: 100,
+                          background: "var(--fill-subtle)",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: "var(--text)",
+                          textDecoration: "none",
+                        }}
+                      >
+                        <span>{c.icon}</span>
+                        {c.name}
+                        <span style={{ color: "var(--text-muted)" }}>· {c.members}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 📀 Últimas Avaliações */}
+              {latestReviews.length > 0 && (
+                <div style={sidebarCard}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <span style={{ ...sidebarTitle, marginBottom: 0 }}>
+                      <Disc3 size={15} />
+                      {t("moments.sidebarReviews")}
+                    </span>
+                    <Link href="/criticsfm" style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
+                      {t("moments.viewAll")}
+                    </Link>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {latestReviews.map((rv) => (
+                      <div key={rv.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Link href={`/profile/${rv.user.handle}`} style={{ flexShrink: 0 }}>
+                          <Avatar user={{ name: rv.user.name, avatar: rv.user.avatarColor }} imageUrl={rv.user.image} size={28} />
+                        </Link>
+                        <Link
+                          href={buildAlbumPath(rv.album.title, rv.album.artist.name, {
+                            artistId: rv.album.artist.id,
+                            albumId: rv.album.id,
+                          })}
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            color: "var(--text)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {rv.album.title}
+                          <span style={{ color: "var(--text-muted)", fontWeight: 500 }}> · {rv.album.artist.name}</span>
+                        </Link>
+                        <ScoreSquare score={rv.rating} size={26} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ✨ Pessoas com o seu gosto */}
+              {tasteMatches.length > 0 && (
+                <div style={sidebarCard}>
+                  <span style={sidebarTitle}>
+                    <Sparkles size={15} />
+                    {t("moments.sidebarTaste")}
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {tasteMatches.map((match) => (
+                      <div key={match.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Link href={`/profile/${match.handle}`} style={{ flexShrink: 0 }}>
+                          <Avatar user={{ name: match.name, avatar: match.avatarColor }} imageUrl={match.image} size={32} />
+                        </Link>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <Link
+                            href={`/profile/${match.handle}`}
+                            style={{
+                              display: "block",
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: "var(--text)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {match.name}
+                          </Link>
+                          <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>
+                            {match.overlapPct}% · {match.commonGenres.slice(0, 2).join(", ")}
+                          </div>
+                        </div>
+                        <FollowButton targetId={match.id} variant="outline" size="sm" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          }
+        />
       </section>
 
-      {/* ===== EM ALTA ===== */}
-      <section style={{ marginBottom: 52 }}>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.6 }}>
-          {t("discover.hotIntro", { weekLabel: weekLabelDisplay })}
-        </p>
-        <HotTabs artists={trendingArtists} songs={trendingSongs} />
-      </section>
-
-      {/* ===== FAQ ===== */}
-      <section
-        style={{
-          borderTop: "1px solid var(--divider)",
-          paddingTop: 40,
-          marginBottom: 8,
-        }}
-      >
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 24, display: "flex", alignItems: "center", gap: 8 }}>
-          <BookOpen size={18} color="#FA243C" />
-          {t("discover.faqTitle")}
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {faq.map((item, i) => (
-            <div
-              key={item.q}
-              style={{
-                borderTop: i === 0 ? "1px solid var(--divider)" : "none",
-                borderBottom: "1px solid var(--divider)",
-                padding: "20px 0",
-              }}
-            >
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{item.q}</div>
-              <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.75, margin: 0 }}>{item.a}</p>
-            </div>
-          ))}
-        </div>
-      </section>
     </Shell>
   );
 }

@@ -116,6 +116,8 @@ export async function POST(req: NextRequest) {
     {
       id: rec.id,
       text: rec.text,
+      type: rec.type,
+      rating: rec.rating,
       likes: 0,
       comments: 0,
       liked: false,

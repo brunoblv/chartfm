@@ -60,8 +60,8 @@ TZ=America/Sao_Paulo
 # 0h20 — consolida analytics do dia anterior (visitas, sessões, tempo no site) e purga eventos >90d
 20 0 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/analytics-rollup >> /root/chartfm/logs/cron.log 2>&1
 
-# Domingo 23:59 — abre a Votação da Semana (Melhor da Semana + Flashback) e notifica todos
-59 23 * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
+# Segunda 6:00 — abre a Votação da Semana (Melhor da Semana + Flashback) e notifica todos
+0 6 * * 1 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
 
 # Radar de Lançamentos — só às sextas (dia mundial de lançamento), de hora em hora, em
 # lotes de ~15 artistas por execução (RELEASE_RADAR_BATCH_PER_RUN), 2s entre artistas e

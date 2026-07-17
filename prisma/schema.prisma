@@ -1005,6 +1005,8 @@ enum PushPhase {
   @@map("push_phase")
 }
 
+/// Momento Musical do Discover: modelo unificado de post do feed social.
+/// "recomendo" é o tipo legado (Recomendações da home); os demais vieram do hub social.
 model SongRecommendation {
   id          String                      @id @default(cuid())
   userId      String                      @map("user_id")
@@ -1013,6 +1015,10 @@ model SongRecommendation {
   ytTitle     String?                     @map("yt_title")
   ytChannel   String?                     @map("yt_channel")
   text        String?
+  /// Tipo do momento: recomendo | loop | descobri | lancamento | review | throwback.
+  type        String                      @default("recomendo") @map("moment_type")
+  /// Nota 0–10, obrigatória quando type = "review".
+  rating      Int?
   likes       Int                         @default(0)
   comments    Int                         @default(0)
   createdAt   DateTime                    @default(now()) @map("created_at")
@@ -1022,6 +1028,8 @@ model SongRecommendation {
   recComments SongRecommendationComment[]
 
   @@index([createdAt(sort: Desc)])
+  @@index([type, createdAt(sort: Desc)], map: "idx_song_recommendations_type_created")
+  @@index([userId, type, createdAt(sort: Desc)], map: "idx_song_recommendations_user_type_created")
   @@map("song_recommendations")
 }
 

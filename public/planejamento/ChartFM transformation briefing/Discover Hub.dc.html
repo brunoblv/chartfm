@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+<script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+<style>
+  body{margin:0}
+  a{color:var(--accent)}
+  a:hover{color:var(--accent-hover)}
+  ::placeholder{color:var(--text-muted)}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="display:flex;min-height:100vh;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',system-ui,sans-serif">
+
+  <div style="width:88px;flex:none;display:flex;flex-direction:column;align-items:center;gap:28px;padding:24px 0;border-right:1px solid var(--divider);position:sticky;top:0;height:100vh">
+    <x-import component-from-global-scope="ChartFM.ChartFMLogo" hint-size="32px,32px" size="32"></x-import>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
+      <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="5">
+        <div title="{{ nav.label }}" style="width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:{{ nav.color }};background:{{ nav.bg }};cursor:pointer" dangerouslySetInnerHTML="{{ nav.iconHtml }}"></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <div style="height:64px;flex:none;display:flex;align-items:center;gap:16px;padding:0 32px;border-bottom:1px solid var(--divider);position:sticky;top:0;background:var(--bg-topbar);backdrop-filter:blur(12px);z-index:5">
+      <div style="flex:1;max-width:420px;display:flex;align-items:center;gap:8px;background:var(--fill-subtle);border-radius:100px;padding:9px 16px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted)"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span style="color:var(--text-muted);font-size:14px">Buscar músicas, álbuns, pessoas…</span>
+      </div>
+      <div style="flex:1"></div>
+      <button onClick="{{ toggleTheme }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--divider);background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:var(--fill-subtle)">
+        <span style="display:flex" dangerouslySetInnerHTML="{{ themeIconHtml }}"></span>
+      </button>
+      <div style="width:36px;height:36px;border-radius:10px;border:1px solid var(--divider);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text)"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <div style="position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)"></div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--gradient-hero);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">EU</div>
+    </div>
+
+    <div style="flex:1;display:flex;justify-content:center;padding:32px 32px 80px">
+      <div style="width:100%;max-width:1000px;display:flex;gap:28px;align-items:flex-start">
+
+        <div style="width:640px;flex:none;display:flex;flex-direction:column;gap:20px;min-width:0">
+          <div>
+            <h1 style="margin:0 0 4px;font-size:26px;font-weight:800;letter-spacing:-0.02em">Discover</h1>
+            <p style="margin:0;color:var(--text-subtle);font-size:14px;font-style:italic">O que está acontecendo na comunidade ChartFM agora?</p>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:16px">
+            <sc-if value="{{ composerOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <sc-for list="{{ composerTypes }}" as="ct" hint-placeholder-count="6">
+                    <button onClick="{{ ct.select }}" style="display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:100px;border:1px solid {{ ct.borderColor }};background:{{ ct.bg }};color:{{ ct.color }};font-size:13px;font-weight:600;cursor:pointer">
+                      <span style="display:flex" dangerouslySetInnerHTML="{{ ct.iconHtml }}"></span><span>{{ ct.label }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;background:var(--fill-subtle);border-radius:12px;padding:10px 14px">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex:none"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  <span style="color:var(--text-muted);font-size:13px">Buscar música, álbum ou artista para vincular…</span>
+                </div>
+                <div style="display:flex;gap:12px;align-items:center;padding:10px;border:1px solid var(--divider);border-radius:12px;background:var(--fill-inset)">
+                  <x-import component-from-global-scope="ChartFM.Cover" hint-size="52px,52px" cover="{{ composerEntity.cover }}" size="52" rounded="10"></x-import>
+                  <div style="min-width:0">
+                    <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ composerEntity.title }}</div>
+                    <div style="font-size:12.5px;color:var(--text-subtle)">{{ composerEntity.artist }}</div>
+                  </div>
+                </div>
+                <textarea value="{{ composerText }}" onChange="{{ setComposerText }}" maxlength="280" placeholder="Escreva algo curto sobre esse momento…" style="width:100%;min-height:60px;resize:none;border:1px solid var(--divider);border-radius:12px;padding:12px;background:var(--bg);color:var(--text);font-family:inherit;font-size:14px"></textarea>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:12px;color:var(--text-muted)">{{ composerCharsLeft }} caracteres restantes</span>
+                  <div style="display:flex;gap:10px">
+                    <button onClick="{{ closeComposer }}" style="padding:9px 18px;border-radius:100px;border:1px solid var(--divider);background:transparent;color:var(--text);font-weight:600;font-size:13px;cursor:pointer">Cancelar</button>
+                    <button onClick="{{ closeComposer }}" style="padding:9px 20px;border-radius:100px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(250,36,60,0.25)">Publicar</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ composerClosed }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:38px;height:38px;border-radius:50%;background:var(--gradient-hero);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex:none">EU</div>
+                  <div onClick="{{ openComposerDefault }}" style="flex:1;padding:10px 16px;border-radius:100px;background:var(--fill-subtle);color:var(--text-muted);font-size:14px;cursor:text">Compartilhe um momento musical…</div>
+                </div>
+                <div style="display:flex;gap:8px;padding-left:48px">
+                  <sc-for list="{{ composerTypes }}" as="ct2" hint-placeholder-count="6">
+                    <button onClick="{{ ct2.select }}" title="{{ ct2.label }}" style="width:34px;height:34px;border-radius:10px;border:1px solid var(--divider);background:var(--surface);color:var(--text-subtle);cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="display:flex" dangerouslySetInnerHTML="{{ ct2.iconHtml }}"></span></button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:6px;background:var(--fill-subtle);border-radius:100px;padding:4px;width:fit-content">
+              <button onClick="{{ setFilterSeguindo }}" style="padding:8px 18px;border-radius:100px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:{{ segSeguindoBg }};color:{{ segSeguindoColor }}">Seguindo</button>
+              <button onClick="{{ setFilterTodos }}" style="padding:8px 18px;border-radius:100px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:{{ segTodosBg }};color:{{ segTodosColor }}">Todos</button>
+            </div>
+            <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px">
+              <sc-for list="{{ typeChips }}" as="tc" hint-placeholder-count="8">
+                <button onClick="{{ tc.toggle }}" style="flex:none;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:100px;border:1px solid {{ tc.borderColor }};background:{{ tc.bg }};color:{{ tc.color }};font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">
+                  <span style="display:flex" dangerouslySetInnerHTML="{{ tc.iconHtml }}"></span><span>{{ tc.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-if value="{{ hasNoPosts }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--surface);border:1px dashed var(--divider-strong);border-radius:18px;padding:32px;text-align:center;color:var(--text-subtle);font-size:14px">
+              Nenhum momento por aqui ainda com esse filtro. <a href="#" onClick="{{ setFilterTodos }}">Ver todos os momentos</a> ou descubra pessoas para seguir na barra ao lado.
+            </div>
+          </sc-if>
+
+          <sc-for list="{{ feedPosts }}" as="post" hint-placeholder-count="8">
+            <div style="background:{{ post.cardBg }};border:1px solid var(--divider);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <sc-if value="{{ post.isConsolidated }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex:none">
+                    <sc-for list="{{ post.stackAvatars }}" as="av" hint-placeholder-count="3">
+                      <div style="width:34px;height:34px;border-radius:50%;background:{{ av.bg }};border:2px solid {{ post.cardBg }};margin-left:-10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;first:margin-left:0">{{ av.initials }}</div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ post.isNotConsolidated }}" hint-placeholder-val="{{ true }}">
+                  <div style="width:38px;height:38px;border-radius:50%;background:{{ post.avatarBg }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex:none">{{ post.authorInitials }}</div>
+                </sc-if>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <span style="font-weight:700;font-size:14px">{{ post.headerName }}</span>
+                    <sc-if value="{{ post.showHandle }}" hint-placeholder-val="{{ true }}">
+                      <span style="color:var(--text-muted);font-size:13px">{{ post.authorHandle }}</span>
+                    </sc-if>
+                  </div>
+                  <div style="color:var(--text-muted);font-size:12.5px">{{ post.timeAgo }}</div>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:100px;background:{{ post.chipBg }};color:{{ post.chipColor }};font-size:12px;font-weight:700">
+                  <span style="display:flex" dangerouslySetInnerHTML="{{ post.chipIconHtml }}"></span><span>{{ post.chipLabel }}</span>
+                </div>
+              </div>
+
+              <sc-if value="{{ post.hasBody }}" hint-placeholder-val="{{ false }}">
+                <p style="margin:0;font-size:14.5px;line-height:1.5">{{ post.body }}</p>
+              </sc-if>
+
+              <div style="display:flex;gap:12px;align-items:center;background:var(--fill-inset);border:1px solid var(--divider-soft);border-radius:14px;padding:10px 14px">
+                <x-import component-from-global-scope="ChartFM.Cover" hint-size="64px,64px" cover="{{ post.cover }}" size="64" rounded="10"></x-import>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ post.songTitle }}</div>
+                  <div style="font-size:13px;color:var(--text-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ post.songArtist }}</div>
+                  <sc-if value="{{ post.showQuickActions }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;gap:8px;margin-top:6px">
+                      <span style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;color:var(--accent);border:1px solid var(--accent-tint);background:var(--accent-tint);padding:3px 9px;border-radius:100px"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>preview</span>
+                      <span style="font-size:11.5px;font-weight:600;color:var(--text-subtle);border:1px solid var(--divider);padding:3px 9px;border-radius:100px">+ parada</span>
+                    </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ post.showScore }}" hint-placeholder-val="{{ false }}">
+                  <div style="width:40px;height:40px;border-radius:10px;background:{{ post.scoreBg }};color:{{ post.scoreColor }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:none">{{ post.score }}</div>
+                </sc-if>
+                <sc-if value="{{ post.showMovement }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:none">
+                    <x-import component-from-global-scope="ChartFM.MovementBadge" hint-size="auto,28px" status="{{ post.moveStatus }}" delta="{{ post.moveDelta }}"></x-import>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:18px">
+                <button onClick="{{ post.toggleLike }}" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:{{ post.likeColor }};font-size:13px;font-weight:600">
+                  <span style="display:flex" dangerouslySetInnerHTML="{{ post.likeIconHtml }}"></span><span>{{ post.likeCount }}</span>
+                </button>
+                <div style="display:flex;align-items:center;gap:6px;color:var(--text-subtle);font-size:13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><span>{{ post.commentCount }}</span></div>
+                <div style="display:flex;align-items:center;gap:6px;color:var(--text-subtle);font-size:13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg><span>{{ post.shareCount }}</span></div>
+                <div style="flex:1"></div>
+                <span style="color:var(--text-muted);cursor:pointer">⋯</span>
+              </div>
+            </div>
+          </sc-for>
+
+          <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:13px">— fim do feed por agora —</div>
+        </div>
+
+        <div style="width:320px;flex:none;display:flex;flex-direction:column;gap:16px;position:sticky;top:88px">
+
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Em Alta</span>
+              <a href="#" style="font-size:12px;font-weight:600;text-decoration:none">ver tudo</a>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ trending }}" as="tr" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <x-import component-from-global-scope="ChartFM.Cover" hint-size="36px,36px" cover="{{ tr.cover }}" size="36" rounded="8"></x-import>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ tr.name }}</div>
+                    <div style="font-size:11.5px;color:var(--text-muted)">{{ tr.mentions }} menções</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--gradient-hero);border-radius:16px;padding:16px;color:#fff;box-shadow:var(--shadow-hero)">
+            <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;opacity:0.9;margin-bottom:10px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>Música da Semana</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <x-import component-from-global-scope="ChartFM.Cover" hint-size="64px,64px" cover="{{ songOfWeek.cover }}" size="64" rounded="12"></x-import>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ songOfWeek.title }}</div>
+                <div style="font-size:12.5px;opacity:0.85">{{ songOfWeek.artist }}</div>
+                <button style="margin-top:8px;padding:6px 14px;border-radius:100px;border:none;background:#fff;color:var(--accent);font-weight:800;font-size:12px;cursor:pointer">Votar</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px">
+            <div style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800;margin-bottom:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"></path><path d="M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2"></path></svg>Playlist da Comunidade</div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <x-import component-from-global-scope="ChartFM.Cover" hint-size="52px,52px" cover="{{ playlist.cover }}" size="52" rounded="10"></x-import>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:700">Playlist ChartFM</div>
+                <div style="font-size:11.5px;color:var(--text-muted)">42 contribuições esta semana</div>
+              </div>
+            </div>
+            <button onClick="{{ togglePlaylist }}" style="margin-top:12px;width:100%;padding:9px;border-radius:100px;border:{{ playlistBorder }};background:{{ playlistBg }};color:{{ playlistColor }};font-weight:700;font-size:12.5px;cursor:pointer">{{ playlistLabel }}</button>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l3.5 12h13L22 5l-6 6.5L12 4l-4 7.5z"></path><path d="M5.5 20h13"></path></svg>Membros em Destaque</span>
+              <a href="#" style="font-size:12px;font-weight:600;text-decoration:none">ver tudo</a>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ members }}" as="m" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:32px;height:32px;border-radius:50%;background:{{ m.avatarBg }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex:none">{{ m.initials }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.name }}</div>
+                  </div>
+                  <button onClick="{{ m.toggleFollow }}" style="flex:none;padding:5px 12px;border-radius:100px;border:{{ m.followBorder }};background:{{ m.followBg }};color:{{ m.followColor }};font-size:11.5px;font-weight:700;cursor:pointer">{{ m.followLabel }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px">
+            <div style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800;margin-bottom:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a13.5 13.5 0 0 1 0 18 13.5 13.5 0 0 1 0-18z"></path></svg>Comunidades em Alta</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ communities }}" as="c" hint-placeholder-count="5">
+                <div style="padding:6px 12px;border-radius:100px;background:var(--fill-subtle);font-size:12px;font-weight:600">{{ c.name }} · {{ c.count }}</div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--fill-subtle);border:1px dashed var(--divider-strong);border-radius:16px;padding:20px;text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">Publicidade · AdSlot</div>
+
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="2.5"></circle></svg>Últimas Avaliações</span>
+              <a href="#" style="font-size:12px;font-weight:600;text-decoration:none">ver tudo</a>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ latestReviews }}" as="rv" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:28px;height:28px;border-radius:50%;background:{{ rv.avatarBg }};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex:none">{{ rv.initials }}</div>
+                  <div style="flex:1;min-width:0;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ rv.title }}</div>
+                  <div style="width:26px;height:26px;border-radius:7px;background:{{ rv.scoreBg }};color:{{ rv.scoreColor }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:none">{{ rv.score }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const NAV_ICONS = {
+  home: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
+  compass: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-3 6-3-3z"/></svg>',
+  bars: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 20V10"/><path d="M12 20V4"/><path d="M18 20v-7"/></svg>',
+  people: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3-6 7-6s7 2.7 7 6"/><circle cx="18" cy="9" r="2.5"/><path d="M16 14c2.8.3 5 2.3 5 5"/></svg>',
+  user: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>'
+};
+
+const ICON_PATHS = {
+  headphones: '<path d="M4 14v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="2"/><rect x="17" y="14" width="4" height="6" rx="2"/>',
+  search: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  disc: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/>',
+  megaphone: '<path d="M3 11l14-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  star: '<path d="M12 3l2.7 5.8 6.3.8-4.6 4.3 1.2 6.1L12 17l-5.6 3 1.2-6.1L3 9.6l6.3-.8z"/>',
+  trendingUp: '<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
+  trendingDown: '<path d="M3 7l6 6 4-4 8 8"/><path d="M21 10v7h-7"/>',
+  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>',
+  comment: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  repeat: '<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'
+};
+
+function icon(name, size = 14, fill = 'none') {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name]}</svg>`;
+}
+
+const TYPE_META = {
+  loop: { icon: 'headphones', label: 'Em Loop' },
+  descobri: { icon: 'search', label: 'Descobri Hoje' },
+  recomendo: { icon: 'disc', label: 'Recomendo' },
+  lancamento: { icon: 'megaphone', label: 'Lançamento' },
+  review: { icon: 'star', label: 'Review' },
+  subiu: { icon: 'trendingUp', label: 'Subiu' },
+  caiu: { icon: 'trendingDown', label: 'Caiu' },
+  throwback: { icon: 'music', label: 'Throwback' }
+};
+
+const AVATAR_COLORS = ['#FA243C', '#7B61FF', '#00A870', '#0A84FF', '#FF9F0A', '#BF5AF2'];
+function colorFor(seed) { return AVATAR_COLORS[seed % AVATAR_COLORS.length]; }
+
+const POSTS = [
+  { id: 1, type: 'loop', author: 'Marina Alves', handle: '@marina.alves', time: 'há 12min', body: 'Não consigo parar de ouvir essa desde ontem.', song: 'Houdini', artist: 'Dua Lipa', seed: 1, likes: 24, comments: 3, shares: 1 },
+  { id: 2, type: 'descobri', author: 'Diego Ramos', handle: '@diego.tunes', time: 'há 40min', body: 'Achei essa faixa numa playlist aleatória e virou obsessão.', song: 'Cassandra', artist: 'FKA twigs', seed: 2, likes: 15, comments: 2, shares: 0 },
+  { id: 3, type: 'recomendo', author: 'Bianca Souza', handle: '@bibop', time: 'há 1h', body: 'Álbum do ano pra mim, disparado. Ouçam do início ao fim.', song: 'COWBOY CARTER', artist: 'Beyoncé', seed: 3, likes: 58, comments: 11, shares: 6 },
+  { id: 4, type: 'lancamento', author: 'Ana, Bruno e +5', handle: '', time: 'há 2h', body: '', song: 'Not Like Us', artist: 'Kendrick Lamar', seed: 4, likes: 91, comments: 20, shares: 14, consolidated: true, stack: ['Ana', 'Bruno', 'Caio'] },
+  { id: 5, type: 'review', author: 'Rafael Lima', handle: '@rafalima', time: 'há 3h', body: 'Produção impecável, letras cruas. Um dos melhores do ano.', song: 'Hit Me Hard and Soft', artist: 'Billie Eilish', seed: 5, likes: 33, comments: 5, shares: 2, score: 9 },
+  { id: 6, type: 'subiu', author: 'ChartFM', handle: '', time: 'há 4h', body: '', song: 'Blinding Lights', artist: 'The Weeknd', seed: 6, likes: 8, comments: 0, shares: 0, automatic: true, moveStatus: 'up', moveDelta: 5 },
+  { id: 7, type: 'caiu', author: 'ChartFM', handle: '', time: 'há 5h', body: '', song: 'As It Was', artist: 'Harry Styles', seed: 7, likes: 3, comments: 0, shares: 0, automatic: true, moveStatus: 'down', moveDelta: 3 },
+  { id: 8, type: 'throwback', author: 'Camila Torres', handle: '@camilat', time: 'há 6h', body: 'Clássico que nunca envelhece.', song: 'Thriller', artist: 'Michael Jackson', seed: 8, likes: 47, comments: 9, shares: 3 }
+];
+
+const MEMBERS = [
+  { id: 1, name: 'Sabrina Carpenter fan', seed: 1 },
+  { id: 2, name: 'Tyler_curator', seed: 2 },
+  { id: 3, name: 'Chappell stan', seed: 3 },
+  { id: 4, name: 'kendrick_lore', seed: 4 },
+  { id: 5, name: 'olivia.rod', seed: 5 }
+];
+
+class Component extends DCLogic {
+  state = {
+    theme: 'dark',
+    filter: 'seguindo',
+    typeFilter: null,
+    composerOpen: false,
+    composerType: 'loop',
+    composerText: '',
+    likeOverrides: {},
+    following: {},
+    playlistAdded: false
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' }));
+  setFilterSeguindo = () => this.setState({ filter: 'seguindo' });
+  setFilterTodos = () => this.setState({ filter: 'todos' });
+  toggleTypeFilter = (t) => this.setState(s => ({ typeFilter: s.typeFilter === t ? null : t }));
+  openComposerDefault = () => this.setState({ composerOpen: true, composerType: 'loop' });
+  openComposerAs = (t) => this.setState({ composerOpen: true, composerType: t });
+  closeComposer = () => this.setState({ composerOpen: false, composerText: '' });
+  setComposerText = (e) => this.setState({ composerText: e.target.value.slice(0, 280) });
+  toggleLike = (id) => this.setState(s => {
+    const cur = s.likeOverrides[id] || { liked: false, delta: 0 };
+    const next = cur.liked ? { liked: false, delta: -1 } : { liked: true, delta: 1 };
+    return { likeOverrides: { ...s.likeOverrides, [id]: next } };
+  });
+  toggleFollow = (id) => this.setState(s => ({ following: { ...s.following, [id]: !s.following[id] } }));
+  togglePlaylist = () => this.setState(s => ({ playlistAdded: !s.playlistAdded }));
+
+  renderVals() {
+    const s = this.state;
+    const isDark = s.theme === 'dark';
+
+    const navItems = [
+      { label: 'Home', iconHtml: { __html: NAV_ICONS.home }, color: 'var(--text-subtle)', bg: 'transparent' },
+      { label: 'Discover', iconHtml: { __html: NAV_ICONS.compass }, color: '#fff', bg: 'var(--accent)' },
+      { label: 'Charts', iconHtml: { __html: NAV_ICONS.bars }, color: 'var(--text-subtle)', bg: 'transparent' },
+      { label: 'Comunidade', iconHtml: { __html: NAV_ICONS.people }, color: 'var(--text-subtle)', bg: 'transparent' },
+      { label: 'Perfil', iconHtml: { __html: NAV_ICONS.user }, color: 'var(--text-subtle)', bg: 'transparent' }
+    ];
+
+    const composerTypeKeys = ['loop', 'descobri', 'recomendo', 'lancamento', 'review', 'throwback'];
+    const composerTypes = composerTypeKeys.map(k => {
+      const active = s.composerType === k;
+      return {
+        iconHtml: { __html: icon(TYPE_META[k].icon) },
+        label: TYPE_META[k].label,
+        select: () => this.setState({ composerType: k }),
+        bg: active ? 'var(--accent-tint)' : 'var(--fill-subtle)',
+        color: active ? 'var(--accent)' : 'var(--text-subtle)',
+        borderColor: active ? 'var(--accent)' : 'var(--divider)'
+      };
+    });
+    const entitySeed = composerTypeKeys.indexOf(s.composerType) + 1;
+    const entitySrc = POSTS.find(p => p.type === s.composerType) || POSTS[0];
+
+    const typeChips = Object.keys(TYPE_META).map(k => {
+      const active = s.typeFilter === k;
+      return {
+        iconHtml: { __html: icon(TYPE_META[k].icon, 13) },
+        label: TYPE_META[k].label,
+        toggle: () => this.toggleTypeFilter(k),
+        bg: active ? 'var(--accent-tint)' : 'var(--surface)',
+        color: active ? 'var(--accent)' : 'var(--text-subtle)',
+        borderColor: active ? 'var(--accent)' : 'var(--divider)'
+      };
+    });
+
+    let visiblePosts = POSTS;
+    if (s.filter === 'seguindo') visiblePosts = visiblePosts.filter(p => p.id % 2 !== 0 || p.automatic);
+    if (s.typeFilter) visiblePosts = visiblePosts.filter(p => p.type === s.typeFilter);
+
+    const feedPosts = visiblePosts.map(p => {
+      const ov = s.likeOverrides[p.id];
+      const liked = ov ? ov.liked : false;
+      const count = p.likes + (ov ? ov.delta : 0);
+      const meta = TYPE_META[p.type];
+      const isAuto = !!p.automatic;
+      return {
+        id: p.id,
+        isConsolidated: !!p.consolidated,
+        isNotConsolidated: !p.consolidated,
+        stackAvatars: (p.stack || []).map(n => ({ initials: n.slice(0, 2).toUpperCase(), bg: colorFor(n.length) })),
+        avatarBg: colorFor(p.seed),
+        authorInitials: p.author.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase(),
+        headerName: p.consolidated ? `${p.author} compartilharam` : (isAuto ? 'ChartFM' : p.author),
+        authorHandle: p.handle,
+        showHandle: !!p.handle,
+        timeAgo: p.time,
+        chipIconHtml: { __html: icon(meta.icon, 12) },
+        chipLabel: meta.label,
+        chipBg: isAuto ? 'var(--fill-subtle)' : 'var(--accent-tint)',
+        chipColor: isAuto ? 'var(--text-subtle)' : 'var(--accent)',
+        cardBg: isAuto ? 'var(--fill-inset)' : 'var(--surface)',
+        hasBody: !!p.body,
+        body: p.body,
+        cover: { palette: [colorFor(p.seed), colorFor(p.seed + 1)], seed: p.seed },
+        songTitle: p.song,
+        songArtist: p.artist,
+        showQuickActions: !isAuto,
+        showScore: p.type === 'review',
+        score: p.score,
+        scoreBg: p.score >= 8 ? 'var(--up-bg)' : 'var(--same-bg)',
+        scoreColor: p.score >= 8 ? 'var(--up-fg)' : 'var(--same-fg)',
+        showMovement: isAuto,
+        moveStatus: p.moveStatus,
+        moveDelta: p.moveDelta,
+        toggleLike: () => this.toggleLike(p.id),
+        liked,
+        likeIconHtml: { __html: icon('heart', 15, liked ? 'currentColor' : 'none') },
+        likeColor: liked ? 'var(--accent)' : 'var(--text-subtle)',
+        likeCount: count,
+        commentCount: p.comments,
+        shareCount: p.shares
+      };
+    });
+
+    const members = MEMBERS.map(m => {
+      const following = !!s.following[m.id];
+      return {
+        id: m.id,
+        name: m.name,
+        initials: m.name.slice(0, 2).toUpperCase(),
+        avatarBg: colorFor(m.seed),
+        toggleFollow: () => this.toggleFollow(m.id),
+        followLabel: following ? 'Seguindo' : 'Seguir',
+        followBg: following ? 'transparent' : 'var(--accent)',
+        followColor: following ? 'var(--text-subtle)' : '#fff',
+        followBorder: following ? '1px solid var(--divider)' : 'none'
+      };
+    });
+
+    const trending = [
+      { name: 'Sabrina Carpenter', mentions: 312, seed: 11 },
+      { name: 'Tyler, The Creator', mentions: 268, seed: 12 },
+      { name: 'Chappell Roan', mentions: 241, seed: 13 },
+      { name: 'Kendrick Lamar', mentions: 220, seed: 14 },
+      { name: 'Olivia Rodrigo', mentions: 198, seed: 15 }
+    ].map(t => ({ ...t, cover: { palette: [colorFor(t.seed), colorFor(t.seed + 1)], seed: t.seed } }));
+
+    const communities = [
+      { name: 'Pop', count: '12.4k' },
+      { name: 'Indie', count: '8.1k' },
+      { name: 'Rock', count: '9.7k' },
+      { name: 'MPB', count: '6.3k' },
+      { name: 'K-Pop', count: '15.2k' }
+    ];
+
+    const latestReviews = [
+      { title: 'Hit Me Hard and Soft', score: 9, seed: 21 },
+      { title: 'COWBOY CARTER', score: 8, seed: 22 },
+      { title: 'Short n\' Sweet', score: 7, seed: 23 }
+    ].map(r => ({ ...r, initials: 'U' + r.seed, avatarBg: colorFor(r.seed), scoreBg: r.score >= 8 ? 'var(--up-bg)' : 'var(--same-bg)', scoreColor: r.score >= 8 ? 'var(--up-fg)' : 'var(--same-fg)' }));
+
+    return {
+      theme: s.theme,
+      themeIconHtml: { __html: icon(isDark ? 'sun' : 'moon', 16) },
+      toggleTheme: this.toggleTheme,
+      navItems,
+      composerOpen: s.composerOpen,
+      composerClosed: !s.composerOpen,
+      composerTypes,
+      composerText: s.composerText,
+      setComposerText: this.setComposerText,
+      composerCharsLeft: 280 - s.composerText.length,
+      composerEntity: { title: entitySrc.song, artist: entitySrc.artist, cover: { palette: [colorFor(entitySeed), colorFor(entitySeed + 1)], seed: entitySeed } },
+      openComposerDefault: this.openComposerDefault,
+      closeComposer: this.closeComposer,
+      setFilterSeguindo: this.setFilterSeguindo,
+      setFilterTodos: this.setFilterTodos,
+      segSeguindoBg: s.filter === 'seguindo' ? 'var(--surface)' : 'transparent',
+      segSeguindoColor: s.filter === 'seguindo' ? 'var(--text)' : 'var(--text-subtle)',
+      segTodosBg: s.filter === 'todos' ? 'var(--surface)' : 'transparent',
+      segTodosColor: s.filter === 'todos' ? 'var(--text)' : 'var(--text-subtle)',
+      typeChips,
+      hasNoPosts: feedPosts.length === 0,
+      feedPosts,
+      members,
+      trending,
+      communities,
+      latestReviews,
+      songOfWeek: { title: 'Espresso', artist: 'Sabrina Carpenter', cover: { palette: [colorFor(31), colorFor(32)], seed: 31 } },
+      playlist: { cover: { palette: [colorFor(41), colorFor(42)], seed: 41 } },
+      togglePlaylist: this.togglePlaylist,
+      playlistLabel: s.playlistAdded ? '✓ Música adicionada' : '+ Adicionar minha música',
+      playlistBg: s.playlistAdded ? 'var(--fill-subtle)' : 'var(--accent)',
+      playlistColor: s.playlistAdded ? 'var(--text-subtle)' : '#fff',
+      playlistBorder: s.playlistAdded ? '1px solid var(--divider)' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>
