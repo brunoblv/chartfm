@@ -34,6 +34,8 @@ export interface BuildPoolArgs {
 export interface RetroSongMeta {
   title: string;
   artist: string;
+  album: string | null;
+  coverUrl: string | null;
   note: string | null;
 }
 
@@ -86,6 +88,8 @@ interface SongRow {
   id: string;
   title: string;
   artist: string;
+  album: string | null;
+  coverUrl: string | null;
   singleReleaseDate: Date | null;
   youtubeReleaseDate: Date | null;
   albumReleaseDate: Date | null;
@@ -100,7 +104,7 @@ async function loadSongIndex(): Promise<Map<string, SongRow>> {
       singleReleaseDate: true,
       youtubeReleaseDate: true,
       musicVideoReleaseDate: true,
-      albumRef: { select: { releaseDate: true } },
+      albumRef: { select: { releaseDate: true, coverUrl: true, title: true, exhibitionName: true } },
     },
   });
   const map = new Map<string, SongRow>();
@@ -112,6 +116,8 @@ async function loadSongIndex(): Promise<Map<string, SongRow>> {
       id: s.id,
       title: s.title,
       artist: s.artist,
+      album: s.albumRef?.exhibitionName ?? s.albumRef?.title ?? null,
+      coverUrl: s.albumRef?.coverUrl ?? null,
       singleReleaseDate: s.singleReleaseDate,
       youtubeReleaseDate: s.youtubeReleaseDate ?? s.musicVideoReleaseDate,
       albumReleaseDate: s.albumRef?.releaseDate ?? null,
@@ -175,7 +181,13 @@ export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResu
 
     const agg = top20.get(song.id) ?? { weeks: 0, bestPeak: null, numberOnes: 0 };
     const profile = profileBySong.get(song.id) ?? null;
-    meta.set(song.id, { title: song.title, artist: song.artist, note: profile?.note ?? null });
+    meta.set(song.id, {
+      title: song.title,
+      artist: song.artist,
+      album: song.album,
+      coverUrl: song.coverUrl,
+      note: profile?.note ?? null,
+    });
     const periodPlaycount = usesRealPeriodData ? periodPlays.get(key) ?? 0 : null;
 
     songs.push({

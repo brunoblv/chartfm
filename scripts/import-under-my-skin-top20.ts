@@ -59,6 +59,7 @@ const prisma = new PrismaClient();
 
 const HANDLE = "bruno";
 const PARADA_NAME = "Under My Skin Video";
+const PARADA_ID = "cmpn5qqi20001mly9beqx3xkt";
 const XLSX_PATH = join(process.cwd(), "public", "Brunos Top 20.xlsx");
 const PARSE_SCRIPT_PATH = join(process.cwd(), "scripts", "parse-brunos-top20-xlsx.py");
 const SPOTIFY_DELAY_MS = 450;
@@ -129,24 +130,32 @@ async function findUserAndParada() {
   });
   if (!user) throw new Error(`Usuário @${HANDLE} não encontrado.`);
 
-  const parada = await prisma.parada.findFirst({
-    where: {
-      userId: user.id,
-      cadence: "WEEKLY",
-      OR: [
-        { name: PARADA_NAME },
-        {
-          isPrimary: true,
-          name: { contains: "Under My Skin Video", mode: "insensitive" },
+  const parada = PARADA_ID
+    ? await prisma.parada.findUnique({ where: { id: PARADA_ID } })
+    : await prisma.parada.findFirst({
+        where: {
+          userId: user.id,
+          cadence: "WEEKLY",
+          OR: [
+            { name: PARADA_NAME },
+            {
+              isPrimary: true,
+              name: { contains: "Under My Skin Video", mode: "insensitive" },
+            },
+          ],
         },
-      ],
-    },
-    orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
-  });
+        orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+      });
 
   if (!parada) {
     throw new Error(
       `Parada "${PARADA_NAME}" não encontrada para @${HANDLE}. Crie a parada principal antes de importar.`,
+    );
+  }
+
+  if (parada.userId !== user.id) {
+    throw new Error(
+      `Parada "${parada.name}" (${parada.id}) pertence a outro usuário, não a @${HANDLE}.`,
     );
   }
 

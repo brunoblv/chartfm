@@ -65,11 +65,17 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     .map((r) => {
       const s = playById.get(r.songId);
+      const m = pool.meta.get(r.songId);
       return {
         ...r,
-        title: pool.meta.get(r.songId)?.title ?? "—",
-        artist: pool.meta.get(r.songId)?.artist ?? "—",
-        note: pool.meta.get(r.songId)?.note ?? null,
+        title: m?.title ?? "—",
+        artist: m?.artist ?? "—",
+        album: m?.album ?? null,
+        coverUrl: m?.coverUrl ?? null,
+        note: m?.note ?? null,
+        singleReleaseDate: s?.singleReleaseDate?.toISOString().slice(0, 10) ?? null,
+        albumReleaseDate: s?.albumReleaseDate?.toISOString().slice(0, 10) ?? null,
+        youtubeReleaseDate: s?.youtubeReleaseDate?.toISOString().slice(0, 10) ?? null,
         overallPlaycount: s?.overallPlaycount ?? 0,
         periodPlaycount: s?.periodPlaycount ?? null,
         top20Weeks: s?.top20Weeks ?? 0,

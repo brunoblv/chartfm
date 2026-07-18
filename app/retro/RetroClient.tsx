@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 
 type PeakPotential = "1" | "top3" | "top5" | "top10" | "top20" | "top40" | "top100" | "out";
 type HitLevel = "diamond" | "platinum" | "gold" | "silver" | "bronze" | "none";
@@ -22,6 +23,11 @@ interface RetroEntry {
   position: number;
   title: string;
   artist: string;
+  album: string | null;
+  coverUrl: string | null;
+  singleReleaseDate: string | null;
+  albumReleaseDate: string | null;
+  youtubeReleaseDate: string | null;
   importance: number;
   importanceIsManual: boolean;
   importanceLocked: boolean;
@@ -69,58 +75,187 @@ const PEAK_LABEL: Record<PeakPotential, string> = {
 };
 const PEAK_ORDER: PeakPotential[] = ["1", "top3", "top5", "top10", "top20", "top40", "top100", "out"];
 
-const HIT_STYLE: Record<HitLevel, { label: string; cls: string }> = {
-  diamond: { label: "Diamond", cls: "bg-cyan-500/15 text-cyan-300" },
-  platinum: { label: "Platinum", cls: "bg-slate-300/15 text-slate-200" },
-  gold: { label: "Gold", cls: "bg-amber-500/15 text-amber-300" },
-  silver: { label: "Silver", cls: "bg-zinc-400/15 text-zinc-300" },
-  bronze: { label: "Bronze", cls: "bg-orange-700/20 text-orange-300" },
-  none: { label: "—", cls: "bg-white/5 text-white/40" },
+const HIT_BADGE: Record<HitLevel, { label: string; fg: string; bg: string }> = {
+  diamond: { label: "Diamond", fg: "#06B6D4", bg: "rgba(6, 182, 212, 0.13)" },
+  platinum: { label: "Platinum", fg: "#8B5CF6", bg: "rgba(139, 92, 246, 0.13)" },
+  gold: { label: "Gold", fg: "#D97706", bg: "rgba(217, 119, 6, 0.13)" },
+  silver: { label: "Silver", fg: "var(--text-subtle)", bg: "var(--fill-subtle)" },
+  bronze: { label: "Bronze", fg: "#B45309", bg: "rgba(180, 83, 9, 0.15)" },
+  none: { label: "—", fg: "var(--text-muted)", bg: "var(--fill-subtle)" },
 };
 
-const PRIORITY_STYLE: Record<Priority, string> = {
-  S: "bg-rose-500/20 text-rose-300",
-  A: "bg-fuchsia-500/20 text-fuchsia-300",
-  B: "bg-indigo-500/20 text-indigo-300",
-  C: "bg-sky-500/20 text-sky-300",
-  D: "bg-white/5 text-white/40",
+const PRIORITY_BADGE: Record<Priority, { fg: string; bg: string }> = {
+  S: { fg: "#E11D48", bg: "rgba(225, 29, 72, 0.13)" },
+  A: { fg: "#C026D3", bg: "rgba(192, 38, 211, 0.12)" },
+  B: { fg: "#4F46E5", bg: "rgba(79, 70, 229, 0.12)" },
+  C: { fg: "#0284C7", bg: "rgba(2, 132, 199, 0.12)" },
+  D: { fg: "var(--text-muted)", bg: "var(--fill-subtle)" },
 };
 
 const CONFIDENCE_LABEL: Record<Confidence, string> = { alta: "Alta", media: "Média", baixa: "Baixa" };
 
-const WEIGHT_ROWS: { key: keyof ScoreBreakdown; label: string; max: number; bar: string }[] = [
-  { key: "period", label: "Plays do período", max: 30, bar: "bg-emerald-400" },
-  { key: "importance", label: "Importância", max: 30, bar: "bg-sky-400" },
-  { key: "top20", label: "Histórico Top 20", max: 15, bar: "bg-violet-400" },
-  { key: "releaseRecency", label: "Recência do lançamento", max: 10, bar: "bg-amber-400" },
-  { key: "clip", label: "Data do clipe", max: 10, bar: "bg-cyan-400" },
-  { key: "adjust", label: "Ajustes manuais", max: 5, bar: "bg-rose-400" },
+const WEIGHT_ROWS: { key: keyof ScoreBreakdown; label: string; max: number; color: string }[] = [
+  { key: "period", label: "Plays do período", max: 30, color: "#10B981" },
+  { key: "importance", label: "Importância", max: 30, color: "#0EA5E9" },
+  { key: "top20", label: "Histórico Top 20", max: 15, color: "#8B5CF6" },
+  { key: "releaseRecency", label: "Recência do lançamento", max: 10, color: "#F59E0B" },
+  { key: "clip", label: "Data do clipe", max: 10, color: "#06B6D4" },
+  { key: "adjust", label: "Ajustes manuais", max: 5, color: "#F43F5E" },
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: CURRENT_YEAR - 2000 + 1 }, (_, i) => CURRENT_YEAR - i);
+const PAGE_SIZE = 50;
 
-function ScoreRing({ value, size = 44 }: { value: number; size?: number }) {
+// ── estilos base ──────────────────────────────────────────────────────────
+
+const card: CSSProperties = {
+  background: "var(--surface)",
+  border: "1px solid var(--divider)",
+  borderRadius: 16,
+};
+
+const inputStyle: CSSProperties = {
+  background: "var(--surface)",
+  color: "var(--text)",
+  border: "1px solid var(--divider-strong)",
+  borderRadius: 10,
+  padding: "8px 12px",
+  fontSize: 14,
+  outline: "none",
+};
+
+const labelStyle: CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  color: "var(--text-muted)",
+};
+
+const badgeStyle = (fg: string, bg: string): CSSProperties => ({
+  display: "inline-block",
+  padding: "3px 8px",
+  borderRadius: 7,
+  fontSize: 11,
+  fontWeight: 700,
+  color: fg,
+  background: bg,
+  whiteSpace: "nowrap",
+});
+
+const thStyle: CSSProperties = {
+  padding: "10px 10px",
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  color: "var(--text-muted)",
+  textAlign: "left",
+  whiteSpace: "nowrap",
+  borderBottom: "1px solid var(--divider)",
+};
+
+const tdStyle: CSSProperties = {
+  padding: "10px 10px",
+  fontSize: 13,
+  color: "var(--text)",
+  borderBottom: "1px solid var(--divider-soft)",
+  whiteSpace: "nowrap",
+  verticalAlign: "middle",
+};
+
+const num: CSSProperties = { fontVariantNumeric: "tabular-nums" };
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(`${iso}T00:00:00Z`);
+  return d
+    .toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
+    .replace(" de ", " ")
+    .replace(".", "");
+}
+
+function scoreHue(pct: number): number {
+  return 120 * (Math.max(0, Math.min(100, pct)) / 100);
+}
+
+// ── componentes visuais ───────────────────────────────────────────────────
+
+function ScoreRing({ value, size = 40 }: { value: number; size?: number }) {
   const pct = Math.max(0, Math.min(100, value));
-  const hue = 120 * (pct / 100);
-  const inner = size - 12;
+  const inner = size - 10;
   return (
     <div
-      className="grid place-items-center rounded-full font-semibold text-white"
-      style={{ width: size, height: size, background: `conic-gradient(hsl(${hue} 70% 45%) ${pct}%, rgba(255,255,255,0.08) 0)` }}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        display: "grid",
+        placeItems: "center",
+        background: `conic-gradient(hsl(${scoreHue(pct)} 65% 45%) ${pct}%, var(--fill-subtle) 0)`,
+        flexShrink: 0,
+      }}
     >
-      <span className="grid place-items-center rounded-full bg-[#151518]" style={{ width: inner, height: inner, fontSize: size / 3.6 }}>
+      <span
+        style={{
+          width: inner,
+          height: inner,
+          borderRadius: "50%",
+          display: "grid",
+          placeItems: "center",
+          background: "var(--surface)",
+          color: "var(--text)",
+          fontWeight: 700,
+          fontSize: size / 3.4,
+          ...num,
+        }}
+      >
         {Math.round(pct)}
       </span>
     </div>
   );
 }
 
+function ImportanceMeter({ value, manual }: { value: number; manual: boolean }) {
+  const pct = Math.max(0, Math.min(100, value));
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontWeight: 600, width: 24, textAlign: "right", ...num }}>{Math.round(pct)}</span>
+      <div style={{ width: 44, height: 5, borderRadius: 99, background: "var(--fill-subtle)", overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 99, background: `hsl(${scoreHue(pct)} 65% 45%)` }} />
+      </div>
+      {manual && (
+        <span title="Ajustada manualmente" style={{ fontSize: 11, color: "var(--accent)" }}>✎</span>
+      )}
+    </div>
+  );
+}
+
+function Cover({ url, title }: { url: string | null; title: string }) {
+  if (!url) {
+    return (
+      <div
+        style={{
+          width: 36, height: 36, borderRadius: 8, background: "var(--fill-subtle)",
+          display: "grid", placeItems: "center", fontSize: 14, color: "var(--text-muted)", flexShrink: 0,
+        }}
+      >
+        ♪
+      </div>
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={url} alt={title} width={36} height={36} style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />;
+}
+
 function StatTile({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <div className="text-2xl font-semibold text-white">{value.toLocaleString("pt-BR")}</div>
-      <div className="mt-0.5 text-xs text-white/50">{label}</div>
+    <div style={{ ...card, padding: "14px 16px" }}>
+      <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", ...num }}>
+        {value.toLocaleString("pt-BR")}
+      </div>
+      <div style={{ marginTop: 2, fontSize: 12, color: "var(--text-muted)" }}>{label}</div>
     </div>
   );
 }
@@ -155,6 +290,8 @@ function draftFrom(e: RetroEntry): Draft {
   };
 }
 
+// ── página ────────────────────────────────────────────────────────────────
+
 export function RetroClient() {
   const [year, setYear] = useState(2005);
   const [month, setMonth] = useState(5);
@@ -162,6 +299,10 @@ export function RetroClient() {
   const [data, setData] = useState<RetroResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const [releaseFilter, setReleaseFilter] = useState<"all" | "year" | "month">("all");
+  const [page, setPage] = useState(1);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -171,6 +312,30 @@ export function RetroClient() {
     () => data?.entries.find((e) => e.songId === selectedId) ?? null,
     [data, selectedId],
   );
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const q = search.trim().toLowerCase();
+    let rows = data.entries;
+    if (q) {
+      rows = rows.filter((e) => e.title.toLowerCase().includes(q) || e.artist.toLowerCase().includes(q));
+    }
+    if (releaseFilter !== "all") {
+      // Mesma preferência da elegibilidade: single > álbum > clipe.
+      const y = data.period.year;
+      const m = String(data.period.month).padStart(2, "0");
+      rows = rows.filter((e) => {
+        const ref = e.singleReleaseDate ?? e.albumReleaseDate ?? e.youtubeReleaseDate;
+        if (!ref) return false;
+        return releaseFilter === "year" ? ref.startsWith(`${y}-`) : ref.startsWith(`${y}-${m}`);
+      });
+    }
+    return rows;
+  }, [data, search, releaseFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -183,6 +348,7 @@ export function RetroClient() {
         setData(null);
       } else {
         setData(body as RetroResponse);
+        setPage(1);
       }
     } catch {
       setError("network");
@@ -232,58 +398,83 @@ export function RetroClient() {
   }
 
   return (
-    <div className="space-y-5 text-white">
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <style>{`
+        .retro-row { cursor: pointer; transition: background 120ms ease; }
+        .retro-row:hover { background: var(--fill-subtle); }
+        .retro-input:focus { border-color: var(--accent) !important; }
+        input[type="range"].retro-range { accent-color: var(--accent); }
+      `}</style>
+
       {/* Controles */}
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-        <label className="flex flex-col gap-1 text-xs text-white/50">
-          Período da parada
-          <div className="flex gap-2">
-            <select value={month} onChange={(ev) => setMonth(Number(ev.target.value))}
-              className="rounded-lg border border-white/10 bg-[#151518] px-3 py-2 text-sm text-white">
+      <div style={{ ...card, display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 16, padding: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={labelStyle}>Período da parada</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <select value={month} onChange={(ev) => setMonth(Number(ev.target.value))} style={inputStyle}>
               {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
             </select>
-            <select value={year} onChange={(ev) => setYear(Number(ev.target.value))}
-              className="rounded-lg border border-white/10 bg-[#151518] px-3 py-2 text-sm text-white">
+            <select value={year} onChange={(ev) => setYear(Number(ev.target.value))} style={inputStyle}>
               {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-        </label>
+        </div>
 
-        <label className="flex flex-col gap-1 text-xs text-white/50">
-          Modo
-          <select value={mode} onChange={(ev) => setMode(ev.target.value as RetroMode)}
-            className="rounded-lg border border-white/10 bg-[#151518] px-3 py-2 text-sm text-white">
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={labelStyle}>Modo</span>
+          <select value={mode} onChange={(ev) => setMode(ev.target.value as RetroMode)} style={inputStyle}>
             <option value="retrospectivo">Retrospectivo</option>
             <option value="historico">Histórico</option>
           </select>
-        </label>
+        </div>
 
-        <button onClick={() => void load()} disabled={loading}
-          className="ml-auto rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black disabled:opacity-50">
+        <button
+          onClick={() => void load()}
+          disabled={loading}
+          style={{
+            marginLeft: "auto",
+            background: "var(--accent)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 10,
+            padding: "10px 18px",
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: loading ? "default" : "pointer",
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
           {loading ? "Calculando…" : "↻ Recalcular"}
         </button>
       </div>
 
       {error === "no_lastfm_user" && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        <div style={{ ...card, borderColor: "rgba(217, 119, 6, 0.4)", background: "rgba(217, 119, 6, 0.08)", padding: "12px 16px", fontSize: 14, color: "#B45309" }}>
           Nenhum usuário do Last.fm configurado na sua conta.
         </div>
       )}
       {error && error !== "no_lastfm_user" && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+        <div style={{ ...card, borderColor: "rgba(225, 29, 72, 0.4)", background: "rgba(225, 29, 72, 0.08)", padding: "12px 16px", fontSize: 14, color: "var(--down-fg)" }}>
           Não foi possível carregar a parada ({error}).
+        </div>
+      )}
+
+      {loading && !data && (
+        <div style={{ ...card, padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+          Montando sua parada retrospectiva… isso pode levar alguns segundos.
         </div>
       )}
 
       {data && (
         <>
-          <div className="text-xs text-white/40">
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
             Parada de {MONTHS[data.period.month - 1]} de {data.period.year} ·{" "}
             {data.usesRealPeriodData ? "plays reais do período" : "antes de Out/2010 → estimado"} ·{" "}
             {data.stats.matched} faixas casadas ({data.stats.unmatched} sem correspondência)
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {/* KPIs */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
             <StatTile value={data.stats.eligible} label="Músicas elegíveis" />
             <StatTile value={data.stats.withPeriodPlays} label="Com plays no período" />
             <StatTile value={data.stats.everInTop20} label="Já entraram na Top 20" />
@@ -291,49 +482,142 @@ export function RetroClient() {
             <StatTile value={data.stats.diamonds} label="Diamonds" />
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-white/10">
-            <table className="w-full min-w-[720px] text-sm">
-              <thead>
-                <tr className="border-b border-white/10 text-left text-xs text-white/40">
-                  <th className="px-3 py-3 font-medium">#</th>
-                  <th className="px-3 py-3 font-medium">Música</th>
-                  <th className="px-3 py-3 font-medium">Importância</th>
-                  <th className="px-3 py-3 font-medium">Peak</th>
-                  <th className="px-3 py-3 font-medium">Hit Level</th>
-                  <th className="px-3 py-3 font-medium">Prioridade</th>
-                  <th className="px-3 py-3 font-medium">Confiança</th>
-                  <th className="px-3 py-3 font-medium">Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.entries.map((e) => (
-                  <tr key={e.songId} onClick={() => openSong(e)}
-                    className={`cursor-pointer border-b border-white/5 hover:bg-white/[0.04] ${selectedId === e.songId ? "bg-white/[0.05]" : ""}`}>
-                    <td className="px-3 py-2 tabular-nums text-white/50">{e.position}</td>
-                    <td className="px-3 py-2">
-                      <div className="font-medium">{e.title}</div>
-                      <div className="text-xs text-white/40">{e.artist}</div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className="tabular-nums">{Math.round(e.importance)}</span>
-                      {e.importanceIsManual && <span className="ml-1 text-xs text-amber-400" title="ajustado manualmente">✎</span>}
-                    </td>
-                    <td className="px-3 py-2 text-white/70">{PEAK_LABEL[e.peakPotential]}</td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${HIT_STYLE[e.hitLevel].cls}`}>{HIT_STYLE[e.hitLevel].label}</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${PRIORITY_STYLE[e.priority]}`}>{e.priority}</span>
-                    </td>
-                    <td className="px-3 py-2 text-xs text-white/50">{CONFIDENCE_LABEL[e.confidence]}</td>
-                    <td className="px-3 py-2"><ScoreRing value={e.scoreFinal} /></td>
+          {/* Busca */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+            <input
+              value={search}
+              onChange={(ev) => { setSearch(ev.target.value); setPage(1); }}
+              placeholder="Buscar música ou artista…"
+              className="retro-input"
+              style={{ ...inputStyle, flex: "1 1 220px", maxWidth: 340 }}
+            />
+            <select
+              value={releaseFilter}
+              onChange={(ev) => { setReleaseFilter(ev.target.value as typeof releaseFilter); setPage(1); }}
+              style={inputStyle}
+              title="Filtrar pela data de lançamento (single > álbum > clipe)"
+            >
+              <option value="all">Lançadas até o período</option>
+              <option value="year">Lançadas em {data.period.year}</option>
+              <option value="month">Lançadas em {MONTHS[data.period.month - 1]}/{data.period.year}</option>
+            </select>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>
+              {filtered.length === data.entries.length
+                ? `${data.entries.length} posições`
+                : `${filtered.length} de ${data.entries.length} posições`}
+            </span>
+          </div>
+
+          {/* Tabela */}
+          <div style={{ ...card, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", minWidth: 1080, borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...thStyle, width: 40 }}>#</th>
+                    <th style={thStyle}>Música</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Mês</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>Total</th>
+                    <th style={thStyle}>Single</th>
+                    <th style={thStyle}>Clipe</th>
+                    <th style={thStyle}>Álbum</th>
+                    <th style={{ ...thStyle, textAlign: "center" }}>Pico</th>
+                    <th style={{ ...thStyle, textAlign: "center" }}>Sem.</th>
+                    <th style={{ ...thStyle, textAlign: "center" }}>#1s</th>
+                    <th style={thStyle}>Importância</th>
+                    <th style={thStyle}>Peak</th>
+                    <th style={thStyle}>Hit Level</th>
+                    <th style={{ ...thStyle, textAlign: "center" }}>Prio.</th>
+                    <th style={thStyle}>Score</th>
                   </tr>
-                ))}
-                {data.entries.length === 0 && (
-                  <tr><td colSpan={8} className="px-3 py-10 text-center text-white/40">Nenhuma música elegível para este período.</td></tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {pageRows.map((e) => (
+                    <tr
+                      key={e.songId}
+                      className="retro-row"
+                      onClick={() => openSong(e)}
+                      style={selectedId === e.songId ? { background: "var(--accent-tint)" } : undefined}
+                    >
+                      <td style={{ ...tdStyle, color: "var(--text-muted)", fontWeight: 600, ...num }}>{e.position}</td>
+                      <td style={{ ...tdStyle, minWidth: 220 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <Cover url={e.coverUrl} title={e.title} />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{e.title}</div>
+                            <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>
+                              {e.artist}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "right", ...num }}>
+                        {e.periodPlaycount == null ? <span style={{ color: "var(--text-muted)" }}>est.</span> : e.periodPlaycount}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "right", ...num }}>{e.overallPlaycount.toLocaleString("pt-BR")}</td>
+                      <td style={{ ...tdStyle, fontSize: 12, color: e.singleReleaseDate ? "var(--text-subtle)" : "var(--text-disabled)" }}>
+                        {fmtDate(e.singleReleaseDate)}
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: 12, color: e.youtubeReleaseDate ? "var(--text-subtle)" : "var(--text-disabled)" }}>
+                        {fmtDate(e.youtubeReleaseDate)}
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: 12, color: e.albumReleaseDate ? "var(--text-subtle)" : "var(--text-disabled)" }}>
+                        {fmtDate(e.albumReleaseDate)}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center", ...num }}>
+                        {e.top20BestPeak != null ? `#${e.top20BestPeak}` : <span style={{ color: "var(--text-disabled)" }}>—</span>}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center", ...num }}>{e.top20Weeks || <span style={{ color: "var(--text-disabled)" }}>—</span>}</td>
+                      <td style={{ ...tdStyle, textAlign: "center", ...num }}>{e.numberOnes || <span style={{ color: "var(--text-disabled)" }}>—</span>}</td>
+                      <td style={tdStyle}><ImportanceMeter value={e.importance} manual={e.importanceIsManual} /></td>
+                      <td style={{ ...tdStyle, fontWeight: 600 }}>
+                        {PEAK_LABEL[e.peakPotential]}
+                        {e.peakPotentialIsManual && <span title="Definido manualmente" style={{ marginLeft: 4, fontSize: 11, color: "var(--accent)" }}>✎</span>}
+                      </td>
+                      <td style={tdStyle}>
+                        <span style={badgeStyle(HIT_BADGE[e.hitLevel].fg, HIT_BADGE[e.hitLevel].bg)}>{HIT_BADGE[e.hitLevel].label}</span>
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center" }}>
+                        <span style={badgeStyle(PRIORITY_BADGE[e.priority].fg, PRIORITY_BADGE[e.priority].bg)}>{e.priority}</span>
+                      </td>
+                      <td style={tdStyle}><ScoreRing value={e.scoreFinal} /></td>
+                    </tr>
+                  ))}
+                  {pageRows.length === 0 && (
+                    <tr>
+                      <td colSpan={15} style={{ ...tdStyle, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
+                        {search ? "Nenhuma música encontrada para a busca." : "Nenhuma música elegível para este período."}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginação */}
+            {filtered.length > PAGE_SIZE && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", borderTop: "1px solid var(--divider)" }}>
+                <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>
+                  Mostrando {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} de {filtered.length}
+                </span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage <= 1}
+                    style={{ ...inputStyle, padding: "6px 12px", cursor: safePage <= 1 ? "default" : "pointer", opacity: safePage <= 1 ? 0.4 : 1 }}
+                  >
+                    ← Anterior
+                  </button>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage >= totalPages}
+                    style={{ ...inputStyle, padding: "6px 12px", cursor: safePage >= totalPages ? "default" : "pointer", opacity: safePage >= totalPages ? 0.4 : 1 }}
+                  >
+                    Próxima →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
@@ -341,52 +625,76 @@ export function RetroClient() {
       {/* Painel lateral de detalhes */}
       {selected && draft && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setSelectedId(null)} />
-          <aside className="fixed right-0 top-0 z-50 flex h-full w-full max-w-[400px] flex-col overflow-y-auto border-l border-white/10 bg-[#0f0f12] p-5 text-white shadow-2xl">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-xs text-white/40">#{selected.position} · Detalhes da música</div>
-                <div className="mt-1 text-lg font-semibold">{selected.title}</div>
-                <div className="text-sm text-white/50">{selected.artist}</div>
+          <div
+            onClick={() => setSelectedId(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 40, background: "rgba(0, 0, 0, 0.45)" }}
+          />
+          <aside
+            style={{
+              position: "fixed", right: 0, top: 0, zIndex: 50, height: "100%",
+              width: "min(420px, 100vw)", overflowY: "auto",
+              background: "var(--surface)", borderLeft: "1px solid var(--divider)",
+              padding: 20, boxShadow: "-12px 0 40px rgba(0, 0, 0, 0.25)",
+              display: "flex", flexDirection: "column", gap: 18,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <Cover url={selected.coverUrl} title={selected.title} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>#{selected.position} · Detalhes da música</div>
+                <div style={{ marginTop: 2, fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>{selected.title}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  {selected.artist}{selected.album ? ` · ${selected.album}` : ""}
+                </div>
               </div>
-              <button onClick={() => setSelectedId(null)} className="rounded-md px-2 py-1 text-white/50 hover:bg-white/5">✕</button>
+              <button
+                onClick={() => setSelectedId(null)}
+                style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 16, cursor: "pointer", padding: 4 }}
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="mt-4 flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <div style={{ ...card, display: "flex", alignItems: "center", gap: 14, padding: 14 }}>
               <ScoreRing value={selected.scoreFinal} size={56} />
               <div>
-                <div className="text-xs text-white/40">Score Final</div>
-                <div className="text-xl font-semibold">{selected.scoreFinal.toFixed(1)} <span className="text-sm text-white/40">/ 100</span></div>
-                <div className="text-xs text-white/40">
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Score Final</div>
+                <div style={{ fontSize: 20, fontWeight: 700, ...num }}>
+                  {selected.scoreFinal.toFixed(1)} <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>/ 100</span>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   Pico provável {PEAK_LABEL[selected.peakPotential]} · Confiança {CONFIDENCE_LABEL[selected.confidence]}
                 </div>
               </div>
             </div>
 
             {/* Por que está aqui */}
-            <div className="mt-4">
-              <div className="mb-2 text-sm font-medium text-white/70">Por que essa música está aqui?</div>
-              <ul className="space-y-1 text-sm text-white/60">
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Por que essa música está aqui?</div>
+              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
                 {reasonsFor(selected).map((r) => (
-                  <li key={r} className="flex gap-2"><span className="text-emerald-400">✔</span>{r}</li>
+                  <li key={r} style={{ display: "flex", gap: 8, fontSize: 13, color: "var(--text-subtle)" }}>
+                    <span style={{ color: "var(--up-fg)" }}>✔</span>{r}
+                  </li>
                 ))}
               </ul>
             </div>
 
             {/* Pesos do cálculo */}
-            <div className="mt-5">
-              <div className="mb-2 text-sm font-medium text-white/70">Pesos do cálculo</div>
-              <div className="space-y-2">
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Pesos do cálculo</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {WEIGHT_ROWS.map((w) => {
                   const val = selected.breakdown[w.key];
                   return (
-                    <div key={w.key} className="text-xs">
-                      <div className="flex justify-between text-white/50">
+                    <div key={w.key}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-muted)" }}>
                         <span>{w.label}</span>
-                        <span className="tabular-nums">{val.toFixed(1)} / {w.max}</span>
+                        <span style={num}>{val.toFixed(1)} / {w.max}</span>
                       </div>
-                      <div className="mt-1 h-1.5 rounded-full bg-white/5">
-                        <div className={`h-1.5 rounded-full ${w.bar}`} style={{ width: `${Math.min(100, (val / w.max) * 100)}%` }} />
+                      <div style={{ marginTop: 4, height: 6, borderRadius: 99, background: "var(--fill-subtle)", overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 99, background: w.color, width: `${Math.min(100, (val / w.max) * 100)}%` }} />
                       </div>
                     </div>
                   );
@@ -395,31 +703,45 @@ export function RetroClient() {
             </div>
 
             {/* Editor */}
-            <div className="mt-6 space-y-4 border-t border-white/10 pt-4">
+            <div style={{ borderTop: "1px solid var(--divider)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Importância */}
               <div>
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-sm font-medium text-white/70">Importância</span>
-                  <label className="flex items-center gap-1 text-xs text-white/50">
-                    <input type="checkbox" checked={draft.impManual}
-                      onChange={(ev) => setDraft({ ...draft, impManual: ev.target.checked })} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>Importância</span>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={draft.impManual}
+                      onChange={(ev) => setDraft({ ...draft, impManual: ev.target.checked })}
+                      style={{ accentColor: "var(--accent)" }}
+                    />
                     Manual
                   </label>
                 </div>
-                <div className="flex items-center gap-3">
-                  <input type="range" min={0} max={100} value={draft.impValue} disabled={!draft.impManual}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <input
+                    type="range" min={0} max={100} value={draft.impValue} disabled={!draft.impManual}
                     onChange={(ev) => setDraft({ ...draft, impValue: Number(ev.target.value) })}
-                    className="w-full disabled:opacity-40" />
-                  <span className="w-9 text-right text-sm tabular-nums">{draft.impManual ? draft.impValue : Math.round(selected.importance)}</span>
+                    className="retro-range"
+                    style={{ flex: 1, opacity: draft.impManual ? 1 : 0.4 }}
+                  />
+                  <span style={{ width: 32, textAlign: "right", fontSize: 14, fontWeight: 600, ...num }}>
+                    {draft.impManual ? draft.impValue : Math.round(selected.importance)}
+                  </span>
                 </div>
-                {!draft.impManual && <div className="mt-0.5 text-xs text-white/30">Usando valor calculado automaticamente.</div>}
+                {!draft.impManual && (
+                  <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>Usando valor calculado automaticamente.</div>
+                )}
               </div>
 
               {/* Peak Potential */}
               <div>
-                <div className="mb-1 text-sm font-medium text-white/70">Peak Potential</div>
-                <select value={draft.peak} onChange={(ev) => setDraft({ ...draft, peak: ev.target.value as Draft["peak"] })}
-                  className="w-full rounded-lg border border-white/10 bg-[#151518] px-3 py-2 text-sm">
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Peak Potential</div>
+                <select
+                  value={draft.peak}
+                  onChange={(ev) => setDraft({ ...draft, peak: ev.target.value as Draft["peak"] })}
+                  style={{ ...inputStyle, width: "100%" }}
+                >
                   <option value="auto">Automático ({PEAK_LABEL[selected.peakPotential]})</option>
                   {PEAK_ORDER.map((p) => <option key={p} value={p}>{PEAK_LABEL[p]}</option>)}
                 </select>
@@ -427,24 +749,42 @@ export function RetroClient() {
 
               {/* Ajuste manual */}
               <div>
-                <div className="mb-1 flex items-center justify-between text-sm font-medium text-white/70">
-                  <span>Ajuste manual</span>
-                  <span className="tabular-nums text-white/50">{draft.adjust > 0 ? `+${draft.adjust}` : draft.adjust}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>Ajuste manual</span>
+                  <span style={{ fontSize: 13, color: "var(--text-muted)", ...num }}>
+                    {draft.adjust > 0 ? `+${draft.adjust}` : draft.adjust}
+                  </span>
                 </div>
-                <input type="range" min={-50} max={50} value={draft.adjust}
-                  onChange={(ev) => setDraft({ ...draft, adjust: Number(ev.target.value) })} className="w-full" />
+                <input
+                  type="range" min={-50} max={50} value={draft.adjust}
+                  onChange={(ev) => setDraft({ ...draft, adjust: Number(ev.target.value) })}
+                  className="retro-range"
+                  style={{ width: "100%" }}
+                />
               </div>
 
               {/* Nota */}
               <div>
-                <div className="mb-1 text-sm font-medium text-white/70">Observação pessoal</div>
-                <textarea value={draft.note} onChange={(ev) => setDraft({ ...draft, note: ev.target.value })}
-                  rows={3} placeholder="Essa música marcou minha adolescência…"
-                  className="w-full resize-none rounded-lg border border-white/10 bg-[#151518] px-3 py-2 text-sm" />
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Observação pessoal</div>
+                <textarea
+                  value={draft.note}
+                  onChange={(ev) => setDraft({ ...draft, note: ev.target.value })}
+                  rows={3}
+                  placeholder="Essa música marcou minha adolescência…"
+                  className="retro-input"
+                  style={{ ...inputStyle, width: "100%", resize: "none", fontFamily: "inherit" }}
+                />
               </div>
 
-              <button onClick={() => void saveDraft()} disabled={saving}
-                className="w-full rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black disabled:opacity-50">
+              <button
+                onClick={() => void saveDraft()}
+                disabled={saving}
+                style={{
+                  background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10,
+                  padding: "11px 18px", fontSize: 14, fontWeight: 600,
+                  cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1,
+                }}
+              >
                 {saving ? "Salvando…" : "Salvar e recalcular"}
               </button>
             </div>
