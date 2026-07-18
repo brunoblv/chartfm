@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Layers, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
 
@@ -8,7 +9,7 @@ type Kind = "music" | "albums" | "artists";
 type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs" | "all";
 
 const SOURCES: { key: Source; label: string; title: string; kinds: Kind[] }[] = [
-  { key: "all", label: "Todas as APIs", title: "Roda Spotify, MusicBrainz, Last.fm, Wikipedia e Bugs, nessa ordem, para cada item", kinds: ["music", "albums", "artists"] },
+  { key: "all", label: "Todas as APIs", title: "Roda Spotify, MusicBrainz, Last.fm e Wikipedia, nessa ordem, para cada item (Bugs fica de fora — só cobre bem música asiática, use o filtro dedicado)", kinds: ["music", "albums", "artists"] },
   { key: "spotify", label: "Spotify", title: "Só Spotify", kinds: ["music", "albums", "artists"] },
   { key: "musicbrainz", label: "MusicBrainz", title: "Só MusicBrainz", kinds: ["music", "albums", "artists"] },
   { key: "lastfm", label: "Last.fm", title: "Só Last.fm", kinds: ["music", "albums", "artists"] },
@@ -47,7 +48,10 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function useBatchBackfill(kind: Kind, initialTotal: number) {
+type Scope = "asian";
+
+function useBatchBackfill(kind: Kind, initialTotal: number, scope?: Scope) {
+  const router = useRouter();
   const [running, setRunning] = useState<Source | null>(null);
   const [force, setForce] = useState(false);
   const [total, setTotal] = useState(initialTotal);
@@ -83,7 +87,7 @@ function useBatchBackfill(kind: Kind, initialTotal: number) {
         const res = await fetch("/api/admin/edicao-de-dados/backfill-source", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind, source, exclude, force }),
+          body: JSON.stringify({ kind, source, exclude, force, scope }),
         });
         const data = (await res.json().catch(() => ({}))) as BatchResponse;
 
@@ -116,6 +120,8 @@ function useBatchBackfill(kind: Kind, initialTotal: number) {
           setFailedItems([...failedById.values()]);
         }
 
+        if ((data.updated ?? 0) > 0) router.refresh();
+
         if (batchProcessed === 0) {
           if (nextRemaining === 0) break;
           consecutiveStalls += 1;
@@ -140,6 +146,7 @@ function useBatchBackfill(kind: Kind, initialTotal: number) {
       setMessage("Erro de conexão durante a busca.");
     } finally {
       setRunning(null);
+      router.refresh();
     }
   }
 
@@ -162,10 +169,12 @@ function BackfillBody({
   kind,
   initialTotal,
   description,
+  scope,
 }: {
   kind: Kind;
   initialTotal: number;
   description: string;
+  scope?: Scope;
 }) {
   const {
     running,
@@ -179,7 +188,7 @@ function BackfillBody({
     failedItems,
     percent,
     run,
-  } = useBatchBackfill(kind, initialTotal);
+  } = useBatchBackfill(kind, initialTotal, scope);
 
   return (
     <>
@@ -323,12 +332,15 @@ export function BackfillDrawerButton({
   initialTotal,
   description,
   buttonLabel,
+  scope,
 }: {
   kind: Kind;
   initialTotal: number;
   description: string;
   /** Rótulo do botão; padrão: "Backfill em lote (N)". */
   buttonLabel?: string;
+  /** Restringe o lote a um subconjunto (hoje só "asian" — música k-pop/j-pop/c-pop/t-pop). */
+  scope?: Scope;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -433,7 +445,7 @@ export function BackfillDrawerButton({
               </button>
             </div>
             <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
-              <BackfillBody kind={kind} initialTotal={initialTotal} description={description} />
+              <BackfillBody kind={kind} initialTotal={initialTotal} description={description} scope={scope} />
             </div>
           </aside>
           <style>{`@keyframes dadosDrawerIn { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>

@@ -3,6 +3,7 @@ import { createEmailUser } from "@/lib/email-user";
 import { sendVerificationEmailForUser } from "@/lib/email-verification";
 import { isPasswordStrongEnough } from "@/lib/password";
 import { enforceIpRateLimit } from "@/lib/rate-limit";
+import { recordSignupEvent } from "@/lib/analytics-signup";
 
 export async function POST(req: Request) {
   const limited = enforceIpRateLimit(req, "register", {
@@ -37,6 +38,8 @@ export async function POST(req: Request) {
       result.error === "email_taken" || result.error === "google_account" ? 409 : 400;
     return NextResponse.json({ error: result.error }, { status });
   }
+
+  await recordSignupEvent(result.userId, "/signup");
 
   const origin = new URL(req.url).origin;
   const emailSent = await sendVerificationEmailForUser(result.userId, origin);

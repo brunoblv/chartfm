@@ -178,6 +178,19 @@ export const CHART_GENRES: readonly ChartGenre[] = [
   },
 ] as const;
 
+/**
+ * Tags que indicam música do leste/sudeste asiático (k-pop, j-pop, c-pop, t-pop) —
+ * usadas no filtro "Música asiática" de admin/dados, escopo do backfill via Bugs
+ * (music.bugs.co.kr), que só tem cobertura boa nesse universo.
+ */
+export const ASIAN_GENRE_TAGS: readonly string[] = [
+  "k-pop", "k-rap", "k-ballad", "k-rock",
+  "j-pop", "j-rock", "j-rap", "j-r&b", "j-dance", "anime", "vocaloid",
+  "japanese indie", "city pop", "kayōkyoku", "enka", "shibuya-kei", "visual kei",
+  "c-pop", "mandopop", "cantopop", "chinese r&b",
+  "t-pop", "thai pop",
+];
+
 /** Gêneros com card no Discover (têm cor e letra). */
 export const DISCOVER_CHART_GENRES = CHART_GENRES.filter(
   (g): g is ChartGenre & { color: [string, string]; letter: string } =>

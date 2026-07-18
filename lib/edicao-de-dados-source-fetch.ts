@@ -51,7 +51,8 @@ import { lookupBugsAlbum, lookupBugsRelease } from "@/lib/bugs-lookup";
  */
 
 export type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
-export const ALL_SOURCES: Source[] = ["spotify", "musicbrainz", "lastfm", "wikipedia", "bugs"];
+/** "Todas as APIs" não inclui Bugs — cobertura só é boa para música asiática (kpop/jpop/cpop/tpop); rodar via fonte dedicada no filtro "Música asiática". */
+export const ALL_SOURCES: Source[] = ["spotify", "musicbrainz", "lastfm", "wikipedia"];
 
 function fmtDate(d: Date): string {
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
@@ -221,20 +222,23 @@ export async function fetchForSong(
 
       if (result.singleReleaseDate) {
         found.push(`single: ${result.singleReleaseDate}`);
-        if (result.artistConfirmed && !song.singleReleaseDate) {
+        if (!song.singleReleaseDate) {
           data.singleReleaseDate = new Date(result.singleReleaseDate);
           applied.push("data do single");
         }
       }
       if (result.clipReleaseDate) {
         found.push(`clipe: ${result.clipReleaseDate}`);
-        if (result.artistConfirmed && !song.musicVideoReleaseDate) {
+        if (!song.musicVideoReleaseDate) {
           data.musicVideoReleaseDate = new Date(result.clipReleaseDate);
           applied.push("data do clipe");
         }
       }
       if (!result.artistConfirmed) {
-        found.push("⚠ artista não confirmado (nome nativo?) — não gravado, conferir manualmente");
+        // Busca já inclui o artista na query — grupos de kpop costumam estar
+        // indexados só pelo nome nativo no Bugs, então o match de artista
+        // falha mesmo quando o título bateu certo; título é sinal suficiente.
+        found.push("⚠ artista não confirmado no Bugs (nome nativo?) — conferir manualmente se houver dúvida");
       }
       if (Object.keys(data).length > 0) {
         await prisma.song.update({
@@ -407,20 +411,20 @@ export async function fetchForAlbum(
 
       if (result.releaseDate) {
         found.push(`data: ${result.releaseDate}`);
-        if (result.artistConfirmed && !album.releaseDate) {
+        if (!album.releaseDate) {
           data.releaseDate = new Date(result.releaseDate);
           applied.push(`data (${result.releaseDate})`);
         }
       }
       if (result.cover) {
         found.push("capa");
-        if (result.artistConfirmed && !album.coverUrl?.trim()) {
+        if (!album.coverUrl?.trim()) {
           data.coverUrl = result.cover;
           applied.push("capa");
         }
       }
       if (!result.artistConfirmed) {
-        found.push("⚠ artista não confirmado (nome nativo?) — não gravado, conferir manualmente");
+        found.push("⚠ artista não confirmado no Bugs (nome nativo?) — conferir manualmente se houver dúvida");
       }
       if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
       return { found, applied, link: `https://music.bugs.co.kr/album/${result.match.albumId}` };

@@ -7,6 +7,16 @@ const SESSION_KEY = "cfm_sid";
 const SESSION_IDLE_MS = 30 * 60 * 1000; // 30 min sem atividade rotaciona a sessão
 const HEARTBEAT_MS = 60 * 1000;
 
+// Espelha o id em cookie (não-httpOnly) para o servidor conseguir vincular
+// eventos server-side (ex: cadastro) à mesma sessão do tracking client-side.
+function syncSessionCookie(id: string) {
+  try {
+    document.cookie = `${SESSION_KEY}=${id}; Max-Age=${Math.floor(SESSION_IDLE_MS / 1000)}; Path=/; SameSite=Lax`;
+  } catch {
+    // cookies indisponíveis — segue só com localStorage
+  }
+}
+
 function getSessionId(): string {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -14,6 +24,7 @@ function getSessionId(): string {
       const { id, ts } = JSON.parse(raw) as { id: string; ts: number };
       if (id && Date.now() - ts < SESSION_IDLE_MS) {
         localStorage.setItem(SESSION_KEY, JSON.stringify({ id, ts: Date.now() }));
+        syncSessionCookie(id);
         return id;
       }
     }
@@ -29,6 +40,7 @@ function getSessionId(): string {
   } catch {
     // sem persistência: sessão vale só para esta página
   }
+  syncSessionCookie(id);
   return id;
 }
 

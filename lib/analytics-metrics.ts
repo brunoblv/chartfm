@@ -17,6 +17,9 @@ export type AnalyticsDashboardData = {
     avgSessionSeconds7d: number;
     visitorsToday: number;
     loggedToday: number;
+    landingVisitors7d: number;
+    signupsFromLanding7d: number;
+    conversionPct7d: number; // signupsFromLanding7d ÷ landingVisitors7d
   };
   traffic: {
     daily: { day: string; visitors: number; logged: number; avgSession: number; pageviews: number }[];
@@ -119,7 +122,7 @@ export async function getAnalyticsDashboardData(now = new Date()): Promise<Analy
     }),
     prisma.analyticsEvent.findMany({
       where: { createdAt: { gte: todayStartBrt } },
-      select: { sessionId: true, userId: true, type: true },
+      select: { sessionId: true, userId: true, type: true, path: true },
     }),
   ]);
 
@@ -248,11 +251,18 @@ export async function getAnalyticsDashboardData(now = new Date()): Promise<Analy
   // ── Tráfego (eventos novos) ──
   const todaySessions = new Set<string>();
   const todayLogged = new Set<string>();
+  const todayLandingSessions = new Set<string>();
   let todayPageviews = 0;
+  let todaySignupEvents = 0;
   for (const ev of todayEvents) {
     todaySessions.add(ev.sessionId);
     if (ev.userId) todayLogged.add(ev.userId);
-    if (ev.type === "pageview") todayPageviews++;
+    if (ev.type === "pageview") {
+      todayPageviews++;
+      if (ev.path === "/" && !ev.userId) todayLandingSessions.add(ev.sessionId);
+    } else if (ev.type === "signup") {
+      todaySignupEvents++;
+    }
   }
 
   const daily = dailyStats.map((s) => ({
@@ -275,6 +285,10 @@ export async function getAnalyticsDashboardData(now = new Date()): Promise<Analy
   const sumSessions = last7.reduce((a, s) => a + s.sessions, 0);
   const avgSessionSeconds7d = sumSessions > 0 ? Math.round(sumSeconds / sumSessions) : 0;
 
+  const landingVisitors7d = last7.reduce((a, s) => a + s.landingVisitors, 0) + todayLandingSessions.size;
+  const signupsFromLanding7d = last7.reduce((a, s) => a + s.signupEvents, 0) + todaySignupEvents;
+  const conversionPct7d = landingVisitors7d > 0 ? Math.round((signupsFromLanding7d / landingVisitors7d) * 1000) / 10 : 0;
+
   return {
     tiles: {
       totalUsers,
@@ -286,6 +300,9 @@ export async function getAnalyticsDashboardData(now = new Date()): Promise<Analy
       avgSessionSeconds7d,
       visitorsToday: todaySessions.size,
       loggedToday: todayLogged.size,
+      landingVisitors7d,
+      signupsFromLanding7d,
+      conversionPct7d,
     },
     traffic: {
       daily,

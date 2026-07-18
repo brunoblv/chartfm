@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { RefreshCw, CheckCircle2, AlertCircle, Loader2, Wrench } from "lucide-react";
 import { adminEntityLinkStyle } from "@/components/admin/AdminEntityLinks";
@@ -37,6 +38,7 @@ function sleep(ms: number) {
 }
 
 export function MissingInfoBackfillClient({ initialTotal }: Props) {
+  const router = useRouter();
   const [running, setRunning] = useState(false);
   const [total, setTotal] = useState(initialTotal);
   const [processed, setProcessed] = useState(0);
@@ -112,6 +114,8 @@ export function MissingInfoBackfillClient({ initialTotal }: Props) {
           setManualItems([...manualByKey.values()]);
         }
 
+        if (batchUpdated > 0) router.refresh();
+
         if (batchProcessed === 0) {
           setTotal(processedSum);
           break;
@@ -125,6 +129,7 @@ export function MissingInfoBackfillClient({ initialTotal }: Props) {
       setMessage("Erro de conexão durante a atualização.");
     } finally {
       setRunning(false);
+      router.refresh();
     }
   }
 

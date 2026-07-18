@@ -29,7 +29,9 @@ export async function rollupAnalyticsDay(dayKey: string) {
   const loggedUsers = new Set<string>();
   const pathViews = new Map<string, number>();
   const editorialViews = new Map<string, number>();
+  const landingVisitorSessions = new Set<string>();
   let pageviews = 0;
+  let signupEvents = 0;
 
   for (const ev of events) {
     const t = ev.createdAt.getTime();
@@ -44,10 +46,13 @@ export async function rollupAnalyticsDay(dayKey: string) {
     if (ev.type === "pageview") {
       pageviews++;
       pathViews.set(ev.path, (pathViews.get(ev.path) ?? 0) + 1);
+      if (ev.path === "/" && !ev.userId) landingVisitorSessions.add(ev.sessionId);
       const editorialSlug = ev.path.match(/^\/editorial\/([^/]+)/)?.[1];
       if (editorialSlug) {
         editorialViews.set(editorialSlug, (editorialViews.get(editorialSlug) ?? 0) + 1);
       }
+    } else if (ev.type === "signup") {
+      signupEvents++;
     }
   }
 
@@ -73,6 +78,8 @@ export async function rollupAnalyticsDay(dayKey: string) {
     totalSeconds,
     avgSessionSeconds,
     signups,
+    landingVisitors: landingVisitorSessions.size,
+    signupEvents,
     topPaths,
   };
 

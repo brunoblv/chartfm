@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { isGoogleAuthConfigured } from "@/lib/auth-config";
 import { ensureGoogleUser } from "@/lib/google-user";
+import { recordSignupEvent } from "@/lib/analytics-signup";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 
@@ -70,12 +71,17 @@ export function getAuthOptions(): NextAuthOptions {
           // Retornar uma string aqui NÃO cria a sessão (next-auth aborta o login e só
           // redireciona) — o envio de usuário novo para /onboarding é feito pelo
           // middleware via token.needsHandle.
-          await ensureGoogleUser({
+          const result = await ensureGoogleUser({
             email: user.email,
             name: user.name,
             image: user.image,
             googleId: account.providerAccountId,
           });
+          if (result.isNew) {
+            // Login/signup com Google podem partir de /login ou /signup — não dá pra
+            // distinguir aqui, então usamos um marcador fixo para o path do evento.
+            await recordSignupEvent(result.userId, "/auth/google");
+          }
           return true;
         } catch (e) {
           console.error("[auth] ensureGoogleUser", e);

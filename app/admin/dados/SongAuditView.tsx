@@ -38,6 +38,8 @@ export async function SongAuditView({
   const hrefFor = (f: SongFiltro, p: number, s: DadosSort = sort) =>
     `${basePath}${dadosListQuery({ filtro: f, q, sort: s, page: p })}`;
 
+  const isAsianFiltro = filtro === "asiatica";
+
   return (
     <>
       <div
@@ -59,8 +61,13 @@ export async function SongAuditView({
         />
         <BackfillDrawerButton
           kind="music"
-          initialTotal={problemCount}
-          description="Roda todas as APIs juntas ou uma de cada vez para todas as músicas com pendência (álbum, capa, MBID, datas, gêneros). Fontes já marcadas como «sem resultado» são puladas."
+          initialTotal={isAsianFiltro ? result.total : problemCount}
+          description={
+            isAsianFiltro
+              ? "Roda uma fonte por vez (recomendado: Bugs, boa cobertura de kpop/jpop/cpop/tpop) só nas músicas deste filtro. Fontes já marcadas como «sem resultado» são puladas."
+              : "Roda todas as APIs juntas ou uma de cada vez para todas as músicas com pendência (álbum, capa, MBID, datas, gêneros). Fontes já marcadas como «sem resultado» são puladas."
+          }
+          scope={isAsianFiltro ? "asian" : undefined}
         />
         {scopeToggle && (
           <Link

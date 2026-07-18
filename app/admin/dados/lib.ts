@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
+import { ASIAN_GENRE_TAGS } from "@/lib/genre-taxonomy";
 
 export const DADOS_PAGE_SIZE = 50;
 
@@ -94,7 +95,8 @@ export type SongFiltro =
   | "sem-clipe"
   | "data-01-01"
   | "datas-nao-encontradas"
-  | "criadas-manualmente";
+  | "criadas-manualmente"
+  | "asiatica";
 
 export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "todas", label: "Todas" },
@@ -108,6 +110,7 @@ export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "data-01-01", label: "Data 01/01" },
   { key: "datas-nao-encontradas", label: "Datas não encontradas" },
   { key: "criadas-manualmente", label: "Criadas manualmente" },
+  { key: "asiatica", label: "Música asiática" },
 ];
 
 export const SONG_FILTRO_DESCRICAO: Record<SongFiltro, string> = {
@@ -125,6 +128,8 @@ export const SONG_FILTRO_DESCRICAO: Record<SongFiltro, string> = {
     "Backfill automático já tentou Wikipedia e MusicBrainz sem resultado — corrija manualmente ou edite título/artista e use WIKI/MB na linha.",
   "criadas-manualmente":
     "Cadastradas à mão na tela de criar parada (Spotify indisponível) — ainda sem busca no Spotify. Use o botão de forçar busca na linha.",
+  asiatica:
+    "Músicas com gênero k-pop, j-pop, c-pop ou t-pop (música ou artista). Escopo do backfill via Bugs (music.bugs.co.kr), que só tem cobertura boa nesse universo.",
 };
 
 export const criadasManualmenteWhere: Prisma.SongWhereInput = { createdManually: true };
@@ -192,6 +197,14 @@ export const songProblemasWhere: Prisma.SongWhereInput = {
   OR: [semAlbumWhere, albumSemCapaWhere, semMbidWhere, semSingleWhere, semClipeWhere],
 };
 
+/** Música ou artista com gênero k-pop/j-pop/c-pop/t-pop — escopo do backfill via Bugs. */
+export const asianMusicWhere: Prisma.SongWhereInput = {
+  OR: [
+    { genres: { hasSome: ASIAN_GENRE_TAGS as string[] } },
+    { artistRef: { genres: { hasSome: ASIAN_GENRE_TAGS as string[] } } },
+  ],
+};
+
 /** Músicas que aparecem em alguma parada própria do usuário (exclui paradas de comunidade e excluídas). */
 export function minhasParadasWhere(userId: string): Prisma.SongWhereInput {
   return {
@@ -240,6 +253,8 @@ function songFiltroWhere(filtro: SongFiltro): Prisma.SongWhereInput | null {
       return datasNaoEncontradasWhere;
     case "criadas-manualmente":
       return criadasManualmenteWhere;
+    case "asiatica":
+      return asianMusicWhere;
   }
 }
 

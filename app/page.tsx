@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
@@ -363,7 +364,20 @@ export default async function HomePage() {
     followingIds = new Set(followRows.map((r) => r.followingId));
   }
 
-  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed, systemFeedPosts, copaLiveFeed, editorialPicks] =
+  const editorialPicksPromise = getEditorialPicksSorted().catch((err) => {
+    console.error("[home] getEditorialPicksSorted", err);
+    return [] as Awaited<ReturnType<typeof getEditorialPicksSorted>>;
+  });
+  // Encadeada na própria promise dos picks (em vez de esperar o Promise.all inteiro
+  // terminar) para rodar em paralelo com as outras 13 queries abaixo.
+  const editorialPreviewImagesPromise = editorialPicksPromise.then((picks) =>
+    resolveEditorialPreviewImages(picks).catch((err) => {
+      console.error("[home] resolveEditorialPreviewImages", err);
+      return new Map<string, string | null>();
+    }),
+  );
+
+  const [daysLeft, trendingArtists, globalTopSongs, suggestedUsers, newUsers, timelineFeeds, publishedToday, reviewsFeed, reviewsForYou, followingReviews, recommendationsFeed, systemFeedPosts, copaLiveFeed, editorialPicks, editorialPreviewImages] =
     await Promise.all([
       Promise.resolve(daysUntilSundayBRT()),
       getTrendingArtists(rankingWeek.weekIndex),
@@ -391,17 +405,11 @@ export default async function HomePage() {
         console.error("[home] getCopaLiveFeedFixtures", err);
         return null;
       }),
-      getEditorialPicksSorted().catch((err) => {
-        console.error("[home] getEditorialPicksSorted", err);
-        return [] as Awaited<ReturnType<typeof getEditorialPicksSorted>>;
-      }),
+      editorialPicksPromise,
+      editorialPreviewImagesPromise,
     ]);
   const { friendsFeed, allFeed } = timelineFeeds;
   // Resolve capa (YouTube/Spotify) dos picks sem previewImage para o card do feed mostrar foto.
-  const editorialPreviewImages = await resolveEditorialPreviewImages(editorialPicks).catch((err) => {
-    console.error("[home] resolveEditorialPreviewImages", err);
-    return new Map<string, string | null>();
-  });
   const editorialPicksWithImages = editorialPicks.map((pick) => ({
     ...pick,
     previewImage: editorialPreviewImages.get(pick.slug) ?? pick.previewImage,
@@ -546,9 +554,17 @@ async function getNewUsers(userId: string, followingIds: Set<string>, limit = 5)
   }));
 }
 
-async function getTrendingArtists(weekIdx: number, limit = 4) {
+function getTrendingArtists(weekIdx: number, limit = 4) {
+  return unstable_cache(
+    () => fetchTrendingArtists(weekIdx, limit),
+    [`home-trending-artists-${weekIdx}-${limit}`],
+    { revalidate: 60 },
+  )();
+}
+
+async function fetchTrendingArtists(weekIdx: number, limit: number) {
   const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: weekIdx } },
+    where: { chart: { weekIndex: weekIdx }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,
@@ -690,7 +706,15 @@ async function getLatestAvailableWeekIndex(maxWeekIndex: number): Promise<number
   return candidates.length ? Math.max(...candidates) : null;
 }
 
-async function getGlobalTopSongs(weekIdx: number, limit = 3) {
+function getGlobalTopSongs(weekIdx: number, limit = 3) {
+  return unstable_cache(
+    () => fetchGlobalTopSongs(weekIdx, limit),
+    [`home-global-top-songs-${weekIdx}-${limit}`],
+    { revalidate: 60 },
+  )();
+}
+
+async function fetchGlobalTopSongs(weekIdx: number, limit: number) {
   const snapshot = await prisma.globalSnapshot.findUnique({ where: { weekIndex: weekIdx } });
   const hasCoverInSlice = (
     rows: Awaited<ReturnType<typeof getOrCreateRankingWeekSnapshot>>["payload"]["weeklySongs"],
@@ -706,7 +730,7 @@ async function getGlobalTopSongs(weekIdx: number, limit = 3) {
     // Recalcula ao vivo usando Album.coverUrl.
   }
   const entries: WeeklyChartEntryRow[] = await prisma.chartEntry.findMany({
-    where: { chart: { weekIndex: weekIdx } },
+    where: { chart: { weekIndex: weekIdx }, position: { lte: 100 } },
     select: {
       position: true,
       points: true,

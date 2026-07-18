@@ -1442,7 +1442,7 @@ model AnalyticsEvent {
   id        BigInt   @id @default(autoincrement())
   sessionId String   @map("session_id")
   userId    String?  @map("user_id")
-  type      String // "pageview" | "heartbeat"
+  type      String // "pageview" | "heartbeat" | "signup"
   path      String
   referrer  String?
   device    String? // "mobile" | "desktop"
@@ -1464,6 +1464,8 @@ model AnalyticsDailyStat {
   totalSeconds      Int      @default(0) @map("total_seconds") // tempo total no site
   avgSessionSeconds Int      @default(0) @map("avg_session_seconds")
   signups           Int      @default(0)
+  landingVisitors   Int      @default(0) @map("landing_visitors") // sessões únicas que visitaram "/" deslogadas
+  signupEvents      Int      @default(0) @map("signup_events") // cadastros vinculados a uma sessão de tracking
   topPaths          Json?    @map("top_paths") // [{ path, views }]
   updatedAt         DateTime @updatedAt @map("updated_at")
 

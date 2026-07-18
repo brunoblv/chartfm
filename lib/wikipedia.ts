@@ -154,12 +154,74 @@ function normalizeLoose(s: string): string {
     .trim();
 }
 
-/** A página encontrada menciona o artista? Evita aplicar dados da página errada. */
+/** Remove markup comum de wikitext para comparar nomes de artista. */
+function stripWikiMarkup(s: string): string {
+  return s
+    .replace(/\{\{[^{}]*\}\}/g, " ")
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2")
+    .replace(/\[\[([^\]]+)\]\]/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/'''?/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripLeadingThe(s: string): string {
+  return s.replace(/^the\s+/, "");
+}
+
+/** O artista pedido é o creditado no campo (ex.: "A feat. B" contém "A")? */
+function artistNamesMatch(requested: string, credited: string): boolean {
+  const a = stripLeadingThe(normalizeLoose(requested));
+  const b = stripLeadingThe(normalizeLoose(credited));
+  if (!a || !b) return false;
+  return b.includes(a) || a.includes(b);
+}
+
+/**
+ * A página é do artista pedido? Exige match no parâmetro do infobox
+ * (|artist|/|artista|/|performer|). Só mencionar o artista no texto (ex.:
+ * seção de covers da versão original) NÃO basta — evita herdar a data
+ * da original em covers (ex.: King of Pain / Alanis → página do The Police).
+ */
 function pageMatchesArtist(wikitext: string, artist: string): boolean {
-  const a = normalizeLoose(artist);
-  if (!a) return false;
-  const text = normalizeLoose(wikitext.slice(0, 4000));
-  return text.includes(a) || text.includes(a.split(" ")[0] ?? a);
+  const raw =
+    infoboxParam(wikitext, "artist") ??
+    infoboxParam(wikitext, "artista") ??
+    infoboxParam(wikitext, "performer");
+  if (!raw) return false;
+  return artistNamesMatch(artist, stripWikiMarkup(raw));
+}
+
+/** Normaliza título de música/álbum para comparação (ignora sufixos tipo "(song)"). */
+function normalizeTitle(s: string): string {
+  return normalizeLoose(s)
+    .replace(/\b(song|single|cancao|album)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titlesMatch(requested: string, candidate: string): boolean {
+  const a = normalizeTitle(requested);
+  const b = normalizeTitle(candidate);
+  if (!a || !b) return false;
+  if (a === b || b.includes(a) || a.includes(b)) return true;
+  const bMain = b.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  return Boolean(bMain) && (a === bMain || bMain.includes(a) || a.includes(bMain));
+}
+
+/** Página de música do título+artista pedidos (infobox), não só menção no artigo. */
+function pageMatchesSong(
+  wikitext: string,
+  pageTitle: string,
+  title: string,
+  artist: string,
+): boolean {
+  if (!pageMatchesArtist(wikitext, artist)) return false;
+  const nameRaw = infoboxParam(wikitext, "name") ?? infoboxParam(wikitext, "nome");
+  const fromInfobox = nameRaw ? stripWikiMarkup(nameRaw) : "";
+  if (fromInfobox && titlesMatch(title, fromInfobox)) return true;
+  return titlesMatch(title, pageTitle);
 }
 
 /** Data do clipe a partir do texto: frases com "music video" + released/premiered. */
@@ -224,7 +286,9 @@ async function findSongPage(
       const wikitext = await getWikitext(lang, pageTitle);
       if (!wikitext) continue;
       const isSongPage = /\{\{\s*infobox (song|single|canção)/i.test(wikitext);
-      if (isSongPage && pageMatchesArtist(wikitext, artist)) return { pageTitle, wikitext };
+      if (isSongPage && pageMatchesSong(wikitext, pageTitle, title, artist)) {
+        return { pageTitle, wikitext };
+      }
     }
   }
   return null;

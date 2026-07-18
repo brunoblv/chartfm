@@ -1,8 +1,22 @@
 "use client";
 
+import Image from "next/image";
 import type { Cover as CoverType, Song } from "@/lib/types";
 
 type SongRef = Pick<Song, "title" | "artist"> & Partial<Pick<Song, "imageUrl" | "album" | "spotifyId">>;
+
+// Hosts com allowlist em next.config.ts (`images.remotePatterns`). Qualquer outro host
+// externo cai em `unoptimized` para não quebrar com "hostname not configured".
+const OPTIMIZABLE_HOSTS = new Set(["lh3.googleusercontent.com", "i.scdn.co", "coverartarchive.org"]);
+
+function isOptimizableImageHost(url: string): boolean {
+  if (url.startsWith("/")) return true;
+  try {
+    return OPTIMIZABLE_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
 
 interface CoverProps {
   cover: CoverType;
@@ -39,18 +53,13 @@ export function Cover({ cover, song, size = 56, rounded = 10, className, style: 
       }}
     >
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={imageUrl}
           alt={alt}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
+          fill
+          sizes={`${size}px`}
+          unoptimized={!isOptimizableImageHost(imageUrl)}
+          style={{ objectFit: "cover" }}
         />
       ) : (
         <>

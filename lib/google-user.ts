@@ -79,7 +79,7 @@ export async function ensureGoogleUser(params: {
       where: { id: existing.id },
       data,
     });
-    return { isNew: false };
+    return { isNew: false, userId: existing.id };
   }
 
   const base = slugifyHandle(email.split("@")[0] ?? "user");
@@ -87,7 +87,7 @@ export async function ensureGoogleUser(params: {
   const hash = [...email].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
   const avatarColor = ACCENTS[Math.abs(hash) % ACCENTS.length];
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       handle,
       name: displayName,
@@ -99,5 +99,5 @@ export async function ensureGoogleUser(params: {
       emailVerifiedAt: new Date(),
     },
   });
-  return { isNew: true };
+  return { isNew: true, userId: created.id };
 }

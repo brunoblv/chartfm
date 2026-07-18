@@ -62,6 +62,11 @@ export function AnalyticsClient({ data, editorial }: { data: AnalyticsDashboardD
         <StatTile label="Atualização semanal" value={`${tiles.weeklyUpdateRate}%`} hint="da base ativa postou chart em 7d" />
         <StatTile label="Sessão média (7d)" value={fmtDuration(tiles.avgSessionSeconds7d)} hint="tempo real no site" />
         <StatTile label="Visitantes hoje" value={fmtInt(tiles.visitorsToday)} hint={`${fmtInt(tiles.loggedToday)} logados`} />
+        <StatTile
+          label="Conversão (visitante → cadastro)"
+          value={`${tiles.conversionPct7d}%`}
+          hint={`${fmtInt(tiles.signupsFromLanding7d)} de ${fmtInt(tiles.landingVisitors7d)} visitantes da landing (7d)`}
+        />
       </div>
 
       {/* ── Tráfego ── */}

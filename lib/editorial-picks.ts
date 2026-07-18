@@ -1,4 +1,5 @@
 import type { EditorialPost } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   EDITORIAL_PICKS,
@@ -62,13 +63,20 @@ export async function seedEditorialPostsIfEmpty(): Promise<void> {
   });
 }
 
-export async function getEditorialPicksSorted(): Promise<EditorialPick[]> {
+async function fetchEditorialPicksSorted(): Promise<EditorialPick[]> {
   await seedEditorialPostsIfEmpty();
   const rows = await prisma.editorialPost.findMany({
     where: { published: true },
     orderBy: { publishedAt: "desc" },
   });
   return rows.map(rowToEditorialPick);
+}
+
+export function getEditorialPicksSorted(): Promise<EditorialPick[]> {
+  return unstable_cache(fetchEditorialPicksSorted, ["editorial-picks-sorted"], {
+    revalidate: 300,
+    tags: [EDITORIAL_POSTS_TAG],
+  })();
 }
 
 export async function getEditorialPick(slug: string): Promise<EditorialPick | null> {

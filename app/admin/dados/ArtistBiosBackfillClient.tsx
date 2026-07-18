@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -26,6 +27,7 @@ function sleep(ms: number) {
 
 /** Roda todos os artistas sem bio, buscando o resumo da Wikipedia (pt, depois en). */
 export function ArtistBiosBackfillClient({ initialTotal }: { initialTotal: number }) {
+  const router = useRouter();
   const [running, setRunning] = useState(false);
   const [total, setTotal] = useState(initialTotal);
   const [processed, setProcessed] = useState(0);
@@ -82,6 +84,8 @@ export function ArtistBiosBackfillClient({ initialTotal }: { initialTotal: numbe
         setNotFound([...notFoundAll.values()]);
         setMessage(remaining > 0 ? `Processando… (${remaining} restantes)` : "Concluído.");
 
+        if ((data.updated ?? 0) > 0) router.refresh();
+
         if ((data.processed ?? 0) === 0) break;
         if (remaining > 0) await sleep(CLIENT_BATCH_DELAY_MS);
       }
@@ -89,6 +93,7 @@ export function ArtistBiosBackfillClient({ initialTotal }: { initialTotal: numbe
       setMessage("Erro de conexão durante o backfill.");
     } finally {
       setRunning(false);
+      router.refresh();
     }
   }
 

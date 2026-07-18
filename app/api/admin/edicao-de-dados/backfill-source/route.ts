@@ -7,6 +7,7 @@ import { buildAlbumPath, buildSongPath } from "@/lib/music-routes";
 import {
   albumPendenciasWhere,
   artistPendenciasComBioWhere,
+  asianMusicWhere,
   songProblemasWhere,
 } from "@/app/admin/dados/lib";
 import { ALL_SOURCES, fetchForAlbum, fetchForArtist, fetchForSong, type Source } from "@/lib/edicao-de-dados-source-fetch";
@@ -34,12 +35,15 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+type Scope = "asian";
+
 type Item = { id: string | number; label: string; href: string };
 
-async function loadBatch(kind: Kind, exclude: (string | number)[], limit: number): Promise<Item[]> {
+async function loadBatch(kind: Kind, exclude: (string | number)[], limit: number, scope?: Scope): Promise<Item[]> {
   if (kind === "music") {
     const excludeIds = exclude.filter((id): id is string => typeof id === "string");
-    const where = excludeIds.length ? { AND: [songProblemasWhere, { id: { notIn: excludeIds } }] } : songProblemasWhere;
+    const baseWhere = scope === "asian" ? { AND: [songProblemasWhere, asianMusicWhere] } : songProblemasWhere;
+    const where = excludeIds.length ? { AND: [baseWhere, { id: { notIn: excludeIds } }] } : baseWhere;
     const rows = await prisma.song.findMany({
       where,
       select: { id: true, title: true, artist: true, spotifyId: true },
@@ -88,8 +92,11 @@ async function runSource(kind: Kind, id: string | number, source: Source, force:
   return fetchForArtist(id as number, source, { force });
 }
 
-async function countRemaining(kind: Kind): Promise<number> {
-  if (kind === "music") return prisma.song.count({ where: songProblemasWhere });
+async function countRemaining(kind: Kind, scope?: Scope): Promise<number> {
+  if (kind === "music") {
+    const where = scope === "asian" ? { AND: [songProblemasWhere, asianMusicWhere] } : songProblemasWhere;
+    return prisma.song.count({ where });
+  }
   if (kind === "albums") return prisma.album.count({ where: albumPendenciasWhere });
   return prisma.artist.count({ where: artistPendenciasComBioWhere });
 }
@@ -106,6 +113,7 @@ export async function POST(req: NextRequest) {
     limit?: unknown;
     exclude?: unknown;
     force?: unknown;
+    scope?: unknown;
   };
 
   const kind = body.kind;
@@ -120,13 +128,14 @@ export async function POST(req: NextRequest) {
   }
 
   const force = body.force === true;
+  const scope: Scope | undefined = body.scope === "asian" ? "asian" : undefined;
   const maxBatch = runAll ? MAX_BATCH_ALL_SOURCES : MAX_BATCH_SINGLE_SOURCE;
   const limit = Math.min(maxBatch, Math.max(1, typeof body.limit === "number" ? Math.floor(body.limit) : maxBatch));
   const exclude = Array.isArray(body.exclude)
     ? body.exclude.filter((id): id is string | number => typeof id === "string" || typeof id === "number")
     : [];
 
-  const batch = await loadBatch(kind, exclude, limit);
+  const batch = await loadBatch(kind, exclude, limit, scope);
   if (batch.length === 0) {
     return NextResponse.json({ ok: true, processed: 0, updated: 0, remaining: 0, log: [], attemptedIds: [], failedItems: [] });
   }
@@ -167,7 +176,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const remaining = await countRemaining(kind);
+  const remaining = await countRemaining(kind, scope);
 
   return NextResponse.json({
     ok: true,

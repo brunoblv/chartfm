@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CalendarSearch, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -35,6 +36,7 @@ export function DatesBackfillClient({
   initialTotal: number;
   scope: "catalogo" | "minhas";
 }) {
+  const router = useRouter();
   const [running, setRunning] = useState(false);
   const [total, setTotal] = useState(initialTotal);
   const [processed, setProcessed] = useState(0);
@@ -89,6 +91,8 @@ export function DatesBackfillClient({
         setNotFound([...notFoundAll.values()]);
         setMessage(remaining > 0 ? `Processando… (${remaining} restantes)` : "Concluído.");
 
+        if ((data.updated ?? 0) > 0) router.refresh();
+
         if ((data.processed ?? 0) === 0) break;
         if (remaining > 0) await sleep(CLIENT_BATCH_DELAY_MS);
       }
@@ -96,6 +100,7 @@ export function DatesBackfillClient({
       setMessage("Erro de conexão durante o backfill.");
     } finally {
       setRunning(false);
+      router.refresh();
     }
   }
 
