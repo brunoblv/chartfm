@@ -21,9 +21,18 @@ export type EligibilityStatus =
   | "no_release_date" // sem nenhuma data → precisa liberação manual
   | "no_scrobble_in_period"; // modo histórico: não foi ouvida no período
 
+/** Origem da data de estreia usada como releaseRef. */
+export type ReleaseRefSource = "single" | "album" | "clipe" | "top20";
+
 /** Uma música do pool, já hidratada pelas fontes externas. */
 export interface RetroSongInput {
   songId: string;
+  /**
+   * Data de estreia precomputada pelo build-pool (cadeia por parada-alvo:
+   * single/clipe → álbum → clipe/single → 1ª entrada Top 20). Quando presente,
+   * substitui a cadeia padrão de `releaseRefOf`.
+   */
+  releaseRef?: Date | null;
   /** Plays totais (all-time) do Last.fm — proxy de força no pré-2010. */
   overallPlaycount: number;
   /** Plays reais no mês do período (pós-Out/2010); null quando estimado. */
@@ -140,8 +149,9 @@ function normLog(value: number, poolMaxLog: number): number {
   return clamp01(Math.log1p(Math.max(0, value)) / poolMaxLog);
 }
 
-/** Data de referência para elegibilidade: single > álbum > clipe. */
+/** Data de referência para elegibilidade: precomputada > single > álbum > clipe. */
 export function releaseRefOf(s: RetroSongInput): Date | null {
+  if (s.releaseRef !== undefined) return s.releaseRef;
   return s.singleReleaseDate ?? s.albumReleaseDate ?? s.youtubeReleaseDate ?? null;
 }
 

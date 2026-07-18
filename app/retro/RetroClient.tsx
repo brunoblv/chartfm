@@ -8,6 +8,8 @@ type HitLevel = "diamond" | "platinum" | "gold" | "silver" | "bronze" | "none";
 type Priority = "S" | "A" | "B" | "C" | "D";
 type Confidence = "alta" | "media" | "baixa";
 type RetroMode = "historico" | "retrospectivo";
+type RetroTarget = "hot100" | "clipes";
+type ReleaseRefSource = "single" | "album" | "clipe" | "top20";
 
 interface ScoreBreakdown {
   period: number;
@@ -28,6 +30,8 @@ interface RetroEntry {
   singleReleaseDate: string | null;
   albumReleaseDate: string | null;
   youtubeReleaseDate: string | null;
+  releaseRef: string | null;
+  releaseRefSource: ReleaseRefSource | null;
   importance: number;
   importanceIsManual: boolean;
   importanceLocked: boolean;
@@ -49,7 +53,7 @@ interface RetroEntry {
 }
 
 interface RetroResponse {
-  period: { year: number; month: number; mode: RetroMode };
+  period: { year: number; month: number; mode: RetroMode; target: RetroTarget };
   chartDate: string;
   usesRealPeriodData: boolean;
   stats: {
@@ -93,6 +97,18 @@ const PRIORITY_BADGE: Record<Priority, { fg: string; bg: string }> = {
 };
 
 const CONFIDENCE_LABEL: Record<Confidence, string> = { alta: "Alta", media: "Média", baixa: "Baixa" };
+
+const TARGET_LABEL: Record<RetroTarget, string> = {
+  hot100: "Hot 100 de Singles",
+  clipes: "Top 20 de Clipes",
+};
+
+const SOURCE_LABEL: Record<ReleaseRefSource, string> = {
+  single: "single",
+  album: "álbum",
+  clipe: "clipe",
+  top20: "Top 20",
+};
 
 const WEIGHT_ROWS: { key: keyof ScoreBreakdown; label: string; max: number; color: string }[] = [
   { key: "period", label: "Plays do período", max: 30, color: "#10B981" },
@@ -296,12 +312,12 @@ export function RetroClient() {
   const [year, setYear] = useState(2005);
   const [month, setMonth] = useState(5);
   const [mode, setMode] = useState<RetroMode>("retrospectivo");
+  const [target, setTarget] = useState<RetroTarget>("hot100");
   const [data, setData] = useState<RetroResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
-  const [releaseFilter, setReleaseFilter] = useState<"all" | "year" | "month">("all");
   const [page, setPage] = useState(1);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -316,22 +332,11 @@ export function RetroClient() {
   const filtered = useMemo(() => {
     if (!data) return [];
     const q = search.trim().toLowerCase();
-    let rows = data.entries;
-    if (q) {
-      rows = rows.filter((e) => e.title.toLowerCase().includes(q) || e.artist.toLowerCase().includes(q));
-    }
-    if (releaseFilter !== "all") {
-      // Mesma preferência da elegibilidade: single > álbum > clipe.
-      const y = data.period.year;
-      const m = String(data.period.month).padStart(2, "0");
-      rows = rows.filter((e) => {
-        const ref = e.singleReleaseDate ?? e.albumReleaseDate ?? e.youtubeReleaseDate;
-        if (!ref) return false;
-        return releaseFilter === "year" ? ref.startsWith(`${y}-`) : ref.startsWith(`${y}-${m}`);
-      });
-    }
-    return rows;
-  }, [data, search, releaseFilter]);
+    if (!q) return data.entries;
+    return data.entries.filter(
+      (e) => e.title.toLowerCase().includes(q) || e.artist.toLowerCase().includes(q),
+    );
+  }, [data, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -341,7 +346,7 @@ export function RetroClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/retro/chart?year=${year}&month=${month}&mode=${mode}`);
+      const res = await fetch(`/api/retro/chart?year=${year}&month=${month}&mode=${mode}&target=${target}`);
       const body = await res.json();
       if (!res.ok) {
         setError(body?.error ?? "erro");
@@ -356,7 +361,7 @@ export function RetroClient() {
     } finally {
       setLoading(false);
     }
-  }, [year, month, mode]);
+  }, [year, month, mode, target]);
 
   useEffect(() => {
     void load();
@@ -421,6 +426,14 @@ export function RetroClient() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={labelStyle}>Parada</span>
+          <select value={target} onChange={(ev) => setTarget(ev.target.value as RetroTarget)} style={inputStyle}>
+            <option value="hot100">{TARGET_LABEL.hot100}</option>
+            <option value="clipes">{TARGET_LABEL.clipes}</option>
+          </select>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={labelStyle}>Modo</span>
           <select value={mode} onChange={(ev) => setMode(ev.target.value as RetroMode)} style={inputStyle}>
             <option value="retrospectivo">Retrospectivo</option>
@@ -468,14 +481,15 @@ export function RetroClient() {
       {data && (
         <>
           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            Parada de {MONTHS[data.period.month - 1]} de {data.period.year} ·{" "}
+            Lançamentos de {MONTHS[data.period.month - 1]} de {data.period.year} — candidatas a estreia na{" "}
+            {TARGET_LABEL[data.period.target]} ·{" "}
             {data.usesRealPeriodData ? "plays reais do período" : "antes de Out/2010 → estimado"} ·{" "}
-            {data.stats.matched} faixas casadas ({data.stats.unmatched} sem correspondência)
+            {data.stats.matched} faixas da biblioteca casadas ({data.stats.unmatched} sem correspondência)
           </div>
 
           {/* KPIs */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
-            <StatTile value={data.stats.eligible} label="Músicas elegíveis" />
+            <StatTile value={data.stats.eligible} label="Candidatas a estreia" />
             <StatTile value={data.stats.withPeriodPlays} label="Com plays no período" />
             <StatTile value={data.stats.everInTop20} label="Já entraram na Top 20" />
             <StatTile value={data.stats.everNumberOne} label="Tiveram #1" />
@@ -491,16 +505,6 @@ export function RetroClient() {
               className="retro-input"
               style={{ ...inputStyle, flex: "1 1 220px", maxWidth: 340 }}
             />
-            <select
-              value={releaseFilter}
-              onChange={(ev) => { setReleaseFilter(ev.target.value as typeof releaseFilter); setPage(1); }}
-              style={inputStyle}
-              title="Filtrar pela data de lançamento (single > álbum > clipe)"
-            >
-              <option value="all">Lançadas até o período</option>
-              <option value="year">Lançadas em {data.period.year}</option>
-              <option value="month">Lançadas em {MONTHS[data.period.month - 1]}/{data.period.year}</option>
-            </select>
             <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>
               {filtered.length === data.entries.length
                 ? `${data.entries.length} posições`
@@ -511,11 +515,12 @@ export function RetroClient() {
           {/* Tabela */}
           <div style={{ ...card, overflow: "hidden" }}>
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", minWidth: 1080, borderCollapse: "collapse" }}>
+              <table style={{ width: "100%", minWidth: 1180, borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
                     <th style={{ ...thStyle, width: 40 }}>#</th>
                     <th style={thStyle}>Música</th>
+                    <th style={thStyle}>Estreia</th>
                     <th style={{ ...thStyle, textAlign: "right" }}>Mês</th>
                     <th style={{ ...thStyle, textAlign: "right" }}>Total</th>
                     <th style={thStyle}>Single</th>
@@ -551,6 +556,14 @@ export function RetroClient() {
                           </div>
                         </div>
                       </td>
+                      <td style={{ ...tdStyle, fontSize: 12 }}>
+                        <span style={{ fontWeight: 600, color: "var(--text)" }}>{fmtDate(e.releaseRef?.slice(0, 10) ?? null)}</span>
+                        {e.releaseRefSource && (
+                          <span style={{ ...badgeStyle("var(--text-subtle)", "var(--fill-subtle)"), marginLeft: 6, fontWeight: 600 }}>
+                            {SOURCE_LABEL[e.releaseRefSource]}
+                          </span>
+                        )}
+                      </td>
                       <td style={{ ...tdStyle, textAlign: "right", ...num }}>
                         {e.periodPlaycount == null ? <span style={{ color: "var(--text-muted)" }}>est.</span> : e.periodPlaycount}
                       </td>
@@ -585,8 +598,8 @@ export function RetroClient() {
                   ))}
                   {pageRows.length === 0 && (
                     <tr>
-                      <td colSpan={15} style={{ ...tdStyle, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
-                        {search ? "Nenhuma música encontrada para a busca." : "Nenhuma música elegível para este período."}
+                      <td colSpan={16} style={{ ...tdStyle, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
+                        {search ? "Nenhuma música encontrada para a busca." : "Nenhum lançamento seu neste mês (pela cadeia single → álbum → clipe → 1ª entrada Top 20)."}
                       </td>
                     </tr>
                   )}
@@ -665,6 +678,10 @@ export function RetroClient() {
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                   Pico provável {PEAK_LABEL[selected.peakPotential]} · Confiança {CONFIDENCE_LABEL[selected.confidence]}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                  Estreia {fmtDate(selected.releaseRef?.slice(0, 10) ?? null)}
+                  {selected.releaseRefSource ? ` (via ${SOURCE_LABEL[selected.releaseRefSource]})` : ""}
                 </div>
               </div>
             </div>

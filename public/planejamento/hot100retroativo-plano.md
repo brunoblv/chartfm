@@ -22,11 +22,12 @@ Regras novas:
 4. Músicas novas ganham prioridade naturalmente; as velhas caem até sair.
 5. **Fallback de estreia = 1ª entrada na Top 20 semanal.** A Top 20 do usuário tem músicas desde 2000; quando a data de lançamento é difícil de achar (ex.: singles brasileiros), a `weekStartDate` da primeira aparição da música na Top 20 vira a âncora de estreia no Hot 100. Cadeia completa: single → álbum → clipe → **1ª entrada Top 20** → liberação manual.
 
-Refactors decorrentes (a fazer):
-- `build-pool.ts`: pool do período = músicas com releaseRef **dentro do mês** (não `<= chartDate`); releaseRef muda por parada-alvo (single vs clipe). `aggregateTop20History` passa a devolver também `firstEntryDate` (menor `weekStartDate` com posição ≤ 20) para usar como fallback de releaseRef e como âncora da semana de estreia.
-- `scoring.ts`: elegibilidade "not_released" vira "estreia futura"; o ranking estático mensal vira insumo da **simulação semanal** (antiga F7, agora núcleo): carry-over + decaimento + estreias.
-- UI: a lista passa a ser "Lançamentos de Maio/2005"; o filtro "Lançadas até o período" perde sentido como padrão.
-- F6 (publicar): grava as semanas geradas como `Chart`/`ChartEntry` **nas duas paradas acima**, semana a semana.
+Refactors decorrentes:
+- ✅ 2026-07-18 `build-pool.ts`: pool do período = músicas com estreia **dentro do mês**; cadeia por parada-alvo (`target: "hot100" | "clipes"`): single/clipe → álbum → clipe/single → **1ª entrada Top 20** (`firstEntryDate` = menor `weekStartDate` com posição ≤ 20). `debutRefFor()` devolve data + fonte (`releaseRefSource`).
+- ✅ 2026-07-18 `scoring.ts`: `RetroSongInput.releaseRef?` precomputado (quando presente, substitui a cadeia padrão de `releaseRefOf`). Testes antigos intactos (16/16).
+- ✅ 2026-07-18 rota + UI: `GET /api/retro/chart?…&target=hot100|clipes` (chartSize 100/20); seletor de Parada, lista "Lançamentos de {mês}", coluna **Estreia** (data + fonte), filtro "Lançadas até o período" removido.
+- ⬜ **Simulação semanal** (núcleo): carry-over da semana N-1 + decaimento + estreias da semana; posições semana a semana.
+- ⬜ F6 (publicar): grava as semanas geradas como `Chart`/`ChartEntry` **nas duas paradas acima**, semana a semana. Inclui liberação manual de música sem data.
 
 ---
 

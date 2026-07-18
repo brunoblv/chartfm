@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireBruno } from "@/lib/require-bruno";
-import { buildRetroPool } from "@/lib/retro/build-pool";
+import { buildRetroPool, type RetroTarget } from "@/lib/retro/build-pool";
 import { buildRetroChart, type RetroMode } from "@/lib/retro/scoring";
 
-const CHART_SIZE = 100;
 const MIN_YEAR = 1990;
 
 function parseMode(raw: string | null): RetroMode {
   return raw === "historico" ? "historico" : "retrospectivo";
 }
 
+function parseTarget(raw: string | null): RetroTarget {
+  return raw === "clipes" ? "clipes" : "hot100";
+}
+
 /**
- * GET /api/retro/chart?year=2005&month=5&mode=retrospectivo
- * Monta e pontua a Hot 100 retrospectiva do usuário para o período.
+ * GET /api/retro/chart?year=2005&month=5&mode=retrospectivo&target=hot100
+ * Lista as candidatas a estreia do mês (modelo estreia + carry-over), pontuadas.
+ * target: "hot100" (singles, 100 posições) | "clipes" (Top 20 de clipes).
  */
 export async function GET(req: NextRequest) {
   // Em um primeiro momento, a Hot 100 Retrospectiva é restrita ao @bruno.
@@ -24,6 +28,8 @@ export async function GET(req: NextRequest) {
   const year = Number(sp.get("year"));
   const month = Number(sp.get("month"));
   const mode = parseMode(sp.get("mode"));
+  const target = parseTarget(sp.get("target"));
+  const chartSize = target === "clipes" ? 20 : 100;
   const nowYear = new Date().getUTCFullYear();
 
   if (!Number.isInteger(year) || year < MIN_YEAR || year > nowYear) {
@@ -38,12 +44,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "no_lastfm_user" }, { status: 400 });
   }
 
-  const pool = await buildRetroPool({ userId, lastfmUser: user.lastfmUser, year, month, mode });
+  const pool = await buildRetroPool({ userId, lastfmUser: user.lastfmUser, year, month, mode, target });
   const rows = buildRetroChart(pool.songs, {
     chartDate: pool.chartDate,
     mode,
     now: new Date(),
-    chartSize: CHART_SIZE,
+    chartSize,
   });
 
   // Estatísticas (faixa de KPIs do mockup) sobre o pool elegível.
@@ -73,6 +79,7 @@ export async function GET(req: NextRequest) {
         album: m?.album ?? null,
         coverUrl: m?.coverUrl ?? null,
         note: m?.note ?? null,
+        releaseRefSource: m?.releaseRefSource ?? null,
         singleReleaseDate: s?.singleReleaseDate?.toISOString().slice(0, 10) ?? null,
         albumReleaseDate: s?.albumReleaseDate?.toISOString().slice(0, 10) ?? null,
         youtubeReleaseDate: s?.youtubeReleaseDate?.toISOString().slice(0, 10) ?? null,
@@ -87,7 +94,7 @@ export async function GET(req: NextRequest) {
     });
 
   return NextResponse.json({
-    period: { year, month, mode },
+    period: { year, month, mode, target },
     chartDate: pool.chartDate.toISOString().slice(0, 10),
     usesRealPeriodData: pool.usesRealPeriodData,
     stats,

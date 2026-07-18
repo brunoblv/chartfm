@@ -13,6 +13,7 @@ import { computeAlbumPageSnapshot } from "./compute-album";
 import { computeArtistPageSnapshot } from "./compute-artist";
 import { computeSongPageSnapshot } from "./compute-song";
 import { saveEntityPageSnapshot } from "./store";
+import { snapshotDayBrt } from "@/lib/snapshot-day";
 
 export type EntitySnapshotRefreshResult = {
   dailyStatsBuilt: boolean;
@@ -20,7 +21,11 @@ export type EntitySnapshotRefreshResult = {
   albums: number;
   songs: number;
   errors: number;
+  purged: number;
 };
+
+/** Dias de snapshot mantidos além do atual (margem caso o refresh falhe num dia). */
+const SNAPSHOT_RETENTION_DAYS = 2;
 
 export type EntitySnapshotRefreshOptions = {
   /** Não recalcula dailyChartSongStats (job das 8h reutiliza o da meia-noite). */
@@ -123,11 +128,24 @@ export async function refreshAllEntityPageSnapshots(
     }
   }
 
+  let purged = 0;
+  try {
+    const cutoff = snapshotDayBrt(now);
+    cutoff.setUTCDate(cutoff.getUTCDate() - SNAPSHOT_RETENTION_DAYS);
+    const result = await prisma.entityPageSnapshot.deleteMany({
+      where: { snapshotDay: { lt: cutoff } },
+    });
+    purged = result.count;
+  } catch (err) {
+    console.error("[snapshot] purge", err);
+  }
+
   return {
     dailyStatsBuilt: true,
     artists,
     albums,
     songs,
     errors,
+    purged,
   };
 }
