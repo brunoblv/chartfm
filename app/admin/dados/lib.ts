@@ -34,6 +34,50 @@ export function parseQuery(raw: string | undefined): string {
   return (raw ?? "").trim();
 }
 
+/** Ordenação da tabela unificada — Nome (alfa) ou Cadastro (createdAt). */
+export type DadosSortBy = "alpha" | "data";
+export type DadosSortDir = "asc" | "desc";
+export type DadosSort = { by: DadosSortBy; dir: DadosSortDir };
+
+export function parseDadosSort(byRaw?: string, dirRaw?: string): DadosSort {
+  const by: DadosSortBy = byRaw === "alpha" ? "alpha" : "data";
+  const dir: DadosSortDir = dirRaw === "asc" || dirRaw === "desc" ? dirRaw : by === "alpha" ? "asc" : "desc";
+  return { by, dir };
+}
+
+/** Alterna a direção se clicar no mesmo critério; senão entra no padrão do critério. */
+export function nextDadosSort(current: DadosSort, by: DadosSortBy): DadosSort {
+  if (current.by === by) {
+    return { by, dir: current.dir === "asc" ? "desc" : "asc" };
+  }
+  return { by, dir: by === "alpha" ? "asc" : "desc" };
+}
+
+export function dadosSortQuery(sort: DadosSort): string {
+  return `sort=${sort.by}&dir=${sort.dir}`;
+}
+
+function songOrderBy(sort: DadosSort): Prisma.SongOrderByWithRelationInput[] {
+  if (sort.by === "alpha") {
+    return [{ title: sort.dir }, { artist: sort.dir }, { id: sort.dir }];
+  }
+  return [{ createdAt: sort.dir }, { id: sort.dir }];
+}
+
+function albumOrderBy(sort: DadosSort): Prisma.AlbumOrderByWithRelationInput[] {
+  if (sort.by === "alpha") {
+    return [{ title: sort.dir }, { id: sort.dir }];
+  }
+  return [{ createdAt: sort.dir }, { id: sort.dir }];
+}
+
+function artistOrderBy(sort: DadosSort): Prisma.ArtistOrderByWithRelationInput[] {
+  if (sort.by === "alpha") {
+    return [{ name: sort.dir }, { id: sort.dir }];
+  }
+  return [{ createdAt: sort.dir }, { id: sort.dir }];
+}
+
 // ---------------------------------------------------------------------------
 // Auditoria de músicas
 // Regra do catálogo: toda música tem um álbum, todo álbum tem uma capa.
@@ -56,12 +100,12 @@ export const SONG_FILTROS: { key: SongFiltro; label: string }[] = [
   { key: "todas", label: "Todas" },
   { key: "problemas", label: "Com pendência" },
   { key: "sem-album", label: "Sem álbum" },
-  { key: "album-sem-capa", label: "Álbum sem capa" },
+  { key: "album-sem-capa", label: "Sem capa" },
   { key: "album-outro-dono", label: "Álbum de outro artista" },
   { key: "sem-mbid", label: "Sem MBID" },
-  { key: "sem-single", label: "Sem data do single" },
-  { key: "sem-clipe", label: "Sem data do clipe" },
-  { key: "data-01-01", label: "Data 01/01 (suspeita)" },
+  { key: "sem-single", label: "Sem single" },
+  { key: "sem-clipe", label: "Sem clipe" },
+  { key: "data-01-01", label: "Data 01/01" },
   { key: "datas-nao-encontradas", label: "Datas não encontradas" },
   { key: "criadas-manualmente", label: "Criadas manualmente" },
 ];
@@ -318,10 +362,13 @@ export async function fetchSongAudit(opts: {
   filtro: SongFiltro;
   page: number;
   q?: string;
+  sort?: DadosSort;
 }): Promise<SongAuditPage> {
   const { userId, filtro } = opts;
+  const sort = opts.sort ?? parseDadosSort();
   const scope = userId ? minhasParadasWhere(userId) : null;
   const searchWhere = songSearchWhere(opts.q ?? "");
+  const orderBy = songOrderBy(sort);
 
   const idListFetcher = ID_LIST_FILTROS[filtro];
   if (idListFetcher) {
@@ -334,18 +381,17 @@ export async function fetchSongAudit(opts: {
           })
         ).map((s) => s.id)
       : allIds;
-    const idOrder = new Map(allIds.map((id, i) => [id, i]));
-    filteredIds.sort((a, b) => (idOrder.get(a) ?? 0) - (idOrder.get(b) ?? 0));
     const total = filteredIds.length;
     const totalPages = Math.max(1, Math.ceil(total / DADOS_PAGE_SIZE));
     const page = Math.min(opts.page, totalPages);
-    const ids = filteredIds.slice((page - 1) * DADOS_PAGE_SIZE, page * DADOS_PAGE_SIZE);
-    const unordered = await prisma.song.findMany({
-      where: { id: { in: ids } },
+    if (total === 0) return { total: 0, totalPages: 1, page: 1, rows: [] };
+    const rows = await prisma.song.findMany({
+      where: { id: { in: filteredIds } },
       select: SONG_AUDIT_SELECT,
+      orderBy,
+      skip: (page - 1) * DADOS_PAGE_SIZE,
+      take: DADOS_PAGE_SIZE,
     });
-    const byId = new Map(unordered.map((s) => [s.id, s]));
-    const rows = ids.map((id) => byId.get(id)).filter((s): s is SongAuditRow => Boolean(s));
     return { total, totalPages, page, rows };
   }
 
@@ -359,7 +405,7 @@ export async function fetchSongAudit(opts: {
   const rows = await prisma.song.findMany({
     where,
     select: SONG_AUDIT_SELECT,
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    orderBy,
     skip: (page - 1) * DADOS_PAGE_SIZE,
     take: DADOS_PAGE_SIZE,
   });
@@ -373,17 +419,28 @@ export async function fetchSongAudit(opts: {
 export type AlbumFiltro = "pendencias" | "sem-capa" | "sem-data" | "data-01-01" | "metadados-nao-encontrados" | "todas";
 
 export const ALBUM_FILTROS: { key: AlbumFiltro; label: string }[] = [
+  { key: "todas", label: "Todos" },
   { key: "pendencias", label: "Com pendência" },
   { key: "sem-capa", label: "Sem capa" },
   { key: "sem-data", label: "Sem data" },
   { key: "data-01-01", label: "Data 01/01 (suspeita)" },
   { key: "metadados-nao-encontrados", label: "Metadados não encontrados" },
-  { key: "todas", label: "Todos" },
 ];
 
-export function parseAlbumFiltro(raw: string | undefined): AlbumFiltro {
+export function parseAlbumFiltro(raw: string | undefined, fallback: AlbumFiltro = "pendencias"): AlbumFiltro {
   const v = (raw ?? "").toLowerCase();
-  return ALBUM_FILTROS.some((f) => f.key === v) ? (v as AlbumFiltro) : "pendencias";
+  return ALBUM_FILTROS.some((f) => f.key === v) ? (v as AlbumFiltro) : fallback;
+}
+
+function albumSearchWhere(q: string): Prisma.AlbumWhereInput | null {
+  const term = q.trim();
+  if (!term) return null;
+  return {
+    OR: [
+      { title: { contains: term, mode: "insensitive" } },
+      { artist: { name: { contains: term, mode: "insensitive" } } },
+    ],
+  };
 }
 
 export const albumSemCapaAlbumWhere: Prisma.AlbumWhereInput = {
@@ -444,25 +501,40 @@ export type AlbumAuditPage = {
 export async function fetchAlbumAudit(opts: {
   filtro: AlbumFiltro;
   page: number;
+  q?: string;
+  sort?: DadosSort;
 }): Promise<AlbumAuditPage> {
+  const searchWhere = albumSearchWhere(opts.q ?? "");
+  const sort = opts.sort ?? parseDadosSort();
+  const orderBy = albumOrderBy(sort);
+
   if (opts.filtro === "data-01-01") {
     const allIds = await albumIdsComData0101();
-    const total = allIds.length;
+    const filteredIds = searchWhere
+      ? (
+          await prisma.album.findMany({
+            where: { AND: [{ id: { in: allIds } }, searchWhere] },
+            select: { id: true },
+          })
+        ).map((a) => a.id)
+      : allIds;
+    const total = filteredIds.length;
     const totalPages = Math.max(1, Math.ceil(total / DADOS_PAGE_SIZE));
     const page = Math.min(opts.page, totalPages);
-    const ids = allIds.slice((page - 1) * DADOS_PAGE_SIZE, page * DADOS_PAGE_SIZE);
-    const unordered = await prisma.album.findMany({
-      where: { id: { in: ids } },
+    if (total === 0) return { total: 0, totalPages: 1, page: 1, rows: [] };
+    const rows = await prisma.album.findMany({
+      where: { id: { in: filteredIds } },
       select: ALBUM_AUDIT_SELECT,
+      orderBy,
+      skip: (page - 1) * DADOS_PAGE_SIZE,
+      take: DADOS_PAGE_SIZE,
     });
-    const byId = new Map(unordered.map((a) => [a.id, a]));
-    const rows = ids.map((id) => byId.get(id)).filter((a): a is AlbumAuditRow => Boolean(a));
     return { total, totalPages, page, rows };
   }
 
-  const where: Prisma.AlbumWhereInput =
+  const filtroWhere: Prisma.AlbumWhereInput | null =
     opts.filtro === "todas"
-      ? {}
+      ? null
       : opts.filtro === "sem-capa"
         ? albumSemCapaAlbumWhere
         : opts.filtro === "sem-data"
@@ -471,13 +543,16 @@ export async function fetchAlbumAudit(opts: {
             ? albumMetadataNaoEncontradoWhere
             : albumPendenciasWhere;
 
+  const and = [filtroWhere, searchWhere].filter((w): w is Prisma.AlbumWhereInput => Boolean(w));
+  const where: Prisma.AlbumWhereInput = and.length > 0 ? { AND: and } : {};
+
   const total = await prisma.album.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / DADOS_PAGE_SIZE));
   const page = Math.min(opts.page, totalPages);
   const rows = await prisma.album.findMany({
     where,
     select: ALBUM_AUDIT_SELECT,
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    orderBy,
     skip: (page - 1) * DADOS_PAGE_SIZE,
     take: DADOS_PAGE_SIZE,
   });
@@ -520,16 +595,27 @@ export async function countAlbunsPendencias(): Promise<number> {
 export type ArtistFiltro = "pendencias" | "sem-bio" | "bio-nao-encontrada" | "metadados-nao-encontrados" | "todas";
 
 export const ARTIST_FILTROS: { key: ArtistFiltro; label: string }[] = [
+  { key: "todas", label: "Todos" },
   { key: "pendencias", label: "Com pendência" },
   { key: "sem-bio", label: "Sem bio" },
   { key: "bio-nao-encontrada", label: "Bio não encontrada" },
   { key: "metadados-nao-encontrados", label: "Metadados não encontrados" },
-  { key: "todas", label: "Todos" },
 ];
 
-export function parseArtistFiltro(raw: string | undefined): ArtistFiltro {
+export function parseArtistFiltro(raw: string | undefined, fallback: ArtistFiltro = "pendencias"): ArtistFiltro {
   const v = (raw ?? "").toLowerCase();
-  return ARTIST_FILTROS.some((f) => f.key === v) ? (v as ArtistFiltro) : "pendencias";
+  return ARTIST_FILTROS.some((f) => f.key === v) ? (v as ArtistFiltro) : fallback;
+}
+
+function artistSearchWhere(q: string): Prisma.ArtistWhereInput | null {
+  const term = q.trim();
+  if (!term) return null;
+  return {
+    OR: [
+      { name: { contains: term, mode: "insensitive" } },
+      { exhibitionName: { contains: term, mode: "insensitive" } },
+    ],
+  };
 }
 
 /** Backfill (Wikipedia) já tentou e não achou bio — não reentra na fila automática até correção manual. */
@@ -568,15 +654,27 @@ export const ARTIST_AUDIT_SELECT = {
 
 export type ArtistAuditRow = Prisma.ArtistGetPayload<{ select: typeof ARTIST_AUDIT_SELECT }>;
 
-export async function fetchArtistPendencias(opts: { filtro: ArtistFiltro; page: number }) {
-  const where = artistFiltroWhere(opts.filtro);
+export async function fetchArtistPendencias(opts: {
+  filtro: ArtistFiltro;
+  page: number;
+  q?: string;
+  sort?: DadosSort;
+}) {
+  const filtroWhere = artistFiltroWhere(opts.filtro);
+  const searchWhere = artistSearchWhere(opts.q ?? "");
+  const sort = opts.sort ?? parseDadosSort();
+  const and = [
+    Object.keys(filtroWhere).length > 0 ? filtroWhere : null,
+    searchWhere,
+  ].filter((w): w is Prisma.ArtistWhereInput => Boolean(w));
+  const where: Prisma.ArtistWhereInput = and.length > 0 ? { AND: and } : {};
   const total = await prisma.artist.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / DADOS_PAGE_SIZE));
   const clamped = Math.min(opts.page, totalPages);
   const rows = await prisma.artist.findMany({
     where,
     select: ARTIST_AUDIT_SELECT,
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    orderBy: artistOrderBy(sort),
     skip: (clamped - 1) * DADOS_PAGE_SIZE,
     take: DADOS_PAGE_SIZE,
   });

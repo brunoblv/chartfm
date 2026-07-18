@@ -5,13 +5,14 @@ import type { CSSProperties } from "react";
 import { RefreshCw } from "lucide-react";
 
 type Kind = "music" | "albums" | "artists";
-type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia";
+type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
 
-const SOURCES: { key: Source; label: string; title: string }[] = [
-  { key: "lastfm", label: "LFM", title: "Buscar no Last.fm (tags/gêneros)" },
-  { key: "spotify", label: "SPT", title: "Buscar no Spotify (metadados, capa, links)" },
-  { key: "musicbrainz", label: "MB", title: "Buscar no MusicBrainz (MBID, datas de single/clipe, tags)" },
-  { key: "wikipedia", label: "WIKI", title: "Buscar na Wikipedia (datas de lançamento, bio) — datas divergentes são corrigidas: vale a da Wikipedia" },
+const SOURCES: { key: Source; label: string; title: string; kinds: Kind[] }[] = [
+  { key: "lastfm", label: "LFM", title: "Buscar no Last.fm (tags/gêneros)", kinds: ["music", "albums", "artists"] },
+  { key: "spotify", label: "SPT", title: "Buscar no Spotify (metadados, capa, links)", kinds: ["music", "albums", "artists"] },
+  { key: "musicbrainz", label: "MB", title: "Buscar no MusicBrainz (MBID, datas de single/clipe, tags)", kinds: ["music", "albums", "artists"] },
+  { key: "wikipedia", label: "WIKI", title: "Buscar na Wikipedia (datas de lançamento, bio) — datas divergentes são corrigidas: vale a da Wikipedia", kinds: ["music", "albums", "artists"] },
+  { key: "bugs", label: "BUGS", title: "Buscar no Bugs (music.bugs.co.kr) — capa, data de single, data de álbum e data de clipe; boa cobertura de kpop", kinds: ["music", "albums"] },
 ];
 
 const chipStyle: CSSProperties = {
@@ -71,16 +72,20 @@ export function SourceFetchButtons({
   kind,
   id,
   notFound = [],
+  inline = false,
 }: {
   kind: Kind;
   id: string | number;
   /** Fontes já consultadas sem resultado para este registro (pulam a API por padrão). */
   notFound?: string[];
+  /** Sem margem superior — para ficar na mesma linha de Ver/Editar. */
+  inline?: boolean;
 }) {
   const [state, setState] = useState<FetchState>({ status: "idle" });
   const [tried, setTried] = useState<Set<string>>(new Set(notFound));
   const [forcingAll, setForcingAll] = useState(false);
 
+  const sourcesForKind = SOURCES.filter((s) => s.kinds.includes(kind));
   const busy = state.status === "loading" || state.status === "forcing" || forcingAll;
 
   async function run(source: Source, force = false) {
@@ -111,7 +116,7 @@ export function SourceFetchButtons({
     if (busy) return;
     setForcingAll(true);
     try {
-      for (const s of SOURCES) {
+      for (const s of sourcesForKind) {
         setState({ status: "forcing", source: s.key });
         try {
           const data = await callFetchSource(kind, id, s.key, true);
@@ -140,9 +145,9 @@ export function SourceFetchButtons({
   const sourceLabel = (s: Source) => SOURCES.find((x) => x.key === s)?.label ?? s;
 
   return (
-    <div style={{ marginTop: 6 }}>
+    <div style={inline ? { display: "contents" } : { marginTop: 6 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
-        {SOURCES.map((s) => {
+        {sourcesForKind.map((s) => {
           const loading = (state.status === "loading" || state.status === "forcing") && state.source === s.key;
           const wasTried = tried.has(s.key);
           return (

@@ -17,9 +17,9 @@ export default async function AdminDataEditRedirect({
 
   switch (params.tab) {
     case "albums":
-      redirect(withQ("/admin/dados/albuns"));
+      redirect(q ? `/admin/dados/albuns-pendencias?filtro=todas&q=${encodeURIComponent(q)}` : "/admin/dados/albuns-pendencias");
     case "artists":
-      redirect(withQ("/admin/dados/artistas"));
+      redirect(q ? `/admin/dados/artistas-pendencias?filtro=todas&q=${encodeURIComponent(q)}` : "/admin/dados/artistas-pendencias");
     case "no-album":
       redirect(`/admin/dados/catalogo?filtro=sem-album${page}`);
     case "no-cover":
@@ -29,11 +29,11 @@ export default async function AdminDataEditRedirect({
     case "missing-music":
       redirect("/admin/dados/catalogo?filtro=problemas");
     case "missing-artists":
-      redirect("/admin/dados/artistas-pendencias");
+      redirect("/admin/dados/artistas-pendencias?filtro=pendencias");
     case "missing-albums":
-      redirect("/admin/dados/albuns-pendencias");
+      redirect("/admin/dados/albuns-pendencias?filtro=pendencias");
     case "music":
     default:
-      redirect(withQ("/admin/dados/musicas"));
+      redirect(withQ("/admin/dados/catalogo"));
   }
 }

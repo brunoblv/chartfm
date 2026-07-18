@@ -26,7 +26,18 @@ const chipStyle: CSSProperties = {
   gap: 4,
 };
 
-export function YouTubeClipFetchButton({ songId, title, artist }: { songId: string; title: string; artist: string }) {
+export function YouTubeClipFetchButton({
+  songId,
+  title,
+  artist,
+  inline = false,
+}: {
+  songId: string;
+  title: string;
+  artist: string;
+  /** Sem margem superior — para ficar na mesma linha de Ver/Editar. */
+  inline?: boolean;
+}) {
   const [state, setState] = useState<FetchState>({ status: "idle" });
 
   async function run() {
@@ -66,6 +77,56 @@ export function YouTubeClipFetchButton({ songId, title, artist }: { songId: stri
     }
   }
 
+  const feedback =
+    state.status === "done" ? (
+      <div style={{ marginTop: inline ? 0 : 4, fontSize: 11, lineHeight: 1.5, maxWidth: 300, flexBasis: "100%" }}>
+        {state.found ? (
+          <>
+            <span style={{ color: "#2D7A32", fontWeight: 700 }}>✓ Clipe encontrado:</span>{" "}
+            <span style={{ color: "var(--text)" }}>{state.title}</span>
+            {state.link && (
+              <>
+                {" "}
+                <a href={state.link} target="_blank" rel="noreferrer" style={{ color: "#FF0000", fontWeight: 700 }}>
+                  youtube ↗
+                </a>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <span style={{ color: "var(--text-muted)" }}>Nenhum clipe encontrado.</span>
+            <br />
+            <span style={{ color: "var(--text-muted)", fontSize: 10 }}>Marcado para revisão manual.</span>
+          </>
+        )}
+      </div>
+    ) : state.status === "error" ? (
+      <div style={{ marginTop: inline ? 0 : 4, fontSize: 11, color: "#C41E3A", maxWidth: 300, flexBasis: "100%" }}>
+        YouTube CLIP: {state.message}
+      </div>
+    ) : null;
+
+  if (inline) {
+    return (
+      <>
+        <button
+          type="button"
+          title={`Buscar video clipe no YouTube para "${title}" por ${artist}`}
+          onClick={() => run()}
+          disabled={state.status === "loading"}
+          style={{
+            ...chipStyle,
+            ...(state.status === "loading" ? { color: "#FF0000", borderColor: "rgba(255,0,0,0.4)" } : null),
+          }}
+        >
+          {state.status === "loading" ? "…" : <><Youtube size={10} /> YT</>}
+        </button>
+        {feedback}
+      </>
+    );
+  }
+
   return (
     <div style={{ marginTop: 6 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -82,37 +143,7 @@ export function YouTubeClipFetchButton({ songId, title, artist }: { songId: stri
           {state.status === "loading" ? "…" : <><Youtube size={10} /> YT CLIP</>}
         </button>
       </div>
-
-      {state.status === "done" && (
-        <div style={{ marginTop: 4, fontSize: 11, lineHeight: 1.5, maxWidth: 300 }}>
-          {state.found ? (
-            <>
-              <span style={{ color: "#2D7A32", fontWeight: 700 }}>✓ Clipe encontrado:</span>{" "}
-              <span style={{ color: "var(--text)" }}>{state.title}</span>
-              {state.link && (
-                <>
-                  {" "}
-                  <a href={state.link} target="_blank" rel="noreferrer" style={{ color: "#FF0000", fontWeight: 700 }}>
-                    youtube ↗
-                  </a>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <span style={{ color: "var(--text-muted)" }}>Nenhum clipe encontrado.</span>
-              <br />
-              <span style={{ color: "var(--text-muted)", fontSize: 10 }}>Marcado para revisão manual.</span>
-            </>
-          )}
-        </div>
-      )}
-
-      {state.status === "error" && (
-        <div style={{ marginTop: 4, fontSize: 11, color: "#C41E3A", maxWidth: 300 }}>
-          YouTube CLIP: {state.message}
-        </div>
-      )}
+      {feedback}
     </div>
   );
 }

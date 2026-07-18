@@ -1,19 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Layers, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Layers, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
 
 type Kind = "music" | "albums" | "artists";
-type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "all";
+type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs" | "all";
 
-const SOURCES: { key: Source; label: string; title: string }[] = [
-  { key: "all", label: "Todas as APIs", title: "Roda Spotify, MusicBrainz, Last.fm e Wikipedia, nessa ordem, para cada item" },
-  { key: "spotify", label: "Spotify", title: "Só Spotify" },
-  { key: "musicbrainz", label: "MusicBrainz", title: "Só MusicBrainz" },
-  { key: "lastfm", label: "Last.fm", title: "Só Last.fm" },
-  { key: "wikipedia", label: "Wikipedia", title: "Só Wikipedia" },
+const SOURCES: { key: Source; label: string; title: string; kinds: Kind[] }[] = [
+  { key: "all", label: "Todas as APIs", title: "Roda Spotify, MusicBrainz, Last.fm, Wikipedia e Bugs, nessa ordem, para cada item", kinds: ["music", "albums", "artists"] },
+  { key: "spotify", label: "Spotify", title: "Só Spotify", kinds: ["music", "albums", "artists"] },
+  { key: "musicbrainz", label: "MusicBrainz", title: "Só MusicBrainz", kinds: ["music", "albums", "artists"] },
+  { key: "lastfm", label: "Last.fm", title: "Só Last.fm", kinds: ["music", "albums", "artists"] },
+  { key: "wikipedia", label: "Wikipedia", title: "Só Wikipedia", kinds: ["music", "albums", "artists"] },
+  { key: "bugs", label: "Bugs", title: "Só Bugs (music.bugs.co.kr) — capa, data de single, data de álbum e data de clipe; boa cobertura de kpop", kinds: ["music", "albums"] },
 ];
+
+const KIND_LABEL: Record<Kind, string> = {
+  music: "Músicas",
+  albums: "Álbuns",
+  artists: "Artistas",
+};
 
 type FailedItem = { id: string | number; label: string; href: string; reason: string };
 
@@ -40,23 +47,7 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Backfill em lote por tipo de item: um botão roda todas as APIs juntas
- * (Spotify → MusicBrainz → Last.fm → Wikipedia) para cada registro pendente,
- * e um botão por API roda só aquela fonte para todos os registros pendentes.
- * Complementa os botões individuais por linha em /admin/dados (mantidos como estão).
- */
-export function SourceBatchBackfillClient({
-  kind,
-  title,
-  description,
-  initialTotal,
-}: {
-  kind: Kind;
-  title: string;
-  description: string;
-  initialTotal: number;
-}) {
+function useBatchBackfill(kind: Kind, initialTotal: number) {
   const [running, setRunning] = useState<Source | null>(null);
   const [force, setForce] = useState(false);
   const [total, setTotal] = useState(initialTotal);
@@ -152,30 +143,58 @@ export function SourceBatchBackfillClient({
     }
   }
 
+  return {
+    running,
+    force,
+    setForce,
+    total,
+    processed,
+    updated,
+    message,
+    log,
+    failedItems,
+    percent,
+    run,
+  };
+}
+
+function BackfillBody({
+  kind,
+  initialTotal,
+  description,
+}: {
+  kind: Kind;
+  initialTotal: number;
+  description: string;
+}) {
+  const {
+    running,
+    force,
+    setForce,
+    total,
+    processed,
+    updated,
+    message,
+    log,
+    failedItems,
+    percent,
+    run,
+  } = useBatchBackfill(kind, initialTotal);
+
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--divider)",
-        borderRadius: 14,
-        padding: 16,
-        marginBottom: 18,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 700, color: "var(--text)" }}>
-        {running ? <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /> : <Layers size={18} />}
-        {title}
-      </div>
-      <div style={{ marginTop: 5, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.45 }}>{description}</div>
+    <>
+      <p style={{ margin: "0 0 14px", fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+        {description}
+      </p>
 
       <label
         style={{
-          marginTop: 10,
           display: "inline-flex",
           alignItems: "center",
           gap: 6,
           fontSize: 12,
           color: "var(--text-muted)",
+          marginBottom: 14,
           cursor: running ? "default" : "pointer",
         }}
         title="Por padrão cada fonte só é consultada uma vez por registro — se não achar nada, fica marcada e é pulada nas próximas rodadas. Marque para forçar todas de novo."
@@ -186,11 +205,11 @@ export function SourceBatchBackfillClient({
           disabled={running != null}
           onChange={(e) => setForce(e.target.checked)}
         />
-        Forçar (ignora marcações de &quot;sem resultado&quot; e consulta tudo de novo — geral)
+        Forçar (ignora &quot;sem resultado&quot; e consulta tudo de novo)
       </label>
 
-      <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
-        {SOURCES.map((s) => {
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+        {SOURCES.filter((s) => s.kinds.includes(kind)).map((s) => {
           const isRunning = running === s.key;
           const disabled = running != null || total === 0;
           return (
@@ -206,7 +225,7 @@ export function SourceBatchBackfillClient({
                 justifyContent: "center",
                 gap: 6,
                 minHeight: 36,
-                padding: "0 12px",
+                padding: "0 13px",
                 borderRadius: 9,
                 border: s.key === "all" ? "none" : "1px solid var(--divider-strong)",
                 background: disabled
@@ -215,7 +234,7 @@ export function SourceBatchBackfillClient({
                     ? "#FA243C"
                     : "var(--surface)",
                 color: disabled ? "var(--text-muted)" : s.key === "all" ? "#fff" : "var(--text)",
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: s.key === "all" ? 750 : 600,
                 cursor: disabled ? "default" : "pointer",
               }}
@@ -227,68 +246,256 @@ export function SourceBatchBackfillClient({
         })}
       </div>
 
-      <div style={{ marginTop: 14 }}>
-        <div style={{ height: 8, borderRadius: 999, background: "var(--fill-inset)", overflow: "hidden" }}>
+      <div style={{ height: 8, borderRadius: 999, background: "var(--fill-inset)", overflow: "hidden" }}>
+        <div
+          style={{
+            width: `${percent}%`,
+            height: "100%",
+            borderRadius: 999,
+            background: "#FA243C",
+            transition: "width 180ms ease",
+          }}
+        />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--text-muted)" }}>
+          {percent === 100 && !running && processed > 0 ? (
+            <CheckCircle2 size={14} color="#2D7A32" />
+          ) : (
+            <AlertCircle size={14} color="#86868B" />
+          )}
+          {message || `${total.toLocaleString("pt-BR")} pendente(s)`}
+        </span>
+        <span style={{ fontSize: 12.5, color: "var(--text-muted)" }}>
+          {processed.toLocaleString("pt-BR")}/{total.toLocaleString("pt-BR")} · {updated.toLocaleString("pt-BR")} atualizados
+        </span>
+      </div>
+
+      {log.length > 0 && (
+        <div
+          style={{
+            marginTop: 14,
+            padding: "10px 12px",
+            borderRadius: 10,
+            background: "var(--fill-inset)",
+            fontSize: 12,
+            lineHeight: 1.7,
+            color: "var(--text-muted)",
+            maxHeight: 220,
+            overflowY: "auto",
+          }}
+        >
+          {log.map((line, i) => (
+            <div key={`${line}-${i}`} style={line.startsWith("✓") ? { color: "#2D7A32" } : undefined}>
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {failedItems.length > 0 && !running && (
+        <div style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)" }}>
+          {failedItems.length.toLocaleString("pt-BR")} sem resultado nesta rodada:
+          <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
+            {failedItems.slice(0, 20).map((item) => (
+              <Link
+                key={`${item.id}`}
+                href={item.href}
+                style={{ color: "#FA243C", fontWeight: 700, textDecoration: "none", fontSize: 13 }}
+              >
+                {item.label}
+              </Link>
+            ))}
+            {failedItems.length > 20 && <span>… e mais {failedItems.length - 20}</span>}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * Backfill em lote por tipo: abre sob demanda em um drawer lateral
+ * para manter a tabela principal compacta.
+ */
+export function BackfillDrawerButton({
+  kind,
+  initialTotal,
+  description,
+  buttonLabel,
+}: {
+  kind: Kind;
+  initialTotal: number;
+  description: string;
+  /** Rótulo do botão; padrão: "Backfill em lote (N)". */
+  buttonLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  const label = buttonLabel ?? `Backfill em lote (${initialTotal.toLocaleString("pt-BR")})`;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 7,
+          padding: "10px 16px",
+          borderRadius: 10,
+          border: "1px solid rgba(250,36,60,0.35)",
+          background: "rgba(250,36,60,0.08)",
+          color: "#FA243C",
+          fontSize: 13,
+          fontWeight: 750,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <Layers size={15} />
+        {label}
+      </button>
+
+      {open && (
+        <>
           <div
+            role="presentation"
+            onClick={() => setOpen(false)}
             style={{
-              width: `${percent}%`,
-              height: "100%",
-              borderRadius: 999,
-              background: "#FA243C",
-              transition: "width 180ms ease",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.35)",
+              zIndex: 40,
             }}
           />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-muted)" }}>
-            {percent === 100 && !running && processed > 0 ? (
-              <CheckCircle2 size={14} color="#2D7A32" />
-            ) : (
-              <AlertCircle size={14} color="#86868B" />
-            )}
-            {message || `${total.toLocaleString("pt-BR")} pendentes`}
-          </span>
-          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {processed.toLocaleString("pt-BR")} processados · {updated.toLocaleString("pt-BR")} atualizados
-          </span>
-        </div>
-
-        {log.length > 0 && (
-          <div
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Backfill em lote · ${KIND_LABEL[kind]}`}
             style={{
-              marginTop: 10,
-              padding: "10px 12px",
-              borderRadius: 10,
-              background: "var(--fill-inset)",
-              fontSize: 12,
-              lineHeight: 1.6,
-              color: "var(--text-muted)",
-              maxHeight: 160,
-              overflowY: "auto",
+              position: "fixed",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: "min(420px, 100vw)",
+              background: "var(--surface-elevated, var(--surface))",
+              borderLeft: "1px solid var(--divider)",
+              zIndex: 41,
+              boxShadow: "-8px 0 24px rgba(0,0,0,0.12)",
+              display: "flex",
+              flexDirection: "column",
+              animation: "dadosDrawerIn 220ms ease",
             }}
           >
-            {log.map((line, i) => (
-              <div key={`${line}-${i}`} style={line.startsWith("✓") ? { color: "#2D7A32" } : undefined}>
-                {line}
+            <div
+              style={{
+                padding: "18px 20px",
+                borderBottom: "1px solid var(--divider)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <div style={{ fontSize: 15, fontWeight: 750, color: "var(--text)" }}>
+                Backfill em lote · {KIND_LABEL[kind]}
               </div>
-            ))}
-          </div>
-        )}
-
-        {failedItems.length > 0 && !running && (
-          <div style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)" }}>
-            {failedItems.length.toLocaleString("pt-BR")} sem resultado nesta rodada. Corrija manualmente ou rode de novo mais tarde:
-            <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 4 }}>
-              {failedItems.slice(0, 20).map((item) => (
-                <Link key={`${item.id}`} href={item.href} style={{ color: "#FA243C", fontWeight: 700, textDecoration: "none", fontSize: 13 }}>
-                  {item.label}
-                </Link>
-              ))}
-              {failedItems.length > 20 && <span>… e mais {failedItems.length - 20}</span>}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Fechar"
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  padding: "2px 6px",
+                  display: "inline-flex",
+                }}
+              >
+                <X size={20} />
+              </button>
             </div>
-          </div>
-        )}
+            <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+              <BackfillBody kind={kind} initialTotal={initialTotal} description={description} />
+            </div>
+          </aside>
+          <style>{`@keyframes dadosDrawerIn { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+        </>
+      )}
+    </>
+  );
+}
+
+/** Card da visão geral: abre o mesmo drawer ao clicar em "Abrir backfill em lote". */
+export function BackfillToolCard({
+  kind,
+  title,
+  description,
+  initialTotal,
+}: {
+  kind: Kind;
+  title: string;
+  description: string;
+  initialTotal: number;
+}) {
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--divider)",
+        borderRadius: 14,
+        padding: 16,
+      }}
+    >
+      <div style={{ fontSize: 14.5, fontWeight: 750, color: "var(--text)" }}>{title}</div>
+      <div style={{ marginTop: 5, fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5, minHeight: 36 }}>
+        {description}
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <BackfillDrawerButton
+          kind={kind}
+          initialTotal={initialTotal}
+          description={description}
+          buttonLabel={`Abrir backfill em lote (${initialTotal.toLocaleString("pt-BR")})`}
+        />
       </div>
     </div>
+  );
+}
+
+/**
+ * @deprecated Preferir BackfillDrawerButton / BackfillToolCard.
+ * Mantido para compatibilidade: renderiza o fluxo no drawer via botão embutido.
+ */
+export function SourceBatchBackfillClient({
+  kind,
+  title,
+  description,
+  initialTotal,
+}: {
+  kind: Kind;
+  title: string;
+  description: string;
+  initialTotal: number;
+}) {
+  return (
+    <BackfillToolCard kind={kind} title={title} description={description} initialTotal={initialTotal} />
   );
 }

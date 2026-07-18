@@ -9,12 +9,11 @@ import {
   countSongsSemDatas,
   fetchDadosOverview,
   getAdminAccess,
-  type EscopoContadores,
 } from "./lib";
 import { AccessDenied, DadosShell } from "./ui";
 import { DatesBackfillClient } from "./DatesBackfillClient";
 import { ArtistBiosBackfillClient } from "./ArtistBiosBackfillClient";
-import { SourceBatchBackfillClient } from "./SourceBatchBackfillClient";
+import { BackfillToolCard } from "./SourceBatchBackfillClient";
 
 export const dynamic = "force-dynamic";
 
@@ -23,44 +22,76 @@ const cardStyle: CSSProperties = {
   background: "var(--surface)",
   border: "1px solid var(--divider)",
   borderRadius: 14,
-  padding: 14,
+  padding: 18,
   textDecoration: "none",
   minWidth: 0,
+  cursor: "pointer",
 };
 
-function StatCard({ label, value, href, alert }: {
+function OverviewEntityCard({
+  label,
+  total,
+  pendentes,
+  href,
+}: {
   label: string;
-  value: number;
+  total: number;
+  pendentes: number;
   href: string;
-  alert?: boolean;
 }) {
-  const highlight = alert && value > 0;
+  const pct = Math.round((pendentes / Math.max(total, 1)) * 100);
   return (
     <Link href={href} style={cardStyle}>
-      <div
-        style={{
-          fontSize: 11,
-          color: "var(--text-muted)",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {label}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span
+          style={{
+            fontSize: 12.5,
+            fontWeight: 750,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "var(--text-muted)",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            color: "#fff",
+            background: "#FA243C",
+            borderRadius: 999,
+            padding: "2px 9px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {pendentes.toLocaleString("pt-BR")} pend.
+        </span>
       </div>
       <div
         style={{
-          marginTop: 4,
-          fontSize: 26,
+          marginTop: 8,
+          fontSize: 32,
           fontWeight: 750,
           letterSpacing: "-0.03em",
-          color: highlight ? "#C41E3A" : "var(--text)",
+          color: "var(--text)",
         }}
       >
-        {value.toLocaleString("pt-BR")}
+        {total.toLocaleString("pt-BR")}
+      </div>
+      <div
+        style={{
+          marginTop: 10,
+          height: 6,
+          borderRadius: 999,
+          background: "var(--fill-inset)",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ height: "100%", width: `${pct}%`, background: "#FA243C", borderRadius: 999 }} />
+      </div>
+      <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-muted)" }}>
+        {pendentes.toLocaleString("pt-BR")} pendente(s)
       </div>
     </Link>
   );
@@ -68,11 +99,11 @@ function StatCard({ label, value, href, alert }: {
 
 function CreateCard({ label, description, href }: { label: string; description: string; href: string }) {
   return (
-    <Link href={href} style={cardStyle}>
-      <div style={{ fontSize: 15, fontWeight: 750, color: "#FA243C", letterSpacing: "-0.01em" }}>
+    <Link href={href} style={{ ...cardStyle, padding: 14 }}>
+      <div style={{ fontSize: 14, fontWeight: 750, color: "#FA243C", letterSpacing: "-0.01em" }}>
         + {label}
       </div>
-      <div style={{ marginTop: 4, fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.45 }}>
+      <div style={{ marginTop: 4, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
         {description}
       </div>
     </Link>
@@ -81,126 +112,154 @@ function CreateCard({ label, description, href }: { label: string; description: 
 
 function GroupTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 style={{ margin: "22px 0 10px", fontSize: 17, fontWeight: 750, color: "var(--text)", letterSpacing: "-0.02em" }}>
+    <h2
+      style={{
+        margin: "0 0 12px",
+        fontSize: 16,
+        fontWeight: 750,
+        color: "var(--text)",
+        letterSpacing: "-0.01em",
+      }}
+    >
       {children}
     </h2>
   );
 }
 
-const gridStyle: CSSProperties = {
+const entityGrid: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
-  gap: 10,
-  maxWidth: 1240,
+  gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+  gap: 12,
+  marginBottom: 32,
 };
-
-function SongCards({ base, c }: { base: string; c: EscopoContadores }) {
-  return (
-    <div style={gridStyle}>
-      <StatCard label="Músicas" value={c.total} href={`${base}?filtro=todas`} />
-      <StatCard label="Sem álbum" value={c.semAlbum} href={`${base}?filtro=sem-album`} alert />
-      <StatCard label="Álbum sem capa" value={c.albumSemCapa} href={`${base}?filtro=album-sem-capa`} alert />
-      <StatCard label="Sem MBID" value={c.semMbid} href={`${base}?filtro=sem-mbid`} alert />
-      <StatCard label="Sem data do single" value={c.semSingle} href={`${base}?filtro=sem-single`} alert />
-      <StatCard label="Sem data do clipe" value={c.semClipe} href={`${base}?filtro=sem-clipe`} alert />
-      <StatCard label="Datas não encontradas" value={c.datasNaoEncontradas} href={`${base}?filtro=datas-nao-encontradas`} alert />
-      <StatCard label="Data 01/01" value={c.data0101} href={`${base}?filtro=data-01-01`} alert />
-    </div>
-  );
-}
 
 export default async function DadosOverviewPage() {
   const access = await getAdminAccess();
   if (!access) return <AccessDenied />;
 
-  const [ov, semDatas, semBio, songsProblemas, albunsPendencias, artistasPendenciasComBio] = await Promise.all([
-    fetchDadosOverview(access.isOwner ? access.userId : null),
-    countSongsSemDatas(),
-    countArtistsSemBio(),
-    countSongsProblemas(),
-    countAlbunsPendencias(),
-    countArtistsPendenciasComBio(),
-  ]);
-  const totalPendencias =
-    ov.catalogo.semAlbum +
-    ov.catalogo.albumSemCapa +
-    ov.albuns.semCapa +
-    ov.artistas.pendencias;
+  const [ov, semDatas, semBio, songsProblemas, albunsPendencias, artistasPendenciasComBio] =
+    await Promise.all([
+      fetchDadosOverview(access.isOwner ? access.userId : null),
+      countSongsSemDatas(),
+      countArtistsSemBio(),
+      countSongsProblemas(),
+      countAlbunsPendencias(),
+      countArtistsPendenciasComBio(),
+    ]);
+
+  const musPendentes = songsProblemas;
+  const totalPendenciasSpotify =
+    ov.catalogo.semAlbum + ov.catalogo.albumSemCapa + ov.albuns.semCapa + ov.artistas.pendencias;
 
   return (
-    <DadosShell active="geral" subtitle="Visão geral" showMinhasParadas={access.isOwner}>
-      <p style={{ margin: "0 0 6px", fontSize: 14, color: "var(--text-muted)", maxWidth: 720, lineHeight: 1.5 }}>
-        Regra do catálogo: <strong>toda música tem um álbum, e todo álbum tem uma capa</strong>.
-        Clique em um cartão para abrir a lista correspondente.
+    <DadosShell active="geral" subtitle="Busque, corrija e faça backfill em um só lugar.">
+      <p
+        style={{
+          margin: "0 0 20px",
+          fontSize: 13.5,
+          color: "var(--text-muted)",
+          maxWidth: 640,
+          lineHeight: 1.55,
+        }}
+      >
+        Regra do catálogo:{" "}
+        <strong style={{ color: "var(--text)" }}>toda música tem um álbum, e todo álbum tem uma capa.</strong>{" "}
+        Clique em um cartão para abrir a lista já filtrada.
       </p>
 
-      <GroupTitle>Criação</GroupTitle>
-      <div style={{ ...gridStyle, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", maxWidth: 720 }}>
-        <CreateCard
-          label="Nova música"
-          description="Cadastro manual: artista (e álbum) entre os já cadastrados; Spotify ID opcional."
-          href="/admin/music/new"
+      <div style={entityGrid}>
+        <OverviewEntityCard
+          label="Músicas"
+          total={ov.catalogo.total}
+          pendentes={musPendentes}
+          href="/admin/dados/catalogo?filtro=problemas"
         />
-        <CreateCard
-          label="Novo artista"
-          description="Cadastro manual de artista, com ou sem Spotify ID."
-          href="/admin/artists"
+        <OverviewEntityCard
+          label="Álbuns"
+          total={ov.albuns.total}
+          pendentes={albunsPendencias}
+          href="/admin/dados/albuns-pendencias?filtro=pendencias"
         />
-        <CreateCard
-          label="Novo álbum"
-          description="Cadastro manual de álbum vinculado a um artista."
-          href="/admin/albums"
+        <OverviewEntityCard
+          label="Artistas"
+          total={ov.artistas.total}
+          pendentes={artistasPendenciasComBio}
+          href="/admin/dados/artistas-pendencias?filtro=pendencias"
         />
       </div>
-
-      <GroupTitle>Edição</GroupTitle>
 
       {ov.minhas && (
         <>
           <GroupTitle>Minhas paradas</GroupTitle>
-          <SongCards base="/admin/dados/minhas-paradas" c={ov.minhas} />
+          <div style={{ ...entityGrid, marginBottom: 32 }}>
+            <OverviewEntityCard
+              label="Músicas nas minhas paradas"
+              total={ov.minhas.total}
+              pendentes={
+                ov.minhas.semAlbum +
+                ov.minhas.albumSemCapa +
+                ov.minhas.semMbid +
+                ov.minhas.semSingle +
+                ov.minhas.semClipe
+              }
+              href="/admin/dados/minhas-paradas?filtro=problemas"
+            />
+          </div>
         </>
       )}
 
-      <GroupTitle>Catálogo geral · músicas</GroupTitle>
-      <SongCards base="/admin/dados/catalogo" c={ov.catalogo} />
-
-      <GroupTitle>Catálogo geral · álbuns e artistas</GroupTitle>
-      <div style={gridStyle}>
-        <StatCard label="Álbuns" value={ov.albuns.total} href="/admin/dados/albuns-pendencias?filtro=todas" />
-        <StatCard label="Álbuns sem capa" value={ov.albuns.semCapa} href="/admin/dados/albuns-pendencias?filtro=sem-capa" alert />
-        <StatCard label="Álbuns sem data" value={ov.albuns.semData} href="/admin/dados/albuns-pendencias?filtro=sem-data" alert />
-        <StatCard label="Álbuns data 01/01" value={ov.albuns.data0101} href="/admin/dados/albuns-pendencias?filtro=data-01-01" alert />
-        <StatCard label="Artistas" value={ov.artistas.total} href="/admin/dados/artistas" />
-        <StatCard label="Artistas c/ pendência" value={ov.artistas.pendencias} href="/admin/dados/artistas-pendencias" alert />
-      </div>
-
-      <GroupTitle>Ferramentas</GroupTitle>
-      <div style={{ maxWidth: 720 }}>
-        <DatesBackfillClient initialTotal={semDatas} scope="catalogo" />
-        <ArtistBiosBackfillClient initialTotal={semBio} />
-        <MissingInfoBackfillClient initialTotal={totalPendencias} />
-      </div>
-
-      <GroupTitle>Buscar dados faltantes por API</GroupTitle>
-      <div style={{ maxWidth: 720 }}>
-        <SourceBatchBackfillClient
+      <GroupTitle>Ferramentas de backfill</GroupTitle>
+      <div style={entityGrid}>
+        <BackfillToolCard
           kind="music"
-          title="Músicas"
-          description="Roda todas as APIs juntas ou uma de cada vez para todas as músicas com pendência (álbum, capa, MBID, datas, gêneros)."
+          title="Backfill de músicas"
+          description="Spotify, MusicBrainz, Last.fm e Wikipedia para músicas com pendência."
           initialTotal={songsProblemas}
         />
-        <SourceBatchBackfillClient
+        <BackfillToolCard
           kind="albums"
-          title="Álbuns"
-          description="Roda todas as APIs juntas ou uma de cada vez para todos os álbuns com pendência (capa, data, tipo, faixas, link)."
+          title="Backfill de álbuns"
+          description="Capa, data, tipo e faixas para álbuns com pendência."
           initialTotal={albunsPendencias}
         />
-        <SourceBatchBackfillClient
+        <BackfillToolCard
           kind="artists"
-          title="Artistas"
-          description="Roda todas as APIs juntas ou uma de cada vez para todos os artistas com pendência (imagem, gêneros, link e bio)."
+          title="Backfill de artistas"
+          description="Imagem, gêneros e bio para artistas com pendência."
           initialTotal={artistasPendenciasComBio}
+        />
+      </div>
+
+      <GroupTitle>Ferramentas especializadas</GroupTitle>
+      <div style={{ maxWidth: 720, marginBottom: 32 }}>
+        <DatesBackfillClient initialTotal={semDatas} scope="catalogo" />
+        <ArtistBiosBackfillClient initialTotal={semBio} />
+        <MissingInfoBackfillClient initialTotal={totalPendenciasSpotify} />
+      </div>
+
+      <GroupTitle>Criação manual</GroupTitle>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12,
+          maxWidth: 760,
+        }}
+      >
+        <CreateCard
+          label="Nova música"
+          description="Artista e álbum entre os já cadastrados; Spotify ID opcional."
+          href="/admin/music/new"
+        />
+        <CreateCard
+          label="Novo artista"
+          description="Cadastro manual, com ou sem Spotify ID."
+          href="/admin/artists"
+        />
+        <CreateCard
+          label="Novo álbum"
+          description="Vinculado a um artista já cadastrado."
+          href="/admin/albums"
         />
       </div>
     </DadosShell>

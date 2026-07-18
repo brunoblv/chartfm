@@ -15,7 +15,7 @@ export const maxDuration = 60;
  * o backfill em lote em lib/edicao-de-dados-source-fetch.ts.
  */
 
-type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia";
+type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     force?: unknown;
   };
   const source = body.source as Source;
-  if (source !== "lastfm" && source !== "spotify" && source !== "musicbrainz" && source !== "wikipedia") {
+  if (source !== "lastfm" && source !== "spotify" && source !== "musicbrainz" && source !== "wikipedia" && source !== "bugs") {
     return NextResponse.json({ error: "invalid_source" }, { status: 400 });
   }
   const force = body.force === true;

@@ -28,22 +28,30 @@ import {
   getWikipediaArtistBio,
   getWikipediaSongInfo,
 } from "@/lib/wikipedia";
+import { lookupBugsAlbum, lookupBugsRelease } from "@/lib/bugs-lookup";
 
 /**
- * Fonte por registro: consulta UMA fonte (Last.fm, Spotify, MusicBrainz ou
- * Wikipedia) e preenche só os campos vazios. Compartilhado entre os botões
- * individuais por linha (SourceFetchButtons) e o backfill em lote por fonte
- * (SourceBatchBackfillClient). Exceção: datas de single/clipe da Wikipedia
- * SOBRESCREVEM valores divergentes (datas de YouTube podem ser de
+ * Fonte por registro: consulta UMA fonte (Last.fm, Spotify, MusicBrainz,
+ * Wikipedia ou Bugs) e preenche só os campos vazios. Compartilhado entre os
+ * botões individuais por linha (SourceFetchButtons) e o backfill em lote por
+ * fonte (SourceBatchBackfillClient). Exceção: datas de single/clipe da
+ * Wikipedia SOBRESCREVEM valores divergentes (datas de YouTube podem ser de
  * repostagens anos depois — quando divergir, vale a da Wikipedia).
+ *
+ * Bugs (music.bugs.co.kr) é API não-oficial (mobile), boa cobertura de kpop:
+ * cobre capa/data de single/data de álbum/data de clipe. Grupos de kpop às
+ * vezes só são encontrados pelo nome nativo coreano no Bugs (ex.: BTS =
+ * 방탄소년단) — quando o match de artista não é confirmado, o resultado só é
+ * reportado (found), sem gravar no banco, para não sujar dados por colisão
+ * de nome.
  *
  * Cada fonte sem resultado fica marcada em `sourcesNotFound` — a próxima
  * chamada pula essa fonte sem bater na API, a menos que `opts.force` seja
  * passado. Um resultado (mesmo sem nada a aplicar) limpa a marcação.
  */
 
-export type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia";
-export const ALL_SOURCES: Source[] = ["spotify", "musicbrainz", "lastfm", "wikipedia"];
+export type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
+export const ALL_SOURCES: Source[] = ["spotify", "musicbrainz", "lastfm", "wikipedia", "bugs"];
 
 function fmtDate(d: Date): string {
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
@@ -203,6 +211,41 @@ export async function fetchForSong(
       return { found, applied };
     }
 
+    if (source === "bugs") {
+      const result = await lookupBugsRelease(song.title, song.artist);
+      if (!result.matches.length) return nothing;
+
+      const found: string[] = [`${result.matches.length} lançamento(s) no Bugs`];
+      const applied: string[] = [];
+      const data: Record<string, unknown> = {};
+
+      if (result.singleReleaseDate) {
+        found.push(`single: ${result.singleReleaseDate}`);
+        if (result.artistConfirmed && !song.singleReleaseDate) {
+          data.singleReleaseDate = new Date(result.singleReleaseDate);
+          applied.push("data do single");
+        }
+      }
+      if (result.clipReleaseDate) {
+        found.push(`clipe: ${result.clipReleaseDate}`);
+        if (result.artistConfirmed && !song.musicVideoReleaseDate) {
+          data.musicVideoReleaseDate = new Date(result.clipReleaseDate);
+          applied.push("data do clipe");
+        }
+      }
+      if (!result.artistConfirmed) {
+        found.push("⚠ artista não confirmado (nome nativo?) — não gravado, conferir manualmente");
+      }
+      if (Object.keys(data).length > 0) {
+        await prisma.song.update({
+          where: { id: song.id },
+          data: songDataWithOptionalDatesNotFoundClear(data),
+        });
+      }
+      const linkAlbumId = result.matches[0]?.albumId;
+      return { found, applied, link: linkAlbumId ? `https://music.bugs.co.kr/album/${linkAlbumId}` : undefined };
+    }
+
     // wikipedia — fonte de confiança para datas: quando a data no banco vier de
     // upload tardio (ex.: clipe postado no YouTube anos depois), a da Wikipedia
     // é a correta. Diferente das outras fontes, aqui a data divergente SOBRESCREVE.
@@ -354,6 +397,35 @@ export async function fetchForAlbum(
       return { found: [`tags: ${tags.slice(0, 6).join(", ")}`], applied: [] };
     }
 
+    if (source === "bugs") {
+      const result = await lookupBugsAlbum(album.title, album.artist.name);
+      if (!result.match) return nothing;
+
+      const found: string[] = [`álbum "${result.match.albumTitle}" no Bugs`];
+      const applied: string[] = [];
+      const data: Record<string, unknown> = {};
+
+      if (result.releaseDate) {
+        found.push(`data: ${result.releaseDate}`);
+        if (result.artistConfirmed && !album.releaseDate) {
+          data.releaseDate = new Date(result.releaseDate);
+          applied.push(`data (${result.releaseDate})`);
+        }
+      }
+      if (result.cover) {
+        found.push("capa");
+        if (result.artistConfirmed && !album.coverUrl?.trim()) {
+          data.coverUrl = result.cover;
+          applied.push("capa");
+        }
+      }
+      if (!result.artistConfirmed) {
+        found.push("⚠ artista não confirmado (nome nativo?) — não gravado, conferir manualmente");
+      }
+      if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
+      return { found, applied, link: `https://music.bugs.co.kr/album/${result.match.albumId}` };
+    }
+
     // wikipedia
     const info = await getWikipediaAlbumInfo(album.title, album.artist.name);
     if (!info) return nothing;
@@ -458,6 +530,12 @@ export async function fetchForArtist(
         }
       }
       return { found, applied, link: `https://musicbrainz.org/artist/${result.mbid}` };
+    }
+
+    if (source === "bugs") {
+      // Bugs não tem bio/gêneros de artista úteis aqui — só capa/datas de
+      // faixa e álbum (ver fetchForSong/fetchForAlbum).
+      return nothing;
     }
 
     // wikipedia

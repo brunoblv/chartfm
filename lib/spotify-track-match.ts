@@ -1,4 +1,5 @@
 import { searchSpotifyTracks } from "@/lib/spotify-server";
+import { VERSION_TAG_CLEANERS, cleanVersionTag, type VersionTagType } from "@/lib/clean-version-tag";
 
 /**
  * Match de faixa no Spotify para os fluxos de admin (edição de dados e
@@ -36,11 +37,35 @@ function normalize(value: string): string {
     .trim();
 }
 
+/**
+ * true quando o candidato só "bate" com o título buscado porque tem uma tag de
+ * versão a mais (live, remix, acoustic, remaster, etc.) que o título buscado não
+ * tem — ex.: buscar "Genie In a Bottle" não pode aceitar "Genie In a Bottle -
+ * Live from the Crazy Horse". Músicas cujo título já contém a palavra (ex.
+ * "Show Me How to Live") não caem aqui porque batem por igualdade exata antes.
+ */
+function hasUnwantedVersionTag(candidateTitle: string, wantedTitle: string): boolean {
+  const candidateBase = normalize(stripFeatFromTitle(candidateTitle));
+  const wantedBase = normalize(stripFeatFromTitle(wantedTitle));
+  for (const type of Object.keys(VERSION_TAG_CLEANERS) as VersionTagType[]) {
+    const cleanedCandidate = normalize(stripFeatFromTitle(cleanVersionTag(candidateTitle, type)));
+    const cleanedWanted = normalize(stripFeatFromTitle(cleanVersionTag(wantedTitle, type)));
+    const candidateHasTag = cleanedCandidate !== candidateBase;
+    const wantedHasTag = cleanedWanted !== wantedBase;
+    if (candidateHasTag && !wantedHasTag && cleanedCandidate === wantedBase) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function titleMatches(candidateTitle: string, wantedTitle: string): boolean {
   const c = normalize(stripFeatFromTitle(candidateTitle));
   const w = normalize(stripFeatFromTitle(wantedTitle));
   if (!c || !w) return false;
-  return c === w || c.startsWith(w) || w.startsWith(c);
+  if (c === w) return true;
+  if (hasUnwantedVersionTag(candidateTitle, wantedTitle)) return false;
+  return c.startsWith(w) || w.startsWith(c);
 }
 
 function someNameMatches(names: string[], wanted: string): boolean {

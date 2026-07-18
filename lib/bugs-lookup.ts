@@ -49,6 +49,7 @@ interface BugsAlbumHit {
   release_ymd?: string;
   image?: BugsImage;
   album_tp_nm?: string; // ex.: "싱글" (single), "EP(미니)", "정규" (álbum), "리패키지" (repackage)
+  artists?: BugsArtist[];
 }
 
 export interface BugsReleaseMatch {
@@ -215,5 +216,51 @@ export async function lookupBugsRelease(title: string, artist: string): Promise<
     singleReleaseDate: single?.releaseDate ?? null,
     albumReleaseDate: album?.releaseDate ?? null,
     clipReleaseDate: officialClip?.releaseDate ?? null,
+  };
+}
+
+export interface BugsAlbumLookupResult {
+  query: { title: string; artist: string };
+  artistConfirmed: boolean;
+  match: BugsReleaseMatch | null;
+  cover: string | null;
+  releaseDate: string | null;
+}
+
+/**
+ * Busca no Bugs por título de álbum + artista (busca direta em type=album,
+ * sem passar por faixa) e retorna capa e data de lançamento. Usada no
+ * backfill de Album, onde não há um título de faixa para buscar.
+ */
+export async function lookupBugsAlbum(title: string, artist: string): Promise<BugsAlbumLookupResult> {
+  const hits = await bugsSearch<BugsAlbumHit>("album", `${title} ${artist}`, 20);
+
+  const titleOnlyMatches = hits.filter((hit) => titleMatches(hit.title, title));
+  const strictMatches = titleOnlyMatches.filter((hit) =>
+    artistMatches(hit.artists?.map((a) => a.artist_nm) ?? [], artist),
+  );
+  const artistConfirmed = strictMatches.length > 0;
+  const candidates = artistConfirmed ? strictMatches : titleOnlyMatches;
+
+  const chosen = [...candidates].sort((a, b) => (a.release_ymd ?? "9999").localeCompare(b.release_ymd ?? "9999"))[0] ?? null;
+
+  const match: BugsReleaseMatch | null = chosen
+    ? {
+        trackId: 0,
+        trackTitle: "",
+        albumId: chosen.album_id,
+        albumTitle: chosen.title,
+        albumType: chosen.album_tp_nm ?? null,
+        releaseDate: ymdToIso(chosen.release_ymd),
+        coverUrl: coverUrlFromPath(chosen.image?.path),
+      }
+    : null;
+
+  return {
+    query: { title, artist },
+    artistConfirmed,
+    match,
+    cover: match?.coverUrl ?? null,
+    releaseDate: match?.releaseDate ?? null,
   };
 }
