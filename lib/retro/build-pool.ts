@@ -15,10 +15,16 @@
  *   5. RetroSongProfile / RetroEraOverride → ajustes manuais do usuário
  *
  * Faz I/O (DB + rede); a lógica pura fica em `scoring.ts`.
+ *
+ * `loadRetroSources()` busca tudo (Last.fm overall, catálogo, histórico Top20,
+ * overrides) UMA VEZ; `buildRetroPoolFromSources()` monta o pool de um mês
+ * específico a partir dessas fontes já em memória, sem I/O novo — permite ao
+ * `generate-history.ts` varrer décadas sem repetir a chamada ao Last.fm por mês
+ * (política de espaçar chamadas à API, ver memória do projeto).
  */
 
 import { prisma } from "@/lib/prisma";
-import { fetchTopTracks, fetchTracksBetweenUnix } from "@/lib/lastfm";
+import { fetchTopTracks, fetchTracksBetweenUnix, type TopTrack } from "@/lib/lastfm";
 import { normalizeTrackMatchKey } from "@/lib/lastfm-import";
 import type { ReleaseRefSource, RetroMode, RetroSongInput } from "@/lib/retro/scoring";
 
@@ -31,13 +37,14 @@ const LASTFM_REAL_DATA_FROM = Date.UTC(2010, 9, 1); // 2010-10-01
 /** Nº de faixas overall a considerar como universo do usuário. */
 const OVERALL_LIMIT = 1000;
 
-export interface BuildPoolArgs {
-  userId: string;
-  lastfmUser: string | null;
-  year: number;
-  month: number; // 1-12
-  mode: RetroMode;
-  target: RetroTarget;
+/** Último dia do mês selecionado, em UTC (ex.: 2005-05 → 2005-05-31). */
+export function endOfMonthUTC(year: number, month: number): Date {
+  return new Date(Date.UTC(year, month, 0));
+}
+
+/** A data do chart tem dado real de plays por período disponível no Last.fm. */
+export function canHaveRealPeriodData(chartDate: Date): boolean {
+  return chartDate.getTime() >= LASTFM_REAL_DATA_FROM;
 }
 
 export interface RetroSongMeta {
@@ -55,6 +62,8 @@ export interface BuildPoolResult {
   usesRealPeriodData: boolean;
   matched: number;
   unmatched: number;
+  /** Candidatas vindas só do catálogo (sem nenhum scrobble na biblioteca). */
+  catalogOnly: number;
   songs: RetroSongInput[];
   /** Metadados de exibição por songId (título/artista) para a UI. */
   meta: Map<string, RetroSongMeta>;
@@ -64,72 +73,6 @@ export interface BuildPoolResult {
 function matchKey(title: string, artist: string): string {
   const a = artist.split(",")[0] ?? artist;
   return `${normalizeTrackMatchKey(title)}|${normalizeTrackMatchKey(a)}`;
-}
-
-/** Último dia do mês selecionado, em UTC (ex.: 2005-05 → 2005-05-31). */
-export function endOfMonthUTC(year: number, month: number): Date {
-  return new Date(Date.UTC(year, month, 0));
-}
-
-interface Top20Agg {
-  weeks: number;
-  bestPeak: number | null;
-  numberOnes: number;
-  /** 1ª semana da música na Top 20 — fallback da data de estreia no Hot 100. */
-  firstEntryDate: Date | null;
-}
-
-/** Agrega o histórico de charts do usuário publicados até a data (pico/semanas/#1/1ª entrada). */
-async function aggregateTop20History(userId: string, chartDate: Date): Promise<Map<string, Top20Agg>> {
-  const entries = await prisma.chartEntry.findMany({
-    where: { chart: { userId, weekStartDate: { lte: chartDate } } },
-    select: { songId: true, position: true, chart: { select: { weekStartDate: true } } },
-  });
-  const map = new Map<string, Top20Agg>();
-  for (const e of entries) {
-    const agg = map.get(e.songId) ?? { weeks: 0, bestPeak: null, numberOnes: 0, firstEntryDate: null };
-    if (e.position <= 20) {
-      agg.weeks += 1;
-      const week = e.chart.weekStartDate;
-      if (week != null && (agg.firstEntryDate == null || week.getTime() < agg.firstEntryDate.getTime())) {
-        agg.firstEntryDate = week;
-      }
-    }
-    if (e.position === 1) agg.numberOnes += 1;
-    agg.bestPeak = agg.bestPeak == null ? e.position : Math.min(agg.bestPeak, e.position);
-    map.set(e.songId, agg);
-  }
-  return map;
-}
-
-/**
- * Data de estreia + origem, na cadeia da parada-alvo:
- *   hot100: single → álbum → clipe → 1ª entrada Top 20
- *   clipes: clipe → álbum → single → 1ª entrada Top 20
- */
-function debutRefFor(
-  target: RetroTarget,
-  song: SongRow,
-  firstEntryDate: Date | null,
-): { date: Date | null; source: ReleaseRefSource | null } {
-  const chain: [ReleaseRefSource, Date | null][] =
-    target === "clipes"
-      ? [
-          ["clipe", song.youtubeReleaseDate],
-          ["album", song.albumReleaseDate],
-          ["single", song.singleReleaseDate],
-          ["top20", firstEntryDate],
-        ]
-      : [
-          ["single", song.singleReleaseDate],
-          ["album", song.albumReleaseDate],
-          ["clipe", song.youtubeReleaseDate],
-          ["top20", firstEntryDate],
-        ];
-  for (const [source, date] of chain) {
-    if (date != null) return { date, source };
-  }
-  return { date: null, source: null };
 }
 
 /** Índice normalizado das músicas cadastradas → dados de elegibilidade. */
@@ -143,6 +86,22 @@ interface SongRow {
   youtubeReleaseDate: Date | null;
   albumReleaseDate: Date | null;
 }
+
+/** Ponto do histórico Top20 do usuário: uma posição publicada numa semana. */
+interface Top20Point {
+  position: number;
+  weekStartDate: Date | null;
+}
+
+interface Top20Agg {
+  weeks: number;
+  bestPeak: number | null;
+  numberOnes: number;
+  /** 1ª semana da música na Top 20 — fallback da data de estreia no Hot 100. */
+  firstEntryDate: Date | null;
+}
+
+const EMPTY_TOP20_AGG: Top20Agg = { weeks: 0, bestPeak: null, numberOnes: 0, firstEntryDate: null };
 
 async function loadSongIndex(): Promise<Map<string, SongRow>> {
   const songs = await prisma.song.findMany({
@@ -175,8 +134,74 @@ async function loadSongIndex(): Promise<Map<string, SongRow>> {
   return map;
 }
 
+/** Todo o histórico de posições do usuário (qualquer parada), por música, ordenado por data. */
+async function loadTop20Points(userId: string): Promise<Map<string, Top20Point[]>> {
+  const entries = await prisma.chartEntry.findMany({
+    where: { chart: { userId } },
+    select: { songId: true, position: true, chart: { select: { weekStartDate: true } } },
+  });
+  const map = new Map<string, Top20Point[]>();
+  for (const e of entries) {
+    const list = map.get(e.songId) ?? [];
+    list.push({ position: e.position, weekStartDate: e.chart.weekStartDate });
+    map.set(e.songId, list);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => (a.weekStartDate?.getTime() ?? 0) - (b.weekStartDate?.getTime() ?? 0));
+  }
+  return map;
+}
+
+/** Agrega o histórico Top20 de uma música só com pontos publicados até `asOf` (evita vazamento temporal). */
+function aggregateTop20AsOf(points: Top20Point[] | undefined, asOf: Date): Top20Agg {
+  if (!points || points.length === 0) return EMPTY_TOP20_AGG;
+  const agg: Top20Agg = { weeks: 0, bestPeak: null, numberOnes: 0, firstEntryDate: null };
+  for (const p of points) {
+    if (p.weekStartDate == null || p.weekStartDate.getTime() > asOf.getTime()) continue;
+    if (p.position <= 20) {
+      agg.weeks += 1;
+      if (agg.firstEntryDate == null || p.weekStartDate.getTime() < agg.firstEntryDate.getTime()) {
+        agg.firstEntryDate = p.weekStartDate;
+      }
+    }
+    if (p.position === 1) agg.numberOnes += 1;
+    agg.bestPeak = agg.bestPeak == null ? p.position : Math.min(agg.bestPeak, p.position);
+  }
+  return agg;
+}
+
+/**
+ * Data de estreia + origem, na cadeia da parada-alvo:
+ *   hot100: single → álbum → clipe → 1ª entrada Top 20
+ *   clipes: clipe → álbum → single → 1ª entrada Top 20
+ */
+function debutRefFor(
+  target: RetroTarget,
+  song: SongRow,
+  firstEntryDate: Date | null,
+): { date: Date | null; source: ReleaseRefSource | null } {
+  const chain: [ReleaseRefSource, Date | null][] =
+    target === "clipes"
+      ? [
+          ["clipe", song.youtubeReleaseDate],
+          ["album", song.albumReleaseDate],
+          ["single", song.singleReleaseDate],
+          ["top20", firstEntryDate],
+        ]
+      : [
+          ["single", song.singleReleaseDate],
+          ["album", song.albumReleaseDate],
+          ["clipe", song.youtubeReleaseDate],
+          ["top20", firstEntryDate],
+        ];
+  for (const [source, date] of chain) {
+    if (date != null) return { date, source };
+  }
+  return { date: null, source: null };
+}
+
 /** Plays reais por música no mês (pós-Out/2010), casados pela chave normalizada. */
-async function fetchRealPeriodPlays(
+export async function fetchRealPeriodPlays(
   lastfmUser: string,
   year: number,
   month: number,
@@ -193,52 +218,89 @@ async function fetchRealPeriodPlays(
   return map;
 }
 
-export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResult> {
-  const { userId, lastfmUser, year, month, mode, target } = args;
-  const chartDate = endOfMonthUTC(year, month);
-  const monthStart = new Date(Date.UTC(year, month - 1, 1));
-  const usesRealPeriodData = chartDate.getTime() >= LASTFM_REAL_DATA_FROM;
+/**
+ * Tudo que `buildRetroPoolFromSources` precisa, buscado UMA VEZ (rede + DB) e
+ * reutilizado por quantos meses forem necessários — sem repetir chamadas ao
+ * Last.fm por mês.
+ */
+export interface RetroSources {
+  overall: TopTrack[];
+  songIndex: Map<string, SongRow>;
+  top20Points: Map<string, Top20Point[]>;
+  profileBySong: Map<string, { importance: number | null; importanceLocked: boolean; peakPotential: string | null; manualAdjustment: number; note: string | null }>;
+  /** year → songId → weight (0-100) */
+  eraOverridesByYear: Map<number, Map<string, number>>;
+}
 
-  if (!lastfmUser) {
-    return { chartDate, usesRealPeriodData, matched: 0, unmatched: 0, songs: [], meta: new Map() };
-  }
-
-  const [overall, songIndex, top20, profiles, eraOverrides, periodPlays] = await Promise.all([
+export async function loadRetroSources(userId: string, lastfmUser: string): Promise<RetroSources> {
+  const [overall, songIndex, top20Points, profiles, eraOverrides] = await Promise.all([
     fetchTopTracks("overall", OVERALL_LIMIT, lastfmUser),
     loadSongIndex(),
-    aggregateTop20History(userId, chartDate),
+    loadTop20Points(userId),
     prisma.retroSongProfile.findMany({ where: { userId } }),
-    prisma.retroEraOverride.findMany({ where: { userId, year } }),
-    usesRealPeriodData ? fetchRealPeriodPlays(lastfmUser, year, month) : Promise.resolve(new Map<string, number>()),
+    prisma.retroEraOverride.findMany({ where: { userId } }),
   ]);
 
-  const profileBySong = new Map(profiles.map((p) => [p.songId, p]));
-  const eraBySong = new Map(eraOverrides.map((e) => [e.songId, e.weight]));
+  const profileBySong = new Map(
+    profiles.map((p) => [
+      p.songId,
+      { importance: p.importance, importanceLocked: p.importanceLocked, peakPotential: p.peakPotential, manualAdjustment: p.manualAdjustment, note: p.note },
+    ]),
+  );
+
+  const eraOverridesByYear = new Map<number, Map<string, number>>();
+  for (const e of eraOverrides) {
+    const byYear = eraOverridesByYear.get(e.year) ?? new Map<string, number>();
+    byYear.set(e.songId, e.weight);
+    eraOverridesByYear.set(e.year, byYear);
+  }
+
+  return { overall, songIndex, top20Points, profileBySong, eraOverridesByYear };
+}
+
+export interface BuildPoolFromSourcesArgs {
+  year: number;
+  month: number; // 1-12
+  target: RetroTarget;
+  /**
+   * Plays reais do mês (mapa vazio conta como "zero plays reais"). `null`/omitido
+   * → sempre usa a estimativa por playsScore×eraWeight, mesmo em datas pós-2010
+   * (é o padrão do backfill em massa, para não multiplicar chamadas ao Last.fm).
+   */
+  periodPlays?: Map<string, number> | null;
+}
+
+/** Monta o pool de UM mês a partir de fontes já carregadas — sem I/O. */
+export function buildRetroPoolFromSources(sources: RetroSources, args: BuildPoolFromSourcesArgs): BuildPoolResult {
+  const { year, month, target } = args;
+  const chartDate = endOfMonthUTC(year, month);
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const usesRealPeriodData = args.periodPlays != null;
+  const periodPlays = args.periodPlays ?? null;
+  const eraBySong = sources.eraOverridesByYear.get(year) ?? new Map<string, number>();
 
   const songs: RetroSongInput[] = [];
   const meta = new Map<string, RetroSongMeta>();
+  const added = new Set<string>();
   let matched = 0;
   let unmatched = 0;
+  let catalogOnly = 0;
 
-  for (const t of overall) {
-    const key = matchKey(t.track, t.artist);
-    const song = songIndex.get(key);
-    if (!song) {
-      unmatched += 1;
-      continue;
-    }
-    matched += 1;
+  /**
+   * Adiciona a música como candidata se a estreia dela cai DENTRO do mês.
+   * O resto do chart vem do carry-over da semana anterior, não desta lista.
+   */
+  function pushCandidate(song: SongRow, overallPlaycount: number, periodPlaycount: number | null): boolean {
+    if (added.has(song.id)) return false;
 
-    const agg = top20.get(song.id) ?? { weeks: 0, bestPeak: null, numberOnes: 0, firstEntryDate: null };
-
-    // Candidatas a estreia: só quem tem data de estreia DENTRO do mês selecionado.
-    // O resto do chart vem do carry-over da semana anterior, não desta lista.
+    const agg = aggregateTop20AsOf(sources.top20Points.get(song.id), chartDate);
     const debut = debutRefFor(target, song, agg.firstEntryDate);
-    if (debut.date == null) continue; // sem data → só entra via liberação manual (F6)
+    if (debut.date == null) return false; // sem data → só entra via liberação manual (F6)
     const ts = debut.date.getTime();
-    if (ts < monthStart.getTime() || ts > chartDate.getTime()) continue;
+    if (ts < monthStart.getTime() || ts > chartDate.getTime()) return false;
 
-    const profile = profileBySong.get(song.id) ?? null;
+    const profile = sources.profileBySong.get(song.id) ?? null;
+    added.add(song.id);
     meta.set(song.id, {
       title: song.title,
       artist: song.artist,
@@ -247,12 +309,11 @@ export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResu
       note: profile?.note ?? null,
       releaseRefSource: debut.source,
     });
-    const periodPlaycount = usesRealPeriodData ? periodPlays.get(key) ?? 0 : null;
 
     songs.push({
       songId: song.id,
       releaseRef: debut.date,
-      overallPlaycount: t.playcount,
+      overallPlaycount,
       periodPlaycount,
       lastScrobbleAt: null, // preenchido numa fase futura (histórico de scrobbles)
       hasScrobbleInPeriod: (periodPlaycount ?? 0) > 0,
@@ -268,11 +329,59 @@ export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResu
       manualAdjustment: profile?.manualAdjustment ?? 0,
       eraOverrideWeight: eraBySong.get(song.id) ?? null,
     });
+    return true;
   }
 
-  // Modo histórico: sem dado real de período (pré-Out/2010) não dá para saber o
-  // que foi ouvido no mês → tratamos como não-elegível no motor. Alertamos aqui.
-  void mode;
+  // 1) Biblioteca do Last.fm (tem playcount real do usuário).
+  for (const t of sources.overall) {
+    const key = matchKey(t.track, t.artist);
+    const song = sources.songIndex.get(key);
+    if (!song) {
+      unmatched += 1;
+      continue;
+    }
+    matched += 1;
+    const periodPlaycount = usesRealPeriodData ? periodPlays!.get(key) ?? 0 : null;
+    pushCandidate(song, t.playcount, periodPlaycount);
+  }
 
-  return { chartDate, usesRealPeriodData, matched, unmatched, songs, meta };
+  // 2) Resto do catálogo: músicas lançadas no mês que o usuário nunca scrobblou
+  //    também são candidatas (podem ser marcadas como "Fora" na UI).
+  for (const song of sources.songIndex.values()) {
+    if (pushCandidate(song, 0, usesRealPeriodData ? 0 : null)) catalogOnly += 1;
+  }
+
+  return { chartDate, usesRealPeriodData, matched, unmatched, catalogOnly, songs, meta };
+}
+
+export interface BuildPoolArgs {
+  userId: string;
+  lastfmUser: string | null;
+  year: number;
+  month: number; // 1-12
+  mode: RetroMode;
+  target: RetroTarget;
+}
+
+/**
+ * Wrapper de conveniência para a rota interativa de um mês só: busca as fontes
+ * (incluindo os plays reais do mês, se a data permitir) e monta o pool.
+ * Para varrer muitos meses, use `loadRetroSources` + `buildRetroPoolFromSources`
+ * diretamente (ver `lib/retro/generate-history.ts`).
+ */
+export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResult> {
+  const { userId, lastfmUser, year, month, mode, target } = args;
+  const chartDate = endOfMonthUTC(year, month);
+
+  if (!lastfmUser) {
+    return { chartDate, usesRealPeriodData: false, matched: 0, unmatched: 0, catalogOnly: 0, songs: [], meta: new Map() };
+  }
+
+  const [sources, periodPlays] = await Promise.all([
+    loadRetroSources(userId, lastfmUser),
+    canHaveRealPeriodData(chartDate) ? fetchRealPeriodPlays(lastfmUser, year, month) : Promise.resolve(null),
+  ]);
+
+  void mode; // gating do modo Histórico é feito em scoring.ts via ctx.mode, não aqui
+  return buildRetroPoolFromSources(sources, { year, month, target, periodPlays });
 }

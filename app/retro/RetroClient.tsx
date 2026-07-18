@@ -22,7 +22,7 @@ interface ScoreBreakdown {
 
 interface RetroEntry {
   songId: string;
-  position: number;
+  position: number | null; // null = marcada como "Fora" (não concorre)
   title: string;
   artist: string;
   album: string | null;
@@ -62,6 +62,8 @@ interface RetroResponse {
     everInTop20: number;
     everNumberOne: number;
     diamonds: number;
+    excludedOut: number;
+    catalogOnly: number;
     matched: number;
     unmatched: number;
   };
@@ -306,6 +308,158 @@ function draftFrom(e: RetroEntry): Draft {
   };
 }
 
+// ── geração de histórico (estreia + carry-over → Chart/ChartEntry reais) ──
+
+interface WeekSampleEntry {
+  position: number;
+  status: string;
+  songId: string;
+  title: string;
+  artist: string;
+}
+interface WeekSample {
+  weekIndex: number;
+  weekLabel: string;
+  dateRange: string;
+  top5: WeekSampleEntry[];
+}
+interface PreviewResponse {
+  dryRun: true;
+  paradaId: string;
+  chartSize: number;
+  startYear: number;
+  boundaryWeekIndex: number;
+  boundaryWeekLabel: string | null;
+  monthsScanned: number;
+  totalDebuts: number;
+  weeksToCreate: number;
+  firstWeek: WeekSample | null;
+  lastWeek: WeekSample | null;
+}
+interface PublishResponse {
+  dryRun: false;
+  created: number;
+  skippedExisting: number;
+  remaining: number;
+}
+
+function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
+  const [startYear, setStartYear] = useState(2000);
+  const [preview, setPreview] = useState<PreviewResponse | null>(null);
+  const [publishResult, setPublishResult] = useState<PublishResponse | null>(null);
+  const [loading, setLoading] = useState<"preview" | "publish" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function callPublish(dryRun: boolean) {
+    setLoading(dryRun ? "preview" : "publish");
+    setError(null);
+    try {
+      const res = await fetch("/api/retro/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, startYear, dryRun }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body?.error ?? "erro");
+        return;
+      }
+      if (dryRun) {
+        setPreview(body as PreviewResponse);
+        setPublishResult(null);
+      } else {
+        setPublishResult(body as PublishResponse);
+      }
+    } catch {
+      setError("network");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  return (
+    <div style={{ ...card, padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>Gerar histórico da parada</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+          Simula semana a semana (estreia + carry-over) desde o ano escolhido até a semana real mais antiga já
+          publicada em {TARGET_LABEL[target]}, e publica como Chart de verdade. Nunca sobrescreve uma semana que já existe.
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={labelStyle}>Começar em</span>
+          <select value={startYear} onChange={(ev) => setStartYear(Number(ev.target.value))} style={inputStyle}>
+            {YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </label>
+        <button
+          onClick={() => void callPublish(true)}
+          disabled={loading !== null}
+          style={{ ...inputStyle, padding: "10px 16px", fontWeight: 600, cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}
+        >
+          {loading === "preview" ? "Simulando…" : "Simular (preview)"}
+        </button>
+        {preview && preview.weeksToCreate > 0 && (
+          <button
+            onClick={() => void callPublish(false)}
+            disabled={loading !== null}
+            style={{
+              background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10,
+              padding: "10px 16px", fontSize: 14, fontWeight: 600,
+              cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1,
+            }}
+          >
+            {loading === "publish" ? "Publicando…" : "Publicar"}
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div style={{ fontSize: 13, color: "var(--down-fg)" }}>Erro: {error}</div>
+      )}
+
+      {preview && (
+        <div style={{ fontSize: 13, color: "var(--text-subtle)", display: "flex", flexDirection: "column", gap: 4 }}>
+          <div>
+            <strong>{preview.weeksToCreate}</strong> semanas seriam geradas · <strong>{preview.totalDebuts}</strong> estreias ·{" "}
+            {preview.monthsScanned} meses varridos · fronteira real: {preview.boundaryWeekLabel ?? "nenhuma ainda"} (weekIndex {preview.boundaryWeekIndex})
+          </div>
+          {preview.firstWeek && (
+            <div>
+              1ª semana: {preview.firstWeek.weekLabel} ({preview.firstWeek.dateRange}) — top 5:{" "}
+              {preview.firstWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", ")}
+            </div>
+          )}
+          {preview.lastWeek && preview.lastWeek.weekIndex !== preview.firstWeek?.weekIndex && (
+            <div>
+              Última semana: {preview.lastWeek.weekLabel} ({preview.lastWeek.dateRange}) — top 5:{" "}
+              {preview.lastWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", ")}
+            </div>
+          )}
+          {preview.weeksToCreate === 0 && (
+            <div>Nada a gerar — ou o ano escolhido já está dentro do histórico real, ou não há estreias elegíveis.</div>
+          )}
+        </div>
+      )}
+
+      {publishResult && (
+        <div style={{ fontSize: 13, color: "var(--text-subtle)" }}>
+          <strong>{publishResult.created}</strong> semanas publicadas · {publishResult.skippedExisting} já existiam ·{" "}
+          {publishResult.remaining > 0 ? (
+            <span style={{ color: "var(--accent)", fontWeight: 600 }}>
+              {publishResult.remaining} restantes — clique em Publicar de novo para continuar.
+            </span>
+          ) : (
+            <span>backfill completo até a fronteira real.</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── página ────────────────────────────────────────────────────────────────
 
 export function RetroClient() {
@@ -323,6 +477,9 @@ export function RetroClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   const selected = useMemo(
     () => data?.entries.find((e) => e.songId === selectedId) ?? null,
@@ -354,6 +511,7 @@ export function RetroClient() {
       } else {
         setData(body as RetroResponse);
         setPage(1);
+        setChecked(new Set());
       }
     } catch {
       setError("network");
@@ -371,6 +529,44 @@ export function RetroClient() {
   function openSong(e: RetroEntry) {
     setSelectedId(e.songId);
     setDraft(draftFrom(e));
+  }
+
+  function toggleChecked(songId: string) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(songId)) next.delete(songId);
+      else next.add(songId);
+      return next;
+    });
+  }
+
+  const allPageChecked = pageRows.length > 0 && pageRows.every((e) => checked.has(e.songId));
+
+  function togglePageAll() {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (allPageChecked) pageRows.forEach((e) => next.delete(e.songId));
+      else pageRows.forEach((e) => next.add(e.songId));
+      return next;
+    });
+  }
+
+  async function bulkSetOut(out: boolean) {
+    if (checked.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const res = await fetch("/api/retro/song-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songIds: Array.from(checked), peakPotential: out ? "out" : null }),
+      });
+      if (res.ok) {
+        setChecked(new Set());
+        await load();
+      }
+    } finally {
+      setBulkSaving(false);
+    }
   }
 
   async function saveDraft() {
@@ -490,13 +686,15 @@ export function RetroClient() {
           {/* KPIs */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
             <StatTile value={data.stats.eligible} label="Candidatas a estreia" />
+            <StatTile value={data.stats.catalogOnly} label="Só no catálogo (sem plays)" />
             <StatTile value={data.stats.withPeriodPlays} label="Com plays no período" />
             <StatTile value={data.stats.everInTop20} label="Já entraram na Top 20" />
             <StatTile value={data.stats.everNumberOne} label="Tiveram #1" />
             <StatTile value={data.stats.diamonds} label="Diamonds" />
+            <StatTile value={data.stats.excludedOut} label="Marcadas como Fora" />
           </div>
 
-          {/* Busca */}
+          {/* Busca + ações em lote */}
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
             <input
               value={search}
@@ -510,6 +708,32 @@ export function RetroClient() {
                 ? `${data.entries.length} posições`
                 : `${filtered.length} de ${data.entries.length} posições`}
             </span>
+
+            {checked.size > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+                <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>{checked.size} selecionadas</span>
+                <button
+                  onClick={() => void bulkSetOut(true)}
+                  disabled={bulkSaving}
+                  style={{ ...inputStyle, padding: "6px 12px", fontWeight: 600, cursor: bulkSaving ? "default" : "pointer", opacity: bulkSaving ? 0.6 : 1 }}
+                >
+                  Marcar como Fora
+                </button>
+                <button
+                  onClick={() => void bulkSetOut(false)}
+                  disabled={bulkSaving}
+                  style={{ ...inputStyle, padding: "6px 12px", cursor: bulkSaving ? "default" : "pointer", opacity: bulkSaving ? 0.6 : 1 }}
+                >
+                  Desfazer exclusão
+                </button>
+                <button
+                  onClick={() => setChecked(new Set())}
+                  style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Limpar seleção
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Tabela */}
@@ -518,6 +742,16 @@ export function RetroClient() {
               <table style={{ width: "100%", minWidth: 1180, borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
+                    <th style={{ ...thStyle, width: 32 }}>
+                      <input
+                        type="checkbox"
+                        checked={allPageChecked}
+                        onChange={togglePageAll}
+                        onClick={(ev) => ev.stopPropagation()}
+                        style={{ accentColor: "var(--accent)" }}
+                        aria-label="Selecionar todas desta página"
+                      />
+                    </th>
                     <th style={{ ...thStyle, width: 40 }}>#</th>
                     <th style={thStyle}>Música</th>
                     <th style={thStyle}>Estreia</th>
@@ -537,14 +771,30 @@ export function RetroClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pageRows.map((e) => (
+                  {pageRows.map((e) => {
+                    const isOut = e.position == null;
+                    return (
                     <tr
                       key={e.songId}
                       className="retro-row"
                       onClick={() => openSong(e)}
-                      style={selectedId === e.songId ? { background: "var(--accent-tint)" } : undefined}
+                      style={{
+                        ...(selectedId === e.songId ? { background: "var(--accent-tint)" } : undefined),
+                        opacity: isOut ? 0.55 : 1,
+                      }}
                     >
-                      <td style={{ ...tdStyle, color: "var(--text-muted)", fontWeight: 600, ...num }}>{e.position}</td>
+                      <td style={tdStyle} onClick={(ev) => ev.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={checked.has(e.songId)}
+                          onChange={() => toggleChecked(e.songId)}
+                          style={{ accentColor: "var(--accent)" }}
+                          aria-label={`Selecionar ${e.title}`}
+                        />
+                      </td>
+                      <td style={{ ...tdStyle, color: "var(--text-muted)", fontWeight: 600, ...num }}>
+                        {e.position ?? <span title="Marcada como Fora">—</span>}
+                      </td>
                       <td style={{ ...tdStyle, minWidth: 220 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <Cover url={e.coverUrl} title={e.title} />
@@ -584,8 +834,14 @@ export function RetroClient() {
                       <td style={{ ...tdStyle, textAlign: "center", ...num }}>{e.numberOnes || <span style={{ color: "var(--text-disabled)" }}>—</span>}</td>
                       <td style={tdStyle}><ImportanceMeter value={e.importance} manual={e.importanceIsManual} /></td>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>
-                        {PEAK_LABEL[e.peakPotential]}
-                        {e.peakPotentialIsManual && <span title="Definido manualmente" style={{ marginLeft: 4, fontSize: 11, color: "var(--accent)" }}>✎</span>}
+                        {isOut ? (
+                          <span style={badgeStyle("var(--down-fg)", "var(--down-bg)")}>Fora</span>
+                        ) : (
+                          <>
+                            {PEAK_LABEL[e.peakPotential]}
+                            {e.peakPotentialIsManual && <span title="Definido manualmente" style={{ marginLeft: 4, fontSize: 11, color: "var(--accent)" }}>✎</span>}
+                          </>
+                        )}
                       </td>
                       <td style={tdStyle}>
                         <span style={badgeStyle(HIT_BADGE[e.hitLevel].fg, HIT_BADGE[e.hitLevel].bg)}>{HIT_BADGE[e.hitLevel].label}</span>
@@ -593,12 +849,13 @@ export function RetroClient() {
                       <td style={{ ...tdStyle, textAlign: "center" }}>
                         <span style={badgeStyle(PRIORITY_BADGE[e.priority].fg, PRIORITY_BADGE[e.priority].bg)}>{e.priority}</span>
                       </td>
-                      <td style={tdStyle}><ScoreRing value={e.scoreFinal} /></td>
+                      <td style={tdStyle}>{isOut ? <span style={{ color: "var(--text-disabled)" }}>—</span> : <ScoreRing value={e.scoreFinal} />}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {pageRows.length === 0 && (
                     <tr>
-                      <td colSpan={16} style={{ ...tdStyle, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
+                      <td colSpan={17} style={{ ...tdStyle, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
                         {search ? "Nenhuma música encontrada para a busca." : "Nenhum lançamento seu neste mês (pela cadeia single → álbum → clipe → 1ª entrada Top 20)."}
                       </td>
                     </tr>
@@ -632,6 +889,8 @@ export function RetroClient() {
               </div>
             )}
           </div>
+
+          <HistoryGenerationPanel target={target} />
         </>
       )}
 

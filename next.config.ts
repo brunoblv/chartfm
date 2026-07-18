@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { hostname: "lh3.googleusercontent.com" },
       { hostname: "i.scdn.co" },
+      { hostname: "coverartarchive.org" },
     ],
   },
   async redirects() {

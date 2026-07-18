@@ -356,6 +356,33 @@ export async function searchMusicBrainzAlbumReleaseDate(
   return { mbid: best.id!, releaseDate: parseMusicBrainzDate(best["first-release-date"]) };
 }
 
+type CoverArtImage = {
+  front?: boolean;
+  image?: string;
+  thumbnails?: Record<string, string>;
+};
+
+/** Capa via Cover Art Archive (coverartarchive.org), indexado por MBID do release-group. */
+export async function getCoverArtArchiveUrl(
+  mbid: string,
+  entity: "release-group" | "release" = "release-group",
+): Promise<string | null> {
+  const id = mbid.trim();
+  if (!id) return null;
+  await throttle();
+  const res = await fetch(`https://coverartarchive.org/${entity}/${encodeURIComponent(id)}`, {
+    headers: { Accept: "application/json", "User-Agent": userAgent() },
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  const data = (await res.json()) as { images?: CoverArtImage[] } | null;
+  const images = data?.images ?? [];
+  const front = images.find((img) => img.front) ?? images[0];
+  if (!front) return null;
+  return front.thumbnails?.["500"] ?? front.image ?? null;
+}
+
 /** Tags/gêneros de um artista via busca por nome. */
 export async function searchMusicBrainzArtistTags(name: string): Promise<{
   mbid: string;

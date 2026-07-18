@@ -10,6 +10,7 @@ import {
 import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
 import {
   findRecordingMbidBySpotifyTrackId,
+  getCoverArtArchiveUrl,
   getMusicBrainzRecordingTags,
   getMusicBrainzReleaseDates,
   searchMusicBrainzAlbumReleaseDate,
@@ -315,13 +316,23 @@ export async function fetchForAlbum(
       if (!result) return nothing;
       const found: string[] = [`release-group ${result.mbid.slice(0, 8)}…`];
       const applied: string[] = [];
+      const data: Record<string, unknown> = {};
       if (result.releaseDate) {
         found.push(`data: ${fmtDate(result.releaseDate)}`);
         if (!album.releaseDate) {
-          await prisma.album.update({ where: { id: album.id }, data: { releaseDate: result.releaseDate } });
+          data.releaseDate = result.releaseDate;
           applied.push("data de lançamento");
         }
       }
+      if (!album.coverUrl?.trim()) {
+        const coverUrl = await getCoverArtArchiveUrl(result.mbid);
+        if (coverUrl) {
+          found.push("capa");
+          data.coverUrl = coverUrl;
+          applied.push("capa");
+        }
+      }
+      if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
       return { found, applied, link: `https://musicbrainz.org/release-group/${result.mbid}` };
     }
 

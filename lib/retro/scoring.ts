@@ -19,7 +19,8 @@ export type EligibilityStatus =
   | "eligible"
   | "not_released" // lançamento posterior à data do chart
   | "no_release_date" // sem nenhuma data → precisa liberação manual
-  | "no_scrobble_in_period"; // modo histórico: não foi ouvida no período
+  | "no_scrobble_in_period" // modo histórico: não foi ouvida no período
+  | "excluded_out"; // usuário marcou Peak Potential "Fora" → não concorre à parada
 
 /** Origem da data de estreia usada como releaseRef. */
 export type ReleaseRefSource = "single" | "album" | "clipe" | "top20";
@@ -173,6 +174,7 @@ export function releaseRefOf(s: RetroSongInput): Date | null {
 // ---------------------------------------------------------------------------
 
 export function evaluateEligibility(s: RetroSongInput, ctx: RetroContext): EligibilityStatus {
+  if (s.manualPeakPotential === "out") return "excluded_out";
   const ref = releaseRefOf(s);
   if (!ref) return "no_release_date";
   if (ref.getTime() > ctx.chartDate.getTime()) return "not_released";

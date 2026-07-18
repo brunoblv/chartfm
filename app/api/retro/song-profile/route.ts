@@ -11,24 +11,36 @@ function clampInt(v: unknown, min: number, max: number): number | null {
   return Math.max(min, Math.min(max, Math.round(n)));
 }
 
+const BULK_MAX = 1000;
+
 /**
  * POST /api/retro/song-profile
  * Grava o ajuste humano de uma música (importance, peak potential, ajuste, nota).
  * Definir importance/peak trava o valor (`*Locked`) — o motor não recalcula mais.
  * Enviar null "destrava" e volta ao valor calculado. Restrito ao @bruno.
+ *
+ * Aceita `songId` (uma música) OU `songIds: string[]` (lote — ex.: marcar
+ * várias como "Fora" de uma vez); o mesmo patch é aplicado a todas.
  */
 export async function POST(req: NextRequest) {
   const userId = await requireBruno();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => null);
-  if (!body || typeof body.songId !== "string") {
+  const isBulk = Array.isArray(body?.songIds);
+  if (!body || (!isBulk && typeof body.songId !== "string")) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
-  const songId: string = body.songId;
+  const requestedIds: string[] = isBulk
+    ? body.songIds.filter((id: unknown): id is string => typeof id === "string").slice(0, BULK_MAX)
+    : [body.songId];
+  if (requestedIds.length === 0) {
+    return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+  }
 
-  const song = await prisma.song.findUnique({ where: { id: songId }, select: { id: true } });
-  if (!song) return NextResponse.json({ error: "song_not_found" }, { status: 404 });
+  const found = await prisma.song.findMany({ where: { id: { in: requestedIds } }, select: { id: true } });
+  if (found.length === 0) return NextResponse.json({ error: "song_not_found" }, { status: 404 });
+  const songIds = found.map((s) => s.id);
 
   // Monta o patch só com os campos presentes no corpo (edição parcial).
   const data: Record<string, unknown> = {};
@@ -77,11 +89,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "nothing_to_update" }, { status: 400 });
   }
 
-  const profile = await prisma.retroSongProfile.upsert({
-    where: { userId_songId: { userId, songId } },
-    create: { userId, songId, ...data },
-    update: data,
-  });
+  const profiles = await prisma.$transaction(
+    songIds.map((songId) =>
+      prisma.retroSongProfile.upsert({
+        where: { userId_songId: { userId, songId } },
+        create: { userId, songId, ...data },
+        update: data,
+      }),
+    ),
+  );
 
-  return NextResponse.json({ profile });
+  return NextResponse.json(isBulk ? { updated: profiles.length } : { profile: profiles[0] });
 }

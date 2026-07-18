@@ -66,6 +66,15 @@ describe("elegibilidade", () => {
     expect(evaluateEligibility(s, ctx())).toBe("eligible");
   });
 
+  it("marca excluded_out quando o usuário define Peak Potential 'Fora' (bulk exclusion)", () => {
+    const s = song({ manualPeakPotential: "out" });
+    expect(evaluateEligibility(s, ctx())).toBe("excluded_out");
+    const rows = buildRetroChart([s], ctx());
+    expect(rows[0].eligible).toBe(false);
+    expect(rows[0].position).toBeNull();
+    expect(rows[0].scoreFinal).toBe(0);
+  });
+
   it("modo histórico exige scrobble no período; retrospectivo não", () => {
     const s = song({ hasScrobbleInPeriod: false });
     expect(evaluateEligibility(s, ctx({ mode: "historico" }))).toBe("no_scrobble_in_period");

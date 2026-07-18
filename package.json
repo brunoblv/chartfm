@@ -26,6 +26,7 @@
     "telegram:test": "tsx scripts/telegram-test.ts",
     "telegram:global": "tsx scripts/telegram-dispatch-global.ts",
     "social:migrate-credentials": "tsx scripts/migrate-social-credentials.ts",
+    "import:single-release-dates-2000s": "tsx scripts/import-single-release-dates-2000s.ts",
     "test": "vitest run",
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d",
@@ -63,6 +64,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "typescript": "5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "xlsx": "^0.18.5"
   }
 }

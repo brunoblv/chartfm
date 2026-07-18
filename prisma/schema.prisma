@@ -223,6 +223,8 @@ model Song {
   /// Cadastrada à mão na tela de criar parada (Spotify indisponível) — artista/álbum podem ser texto livre, sem vínculo Spotify ainda.
   createdManually            Boolean                   @default(false) @map("created_manually")
   editorialNote              String?                   @map("editorial_note")
+  /// Data de estreia da música na Billboard Hot 100 (primeira semana em que apareceu no chart), importado de mhollingshead/billboard-hot-100.
+  billboardHot100DebutDate   DateTime?                 @db.Date @map("billboard_hot100_debut_date")
   createdAt                  DateTime                  @default(now()) @map("created_at")
   artistRef                  Artist?                   @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
   albumRef                   Album?                    @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])

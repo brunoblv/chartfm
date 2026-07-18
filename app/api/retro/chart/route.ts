@@ -55,20 +55,27 @@ export async function GET(req: NextRequest) {
   // Estatísticas (faixa de KPIs do mockup) sobre o pool elegível.
   const playById = new Map(pool.songs.map((s) => [s.songId, s]));
   const eligible = rows.filter((r) => r.eligible);
+  const excluded = rows.filter((r) => r.eligibilityStatus === "excluded_out");
   const stats = {
     eligible: eligible.length,
     withPeriodPlays: eligible.filter((r) => (playById.get(r.songId)?.periodPlaycount ?? 0) > 0).length,
     everInTop20: eligible.filter((r) => (playById.get(r.songId)?.top20Weeks ?? 0) > 0).length,
     everNumberOne: eligible.filter((r) => (playById.get(r.songId)?.numberOnes ?? 0) > 0).length,
     diamonds: eligible.filter((r) => r.hitLevel === "diamond").length,
+    excludedOut: excluded.length,
+    catalogOnly: pool.catalogOnly,
     matched: pool.matched,
     unmatched: pool.unmatched,
   };
 
-  // O chart em si: só as posições atribuídas, ordenadas, com dados de exibição e edição.
-  const entries = rows
+  // O chart: posições atribuídas em ordem + as marcadas como "Fora" no final
+  // (sem posição), para o usuário poder rever/desfazer a exclusão.
+  const titleOf = (songId: string) => pool.meta.get(songId)?.title ?? "";
+  const ranked = rows
     .filter((r) => r.position != null)
-    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const excludedSorted = excluded.sort((a, b) => titleOf(a.songId).localeCompare(titleOf(b.songId), "pt-BR"));
+  const entries = [...ranked, ...excludedSorted]
     .map((r) => {
       const s = playById.get(r.songId);
       const m = pool.meta.get(r.songId);
