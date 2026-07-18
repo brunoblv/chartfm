@@ -59,6 +59,16 @@ Fontes:
 
 ---
 
+# Paradas-alvo
+
+O sistema alimenta duas paradas semanais REAIS do usuário:
+
+• Hot 100 de Singles — parada `cmqyiop8m00012b83w8d56h7e` (elegibilidade pela Data do Single)
+
+• Top 20 de Clipes — parada `cmpn5qqi20001mly9beqx3xkt` (elegibilidade pela Data do Clipe)
+
+---
+
 # Página
 
 Selecionar:
@@ -75,7 +85,11 @@ Maio/2005
 
 ↓
 
-O sistema procura todas as músicas elegíveis.
+O sistema lista SOMENTE as músicas lançadas naquele mês.
+
+Elas são as candidatas a ESTREIA: cada uma entra na parada a partir da semana do seu lançamento.
+
+Músicas antigas NÃO aparecem nessa lista — elas já estão no Hot 100 da semana anterior e continuam charteando por carry-over, de acordo com o poder delas, até enfraquecer e sair.
 
 ---
 
@@ -165,7 +179,7 @@ URL
 
 ## ChartFM
 
-Entrada Top20
+Entrada Top20 (primeira semana na Top 20 semanal — também é o fallback de data de estreia)
 
 Pico
 
@@ -181,21 +195,49 @@ Charts posteriores
 
 # Elegibilidade
 
-A música somente poderá participar da parada se:
+A música ESTREIA na parada na semana do seu lançamento:
 
-Data do Single <= Data do Chart
+Hot 100 de Singles → Data do Single
 
-Caso não exista:
+Top 20 de Clipes → Data do Clipe
+
+Fallback quando a data principal não existe:
 
 Data do Álbum
 
 Caso não exista:
 
-Data do Clipe
+Data do Clipe (no Hot 100) / Data do Single (no Top 20 de Clipes)
+
+Caso não exista:
+
+PRIMEIRA ENTRADA NA TOP 20 SEMANAL
+
+A Top 20 semanal do usuário tem músicas desde 2000. Quando a data de lançamento é difícil de achar (ex.: singles brasileiros), a data da primeira semana da música na Top 20 vira a âncora de estreia — a música entra no Hot 100 naquela semana.
 
 Caso nenhuma informação exista:
 
 Usuário poderá liberar manualmente.
+
+Depois de estrear, a música não depende mais da lista do mês: ela segue semana a semana por carry-over até sair da parada.
+
+---
+
+# Geração Semanal (Carry-over)
+
+Semana N = Semana N-1 + estreias da semana
+
+1. Parte do chart publicado da semana anterior.
+
+2. Aplica o decaimento de poder (momentum / Era Weight) em quem já está na parada.
+
+3. Adiciona as estreias da semana (músicas lançadas naquela semana).
+
+4. Reordena tudo pelo poder atual.
+
+5. Quem perde o poder sai da parada.
+
+Efeito: músicas novas vão ganhando prioridade naturalmente; músicas velhas caem posição a posição até sair. Por isso a lista do mês contém apenas lançamentos — o resto do chart vem do carry-over.
 
 ---
 

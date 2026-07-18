@@ -21,7 +21,7 @@ import openpyxl
 
 
 START_DATE = date(2001, 1, 1)
-END_DATE = date(2010, 9, 30)
+END_DATE = date(2025, 12, 31)
 DATA_START_ROW = 2
 
 

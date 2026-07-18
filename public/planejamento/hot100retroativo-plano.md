@@ -5,6 +5,31 @@
 
 ---
 
+## 🔁 PIVOT DO MODELO — 2026-07-17 (leia antes de continuar)
+
+O modelo deixou de ser "ranking mensal estático de tudo que já foi lançado" e passou a ser
+**estreia + carry-over semanal**, alimentando duas paradas reais do usuário:
+
+| Parada | ID | Elegibilidade |
+|---|---|---|
+| Hot 100 de Singles (semanal) | `cmqyiop8m00012b83w8d56h7e` | Data do Single |
+| Top 20 de Clipes (semanal) | `cmpn5qqi20001mly9beqx3xkt` | Data do Clipe |
+
+Regras novas:
+1. **Lista do mês = SÓ lançamentos daquele mês** (candidatas a estreia). Música antiga não aparece — ela já está no chart da semana anterior.
+2. Cada música **estreia na semana do seu lançamento**, com posição de entrada função do Score.
+3. **Semana N = chart da semana N-1** (com decaimento de poder/momentum) **+ estreias da semana**, reordenado; quem perde poder sai.
+4. Músicas novas ganham prioridade naturalmente; as velhas caem até sair.
+5. **Fallback de estreia = 1ª entrada na Top 20 semanal.** A Top 20 do usuário tem músicas desde 2000; quando a data de lançamento é difícil de achar (ex.: singles brasileiros), a `weekStartDate` da primeira aparição da música na Top 20 vira a âncora de estreia no Hot 100. Cadeia completa: single → álbum → clipe → **1ª entrada Top 20** → liberação manual.
+
+Refactors decorrentes (a fazer):
+- `build-pool.ts`: pool do período = músicas com releaseRef **dentro do mês** (não `<= chartDate`); releaseRef muda por parada-alvo (single vs clipe). `aggregateTop20History` passa a devolver também `firstEntryDate` (menor `weekStartDate` com posição ≤ 20) para usar como fallback de releaseRef e como âncora da semana de estreia.
+- `scoring.ts`: elegibilidade "not_released" vira "estreia futura"; o ranking estático mensal vira insumo da **simulação semanal** (antiga F7, agora núcleo): carry-over + decaimento + estreias.
+- UI: a lista passa a ser "Lançamentos de Maio/2005"; o filtro "Lançadas até o período" perde sentido como padrão.
+- F6 (publicar): grava as semanas geradas como `Chart`/`ChartEntry` **nas duas paradas acima**, semana a semana.
+
+---
+
 ## ✅ STATUS (retomar aqui) — atualizado 2026-07-17
 
 **Fases 1–5 implementadas e verificadas** (typecheck limpo, 16/16 testes verdes).
