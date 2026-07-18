@@ -4,6 +4,7 @@ import {
   computeEraWeight,
   evaluateEligibility,
   monthsBetween,
+  playsScore,
   releaseRefOf,
   type RetroContext,
   type RetroSongInput,
@@ -113,6 +114,25 @@ describe("pré-2010: força estimada = overall × eraWeight", () => {
     const rows = buildRetroChart([s], ctx());
     // com pool de 1 música, o próprio máximo → força normalizada = 1
     expect(rows[0].periodStrength).toBeCloseTo(1, 5);
+  });
+});
+
+describe("playsScore — teto absoluto de 500 scrobbles", () => {
+  it("é linear até 500 e satura no teto", () => {
+    expect(playsScore(0)).toBe(0);
+    expect(playsScore(250)).toBeCloseTo(0.5, 5);
+    expect(playsScore(500)).toBe(1);
+    expect(playsScore(5000)).toBe(1); // acima de 500 não ganha mais nada
+  });
+
+  it("500 e 5000 plays empatam em importance (resto igual)", () => {
+    const a = song({ songId: "a", overallPlaycount: 500 });
+    const b = song({ songId: "b", overallPlaycount: 5000 });
+    const rows = buildRetroChart([a, b], ctx());
+    const rA = rows.find((r) => r.songId === "a")!;
+    const rB = rows.find((r) => r.songId === "b")!;
+    expect(rA.importance).toBeCloseTo(rB.importance, 5);
+    expect(rA.scoreFinal).toBeCloseTo(rB.scoreFinal, 5);
   });
 });
 

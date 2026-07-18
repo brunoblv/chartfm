@@ -9,9 +9,9 @@ import {
   getSpotifyAlbumMetadataById,
   getSpotifyArtistById,
   getSpotifyTrackMetadataById,
-  searchSpotifyTracks,
   spotifyConfigured,
 } from "@/lib/spotify-server";
+import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
 import { buildSongPath } from "@/lib/music-routes";
 
 export const runtime = "nodejs";
@@ -62,31 +62,13 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function normalize(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function looksLikeSameTrack(candidate: { title: string; artist: string }, song: { title: string; artist: string }) {
-  const title = normalize(song.title);
-  const candidateTitle = normalize(candidate.title);
-  const artist = normalize(song.artist);
-  const candidateArtist = normalize(candidate.artist);
-  return (
-    (candidateTitle === title || candidateTitle.includes(title) || title.includes(candidateTitle)) &&
-    (candidateArtist.includes(artist) || artist.includes(candidateArtist.split(",")[0]?.trim() ?? ""))
-  );
-}
-
 async function updateSong(song: { id: string; title: string; artist: string; spotifyId: string | null }) {
   let spotifyId = song.spotifyId;
   if (!spotifyId) {
-    const tracks = await searchSpotifyTracks(`${song.title} ${song.artist}`, 5);
-    spotifyId = tracks.find((track) => looksLikeSameTrack(track, song))?.spotifyId ?? tracks[0]?.spotifyId ?? null;
+    // Sem fallback cego para o 1\u00ba resultado: s\u00f3 faixa validada (t\u00edtulo+artista)
+    // em \u00e1lbum/single do pr\u00f3prio artista \u2014 colet\u00e2nea n\u00e3o entra no banco.
+    const hit = await findSpotifyTrackForSong(song.title, song.artist);
+    spotifyId = hit?.spotifyId ?? null;
   }
   if (!spotifyId) return { updated: false, reason: "spotify_track_not_found" };
 

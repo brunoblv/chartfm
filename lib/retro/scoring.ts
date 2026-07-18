@@ -119,6 +119,11 @@ const WEIGHTS = {
 } as const;
 
 const THRESHOLDS = {
+  /**
+   * Scrobbles totais no Last.fm que valem a pontuação MÁXIMA de plays.
+   * Escala linear: 250 plays = metade da pontuação; ≥500 = teto.
+   */
+  playsCap: 500,
   /** Era Weight: meses de "auge" antes de começar a decair. */
   eraFullMonths: 12,
   /** Constante de decaimento (meses) do Era Weight após o auge. */
@@ -147,6 +152,14 @@ export function monthsBetween(from: Date, to: Date): number {
 function normLog(value: number, poolMaxLog: number): number {
   if (poolMaxLog <= 0) return 0;
   return clamp01(Math.log1p(Math.max(0, value)) / poolMaxLog);
+}
+
+/**
+ * Força de plays totais 0..1 com teto ABSOLUTO: 500 scrobbles no Last.fm = 1.
+ * Linear — quanto mais perto de 500, mais pontos; acima disso não ganha mais nada.
+ */
+export function playsScore(overallPlaycount: number): number {
+  return clamp01(Math.max(0, overallPlaycount) / THRESHOLDS.playsCap);
 }
 
 /** Data de referência para elegibilidade: precomputada > single > álbum > clipe. */
@@ -218,7 +231,6 @@ function clipScore(youtubeReleaseDate: Date | null, chartDate: Date): number {
 // ---------------------------------------------------------------------------
 
 interface PoolMax {
-  overallLog: number;
   periodLog: number;
   weeks: number;
   ones: number;
@@ -230,7 +242,7 @@ function computeImportance(s: RetroSongInput, ctx: RetroContext, pool: PoolMax):
   }
   const w = WEIGHTS.importance;
   const raw =
-    w.plays * normLog(s.overallPlaycount, pool.overallLog) +
+    w.plays * playsScore(s.overallPlaycount) +
     w.weeks * clamp01(pool.weeks > 0 ? s.top20Weeks / pool.weeks : 0) +
     w.ones * clamp01(pool.ones > 0 ? s.numberOnes / pool.ones : 0) +
     w.peak * peakScore(s.top20BestPeak) +
@@ -299,7 +311,6 @@ export function buildRetroChart(songs: RetroSongInput[], ctx: RetroContext): Ret
 
   // 2) Máximos do pool para normalização (só elegíveis)
   const pool: PoolMax = {
-    overallLog: Math.max(0, ...eligible.map((e) => Math.log1p(Math.max(0, e.s.overallPlaycount)))),
     periodLog: Math.max(0, ...eligible.map((e) => Math.log1p(Math.max(0, e.s.periodPlaycount ?? 0)))),
     weeks: Math.max(0, ...eligible.map((e) => e.s.top20Weeks)),
     ones: Math.max(0, ...eligible.map((e) => e.s.numberOnes)),
@@ -311,11 +322,12 @@ export function buildRetroChart(songs: RetroSongInput[], ctx: RetroContext): Ret
     const ref = releaseRefOf(s);
     const eraWeight = computeEraWeight(s, ctx);
 
-    // Força do período: plays reais (pós-2010) OU overall×eraWeight (pré-2010 estimado)
+    // Força do período: plays reais do mês (pós-2010, relativo ao pool) OU
+    // plays totais no teto de 500 × eraWeight (pré-2010 estimado).
     const periodStrength =
       s.periodPlaycount != null
         ? normLog(s.periodPlaycount, pool.periodLog)
-        : normLog(s.overallPlaycount, pool.overallLog) * eraWeight;
+        : playsScore(s.overallPlaycount) * eraWeight;
 
     const { value: importance, manual: importanceIsManual } = computeImportance(s, ctx, pool);
 

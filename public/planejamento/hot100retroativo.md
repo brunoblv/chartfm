@@ -263,7 +263,7 @@ Pode ser alterada manualmente.
 
 40%
 
-Total de Plays
+Total de Plays (teto: 500 scrobbles no Last.fm = pontuação máxima; escala linear — 250 plays = metade)
 
 +
 

@@ -136,10 +136,10 @@ se nenhuma existir → status "precisa liberação manual" (não entra até o us
 
 ### 2.2 Força do período (a peça pré-2010)
 ```
-base = normalizeLog(overallPlaycount, pool)      // log1p normalizado 0..1 no pool elegível
-                                                 // log: 500 vs 2000 plays ≠ 4x de força
+base = min(overallPlaycount / 500, 1)            // TETO ABSOLUTO: 500 scrobbles no Last.fm = 1.0
+                                                 // linear: 250 plays = 0.5; acima de 500 não ganha mais
 períodoStrength =
-   pós-2010:  normalizeLog(playsDoMêsReal, pool)
+   pós-2010:  normalizeLog(playsDoMêsReal, pool) // plays do mês seguem relativos ao pool
    pré-2010:  base × eraWeight                    // eraWeight impede que descoberta recente domine chart antigo
 ```
 
@@ -155,7 +155,7 @@ override manual por ano      → substitui o calculado
 ### 2.4 Importance (0-100) — global, congela ao editar
 Pesos do spec:
 ```
-40%  overallPlaycount   (log-normalizado vs pool)
+40%  overallPlaycount   (linear com teto em 500 scrobbles: min(plays/500, 1))
 25%  semanas na Top20    (normalizado)
 15%  qtd de #1           (normalizado)
 10%  melhor pico         (invertido: #1 = 100)

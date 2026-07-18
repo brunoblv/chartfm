@@ -67,6 +67,7 @@ type SpotifyTrackApi = {
     name: string;
     images: SpotifyImage[];
     album_type?: string;
+    artists?: { id: string; name: string }[];
     release_date?: string;
     total_tracks?: number;
     external_urls?: { spotify?: string };
@@ -139,7 +140,7 @@ export function markBackupLimited(ms: number = PRIMARY_LIMITED_DEFAULT_MS): void
 const coverCache = new Map<string, string | null>();
 const COVER_CACHE_MAX = 500;
 
-type SearchCacheEntry = { tracks: { spotifyId: string; title: string; artist: string; album: string; imageUrl: string | null; previewUrl: string | null; externalUrl: string }[]; expiresAt: number };
+type SearchCacheEntry = { tracks: ReturnType<typeof mapTrackToResult>[]; expiresAt: number };
 const searchCache = new Map<string, SearchCacheEntry>();
 const SEARCH_CACHE_MAX = 5000;
 // Resultados de busca mudam devagar — cache longo elimina re-consultas dos mesmos termos.
@@ -533,7 +534,10 @@ export function mapTrackToResult(track: SpotifyTrackApi) {
     spotifyId: track.id,
     title: track.name,
     artist,
+    artistNames: track.artists.map((a) => a.name),
     album: track.album.name,
+    albumType: track.album.album_type?.toLowerCase() ?? null,
+    albumArtistNames: (track.album.artists ?? []).map((a) => a.name),
     imageUrl: pickAlbumImageUrl(track.album.images),
     previewUrl: track.preview_url,
     externalUrl: track.external_urls.spotify,
@@ -568,8 +572,18 @@ function sortReleaseMs(raw: string | undefined): number {
   return Infinity;
 }
 
+function isCompilationAlbum(track: SpotifyTrackApi): boolean {
+  if (track.album.album_type?.toLowerCase() === "compilation") return true;
+  return (track.album.artists ?? []).some((a) => /various artists/i.test(a.name));
+}
+
 function pickBestVersion(tracks: SpotifyTrackApi[]): SpotifyTrackApi {
   return [...tracks].sort((a, b) => {
+    // Coletâneas (album_type compilation / Various Artists) por último: a mesma
+    // faixa em álbum/single do próprio artista sempre vence.
+    const aComp = isCompilationAlbum(a) ? 1 : 0;
+    const bComp = isCompilationAlbum(b) ? 1 : 0;
+    if (aComp !== bComp) return aComp - bComp;
     const aEdition = EDITION_PATTERN.test(a.album.name) ? 1 : 0;
     const bEdition = EDITION_PATTERN.test(b.album.name) ? 1 : 0;
     if (aEdition !== bEdition) return aEdition - bEdition;

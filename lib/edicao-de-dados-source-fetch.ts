@@ -5,9 +5,9 @@ import {
   getSpotifyAlbumMetadataById,
   getSpotifyArtistById,
   getSpotifyTrackMetadataById,
-  searchSpotifyTracks,
   spotifyConfigured,
 } from "@/lib/spotify-server";
+import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
 import {
   findRecordingMbidBySpotifyTrackId,
   getMusicBrainzRecordingTags,
@@ -106,8 +106,10 @@ export async function fetchForSong(
       if (!spotifyConfigured()) return { error: "spotify_nao_configurado" };
       let spotifyId = song.spotifyId;
       if (!spotifyId) {
-        const tracks = await searchSpotifyTracks(`${song.title} ${song.artist}`, 5, "BR", undefined, { maxAttempts: 1 });
-        spotifyId = tracks[0]?.spotifyId ?? null;
+        // Só aceita faixa em álbum/single do próprio artista (nunca coletânea)
+        // e valida título+artista; tenta variantes de query e mercados BR→US.
+        const hit = await findSpotifyTrackForSong(song.title, song.artist, { maxAttempts: 1 });
+        spotifyId = hit?.spotifyId ?? null;
       }
       if (!spotifyId) return nothing;
       const meta = await getSpotifyTrackMetadataById(spotifyId, "BR", { maxAttempts: 1 });
