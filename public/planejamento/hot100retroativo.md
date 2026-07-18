@@ -219,6 +219,24 @@ Caso nenhuma informação exista:
 
 Usuário poderá liberar manualmente.
 
+---
+
+# Debut Billboard Hot 100 (override manual)
+
+Campo editável por música: data real de estreia da música na Billboard Hot 100 americana (conhecimento do usuário, não vem de nenhuma fonte automática).
+
+Só se aplica ao Hot 100 de Singles.
+
+Vence a cadeia de elegibilidade (single/álbum/clipe/Top20) somente se for anterior às duas ao mesmo tempo:
+
+Data do Single
+
+E
+
+1ª entrada da música na Top 20 do usuário
+
+Corrige casos em que a data de lançamento cadastrada — ou a própria Top 20 pessoal do usuário — é mais tardia que a estreia real da música no chart americano.
+
 Depois de estrear, a música não depende mais da lista do mês: ela segue semana a semana por carry-over até sair da parada.
 
 ---

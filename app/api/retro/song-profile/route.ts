@@ -85,6 +85,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if ("billboardHot100DebutDate" in body) {
+    if (body.billboardHot100DebutDate === null) {
+      data.billboardHot100DebutDate = null;
+    } else if (typeof body.billboardHot100DebutDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.billboardHot100DebutDate)) {
+      const d = new Date(`${body.billboardHot100DebutDate}T00:00:00Z`);
+      if (Number.isNaN(d.getTime())) return NextResponse.json({ error: "invalid_billboard_date" }, { status: 400 });
+      data.billboardHot100DebutDate = d;
+    } else {
+      return NextResponse.json({ error: "invalid_billboard_date" }, { status: 400 });
+    }
+  }
+
   if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "nothing_to_update" }, { status: 400 });
   }

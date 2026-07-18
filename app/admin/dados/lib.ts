@@ -359,7 +359,7 @@ export async function fetchSongAudit(opts: {
   const rows = await prisma.song.findMany({
     where,
     select: SONG_AUDIT_SELECT,
-    orderBy: [{ artist: "asc" }, { title: "asc" }],
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     skip: (page - 1) * DADOS_PAGE_SIZE,
     take: DADOS_PAGE_SIZE,
   });
@@ -477,7 +477,7 @@ export async function fetchAlbumAudit(opts: {
   const rows = await prisma.album.findMany({
     where,
     select: ALBUM_AUDIT_SELECT,
-    orderBy: [{ title: "asc" }],
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     skip: (page - 1) * DADOS_PAGE_SIZE,
     take: DADOS_PAGE_SIZE,
   });
@@ -576,7 +576,7 @@ export async function fetchArtistPendencias(opts: { filtro: ArtistFiltro; page: 
   const rows = await prisma.artist.findMany({
     where,
     select: ARTIST_AUDIT_SELECT,
-    orderBy: { name: "asc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     skip: (clamped - 1) * DADOS_PAGE_SIZE,
     take: DADOS_PAGE_SIZE,
   });

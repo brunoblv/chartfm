@@ -87,6 +87,7 @@ export async function GET(req: NextRequest) {
         coverUrl: m?.coverUrl ?? null,
         note: m?.note ?? null,
         releaseRefSource: m?.releaseRefSource ?? null,
+        billboardHot100DebutDate: m?.billboardHot100DebutDate?.toISOString().slice(0, 10) ?? null,
         singleReleaseDate: s?.singleReleaseDate?.toISOString().slice(0, 10) ?? null,
         albumReleaseDate: s?.albumReleaseDate?.toISOString().slice(0, 10) ?? null,
         youtubeReleaseDate: s?.youtubeReleaseDate?.toISOString().slice(0, 10) ?? null,

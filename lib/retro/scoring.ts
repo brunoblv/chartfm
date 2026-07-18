@@ -23,7 +23,7 @@ export type EligibilityStatus =
   | "excluded_out"; // usuário marcou Peak Potential "Fora" → não concorre à parada
 
 /** Origem da data de estreia usada como releaseRef. */
-export type ReleaseRefSource = "single" | "album" | "clipe" | "top20";
+export type ReleaseRefSource = "single" | "album" | "clipe" | "top20" | "billboard";
 
 /** Uma música do pool, já hidratada pelas fontes externas. */
 export interface RetroSongInput {

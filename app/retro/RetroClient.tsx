@@ -9,7 +9,7 @@ type Priority = "S" | "A" | "B" | "C" | "D";
 type Confidence = "alta" | "media" | "baixa";
 type RetroMode = "historico" | "retrospectivo";
 type RetroTarget = "hot100" | "clipes";
-type ReleaseRefSource = "single" | "album" | "clipe" | "top20";
+type ReleaseRefSource = "single" | "album" | "clipe" | "top20" | "billboard";
 
 interface ScoreBreakdown {
   period: number;
@@ -50,6 +50,7 @@ interface RetroEntry {
   numberOnes: number;
   manualAdjustment: number;
   note: string | null;
+  billboardHot100DebutDate: string | null;
 }
 
 interface RetroResponse {
@@ -110,6 +111,7 @@ const SOURCE_LABEL: Record<ReleaseRefSource, string> = {
   album: "álbum",
   clipe: "clipe",
   top20: "Top 20",
+  billboard: "Billboard",
 };
 
 const WEIGHT_ROWS: { key: keyof ScoreBreakdown; label: string; max: number; color: string }[] = [
@@ -296,6 +298,7 @@ interface Draft {
   peak: PeakPotential | "auto";
   adjust: number;
   note: string;
+  billboardDebut: string; // yyyy-mm-dd ou ""
 }
 
 function draftFrom(e: RetroEntry): Draft {
@@ -305,6 +308,7 @@ function draftFrom(e: RetroEntry): Draft {
     peak: e.peakPotentialIsManual ? e.peakPotential : "auto",
     adjust: e.manualAdjustment,
     note: e.note ?? "",
+    billboardDebut: e.billboardHot100DebutDate ?? "",
   };
 }
 
@@ -582,6 +586,7 @@ export function RetroClient() {
           peakPotential: draft.peak === "auto" ? null : draft.peak,
           manualAdjustment: draft.adjust,
           note: draft.note.trim() === "" ? null : draft.note,
+          billboardHot100DebutDate: draft.billboardDebut.trim() === "" ? null : draft.billboardDebut,
         }),
       });
       if (res.ok) {
@@ -1021,6 +1026,21 @@ export function RetroClient() {
                   <option value="auto">Automático ({PEAK_LABEL[selected.peakPotential]})</option>
                   {PEAK_ORDER.map((p) => <option key={p} value={p}>{PEAK_LABEL[p]}</option>)}
                 </select>
+              </div>
+
+              {/* Estreia na Billboard Hot 100 */}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Estreia na Billboard Hot 100</div>
+                <input
+                  type="date"
+                  value={draft.billboardDebut}
+                  onChange={(ev) => setDraft({ ...draft, billboardDebut: ev.target.value })}
+                  className="retro-input"
+                  style={{ ...inputStyle, width: "100%" }}
+                />
+                <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)" }}>
+                  Só usada na Hot 100 de Singles: se for anterior à data do single e à 1ª entrada dela na sua Top 20, vence as duas como data de estreia.
+                </div>
               </div>
 
               {/* Ajuste manual */}

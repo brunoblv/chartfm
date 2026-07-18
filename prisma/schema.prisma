@@ -225,6 +225,10 @@ model Song {
   editorialNote              String?                   @map("editorial_note")
   /// Data de estreia da música na Billboard Hot 100 (primeira semana em que apareceu no chart), importado de mhollingshead/billboard-hot-100.
   billboardHot100DebutDate   DateTime?                 @db.Date @map("billboard_hot100_debut_date")
+  /// Data de estreia mais antiga da música em qualquer chart secundário da Billboard (Mainstream Rock, Alternative Airplay, Hot Latin Songs etc.), importado via scripts/billboard-genre-charts-scrape.py. Complementa o Hot 100 para músicas que charteiam em formatos específicos sem entrar no Hot 100.
+  billboardGenreChartDebutDate DateTime?               @db.Date @map("billboard_genre_chart_debut_date")
+  /// Nome do chart secundário (ex.: "Mainstream Rock Airplay") de onde veio billboardGenreChartDebutDate.
+  billboardGenreChartName    String?                   @map("billboard_genre_chart_name")
   createdAt                  DateTime                  @default(now()) @map("created_at")
   artistRef                  Artist?                   @relation("PrimarySongArtist", fields: [artistSpotifyId], references: [spotifyId])
   albumRef                   Album?                    @relation("AlbumSongs", fields: [albumSpotifyId], references: [spotifyId])
@@ -1935,6 +1939,10 @@ model RetroSongProfile {
   peakPotentialLocked Boolean  @default(false) @map("peak_potential_locked")
   /// Somado ao Score Final. Faixa -50..+50.
   manualAdjustment    Int      @default(0) @map("manual_adjustment")
+  /// Data de estreia da música na Billboard Hot 100 real (conhecimento do usuário,
+  /// não vem de nenhuma fonte automática). Só usada no target "hot100": se anterior
+  /// à data do single E à 1ª entrada da música na Top20 do usuário, vence as duas.
+  billboardHot100DebutDate DateTime? @map("billboard_hot100_debut_date") @db.Date
   /// Observação pessoal ("marcou minha adolescência") — insumo futuro para IA.
   note                String?
   createdAt           DateTime @default(now()) @map("created_at")

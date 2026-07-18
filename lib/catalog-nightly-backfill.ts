@@ -123,7 +123,7 @@ async function runSongDatesBackfill(): Promise<NightlyBackfillStepResult> {
     const songs = await prisma.song.findMany({
       where: semDatasBackfillWhere,
       select: { id: true, title: true, artist: true, spotifyId: true, recordingMbid: true, singleReleaseDate: true, musicVideoReleaseDate: true },
-      orderBy: [{ artist: "asc" }, { title: "asc" }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: CHUNK_SIZE,
     });
     if (songs.length === 0) break;
@@ -201,7 +201,7 @@ async function runArtistBiosBackfill(): Promise<NightlyBackfillStepResult> {
     const artists = await prisma.artist.findMany({
       where: artistSemBioWhere,
       select: { id: true, name: true },
-      orderBy: { name: "asc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: CHUNK_SIZE,
     });
     if (artists.length === 0) break;
@@ -284,7 +284,7 @@ async function runArtistMetadataBackfill(): Promise<NightlyBackfillStepResult> {
     const artists = await prisma.artist.findMany({
       where: artistMetadataMissingWhere,
       select: { id: true, name: true, spotifyId: true, genres: true },
-      orderBy: { name: "asc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: CHUNK_SIZE,
     });
     if (artists.length === 0) break;
@@ -354,7 +354,7 @@ async function runAlbumMetadataBackfill(): Promise<NightlyBackfillStepResult> {
     const albums = await prisma.album.findMany({
       where: albumMetadataMissingWhere,
       select: { id: true, spotifyId: true },
-      orderBy: { title: "asc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: CHUNK_SIZE,
     });
     if (albums.length === 0) break;

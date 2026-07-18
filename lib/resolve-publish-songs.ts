@@ -886,7 +886,7 @@ export async function findSongsMissingCovers(db: Db, limit?: number, opts?: { in
       ...(opts?.includeNotFound ? {} : { NOT: { sourcesNotFound: { has: "spotify" } } }),
     },
     select: SONG_COVER_SELECT,
-    orderBy: { id: "asc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     ...(limit ? { take: limit } : {}),
   });
   return rows.filter((r) => !r.albumRef?.coverUrl?.trim());

@@ -139,7 +139,7 @@ export async function findSongsWithoutClips(
       artist: true,
       spotifyId: true,
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
   });
 
