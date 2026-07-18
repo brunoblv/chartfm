@@ -47,8 +47,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no_lastfm_user" }, { status: 400 });
   }
 
-  const result = await generateRetroHistory({ userId, lastfmUser: user.lastfmUser, target, startYear, fetchRealPeriodPlays });
+  // Parada de destino: por padrão a parada fixa de `target` (ver TARGET_PARADA), mas o
+  // usuário pode escolher qualquer parada dele — precisa pertencer a ele.
+  const requestedParadaId = typeof body?.paradaId === "string" ? body.paradaId.trim() : "";
+  let customParada: { id: string; chartSize: number | null; isPrimary: boolean } | null = null;
+  if (requestedParadaId) {
+    customParada = await prisma.parada.findFirst({
+      where: { id: requestedParadaId, userId, deletedAt: null },
+      select: { id: true, chartSize: true, isPrimary: true },
+    });
+    if (!customParada) {
+      return NextResponse.json({ error: "parada_not_found" }, { status: 404 });
+    }
+  }
+
+  const result = await generateRetroHistory({
+    userId,
+    lastfmUser: user.lastfmUser,
+    target,
+    startYear,
+    fetchRealPeriodPlays,
+    paradaId: customParada?.id,
+    chartSize: customParada?.chartSize ?? undefined,
+  });
   const { paradaId, chartSize, weeks } = result;
+  const isPrimary = customParada?.isPrimary ?? TARGET_PARADA[target].isPrimary;
 
   if (dryRun) {
     const firstWeek = weeks[0] ?? null;
@@ -85,7 +108,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Escrita real ──────────────────────────────────────────────────────
-  const tier = scoringTierFromPrimary(TARGET_PARADA[target].isPrimary);
+  const tier = scoringTierFromPrimary(isPrimary);
   const allSongIds = Array.from(new Set(weeks.flatMap((w) => w.entries.map((e) => e.songId))));
   const songs = await prisma.song.findMany({ where: { id: { in: allSongIds } }, select: { id: true, title: true, artist: true, spotifyId: true } });
   const songById = new Map(songs.map((s) => [s.id, s]));

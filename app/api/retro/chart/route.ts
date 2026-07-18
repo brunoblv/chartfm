@@ -44,13 +44,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "no_lastfm_user" }, { status: 400 });
   }
 
-  const pool = await buildRetroPool({ userId, lastfmUser: user.lastfmUser, year, month, mode, target });
-  const rows = buildRetroChart(pool.songs, {
-    chartDate: pool.chartDate,
-    mode,
-    now: new Date(),
-    chartSize,
-  });
+  let pool: Awaited<ReturnType<typeof buildRetroPool>>;
+  let rows: ReturnType<typeof buildRetroChart>;
+  try {
+    pool = await buildRetroPool({ userId, lastfmUser: user.lastfmUser, year, month, mode, target });
+    rows = buildRetroChart(pool.songs, {
+      chartDate: pool.chartDate,
+      mode,
+      now: new Date(),
+      chartSize,
+    });
+  } catch (err) {
+    console.error("[/api/retro/chart] falha ao montar a parada:", err);
+    const message = err instanceof Error ? err.message : "erro desconhecido";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   // Estatísticas (faixa de KPIs do mockup) sobre o pool elegível.
   const playById = new Map(pool.songs.map((s) => [s.songId, s]));

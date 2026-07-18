@@ -47,6 +47,10 @@ export interface GenerateHistoryOptions {
    * evitar num backfill em massa. Ligar só para uma faixa curta de meses.
    */
   fetchRealPeriodPlays?: boolean;
+  /** Parada de destino, se diferente da parada padrão de `target` (ver `TARGET_PARADA`). */
+  paradaId?: string;
+  /** Tamanho do chart da parada de destino, se diferente do padrão de `target`. */
+  chartSize?: number;
 }
 
 export interface DebutSummary {
@@ -88,7 +92,9 @@ async function resolveBoundaryWeekIndex(paradaId: string): Promise<{ weekIndex: 
  */
 export async function generateRetroHistory(opts: GenerateHistoryOptions): Promise<GenerateHistoryResult> {
   const { userId, lastfmUser, target, startYear } = opts;
-  const { paradaId, chartSize } = TARGET_PARADA[target];
+  const defaults = TARGET_PARADA[target];
+  const paradaId = opts.paradaId ?? defaults.paradaId;
+  const chartSize = opts.chartSize ?? defaults.chartSize;
 
   const [sources, boundary] = await Promise.all([
     loadRetroSources(userId, lastfmUser),

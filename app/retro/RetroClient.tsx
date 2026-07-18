@@ -347,12 +347,31 @@ interface PublishResponse {
   remaining: number;
 }
 
+interface ParadaOption {
+  id: string;
+  name: string;
+}
+
 function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
   const [startYear, setStartYear] = useState(2000);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [publishResult, setPublishResult] = useState<PublishResponse | null>(null);
   const [loading, setLoading] = useState<"preview" | "publish" | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [paradas, setParadas] = useState<ParadaOption[]>([]);
+  const [paradaId, setParadaId] = useState(""); // vazio = usa a parada padrão do target
+
+  useEffect(() => {
+    fetch("/api/user/paradas")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => {
+        if (body?.paradas) {
+          setParadas(body.paradas.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function callPublish(dryRun: boolean) {
     setLoading(dryRun ? "preview" : "publish");
@@ -361,7 +380,7 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
       const res = await fetch("/api/retro/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, startYear, dryRun }),
+        body: JSON.stringify({ target, startYear, dryRun, paradaId: paradaId || undefined }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -392,6 +411,13 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={labelStyle}>Publicar em</span>
+          <select value={paradaId} onChange={(ev) => setParadaId(ev.target.value)} style={inputStyle}>
+            <option value="">Padrão ({TARGET_LABEL[target]})</option>
+            {paradas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={labelStyle}>Começar em</span>
           <select value={startYear} onChange={(ev) => setStartYear(Number(ev.target.value))} style={inputStyle}>
