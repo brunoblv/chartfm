@@ -17,6 +17,11 @@ import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
 import type { Cover as CoverType } from "@/lib/types";
 
+export type CommunityWeeklyPollOpen = {
+  weekLabel: string;
+  dateRange: string;
+};
+
 export type CommunityDbSerializable = {
   id: string;
   slug: string;
@@ -68,6 +73,7 @@ export type CommunityPostSerializable = {
   ytThumbA: string | null;
   ytThumbB: string | null;
   likes: number;
+  hasLiked: boolean;
   replies: number;
   shares: number;
   createdAt: string;
@@ -111,6 +117,7 @@ export function CommunityPageClient({
   contributorCount,
   dateRange,
   contextText,
+  weeklyPollOpen,
 }: {
   dbCommunity: CommunityDbSerializable;
   dbPosts: CommunityPostSerializable[];
@@ -119,6 +126,7 @@ export function CommunityPageClient({
   contributorCount: number;
   dateRange: string;
   contextText: string;
+  weeklyPollOpen: CommunityWeeklyPollOpen | null;
 }) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -135,9 +143,11 @@ export function CommunityPageClient({
   const [postError, setPostError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyErrors, setReplyErrors] = useState<Record<string, string | null>>({});
   const [replyingFor, setReplyingFor] = useState<string | null>(null);
   const [replyTarget, setReplyTarget] = useState<Record<string, CommunityReplySerializable | null>>({});
   const [likingReplyId, setLikingReplyId] = useState<string | null>(null);
+  const [likingPostId, setLikingPostId] = useState<string | null>(null);
   const [timelinePosts, setTimelinePosts] = useState<CommunityPostSerializable[]>(dbPosts);
   const [isMember, setIsMember] = useState(community.isMember);
   const [memberCount, setMemberCount] = useState(community.members);
@@ -230,6 +240,7 @@ export function CommunityPageClient({
       return;
     }
     setReplyingFor(postId);
+    setReplyErrors((prev) => ({ ...prev, [postId]: null }));
     try {
       const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/replies`, {
         method: "POST",
@@ -237,7 +248,10 @@ export function CommunityPageClient({
         body: JSON.stringify({ text, replyToId: replyTarget[postId]?.id ?? null }),
       });
       const data = (await res.json()) as CommunityReplySerializable & { error?: string };
-      if (!res.ok) return;
+      if (!res.ok) {
+        setReplyErrors((prev) => ({ ...prev, [postId]: data.error ?? "Não foi possível comentar." }));
+        return;
+      }
       setTimelinePosts((prev) =>
         prev.map((p) =>
           p.id === postId
@@ -251,8 +265,31 @@ export function CommunityPageClient({
       );
       setReplyDrafts((prev) => ({ ...prev, [postId]: "" }));
       setReplyTarget((prev) => ({ ...prev, [postId]: null }));
+    } catch {
+      setReplyErrors((prev) => ({ ...prev, [postId]: "Erro de rede ao comentar." }));
     } finally {
       setReplyingFor(null);
+    }
+  }
+
+  async function handleLikePost(postId: string) {
+    if (!session?.user?.id) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(`/community/${community.slug}`)}`);
+      return;
+    }
+    if (likingPostId) return;
+    setLikingPostId(postId);
+    try {
+      const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/like`, {
+        method: "POST",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { liked: boolean; likes: number };
+      setTimelinePosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, likes: data.likes, hasLiked: data.liked } : p)),
+      );
+    } finally {
+      setLikingPostId(null);
     }
   }
 
@@ -650,9 +687,24 @@ export function CommunityPageClient({
                     )}
 
                     <div style={{ marginTop: 10, display: "flex", gap: 18, color: "var(--text-muted)", fontSize: 13 }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <Heart size={14} /> {post.likes}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void handleLikePost(post.id)}
+                        disabled={likingPostId === post.id}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          border: "none",
+                          background: "none",
+                          padding: 0,
+                          color: post.hasLiked ? "#FA243C" : "var(--text-muted)",
+                          cursor: likingPostId === post.id ? "wait" : "pointer",
+                          fontSize: 13,
+                        }}
+                      >
+                        <Heart size={14} fill={post.hasLiked ? "#FA243C" : "none"} /> {post.likes}
+                      </button>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                         <MessageCircle size={14} /> {post.replies}
                       </span>
@@ -737,7 +789,10 @@ export function CommunityPageClient({
                       <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                         <input
                           value={replyDrafts[post.id] ?? ""}
-                          onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                          onChange={(e) => {
+                            setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }));
+                            if (replyErrors[post.id]) setReplyErrors((prev) => ({ ...prev, [post.id]: null }));
+                          }}
                           placeholder={replyTarget[post.id] ? `Responder @${replyTarget[post.id]?.user.handle}...` : "Responder este post..."}
                           style={{
                             flex: 1,
@@ -769,6 +824,9 @@ export function CommunityPageClient({
                           Responder
                         </button>
                       </div>
+                      {replyErrors[post.id] && (
+                        <div style={{ fontSize: 12, color: "#DC2626" }}>{replyErrors[post.id]}</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -780,9 +838,35 @@ export function CommunityPageClient({
 
         {!isMobile && (
           <div style={{ width: 296, flexShrink: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: "24px 16px", textAlign: "center" }}>
+            <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: "20px 16px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Enquetes</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>Em breve você poderá criar e votar em enquetes da comunidade aqui.</div>
+              {weeklyPollOpen ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                    A votação da Parada Global está aberta — {weeklyPollOpen.weekLabel}
+                    {weeklyPollOpen.dateRange ? ` (${weeklyPollOpen.dateRange})` : ""}.
+                  </div>
+                  <Link
+                    href="/votacao-da-semana"
+                    style={{
+                      alignSelf: "flex-start",
+                      padding: "8px 14px",
+                      borderRadius: 999,
+                      background: "var(--accent)",
+                      color: "#fff",
+                      fontWeight: 700,
+                      fontSize: 12,
+                      textDecoration: "none",
+                    }}
+                  >
+                    Votar na enquete da semana
+                  </Link>
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                  Não há enquete da Parada Global aberta no momento.
+                </div>
+              )}
             </div>
           </div>
         )}

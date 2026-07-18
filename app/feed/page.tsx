@@ -139,8 +139,6 @@ async function getPublicTimelineFeed(locale: Awaited<ReturnType<typeof getServer
   const rows = await prisma.chart.findMany({
     where: {
       isPublished: true,
-      // paradas "de estilo" simuladas (queda semanal) não entram no feed público.
-      parada: { autoDecay: false },
     },
     orderBy: { postedAt: "desc" },
     take: 30,

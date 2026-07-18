@@ -17,7 +17,6 @@ export async function GET() {
     chart: {
       isPublished: true,
       weekIndex: { gte: rankingWeek.weekIndex - 3 },
-      parada: { autoDecay: false },
       ...(userId ? { userId: { not: userId } } : {}),
     },
   };

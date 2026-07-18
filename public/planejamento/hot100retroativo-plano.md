@@ -11,9 +11,8 @@
 Visível **apenas para o @bruno** por enquanto (via `requireBruno()` na rota e na página).
 
 ### ⚠️ Pendência antes do smoke test
-Nada foi exercitado contra banco/Last.fm reais ainda. Rodar:
+✅ 2026-07-17: `prisma db push` aplicado no dev — `retro_song_profiles` e `retro_era_overrides` criadas; client regenerado; typecheck limpo. Falta só o smoke test manual:
 ```
-npm run db:push      # cria retro_song_profiles e retro_era_overrides (Prisma já gerado)
 npm run dev          # logar como @bruno → acessar /retro
 ```
 

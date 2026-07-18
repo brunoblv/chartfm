@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { signOut, useSession } from "next-auth/react";
-import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper, Send, ScrollText, Copy, Music2 } from "lucide-react";
+import { Home, Search, Globe, Users, Flame, LogOut, X, Settings, ChevronDown, Shield, Database, Disc3, UserCog, Sparkles, Award, ImagePlay, Zap, ListMusic, User, LifeBuoy, MailWarning, BarChart3, Megaphone, Download, Tv, Radar, Newspaper, Send, ScrollText, Copy, Music2, History } from "lucide-react";
 import { MYTRL_OWNER_HANDLE } from "@/lib/mytrl-access";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
@@ -583,6 +583,10 @@ function SidebarContent({
                   <Link href="/admin/tiktok-bot" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/tiktok-bot")}>
                     <Music2 size={14} />
                     <span>TikTok Growth Bot</span>
+                  </Link>
+                  <Link href="/retro" onClick={onNavClick} style={adminLinkStyle(pathname, "/retro")}>
+                    <History size={14} />
+                    <span>Hot 100 Retrô</span>
                   </Link>
                 </>
               )}

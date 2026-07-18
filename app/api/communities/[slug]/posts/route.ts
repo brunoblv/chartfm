@@ -37,6 +37,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ slug: 
     orderBy: { createdAt: "desc" },
     include: {
       user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+      postLikes: { where: { userId: userId ?? "" }, select: { id: true } },
       postReplies: {
         orderBy: { createdAt: "asc" },
         include: {
@@ -60,6 +61,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ slug: 
     ytThumbA: post.ytThumbA,
     ytThumbB: post.ytThumbB,
     likes: post.likes,
+    hasLiked: post.postLikes.length > 0,
     replies: post.replies,
     shares: post.shares,
     createdAt: post.createdAt.toISOString(),
@@ -169,6 +171,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ slug: 
       ytThumbA: created.ytThumbA,
       ytThumbB: created.ytThumbB,
       likes: created.likes,
+      hasLiked: false,
       replies: created.replies,
       shares: created.shares,
       createdAt: created.createdAt.toISOString(),

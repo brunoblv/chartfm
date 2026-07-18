@@ -15,12 +15,13 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
   const row = await getCommunityBySlug(slug);
   if (!row) notFound();
 
-  const [postsRows, isAdmin, memberRole] = await Promise.all([
+  const [postsRows, isAdmin, memberRole, openWeeklyPoll] = await Promise.all([
     prisma.post.findMany({
       where: { communityId: row.id },
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { id: true, handle: true, name: true, avatarColor: true, image: true } },
+        postLikes: { where: { userId: userId ?? "" }, select: { id: true } },
         postReplies: {
           orderBy: { createdAt: "asc" },
           include: {
@@ -33,6 +34,11 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
     }),
     isCommunityAdmin(row.id, userId),
     userId ? getCommunityMemberRole(row.id, userId) : Promise.resolve(null),
+    prisma.weeklySpotlightPoll.findFirst({
+      where: { status: "open" },
+      select: { weekLabel: true, dateRange: true },
+      orderBy: { weekIndex: "desc" },
+    }),
   ]);
 
   const config = parseCommunityPointsConfig(row);
@@ -70,6 +76,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
     ytThumbA: post.ytThumbA,
     ytThumbB: post.ytThumbB,
     likes: post.likes,
+    hasLiked: post.postLikes.length > 0,
     replies: post.replies,
     shares: post.shares,
     createdAt: post.createdAt.toISOString(),
@@ -151,6 +158,11 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       contributorCount={chart.contributorCount}
       dateRange={chart.dateRange}
       contextText={contextText}
+      weeklyPollOpen={
+        openWeeklyPoll
+          ? { weekLabel: openWeeklyPoll.weekLabel, dateRange: openWeeklyPoll.dateRange }
+          : null
+      }
     />
   );
 }

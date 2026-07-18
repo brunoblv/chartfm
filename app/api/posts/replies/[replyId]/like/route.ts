@@ -23,7 +23,7 @@ export async function POST(_req: NextRequest, context: { params: Promise<{ reply
       prisma.postReplyLike.delete({ where: { id: existing.id } }),
       prisma.postReply.update({ where: { id: replyId }, data: { likes: { decrement: 1 } } }),
     ]);
-    return NextResponse.json({ liked: false, likes: updated.likes });
+    return NextResponse.json({ liked: false, likes: Math.max(0, updated.likes) });
   }
 
   const [, updated] = await prisma.$transaction([
