@@ -46,6 +46,7 @@ const MONTH_MAP: Record<string, number> = {
   dec: 11,
   dez: 11,
   dezembro: 11,
+  dezember: 11,
 };
 
 /** Sufixo ordinal EN (`15th`) e typo comum (`7h` no lugar de `7th`). */
@@ -185,6 +186,17 @@ export function parseDateFromChartSlug(slug: string): string | null {
         const month = Number(m[1]) - 1;
         const day = Number(m[2]);
         const year = 2000 + Number(m[3]);
+        if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+        return toYmd(year, month, day);
+      },
+    },
+    {
+      // DDMMYYYY no fim do slug: the-best-damn-chart-07052000 / -20082000-0
+      re: /(?:^|-)(\d{2})(\d{2})(\d{4})(?:-\d+)?$/i,
+      pick: (m) => {
+        const day = Number(m[1]);
+        const month = Number(m[2]) - 1;
+        const year = Number(m[3]);
         if (month < 0 || month > 11 || day < 1 || day > 31) return null;
         return toYmd(year, month, day);
       },

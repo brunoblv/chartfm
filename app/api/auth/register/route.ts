@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import { createEmailUser } from "@/lib/email-user";
 import { sendVerificationEmailForUser } from "@/lib/email-verification";
 import { isPasswordStrongEnough } from "@/lib/password";
+import { enforceIpRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const limited = enforceIpRateLimit(req, "register", {
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (limited) return limited;
+
   let body: { email?: string; password?: string; name?: string };
   try {
     body = await req.json();

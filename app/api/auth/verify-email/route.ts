@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { verifyEmailToken } from "@/lib/email-verification";
+import { enforceIpRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const limited = enforceIpRateLimit(req, "verify-email", {
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (limited) return limited;
+
   let body: { token?: string };
   try {
     body = await req.json();

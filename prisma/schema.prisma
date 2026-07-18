@@ -95,6 +95,8 @@ model User {
   weeklySpotlightNominations       WeeklySpotlightNomination[]
   weeklySpotlightVotes             WeeklySpotlightVote[]
   songFlags                        SongFlag[]
+  retroSongProfiles                RetroSongProfile[]
+  retroEraOverrides                RetroEraOverride[]
 }
 
 model PasswordResetToken {
@@ -232,6 +234,8 @@ model Song {
   recommendations            SongRecommendation[]
   weeklySpotlightOptions     WeeklySpotlightOption[]
   flags                      SongFlag[]
+  retroProfiles              RetroSongProfile[]
+  retroEraOverrides          RetroEraOverride[]
 
   @@unique([title, artist])
   @@index([spotifyId], map: "idx_songs_spotify_id")
@@ -1908,4 +1912,53 @@ model SocialCredential {
   updatedAt       DateTime                 @updatedAt @map("updated_at")
 
   @@map("social_credentials")
+}
+
+// ==========================================================================
+// Hot 100 Retrospectivo
+// Persistimos apenas o ajuste humano; o chart em si é recalculado sob demanda.
+// ==========================================================================
+
+/// Perfil retrô GLOBAL por usuário+música: importance, peak potential, ajuste e nota.
+/// Uma vez editado pelo usuário, `*Locked` impede o recálculo automático sobrescrever.
+model RetroSongProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @map("user_id")
+  songId              String   @map("song_id")
+  /// 0-100; null = usar o valor calculado pelo motor.
+  importance          Int?
+  importanceLocked    Boolean  @default(false) @map("importance_locked")
+  /// "1","top3","top5","top10","top20","top40","top100","out"; null = calculado.
+  peakPotential       String?  @map("peak_potential")
+  peakPotentialLocked Boolean  @default(false) @map("peak_potential_locked")
+  /// Somado ao Score Final. Faixa -50..+50.
+  manualAdjustment    Int      @default(0) @map("manual_adjustment")
+  /// Observação pessoal ("marcou minha adolescência") — insumo futuro para IA.
+  note                String?
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song                Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, songId])
+  @@index([userId])
+  @@index([songId])
+  @@map("retro_song_profiles")
+}
+
+/// Override manual do Era Weight por ano (ex.: Mr. Brightside 2005=95, 2010=75).
+/// Opcional — só existe quando o usuário ajusta a força da música por época.
+model RetroEraOverride {
+  id     String @id @default(cuid())
+  userId String @map("user_id")
+  songId String @map("song_id")
+  year   Int
+  /// 0-100.
+  weight Int
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song   Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, songId, year])
+  @@index([userId])
+  @@map("retro_era_overrides")
 }

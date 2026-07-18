@@ -49,10 +49,41 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
+          // Diretivas seguras impostas: reforçam contra clickjacking (frame-ancestors),
+          // injeção de <base> (base-uri) e plugins/objetos (object-src). Nenhuma
+          // afeta scripts/estilos, então não quebram o AdSense nem o Analytics.
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'",
+          },
+          // Política completa em modo Report-Only: o navegador reporta violações
+          // no console sem bloquear nada. Serve para observar o que uma CSP estrita
+          // quebraria (scripts inline, AdSense, GA) antes de migrar para imposição.
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: CSP_REPORT_ONLY,
+          },
         ],
       },
     ];
   },
 };
+
+// Alvo de CSP estrita para futura imposição. Cobre os terceiros atuais
+// (Google Analytics + AdSense). `'unsafe-inline'` em script-src ainda é
+// necessário por causa dos scripts inline (tema, JSON-LD, config do GA);
+// migrar para nonces removeria essa necessidade.
+const CSP_REPORT_ONLY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://www.googletagmanager.com https://www.google-analytics.com https://adservice.google.com https://*.googleadservices.com",
+  "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.google.com",
+  "frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.googlesyndication.com https://www.google.com",
+].join("; ");
 
 export default nextConfig;

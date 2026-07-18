@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { hashPassword, hashResetToken, isPasswordStrongEnough } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { enforceIpRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const limited = enforceIpRateLimit(req, "reset-password", {
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (limited) return limited;
+
   let body: { token?: string; password?: string };
   try {
     body = await req.json();

@@ -7,10 +7,17 @@ import {
   passwordResetEmail,
   sendEmail,
 } from "@/lib/send-email";
+import { enforceIpRateLimit } from "@/lib/rate-limit";
 
 const RESET_TTL_MS = 60 * 60 * 1000;
 
 export async function POST(req: Request) {
+  const limited = enforceIpRateLimit(req, "forgot-password", {
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (limited) return limited;
+
   let body: { email?: string };
   try {
     body = await req.json();

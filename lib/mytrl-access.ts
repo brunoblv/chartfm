@@ -167,6 +167,7 @@ export function canUseSpotifyFeatures(handle: string | null | undefined): boolea
 
 export function authorizeMyTrlCron(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  // Fail-closed: sem CRON_SECRET, negar em produção (ver lib/cron-auth.ts).
+  if (!secret) return process.env.NODE_ENV !== "production";
   return req.headers.get("authorization") === `Bearer ${secret}`;
 }

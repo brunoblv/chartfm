@@ -77,7 +77,7 @@ function resolveWeightedImportWeights(handle: string | null | undefined): {
   return { recentPlayWeight, olderPlayWeight, periodLabel };
 }
 
-function normalizeTrackMatchKey(s: string): string {
+export function normalizeTrackMatchKey(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFD")

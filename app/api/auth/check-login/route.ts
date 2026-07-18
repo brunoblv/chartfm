@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { enforceIpRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const limited = enforceIpRateLimit(req, "check-login", {
+    limit: 10,
+    windowMs: 5 * 60 * 1000,
+  });
+  if (limited) return limited;
+
   let body: { email?: string; password?: string };
   try {
     body = await req.json();

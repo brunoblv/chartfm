@@ -5,6 +5,41 @@
 
 ---
 
+## ✅ STATUS (retomar aqui) — atualizado 2026-07-17
+
+**Fases 1–5 implementadas e verificadas** (typecheck limpo, 16/16 testes verdes).
+Visível **apenas para o @bruno** por enquanto (via `requireBruno()` na rota e na página).
+
+### ⚠️ Pendência antes do smoke test
+Nada foi exercitado contra banco/Last.fm reais ainda. Rodar:
+```
+npm run db:push      # cria retro_song_profiles e retro_era_overrides (Prisma já gerado)
+npm run dev          # logar como @bruno → acessar /retro
+```
+
+### Arquivos criados/alterados
+| Arquivo | O quê |
+|---|---|
+| `prisma/schema.prisma` | modelos `RetroSongProfile` + `RetroEraOverride` (+ back-relations em User/Song) |
+| `lib/retro/scoring.ts` | **motor puro**: elegibilidade, era weight, importance, score + `breakdown`, derivados |
+| `lib/retro/scoring.test.ts` | 16 testes (Firework barrada, era weight decrescente, pré-2010 estimado, importance travada…) |
+| `lib/retro/build-pool.ts` | junta Last.fm overall + período + Song + ChartEntry + overrides → `RetroSongInput[]` |
+| `app/api/retro/chart/route.ts` | `GET /api/retro/chart?year&month&mode` (restrito @bruno) — entries + stats |
+| `app/api/retro/song-profile/route.ts` | `POST` upsert do ajuste manual (restrito @bruno); importance/peak travam ao salvar |
+| `app/retro/page.tsx` + `RetroClient.tsx` | página gated + tabela + KPIs + **painel lateral editável** |
+| `lib/lastfm-import.ts` | exportado `normalizeTrackMatchKey` (reuso no match) |
+
+### O que falta (próximas fases)
+- **F6** — publicar o chart retrô como `Parada`/`Chart`/`ChartEntry` real (reusa feed/export). Rota `POST /api/retro/publish`.
+- **F7** — simulação de trajetória (2.7): permanência + **rodízio de #1** + entrada→pico→saída; depois o "sistema aprende".
+- **Débitos técnicos anotados no código**:
+  - `build-pool.loadSongIndex()` carrega toda a `Song` — otimizar com coluna de chave normalizada indexada.
+  - `lastScrobbleAt` está `null` (recência de plays da Importance zerada) — precisa de histórico de scrobbles.
+  - Limiares de Peak Potential/Hit Level/Prioridade em `scoring.ts` são sensatos mas **não calibrados** com dados reais — revisar após o smoke test.
+  - Pré-2010 + Modo Histórico é fraco por definição (sem scrobble não há "plays do mês") — modo principal é o Retrospectivo.
+
+---
+
 ## 0. Decisões de arquitetura (fechadas)
 
 | Decisão | Escolha |
@@ -118,10 +153,25 @@ Pesos do spec:
 
 ### 2.6 Derivados
 - **Peak Potential**: calculado do Score/HitLevel; travável pelo usuário. Algoritmo nunca sugere acima dele sem autorização.
+  - **Rodízio de #1 (importante):** quando muitas músicas têm Peak Potential alto (ex.: várias "#1"), elas **revezam o topo ao longo das semanas do período** — o #1 não é fixo. Quanto **maior o Peak Potential + Score**, **mais semanas em #1** a música acumula. Ou seja: o topo é distribuído proporcionalmente à força entre os candidatos elegíveis. Isso é resolvido na simulação de trajetória (2.7), não no ranking estático de um mês.
 - **Hit Level**: Diamond/Platinum/Gold/Silver/Bronze por faixas de Importance + plays + #1 + semanas.
 - **Prioridade S/A/B/C/D**: banding do Score + Hit Level.
 - **Confiança** Alta/Média/Baixa: quantos campos existem (release date? plays reais? histórico Top20?). Pré-2010 sem histórico → Média/Baixa.
-- **Permanência (semanas) + trajetória de Pico**: **Fase 5** (simulação), não bloqueia o MVP.
+- **Permanência (semanas) + trajetória de Pico**: **Fase 7** (simulação), não bloqueia o MVP. Ver 2.7.
+
+### 2.7 Simulação de trajetória (Fase 7) — inclui o rodízio de #1
+Para um período com N semanas, distribuímos posições semana a semana, não só um ranking estático:
+```
+para cada semana do período:
+   força(música) = Score × EW(semana) × momentum
+   ordena por força → posições da semana
+#1 rotativo: entre os candidatos com Peak Potential alto, o topo alterna
+   semanas em #1 ∝ (peakPotential × Score) / Σ(candidatos)   // quanto mais forte, mais #1s
+Permanência = nº de semanas que a música fica dentro do chartSize (função de Importance,
+   Peak Potential, momentum, concorrência do período)
+```
+Resultado: cada música ganha entrada→pico→saída (a curva #78→#42→…→#1→#2→saída do spec) e a
+contagem real de #1s emerge da simulação, não de um valor fixo.
 
 ---
 
@@ -162,17 +212,19 @@ Reaproveitar componentes de medidor/tabela que já existem no app onde der.
 
 ## 6. Fases (ordem de entrega)
 
-| Fase | Entrega | Dá pra demonstrar? |
+| Fase | Entrega | Status |
 |---|---|---|
-| **F1** | Schema (`RetroSongProfile`) + migração | — |
-| **F2** | `lib/retro/scoring.ts` + testes vitest (elegibilidade, importance, score, era weight) | ✅ testes verdes com casos do spec (Mr. Brightside, Firework) |
-| **F3** | `build-pool.ts` + `GET /api/retro/chart` | ✅ JSON de um chart de Maio/2005 |
-| **F4** | Página + tabela + stats (read-only) | ✅ tela do mockup funcionando |
-| **F5** | Painel lateral + edição (Importance, ajuste, nota, liberação manual) + persistência | ✅ editar e recalcular |
-| **F6** | Publicar como `Parada` + export | ✅ chart retrô no feed |
-| **F7** | Permanência/Pico (simulação) + "sistema aprende" (fase futura) | — |
+| **F1** | Schema (`RetroSongProfile` + `RetroEraOverride`) | ✅ feito (falta `db:push`) |
+| **F2** | `lib/retro/scoring.ts` + testes vitest | ✅ feito — 16/16 verdes |
+| **F3** | `build-pool.ts` + `GET /api/retro/chart` | ✅ feito |
+| **F4** | Página + tabela + stats | ✅ feito |
+| **F5** | Painel lateral + edição (Importance, ajuste, nota) + persistência | ✅ feito |
+| **F6** | Publicar como `Parada` + export | ⬜ a fazer |
+| **F7** | Permanência/Pico (simulação, com rodízio de #1) + "sistema aprende" | ⬜ a fazer |
 
-**Recomendação:** começar por **F2** (motor + testes) antes de qualquer UI. É onde está o risco real, é 100% testável sem Last.fm, e valida as fórmulas do spec com os próprios exemplos que você escreveu.
+**Liberação manual de elegibilidade** (liberar música sem data de lançamento) ficou fora da F5 — mover para F6 junto com a publicação.
+
+**Próximo passo recomendado:** rodar `db:push` e fazer o **smoke test com dados reais do @bruno** antes de F6/F7, para calibrar pesos/limiares.
 
 ---
 

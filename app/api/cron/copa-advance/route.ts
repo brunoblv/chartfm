@@ -2,21 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { syncCopaToSchedule } from "@/lib/copa-day";
 import { probeSpotifyApi } from "@/lib/spotify-server";
+import { authorizedCron } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-function authorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 // Roda de hora em hora e reconcilia cada Copa agendada (com startsAt) ao seu
 // calendário: abre/fecha os lotes no horário definido. Copas sem data marcada
 // ficam no modo manual (botão Avançar Dia) e são ignoradas aqui.
 export async function GET(req: NextRequest) {
-  if (!authorized(req)) {
+  if (!authorizedCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
