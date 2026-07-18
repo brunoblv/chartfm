@@ -6,6 +6,7 @@ import {
   searchSpotifyTracks,
   type SpotifyTrackMetadata,
 } from "@/lib/spotify-server";
+import { normalizeArtistCredit, splitArtistCredits, splitByXSeparator } from "@/lib/song-artist";
 
 export type PublishEntryInput = {
   title: string;
@@ -22,13 +23,51 @@ export type ResolvedPublishSong = {
   albumSpotifyId: string | null;
 };
 
-type Db = PrismaClient | Prisma.TransactionClient;
+export type Db = PrismaClient | Prisma.TransactionClient;
 
 const SONG_SELECT = { id: true, spotifyId: true, albumSpotifyId: true } as const;
 
 function textMatchKey(title: string, artist: string): string {
-  const primaryArtist = (artist.split(",")[0] ?? artist).trim().toLowerCase();
+  const primaryArtist = splitArtistCredits(artist).main.toLowerCase();
   return `${title.trim().toLowerCase()}|||${primaryArtist}`;
+}
+
+/** Existe algum artista ou música já cadastrado com esse nome exato (case-insensitive)? */
+async function knownArtistName(db: Db, name: string): Promise<boolean> {
+  const [artist, song] = await Promise.all([
+    db.artist.findFirst({ where: { name: { equals: name, mode: "insensitive" } }, select: { id: true } }),
+    db.song.findFirst({ where: { artist: { equals: name, mode: "insensitive" } }, select: { id: true } }),
+  ]);
+  return Boolean(artist || song);
+}
+
+/**
+ * Normaliza um crédito de artista bruto para gravar em `Song.artist`,
+ * cuidando do separador "x" (comum em singles hip-hop/trap: "A x B x C") sem
+ * quebrar artistas cujo nome já tem "x" (ex.: Chloe x Halle). `feat.`/`ft.`/
+ * `Featuring`/lista por vírgula são inequívocos e não precisam de checagem —
+ * só "x" é ambíguo por texto puro.
+ *
+ * Regra: só separa por "x" quando o catálogo já conhece a string inteira
+ * como UM artista (nesse caso não separa) OU já conhece o primeiro pedaço
+ * como um artista isolado (nesse caso confirma que é featuring e separa).
+ * Fora esses dois casos, mantém o texto como veio — evita adivinhar.
+ */
+export async function resolveArtistCreditForSave(db: Db, raw: string): Promise<string> {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+
+  const { feats } = splitArtistCredits(trimmed);
+  if (feats.length) return normalizeArtistCredit(trimmed);
+
+  const xParts = splitByXSeparator(trimmed);
+  if (xParts.length < 2) return trimmed;
+
+  if (await knownArtistName(db, trimmed)) return trimmed;
+  if (await knownArtistName(db, xParts[0])) {
+    return `${xParts[0]} feat. ${xParts.slice(1).join(" & ")}`;
+  }
+  return trimmed;
 }
 
 /** Resolve músicas para publicação rápida — só banco, sem chamadas ao Spotify. */
@@ -163,7 +202,7 @@ export async function resolveSongsForFastPublish(
     const sid = e.spotifyId?.trim() || null;
 
     if (sid) {
-      const primaryArtist = (e.artist.split(",")[0] ?? e.artist).trim();
+      const primaryArtist = splitArtistCredits(e.artist).main;
       const existingByName = await db.song.findFirst({
         where: {
           title: { equals: e.title, mode: "insensitive" },
@@ -188,16 +227,17 @@ export async function resolveSongsForFastPublish(
         continue;
       }
 
+      const normalizedArtist = await resolveArtistCreditForSave(db, e.artist);
       const song = await db.song.upsert({
         where: { spotifyId: sid },
         update: {
           title: e.title,
-          artist: e.artist,
+          artist: normalizedArtist,
           ...(e.album ? { album: e.album } : {}),
         },
         create: {
           title: e.title,
-          artist: e.artist,
+          artist: normalizedArtist,
           album: e.album ?? null,
           spotifyId: sid,
         },
@@ -211,7 +251,7 @@ export async function resolveSongsForFastPublish(
       continue;
     }
 
-    const primaryArtist = (e.artist.split(",")[0] ?? e.artist).trim();
+    const primaryArtist = splitArtistCredits(e.artist).main;
     const existingByName = await db.song.findFirst({
       where: {
         title: { equals: e.title, mode: "insensitive" },
@@ -231,7 +271,7 @@ export async function resolveSongsForFastPublish(
     const song = await db.song.create({
       data: {
         title: e.title,
-        artist: e.artist,
+        artist: await resolveArtistCreditForSave(db, e.artist),
         album: e.album ?? null,
       },
       select: SONG_SELECT,
@@ -297,7 +337,7 @@ function normalizeMatchKey(s: string): string {
 }
 
 function primaryArtistName(artist: string): string {
-  return (artist.split(",")[0] ?? artist).split(" feat ")[0]?.trim() || artist.trim();
+  return splitArtistCredits(artist).main || artist.trim();
 }
 
 function titleSearchVariants(title: string): string[] {

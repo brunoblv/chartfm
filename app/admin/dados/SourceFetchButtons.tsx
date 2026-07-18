@@ -17,7 +17,9 @@ const SOURCES: { key: Source; label: string; title: string }[] = [
 const chipStyle: CSSProperties = {
   padding: "3px 8px",
   borderRadius: 999,
-  border: "1px solid var(--divider-strong)",
+  borderWidth: 1,
+  borderStyle: "solid",
+  borderColor: "var(--divider-strong)",
   background: "var(--surface)",
   color: "var(--text-muted)",
   fontSize: 10,

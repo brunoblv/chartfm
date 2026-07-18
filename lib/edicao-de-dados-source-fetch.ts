@@ -11,6 +11,7 @@ import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
 import {
   findRecordingMbidBySpotifyTrackId,
   getCoverArtArchiveUrl,
+  getMusicBrainzAlbumForRecording,
   getMusicBrainzRecordingTags,
   getMusicBrainzReleaseDates,
   searchMusicBrainzAlbumReleaseDate,
@@ -88,6 +89,7 @@ export async function fetchForSong(
       id: true,
       title: true,
       artist: true,
+      album: true,
       spotifyId: true,
       recordingMbid: true,
       genres: true,
@@ -161,6 +163,15 @@ export async function fetchForSong(
           data.genres = rec.tags;
           data.genreSource = "musicbrainz";
           applied.push("gêneros");
+        }
+      }
+
+      if (!song.album?.trim()) {
+        const albumHit = await getMusicBrainzAlbumForRecording(mbid, { title: song.title, artist: song.artist });
+        if (albumHit) {
+          found.push(`álbum: ${albumHit.title}`);
+          data.album = albumHit.title;
+          applied.push("álbum");
         }
       }
 

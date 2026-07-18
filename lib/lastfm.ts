@@ -174,6 +174,42 @@ export async function fetchTracksBetweenUnix(
   return Array.from(grouped.values());
 }
 
+/**
+ * Playcount vitalício (`userplaycount`) de UMA faixa específica via `track.getInfo`.
+ * Usado só como fallback pontual (não em massa) para músicas fora do top N de
+ * `fetchTopTracks` — nunca lança, devolve `null` em qualquer erro/miss.
+ */
+export async function fetchTrackUserPlaycount(
+  track: string,
+  artist: string,
+  usernameOverride?: string,
+): Promise<number | null> {
+  const username = usernameOverride || process.env.LASTFM_USERNAME;
+  const apiKey = process.env.API_KEY;
+  if (!username || !apiKey) return null;
+
+  const params = new URLSearchParams({
+    method: "track.getInfo",
+    track,
+    artist,
+    username,
+    api_key: apiKey,
+    format: "json",
+    autocorrect: "1",
+  });
+
+  try {
+    const res = await fetch(`${BASE_URL}?${params.toString()}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.error) return null;
+    const count = Number(data.track?.userplaycount ?? NaN);
+    return Number.isFinite(count) ? count : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchRecentTracks(days = 30, usernameOverride?: string): Promise<TrackPlays[]> {
   const now = Math.floor(Date.now() / 1000);
   return fetchTracksBetweenUnix(now - days * 86400, now + 1, usernameOverride);

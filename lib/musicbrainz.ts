@@ -356,6 +356,88 @@ export async function searchMusicBrainzAlbumReleaseDate(
   return { mbid: best.id!, releaseDate: parseMusicBrainzDate(best["first-release-date"]) };
 }
 
+type MbReleaseGroupBrief = {
+  id?: string;
+  title?: string;
+  "primary-type"?: string;
+  "secondary-types"?: string[];
+  "first-release-date"?: string;
+};
+
+type MbReleaseWithGroup = {
+  "release-group"?: MbReleaseGroupBrief;
+};
+
+export type MusicBrainzAlbumForRecording = { title: string; mbid: string };
+export type MusicBrainzAlbumHint = { title?: string; artist?: string };
+
+/**
+ * Escolhe o release-group tipo "Album" mais antigo (sem secondary-types, o
+ * que descarta coletâneas/ao vivo/trilha sonora) entre as releases de uma
+ * recording. `release-groups` sozinho como inc NÃO retorna nada na API do
+ * MusicBrainz — o release-group só vem aninhado quando `releases` também é
+ * incluído.
+ */
+function pickBestAlbumGroup(releases: MbReleaseWithGroup[]): MusicBrainzAlbumForRecording | null {
+  const candidates = releases
+    .map((r) => r["release-group"])
+    .filter(
+      (rg): rg is MbReleaseGroupBrief =>
+        !!rg?.id && !!rg.title && rg["primary-type"] === "Album" && !rg["secondary-types"]?.length,
+    );
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => {
+    const da = parseMusicBrainzDate(a["first-release-date"])?.getTime() ?? Infinity;
+    const db = parseMusicBrainzDate(b["first-release-date"])?.getTime() ?? Infinity;
+    return da - db;
+  });
+  const best = candidates[0];
+  return { title: best.title!, mbid: best.id! };
+}
+
+/**
+ * Álbum de estúdio em que a faixa aparece. A recording resolvida para a
+ * música (ex.: radio edit) pode não estar diretamente ligada ao álbum — nesse
+ * caso busca outras recordings do mesmo título/artista (remix, versão do
+ * álbum etc.) até achar uma ligada a um release-group tipo Album.
+ */
+export async function getMusicBrainzAlbumForRecording(
+  mbid: string,
+  hint?: MusicBrainzAlbumHint,
+): Promise<MusicBrainzAlbumForRecording | null> {
+  const id = mbid.trim();
+  if (!id) return null;
+
+  const data = (await mbFetch(
+    `/recording/${encodeURIComponent(id)}?inc=releases+release-groups&fmt=json`,
+  )) as { releases?: MbReleaseWithGroup[] } | null;
+  const direct = pickBestAlbumGroup(data?.releases ?? []);
+  if (direct) return direct;
+
+  const title = hint?.title?.trim();
+  const artist = hint?.artist?.trim();
+  const t = escapeLucene(title ?? "");
+  const a = escapeLucene(artist ?? "");
+  if (!t || !a) return null;
+
+  const searchData = (await mbFetch(
+    `/recording?query=${encodeURIComponent(`recording:"${t}" AND artist:"${a}"`)}&limit=10&fmt=json`,
+  )) as { recordings?: Array<{ id?: string; score?: number }> } | null;
+  const candidates = (searchData?.recordings ?? [])
+    .filter((r) => r.id && r.id !== id)
+    .sort((x, y) => (y.score ?? 0) - (x.score ?? 0))
+    .slice(0, 6);
+
+  for (const cand of candidates) {
+    const relData = (await mbFetch(
+      `/recording/${encodeURIComponent(cand.id!)}?inc=releases+release-groups&fmt=json`,
+    )) as { releases?: MbReleaseWithGroup[] } | null;
+    const hit = pickBestAlbumGroup(relData?.releases ?? []);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 type CoverArtImage = {
   front?: boolean;
   image?: string;

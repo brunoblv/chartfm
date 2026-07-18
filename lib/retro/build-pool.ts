@@ -24,7 +24,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { fetchTopTracks, fetchTracksBetweenUnix, type TopTrack } from "@/lib/lastfm";
+import { fetchTopTracks, fetchTracksBetweenUnix, fetchTrackUserPlaycount, type TopTrack } from "@/lib/lastfm";
 import { normalizeTrackMatchKey } from "@/lib/lastfm-import";
 import type { ReleaseRefSource, RetroMode, RetroSongInput } from "@/lib/retro/scoring";
 
@@ -64,6 +64,8 @@ export interface BuildPoolResult {
   unmatched: number;
   /** Candidatas vindas só do catálogo (sem nenhum scrobble na biblioteca). */
   catalogOnly: number;
+  /** songId de quem entrou pela passada de catálogo (overallPlaycount=0 "cru", sem confirmação do Last.fm). */
+  catalogOnlySongIds: string[];
   songs: RetroSongInput[];
   /** Metadados de exibição por songId (título/artista) para a UI. */
   meta: Map<string, RetroSongMeta>;
@@ -346,12 +348,18 @@ export function buildRetroPoolFromSources(sources: RetroSources, args: BuildPool
   }
 
   // 2) Resto do catálogo: músicas lançadas no mês que o usuário nunca scrobblou
-  //    também são candidatas (podem ser marcadas como "Fora" na UI).
+  //    (ou que scrobblou, mas ficaram fora do top N de `fetchTopTracks`) também
+  //    são candidatas. `overallPlaycount` fica 0 "cru" aqui — `buildRetroPool`
+  //    (rota de 1 mês) pode confirmar com uma consulta pontual ao Last.fm.
+  const catalogOnlySongIds: string[] = [];
   for (const song of sources.songIndex.values()) {
-    if (pushCandidate(song, 0, usesRealPeriodData ? 0 : null)) catalogOnly += 1;
+    if (pushCandidate(song, 0, usesRealPeriodData ? 0 : null)) {
+      catalogOnly += 1;
+      catalogOnlySongIds.push(song.id);
+    }
   }
 
-  return { chartDate, usesRealPeriodData, matched, unmatched, catalogOnly, songs, meta };
+  return { chartDate, usesRealPeriodData, matched, unmatched, catalogOnly, catalogOnlySongIds, songs, meta };
 }
 
 export interface BuildPoolArgs {
@@ -374,7 +382,7 @@ export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResu
   const chartDate = endOfMonthUTC(year, month);
 
   if (!lastfmUser) {
-    return { chartDate, usesRealPeriodData: false, matched: 0, unmatched: 0, catalogOnly: 0, songs: [], meta: new Map() };
+    return { chartDate, usesRealPeriodData: false, matched: 0, unmatched: 0, catalogOnly: 0, catalogOnlySongIds: [], songs: [], meta: new Map() };
   }
 
   const [sources, periodPlays] = await Promise.all([
@@ -383,5 +391,35 @@ export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResu
   ]);
 
   void mode; // gating do modo Histórico é feito em scoring.ts via ctx.mode, não aqui
-  return buildRetroPoolFromSources(sources, { year, month, target, periodPlays });
+  const pool = buildRetroPoolFromSources(sources, { year, month, target, periodPlays });
+  await enrichCatalogOnlyPlaycounts(pool, lastfmUser);
+  return pool;
+}
+
+/**
+ * Confirma o playcount real (vitalício) de quem entrou só pela varredura de
+ * catálogo (fora do top `OVERALL_LIMIT` de `fetchTopTracks`, ou nunca scrobblado
+ * mesmo). Só usado na rota interativa de 1 mês — sequencial, com pausa entre
+ * chamadas e um teto, para não estourar a política de rate-limit do Last.fm.
+ * O backfill em massa (`generate-history.ts`) nunca passa por aqui.
+ */
+const ENRICH_MAX_LOOKUPS = 40;
+const ENRICH_DELAY_MS = 150;
+
+async function enrichCatalogOnlyPlaycounts(pool: BuildPoolResult, lastfmUser: string): Promise<void> {
+  const targets = pool.catalogOnlySongIds.slice(0, ENRICH_MAX_LOOKUPS);
+  if (targets.length === 0) return;
+
+  const byId = new Map(pool.songs.map((s) => [s.songId, s]));
+  for (let i = 0; i < targets.length; i++) {
+    const songId = targets[i];
+    const song = byId.get(songId);
+    const meta = pool.meta.get(songId);
+    if (!song || !meta) continue;
+
+    const realCount = await fetchTrackUserPlaycount(meta.title, meta.artist, lastfmUser);
+    if (realCount != null && realCount > 0) song.overallPlaycount = realCount;
+
+    if (i < targets.length - 1) await new Promise((resolve) => setTimeout(resolve, ENRICH_DELAY_MS));
+  }
 }

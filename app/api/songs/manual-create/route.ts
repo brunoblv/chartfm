@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
+import { resolveArtistCreditForSave } from "@/lib/resolve-publish-songs";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "instrumental_title" }, { status: 400 });
   }
 
-  let artistName = artistInput;
+  let artistName = await resolveArtistCreditForSave(prisma, artistInput);
   let resolvedArtistSpotifyId: string | null = null;
   if (artistSpotifyId) {
     const artist = await prisma.artist.findUnique({

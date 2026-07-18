@@ -20,6 +20,8 @@ import {
   resolveOptionalSpotlightSongId,
   spotlightSongIdFromResolvedEntries,
 } from "@/lib/chart-spotlight";
+import { splitArtistCredits } from "@/lib/song-artist";
+import { resolveArtistCreditForSave } from "@/lib/resolve-publish-songs";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -163,7 +165,8 @@ export async function POST(req: NextRequest) {
     for (const e of entries) {
       const spotifyId = e.spotifyId?.trim() || null;
       if (!spotifyId) {
-        const resolvedArtist = await spotifyArtistByName(e.artist);
+        const mainArtistInput = splitArtistCredits(e.artist).main;
+        const resolvedArtist = await spotifyArtistByName(mainArtistInput);
         if (resolvedArtist) {
           await prisma.artist.upsert({
             where: { spotifyId: resolvedArtist.spotifyId },
@@ -182,11 +185,11 @@ export async function POST(req: NextRequest) {
             },
           });
         }
-        const canonicalArtist = resolvedArtist?.name ?? e.artist;
+        const canonicalArtist = resolvedArtist?.name ?? (await resolveArtistCreditForSave(prisma, e.artist));
         const existingSong = await prisma.song.findFirst({
           where: {
             title: e.title,
-            artist: { in: [...new Set([e.artist, canonicalArtist])] },
+            artist: { in: [...new Set([e.artist, mainArtistInput, canonicalArtist])] },
           },
         });
         const song = existingSong
@@ -212,7 +215,10 @@ export async function POST(req: NextRequest) {
       const metadata = await getSpotifyTrackMetadataById(spotifyId);
       const primaryArtist = metadata?.primaryArtist;
       const albumSpotifyId = metadata?.album.spotifyId ?? null;
-      const mainArtistName = primaryArtist?.name?.trim() || metadata?.artists?.[0]?.name?.trim() || e.artist;
+      const mainArtistName =
+        primaryArtist?.name?.trim() ||
+        metadata?.artists?.[0]?.name?.trim() ||
+        (await resolveArtistCreditForSave(prisma, e.artist));
 
       if (primaryArtist) {
         const profile = await spotifyArtistProfile(primaryArtist.spotifyId);
