@@ -142498,5 +142498,5705 @@
         "weeksOnChart": 2
       }
     ]
+  },
+  {
+    "date": "1999-08-07",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 2,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 3,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 4,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 5,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 5,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 6,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 7,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 8,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 8,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 9,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 9,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 10,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 11,
+        "song": "No More, No Less",
+        "artist": "Collective Soul",
+        "peakPos": 11,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 12,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 12,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 13,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 14,
+        "song": "One",
+        "artist": "Creed",
+        "peakPos": 2,
+        "weeksOnChart": 34
+      },
+      {
+        "rank": 15,
+        "song": "Whatever",
+        "artist": "Godsmack",
+        "peakPos": 7,
+        "weeksOnChart": 42
+      },
+      {
+        "rank": 16,
+        "song": "Heavy",
+        "artist": "Collective Soul",
+        "peakPos": 1,
+        "weeksOnChart": 29
+      },
+      {
+        "rank": 17,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 17,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 18,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 18,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 19,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 20,
+        "song": "My Own Worst Enemy",
+        "artist": "Lit",
+        "peakPos": 6,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 21,
+        "song": "Freak On A Leash",
+        "artist": "Korn",
+        "peakPos": 10,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 22,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 22,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 23,
+        "song": "Shag",
+        "artist": "Sammy Hagar",
+        "peakPos": 22,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 24,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 24,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 25,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 25,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 26,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 26,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 27,
+        "song": "Hammer Of Love",
+        "artist": "Bad Company",
+        "peakPos": 23,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 28,
+        "song": "Mysterious",
+        "artist": "Scorpions",
+        "peakPos": 27,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 29,
+        "song": "Ana's Song (Open Fire)",
+        "artist": "Silverchair",
+        "peakPos": 28,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 30,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 30,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 31,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 30,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 32,
+        "song": "Black Balloon",
+        "artist": "Goo Goo Dolls",
+        "peakPos": 32,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 33,
+        "song": "Die, Die My Darling",
+        "artist": "Metallica",
+        "peakPos": 26,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 34,
+        "song": "Slider",
+        "artist": "Simon Says",
+        "peakPos": 34,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 35,
+        "song": "Under It All",
+        "artist": "New American Shame",
+        "peakPos": 35,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 36,
+        "song": "Go Faster",
+        "artist": "The Black Crowes",
+        "peakPos": 24,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 37,
+        "song": "Meet Virginia",
+        "artist": "Train",
+        "peakPos": 21,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 38,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 38,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 39,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 39,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 40,
+        "song": "Stitches",
+        "artist": "Orgy",
+        "peakPos": 38,
+        "weeksOnChart": 3
+      }
+    ]
+  },
+  {
+    "date": "1999-08-14",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 2,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 3,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 4,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 4,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 5,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 6,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 6,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 7,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 7,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 8,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 9,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 10,
+        "song": "No More, No Less",
+        "artist": "Collective Soul",
+        "peakPos": 10,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 11,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 11,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 12,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 13,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 13,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 14,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 12,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 15,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 16,
+        "song": "One",
+        "artist": "Creed",
+        "peakPos": 2,
+        "weeksOnChart": 35
+      },
+      {
+        "rank": 17,
+        "song": "Heavy",
+        "artist": "Collective Soul",
+        "peakPos": 1,
+        "weeksOnChart": 30
+      },
+      {
+        "rank": 18,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 18,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 19,
+        "song": "Whatever",
+        "artist": "Godsmack",
+        "peakPos": 7,
+        "weeksOnChart": 43
+      },
+      {
+        "rank": 20,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 20,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 21,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 22,
+        "song": "My Own Worst Enemy",
+        "artist": "Lit",
+        "peakPos": 6,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 23,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 23,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 24,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 24,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 25,
+        "song": "Freak On A Leash",
+        "artist": "Korn",
+        "peakPos": 10,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 26,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 26,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 27,
+        "song": "Mysterious",
+        "artist": "Scorpions",
+        "peakPos": 27,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 28,
+        "song": "Shag",
+        "artist": "Sammy Hagar",
+        "peakPos": 22,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 29,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 29,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 30,
+        "song": "Hammer Of Love",
+        "artist": "Bad Company",
+        "peakPos": 23,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 31,
+        "song": "Ana's Song (Open Fire)",
+        "artist": "Silverchair",
+        "peakPos": 28,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 32,
+        "song": "Black Balloon",
+        "artist": "Goo Goo Dolls",
+        "peakPos": 32,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 33,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 33,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 34,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 34,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 35,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 35,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 36,
+        "song": "Slider",
+        "artist": "Simon Says",
+        "peakPos": 34,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 37,
+        "song": "Die, Die My Darling",
+        "artist": "Metallica",
+        "peakPos": 26,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 38,
+        "song": "Teaser",
+        "artist": "Motley Crue",
+        "peakPos": 38,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 39,
+        "song": "Hero",
+        "artist": "The Verve Pipe",
+        "peakPos": 39,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 40,
+        "song": "Stitches",
+        "artist": "Orgy",
+        "peakPos": 38,
+        "weeksOnChart": 4
+      }
+    ]
+  },
+  {
+    "date": "1999-08-21",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 2,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 3,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 4,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 4,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 5,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 5,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 6,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 7,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 6,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 8,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 7,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 9,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 9,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 10,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 10,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 11,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 12,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 27
+      },
+      {
+        "rank": 13,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 14,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 15,
+        "song": "One",
+        "artist": "Creed",
+        "peakPos": 2,
+        "weeksOnChart": 36
+      },
+      {
+        "rank": 16,
+        "song": "No More, No Less",
+        "artist": "Collective Soul",
+        "peakPos": 10,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 17,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 17,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 18,
+        "song": "Heavy",
+        "artist": "Collective Soul",
+        "peakPos": 1,
+        "weeksOnChart": 31
+      },
+      {
+        "rank": 19,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 19,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 20,
+        "song": "Whatever",
+        "artist": "Godsmack",
+        "peakPos": 7,
+        "weeksOnChart": 44
+      },
+      {
+        "rank": 21,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 21,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 22,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 22,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 23,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 24,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 24,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 25,
+        "song": "My Own Worst Enemy",
+        "artist": "Lit",
+        "peakPos": 6,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 26,
+        "song": "Mysterious",
+        "artist": "Scorpions",
+        "peakPos": 26,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 27,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 27,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 28,
+        "song": "Black Balloon",
+        "artist": "Goo Goo Dolls",
+        "peakPos": 28,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 29,
+        "song": "Ana's Song (Open Fire)",
+        "artist": "Silverchair",
+        "peakPos": 28,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 30,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 30,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 31,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 31,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 32,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 32,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 33,
+        "song": "Shag",
+        "artist": "Sammy Hagar",
+        "peakPos": 22,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 34,
+        "song": "Hammer Of Love",
+        "artist": "Bad Company",
+        "peakPos": 23,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 35,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 35,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 36,
+        "song": "Slider",
+        "artist": "Simon Says",
+        "peakPos": 34,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 37,
+        "song": "Enter My Mind",
+        "artist": "Drain STH",
+        "peakPos": 37,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 38,
+        "song": "Die, Die My Darling",
+        "artist": "Metallica",
+        "peakPos": 26,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 39,
+        "song": "Teaser",
+        "artist": "Motley Crue",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 40,
+        "song": "The Boys Are Back In Town",
+        "artist": "Everclear",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-08-28",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 2,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 3,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 4,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 5,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 6,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 7,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 7,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 8,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 6,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 9,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 9,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 10,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 9,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 11,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 11,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 12,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 13,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 28
+      },
+      {
+        "rank": 14,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 14,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 15,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 16,
+        "song": "No More, No Less",
+        "artist": "Collective Soul",
+        "peakPos": 10,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 17,
+        "song": "One",
+        "artist": "Creed",
+        "peakPos": 2,
+        "weeksOnChart": 37
+      },
+      {
+        "rank": 18,
+        "song": "Heavy",
+        "artist": "Collective Soul",
+        "peakPos": 1,
+        "weeksOnChart": 32
+      },
+      {
+        "rank": 19,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 20,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 20,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 21,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 21,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 22,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 22,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 23,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 24,
+        "song": "My Own Worst Enemy",
+        "artist": "Lit",
+        "peakPos": 6,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 25,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 25,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 26,
+        "song": "Mysterious",
+        "artist": "Scorpions",
+        "peakPos": 26,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 27,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 27,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 28,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 28,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 29,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 29,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 30,
+        "song": "Ana's Song (Open Fire)",
+        "artist": "Silverchair",
+        "peakPos": 28,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 31,
+        "song": "Black Balloon",
+        "artist": "Goo Goo Dolls",
+        "peakPos": 28,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 32,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 32,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 33,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 33,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 34,
+        "song": "Enter My Mind",
+        "artist": "Drain STH",
+        "peakPos": 34,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 35,
+        "song": "Teaser",
+        "artist": "Motley Crue",
+        "peakPos": 35,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 36,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 36,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 37,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 37,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 38,
+        "song": "Hero",
+        "artist": "The Verve Pipe",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 39,
+        "song": "Over The Edge",
+        "artist": "Ratt",
+        "peakPos": 39,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 40,
+        "song": "The Boys Are Back In Town",
+        "artist": "Everclear",
+        "peakPos": 40,
+        "weeksOnChart": 2
+      }
+    ]
+  },
+  {
+    "date": "1999-09-04",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 2,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 3,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 4,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 5,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 6,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 7,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 8,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 8,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 9,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 10,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 6,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 11,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 12,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 12,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 13,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 11,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 14,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 14,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 15,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 29
+      },
+      {
+        "rank": 16,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 17,
+        "song": "One",
+        "artist": "Creed",
+        "peakPos": 2,
+        "weeksOnChart": 38
+      },
+      {
+        "rank": 18,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 18,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 19,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 20,
+        "song": "Heavy",
+        "artist": "Collective Soul",
+        "peakPos": 1,
+        "weeksOnChart": 33
+      },
+      {
+        "rank": 21,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 21,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 22,
+        "song": "No More, No Less",
+        "artist": "Collective Soul",
+        "peakPos": 10,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 23,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 24,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 25,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 25,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 26,
+        "song": "My Own Worst Enemy",
+        "artist": "Lit",
+        "peakPos": 6,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 27,
+        "song": "Mysterious",
+        "artist": "Scorpions",
+        "peakPos": 26,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 28,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 28,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 29,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 29,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 30,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 27,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 31,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 31,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 32,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 32,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 33,
+        "song": "Black Balloon",
+        "artist": "Goo Goo Dolls",
+        "peakPos": 28,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 34,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 34,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 35,
+        "song": "Ana's Song (Open Fire)",
+        "artist": "Silverchair",
+        "peakPos": 28,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 36,
+        "song": "Over The Edge",
+        "artist": "Ratt",
+        "peakPos": 36,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 37,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 36,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 38,
+        "song": "Teaser",
+        "artist": "Motley Crue",
+        "peakPos": 35,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 39,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 39,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 40,
+        "song": "Enter My Mind",
+        "artist": "Drain STH",
+        "peakPos": 34,
+        "weeksOnChart": 4
+      }
+    ]
+  },
+  {
+    "date": "1999-09-11",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 2,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 3,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 3,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 4,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 5,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 6,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 6,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 7,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 7,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 8,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 9,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 10,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 10,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 11,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 8,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 12,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 12,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 13,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 14,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 15,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 16,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 17,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 30
+      },
+      {
+        "rank": 18,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 18,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 19,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 6,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 20,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 20,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 21,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 21,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 22,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 22,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 23,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 24,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 24,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 25,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 26,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 26,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 27,
+        "song": "My Own Worst Enemy",
+        "artist": "Lit",
+        "peakPos": 6,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 28,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 27,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 29,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 29,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 30,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 31,
+        "song": "Mysterious",
+        "artist": "Scorpions",
+        "peakPos": 26,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 32,
+        "song": "No More, No Less",
+        "artist": "Collective Soul",
+        "peakPos": 10,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 33,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 33,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 34,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 34,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 35,
+        "song": "Black Balloon",
+        "artist": "Goo Goo Dolls",
+        "peakPos": 28,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 36,
+        "song": "Over The Edge",
+        "artist": "Ratt",
+        "peakPos": 36,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 37,
+        "song": "Ana's Song (Open Fire)",
+        "artist": "Silverchair",
+        "peakPos": 28,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 38,
+        "song": "Breakdown",
+        "artist": "Queensryche",
+        "peakPos": 38,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 39,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 39,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 40,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-09-18",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 2,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 2,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 3,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 4,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 4,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 5,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 6,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 6,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 7,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 8,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 9,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 8,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 10,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 11,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 10,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 12,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 13,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 14,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 15,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 15,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 16,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 31
+      },
+      {
+        "rank": 17,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 17,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 18,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 18,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 19,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 20,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 20,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 21,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 22,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 22,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 23,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 23,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 24,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 25,
+        "song": "My Own Worst Enemy",
+        "artist": "Lit",
+        "peakPos": 6,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 26,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 26,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 27,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 27,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 28,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 29,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 29,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 30,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 30,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 31,
+        "song": "Breakdown",
+        "artist": "Queensryche",
+        "peakPos": 31,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 32,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 6,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 33,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 34,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 34,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 35,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 34,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 36,
+        "song": "Mysterious",
+        "artist": "Scorpions",
+        "peakPos": 26,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 37,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 37,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 38,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 39,
+        "song": "No More, No Less",
+        "artist": "Collective Soul",
+        "peakPos": 10,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 40,
+        "song": "Cat Scratch Fever",
+        "artist": "Pantera",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-09-25",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 2,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 3,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 4,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 4,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 5,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 6,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 7,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 8,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 8,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 9,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 10,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 11,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 8,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 12,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 13,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 13,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 14,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 14,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 15,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 27
+      },
+      {
+        "rank": 16,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 16,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 17,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 18,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 32
+      },
+      {
+        "rank": 19,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 17,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 20,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 20,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 21,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 22,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 22,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 23,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 23,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 24,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 23,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 25,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 25,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 26,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 27,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 26,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 28,
+        "song": "Bawitdaba",
+        "artist": "Kid Rock",
+        "peakPos": 11,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 29,
+        "song": "Breakdown",
+        "artist": "Queensryche",
+        "peakPos": 29,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 30,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 30,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 31,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 32,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 30,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 33,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 33,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 34,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 34,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 35,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 35,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 36,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 36,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 37,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 37,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 38,
+        "song": "Zip-Lock",
+        "artist": "Lit",
+        "peakPos": 38,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 39,
+        "song": "Last Kiss",
+        "artist": "Pearl Jam",
+        "peakPos": 5,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 40,
+        "song": "Crush 'Em",
+        "artist": "Megadeth",
+        "peakPos": 6,
+        "weeksOnChart": 12
+      }
+    ]
+  },
+  {
+    "date": "1999-10-02",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 2,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 3,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 4,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 4,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 5,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 6,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 7,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 7,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 8,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 9,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 8,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 10,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 11,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 12,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 12,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 13,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 13,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 14,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 8,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 15,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 15,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 16,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 17,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 17,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 18,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 18,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 19,
+        "song": "Why I'm Here",
+        "artist": "Oleander",
+        "peakPos": 3,
+        "weeksOnChart": 33
+      },
+      {
+        "rank": 20,
+        "song": "Lit Up",
+        "artist": "Buckcherry",
+        "peakPos": 1,
+        "weeksOnChart": 28
+      },
+      {
+        "rank": 21,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 17,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 22,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 22,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 23,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 24,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 24,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 25,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 26,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 26,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 27,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 27,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 28,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 23,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 29,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 25,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 30,
+        "song": "Breakdown",
+        "artist": "Queensryche",
+        "peakPos": 29,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 31,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 30,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 32,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 32,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 33,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 26,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 34,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 34,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 35,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 35,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 36,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 35,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 37,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 34,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 38,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 39,
+        "song": "What's My Age Again?",
+        "artist": "blink-182",
+        "peakPos": 19,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 40,
+        "song": "Zip-Lock",
+        "artist": "Lit",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      }
+    ]
+  },
+  {
+    "date": "1999-10-09",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 2,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 3,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 3,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 4,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 5,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 6,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 6,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 7,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 7,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 8,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 9,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 9,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 10,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 11,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 12,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 13,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 8,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 14,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 15,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 15,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 16,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 13,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 17,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 17,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 18,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 18,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 19,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 19,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 20,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 21,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 21,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 22,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 22,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 23,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 23,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 24,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 25,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 25,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 26,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 26,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 27,
+        "song": "Breakdown",
+        "artist": "Queensryche",
+        "peakPos": 27,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 28,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 25,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 29,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 8,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 30,
+        "song": "Swingin'",
+        "artist": "Tom Petty And The Heartbreakers",
+        "peakPos": 17,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 31,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 31,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 32,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 33,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 30,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 34,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 34,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 35,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 26,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 36,
+        "song": "Zip-Lock",
+        "artist": "Lit",
+        "peakPos": 36,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 37,
+        "song": "Tremble For My Beloved",
+        "artist": "Collective Soul",
+        "peakPos": 37,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 38,
+        "song": "Promises",
+        "artist": "Def Leppard",
+        "peakPos": 1,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 39,
+        "song": "Come Original",
+        "artist": "311",
+        "peakPos": 39,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 40,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-10-16",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 2,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 3,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 4,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 4,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 5,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 6,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 6,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 7,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 8,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 8,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 9,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 10,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 11,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 12,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 12,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 13,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 14,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 15,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 16,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 17,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 17,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 18,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 18,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 19,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 20,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 13,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 21,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 8,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 22,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 22,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 23,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 22,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 24,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 25,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 23,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 26,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 26,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 27,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 27,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 28,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 28,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 29,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 29,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 30,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 31,
+        "song": "Breakdown",
+        "artist": "Queensryche",
+        "peakPos": 27,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 32,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 32,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 33,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 25,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 34,
+        "song": "Zip-Lock",
+        "artist": "Lit",
+        "peakPos": 34,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 35,
+        "song": "Shock The Monkey",
+        "artist": "Coal Chamber FeaturingOzzy Osbourne",
+        "peakPos": 35,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 36,
+        "song": "Rollin' Stoned",
+        "artist": "Great White",
+        "peakPos": 8,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 37,
+        "song": "Get Born Again",
+        "artist": "Alice in Chains",
+        "peakPos": 4,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 38,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 39,
+        "song": "Tremble For My Beloved",
+        "artist": "Collective Soul",
+        "peakPos": 37,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 40,
+        "song": "Attention Please",
+        "artist": "Caroline's Spine",
+        "peakPos": 30,
+        "weeksOnChart": 8
+      }
+    ]
+  },
+  {
+    "date": "1999-10-23",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 2,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 3,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 4,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 4,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 5,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 6,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 6,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 7,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 8,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 9,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 9,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 10,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 11,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 12,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 13,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 14,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 15,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 15,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 16,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 17,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 17,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 18,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 18,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 19,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 19,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 20,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 21,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 21,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 22,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 22,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 23,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 22,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 24,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 25,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 13,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 26,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 27,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 26,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 28,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 8,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 29,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 28,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 30,
+        "song": "Shock The Monkey",
+        "artist": "Coal Chamber FeaturingOzzy Osbourne",
+        "peakPos": 30,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 31,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 31,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 32,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 33,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 33,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 34,
+        "song": "Zip-Lock",
+        "artist": "Lit",
+        "peakPos": 34,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 35,
+        "song": "Tremble For My Beloved",
+        "artist": "Collective Soul",
+        "peakPos": 35,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 36,
+        "song": "Tattooed Bruise (Here And There)",
+        "artist": "Doubledrive",
+        "peakPos": 32,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 37,
+        "song": "Breakdown",
+        "artist": "Queensryche",
+        "peakPos": 27,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 38,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 38,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 39,
+        "song": "For The Movies",
+        "artist": "Buckcherry",
+        "peakPos": 25,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 40,
+        "song": "Everything Dies",
+        "artist": "Type O Negative",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-10-30",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 2,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 3,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 4,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 4,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 5,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 4,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 6,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 7,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 8,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 8,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 9,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 10,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 11,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 12,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 13,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 14,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 15,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 16,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 16,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 17,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 17,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 18,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 18,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 19,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 19,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 20,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 19,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 21,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 21,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 22,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 23,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 24,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 24,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 25,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 25,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 26,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 26,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 27,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 27,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 28,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 29,
+        "song": "Shock The Monkey",
+        "artist": "Coal Chamber FeaturingOzzy Osbourne",
+        "peakPos": 29,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 30,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 30,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 31,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 13,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 32,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 33,
+        "song": "Welcome To The Fold",
+        "artist": "Filter",
+        "peakPos": 8,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 34,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 35,
+        "song": "Oh My God",
+        "artist": "Guns N' Roses",
+        "peakPos": 35,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 36,
+        "song": "Tremble For My Beloved",
+        "artist": "Collective Soul",
+        "peakPos": 35,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 37,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 37,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 38,
+        "song": "Zip-Lock",
+        "artist": "Lit",
+        "peakPos": 34,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 39,
+        "song": "Everything Dies",
+        "artist": "Type O Negative",
+        "peakPos": 39,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 40,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-11-06",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 2,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 3,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 3,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 4,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 4,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 5,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 6,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 7,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 7,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 8,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 27
+      },
+      {
+        "rank": 9,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 10,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 11,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 12,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 12,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 13,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 14,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 15,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 16,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 16,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 17,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 17,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 18,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 18,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 19,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 16,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 20,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 20,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 21,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 22,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 21,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 23,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 23,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 24,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 25,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 24,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 26,
+        "song": "Shock The Monkey",
+        "artist": "Coal Chamber FeaturingOzzy Osbourne",
+        "peakPos": 26,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 27,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 26,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 28,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 28,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 29,
+        "song": "Oh My God",
+        "artist": "Guns N' Roses",
+        "peakPos": 29,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 30,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 31,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 32,
+        "song": "Take A Picture",
+        "artist": "Filter",
+        "peakPos": 32,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 33,
+        "song": "You Wanted More",
+        "artist": "Tonic",
+        "peakPos": 3,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 34,
+        "song": "Workin'",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 13,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 35,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 35,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 36,
+        "song": "American Woman",
+        "artist": "Lenny Kravitz",
+        "peakPos": 3,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 37,
+        "song": "Everything Dies",
+        "artist": "Type O Negative",
+        "peakPos": 37,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 38,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 39,
+        "song": "Tremble For My Beloved",
+        "artist": "Collective Soul",
+        "peakPos": 35,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 40,
+        "song": "Simon Says",
+        "artist": "Drain STH",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-11-13",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 2,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 3,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 3,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 4,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 4,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 5,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 6,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 6,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 7,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 8,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 28
+      },
+      {
+        "rank": 9,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 10,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 10,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 11,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 12,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 12,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 13,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 14,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 15,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 15,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 16,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 16,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 17,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 17,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 18,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 19,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 20,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 20,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 21,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 22,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 16,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 23,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 21,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 24,
+        "song": "Take A Picture",
+        "artist": "Filter",
+        "peakPos": 24,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 25,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 26,
+        "song": "Oh My God",
+        "artist": "Guns N' Roses",
+        "peakPos": 26,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 27,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 27,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 28,
+        "song": "Shock The Monkey",
+        "artist": "Coal Chamber FeaturingOzzy Osbourne",
+        "peakPos": 26,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 29,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 24,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 30,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 31,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 32,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 32,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 33,
+        "song": "Insomnia",
+        "artist": "Megadeth",
+        "peakPos": 26,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 34,
+        "song": "Falling Away From Me",
+        "artist": "Korn",
+        "peakPos": 34,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 35,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 35,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 36,
+        "song": "Knock Down Walls",
+        "artist": "Tonic",
+        "peakPos": 36,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 37,
+        "song": "Simon Says",
+        "artist": "Drain STH",
+        "peakPos": 37,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 38,
+        "song": "Everything Dies",
+        "artist": "Type O Negative",
+        "peakPos": 37,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 39,
+        "song": "Hanginaround",
+        "artist": "Counting Crows",
+        "peakPos": 39,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 40,
+        "song": "True Friends",
+        "artist": "Shannon Curfman",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-11-20",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 2,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 3,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 3,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 4,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 4,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 5,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 6,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 6,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 7,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 8,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 29
+      },
+      {
+        "rank": 9,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 9,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 10,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 10,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 11,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 11,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 12,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 12,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 13,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 10,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 14,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 15,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 16,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 17,
+        "song": "Falling Away From Me",
+        "artist": "Korn",
+        "peakPos": 17,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 18,
+        "song": "Take A Picture",
+        "artist": "Filter",
+        "peakPos": 18,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 19,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 20,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 20,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 21,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 22,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 23,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 24,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 21,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 25,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 25,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 26,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 16,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 27,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 28,
+        "song": "Shock The Monkey",
+        "artist": "Coal Chamber FeaturingOzzy Osbourne",
+        "peakPos": 26,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 29,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 30,
+        "song": "Voodoo",
+        "artist": "Godsmack",
+        "peakPos": 30,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 31,
+        "song": "I Walk Alone",
+        "artist": "Oleander",
+        "peakPos": 24,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 32,
+        "song": "Oh My God",
+        "artist": "Guns N' Roses",
+        "peakPos": 26,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 33,
+        "song": "Knock Down Walls",
+        "artist": "Tonic",
+        "peakPos": 33,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 34,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 32,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 35,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 36,
+        "song": "True Friends",
+        "artist": "Shannon Curfman",
+        "peakPos": 36,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 37,
+        "song": "Simon Says",
+        "artist": "Drain STH",
+        "peakPos": 37,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 38,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 35,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 39,
+        "song": "Superbeast",
+        "artist": "Rob Zombie",
+        "peakPos": 26,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 40,
+        "song": "Sugar",
+        "artist": "System of a Down",
+        "peakPos": 40,
+        "weeksOnChart": 1
+      }
+    ]
+  },
+  {
+    "date": "1999-11-27",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 2,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 2,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 3,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 3,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 4,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 5,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 6,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 6,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 7,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 30
+      },
+      {
+        "rank": 8,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 8,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 9,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 9,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 10,
+        "song": "Take A Picture",
+        "artist": "Filter",
+        "peakPos": 10,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 11,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 10,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 12,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 13,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 11,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 14,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 12,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 15,
+        "song": "Falling Away From Me",
+        "artist": "Korn",
+        "peakPos": 15,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 16,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 16,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 17,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 18,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 19,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 20,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 21,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 22,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 22,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 23,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 24,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 25,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 25,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 26,
+        "song": "Voodoo",
+        "artist": "Godsmack",
+        "peakPos": 26,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 27,
+        "song": "Knock Down Walls",
+        "artist": "Tonic",
+        "peakPos": 27,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 28,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 21,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 29,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 21
+      },
+      {
+        "rank": 30,
+        "song": "Oh My God",
+        "artist": "Guns N' Roses",
+        "peakPos": 26,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 31,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 25
+      },
+      {
+        "rank": 32,
+        "song": "Shock The Monkey",
+        "artist": "Coal Chamber FeaturingOzzy Osbourne",
+        "peakPos": 26,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 33,
+        "song": "Preacher Man",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 33,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 34,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 34,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 35,
+        "song": "Nookie",
+        "artist": "Limp Bizkit",
+        "peakPos": 6,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 36,
+        "song": "True Friends",
+        "artist": "Shannon Curfman",
+        "peakPos": 36,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 37,
+        "song": "Simon Says",
+        "artist": "Drain STH",
+        "peakPos": 37,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 38,
+        "song": "Sugar",
+        "artist": "System of a Down",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 39,
+        "song": "Hanginaround",
+        "artist": "Counting Crows",
+        "peakPos": 39,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 40,
+        "song": "One Man Army",
+        "artist": "Our Lady Peace",
+        "peakPos": 16,
+        "weeksOnChart": 11
+      }
+    ]
+  },
+  {
+    "date": "1999-12-04",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 2,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 2,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 3,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 3,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 4,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 5,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 5,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 6,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 7,
+        "song": "Take A Picture",
+        "artist": "Filter",
+        "peakPos": 7,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 8,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 8,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 9,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 31
+      },
+      {
+        "rank": 10,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 8,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 11,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 10,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 12,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 12,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 13,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 11,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 14,
+        "song": "Falling Away From Me",
+        "artist": "Korn",
+        "peakPos": 14,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 15,
+        "song": "No Leaf Clover",
+        "artist": "Metallica",
+        "peakPos": 15,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 16,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 17,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 16,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 18,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 19,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 20,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 27
+      },
+      {
+        "rank": 21,
+        "song": "Voodoo",
+        "artist": "Godsmack",
+        "peakPos": 21,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 22,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 23,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 23,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 24,
+        "song": "Knock Down Walls",
+        "artist": "Tonic",
+        "peakPos": 24,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 25,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 22,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 26,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 27,
+        "song": "Preacher Man",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 27,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 28,
+        "song": "Can't Change Me",
+        "artist": "Chris Cornell",
+        "peakPos": 5,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 29,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 30,
+        "song": "Simon Says",
+        "artist": "Drain STH",
+        "peakPos": 30,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 31,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 22
+      },
+      {
+        "rank": 32,
+        "song": "The Kids Aren't Alright",
+        "artist": "The Offspring",
+        "peakPos": 11,
+        "weeksOnChart": 26
+      },
+      {
+        "rank": 33,
+        "song": "True Friends",
+        "artist": "Shannon Curfman",
+        "peakPos": 33,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 34,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 34,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 35,
+        "song": "Sugar",
+        "artist": "System of a Down",
+        "peakPos": 35,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 36,
+        "song": "Pardon Me",
+        "artist": "Incubus",
+        "peakPos": 36,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 37,
+        "song": "Breadline",
+        "artist": "Megadeth",
+        "peakPos": 37,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 38,
+        "song": "Dead Again",
+        "artist": "Buckcherry",
+        "peakPos": 38,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 39,
+        "song": "Hanginaround",
+        "artist": "Counting Crows",
+        "peakPos": 39,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 40,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 21,
+        "weeksOnChart": 12
+      }
+    ]
+  },
+  {
+    "date": "1999-12-11",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 2,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 2,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 3,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 3,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 4,
+        "song": "No Leaf Clover",
+        "artist": "Metallica",
+        "peakPos": 4,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 5,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 6,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 5,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 7,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 8,
+        "song": "Take A Picture",
+        "artist": "Filter",
+        "peakPos": 7,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 9,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 8,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 10,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 8,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 11,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 11,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 12,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 32
+      },
+      {
+        "rank": 13,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 10,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 14,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 12,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 15,
+        "song": "Falling Away From Me",
+        "artist": "Korn",
+        "peakPos": 14,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 16,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 16,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 17,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 18,
+        "song": "Voodoo",
+        "artist": "Godsmack",
+        "peakPos": 18,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 19,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 28
+      },
+      {
+        "rank": 20,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 18
+      },
+      {
+        "rank": 21,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 21,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 22,
+        "song": "Knock Down Walls",
+        "artist": "Tonic",
+        "peakPos": 22,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 23,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 22,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 24,
+        "song": "Breadline",
+        "artist": "Megadeth",
+        "peakPos": 24,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 25,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 26,
+        "song": "Preacher Man",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 26,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 27,
+        "song": "Simon Says",
+        "artist": "Drain STH",
+        "peakPos": 27,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 28,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 14
+      },
+      {
+        "rank": 29,
+        "song": "Sugar",
+        "artist": "System of a Down",
+        "peakPos": 29,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 30,
+        "song": "True Friends",
+        "artist": "Shannon Curfman",
+        "peakPos": 30,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 31,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 23
+      },
+      {
+        "rank": 32,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 33,
+        "song": "Pardon Me",
+        "artist": "Incubus",
+        "peakPos": 33,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 34,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 34,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 35,
+        "song": "Fearless Boogie",
+        "artist": "ZZ Top",
+        "peakPos": 13,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 36,
+        "song": "Open Your Eyes",
+        "artist": "Guano Apes",
+        "peakPos": 36,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 37,
+        "song": "We're In This Together",
+        "artist": "Nine Inch Nails",
+        "peakPos": 21,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 38,
+        "song": "Dead Again",
+        "artist": "Buckcherry",
+        "peakPos": 38,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 39,
+        "song": "The Thanksgiving Song",
+        "artist": "Adam Sandler",
+        "peakPos": 29,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 40,
+        "song": "Hanginaround",
+        "artist": "Counting Crows",
+        "peakPos": 39,
+        "weeksOnChart": 4
+      }
+    ]
+  },
+  {
+    "date": "1999-12-18",
+    "data": [
+      {
+        "rank": 1,
+        "song": "Higher",
+        "artist": "Creed",
+        "peakPos": 1,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 2,
+        "song": "Learn To Fly",
+        "artist": "Foo Fighters",
+        "peakPos": 2,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 3,
+        "song": "No Leaf Clover",
+        "artist": "Metallica",
+        "peakPos": 3,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 4,
+        "song": "The Chemicals Between Us",
+        "artist": "Bush",
+        "peakPos": 3,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 5,
+        "song": "The Dolphin's Cry",
+        "artist": "Live",
+        "peakPos": 2,
+        "weeksOnChart": 16
+      },
+      {
+        "rank": 6,
+        "song": "Take A Picture",
+        "artist": "Filter",
+        "peakPos": 6,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 7,
+        "song": "In 2 Deep",
+        "artist": "TheKenny Wayne ShepherdBand",
+        "peakPos": 5,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 8,
+        "song": "Down",
+        "artist": "Stone Temple Pilots",
+        "peakPos": 5,
+        "weeksOnChart": 12
+      },
+      {
+        "rank": 9,
+        "song": "Put Your Lights On",
+        "artist": "SantanaFeaturingEverlast",
+        "peakPos": 8,
+        "weeksOnChart": 13
+      },
+      {
+        "rank": 10,
+        "song": "Re-arranged",
+        "artist": "Limp Bizkit",
+        "peakPos": 8,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 11,
+        "song": "Falling Away From Me",
+        "artist": "Korn",
+        "peakPos": 11,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 12,
+        "song": "Mudshovel",
+        "artist": "Staind",
+        "peakPos": 10,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 13,
+        "song": "Guerrilla Radio",
+        "artist": "Rage Against the Machine",
+        "peakPos": 12,
+        "weeksOnChart": 10
+      },
+      {
+        "rank": 14,
+        "song": "Keep Away",
+        "artist": "Godsmack",
+        "peakPos": 5,
+        "weeksOnChart": 33
+      },
+      {
+        "rank": 15,
+        "song": "Fear The Voices",
+        "artist": "Alice in Chains",
+        "peakPos": 11,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 16,
+        "song": "Breadline",
+        "artist": "Megadeth",
+        "peakPos": 16,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 17,
+        "song": "Around The World",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 16,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 18,
+        "song": "Voodoo",
+        "artist": "Godsmack",
+        "peakPos": 18,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 19,
+        "song": "Scar Tissue",
+        "artist": "Red Hot Chili Peppers",
+        "peakPos": 1,
+        "weeksOnChart": 29
+      },
+      {
+        "rank": 20,
+        "song": "Push It",
+        "artist": "Static-X",
+        "peakPos": 20,
+        "weeksOnChart": 11
+      },
+      {
+        "rank": 21,
+        "song": "Knock Down Walls",
+        "artist": "Tonic",
+        "peakPos": 21,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 22,
+        "song": "Enemy",
+        "artist": "Days Of The New",
+        "peakPos": 2,
+        "weeksOnChart": 20
+      },
+      {
+        "rank": 23,
+        "song": "She's Got Issues",
+        "artist": "The Offspring",
+        "peakPos": 21,
+        "weeksOnChart": 9
+      },
+      {
+        "rank": 24,
+        "song": "Denial",
+        "artist": "Sevendust",
+        "peakPos": 14,
+        "weeksOnChart": 19
+      },
+      {
+        "rank": 25,
+        "song": "Simon Says",
+        "artist": "Drain STH",
+        "peakPos": 25,
+        "weeksOnChart": 7
+      },
+      {
+        "rank": 26,
+        "song": "Preacher Man",
+        "artist": "Lynyrd Skynyrd",
+        "peakPos": 26,
+        "weeksOnChart": 4
+      },
+      {
+        "rank": 27,
+        "song": "Smooth",
+        "artist": "SantanaFeaturingRob Thomas",
+        "peakPos": 10,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 28,
+        "song": "Sugar",
+        "artist": "System of a Down",
+        "peakPos": 28,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 29,
+        "song": "True Friends",
+        "artist": "Shannon Curfman",
+        "peakPos": 29,
+        "weeksOnChart": 6
+      },
+      {
+        "rank": 30,
+        "song": "Pardon Me",
+        "artist": "Incubus",
+        "peakPos": 30,
+        "weeksOnChart": 3
+      },
+      {
+        "rank": 31,
+        "song": "Paper Sun",
+        "artist": "Def Leppard",
+        "peakPos": 11,
+        "weeksOnChart": 15
+      },
+      {
+        "rank": 32,
+        "song": "Nobody's Real",
+        "artist": "Powerman 5000",
+        "peakPos": 32,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 33,
+        "song": "Open Your Eyes",
+        "artist": "Guano Apes",
+        "peakPos": 33,
+        "weeksOnChart": 2
+      },
+      {
+        "rank": 34,
+        "song": "Life Jacket",
+        "artist": "Simon Says",
+        "peakPos": 34,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 35,
+        "song": "When Worlds Collide",
+        "artist": "Powerman 5000",
+        "peakPos": 16,
+        "weeksOnChart": 24
+      },
+      {
+        "rank": 36,
+        "song": "Anything",
+        "artist": "Third Eye Blind",
+        "peakPos": 36,
+        "weeksOnChart": 1
+      },
+      {
+        "rank": 37,
+        "song": "No Tears Left",
+        "artist": "Crosby, Stills, Nash & Young",
+        "peakPos": 34,
+        "weeksOnChart": 8
+      },
+      {
+        "rank": 38,
+        "song": "Hanginaround",
+        "artist": "Counting Crows",
+        "peakPos": 38,
+        "weeksOnChart": 5
+      },
+      {
+        "rank": 39,
+        "song": "Cowboy",
+        "artist": "Kid Rock",
+        "peakPos": 10,
+        "weeksOnChart": 17
+      },
+      {
+        "rank": 40,
+        "song": "Dead Again",
+        "artist": "Buckcherry",
+        "peakPos": 38,
+        "weeksOnChart": 3
+      }
+    ]
   }
 ]
