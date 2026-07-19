@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    // Next 16 exige allowlist explícita pra otimizar imagem local com query string.
+    // Uploads (avatar, capa, logo de parada, clipe) usam `?v=timestamp` pra cache-busting,
+    // e sem isso o next/image lança exceção no SSR — derrubava a página inteira (500).
+    localPatterns: [{ pathname: "/api/uploads/**", search: "*" }],
     remotePatterns: [
       { hostname: "lh3.googleusercontent.com" },
       { hostname: "i.scdn.co" },
