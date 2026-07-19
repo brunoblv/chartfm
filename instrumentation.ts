@@ -22,7 +22,14 @@ function extractLogId(request: unknown): string | null {
 }
 
 export async function register() {
-  // nada a inicializar; register() é exigido pelo Next para habilitar o hook abaixo.
+  // Hosts com AAAA (ex.: musicbrainz.org) fazem o fetch nativo tentar IPv6
+  // primeiro; em redes com IPv6 mal configurado (comum em fibra residencial no
+  // Brasil) a conexão trava e o fetch quebra com "fetch failed", sem fallback
+  // pro IPv4. Força IPv4 primeiro pra evitar isso.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const dns = await import("node:dns");
+    dns.setDefaultResultOrder("ipv4first");
+  }
 }
 
 export async function onRequestError(
