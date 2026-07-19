@@ -704,8 +704,10 @@ async function searchSpotifyTracksUncached(
 
   if (signal?.aborted) return [];
 
-  // Busca mais candidatos para ter opções suficientes após deduplicação
-  const fetchLimit = Math.min(50, lim * 4);
+  // Busca mais candidatos para ter opções suficientes após deduplicação. Cap em 10:
+  // os apps BACKUP2/BACKUP3 (sem extended quota mode) respondem 400 "Invalid limit"
+  // acima disso — limite universal evita depender de qual app atende a chamada.
+  const fetchLimit = Math.min(10, lim * 4);
   const url = new URL(`${API_BASE}/search`);
   url.searchParams.set("q", q);
   url.searchParams.set("type", "track");
