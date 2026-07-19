@@ -17,8 +17,7 @@ import {
 } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { useTranslations } from "@/hooks/useTranslations";
-import { AdSlot } from "@/components/ui/AdSlot";
-import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
+import { Ad } from "@/components/ui/Ad";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { VideoClipCover } from "@/components/ui/VideoClipCover";
@@ -1249,8 +1248,8 @@ export default function ChartDetailPage() {
           )}
         </div>
 
-        <AdSlot
-          slotId={ADSENSE_SLOTS.chart}
+        <Ad
+          placement="chart"
           format="leaderboard"
           style={{ margin: "0 0 4px 0" }}
         />

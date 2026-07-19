@@ -9,8 +9,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
-import { AdSlot } from "@/components/ui/AdSlot";
-import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
+import { Ad } from "@/components/ui/Ad";
 import { loadSongGlobalStatsFromSnapshots, lookupSongGlobal100Stats } from "@/lib/global-snapshot";
 import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
 import { buildSongParadaAppearanceGroups } from "@/lib/song-parada-appearances";
@@ -482,7 +481,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           initialClips={initialClips}
         />
 
-        <AdSlot slotId={ADSENSE_SLOTS.song} format="rectangle" style={{ margin: "28px 0" }} />
+        <Ad placement="song" format="rectangle" style={{ margin: "28px 0" }} />
 
         {!hasChartPresence && (
           <div style={{ marginTop: 20, padding: 14, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)" }}>

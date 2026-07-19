@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { AdSlot } from "@/components/ui/AdSlot";
-import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
+import { Ad } from "@/components/ui/Ad";
 import {
   EDITORIAL_CATEGORY_LABELS,
   type EditorialPick,
@@ -138,7 +137,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
         ))}
       </div>
 
-      <AdSlot slotId={ADSENSE_SLOTS.editorial} format="rectangle" style={{ margin: "0 0 32px 0" }} />
+      <Ad placement="editorial" format="rectangle" style={{ margin: "0 0 32px 0" }} />
 
       {spotifyEmbed && (
         <div style={{ maxWidth: 820, marginBottom: 32 }}>

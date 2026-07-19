@@ -7,8 +7,7 @@ import {
   InstitutionalTitle,
 } from "@/components/institutional/InstitutionalPrimitives";
 import { EditorialPostPreviewCard } from "@/components/editorial/EditorialPostPreviewCard";
-import { AdSlot } from "@/components/ui/AdSlot";
-import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
+import { Ad } from "@/components/ui/Ad";
 import { getEditorialPicksSorted } from "@/lib/editorial-picks";
 import { resolveEditorialPreviewImages } from "@/lib/editorial-preview-image";
 
@@ -48,7 +47,7 @@ export default async function EditorialPage() {
         </p>
       </div>
 
-      <AdSlot slotId={ADSENSE_SLOTS.editorial} format="rectangle" style={{ margin: "0 0 36px 0" }} />
+      <Ad placement="editorial" format="rectangle" style={{ margin: "0 0 36px 0" }} />
 
       <div
         style={{

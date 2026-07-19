@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { GlobalSecondaryCards, GlobalGenreList } from "@/components/global/GlobalHubCards";
-import { AdSlot } from "@/components/ui/AdSlot";
-import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
+import { Ad } from "@/components/ui/Ad";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
@@ -224,7 +223,7 @@ export default async function GlobalHubPage() {
         </div>
       </section>
 
-      <AdSlot slotId={ADSENSE_SLOTS.globalHub} format="rectangle" style={{ margin: "0 0 28px 0" }} />
+      <Ad placement="globalHub" format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
       {/* ===== COMO FUNCIONA ===== */}
       <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 32 }}>

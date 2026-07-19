@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ChevronLeft, Flame, Trophy, BadgeCheck } from "lucide-react";
-import { AdSlot } from "@/components/ui/AdSlot";
-import { ADSENSE_SLOTS } from "@/lib/adsense-slots";
+import { Ad } from "@/components/ui/Ad";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartCard } from "@/components/chart/ChartCard";
@@ -1544,8 +1543,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <AdSlot
-          slotId={ADSENSE_SLOTS.profile}
+        <Ad
+          placement="profile"
           format="rectangle"
           style={{ margin: "0 0 28px 0" }}
         />
