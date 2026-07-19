@@ -4,6 +4,7 @@ import {
 } from "@/lib/global-lastfm-snapshot";
 import { getOrCreateCuratorsSnapshot } from "@/lib/curators-snapshot";
 import { publishAllCommunityLastfmSnapshots } from "@/lib/community-lastfm";
+import { publishAllCommunityOfficialWeeksFromMembers } from "@/lib/community-official-from-members";
 import { publishGlobalGenreSnapshotsForRankingWeek } from "@/lib/global-genre-snapshot";
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
@@ -39,6 +40,21 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
   const communityLastfm = await publishAllCommunityLastfmSnapshots(now).catch((e) => {
     console.error("[publish-weekly-globals] publishAllCommunityLastfmSnapshots", e);
     return { communities: 0, created: 0, errors: [String(e)] };
+  });
+
+  // Parada oficial de músicas (ex.: UCC): após o histórico importado, novas semanas
+  // vêm da agregação das paradas primárias dos membros (create-only).
+  const communityOfficial = await publishAllCommunityOfficialWeeksFromMembers(now).catch((e) => {
+    console.error("[publish-weekly-globals] publishAllCommunityOfficialWeeksFromMembers", e);
+    return {
+      weekIndex: global.weekIndex,
+      communities: 0,
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      empty: 0,
+      results: [],
+    };
   });
 
   syncGlobal100YouTubePlaylist(global.weekIndex, global.weekLabel).catch((e) =>
@@ -101,6 +117,7 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
     },
     genreSnapshots,
     communityLastfm,
+    communityOfficial,
     weeklyPoll,
     notificationsSent,
   };

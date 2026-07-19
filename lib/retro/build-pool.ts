@@ -10,8 +10,9 @@
  *   1. Last.fm overall  → força all-time (proxy pré-2010)
  *   2. Last.fm período  → plays reais do mês (pós-Out/2010)
  *   3. Song             → datas de lançamento / clipe (estreia)
- *   4. ChartEntry       → histórico Top20 do usuário (pico / semanas / #1 /
- *                         1ª entrada — fallback da data de estreia)
+ *   4. ChartEntry       → histórico Top20 vitalício só da parada-base
+ *                         (`RETRO_TOP20_SOURCE_PARADA_ID`: Video Countdown) —
+ *                         pico / semanas / #1 / 1ª entrada (hindsight OK)
  *   5. RetroSongProfile / RetroEraOverride → ajustes manuais do usuário
  *
  * Faz I/O (DB + rede); a lógica pura fica em `scoring.ts`.
@@ -21,6 +22,8 @@
  * específico a partir dessas fontes já em memória, sem I/O novo — permite ao
  * `generate-history.ts` varrer décadas sem repetir a chamada ao Last.fm por mês
  * (política de espaçar chamadas à API, ver memória do projeto).
+ *
+ * Plays fora do top 1000: `enrichZeroPlaycounts` (rota interativa + publish mês a mês).
  */
 
 import { prisma } from "@/lib/prisma";
@@ -30,6 +33,12 @@ import type { ReleaseRefSource, RetroMode, RetroSongInput } from "@/lib/retro/sc
 
 /** Parada-alvo da geração: define a cadeia de datas da estreia. */
 export type RetroTarget = "hot100" | "clipes";
+
+/**
+ * Parada Top 20 semanal histórica (Under My Skin Video Countdown) — base de
+ * pico/semanas/#1s do motor retrospectivo (tanto Hot 100 quanto Clipes).
+ */
+export const RETRO_TOP20_SOURCE_PARADA_ID = "cmpn5qqi20001mly9beqx3xkt";
 
 /** Antes disto não há dado real de Last.fm por período → estimativa. */
 const LASTFM_REAL_DATA_FROM = Date.UTC(2010, 9, 1); // 2010-10-01
@@ -96,7 +105,7 @@ export interface SongRow {
 }
 
 /** Ponto do histórico Top20 do usuário: uma posição publicada numa semana. */
-interface Top20Point {
+export interface Top20Point {
   position: number;
   weekStartDate: Date | null;
 }
@@ -146,16 +155,31 @@ async function loadSongIndex(): Promise<Map<string, SongRow>> {
   return map;
 }
 
-/** Todo o histórico de posições do usuário (qualquer parada), por música, ordenado por data. */
+/**
+ * Histórico de posições só na Top 20 semanal-base (`RETRO_TOP20_SOURCE_PARADA_ID`).
+ * Não mistura diária, Hot 100 Singles nem outras paradas.
+ */
 async function loadTop20Points(userId: string): Promise<Map<string, Top20Point[]>> {
   const entries = await prisma.chartEntry.findMany({
-    where: { chart: { userId } },
-    select: { songId: true, position: true, chart: { select: { weekStartDate: true } } },
+    where: {
+      chart: {
+        userId,
+        paradaId: RETRO_TOP20_SOURCE_PARADA_ID,
+      },
+      position: { lte: 20 },
+    },
+    select: {
+      songId: true,
+      position: true,
+      chart: { select: { weekStartDate: true, publishedAt: true } },
+    },
   });
   const map = new Map<string, Top20Point[]>();
   for (const e of entries) {
+    // Charts sem week_start_date ainda contam via publishedAt.
+    const weekStartDate = e.chart.weekStartDate ?? e.chart.publishedAt ?? null;
     const list = map.get(e.songId) ?? [];
-    list.push({ position: e.position, weekStartDate: e.chart.weekStartDate });
+    list.push({ position: e.position, weekStartDate });
     map.set(e.songId, list);
   }
   for (const list of map.values()) {
@@ -164,20 +188,23 @@ async function loadTop20Points(userId: string): Promise<Map<string, Top20Point[]
   return map;
 }
 
-/** Agrega o histórico Top20 de uma música só com pontos publicados até `asOf` (evita vazamento temporal). */
-function aggregateTop20AsOf(points: Top20Point[] | undefined, asOf: Date): Top20Agg {
+/**
+ * Histórico Top20 vitalício da parada-base (hindsight de propósito).
+ * Plays overall já são all-time; o Top20 segue a mesma lógica.
+ */
+export function aggregateTop20Lifetime(points: Top20Point[] | undefined): Top20Agg {
   if (!points || points.length === 0) return EMPTY_TOP20_AGG;
   const agg: Top20Agg = { weeks: 0, bestPeak: null, numberOnes: 0, firstEntryDate: null };
   for (const p of points) {
-    if (p.weekStartDate == null || p.weekStartDate.getTime() > asOf.getTime()) continue;
+    if (p.weekStartDate == null) continue;
     if (p.position <= 20) {
       agg.weeks += 1;
       if (agg.firstEntryDate == null || p.weekStartDate.getTime() < agg.firstEntryDate.getTime()) {
         agg.firstEntryDate = p.weekStartDate;
       }
+      if (p.position === 1) agg.numberOnes += 1;
+      agg.bestPeak = agg.bestPeak == null ? p.position : Math.min(agg.bestPeak, p.position);
     }
-    if (p.position === 1) agg.numberOnes += 1;
-    agg.bestPeak = agg.bestPeak == null ? p.position : Math.min(agg.bestPeak, p.position);
   }
   return agg;
 }
@@ -342,7 +369,7 @@ export function buildRetroPoolFromSources(sources: RetroSources, args: BuildPool
   function pushCandidate(song: SongRow, overallPlaycount: number, periodPlaycount: number | null): boolean {
     if (added.has(song.id)) return false;
 
-    const agg = aggregateTop20AsOf(sources.top20Points.get(song.id), chartDate);
+    const agg = aggregateTop20Lifetime(sources.top20Points.get(song.id));
     const billboardDebutDate = sources.profileBySong.get(song.id)?.billboardHot100DebutDate ?? null;
     const debut = debutRefFor(target, song, agg.firstEntryDate, billboardDebutDate);
     if (debut.date == null) return false; // sem data → só entra via liberação manual (F6)
@@ -441,30 +468,32 @@ export async function buildRetroPool(args: BuildPoolArgs): Promise<BuildPoolResu
 
   void mode; // gating do modo Histórico é feito em scoring.ts via ctx.mode, não aqui
   const pool = buildRetroPoolFromSources(sources, { year, month, target, periodPlays });
-  await enrichCatalogOnlyPlaycounts(pool, lastfmUser);
+  await enrichZeroPlaycounts(pool, lastfmUser);
   return pool;
 }
 
 /**
- * Confirma o playcount real (vitalício) de quem entrou só pela varredura de
- * catálogo (fora do top `OVERALL_LIMIT` de `fetchTopTracks`, ou nunca scrobblado
- * mesmo). Só usado na rota interativa de 1 mês — sequencial, com pausa entre
- * chamadas e um teto, para não estourar a política de rate-limit do Last.fm.
- * O backfill em massa (`generate-history.ts`) nunca passa por aqui.
+ * Confirma o playcount vitalício de quem ficou com TOTAL 0 (fora do top
+ * `OVERALL_LIMIT` do Last.fm, ou mismatch de nome). Usado na rota interativa
+ * e no publish mês a mês.
+ *
+ * Prioriza músicas com histórico Top20 — são as que mais precisam de força
+ * correta na curadoria. Cap generoso: um mês típico tem <100 estreias.
  */
-const ENRICH_MAX_LOOKUPS = 40;
-const ENRICH_DELAY_MS = 150;
+const ENRICH_MAX_LOOKUPS = 120;
+const ENRICH_DELAY_MS = 120;
 
-async function enrichCatalogOnlyPlaycounts(pool: BuildPoolResult, lastfmUser: string): Promise<void> {
-  const targets = pool.catalogOnlySongIds.slice(0, ENRICH_MAX_LOOKUPS);
+export async function enrichZeroPlaycounts(pool: BuildPoolResult, lastfmUser: string): Promise<void> {
+  const targets = pool.songs
+    .filter((s) => s.overallPlaycount <= 0)
+    .sort((a, b) => b.top20Weeks - a.top20Weeks || b.numberOnes - a.numberOnes || a.songId.localeCompare(b.songId))
+    .slice(0, ENRICH_MAX_LOOKUPS);
   if (targets.length === 0) return;
 
-  const byId = new Map(pool.songs.map((s) => [s.songId, s]));
   for (let i = 0; i < targets.length; i++) {
-    const songId = targets[i];
-    const song = byId.get(songId);
-    const meta = pool.meta.get(songId);
-    if (!song || !meta) continue;
+    const song = targets[i];
+    const meta = pool.meta.get(song.songId);
+    if (!meta) continue;
 
     const realCount = await fetchTrackUserPlaycount(meta.title, meta.artist, lastfmUser);
     if (realCount != null && realCount > 0) song.overallPlaycount = realCount;

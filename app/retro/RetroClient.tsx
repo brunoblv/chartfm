@@ -16,7 +16,6 @@ interface ScoreBreakdown {
   importance: number;
   top20: number;
   releaseRecency: number;
-  clip: number;
   adjust: number;
 }
 
@@ -115,17 +114,25 @@ const SOURCE_LABEL: Record<ReleaseRefSource, string> = {
 };
 
 const WEIGHT_ROWS: { key: keyof ScoreBreakdown; label: string; max: number; color: string }[] = [
-  { key: "period", label: "Plays do período", max: 30, color: "#10B981" },
+  { key: "period", label: "Plays do período", max: 25, color: "#10B981" },
   { key: "importance", label: "Importância", max: 30, color: "#0EA5E9" },
-  { key: "top20", label: "Histórico Top 20", max: 15, color: "#8B5CF6" },
+  { key: "top20", label: "Histórico Top 20", max: 30, color: "#8B5CF6" },
   { key: "releaseRecency", label: "Recência do lançamento", max: 10, color: "#F59E0B" },
-  { key: "clip", label: "Data do clipe", max: 10, color: "#06B6D4" },
   { key: "adjust", label: "Ajustes manuais", max: 5, color: "#F43F5E" },
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: CURRENT_YEAR - 2000 + 1 }, (_, i) => CURRENT_YEAR - i);
+const MIN_HISTORY_YEAR = 1990;
+/** Anos selecionáveis no período e no “histórico desde” (1990 → atual). */
+const YEARS = Array.from({ length: CURRENT_YEAR - MIN_HISTORY_YEAR + 1 }, (_, i) => CURRENT_YEAR - i);
 const PAGE_SIZE = 50;
+
+/** Um ano antes do mês “até” — aquece o Hot 100 com ~12 meses de estreias. */
+function defaultHistoryStart(throughYear: number, throughMonth: number): { year: number; month: number } {
+  const year = throughYear - 1;
+  if (year < MIN_HISTORY_YEAR) return { year: MIN_HISTORY_YEAR, month: 1 };
+  return { year, month: throughMonth };
+}
 
 // ── estilos base ──────────────────────────────────────────────────────────
 
@@ -288,7 +295,6 @@ function reasonsFor(e: RetroEntry): string[] {
   if (e.numberOnes > 0) r.push(`Já teve ${e.numberOnes}× #1 na sua Top 20`);
   if (e.top20BestPeak != null) r.push(`Pico #${e.top20BestPeak} na sua Top 20`);
   if (e.top20Weeks > 0) r.push(`${e.top20Weeks} semanas na Top 20`);
-  if (e.breakdown.clip > 0) r.push("Clipe lançado antes da data do chart");
   return r;
 }
 
@@ -332,6 +338,7 @@ interface PreviewResponse {
   paradaId: string;
   chartSize: number;
   startYear: number;
+  startMonth?: number;
   throughYear: number | null;
   throughMonth: number | null;
   boundaryWeekIndex: number;
@@ -339,6 +346,8 @@ interface PreviewResponse {
   endWeekIndexExclusive: number;
   monthsScanned: number;
   totalDebuts: number;
+  weeksSimulated?: number;
+  weeksAlreadyExist?: number;
   weeksToCreate: number;
   firstWeek: WeekSample | null;
   lastWeek: WeekSample | null;
@@ -355,17 +364,286 @@ interface ParadaOption {
   name: string;
 }
 
+type RetroView = "debuts" | "live";
+
+interface LiveWeekMeta {
+  weekIndex: number;
+  weekLabel: string;
+  dateRange: string;
+  weekStartDate: string;
+}
+
+interface LiveEntry {
+  position: number;
+  songId: string;
+  title: string;
+  artist: string;
+  coverUrl: string | null;
+  status: "new" | "up" | "down" | "same";
+  delta: number | null;
+  prevPos: number | null;
+  peak: number;
+  weeks: number;
+  power: number;
+  scoreFinal: number | null;
+  debutDate: string | null;
+}
+
+interface LivePreviewResponse {
+  period: { year: number; month: number; target: RetroTarget; startYear: number; startMonth?: number };
+  chartSize: number;
+  totalDebuts: number;
+  debutsInMonth: number;
+  weeks: LiveWeekMeta[];
+  chart: {
+    weekIndex: number;
+    weekLabel: string;
+    dateRange: string;
+    weekStartDate: string;
+    entries: LiveEntry[];
+  } | null;
+}
+
+const STATUS_LABEL: Record<LiveEntry["status"], { label: string; color: string }> = {
+  new: { label: "NEW", color: "var(--accent)" },
+  up: { label: "▲", color: "var(--up-fg, #059669)" },
+  down: { label: "▼", color: "var(--down-fg)" },
+  same: { label: "═", color: "var(--text-muted)" },
+};
+
+function WeeklyLivePreview({
+  year,
+  month,
+  target,
+  startYear,
+  startMonth,
+}: {
+  year: number;
+  month: number;
+  target: RetroTarget;
+  startYear: number;
+  startMonth: number;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<LivePreviewResponse | null>(null);
+  const [weekIndex, setWeekIndex] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+
+  const startLabel = `${MONTHS[startMonth - 1]} de ${startYear}`;
+
+  const load = useCallback(async (wi?: number | null) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const qs = new URLSearchParams({
+        year: String(year),
+        month: String(month),
+        target,
+        startYear: String(startYear),
+        startMonth: String(startMonth),
+      });
+      if (wi != null) qs.set("weekIndex", String(wi));
+      const res = await fetch(`/api/retro/weekly-preview?${qs}`);
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body?.error ?? "erro");
+        setData(null);
+        return;
+      }
+      const parsed = body as LivePreviewResponse;
+      setData(parsed);
+      setWeekIndex(parsed.chart?.weekIndex ?? null);
+    } catch {
+      setError("network");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [year, month, target, startYear, startMonth]);
+
+  useEffect(() => {
+    void load(null);
+  }, [load]);
+
+  const entries = useMemo(() => {
+    const list = data?.chart?.entries ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((e) => e.title.toLowerCase().includes(q) || e.artist.toLowerCase().includes(q));
+  }, [data, search]);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+        Hot 100 simulado de {MONTHS[month - 1]} de {year} — carry-over + estreias ·{" "}
+        {data ? (
+          <>
+            <strong style={{ color: "var(--text)" }}>{data.totalDebuts}</strong> estreias desde {startLabel} ·{" "}
+            <strong style={{ color: "var(--text)" }}>{data.debutsInMonth}</strong> neste mês
+          </>
+        ) : (
+          "montando a curva…"
+        )}
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={labelStyle}>Semana</span>
+          <select
+            value={weekIndex ?? ""}
+            disabled={!data?.weeks.length || loading}
+            onChange={(ev) => {
+              const wi = Number(ev.target.value);
+              setWeekIndex(wi);
+              void load(wi);
+            }}
+            style={inputStyle}
+          >
+            {(data?.weeks ?? []).map((w) => (
+              <option key={w.weekIndex} value={w.weekIndex}>
+                {w.weekLabel} ({w.dateRange})
+              </option>
+            ))}
+          </select>
+        </label>
+        <input
+          value={search}
+          onChange={(ev) => setSearch(ev.target.value)}
+          placeholder="Buscar no chart…"
+          className="retro-input"
+          style={{ ...inputStyle, flex: "1 1 200px", maxWidth: 280, alignSelf: "flex-end" }}
+        />
+        <button
+          onClick={() => void load(weekIndex)}
+          disabled={loading}
+          style={{
+            ...inputStyle,
+            alignSelf: "flex-end",
+            padding: "10px 16px",
+            fontWeight: 600,
+            cursor: loading ? "default" : "pointer",
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          {loading ? "Simulando…" : "↻ Atualizar simulação"}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ ...card, borderColor: "rgba(225, 29, 72, 0.4)", background: "rgba(225, 29, 72, 0.08)", padding: "12px 16px", fontSize: 14, color: "var(--down-fg)" }}>
+          Não foi possível simular o Hot 100 ({error}).
+        </div>
+      )}
+
+      {loading && !data && (
+        <div style={{ ...card, padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+          Simulando semanas com carry-over… isso pode levar alguns segundos.
+        </div>
+      )}
+
+      {data && !data.chart && !loading && (
+        <div style={{ ...card, padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
+          Nenhuma semana simulada neste mês — ainda não há estreias elegíveis desde {startLabel}.
+        </div>
+      )}
+
+      {data?.chart && (
+        <div style={{ ...card, overflow: "hidden", opacity: loading ? 0.7 : 1 }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--divider)", fontSize: 13 }}>
+            <strong>{data.chart.weekLabel}</strong>
+            <span style={{ color: "var(--text-muted)" }}> · {data.chart.dateRange} · top {data.chartSize}</span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ ...thStyle, width: 44 }}>#</th>
+                  <th style={{ ...thStyle, width: 48 }}>LW</th>
+                  <th style={thStyle}>Música</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>St</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Sem.</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>Pico</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Power</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Score</th>
+                  <th style={thStyle}>Estreia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e) => {
+                  const st = STATUS_LABEL[e.status];
+                  const debutMonth =
+                    e.debutDate != null
+                      ? `${MONTHS[Number(e.debutDate.slice(5, 7)) - 1]?.slice(0, 3) ?? ""}/${e.debutDate.slice(0, 4)}`
+                      : null;
+                  return (
+                    <tr key={e.songId} className="retro-row" style={{ cursor: "default" }}>
+                      <td style={{ ...tdStyle, fontWeight: 700, ...num }}>{e.position}</td>
+                      <td style={{ ...tdStyle, color: "var(--text-muted)", ...num }}>
+                        {e.prevPos ?? <span style={{ color: "var(--text-disabled)" }}>—</span>}
+                      </td>
+                      <td style={{ ...tdStyle, minWidth: 220 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <Cover url={e.coverUrl} title={e.title} />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>{e.title}</div>
+                            <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 280 }}>
+                              {e.artist}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center", fontWeight: 700, color: st.color, fontSize: 12 }}>
+                        {e.status === "up" || e.status === "down"
+                          ? `${st.label}${e.delta != null ? Math.abs(e.delta) : ""}`
+                          : st.label}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center", ...num }}>{e.weeks}</td>
+                      <td style={{ ...tdStyle, textAlign: "center", ...num }}>#{e.peak}</td>
+                      <td style={{ ...tdStyle, textAlign: "right", ...num }}>{e.power}</td>
+                      <td style={{ ...tdStyle, textAlign: "right", ...num }}>
+                        {e.scoreFinal != null ? e.scoreFinal : <span style={{ color: "var(--text-disabled)" }}>—</span>}
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: 12, color: "var(--text-muted)" }}>
+                        {debutMonth ?? "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {entries.length === 0 && (
+                  <tr>
+                    <td colSpan={9} style={{ ...tdStyle, padding: 32, textAlign: "center", color: "var(--text-muted)" }}>
+                      Nenhuma música encontrada.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HistoryGenerationPanel({
   target,
   throughYear,
   throughMonth,
+  startYear,
+  startMonth,
+  onStartYearChange,
+  onStartMonthChange,
 }: {
   target: RetroTarget;
   /** Mês selecionado na tela — publica só até aqui (fluxo mês a mês). */
   throughYear: number;
   throughMonth: number;
+  startYear: number;
+  startMonth: number;
+  onStartYearChange: (year: number) => void;
+  onStartMonthChange: (month: number) => void;
 }) {
-  const [startYear, setStartYear] = useState(2000);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [publishResult, setPublishResult] = useState<PublishResponse | null>(null);
   const [loading, setLoading] = useState<"preview" | "publish" | null>(null);
@@ -375,6 +653,7 @@ function HistoryGenerationPanel({
   const [paradaId, setParadaId] = useState(""); // vazio = usa a parada padrão do target
 
   const throughLabel = `${MONTHS[throughMonth - 1]} de ${throughYear}`;
+  const startLabel = `${MONTHS[startMonth - 1]} de ${startYear}`;
 
   useEffect(() => {
     fetch("/api/user/paradas")
@@ -387,16 +666,12 @@ function HistoryGenerationPanel({
       .catch(() => {});
   }, []);
 
-  // Trocar o mês da curadoria invalida o preview anterior.
+  // Trocar o mês da curadoria / início invalida o preview anterior.
   useEffect(() => {
     setPreview(null);
     setPublishResult(null);
     setError(null);
-  }, [throughYear, throughMonth, target, startYear, paradaId]);
-
-  useEffect(() => {
-    if (startYear > throughYear) setStartYear(throughYear);
-  }, [throughYear, startYear]);
+  }, [throughYear, throughMonth, target, startYear, startMonth, paradaId]);
 
   async function callPublish(dryRun: boolean) {
     setLoading(dryRun ? "preview" : "publish");
@@ -408,6 +683,7 @@ function HistoryGenerationPanel({
         body: JSON.stringify({
           target,
           startYear,
+          startMonth,
           throughYear,
           throughMonth,
           dryRun,
@@ -437,9 +713,10 @@ function HistoryGenerationPanel({
       <div>
         <div style={{ fontSize: 15, fontWeight: 700 }}>Publicar até este mês</div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-          Fluxo mês a mês: cura as estreias de {throughLabel} acima, depois simula e publica as semanas
-          desde o início do histórico até o fim de {throughLabel} (carry-over incluído). Semanas que já
-          existem não são sobrescritas — avance um mês quando estiver pronto.
+          Fluxo mês a mês: cura as estreias de {throughLabel}, depois simula e publica desde{" "}
+          <strong style={{ color: "var(--text)" }}>{startLabel}</strong> até o fim de {throughLabel}{" "}
+          (padrão = 1 ano antes, para o primeiro Hot 100 já nascer cheio). Semanas existentes não são
+          sobrescritas.
         </div>
       </div>
 
@@ -453,15 +730,30 @@ function HistoryGenerationPanel({
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={labelStyle}>Histórico desde</span>
-          <select
-            value={Math.min(startYear, throughYear)}
-            onChange={(ev) => setStartYear(Number(ev.target.value))}
-            style={inputStyle}
-          >
-            {YEARS.slice().reverse().filter((y) => y <= throughYear).map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          <div style={{ display: "flex", gap: 8 }}>
+            <select
+              value={startMonth}
+              onChange={(ev) => onStartMonthChange(Number(ev.target.value))}
+              style={inputStyle}
+            >
+              {MONTHS.map((m, i) => {
+                const mNum = i + 1;
+                const disabled = startYear === throughYear && mNum > throughMonth;
+                return (
+                  <option key={m} value={mNum} disabled={disabled}>{m}</option>
+                );
+              })}
+            </select>
+            <select
+              value={startYear}
+              onChange={(ev) => onStartYearChange(Number(ev.target.value))}
+              style={inputStyle}
+            >
+              {YEARS.slice().reverse().filter((y) => y <= throughYear).map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
         </label>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={labelStyle}>Até</span>
@@ -498,15 +790,15 @@ function HistoryGenerationPanel({
       {preview && (
         <div style={{ fontSize: 13, color: "var(--text-subtle)", display: "flex", flexDirection: "column", gap: 4 }}>
           <div>
-            <strong>{preview.weeksToCreate}</strong> semanas até {throughLabel} · <strong>{preview.totalDebuts}</strong> estreias ·{" "}
-            {preview.monthsScanned} meses varridos
-            {preview.boundaryWeekLabel && (
-              <> · fronteira do histórico real: {preview.boundaryWeekLabel}</>
+            <strong>{preview.weeksToCreate}</strong> semanas novas de {startLabel} até {throughLabel}
+            {(preview.weeksAlreadyExist ?? 0) > 0 && (
+              <> · {preview.weeksAlreadyExist} já existem (não sobrescreve)</>
             )}
+            {" "}· <strong>{preview.totalDebuts}</strong> estreias · {preview.monthsScanned} meses varridos
           </div>
           {preview.firstWeek && (
             <div>
-              1ª semana: {preview.firstWeek.weekLabel} ({preview.firstWeek.dateRange}) — top 5:{" "}
+              1ª semana nova: {preview.firstWeek.weekLabel} ({preview.firstWeek.dateRange}) — top 5:{" "}
               {preview.firstWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", ")}
             </div>
           )}
@@ -518,8 +810,11 @@ function HistoryGenerationPanel({
           )}
           {preview.weeksToCreate === 0 && (
             <div>
-              Nada novo até {throughLabel} — semanas desse intervalo já existem, ou ainda não há estreias elegíveis.
-              Avance o período acima e continue.
+              {(preview.weeksAlreadyExist ?? 0) > 0
+                ? `Todas as ${preview.weeksAlreadyExist} semanas de ${startLabel} até ${throughLabel} já estão publicadas. Avance o período acima e continue.`
+                : preview.monthsScanned === 0
+                  ? `Nenhum mês varrido até ${throughLabel} — confira “Histórico desde” e o mês/ano acima.`
+                  : `Simulação sem estreias elegíveis até ${throughLabel} (${preview.monthsScanned} meses varridos). Cure as estreias do mês e tente de novo.`}
             </div>
           )}
         </div>
@@ -554,6 +849,10 @@ export function RetroClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const initialHistory = defaultHistoryStart(2005, 5);
+  const [historyStartYear, setHistoryStartYear] = useState(initialHistory.year);
+  const [historyStartMonth, setHistoryStartMonth] = useState(initialHistory.month);
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -563,6 +862,14 @@ export function RetroClient() {
 
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [view, setView] = useState<RetroView>("debuts");
+
+  // Ao mudar o mês “até”, sugere início = 1 ano antes (pode ajustar manualmente).
+  useEffect(() => {
+    const next = defaultHistoryStart(year, month);
+    setHistoryStartYear(next.year);
+    setHistoryStartMonth(next.month);
+  }, [year, month]);
 
   const selected = useMemo(
     () => data?.entries.find((e) => e.songId === selectedId) ?? null,
@@ -760,6 +1067,47 @@ export function RetroClient() {
 
       {data && (
         <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {(
+              [
+                { id: "debuts" as const, label: "Estreias do mês" },
+                { id: "live" as const, label: "Hot 100 vivo" },
+              ] as const
+            ).map((tab) => {
+              const active = view === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setView(tab.id)}
+                  style={{
+                    ...inputStyle,
+                    padding: "8px 14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    background: active ? "var(--accent)" : "var(--surface)",
+                    color: active ? "#fff" : "var(--text)",
+                    borderColor: active ? "var(--accent)" : "var(--divider)",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {view === "live" && (
+            <WeeklyLivePreview
+              year={year}
+              month={month}
+              target={target}
+              startYear={historyStartYear}
+              startMonth={historyStartMonth}
+            />
+          )}
+
+          {view === "debuts" && (
+          <>
           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
             Lançamentos de {MONTHS[data.period.month - 1]} de {data.period.year} — candidatas a estreia na{" "}
             {TARGET_LABEL[data.period.target]} ·{" "}
@@ -844,9 +1192,9 @@ export function RetroClient() {
                     <th style={thStyle}>Single</th>
                     <th style={thStyle}>Clipe</th>
                     <th style={thStyle}>Álbum</th>
-                    <th style={{ ...thStyle, textAlign: "center" }}>Pico</th>
-                    <th style={{ ...thStyle, textAlign: "center" }}>Sem.</th>
-                    <th style={{ ...thStyle, textAlign: "center" }}>#1s</th>
+                    <th style={{ ...thStyle, textAlign: "center" }} title="Pico na Under My Skin Video Countdown (Top 20)">Pico</th>
+                    <th style={{ ...thStyle, textAlign: "center" }} title="Semanas na Under My Skin Video Countdown (Top 20)">Sem.</th>
+                    <th style={{ ...thStyle, textAlign: "center" }} title="#1s na Under My Skin Video Countdown (Top 20)">#1s</th>
                     <th style={thStyle}>Importância</th>
                     <th style={thStyle}>Peak</th>
                     <th style={thStyle}>Hit Level</th>
@@ -973,8 +1321,18 @@ export function RetroClient() {
               </div>
             )}
           </div>
+          </>
+          )}
 
-          <HistoryGenerationPanel target={target} throughYear={year} throughMonth={month} />
+          <HistoryGenerationPanel
+            target={target}
+            throughYear={year}
+            throughMonth={month}
+            startYear={historyStartYear}
+            startMonth={historyStartMonth}
+            onStartYearChange={setHistoryStartYear}
+            onStartMonthChange={setHistoryStartMonth}
+          />
         </>
       )}
 

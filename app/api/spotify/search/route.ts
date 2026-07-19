@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import {
+  getBackup2LimitedUntil,
+  getBackup3LimitedUntil,
   getBackupLimitedUntil,
   getPrimaryLimitedUntil,
   spotifyConfigured,
   searchSpotifyTracks,
 } from "@/lib/spotify-server";
-import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
+import { runWithSpotifyUserChartsPool, runWithSpotifyCrownnotePool } from "@/lib/spotify-user-charts-pool";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -73,13 +75,20 @@ async function searchLocalCatalog(q: string, limit: number, artist?: string): Pr
  * dedup de chamadas em voo no spotify-server). O browser não recebe mais tokens
  * nem fala com api.spotify.com — todo acesso passa pelo backend.
  *
- * Pool user-charts: se principal + BACKUP estiverem fora, usa BACKUP2 (paradas).
+ * Pool user-charts (padrão): BACKUP2 é exclusivo pra busca de criação/edição de paradas
+ * de usuário — só cai pro principal/backup se o BACKUP2 tomar 429.
+ * pool=crownnote: usa o BACKUP3 dedicado (tela /admin/crownnote-export).
  */
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim().slice(0, 200) ?? "";
   const artist = req.nextUrl.searchParams.get("artist")?.trim().slice(0, 120) || undefined;
   const limitRaw = req.nextUrl.searchParams.get("limit");
   const limit = Math.min(50, Math.max(1, Number(limitRaw) || 12));
+  // pool=crownnote: tela /admin/crownnote-export, usa o BACKUP3 dedicado.
+  const runWithPool =
+    req.nextUrl.searchParams.get("pool") === "crownnote"
+      ? runWithSpotifyCrownnotePool
+      : runWithSpotifyUserChartsPool;
 
   const configured = spotifyConfigured();
 
@@ -95,12 +104,16 @@ export async function GET(req: NextRequest) {
   }
 
   const spotifyQuery = artist ? `${q} artist:"${artist}"` : q;
-  const bothLimited =
-    Date.now() < getPrimaryLimitedUntil() && Date.now() < getBackupLimitedUntil();
+  const isCrownnotePool = req.nextUrl.searchParams.get("pool") === "crownnote";
+  const now = Date.now();
+  const bothLimited = isCrownnotePool
+    ? now < getBackup3LimitedUntil()
+    : now < getBackup2LimitedUntil() && now < getPrimaryLimitedUntil() && now < getBackupLimitedUntil();
 
-  // Complementa com Spotify no pool de paradas (principal → backup → BACKUP2).
+  // Pool user-charts (padrão): BACKUP2 exclusivo, cai pro principal → backup se
+  // tomar 429. pool=crownnote: direto no BACKUP3 dedicado da tela do Crownnote.
   // maxAttempts 1 + prazo curto: evita 504 no nginx quando a API está em 429.
-  const spotifyTracks = await runWithSpotifyUserChartsPool(() =>
+  const spotifyTracks = await runWithPool(() =>
     searchSpotifyTracks(spotifyQuery, limit, "BR", req.signal, {
       maxAttempts: 1,
       deadlineAt: Date.now() + 8_000,

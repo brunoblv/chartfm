@@ -63,7 +63,7 @@ function SongResolver({
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const spotify = useSpotifySearch(query);
+  const spotify = useSpotifySearch(query, false, "crownnote");
 
   useEffect(() => {
     const q = query.trim();

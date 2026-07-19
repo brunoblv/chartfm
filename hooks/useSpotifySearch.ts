@@ -29,7 +29,11 @@ export type SpotifySearchResult = {
  * pelo servidor. O browser não fala mais diretamente com api.spotify.com — o
  * servidor tem cache compartilhado de 30 dias e deduplicação de chamadas.
  */
-export function useSpotifySearch(query: string, disabled = false): SpotifySearchResult {
+export function useSpotifySearch(
+  query: string,
+  disabled = false,
+  pool?: "crownnote",
+): SpotifySearchResult {
   const [tracks, setTracks] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(true);
@@ -54,10 +58,10 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
       setLoading(true);
       setUnavailable(false);
       try {
-        const serverRes = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}&limit=12`, {
-          signal: ac.signal,
-          cache: "no-store",
-        });
+        const serverRes = await fetch(
+          `/api/spotify/search?q=${encodeURIComponent(q)}&limit=12${pool ? `&pool=${pool}` : ""}`,
+          { signal: ac.signal, cache: "no-store" },
+        );
         if (ac.signal.aborted) return;
         if (!serverRes.ok) {
           try {
@@ -102,7 +106,7 @@ export function useSpotifySearch(query: string, disabled = false): SpotifySearch
       ac.abort();
       clearTimeout(timer);
     };
-  }, [query, disabled]);
+  }, [query, disabled, pool]);
 
   return { tracks, loading, configured, unavailable };
 }

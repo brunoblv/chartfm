@@ -5,6 +5,7 @@ import {
   rematchUnmatchedRows,
   resolveUnmatchedRowsViaSpotify,
 } from "@/lib/crownnote-song-match";
+import { runWithSpotifyCrownnotePool } from "@/lib/spotify-user-charts-pool";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -51,9 +52,11 @@ export async function POST(req: NextRequest) {
 
         try {
           if (mode === "spotify") {
-            const result = await resolveUnmatchedRowsViaSpotify(rows, (progress) => {
-              send({ type: "progress", ...progress });
-            });
+            const result = await runWithSpotifyCrownnotePool(() =>
+              resolveUnmatchedRowsViaSpotify(rows, (progress) => {
+                send({ type: "progress", ...progress });
+              }),
+            );
             send({ type: "done", ...result });
           } else {
             const result = await rematchUnmatchedRows(rows);
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest) {
 
   try {
     if (mode === "spotify") {
-      const result = await resolveUnmatchedRowsViaSpotify(rows);
+      const result = await runWithSpotifyCrownnotePool(() => resolveUnmatchedRowsViaSpotify(rows));
       return NextResponse.json({ ok: true, ...result }, { headers: NO_CACHE });
     }
     const result = await rematchUnmatchedRows(rows);

@@ -3,6 +3,7 @@ import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { upsertSongFromSpotify } from "@/lib/mytrl-weekly-chart";
 import { prisma } from "@/lib/prisma";
 import { cleanArtistForLookup } from "@/lib/crownnote-song-match";
+import { runWithSpotifyCrownnotePool } from "@/lib/spotify-user-charts-pool";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,11 +72,13 @@ export async function POST(req: NextRequest) {
   const crownnoteTitle = body.crownnoteTitle?.trim() || "Música";
 
   try {
-    const song = await upsertSongFromSpotify(spotifyId, {
-      track: crownnoteTitle,
-      artist: cleanArtistForLookup(crownnoteArtist),
-      album: "",
-    });
+    const song = await runWithSpotifyCrownnotePool(() =>
+      upsertSongFromSpotify(spotifyId, {
+        track: crownnoteTitle,
+        artist: cleanArtistForLookup(crownnoteArtist),
+        album: "",
+      }),
+    );
 
     const saved = await prisma.song.findUnique({
       where: { id: song.id },

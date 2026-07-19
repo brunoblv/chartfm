@@ -25,9 +25,9 @@ function parseTarget(raw: unknown): RetroTarget | null {
  *
  * Gera o histórico semanal (estreia + carry-over) a partir de `startYear` e,
  * se `dryRun` for false, grava como `Chart`/`ChartEntry` reais na parada-alvo.
- * Com `throughYear`/`throughMonth`, para no fim daquele mês (curadoria calma).
- * NUNCA sobrescreve uma semana que já existe (idempotente — pode rodar de novo
- * pra continuar em pedaços de até `MAX_WEEKS_PER_CALL`).
+ * Com `throughYear`/`throughMonth`, simula até o fim daquele mês (fluxo mês a
+ * mês) e pula semanas que já existem — não usa a semana mais antiga da parada
+ * como teto. NUNCA sobrescreve (idempotente; lotes de até `MAX_WEEKS_PER_CALL`).
  * Restrito ao @bruno.
  */
 export async function POST(req: NextRequest) {
@@ -39,9 +39,13 @@ export async function POST(req: NextRequest) {
   if (!target) return NextResponse.json({ error: "invalid_target" }, { status: 400 });
 
   const startYear = Number(body?.startYear);
+  const startMonth = body?.startMonth != null ? Number(body.startMonth) : 1;
   const nowYear = new Date().getUTCFullYear();
   if (!Number.isInteger(startYear) || startYear < MIN_YEAR || startYear > nowYear) {
     return NextResponse.json({ error: "invalid_start_year" }, { status: 400 });
+  }
+  if (!Number.isInteger(startMonth) || startMonth < 1 || startMonth > 12) {
+    return NextResponse.json({ error: "invalid_start_month" }, { status: 400 });
   }
 
   const hasThrough = body?.throughYear != null || body?.throughMonth != null;
@@ -50,11 +54,17 @@ export async function POST(req: NextRequest) {
   if (hasThrough) {
     throughYear = Number(body?.throughYear);
     throughMonth = Number(body?.throughMonth);
-    if (!Number.isInteger(throughYear) || throughYear < startYear || throughYear > nowYear) {
+    if (!Number.isInteger(throughYear) || throughYear > nowYear) {
       return NextResponse.json({ error: "invalid_through_year" }, { status: 400 });
     }
     if (!Number.isInteger(throughMonth) || throughMonth < 1 || throughMonth > 12) {
       return NextResponse.json({ error: "invalid_through_month" }, { status: 400 });
+    }
+    if (
+      throughYear < startYear ||
+      (throughYear === startYear && throughMonth < startMonth)
+    ) {
+      return NextResponse.json({ error: "through_before_start" }, { status: 400 });
     }
   }
 
@@ -85,6 +95,7 @@ export async function POST(req: NextRequest) {
     lastfmUser: user.lastfmUser,
     target,
     startYear,
+    startMonth,
     throughYear,
     throughMonth,
     fetchRealPeriodPlays,
@@ -95,10 +106,19 @@ export async function POST(req: NextRequest) {
   const isPrimary = customParada?.isPrimary ?? TARGET_PARADA[target].isPrimary;
 
   if (dryRun) {
-    const firstWeek = weeks[0] ?? null;
-    const lastWeek = weeks[weeks.length - 1] ?? null;
+    const weekIndexes = weeks.map((w) => w.weekIndex);
+    const existing = weekIndexes.length
+      ? await prisma.chart.findMany({
+          where: { paradaId, weekIndex: { in: weekIndexes } },
+          select: { weekIndex: true },
+        })
+      : [];
+    const existingSet = new Set(existing.map((c) => c.weekIndex));
+    const newWeeks = weeks.filter((w) => !existingSet.has(w.weekIndex));
+    const firstWeek = newWeeks[0] ?? null;
+    const lastWeek = newWeeks[newWeeks.length - 1] ?? null;
     const titleById = new Map(result.debuts.map((d) => [d.songId, d]));
-    const sample = (w: typeof firstWeek) =>
+    const sample = (w: (typeof newWeeks)[number] | null) =>
       w && {
         weekIndex: w.weekIndex,
         weekLabel: w.weekLabel,
@@ -117,7 +137,8 @@ export async function POST(req: NextRequest) {
       target,
       paradaId,
       chartSize,
-      startYear,
+      startYear: result.startYear,
+      startMonth: result.startMonth,
       throughYear: result.throughYear,
       throughMonth: result.throughMonth,
       boundaryWeekIndex: result.boundaryWeekIndex,
@@ -125,7 +146,9 @@ export async function POST(req: NextRequest) {
       endWeekIndexExclusive: result.endWeekIndexExclusive,
       monthsScanned: result.monthsScanned,
       totalDebuts: result.debuts.length,
-      weeksToCreate: weeks.length,
+      weeksSimulated: weeks.length,
+      weeksAlreadyExist: existingSet.size,
+      weeksToCreate: newWeeks.length,
       firstWeek: sample(firstWeek),
       lastWeek: sample(lastWeek),
     });

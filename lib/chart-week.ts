@@ -65,6 +65,15 @@ export function prevChartWeekIndex(weekIndex: number): number {
   return prevYear * 100 + isoWeeksInYear(prevYear);
 }
 
+/** `weekIndex` da semana ISO imediatamente seguinte. */
+export function nextChartWeekIndex(weekIndex: number): number {
+  const year = Math.floor(weekIndex / 100);
+  const week = weekIndex % 100;
+  const max = isoWeeksInYear(year);
+  if (week < max) return year * 100 + (week + 1);
+  return (year + 1) * 100 + 1;
+}
+
 /** Dia da semana (0=domingo…6=sábado) e horário BRT ("HH:MM") de publicação da Parada Global. */
 export type GlobalPublishSlot = { weekday: number; time: string };
 

@@ -48,6 +48,20 @@ describe("simulateWeeklyChart", () => {
     return { songId, debutDate: new Date(`${weekMonday}T00:00:00Z`), scoreFinal };
   }
 
+  it("startMonth começa na semana do dia 1 desse mês (não na semana ISO 1)", () => {
+    const snapshots = simulateWeeklyChart({
+      debuts: [debut("maio", "2004-05-03", 80)], // segunda da semana do 1º/mai/2004 ≈
+      startYear: 2004,
+      startMonth: 5,
+      endWeekIndexExclusive: 200420,
+      chartSize: 10,
+    });
+    expect(snapshots.length).toBeGreaterThan(0);
+    // 1ª semana gerada deve ser em maio/2004 (não janeiro)
+    const firstStart = snapshots[0].weekStartDate.toISOString().slice(0, 7);
+    expect(firstStart).toBe("2004-05");
+  });
+
   it("uma estreia fraca entra como 'new' e desaparece antes do fim do intervalo simulado", () => {
     const snapshots = simulateWeeklyChart({
       debuts: [debut("fraca", "2005-01-03", 15)],

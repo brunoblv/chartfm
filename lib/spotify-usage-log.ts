@@ -9,7 +9,7 @@
 export type SpotifyCallRecord = {
   ts: number;
   endpoint: string; // normalizado: /search, /tracks/{id}, token, browser-token, ...
-  app: "primary" | "backup" | "backup2" | "token" | "browser";
+  app: "primary" | "backup" | "backup2" | "backup3" | "token" | "browser";
   status: number | null; // null = falha de rede/timeout
   retryAfterS: number | null;
   caller: string; // função/arquivo de origem (melhor esforço via stack)
@@ -21,6 +21,9 @@ const records: SpotifyCallRecord[] = [];
 // Agregado por hora (chave = epoch-hora) → por endpoint → contadores
 type HourBucket = Map<string, { total: number; e429: number; byCaller: Map<string, number> }>;
 const hourly = new Map<number, HourBucket>();
+// Agregado por hora → por app (primary/backup/backup2/backup3/...) → contadores
+type HourAppBucket = Map<SpotifyCallRecord["app"], { total: number; e429: number }>;
+const hourlyByApp = new Map<number, HourAppBucket>();
 const HOURS_KEPT = 48;
 
 function normalizeEndpoint(input: string | URL): string {
@@ -65,6 +68,9 @@ function pruneHourly() {
   for (const key of hourly.keys()) {
     if (key < cutoff) hourly.delete(key);
   }
+  for (const key of hourlyByApp.keys()) {
+    if (key < cutoff) hourlyByApp.delete(key);
+  }
 }
 
 export function recordSpotifyCall(opts: {
@@ -103,6 +109,16 @@ export function recordSpotifyCall(opts: {
     entry.total += 1;
     if (rec.status === 429) entry.e429 += 1;
     entry.byCaller.set(rec.caller, (entry.byCaller.get(rec.caller) ?? 0) + 1);
+
+    let appBucket = hourlyByApp.get(hourKey);
+    if (!appBucket) {
+      appBucket = new Map();
+      hourlyByApp.set(hourKey, appBucket);
+    }
+    const appEntry = appBucket.get(rec.app) ?? { total: 0, e429: 0 };
+    appEntry.total += 1;
+    if (rec.status === 429) appEntry.e429 += 1;
+    appBucket.set(rec.app, appEntry);
   } catch {
     // log nunca pode quebrar o fluxo principal
   }
@@ -113,6 +129,7 @@ export type SpotifyUsageSummary = {
   totalCalls: number;
   total429: number;
   byEndpoint: { endpoint: string; total: number; e429: number; topCallers: { caller: string; count: number }[] }[];
+  byApp: { app: SpotifyCallRecord["app"]; total: number; e429: number }[];
   byHour: { hourIso: string; total: number; e429: number }[];
   recent429s: SpotifyCallRecord[];
   recentCalls: SpotifyCallRecord[];
@@ -123,6 +140,7 @@ export function getSpotifyUsageSummary(hours = 24): SpotifyUsageSummary {
   const since = sinceHour * 3_600_000;
 
   const endpointAgg = new Map<string, { total: number; e429: number; byCaller: Map<string, number> }>();
+  const appAgg = new Map<SpotifyCallRecord["app"], { total: number; e429: number }>();
   const byHour: { hourIso: string; total: number; e429: number }[] = [];
 
   for (const [hourKey, bucket] of [...hourly.entries()].sort((a, b) => a[0] - b[0])) {
@@ -146,6 +164,16 @@ export function getSpotifyUsageSummary(hours = 24): SpotifyUsageSummary {
     byHour.push({ hourIso: new Date(hourKey * 3_600_000).toISOString(), total: hTotal, e429: h429 });
   }
 
+  for (const [hourKey, appBucket] of hourlyByApp) {
+    if (hourKey < sinceHour) continue;
+    for (const [app, entry] of appBucket) {
+      const agg = appAgg.get(app) ?? { total: 0, e429: 0 };
+      agg.total += entry.total;
+      agg.e429 += entry.e429;
+      appAgg.set(app, agg);
+    }
+  }
+
   const byEndpoint = [...endpointAgg.entries()]
     .map(([endpoint, agg]) => ({
       endpoint,
@@ -158,6 +186,10 @@ export function getSpotifyUsageSummary(hours = 24): SpotifyUsageSummary {
     }))
     .sort((a, b) => b.total - a.total);
 
+  const byApp = [...appAgg.entries()]
+    .map(([app, agg]) => ({ app, total: agg.total, e429: agg.e429 }))
+    .sort((a, b) => b.total - a.total);
+
   const inWindow = records.filter((r) => r.ts >= since);
 
   return {
@@ -165,6 +197,7 @@ export function getSpotifyUsageSummary(hours = 24): SpotifyUsageSummary {
     totalCalls: inWindow.length,
     total429: inWindow.filter((r) => r.status === 429).length,
     byEndpoint,
+    byApp,
     byHour,
     recent429s: inWindow.filter((r) => r.status === 429).slice(-30).reverse(),
     recentCalls: inWindow.slice(-50).reverse(),

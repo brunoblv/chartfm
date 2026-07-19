@@ -3,14 +3,19 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { probeSpotifyApi, probeSpotifyBackupApi, probeSpotifyBackup2Api } from "@/lib/spotify-server";
+import {
+  probeSpotifyApi,
+  probeSpotifyBackupApi,
+  probeSpotifyBackup2Api,
+  probeSpotifyBackup3Api,
+} from "@/lib/spotify-server";
 import { getSpotifyUsageSummary } from "@/lib/spotify-usage-log";
 import { getSpotifyBudgetStatus } from "@/lib/spotify-budget";
 
 export const runtime = "nodejs";
 
 /**
- * target=primary|backup|backup2 — testa (sob demanda) cada app Spotify.
+ * target=primary|backup|backup2|backup3 — testa (sob demanda) cada app Spotify.
  * target=usage[&hours=24] — resumo do log de uso (de onde vem o consumo), usado em /admin/logs.
  */
 export async function GET(req: NextRequest) {
@@ -26,7 +31,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ target, ...getSpotifyUsageSummary(hours), budgets: getSpotifyBudgetStatus() });
   }
 
-  if (target !== "primary" && target !== "backup" && target !== "backup2") {
+  if (target !== "primary" && target !== "backup" && target !== "backup2" && target !== "backup3") {
     return NextResponse.json({ error: "invalid_target" }, { status: 400 });
   }
 
@@ -35,6 +40,8 @@ export async function GET(req: NextRequest) {
       ? await probeSpotifyApi()
       : target === "backup"
         ? await probeSpotifyBackupApi()
-        : await probeSpotifyBackup2Api();
+        : target === "backup2"
+          ? await probeSpotifyBackup2Api()
+          : await probeSpotifyBackup3Api();
   return NextResponse.json({ target, ...result });
 }

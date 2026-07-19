@@ -46,8 +46,14 @@ export interface WeeklySnapshot {
 export interface SimulateWeeklyChartArgs {
   /** Uma estreia por música (a mesma lista serve para todo o intervalo). */
   debuts: WeeklyDebut[];
-  /** Ano de início da simulação (semana ISO 1). */
+  /** Ano de início da simulação. */
   startYear: number;
+  /**
+   * Mês civil de início (1-12). Default 1 = semana ISO 1 do ano.
+   * Com mês > 1, começa na segunda da semana que contém o dia 1 desse mês
+   * (ex.: maio/2004 → um ano de aquecimento antes de maio/2005).
+   */
+  startMonth?: number;
   /** Simula até (exclusive) este weekIndex — nunca gera aqui ou depois. */
   endWeekIndexExclusive: number;
   chartSize: number;
@@ -169,11 +175,12 @@ interface TrackedSong {
 }
 
 /**
- * Simula semana a semana, de `startYear` (semana ISO 1) até `endWeekIndexExclusive`.
+ * Simula semana a semana, de `startYear`[/`startMonth`] até `endWeekIndexExclusive`.
  * Carry-over puro: uma música só sai da parada quando o poder cai (nunca reentra).
  */
 export function simulateWeeklyChart(args: SimulateWeeklyChartArgs): WeeklySnapshot[] {
   const { debuts, startYear, endWeekIndexExclusive, chartSize } = args;
+  const startMonth = args.startMonth ?? 1;
 
   const debutsByWeek = new Map<number, WeeklyDebut[]>();
   for (const d of debuts) {
@@ -186,7 +193,13 @@ export function simulateWeeklyChart(args: SimulateWeeklyChartArgs): WeeklySnapsh
   const tracked = new Map<string, TrackedSong>();
   const snapshots: WeeklySnapshot[] = [];
 
-  let anchor = mondayOfIsoWeek1UTC(startYear);
+  let anchor: Date;
+  if (startMonth <= 1) {
+    anchor = mondayOfIsoWeek1UTC(startYear);
+  } else {
+    const monthStart = new Date(Date.UTC(startYear, startMonth - 1, 1));
+    anchor = weekRangeUTC(monthStart).start;
+  }
   let wi = weekIndexUTC(anchor);
 
   while (wi < endWeekIndexExclusive) {

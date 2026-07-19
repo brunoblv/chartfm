@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { debutRefFor, type SongRow } from "./build-pool";
+import { aggregateTop20Lifetime, debutRefFor, type SongRow } from "./build-pool";
 
 function song(over: Partial<SongRow> = {}): SongRow {
   return {
@@ -16,6 +16,38 @@ function song(over: Partial<SongRow> = {}): SongRow {
     ...over,
   };
 }
+
+describe("aggregateTop20Lifetime", () => {
+  it("conta semanas/pico/#1 all-time (não corta no mês da estreia)", () => {
+    const points = [
+      { position: 20, weekStartDate: new Date("2005-06-06") },
+      { position: 5, weekStartDate: new Date("2005-06-12") },
+      { position: 2, weekStartDate: new Date("2006-01-24") },
+      { position: 1, weekStartDate: new Date("2006-01-30") },
+      { position: 45, weekStartDate: new Date("2006-02-01") }, // fora do top20
+    ];
+    expect(aggregateTop20Lifetime(points)).toEqual({
+      weeks: 4,
+      bestPeak: 1,
+      numberOnes: 1,
+      firstEntryDate: new Date("2005-06-06"),
+    });
+  });
+
+  it("ignora pontos sem data", () => {
+    expect(
+      aggregateTop20Lifetime([
+        { position: 3, weekStartDate: null },
+        { position: 8, weekStartDate: new Date("2005-01-01") },
+      ]),
+    ).toEqual({
+      weeks: 1,
+      bestPeak: 8,
+      numberOnes: 0,
+      firstEntryDate: new Date("2005-01-01"),
+    });
+  });
+});
 
 describe("debutRefFor — cadeia padrão", () => {
   it("hot100: prioriza single, depois álbum, depois clipe, depois Top20", () => {

@@ -54,7 +54,7 @@ function SpotifyProbeButton({
   target,
   label,
 }: {
-  target: "primary" | "backup" | "backup2";
+  target: "primary" | "backup" | "backup2" | "backup3";
   label: string;
 }) {
   const [testing, setTesting] = useState(false);
@@ -119,10 +119,30 @@ type UsageSummary = {
   totalCalls: number;
   total429: number;
   byEndpoint: { endpoint: string; total: number; e429: number; topCallers: { caller: string; count: number }[] }[];
+  byApp: { app: string; total: number; e429: number }[];
   byHour: { hourIso: string; total: number; e429: number }[];
   recent429s: { ts: number; endpoint: string; app: string; retryAfterS: number | null; caller: string }[];
   recentCalls: { ts: number; endpoint: string; app: string; status: number | null; caller: string }[];
 };
+
+function appLabel(app: string): string {
+  switch (app) {
+    case "primary":
+      return "Principal";
+    case "backup":
+      return "Reserva (BACKUP)";
+    case "backup2":
+      return "Reserva 2 (criação de paradas)";
+    case "backup3":
+      return "Reserva 3 (crownnote)";
+    case "token":
+      return "Token (auth)";
+    case "browser":
+      return "Browser (legado)";
+    default:
+      return app;
+  }
+}
 
 function SpotifyUsagePanel() {
   const [hours, setHours] = useState(24);
@@ -192,6 +212,38 @@ function SpotifyUsagePanel() {
 
       {data && data.byEndpoint.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {data.byApp.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Por app</div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={adminThStyle}>App</th>
+                    <th style={adminThStyle}>Chamadas</th>
+                    <th style={adminThStyle}>429</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.byApp.map((a) => (
+                    <tr key={a.app}>
+                      <td style={adminTdStyle}>{appLabel(a.app)}</td>
+                      <td style={adminTdStyle}>{a.total}</td>
+                      <td
+                        style={{
+                          ...adminTdStyle,
+                          color: a.e429 > 0 ? "#dc2626" : undefined,
+                          fontWeight: a.e429 > 0 ? 700 : undefined,
+                        }}
+                      >
+                        {a.e429}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -355,7 +407,8 @@ export function LogsAdminClient({
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <SpotifyProbeButton target="primary" label="API principal" />
           <SpotifyProbeButton target="backup" label="API reserva (BACKUP)" />
-          <SpotifyProbeButton target="backup2" label="API reserva 2 (paradas)" />
+          <SpotifyProbeButton target="backup2" label="API reserva 2 (criação de paradas)" />
+          <SpotifyProbeButton target="backup3" label="API reserva 3 (crownnote)" />
         </div>
       </AdminPanel>
 

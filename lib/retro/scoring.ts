@@ -73,21 +73,19 @@ export interface RetroContext {
 
 /** Contribuição de cada componente para o Score Final, já em pontos (0..máximo). */
 export interface ScoreBreakdown {
-  period: number; // /30
+  period: number; // /25
   importance: number; // /30
-  top20: number; // /15
+  top20: number; // /30
   releaseRecency: number; // /10
-  clip: number; // /10
   adjust: number; // /5
 }
 
 /** Máximo em pontos de cada componente do Score Final (para barras de UI). */
 export const SCORE_COMPONENT_MAX: ScoreBreakdown = {
-  period: 30,
+  period: 25,
   importance: 30,
-  top20: 15,
+  top20: 30,
   releaseRecency: 10,
-  clip: 10,
   adjust: 5,
 };
 
@@ -116,7 +114,8 @@ export interface RetroRow {
 
 const WEIGHTS = {
   importance: { plays: 0.4, weeks: 0.25, ones: 0.15, peak: 0.1, recency: 0.1 },
-  score: { period: 0.3, importance: 0.3, top20: 0.15, releaseRecency: 0.1, clip: 0.1, adjust: 0.05 },
+  // 25 + 30 + 30 + 10 + 5 = 100
+  score: { period: 0.25, importance: 0.3, top20: 0.3, releaseRecency: 0.1, adjust: 0.05 },
 } as const;
 
 const THRESHOLDS = {
@@ -222,12 +221,6 @@ function releaseRecencyScore(ref: Date | null, chartDate: Date): number {
   return clamp01(1 - months / THRESHOLDS.releaseRecencyMonths);
 }
 
-/** Bônus de clipe: lançado até a data do chart. */
-function clipScore(youtubeReleaseDate: Date | null, chartDate: Date): number {
-  if (!youtubeReleaseDate) return 0;
-  return youtubeReleaseDate.getTime() <= chartDate.getTime() ? 1 : 0;
-}
-
 // ---------------------------------------------------------------------------
 // Importance (0..100) — global; usa override quando travada/definida
 // ---------------------------------------------------------------------------
@@ -289,7 +282,7 @@ export function deriveConfidence(s: RetroSongInput): Confidence {
     releaseRefOf(s) != null, // sabemos quando lançou
     s.periodPlaycount != null, // temos plays reais do período
     s.top20Weeks > 0, // temos histórico Top20
-    s.youtubeReleaseDate != null, // sabemos do clipe
+    s.overallPlaycount > 0, // temos plays totais no Last.fm
   ].filter(Boolean).length;
   if (signals >= 3) return "alta";
   if (signals === 2) return "media";
@@ -342,10 +335,9 @@ export function buildRetroChart(songs: RetroSongInput[], ctx: RetroContext): Ret
       importance: w.importance * (importance / 100),
       top20: w.top20 * top20Composite,
       releaseRecency: w.releaseRecency * releaseRecencyScore(ref, ctx.chartDate),
-      clip: w.clip * clipScore(s.youtubeReleaseDate, ctx.chartDate),
       adjust: w.adjust * adjustScore,
     };
-    const score01 = c.period + c.importance + c.top20 + c.releaseRecency + c.clip + c.adjust;
+    const score01 = c.period + c.importance + c.top20 + c.releaseRecency + c.adjust;
     const scoreFinal = eligible ? clamp01(score01) * 100 : 0;
     const scale = eligible ? 100 : 0;
     const breakdown: ScoreBreakdown = {
@@ -353,7 +345,6 @@ export function buildRetroChart(songs: RetroSongInput[], ctx: RetroContext): Ret
       importance: c.importance * scale,
       top20: c.top20 * scale,
       releaseRecency: c.releaseRecency * scale,
-      clip: c.clip * scale,
       adjust: c.adjust * scale,
     };
 

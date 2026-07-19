@@ -8,7 +8,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { __setSpotifyAppPoolGetter, probeSpotifyApi } from "@/lib/spotify-server";
 
-type SpotifyAppPool = "default" | "user-charts";
+type SpotifyAppPool = "default" | "user-charts" | "crownnote";
 
 const spotifyPoolStorage = new AsyncLocalStorage<{ pool: SpotifyAppPool }>();
 
@@ -17,6 +17,11 @@ __setSpotifyAppPoolGetter(() => spotifyPoolStorage.getStore()?.pool ?? "default"
 /** Escopo para publicação/import de paradas — libera failover no BACKUP2. */
 export function runWithSpotifyUserChartsPool<T>(fn: () => Promise<T>): Promise<T> {
   return spotifyPoolStorage.run({ pool: "user-charts" }, fn);
+}
+
+/** Escopo da tela /admin/crownnote-export — usa o BACKUP3 dedicado. */
+export function runWithSpotifyCrownnotePool<T>(fn: () => Promise<T>): Promise<T> {
+  return spotifyPoolStorage.run({ pool: "crownnote" }, fn);
 }
 
 /** Probe no pool de paradas de usuário (principal → backup → BACKUP2). */
