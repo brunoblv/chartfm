@@ -47,3 +47,11 @@ export function writeStoredConsent(value: string): void {
     // ignore quota / private mode
   }
 }
+
+export const CONSENT_REOPEN_EVENT = "chartfm-consent-reopen";
+
+/** Reabre o banner de cookies para o usuário revisar/trocar a escolha já feita. */
+export function reopenConsentBanner(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(CONSENT_REOPEN_EVENT));
+}

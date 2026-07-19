@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Check, Cookie } from "lucide-react";
 import {
-  CONSENT_STORAGE_KEY,
+  CONSENT_REOPEN_EVENT,
+  hasAdsConsent,
   readStoredConsent,
   writeStoredConsent,
 } from "@/lib/consent";
@@ -19,6 +20,16 @@ export function CookieConsent() {
 
   useEffect(() => {
     setVisible(readStoredConsent() === null);
+  }, []);
+
+  useEffect(() => {
+    function reopen() {
+      setAdsEnabled(hasAdsConsent(readStoredConsent()));
+      setShowOptions(true);
+      setVisible(true);
+    }
+    window.addEventListener(CONSENT_REOPEN_EVENT, reopen);
+    return () => window.removeEventListener(CONSENT_REOPEN_EVENT, reopen);
   }, []);
 
   function finish(message: string, value: string) {

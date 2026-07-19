@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { SocialFooterBadges } from "@/components/ui/SocialFooterBadges";
 import { useTranslations } from "@/hooks/useTranslations";
+import { reopenConsentBanner } from "@/lib/consent";
 
 type LinkItem = { label: string; href: string };
 
@@ -29,7 +30,15 @@ const columnTitleStyle: React.CSSProperties = {
   marginBottom: 2,
 };
 
-function FooterColumn({ title, links }: { title: string; links: LinkItem[] }) {
+function FooterColumn({
+  title,
+  links,
+  trailing,
+}: {
+  title: string;
+  links: LinkItem[];
+  trailing?: React.ReactNode;
+}) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={columnTitleStyle}>{title}</div>
@@ -38,6 +47,7 @@ function FooterColumn({ title, links }: { title: string; links: LinkItem[] }) {
           {item.label}
         </Link>
       ))}
+      {trailing}
     </div>
   );
 }
@@ -71,7 +81,6 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
     { label: t("landing.footerTerms"), href: "/terms-of-use" },
     { label: t("landing.footerPrivacy"), href: "/privacy-policy" },
     { label: t("globalFooter.dataDeletion"), href: "/data-deletion" },
-    { label: t("globalFooter.cookies"), href: "/privacy-policy#cookies" },
   ];
 
   const bottomLinks: LinkItem[] = [
@@ -127,7 +136,19 @@ export function GlobalFooter({ isMobile = false }: GlobalFooterProps) {
 
         <FooterColumn title={t("landing.footerProduct")} links={productLinks} />
         <FooterColumn title={t("globalFooter.community")} links={communityLinks} />
-        <FooterColumn title={t("landing.footerLegal")} links={legalLinks} />
+        <FooterColumn
+          title={t("landing.footerLegal")}
+          links={legalLinks}
+          trailing={
+            <button
+              type="button"
+              onClick={() => reopenConsentBanner()}
+              style={{ ...linkStyle, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}
+            >
+              {t("globalFooter.cookies")}
+            </button>
+          }
+        />
       </div>
 
       <div style={{ height: 1, background: "var(--divider)" }} />
