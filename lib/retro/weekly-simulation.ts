@@ -125,6 +125,16 @@ export function weekRangeUTC(date: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
+/**
+ * weekIndex da primeira semana ISO que começa DEPOIS do mês (exclusive end).
+ * Inclui a semana que contém o último dia do mês.
+ */
+export function endWeekIndexAfterMonth(year: number, month: number): number {
+  const monthEnd = new Date(Date.UTC(year, month, 0)); // último dia do mês
+  const { start: monday } = weekRangeUTC(monthEnd);
+  return weekIndexUTC(addDaysUTC(monday, 7));
+}
+
 /** Segunda-feira da semana ISO 1 de `year`, em UTC (4 de janeiro está sempre na semana 1). */
 export function mondayOfIsoWeek1UTC(year: number): Date {
   const jan4 = new Date(Date.UTC(year, 0, 4));

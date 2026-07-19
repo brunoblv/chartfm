@@ -332,8 +332,11 @@ interface PreviewResponse {
   paradaId: string;
   chartSize: number;
   startYear: number;
+  throughYear: number | null;
+  throughMonth: number | null;
   boundaryWeekIndex: number;
   boundaryWeekLabel: string | null;
+  endWeekIndexExclusive: number;
   monthsScanned: number;
   totalDebuts: number;
   weeksToCreate: number;
@@ -352,7 +355,16 @@ interface ParadaOption {
   name: string;
 }
 
-function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
+function HistoryGenerationPanel({
+  target,
+  throughYear,
+  throughMonth,
+}: {
+  target: RetroTarget;
+  /** Mês selecionado na tela — publica só até aqui (fluxo mês a mês). */
+  throughYear: number;
+  throughMonth: number;
+}) {
   const [startYear, setStartYear] = useState(2000);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [publishResult, setPublishResult] = useState<PublishResponse | null>(null);
@@ -361,6 +373,8 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
 
   const [paradas, setParadas] = useState<ParadaOption[]>([]);
   const [paradaId, setParadaId] = useState(""); // vazio = usa a parada padrão do target
+
+  const throughLabel = `${MONTHS[throughMonth - 1]} de ${throughYear}`;
 
   useEffect(() => {
     fetch("/api/user/paradas")
@@ -373,6 +387,17 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
       .catch(() => {});
   }, []);
 
+  // Trocar o mês da curadoria invalida o preview anterior.
+  useEffect(() => {
+    setPreview(null);
+    setPublishResult(null);
+    setError(null);
+  }, [throughYear, throughMonth, target, startYear, paradaId]);
+
+  useEffect(() => {
+    if (startYear > throughYear) setStartYear(throughYear);
+  }, [throughYear, startYear]);
+
   async function callPublish(dryRun: boolean) {
     setLoading(dryRun ? "preview" : "publish");
     setError(null);
@@ -380,7 +405,14 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
       const res = await fetch("/api/retro/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, startYear, dryRun, paradaId: paradaId || undefined }),
+        body: JSON.stringify({
+          target,
+          startYear,
+          throughYear,
+          throughMonth,
+          dryRun,
+          paradaId: paradaId || undefined,
+        }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -403,10 +435,11 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
   return (
     <div style={{ ...card, padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700 }}>Gerar histórico da parada</div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>Publicar até este mês</div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-          Simula semana a semana (estreia + carry-over) desde o ano escolhido até a semana real mais antiga já
-          publicada em {TARGET_LABEL[target]}, e publica como Chart de verdade. Nunca sobrescreve uma semana que já existe.
+          Fluxo mês a mês: cura as estreias de {throughLabel} acima, depois simula e publica as semanas
+          desde o início do histórico até o fim de {throughLabel} (carry-over incluído). Semanas que já
+          existem não são sobrescritas — avance um mês quando estiver pronto.
         </div>
       </div>
 
@@ -419,17 +452,29 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
           </select>
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Começar em</span>
-          <select value={startYear} onChange={(ev) => setStartYear(Number(ev.target.value))} style={inputStyle}>
-            {YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
+          <span style={labelStyle}>Histórico desde</span>
+          <select
+            value={Math.min(startYear, throughYear)}
+            onChange={(ev) => setStartYear(Number(ev.target.value))}
+            style={inputStyle}
+          >
+            {YEARS.slice().reverse().filter((y) => y <= throughYear).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
           </select>
         </label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={labelStyle}>Até</span>
+          <div style={{ ...inputStyle, fontWeight: 600, background: "var(--fill-subtle)" }}>
+            {throughLabel}
+          </div>
+        </div>
         <button
           onClick={() => void callPublish(true)}
           disabled={loading !== null}
           style={{ ...inputStyle, padding: "10px 16px", fontWeight: 600, cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}
         >
-          {loading === "preview" ? "Simulando…" : "Simular (preview)"}
+          {loading === "preview" ? "Simulando…" : "Simular até este mês"}
         </button>
         {preview && preview.weeksToCreate > 0 && (
           <button
@@ -441,7 +486,7 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
               cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1,
             }}
           >
-            {loading === "publish" ? "Publicando…" : "Publicar"}
+            {loading === "publish" ? "Publicando…" : `Publicar até ${MONTHS[throughMonth - 1]}/${throughYear}`}
           </button>
         )}
       </div>
@@ -453,8 +498,11 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
       {preview && (
         <div style={{ fontSize: 13, color: "var(--text-subtle)", display: "flex", flexDirection: "column", gap: 4 }}>
           <div>
-            <strong>{preview.weeksToCreate}</strong> semanas seriam geradas · <strong>{preview.totalDebuts}</strong> estreias ·{" "}
-            {preview.monthsScanned} meses varridos · fronteira real: {preview.boundaryWeekLabel ?? "nenhuma ainda"} (weekIndex {preview.boundaryWeekIndex})
+            <strong>{preview.weeksToCreate}</strong> semanas até {throughLabel} · <strong>{preview.totalDebuts}</strong> estreias ·{" "}
+            {preview.monthsScanned} meses varridos
+            {preview.boundaryWeekLabel && (
+              <> · fronteira do histórico real: {preview.boundaryWeekLabel}</>
+            )}
           </div>
           {preview.firstWeek && (
             <div>
@@ -464,12 +512,15 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
           )}
           {preview.lastWeek && preview.lastWeek.weekIndex !== preview.firstWeek?.weekIndex && (
             <div>
-              Última semana: {preview.lastWeek.weekLabel} ({preview.lastWeek.dateRange}) — top 5:{" "}
+              Última semana deste lote: {preview.lastWeek.weekLabel} ({preview.lastWeek.dateRange}) — top 5:{" "}
               {preview.lastWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", ")}
             </div>
           )}
           {preview.weeksToCreate === 0 && (
-            <div>Nada a gerar — ou o ano escolhido já está dentro do histórico real, ou não há estreias elegíveis.</div>
+            <div>
+              Nada novo até {throughLabel} — semanas desse intervalo já existem, ou ainda não há estreias elegíveis.
+              Avance o período acima e continue.
+            </div>
           )}
         </div>
       )}
@@ -479,10 +530,12 @@ function HistoryGenerationPanel({ target }: { target: RetroTarget }) {
           <strong>{publishResult.created}</strong> semanas publicadas · {publishResult.skippedExisting} já existiam ·{" "}
           {publishResult.remaining > 0 ? (
             <span style={{ color: "var(--accent)", fontWeight: 600 }}>
-              {publishResult.remaining} restantes — clique em Publicar de novo para continuar.
+              {publishResult.remaining} restantes neste mês — clique em Publicar de novo para continuar.
             </span>
           ) : (
-            <span>backfill completo até a fronteira real.</span>
+            <span>
+              {throughLabel} pronto. Avance o período (mês/ano acima), cure as estreias e publique o próximo mês.
+            </span>
           )}
         </div>
       )}
@@ -921,7 +974,7 @@ export function RetroClient() {
             )}
           </div>
 
-          <HistoryGenerationPanel target={target} />
+          <HistoryGenerationPanel target={target} throughYear={year} throughMonth={month} />
         </>
       )}
 

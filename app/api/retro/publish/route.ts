@@ -17,12 +17,17 @@ function parseTarget(raw: unknown): RetroTarget | null {
 
 /**
  * POST /api/retro/publish
- * Body: { target: "hot100" | "clipes", startYear: number, dryRun?: boolean, fetchRealPeriodPlays?: boolean }
+ * Body: {
+ *   target, startYear,
+ *   throughYear?, throughMonth?,  // fluxo mês a mês: gera só até o fim desse mês
+ *   dryRun?, fetchRealPeriodPlays?, paradaId?
+ * }
  *
  * Gera o histórico semanal (estreia + carry-over) a partir de `startYear` e,
  * se `dryRun` for false, grava como `Chart`/`ChartEntry` reais na parada-alvo.
+ * Com `throughYear`/`throughMonth`, para no fim daquele mês (curadoria calma).
  * NUNCA sobrescreve uma semana que já existe (idempotente — pode rodar de novo
- * pra continuar um backfill grande em pedaços de até `MAX_WEEKS_PER_CALL`).
+ * pra continuar em pedaços de até `MAX_WEEKS_PER_CALL`).
  * Restrito ao @bruno.
  */
 export async function POST(req: NextRequest) {
@@ -37,6 +42,20 @@ export async function POST(req: NextRequest) {
   const nowYear = new Date().getUTCFullYear();
   if (!Number.isInteger(startYear) || startYear < MIN_YEAR || startYear > nowYear) {
     return NextResponse.json({ error: "invalid_start_year" }, { status: 400 });
+  }
+
+  const hasThrough = body?.throughYear != null || body?.throughMonth != null;
+  let throughYear: number | undefined;
+  let throughMonth: number | undefined;
+  if (hasThrough) {
+    throughYear = Number(body?.throughYear);
+    throughMonth = Number(body?.throughMonth);
+    if (!Number.isInteger(throughYear) || throughYear < startYear || throughYear > nowYear) {
+      return NextResponse.json({ error: "invalid_through_year" }, { status: 400 });
+    }
+    if (!Number.isInteger(throughMonth) || throughMonth < 1 || throughMonth > 12) {
+      return NextResponse.json({ error: "invalid_through_month" }, { status: 400 });
+    }
   }
 
   const dryRun = body?.dryRun !== false; // padrão: dry-run (só quem manda dryRun:false grava)
@@ -66,6 +85,8 @@ export async function POST(req: NextRequest) {
     lastfmUser: user.lastfmUser,
     target,
     startYear,
+    throughYear,
+    throughMonth,
     fetchRealPeriodPlays,
     paradaId: customParada?.id,
     chartSize: customParada?.chartSize ?? undefined,
@@ -97,8 +118,11 @@ export async function POST(req: NextRequest) {
       paradaId,
       chartSize,
       startYear,
+      throughYear: result.throughYear,
+      throughMonth: result.throughMonth,
       boundaryWeekIndex: result.boundaryWeekIndex,
       boundaryWeekLabel: result.boundaryWeekLabel,
+      endWeekIndexExclusive: result.endWeekIndexExclusive,
       monthsScanned: result.monthsScanned,
       totalDebuts: result.debuts.length,
       weeksToCreate: weeks.length,

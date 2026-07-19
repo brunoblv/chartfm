@@ -23,7 +23,13 @@ import {
   type RetroTarget,
 } from "@/lib/retro/build-pool";
 import { buildRetroChart } from "@/lib/retro/scoring";
-import { simulateWeeklyChart, weekIndexUTC, type WeeklyDebut, type WeeklySnapshot } from "@/lib/retro/weekly-simulation";
+import {
+  endWeekIndexAfterMonth,
+  simulateWeeklyChart,
+  weekIndexUTC,
+  type WeeklyDebut,
+  type WeeklySnapshot,
+} from "@/lib/retro/weekly-simulation";
 
 /** As duas paradas reais que o sistema alimenta (ver hot100retroativo.md §"Paradas-alvo"). */
 export const TARGET_PARADA: Record<RetroTarget, { paradaId: string; chartSize: number; isPrimary: boolean }> = {
@@ -34,12 +40,21 @@ export const TARGET_PARADA: Record<RetroTarget, { paradaId: string; chartSize: n
 /** Segurança contra boundary mal calculado / parada sem nenhum chart real ainda. */
 const MAX_MONTHS = 40 * 12;
 
+export { endWeekIndexAfterMonth };
+
 export interface GenerateHistoryOptions {
   userId: string;
   lastfmUser: string;
   target: RetroTarget;
   /** Ano civil de início do backfill (semana ISO 1 desse ano). */
   startYear: number;
+  /**
+   * Se definidos, só varre estreias e só gera semanas até o fim deste mês
+   * (inclusive). Fluxo mês a mês: curar maio → publicar até maio → junho → …
+   * Sempre respeita também a fronteira do histórico real já publicado.
+   */
+  throughYear?: number;
+  throughMonth?: number; // 1-12
   /**
    * Busca plays reais do Last.fm por mês (pós-Out/2010) em vez de estimar por
    * playsScore×eraWeight. Desligado por padrão: multiplicaria as chamadas ao
@@ -66,9 +81,14 @@ export interface GenerateHistoryResult {
   paradaId: string;
   chartSize: number;
   startYear: number;
+  /** Se a geração foi limitada a um mês (fluxo mês a mês). */
+  throughYear: number | null;
+  throughMonth: number | null;
   /** weekIndex da semana real mais antiga já publicada nessa parada — nunca gerado além disso. */
   boundaryWeekIndex: number;
   boundaryWeekLabel: string | null;
+  /** Fim exclusivo efetivo da simulação (min da fronteira real e do throughMonth). */
+  endWeekIndexExclusive: number;
   monthsScanned: number;
   debuts: DebutSummary[];
   weeks: WeeklySnapshot[];
@@ -95,11 +115,19 @@ export async function generateRetroHistory(opts: GenerateHistoryOptions): Promis
   const defaults = TARGET_PARADA[target];
   const paradaId = opts.paradaId ?? defaults.paradaId;
   const chartSize = opts.chartSize ?? defaults.chartSize;
+  const throughYear = opts.throughYear ?? null;
+  const throughMonth = opts.throughMonth ?? null;
 
   const [sources, boundary] = await Promise.all([
     loadRetroSources(userId, lastfmUser),
     resolveBoundaryWeekIndex(paradaId),
   ]);
+
+  // Fim da simulação: fronteira do histórico real, opcionalmente cortada no mês pedido.
+  let endWeekIndexExclusive = boundary.weekIndex;
+  if (throughYear != null && throughMonth != null) {
+    endWeekIndexExclusive = Math.min(endWeekIndexExclusive, endWeekIndexAfterMonth(throughYear, throughMonth));
+  }
 
   const titleById = new Map<string, { title: string; artist: string }>();
   for (const song of sources.songIndex.values()) {
@@ -115,10 +143,14 @@ export async function generateRetroHistory(opts: GenerateHistoryOptions): Promis
   let monthsScanned = 0;
 
   while (monthsScanned < MAX_MONTHS) {
+    if (throughYear != null && throughMonth != null) {
+      if (year > throughYear || (year === throughYear && month > throughMonth)) break;
+    }
+
     const chartDate = endOfMonthUTC(year, month);
-    const monthEndWeekIndex = weekIndexUTC(chartDate);
-    if (monthEndWeekIndex >= boundary.weekIndex && weekIndexUTC(new Date(Date.UTC(year, month - 1, 1))) >= boundary.weekIndex) {
-      break; // o mês inteiro já está na (ou depois da) fronteira real — para
+    const monthStartWeekIndex = weekIndexUTC(new Date(Date.UTC(year, month - 1, 1)));
+    if (monthStartWeekIndex >= endWeekIndexExclusive) {
+      break; // o mês inteiro já está na (ou depois da) fronteira efetiva — para
     }
 
     const periodPlays =
@@ -133,7 +165,7 @@ export async function generateRetroHistory(opts: GenerateHistoryOptions): Promis
       if (row.position == null || row.releaseRef == null) continue;
       if (seenSongIds.has(row.songId)) continue; // cada música estreia 1x só
       const debutWeekIndex = weekIndexUTC(row.releaseRef);
-      if (debutWeekIndex >= boundary.weekIndex) continue; // cairia numa semana já real
+      if (debutWeekIndex >= endWeekIndexExclusive) continue; // cairia fora do intervalo pedido / já real
 
       seenSongIds.add(row.songId);
       debuts.push({ songId: row.songId, debutDate: row.releaseRef, scoreFinal: row.scoreFinal });
@@ -158,7 +190,7 @@ export async function generateRetroHistory(opts: GenerateHistoryOptions): Promis
   const weeks = simulateWeeklyChart({
     debuts,
     startYear,
-    endWeekIndexExclusive: boundary.weekIndex,
+    endWeekIndexExclusive,
     chartSize,
   });
 
@@ -167,8 +199,11 @@ export async function generateRetroHistory(opts: GenerateHistoryOptions): Promis
     paradaId,
     chartSize,
     startYear,
+    throughYear,
+    throughMonth,
     boundaryWeekIndex: boundary.weekIndex,
     boundaryWeekLabel: boundary.weekLabel,
+    endWeekIndexExclusive,
     monthsScanned,
     debuts: debutSummaries,
     weeks,
