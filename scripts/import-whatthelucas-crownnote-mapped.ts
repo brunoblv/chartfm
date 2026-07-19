@@ -1,14 +1,9 @@
 /**
- * Importa as charts Crownnote do @whatthelucas a partir dos JSONs já mapeados
- * (songMappings com songId/spotifyId) — mesmo padrão de
- * import-rafizaka-crownnote-mapped.ts, mas processando vários arquivos em
- * sequência (o export veio dividido em 3 pedaços por período) e SEM
- * sobrescrever charts que já existem no site para a semana (skip, não update).
+ * Importa a Fifofu Chart do @whatthelucas a partir do JSON Crownnote já mapeado
+ * (songMappings com songId/spotifyId) — mesmo padrão de import-otiagoqz-crownnote.ts.
  *
- * Fontes padrão (relativas ao cwd do repo), em ordem cronológica:
- *   public/jsons/crownnote-whatthelucas-mapped-2026-07-19.json          (2000–2002)
- *   public/jsons/crownnote-whatthelucas-mapped-2026-07-19 (1).json      (2002–2005)
- *   public/jsons/crownnote-whatthelucas-mapped-2026-07-19 (3).json      (2005–2008, versão mais recente — "(2)" é um snapshot anterior e é ignorado)
+ * Fonte padrão (relativa ao cwd do repo):
+ *   public/jsons/crownnote-whatthelucas-mapped-2026-07-19.json
  *
  * Usage:
  *   npx tsx scripts/import-whatthelucas-crownnote-mapped.ts --dry-run
@@ -61,16 +56,17 @@ const prisma = new PrismaClient(
 );
 
 const HANDLE = "whatthelucas";
-const DEFAULT_JSONS = [
-  join(process.cwd(), "public", "jsons", "crownnote-whatthelucas-mapped-2026-07-19.json"),
-  join(process.cwd(), "public", "jsons", "crownnote-whatthelucas-mapped-2026-07-19 (1).json"),
-  join(process.cwd(), "public", "jsons", "crownnote-whatthelucas-mapped-2026-07-19 (3).json"),
-];
+const DEFAULT_JSON = join(
+  process.cwd(),
+  "public",
+  "jsons",
+  "crownnote-whatthelucas-mapped-2026-07-19.json",
+);
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const VERBOSE = process.argv.includes("--verbose");
 const FILE_ARG = process.argv.find((a) => a.startsWith("--file="));
-const JSON_PATHS = FILE_ARG ? [FILE_ARG.split("=").slice(1).join("=")] : DEFAULT_JSONS;
+const JSON_PATH = FILE_ARG ? FILE_ARG.split("=").slice(1).join("=") : DEFAULT_JSON;
 
 function parseYmdDate(ymd: string): Date {
   const [y, m, d] = ymd.split("-").map(Number);
@@ -81,10 +77,10 @@ function loadMappedExport(path: string): CrownnoteMappedExport {
   if (!existsSync(path)) throw new Error(`Arquivo não encontrado: ${path}`);
   const data = JSON.parse(readFileSync(path, "utf-8")) as CrownnoteMappedExport;
   if (data.source !== "crownnote") {
-    throw new Error(`JSON inválido (${path}): source esperado "crownnote", veio "${String(data.source)}".`);
+    throw new Error(`JSON inválido: source esperado "crownnote", veio "${String(data.source)}".`);
   }
   if (!Array.isArray(data.charts) || !Array.isArray(data.songMappings)) {
-    throw new Error(`JSON inválido (${path}): faltam charts ou songMappings.`);
+    throw new Error("JSON inválido: faltam charts ou songMappings.");
   }
   return data;
 }
@@ -145,7 +141,7 @@ function buildWeeks(data: CrownnoteMappedExport): RawWeek[] {
     previousDate = date;
   }
 
-  return weeks;
+  return weeks.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 async function findUserAndParada() {
@@ -187,13 +183,10 @@ async function resolveMappedSong(
       select: { id: true, spotifyId: true, albumSpotifyId: true },
     });
     if (byId) {
-      // Só usa spotifyId/albumSpotifyId do próprio registro (Song.spotifyId é
-      // FK de ChartEntry.songSpotifyId) — o valor do mapping pode não
-      // corresponder a nenhum Song/Album persistido e quebra a FK.
       resolved = {
         id: byId.id,
-        spotifyId: byId.spotifyId,
-        albumSpotifyId: byId.albumSpotifyId,
+        spotifyId: byId.spotifyId ?? mapping.spotifyId,
+        albumSpotifyId: byId.albumSpotifyId ?? mapping.albumSpotifyId,
       };
     }
   }
@@ -233,40 +226,26 @@ async function resolveMappedSong(
 }
 
 async function importWeeks() {
+  const data = loadMappedExport(JSON_PATH);
   console.log("=== Import Crownnote → @whatthelucas ===");
-  console.log(`[info] Arquivos (${JSON_PATHS.length}):`);
-  for (const p of JSON_PATHS) console.log(`  - ${p}`);
+  console.log(`[info] Arquivo: ${JSON_PATH}`);
+  console.log(`[info] Crownnote user: ${data.username}`);
+  console.log(
+    `[info] Mappings: ${data.songMappings.length} (matched ${data.matchStats?.matched ?? "?"}/${data.matchStats?.uniqueSongs ?? "?"})`,
+  );
   if (DRY_RUN) console.log("[info] Modo: dry-run");
 
-  const datasets = JSON_PATHS.map(loadMappedExport);
-  const mappingByKey = new Map<string, CrownnoteSongMapping>();
-  for (const data of datasets) {
-    for (const m of data.songMappings) mappingByKey.set(m.key, m);
-  }
-
-  const allWeeks: RawWeek[] = [];
-  const weekBySlug = new Set<string>();
-  for (const data of datasets) {
-    for (const week of buildWeeks(data)) {
-      if (weekBySlug.has(week.slug)) {
-        console.warn(`[warn] Slug duplicado entre arquivos, ignorando repetição: ${week.slug}`);
-        continue;
-      }
-      weekBySlug.add(week.slug);
-      allWeeks.push(week);
-    }
-  }
-  const weeks = allWeeks.sort((a, b) => a.date.localeCompare(b.date));
-  console.log(`[info] Mappings combinados: ${mappingByKey.size}`);
+  const weeks = buildWeeks(data);
   console.log(`[info] Semanas: ${weeks.length} (${weeks[0]?.date} → ${weeks.at(-1)?.date})`);
 
+  const mappingByKey = new Map(data.songMappings.map((m) => [m.key, m]));
   const { user, parada } = await findUserAndParada();
   const scoringTier = scoringTierFromPrimary(parada.isPrimary);
 
   const songCache = new Map<string, ResolvedSong | null>();
   const notFound: NotFoundRow[] = [];
   let createdCharts = 0;
-  let skippedExisting = 0;
+  let updatedCharts = 0;
   let createdEntries = 0;
 
   // Detecta weekIndex duplicado (duas datas caem na mesma semana ISO)
@@ -286,17 +265,6 @@ async function importWeeks() {
       );
     }
     weekIndexSeen.set(weekIndex, week.slug);
-
-    // Já existe uma parada publicada nessa semana no site — não sobrescreve, pula.
-    const existing = await prisma.chart.findUnique({
-      where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex } },
-      select: { id: true },
-    });
-    if (existing) {
-      skippedExisting += 1;
-      console.log(`[skip] ${week.date} weekIndex ${weekIndex} já existe no site (${week.slug}) — ignorado`);
-      continue;
-    }
 
     const resolvedByPos = new Map<number, ResolvedSong>();
 
@@ -362,26 +330,44 @@ async function importWeeks() {
       continue;
     }
 
-    await prisma.chart.create({
-      data: {
-        userId: user.id,
-        paradaId: parada.id,
-        weekIndex,
-        weekLabel,
-        dateRange,
-        publishedAt: refDate,
-        weekStartDate: weekStart,
-        maxItems: Math.max(...finalRows.map((r) => r.position), finalRows.length),
-        entries: { create: entryPayload },
-      },
+    const existing = await prisma.chart.findUnique({
+      where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex } },
+      select: { id: true },
     });
-    createdCharts += 1;
+
+    const chartPayload = {
+      weekLabel,
+      dateRange,
+      publishedAt: refDate,
+      weekStartDate: weekStart,
+      maxItems: Math.max(...finalRows.map((r) => r.position), finalRows.length),
+      entries: { create: entryPayload },
+    };
+
+    if (!existing) {
+      await prisma.chart.create({
+        data: { userId: user.id, paradaId: parada.id, weekIndex, ...chartPayload },
+      });
+      createdCharts += 1;
+    } else {
+      // delete + createMany explícitos: nested create no update falha se houver
+      // duplicata de position no payload (P2002 em chartId+position).
+      const { entries: _entries, ...chartFields } = chartPayload;
+      await prisma.$transaction(async (tx) => {
+        await tx.chartEntry.deleteMany({ where: { chartId: existing.id } });
+        await tx.chart.update({ where: { id: existing.id }, data: chartFields });
+        await tx.chartEntry.createMany({
+          data: entryPayload.map((e) => ({ ...e, chartId: existing.id })),
+        });
+      });
+      updatedCharts += 1;
+    }
 
     createdEntries += finalRows.length;
     console.log(`[ok] ${week.date} -> weekIndex ${weekIndex} (${finalRows.length} entradas)`);
   }
 
-  if (!DRY_RUN && createdCharts > 0) {
+  if (!DRY_RUN && (createdCharts > 0 || updatedCharts > 0)) {
     const stats = await recomputePersistedChartEntryStatsForParada(prisma, parada.id);
     console.log(`[info] Stats recalculadas: ${stats.charts} charts, ${stats.entries} entradas`);
 
@@ -403,7 +389,7 @@ async function importWeeks() {
   console.log("");
   console.log("=== RESUMO ===");
   console.log(`Charts criados: ${createdCharts}`);
-  console.log(`Charts já existentes (pulados): ${skippedExisting}`);
+  console.log(`Charts atualizados: ${updatedCharts}`);
   console.log(`Entradas inseridas: ${createdEntries}`);
   console.log(`Não encontradas: ${notFound.length}`);
 

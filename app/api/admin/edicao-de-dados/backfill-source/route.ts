@@ -47,7 +47,7 @@ async function loadBatch(kind: Kind, exclude: (string | number)[], limit: number
     const rows = await prisma.song.findMany({
       where,
       select: { id: true, title: true, artist: true, spotifyId: true },
-      orderBy: [{ artist: "asc" }, { title: "asc" }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit,
     });
     return rows.map((s) => ({
@@ -63,7 +63,7 @@ async function loadBatch(kind: Kind, exclude: (string | number)[], limit: number
     const rows = await prisma.album.findMany({
       where,
       select: { id: true, title: true, artist: { select: { id: true, name: true } } },
-      orderBy: [{ title: "asc" }],
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit,
     });
     return rows.map((a) => ({
@@ -80,7 +80,7 @@ async function loadBatch(kind: Kind, exclude: (string | number)[], limit: number
   const rows = await prisma.artist.findMany({
     where,
     select: { id: true, name: true },
-    orderBy: { name: "asc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
   });
   return rows.map((a) => ({ id: a.id, label: a.name, href: `/artist/${a.id}/edit` }));

@@ -164,6 +164,41 @@ function isJan1(d: Date): boolean {
   return d.getUTCMonth() === 0 && d.getUTCDate() === 1;
 }
 
+/** Data só para visualização (sem clique/edição). */
+export function ReadonlyDate({
+  value,
+  empty = "—",
+  tag,
+  title,
+}: {
+  value: Date | string | null | undefined;
+  empty?: string;
+  tag?: string | null;
+  title?: string;
+}) {
+  const d = toDateOrNull(value);
+  if (!d) {
+    return <span style={{ color: "var(--text-muted)", fontSize: 12.5 }}>{empty}</span>;
+  }
+  return (
+    <span
+      title={title}
+      style={{
+        display: "inline-block",
+        fontSize: 13,
+        fontVariantNumeric: "tabular-nums",
+        color: "var(--text)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {formatBR(d)}
+      {tag ? (
+        <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>{tag}</span>
+      ) : null}
+    </span>
+  );
+}
+
 /**
  * Data editável in-place: mostra a data formatada (ou "falta"); clique abre
  * um seletor de data e salva ao sair do campo. Limpar o campo remove a data.

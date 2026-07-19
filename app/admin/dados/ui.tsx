@@ -13,7 +13,7 @@ import {
 import type { AlbumAuditRow, ArtistAuditRow, DadosSort, DadosSortBy, SongAuditRow } from "./lib";
 import { dadosSortQuery, nextDadosSort } from "./lib";
 import { SourceFetchButtons } from "./SourceFetchButtons";
-import { InlineDate } from "./InlineEdit";
+import { InlineDate, ReadonlyDate } from "./InlineEdit";
 import { AlbumPicker } from "./AlbumPicker";
 import { YouTubeClipFetchButton } from "./YouTubeClipFetchButton";
 import { ArtistRefreshImageButton } from "../artists/ArtistRefreshImageButton";
@@ -556,18 +556,53 @@ const compactTd: CSSProperties = {
   borderTop: "1px solid var(--divider-soft, var(--divider))",
 };
 
+function shortChartTag(name: string | null | undefined): string {
+  if (!name?.trim()) return "BB";
+  const t = name.trim();
+  return t.length > 12 ? `${t.slice(0, 11)}…` : t;
+}
+
+function BillboardDebutCell({
+  hot100,
+  genre,
+  genreName,
+}: {
+  hot100: Date | string | null | undefined;
+  genre: Date | string | null | undefined;
+  genreName: string | null | undefined;
+}) {
+  if (!hot100 && !genre) {
+    return <span style={{ color: "var(--text-muted)", fontSize: 12.5 }}>—</span>;
+  }
+  return (
+    <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {hot100 ? (
+        <ReadonlyDate value={hot100} title="Estreia na Billboard Hot 100" tag="H100" />
+      ) : null}
+      {genre ? (
+        <ReadonlyDate
+          value={genre}
+          title={genreName ? `Estreia em ${genreName}` : "Estreia em chart Billboard"}
+          tag={hot100 ? "BB" : shortChartTag(genreName)}
+        />
+      ) : null}
+    </span>
+  );
+}
+
 export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emptyLabel: string }) {
   return (
     <AdminPanel maxWidth={1320}>
       <div style={{ overflowX: "auto" }}>
         <table style={fixedTableStyle}>
           <colgroup>
-            <col style={{ width: 240 }} />
+            <col style={{ width: 220 }} />
+            <col style={{ width: 160 }} />
             <col style={{ width: 180 }} />
-            <col style={{ width: 200 }} />
-            <col style={{ width: 110 }} />
-            <col style={{ width: 110 }} />
-            <col style={{ width: 200 }} />
+            <col style={{ width: 100 }} />
+            <col style={{ width: 100 }} />
+            <col style={{ width: 120 }} />
+            <col style={{ width: 180 }} />
           </colgroup>
           <thead>
             <tr style={{ background: "var(--fill-inset)" }}>
@@ -576,6 +611,7 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
               <th style={compactTh}>Álbum</th>
               <th style={compactTh}>Single</th>
               <th style={compactTh}>Clipe</th>
+              <th style={compactTh}>Billboard</th>
               <th style={compactTh}>Ações</th>
             </tr>
           </thead>
@@ -637,6 +673,13 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                       value={s.musicVideoReleaseDate}
                       fallback={s.youtubeReleaseDate}
                       fallbackTag="YT"
+                    />
+                  </td>
+                  <td style={compactTd}>
+                    <BillboardDebutCell
+                      hot100={s.billboardHot100DebutDate}
+                      genre={s.billboardGenreChartDebutDate}
+                      genreName={s.billboardGenreChartName}
                     />
                   </td>
                   <td style={compactTd}>

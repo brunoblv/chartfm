@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       singleReleaseDate: true,
       musicVideoReleaseDate: true,
     },
-    orderBy: [{ artist: "asc" }, { title: "asc" }],
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: limit,
   });
 

@@ -269,6 +269,9 @@ export const SONG_AUDIT_SELECT = {
   singleReleaseDate: true,
   musicVideoReleaseDate: true,
   youtubeReleaseDate: true,
+  billboardHot100DebutDate: true,
+  billboardGenreChartDebutDate: true,
+  billboardGenreChartName: true,
   releaseDatesNotFoundAt: true,
   sourcesNotFound: true,
   albumRef: {
