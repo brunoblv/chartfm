@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
+import { ManualSongCreateModal } from "@/components/create/ManualSongCreateModal";
 import type { CrownnoteUserExport } from "@/lib/crownnote-export";
 import type {
   CrownnoteCatalogSong,
@@ -54,13 +55,14 @@ function SongResolver({
   onResolved,
 }: {
   row: CrownnoteSongMatchRow;
-  onResolved: (match: CrownnoteCatalogSong, source: "manual_db" | "manual_spotify") => void;
+  onResolved: (match: CrownnoteCatalogSong, source: "manual_db" | "manual_spotify" | "manual_create") => void;
 }) {
   const [query, setQuery] = useState(`${row.crownnoteTitle} ${row.crownnoteArtist}`);
   const [dbHits, setDbHits] = useState<DbSearchHit[]>([]);
   const [dbLoading, setDbLoading] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const spotify = useSpotifySearch(query);
 
   useEffect(() => {
@@ -258,7 +260,36 @@ function SongResolver({
             })}
           </div>
         </div>
+
+        <div style={{ paddingTop: 4, borderTop: "1px solid var(--divider)" }}>
+          <p style={{ margin: "10px 0 8px", fontSize: 12, color: "var(--text-muted)" }}>
+            Não achou em nenhum dos dois? Cadastre a música manualmente.
+          </p>
+          <button type="button" style={btn(false, "ghost")} onClick={() => setShowCreateModal(true)}>
+            Criar artista e música
+          </button>
+        </div>
       </div>
+
+      {showCreateModal && (
+        <ManualSongCreateModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={(song) => {
+            if (!song.id) return;
+            onResolved(
+              {
+                songId: song.id,
+                title: song.title,
+                artist: song.artist,
+                spotifyId: song.spotifyId ?? null,
+                albumSpotifyId: null,
+              },
+              "manual_create",
+            );
+            setShowCreateModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -269,7 +300,7 @@ function MatchRow({
   onClear,
 }: {
   row: CrownnoteSongMatchRow;
-  onResolved: (match: CrownnoteCatalogSong, source: "manual_db" | "manual_spotify") => void;
+  onResolved: (match: CrownnoteCatalogSong, source: "manual_db" | "manual_spotify" | "manual_create") => void;
   onClear: () => void;
 }) {
   const [open, setOpen] = useState(row.status === "unmatched");

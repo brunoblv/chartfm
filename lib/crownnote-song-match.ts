@@ -36,7 +36,7 @@ export type CrownnoteSongMapping = CrownnoteCatalogSong & {
   key: string;
   crownnoteArtist: string;
   crownnoteTitle: string;
-  source: "auto" | "manual_db" | "manual_spotify" | "auto_spotify";
+  source: "auto" | "manual_db" | "manual_spotify" | "auto_spotify" | "manual_create";
 };
 
 export type CrownnoteMappedExport = CrownnoteUserExport & {
