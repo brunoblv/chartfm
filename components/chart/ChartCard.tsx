@@ -21,6 +21,7 @@ import { Cover } from "@/components/ui/Cover";
 import { MovementBadge } from "@/components/ui/MovementBadge";
 import { PositionNumber } from "@/components/ui/PositionNumber";
 import { FollowButton } from "@/components/ui/FollowButton";
+import { JoinCommunityChip } from "@/components/community/JoinCommunityChip";
 import { formatChartPeriod } from "@/lib/chart-week";
 import { formatSongArtist } from "@/lib/song-artist";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
@@ -220,6 +221,13 @@ export function ChartCard({
   const remaining = totalTracks - preview.length;
   const formattedPeriod = formatChartPeriod(chart);
   const chartName = chart.paradaNome || user.paradaNome || `Top ${totalTracks}`;
+  const community = chart.community ?? null;
+  const posterHref = community ? `/community/${community.slug}` : `/profile/${user.handle}`;
+  const posterName = community ? community.name : user.name;
+  const posterAvatarUser = community
+    ? { name: community.name, avatar: community.coverA }
+    : user;
+  const posterAvatarImageUrl = community ? community.logoUrl : user.imageUrl;
   const [liked, setLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(chart.likes);
   const [liking, setLiking] = useState(false);
@@ -268,8 +276,8 @@ export function ChartCard({
           }}
         >
           <div style={{ position: "relative", flexShrink: 0 }}>
-            <Link href={`/profile/${user.handle}`}>
-              <Avatar user={user} imageUrl={user.imageUrl} size={44} />
+            <Link href={posterHref}>
+              <Avatar user={posterAvatarUser} imageUrl={posterAvatarImageUrl} size={44} />
             </Link>
             <span
               style={{
@@ -301,7 +309,7 @@ export function ChartCard({
               }}
             >
               <Link
-                href={`/profile/${user.handle}`}
+                href={posterHref}
                 style={{
                   fontSize: 15,
                   fontWeight: 700,
@@ -310,14 +318,16 @@ export function ChartCard({
                   letterSpacing: "-0.01em",
                 }}
               >
-                {user.name}
+                {posterName}
               </Link>
-              {user.verified && (
+              {!community && user.verified && (
                 <BadgeCheck size={15} color="#0A84FF" fill="#0A84FF" />
               )}
-              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                @{user.handle}
-              </span>
+              {!community && (
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  @{user.handle}
+                </span>
+              )}
               {postedAgo && (
                 <>
                   <span style={{ fontSize: 13, color: "var(--text-muted)" }}>·</span>
@@ -340,6 +350,7 @@ export function ChartCard({
               >
                 Parada
               </span>
+              {community && <JoinCommunityChip slug={community.slug} />}
             </div>
             {actionLabel && (
               <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 4 }}>
@@ -544,7 +555,7 @@ export function ChartCard({
             gap: 12,
           }}
         >
-          {user.paradaLogo && (
+          {!community && user.paradaLogo && (
             <img
               src={user.paradaLogo}
               alt=""
@@ -553,8 +564,8 @@ export function ChartCard({
               style={{ borderRadius: 8, objectFit: "cover", flexShrink: 0 }}
             />
           )}
-          <Link href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
-            <Avatar user={user} imageUrl={user.imageUrl} size={44} />
+          <Link href={posterHref} style={{ textDecoration: "none" }}>
+            <Avatar user={posterAvatarUser} imageUrl={posterAvatarImageUrl} size={44} />
           </Link>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -568,22 +579,26 @@ export function ChartCard({
               }}
             >
               <Link
-                href={`/profile/${user.handle}`}
+                href={posterHref}
                 style={{ textDecoration: "none", color: "var(--text)" }}
               >
-                {user.name}
+                {posterName}
               </Link>
-              {user.verified && (
+              {!community && user.verified && (
                 <BadgeCheck size={16} color="#0A84FF" fill="#0A84FF" />
               )}
             </div>
             <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              @{user.handle}
+              {community ? chartName : `@${user.handle}`}
               {postedAgo ? ` · ${postedAgo}` : ""}
             </div>
           </div>
-          {showFollowActions && (
-            <FollowButton targetId={user.id} initialFollowing={isFollowing} />
+          {community ? (
+            <JoinCommunityChip slug={community.slug} />
+          ) : (
+            showFollowActions && (
+              <FollowButton targetId={user.id} initialFollowing={isFollowing} />
+            )
           )}
         </header>
       )}

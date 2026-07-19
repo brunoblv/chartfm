@@ -39,6 +39,7 @@ type PublicChartRow = {
   comments: number;
   reposts: number;
   parada: { name: string };
+  community: { slug: string; name: string; icon: string; logoUrl: string | null; coverA: string } | null;
   user: {
     id: string;
     handle: string;
@@ -99,6 +100,7 @@ function mapPublicChartRow(c: PublicChartRow, locale: Awaited<ReturnType<typeof 
       weekLabel: c.weekLabel,
       dateRange: c.dateRange,
       paradaNome: c.parada.name,
+      community: c.community,
       likes: c.likes,
       comments: c.comments,
       reposts: c.reposts,
@@ -153,6 +155,7 @@ async function getPublicTimelineFeed(locale: Awaited<ReturnType<typeof getServer
       comments: true,
       reposts: true,
       parada: { select: { name: true } },
+      community: { select: { slug: true, name: true, icon: true, logoUrl: true, coverA: true } },
       user: {
         select: {
           id: true,

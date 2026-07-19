@@ -67,6 +67,14 @@ export interface PersonalDropoutEntry {
   points: number;
 }
 
+export interface ChartCommunity {
+  slug: string;
+  name: string;
+  icon: string;
+  logoUrl: string | null;
+  coverA: string;
+}
+
 export interface Chart {
   id: string;
   week: number;
@@ -74,6 +82,8 @@ export interface Chart {
   dateRange: string;
   /** Nome real da parada que gerou este chart específico (pode diferir da parada primária atual do autor). */
   paradaNome?: string | null;
+  /** Presente quando o chart é a parada oficial de uma comunidade — feed deve mostrar a comunidade, não o autor. */
+  community?: ChartCommunity | null;
   entries: ChartEntry[];
   /** Total de faixas na parada (pode ser maior que `entries.length` em previews do feed). */
   entryCount?: number;
