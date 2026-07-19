@@ -8,6 +8,11 @@ import { isInstrumentalTitle } from "@/lib/is-instrumental-title";
 import { buildPeriodFromDate, computeStreakForCadence, prevPeriodIndex } from "@/lib/chart-cadence";
 import { getSpotifyArtistById, getSpotifyTrackMetadataById, probeSpotifyApi, searchSpotifyArtist } from "@/lib/spotify-server";
 import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
+import { runCountingSpotifyCalls } from "@/lib/api-call-context";
+import {
+  auditParadaCreateSummary,
+  recordSiteAudit,
+} from "@/lib/site-audit-log";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import { resolveParadaForPublish } from "@/lib/paradas";
 import {
@@ -127,7 +132,11 @@ export async function POST(req: NextRequest) {
   // Caminho lento faz dezenas de chamadas Spotify; sob rate limit (429), degrada para o
   // caminho rápido (só banco local) — a parada salva com o que se sabe e o cron de
   // backfill completa capas/metadados depois.
-  const { songs, enrichmentStats } = await runWithSpotifyUserChartsPool(async () => {
+  const {
+    result: { songs, enrichmentStats },
+    spotifyCalls,
+  } = await runCountingSpotifyCalls(() =>
+    runWithSpotifyUserChartsPool(async () => {
   let songsInner: ResolvedSongRow[] = [];
   let enrichmentStatsInner: {
     withCover: number;
@@ -361,7 +370,8 @@ export async function POST(req: NextRequest) {
   }
 
   return { songs: songsInner, enrichmentStats: enrichmentStatsInner };
-  });
+    }),
+  );
 
   const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);
 
@@ -453,6 +463,34 @@ export async function POST(req: NextRequest) {
       flashbackSongId,
       destaqueSongId,
       entries: { create: entryData },
+    },
+  });
+
+  void recordSiteAudit({
+    action: "parada.create",
+    summary: auditParadaCreateSummary({
+      userName: session.user.name,
+      userHandle: session.user.handle,
+      paradaName: parada.name,
+      weekLabel,
+      entryCount: entries.length,
+      spotifyCalls,
+    }),
+    trigger: "manual",
+    userId,
+    userName: session.user.name ?? null,
+    userHandle: session.user.handle ?? null,
+    entityType: "chart",
+    entityId: chart.id,
+    spotifyCalls,
+    meta: {
+      paradaId: parada.id,
+      paradaName: parada.name,
+      weekIndex,
+      weekLabel,
+      dateRange,
+      entryCount: entries.length,
+      fastPublish,
     },
   });
 

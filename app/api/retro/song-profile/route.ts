@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireBruno } from "@/lib/require-bruno";
-
-const PEAK_VALUES = new Set(["1", "top3", "top5", "top10", "top20", "top40", "top100", "out"]);
+import { PEAK_POTENTIAL_SET } from "@/lib/retro/scoring";
 const NOTE_MAX = 1000;
 
 function clampInt(v: unknown, min: number, max: number): number | null {
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
     if (body.peakPotential === null) {
       data.peakPotential = null;
       data.peakPotentialLocked = false;
-    } else if (typeof body.peakPotential === "string" && PEAK_VALUES.has(body.peakPotential)) {
+    } else if (typeof body.peakPotential === "string" && PEAK_POTENTIAL_SET.has(body.peakPotential)) {
       data.peakPotential = body.peakPotential;
       data.peakPotentialLocked = true;
     } else {

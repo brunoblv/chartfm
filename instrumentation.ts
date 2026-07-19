@@ -29,6 +29,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const dns = await import("node:dns");
     dns.setDefaultResultOrder("ipv4first");
+    // Liga o resolvedor de "quem pediu" para o log do Spotify (headers do middleware).
+    await import("@/lib/api-call-context");
   }
 }
 

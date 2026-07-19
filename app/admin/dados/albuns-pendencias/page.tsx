@@ -60,7 +60,7 @@ export default async function AlbunsUnificadosPage({
   return (
     <DadosShell active="albuns-pendencias" subtitle="Busque, filtre e corrija álbuns.">
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <Link href="/admin/albums" style={{ ...adminNavChipStyle, background: "#FA243C", color: "#fff", border: "none" }}>
+        <Link href="/admin/albums/new" style={{ ...adminNavChipStyle, background: "#FA243C", color: "#fff", border: "none" }}>
           + Novo álbum
         </Link>
         <Link href="/admin/duplicates/albums" style={adminNavChipStyle}>

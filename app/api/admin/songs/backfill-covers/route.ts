@@ -9,12 +9,15 @@ import {
   findSongsMissingCovers,
 } from "@/lib/resolve-publish-songs";
 import {
+  backup3SpotifyConfigured,
   isSpotifyTrackId,
   markPrimaryLimited,
   probeSpotifyApi,
   probeSpotifyBackupApi,
+  probeSpotifyBackup3Api,
   spotifyConfigured,
 } from "@/lib/spotify-server";
+import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -65,24 +68,40 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Principal com erro → tenta o app de backup; só recusa o lote se os dois falharem.
-  const probe = await probeSpotifyApi();
-  if (!probe.ok) {
-    const backupProbe = await probeSpotifyBackupApi();
-    if (!backupProbe.ok) {
+  // Preferência: BACKUP3 (pool backfill). Sem BACKUP3, principal → backup.
+  if (backup3SpotifyConfigured()) {
+    const probe3 = await probeSpotifyBackup3Api();
+    if (!probe3.ok) {
       return NextResponse.json(
         {
           ok: false,
           configured: true,
-          message: `${probe.error}; backup: ${backupProbe.error}`,
-          status: probe.status,
-          retryAfterMs: probe.retryAfterMs,
+          message: probe3.error ?? "BACKUP3 indisponível",
+          status: probe3.status,
+          retryAfterMs: probe3.retryAfterMs,
+          app: "backup3",
         },
         { status: 400 },
       );
     }
-    // Backup ok: marca o principal como limitado para o lote rodar no backup.
-    markPrimaryLimited(probe.retryAfterMs ?? undefined);
+  } else {
+    const probe = await probeSpotifyApi();
+    if (!probe.ok) {
+      const backupProbe = await probeSpotifyBackupApi();
+      if (!backupProbe.ok) {
+        return NextResponse.json(
+          {
+            ok: false,
+            configured: true,
+            message: `${probe.error}; backup: ${backupProbe.error}`,
+            status: probe.status,
+            retryAfterMs: probe.retryAfterMs,
+          },
+          { status: 400 },
+        );
+      }
+      markPrimaryLimited(probe.retryAfterMs ?? undefined);
+    }
   }
 
   const body = (await req.json().catch(() => ({}))) as {
@@ -113,10 +132,12 @@ export async function POST(req: NextRequest) {
   }
 
   const batchIds = new Set(batch.map((s) => s.id));
-  const result = await enrichSongsWithSpotifyMetadataByIds(prisma, batch.map((s) => s.id), {
-    searchFallback: true,
-    deadlineAt,
-  });
+  const result = await runWithSpotifyBackfillPool(() =>
+    enrichSongsWithSpotifyMetadataByIds(prisma, batch.map((s) => s.id), {
+      searchFallback: true,
+      deadlineAt,
+    }),
+  );
   const deferred = new Set(result.deferredIds);
   const remaining = await countSongsMissingCovers(prisma);
   const stillMissing = await findSongsMissingCovers(prisma);

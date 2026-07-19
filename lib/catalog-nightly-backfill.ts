@@ -9,6 +9,7 @@ import {
 } from "@/lib/musicbrainz";
 import { fetchAndSaveSongGenres, songEnrichmentPendingWhere, songGenresBackfillOrderBy } from "@/lib/resolve-song-genres";
 import { getSpotifyArtistById, getSpotifyAlbumMetadataById, spotifyConfigured, probeSpotifyApi } from "@/lib/spotify-server";
+import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
 
 /**
  * Backfill noturno único (cron 1h) que passa por músicas, álbuns e artistas
@@ -272,42 +273,45 @@ async function backfillOneArtistMetadata(artist: { id: number; name: string; spo
 
 async function runArtistMetadataBackfill(): Promise<NightlyBackfillStepResult> {
   if (!spotifyConfigured()) return { step: "artist_metadata", processed: 0, updated: 0, notFound: 0, skipped: "Spotify não configurado" };
-  const probe = await probeSpotifyApi();
-  if (!probe.ok) return { step: "artist_metadata", processed: 0, updated: 0, notFound: 0, skipped: probe.error };
 
-  const deadline = Date.now() + ARTIST_METADATA_BUDGET_MS;
-  let processed = 0;
-  let updated = 0;
-  let notFound = 0;
+  return runWithSpotifyBackfillPool(async () => {
+    const probe = await probeSpotifyApi();
+    if (!probe.ok) return { step: "artist_metadata", processed: 0, updated: 0, notFound: 0, skipped: probe.error };
 
-  while (Date.now() < deadline) {
-    const artists = await prisma.artist.findMany({
-      where: artistMetadataMissingWhere,
-      select: { id: true, name: true, spotifyId: true, genres: true },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: CHUNK_SIZE,
-    });
-    if (artists.length === 0) break;
+    const deadline = Date.now() + ARTIST_METADATA_BUDGET_MS;
+    let processed = 0;
+    let updated = 0;
+    let notFound = 0;
 
-    for (const artist of artists) {
-      if (Date.now() >= deadline) break;
-      processed += 1;
-      try {
-        const ok = await backfillOneArtistMetadata(artist);
-        if (ok) updated += 1;
-        else {
-          await prisma.artist.update({ where: { id: artist.id }, data: { metadataNotFoundAt: new Date() } });
+    while (Date.now() < deadline) {
+      const artists = await prisma.artist.findMany({
+        where: artistMetadataMissingWhere,
+        select: { id: true, name: true, spotifyId: true, genres: true },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: CHUNK_SIZE,
+      });
+      if (artists.length === 0) break;
+
+      for (const artist of artists) {
+        if (Date.now() >= deadline) break;
+        processed += 1;
+        try {
+          const ok = await backfillOneArtistMetadata(artist);
+          if (ok) updated += 1;
+          else {
+            await prisma.artist.update({ where: { id: artist.id }, data: { metadataNotFoundAt: new Date() } });
+            notFound += 1;
+          }
+        } catch {
+          await prisma.artist.update({ where: { id: artist.id }, data: { metadataNotFoundAt: new Date() } }).catch(() => null);
           notFound += 1;
         }
-      } catch {
-        await prisma.artist.update({ where: { id: artist.id }, data: { metadataNotFoundAt: new Date() } }).catch(() => null);
-        notFound += 1;
+        await sleep(SPOTIFY_ITEM_DELAY_MS);
       }
-      await sleep(SPOTIFY_ITEM_DELAY_MS);
     }
-  }
 
-  return { step: "artist_metadata", processed, updated, notFound };
+    return { step: "artist_metadata", processed, updated, notFound };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -342,42 +346,45 @@ async function backfillOneAlbumMetadata(album: { id: number; spotifyId: string }
 
 async function runAlbumMetadataBackfill(): Promise<NightlyBackfillStepResult> {
   if (!spotifyConfigured()) return { step: "album_metadata", processed: 0, updated: 0, notFound: 0, skipped: "Spotify não configurado" };
-  const probe = await probeSpotifyApi();
-  if (!probe.ok) return { step: "album_metadata", processed: 0, updated: 0, notFound: 0, skipped: probe.error };
 
-  const deadline = Date.now() + ALBUM_METADATA_BUDGET_MS;
-  let processed = 0;
-  let updated = 0;
-  let notFound = 0;
+  return runWithSpotifyBackfillPool(async () => {
+    const probe = await probeSpotifyApi();
+    if (!probe.ok) return { step: "album_metadata", processed: 0, updated: 0, notFound: 0, skipped: probe.error };
 
-  while (Date.now() < deadline) {
-    const albums = await prisma.album.findMany({
-      where: albumMetadataMissingWhere,
-      select: { id: true, spotifyId: true },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: CHUNK_SIZE,
-    });
-    if (albums.length === 0) break;
+    const deadline = Date.now() + ALBUM_METADATA_BUDGET_MS;
+    let processed = 0;
+    let updated = 0;
+    let notFound = 0;
 
-    for (const album of albums) {
-      if (Date.now() >= deadline) break;
-      processed += 1;
-      try {
-        const ok = await backfillOneAlbumMetadata(album);
-        if (ok) updated += 1;
-        else {
-          await prisma.album.update({ where: { id: album.id }, data: { metadataNotFoundAt: new Date() } });
+    while (Date.now() < deadline) {
+      const albums = await prisma.album.findMany({
+        where: albumMetadataMissingWhere,
+        select: { id: true, spotifyId: true },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: CHUNK_SIZE,
+      });
+      if (albums.length === 0) break;
+
+      for (const album of albums) {
+        if (Date.now() >= deadline) break;
+        processed += 1;
+        try {
+          const ok = await backfillOneAlbumMetadata(album);
+          if (ok) updated += 1;
+          else {
+            await prisma.album.update({ where: { id: album.id }, data: { metadataNotFoundAt: new Date() } });
+            notFound += 1;
+          }
+        } catch {
+          await prisma.album.update({ where: { id: album.id }, data: { metadataNotFoundAt: new Date() } }).catch(() => null);
           notFound += 1;
         }
-      } catch {
-        await prisma.album.update({ where: { id: album.id }, data: { metadataNotFoundAt: new Date() } }).catch(() => null);
-        notFound += 1;
+        await sleep(SPOTIFY_ITEM_DELAY_MS);
       }
-      await sleep(SPOTIFY_ITEM_DELAY_MS);
     }
-  }
 
-  return { step: "album_metadata", processed, updated, notFound };
+    return { step: "album_metadata", processed, updated, notFound };
+  });
 }
 
 // ---------------------------------------------------------------------------

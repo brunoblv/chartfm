@@ -47,6 +47,8 @@ export async function GET(
     coverA: community.coverA,
     coverB: community.coverB,
     coverImageUrl: community.coverImageUrl,
+    privacy: community.privacy,
+    isPublic: community.isPublic,
     paradaName: community.paradaName,
     maxSongs: community.maxSongs,
     memberPositionLimit: community.memberPositionLimit,
@@ -178,6 +180,11 @@ export async function PATCH(
     data.icon = b.icon.trim().slice(0, 8);
   }
 
+  if (b.privacy === "public" || b.privacy === "private") {
+    data.privacy = b.privacy;
+    data.isPublic = b.privacy === "public";
+  }
+
   if (typeof b.promoteUserId === "string") {
     const targetId = b.promoteUserId;
     const member = await prisma.communityMember.findUnique({
@@ -235,6 +242,8 @@ export async function PATCH(
               coverA: true,
               coverB: true,
               icon: true,
+              privacy: true,
+              isPublic: true,
             },
           })
         : null;

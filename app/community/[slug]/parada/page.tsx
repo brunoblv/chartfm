@@ -81,12 +81,9 @@ export default async function CommunityParadaPage({ params, searchParams }: Comm
       : null;
 
   const basePath = `/community/${slug}/parada`;
-  const pointsRule = chart.usesOfficialParada
-    ? "Parada oficial da comunidade - histórico semanal importado."
-    : "Ranking agregado a partir das paradas primárias dos membros.";
-  const statPrimaryLabel = chart.usesOfficialParada
-    ? `${chart.overallChartCount} semanas no histórico`
-    : `${chart.contributorCount} paradas na semana`;
+  const pointsRule =
+    "Parada semanal congelada da comunidade — snapshot das paradas primárias dos membros (não reconta com membros novos).";
+  const statPrimaryLabel = `${chart.overallChartCount} semanas no histórico`;
 
   const imageMap = await resolveArtistImages(
     [...chart.weeklyArtists, ...chart.overallArtists].map((a) => ({

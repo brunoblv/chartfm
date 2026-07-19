@@ -13,7 +13,6 @@ import {
   artistDisplayName,
   type WeeklyChartEntryRow,
 } from "@/lib/weekly-chart-aggregate";
-import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
 import { loadCoverUrlsForSongIds } from "@/lib/chart-entry-cover";
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import type { GlobalChartEntry } from "@/lib/types";
@@ -91,7 +90,13 @@ type OfficialChartEntryRow = WeeklyChartEntryRow & {
   weeks: number;
 };
 
-function applyCommunityPointRules(
+/**
+ * Ajusta pontos das entradas dos membros conforme config da comunidade.
+ * No modo `custom`, remapeia pela tabela e **remove** posições fora dela
+ * (points 0). Não deixar 0 chegar em `aggregateGlobalSongs`/`weightMode:"stored"`:
+ * lá `points === 0` cai no fallback da escala primária (1000→10).
+ */
+export function applyCommunityPointRules(
   entries: WeeklyChartEntryRow[],
   config: CommunityPointsConfig,
 ): WeeklyChartEntryRow[] {
@@ -100,39 +105,43 @@ function applyCommunityPointRules(
     filtered = entries.filter((e) => e.position <= config.memberPositionLimit!);
   }
   if (config.pointsMode === "custom" && config.customPoints?.length) {
-    return filtered.map((e) => ({
-      ...e,
-      points: config.customPoints![e.position - 1] ?? 0,
-    }));
+    return filtered
+      .map((e) => ({
+        ...e,
+        points: config.customPoints![e.position - 1] ?? 0,
+      }))
+      .filter((e) => e.points > 0);
   }
   return filtered;
 }
 
-async function loadMemberChartEntries(
-  memberIds: string[],
-  weekIndex?: number,
-): Promise<WeeklyChartEntryRow[]> {
-  if (!memberIds.length) return [];
-  const where = {
-    chart: {
-      userId: { in: memberIds },
-      ...(weekIndex != null ? { weekIndex } : {}),
-      ...publishedPrimaryParadaChartWhere,
-    },
-    position: { lte: 100 },
-  };
-  return prisma.chartEntry.findMany({
-    where,
-    select: entrySelect,
-  });
-}
-
-async function communityHasOfficialCharts(communityId: string): Promise<boolean> {
+async function communityHasOfficialWeek(
+  communityId: string,
+  weekIndex: number,
+): Promise<boolean> {
   const chart = await prisma.chart.findFirst({
-    where: { communityId, isPublished: true },
+    where: { communityId, weekIndex, isPublished: true },
     select: { id: true },
   });
   return chart != null;
+}
+
+/**
+ * Garante snapshot create-only da semana (igual Global 100 / Last.fm da comunidade).
+ * Não sobrescreve semana já congelada — membro novo não reconta o passado.
+ */
+async function ensureCommunityOfficialWeekSnapshot(
+  communityId: string,
+  weekIndex: number,
+): Promise<void> {
+  if (await communityHasOfficialWeek(communityId, weekIndex)) return;
+  const { publishCommunityOfficialWeekFromMembers } = await import(
+    "@/lib/community-official-from-members"
+  );
+  await publishCommunityOfficialWeekFromMembers(communityId, weekIndex, {
+    force: false,
+    recomputeStats: true,
+  });
 }
 
 export type CommunityChartWeekMeta = {
@@ -149,36 +158,20 @@ export type ComputeCommunityChartOptions = {
 
 export async function getCommunityAvailableWeeks(
   communityId: string,
+  options: { referenceDate?: Date; ensureCurrentWeek?: boolean } = {},
 ): Promise<CommunityChartWeekMeta[]> {
-  if (await communityHasOfficialCharts(communityId)) {
-    return prisma.chart.findMany({
-      where: { communityId, isPublished: true },
-      select: { weekIndex: true, weekLabel: true, dateRange: true },
-      orderBy: { weekIndex: "desc" },
-    });
+  const { referenceDate = new Date(), ensureCurrentWeek = true } = options;
+
+  if (ensureCurrentWeek) {
+    const rankingWeek = getRankingWeekReference(referenceDate, await getGlobalPublishSlot());
+    await ensureCommunityOfficialWeekSnapshot(communityId, rankingWeek.weekIndex);
   }
 
-  const memberIds = await prisma.communityMember.findMany({
-    where: { communityId },
-    select: { userId: true },
-  });
-  const userIds = memberIds.map((m) => m.userId);
-  if (!userIds.length) return [];
-
-  const charts = await prisma.chart.findMany({
-    where: {
-      userId: { in: userIds },
-      ...publishedPrimaryParadaChartWhere,
-    },
+  return prisma.chart.findMany({
+    where: { communityId, isPublished: true },
     select: { weekIndex: true, weekLabel: true, dateRange: true },
     orderBy: { weekIndex: "desc" },
   });
-
-  const byWeek = new Map<number, CommunityChartWeekMeta>();
-  for (const chart of charts) {
-    if (!byWeek.has(chart.weekIndex)) byWeek.set(chart.weekIndex, chart);
-  }
-  return [...byWeek.values()].sort((a, b) => b.weekIndex - a.weekIndex);
 }
 
 async function weekMetaFromIndex(weekIndex: number): Promise<Pick<CommunityChartWeekMeta, "weekLabel" | "dateRange">> {
@@ -384,88 +377,12 @@ export async function computeCommunityChartData(
 ): Promise<CommunityChartPayload> {
   const { weekIndex: requestedWeekIndex, referenceDate = new Date() } = options;
 
-  if (await communityHasOfficialCharts(communityId)) {
-    const official = await computeOfficialCommunityChartData(
-      communityId,
-      config,
-      requestedWeekIndex,
-    );
-    return { ...official, usesOfficialParada: true };
-  }
-
   const rankingWeek = getRankingWeekReference(referenceDate, await getGlobalPublishSlot());
   const weekIndex = requestedWeekIndex ?? rankingWeek.weekIndex;
-  const prevWeek = prevChartWeekIndex(weekIndex);
 
-  const memberIds = await prisma.communityMember.findMany({
-    where: { communityId },
-    select: { userId: true },
-  });
-  const userIds = memberIds.map((m) => m.userId);
+  // Snapshot create-only: congela na 1ª vez; visitas / membros novos não recontam.
+  await ensureCommunityOfficialWeekSnapshot(communityId, weekIndex);
 
-  const [weeklyRaw, prevWeeklyRaw, overallRaw] = await Promise.all([
-    loadMemberChartEntries(userIds, weekIndex),
-    loadMemberChartEntries(userIds, prevWeek),
-    loadMemberChartEntries(userIds),
-  ]);
-
-  const weeklyEntries = applyCommunityPointRules(weeklyRaw, config);
-  const prevWeeklyEntries = applyCommunityPointRules(prevWeeklyRaw, config);
-  const overallEntries = applyCommunityPointRules(overallRaw, config);
-
-  const limit = config.maxSongs;
-  const contributorCount = new Set(weeklyRaw.map((e) => e.chartId)).size;
-  const overallChartCount = new Set(overallRaw.map((e) => e.chartId)).size;
-
-  const weeklySongs = aggregateGlobalSongs(weeklyEntries, limit, {
-    previousWeekEntries: prevWeeklyEntries,
-    weightMode: "stored",
-  });
-  const weeklyArtists = aggregateTopArtists(weeklyEntries, limit, {
-    previousWeekEntries: prevWeeklyEntries,
-    weightMode: "stored",
-  });
-  const overallSongs = aggregateGlobalSongs(overallEntries, COMMUNITY_OVERALL_RANKING_LIMIT, {
-    weightMode: "stored",
-  });
-  const overallArtists = aggregateTopArtists(overallEntries, COMMUNITY_OVERALL_RANKING_LIMIT, {
-    weightMode: "stored",
-  });
-
-  function songKey(song: { spotifyId?: string | null; title: string; artist: string }): string {
-    if (song.spotifyId) return `spotify:${song.spotifyId}`;
-    return `local:${song.title.trim().toLowerCase()}|${song.artist.trim().toLowerCase()}`;
-  }
-  const currentKeySet = new Set(weeklySongs.map((s) => songKey(s.song)));
-  const prevWeeklySongs = aggregateGlobalSongs(prevWeeklyEntries, limit, { weightMode: "stored" });
-  const weeklyDropoutsRaw = prevWeeklySongs.filter((s) => !currentKeySet.has(songKey(s.song)));
-
-  const [hydratedWeekly, hydratedOverall, hydratedDropouts] = await Promise.all([
-    hydrateSongCovers(weeklySongs),
-    hydrateSongCovers(overallSongs),
-    hydrateSongCovers(weeklyDropoutsRaw),
-  ]);
-
-  const weekMeta =
-    (await prisma.chart.findFirst({
-      where: {
-        userId: { in: userIds },
-        weekIndex,
-        ...publishedPrimaryParadaChartWhere,
-      },
-      select: { weekLabel: true, dateRange: true },
-    })) ?? (await weekMetaFromIndex(weekIndex));
-
-  return {
-    weekIndex,
-    weekLabel: weekMeta.weekLabel,
-    dateRange: weekMeta.dateRange,
-    contributorCount,
-    overallChartCount,
-    weeklySongs: hydratedWeekly,
-    weeklyArtists,
-    overallSongs: hydratedOverall,
-    overallArtists,
-    weeklyDropouts: hydratedDropouts,
-  };
+  const official = await computeOfficialCommunityChartData(communityId, config, weekIndex);
+  return { ...official, usesOfficialParada: true };
 }

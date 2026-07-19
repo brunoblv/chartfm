@@ -440,11 +440,11 @@ export default function CreateCommunityPage() {
                 padding: 20,
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Como funciona a Parada Global</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Como funciona a Parada da Comunidade</div>
               <ul style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.7, paddingLeft: 16, margin: 0 }}>
                 <li>Membros publicam suas paradas semanais</li>
-                <li>As paradas são agregadas automaticamente</li>
-                <li>A Parada da Comunidade é atualizada toda semana</li>
+                <li>Cada semana gera um snapshot congelado (como o Global 100)</li>
+                <li>Membros novos não alteram semanas já publicadas</li>
               </ul>
             </div>
           </div>

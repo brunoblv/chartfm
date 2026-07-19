@@ -20,7 +20,7 @@ export default function GuideComunidades() {
           body: [
             "Comunidades são grupos temáticos dentro do ChartFM onde usuários com gostos musicais parecidos se reúnem para discutir lançamentos, compartilhar descobertas e construir charts coletivas. Cada comunidade tem seu próprio feed, sua própria parada semanal e seu próprio grupo de membros.",
             "Diferente de grupos genéricos em redes sociais, as comunidades do ChartFM são organizadas em torno da música. Podem existir comunidades dedicadas a um gênero específico (como indie rock ou K-Pop), a um artista, a uma era musical, a um movimento cultural ou a qualquer outra afinidade musical que faça sentido para um grupo de pessoas.",
-            "A grande diferença em relação a outras plataformas é a parada coletiva: toda semana, as charts individuais dos membros são agregadas automaticamente para gerar um ranking exclusivo da comunidade.",
+            "A grande diferença em relação a outras plataformas é a parada coletiva: toda semana o ChartFM congela um snapshot das charts individuais dos membros (no mesmo modelo do Global 100), gerando um ranking exclusivo da comunidade.",
           ],
         },
         {
@@ -34,9 +34,9 @@ export default function GuideComunidades() {
         {
           title: "A parada coletiva da comunidade",
           body: [
-            "O recurso mais exclusivo das comunidades no ChartFM é a parada coletiva semanal. Todo semana, o sistema agrega automaticamente as charts individuais de todos os membros e gera um ranking exclusivo para aquela comunidade.",
-            "Esse ranking é calculado da mesma forma que o Global 100: cada posição nas paradas pessoais gera pontos, e a soma determina a classificação final. A diferença é que apenas as paradas dos membros da comunidade entram no cálculo.",
-            "Isso significa que a parada de uma comunidade de fãs de jazz vai refletir o que os amantes de jazz estão ouvindo, não o que domina o ranking global. É uma forma muito mais precisa de acompanhar tendências dentro de um nicho específico.",
+            "O recurso mais exclusivo das comunidades no ChartFM é a parada coletiva semanal. Toda semana o sistema congela um snapshot das charts individuais dos membros e gera um ranking exclusivo daquela comunidade — igual ao Global 100, a semana já publicada não muda depois.",
+            "Esse ranking usa a pontuação configurada da comunidade (pontos da parada do membro ou tabela custom). Só entram as paradas dos membros no momento do congelamento; quem entra depois não altera semanas antigas.",
+            "Isso significa que a parada de uma comunidade de fãs de jazz vai refletir o que os amantes de jazz estavam ouvindo naquela semana, não o que domina o ranking global. É uma forma mais precisa de acompanhar tendências dentro de um nicho.",
           ],
         },
         {

@@ -38,6 +38,7 @@ type SettingsData = {
   coverB: string;
   coverImageUrl: string | null;
   icon: string;
+  privacy: "public" | "private";
   members: MemberRow[];
 };
 
@@ -80,6 +81,7 @@ export function CommunitySettingsClient({
   const [coverImageUrl, setCoverImageUrl] = useState(initial.coverImageUrl);
   const [coverWarning, setCoverWarning] = useState<string | null>(null);
   const [icon, setIcon] = useState(initial.icon);
+  const [privacy, setPrivacy] = useState<"public" | "private">(initial.privacy);
   const [members, setMembers] = useState(initial.members);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,6 +123,7 @@ export function CommunitySettingsClient({
           coverA,
           coverB,
           icon,
+          privacy,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -316,7 +319,7 @@ export function CommunitySettingsClient({
             <>
               <div>
                 <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)" }}>Identidade</div>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Nome, ícone e aparência visual da comunidade</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Nome, privacidade, ícone e aparência visual da comunidade</div>
               </div>
 
               <div style={cardStyle}>
@@ -332,6 +335,36 @@ export function CommunitySettingsClient({
                   <div>
                     <div style={fieldLabel}>Nome da parada</div>
                     <input value={paradaName} onChange={(e) => setParadaName(e.target.value)} style={inputStyle} />
+                  </div>
+                  <div>
+                    <div style={fieldLabel}>Privacidade</div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {(["public", "private"] as const).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setPrivacy(p)}
+                          style={{
+                            flex: 1,
+                            minWidth: 160,
+                            padding: "12px 14px",
+                            borderRadius: 12,
+                            textAlign: "left",
+                            border: `1.5px solid ${privacy === p ? "var(--accent)" : "var(--divider)"}`,
+                            background: privacy === p ? "var(--accent-tint)" : "var(--fill-inset)",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>
+                            {p === "public" ? "Pública" : "Privada"}
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>
+                            {p === "public" ? "Qualquer pessoa pode entrar" : "Apenas por convite"}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

@@ -254,12 +254,12 @@ export default async function DadosOverviewPage() {
         <CreateCard
           label="Novo artista"
           description="Cadastro manual, com ou sem Spotify ID."
-          href="/admin/artists"
+          href="/admin/artists/new"
         />
         <CreateCard
           label="Novo álbum"
           description="Vinculado a um artista já cadastrado."
-          href="/admin/albums"
+          href="/admin/albums/new"
         />
       </div>
     </DadosShell>

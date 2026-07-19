@@ -50,6 +50,7 @@ export default async function CommunitySettingsPage({ params }: { params: Promis
         coverB: row.coverB,
         coverImageUrl: row.coverImageUrl,
         icon: row.icon,
+        privacy: row.privacy === "private" ? "private" : "public",
         members: members.map((m) => ({
           id: m.id,
           userId: m.userId,

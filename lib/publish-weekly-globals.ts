@@ -42,8 +42,8 @@ export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
     return { communities: 0, created: 0, errors: [String(e)] };
   });
 
-  // Parada oficial de músicas (ex.: UCC): após o histórico importado, novas semanas
-  // vêm da agregação das paradas primárias dos membros (create-only).
+  // Parada oficial de músicas: snapshot create-only para TODAS as comunidades
+  // (mesma regra do Global 100 — membro novo não reconta semanas já congeladas).
   const communityOfficial = await publishAllCommunityOfficialWeeksFromMembers(now).catch((e) => {
     console.error("[publish-weekly-globals] publishAllCommunityOfficialWeeksFromMembers", e);
     return {

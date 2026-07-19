@@ -47,6 +47,9 @@ export type WeightMode = "stored" | "global";
 
 function pointsForWeeklyEntry(entry: WeeklyChartEntryRow, mode: WeightMode = "stored"): number {
   if (mode === "global") return globalWeight(entry.position);
+  // `stored`: usa pontos persistidos. Só cai na escala por posição quando a entrada
+  // ainda não foi pontuada (0). Quem precisa de "0 intencional" (ex.: tabela custom
+  // da comunidade) deve filtrar essas linhas antes de agregar — ver applyCommunityPointRules.
   return entry.points > 0 ? entry.points : pointsForChartPosition(entry.position);
 }
 

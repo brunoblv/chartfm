@@ -7,6 +7,16 @@ import Link from "next/link";
 import { AdminPanel } from "@/components/admin/AdminPanel";
 import { adminTdStyle, adminThStyle, adminInputStyle } from "@/components/admin/admin-styles";
 import type { SourceFilter, StatusFilter } from "./page";
+import {
+  consumptionPlainSummary,
+  friendlyApiPath,
+  friendlyBudgetCategory,
+  friendlySpotifyApp,
+  friendlySpotifyCaller,
+  friendlySpotifyEndpoint,
+  sourceWhoLabel,
+  triggerLabel,
+} from "@/lib/api-log-labels";
 
 type LogRow = {
   id: string;
@@ -19,6 +29,19 @@ type LogRow = {
   errorMessage: string | null;
   userName: string | null;
   userHandle: string | null;
+};
+
+type AuditRow = {
+  id: string;
+  createdAt: string;
+  action: string;
+  summary: string;
+  trigger: string;
+  userName: string | null;
+  userHandle: string | null;
+  spotifyCalls: number;
+  entityType: string | null;
+  entityId: string | null;
 };
 
 function formatBrasilia(iso: string) {
@@ -48,6 +71,12 @@ function formatWaitTime(ms: number | null | undefined): string {
   if (hours > 0 && minutes > 0) return `${hours}h ${minutes}min`;
   if (hours > 0) return `${hours}h`;
   return `${minutes}min`;
+}
+
+function formatDuration(ms: number | null | undefined): string {
+  if (ms == null || ms < 0) return "—";
+  if (ms < 1000) return `${ms} ms`;
+  return `${(ms / 1000).toFixed(1)} s`;
 }
 
 function SpotifyProbeButton({
@@ -100,14 +129,14 @@ function SpotifyProbeButton({
       </button>
       {result && (
         result.ok ? (
-          <span style={{ color: "#16a34a", fontSize: 13, fontWeight: 600 }}>OK — sem rate limit</span>
+          <span style={{ color: "#16a34a", fontSize: 13, fontWeight: 600 }}>OK — respondendo normalmente</span>
         ) : result.status === 429 ? (
           <span style={{ color: "#dc2626", fontSize: 13, fontWeight: 600 }}>
-            429 — esperar {formatWaitTime(result.retryAfterMs) || "alguns minutos"}
+            Limite atingido — esperar {formatWaitTime(result.retryAfterMs) || "alguns minutos"}
           </span>
         ) : (
           <span style={{ color: "#dc2626", fontSize: 13, fontWeight: 600 }}>
-            Erro{result.status ? ` (${result.status})` : ""}{result.error ? `: ${result.error}` : ""}
+            Problema{result.status ? ` (código ${result.status})` : ""}{result.error ? `: ${result.error}` : ""}
           </span>
         )
       )}
@@ -118,30 +147,53 @@ function SpotifyProbeButton({
 type UsageSummary = {
   totalCalls: number;
   total429: number;
-  byEndpoint: { endpoint: string; total: number; e429: number; topCallers: { caller: string; count: number }[] }[];
+  avgDurationMs: number | null;
+  byEndpoint: {
+    endpoint: string;
+    total: number;
+    e429: number;
+    avgDurationMs: number | null;
+    topCallers: { caller: string; count: number }[];
+  }[];
   byApp: { app: string; total: number; e429: number }[];
+  byWho: { who: string; trigger: "manual" | "automatic"; total: number; e429: number }[];
   byHour: { hourIso: string; total: number; e429: number }[];
-  recent429s: { ts: number; endpoint: string; app: string; retryAfterS: number | null; caller: string }[];
-  recentCalls: { ts: number; endpoint: string; app: string; status: number | null; caller: string }[];
+  recent429s: {
+    ts: number;
+    endpoint: string;
+    app: string;
+    retryAfterS: number | null;
+    caller: string;
+    who: string;
+    trigger: "manual" | "automatic";
+    durationMs: number | null;
+  }[];
+  recentCalls: {
+    ts: number;
+    endpoint: string;
+    app: string;
+    status: number | null;
+    caller: string;
+    who: string;
+    trigger: "manual" | "automatic";
+    path: string | null;
+    durationMs: number | null;
+  }[];
+  budgets?: { category: string; used: number; limit: number }[];
 };
 
-function appLabel(app: string): string {
-  switch (app) {
-    case "primary":
-      return "Principal";
-    case "backup":
-      return "Reserva (BACKUP)";
-    case "backup2":
-      return "Reserva 2 (criação de paradas)";
-    case "backup3":
-      return "Reserva 3 (crownnote)";
-    case "token":
-      return "Token (auth)";
-    case "browser":
-      return "Browser (legado)";
-    default:
-      return app;
-  }
+function triggerBadgeStyle(trigger: string) {
+  const automatic = trigger === "automatic";
+  return {
+    display: "inline-block",
+    padding: "2px 8px",
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 700,
+    color: "white",
+    background: automatic ? "#8b5cf6" : "#2563eb",
+    whiteSpace: "nowrap" as const,
+  };
 }
 
 function SpotifyUsagePanel() {
@@ -155,10 +207,10 @@ function SpotifyUsagePanel() {
     setError(null);
     try {
       const res = await fetch(`/api/admin/spotify-status?target=usage&hours=${h}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`Não foi possível carregar (código ${res.status})`);
       setData((await res.json()) as UsageSummary);
     } catch (e) {
-      setError(String(e));
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -167,7 +219,7 @@ function SpotifyUsagePanel() {
   return (
     <AdminPanel maxWidth={1200}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>Uso da API do Spotify</div>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>Consumo do Spotify</div>
         <select
           value={hours}
           onChange={(e) => setHours(Number(e.target.value))}
@@ -195,47 +247,72 @@ function SpotifyUsagePanel() {
         >
           {loading ? "Carregando…" : "Atualizar"}
         </button>
-        {data && (
-          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            {data.totalCalls} chamadas, {data.total429} × 429 — desde o último restart do app
-          </span>
-        )}
+      </div>
+
+      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
+        Cada linha mostra uma consulta que o ChartFM fez ao Spotify: quem pediu, se foi um clique
+        (manual) ou uma tarefa do sistema (automática), e quanto tempo levou. O contador zera quando
+        o app reinicia.
       </div>
 
       {error && <div style={{ color: "#dc2626", fontSize: 13 }}>{error}</div>}
 
+      {data && (
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            marginBottom: 14,
+            padding: "10px 12px",
+            borderRadius: 8,
+            background: "var(--fill-subtle)",
+            border: "1px solid var(--divider)",
+          }}
+        >
+          {consumptionPlainSummary({
+            totalCalls: data.totalCalls,
+            total429: data.total429,
+            avgDurationMs: data.avgDurationMs,
+          })}
+        </div>
+      )}
+
       {data && data.byEndpoint.length === 0 && (
         <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-          Nenhuma chamada registrada na janela (o log zera quando o app reinicia).
+          Nenhuma consulta registrada neste período (ou o app acabou de reiniciar).
         </div>
       )}
 
       {data && data.byEndpoint.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {data.byApp.length > 0 && (
+          {data.byWho && data.byWho.length > 0 && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Por app</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Quem pediu (e quanto consumiu)</div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th style={adminThStyle}>App</th>
-                    <th style={adminThStyle}>Chamadas</th>
-                    <th style={adminThStyle}>429</th>
+                    <th style={adminThStyle}>Quem</th>
+                    <th style={adminThStyle}>Tipo</th>
+                    <th style={adminThStyle}>Consultas</th>
+                    <th style={adminThStyle}>Pediu espera</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.byApp.map((a) => (
-                    <tr key={a.app}>
-                      <td style={adminTdStyle}>{appLabel(a.app)}</td>
-                      <td style={adminTdStyle}>{a.total}</td>
+                  {data.byWho.map((w) => (
+                    <tr key={w.who}>
+                      <td style={adminTdStyle}>{w.who}</td>
+                      <td style={adminTdStyle}>
+                        <span style={triggerBadgeStyle(w.trigger)}>{triggerLabel(w.trigger)}</span>
+                      </td>
+                      <td style={adminTdStyle}>{w.total}</td>
                       <td
                         style={{
                           ...adminTdStyle,
-                          color: a.e429 > 0 ? "#dc2626" : undefined,
-                          fontWeight: a.e429 > 0 ? 700 : undefined,
+                          color: w.e429 > 0 ? "#dc2626" : undefined,
+                          fontWeight: w.e429 > 0 ? 700 : undefined,
                         }}
                       >
-                        {a.e429}
+                        {w.e429 > 0 ? `${w.e429}×` : "—"}
                       </td>
                     </tr>
                   ))}
@@ -244,34 +321,117 @@ function SpotifyUsagePanel() {
             </div>
           )}
 
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={adminThStyle}>Endpoint</th>
-                <th style={adminThStyle}>Chamadas</th>
-                <th style={adminThStyle}>429</th>
-                <th style={adminThStyle}>Principais origens</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.byEndpoint.map((e) => (
-                <tr key={e.endpoint}>
-                  <td style={{ ...adminTdStyle, fontFamily: "monospace", fontSize: 12 }}>{e.endpoint}</td>
-                  <td style={adminTdStyle}>{e.total}</td>
-                  <td style={{ ...adminTdStyle, color: e.e429 > 0 ? "#dc2626" : undefined, fontWeight: e.e429 > 0 ? 700 : undefined }}>
-                    {e.e429}
-                  </td>
-                  <td style={{ ...adminTdStyle, fontSize: 12 }}>
-                    {e.topCallers.map((c) => `${c.caller} (${c.count})`).join(", ")}
-                  </td>
+          {data.budgets && data.budgets.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Orçamento do dia (tarefas automáticas)</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>
+                Limite diário para tarefas de fundo — buscas e publicações feitas por pessoas não entram aqui.
+              </div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={adminThStyle}>Área</th>
+                    <th style={adminThStyle}>Usado</th>
+                    <th style={adminThStyle}>Limite</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.budgets.map((b) => (
+                    <tr key={b.category}>
+                      <td style={adminTdStyle}>{friendlyBudgetCategory(b.category)}</td>
+                      <td
+                        style={{
+                          ...adminTdStyle,
+                          color: b.used >= b.limit ? "#dc2626" : undefined,
+                          fontWeight: b.used >= b.limit ? 700 : undefined,
+                        }}
+                      >
+                        {b.used}
+                      </td>
+                      <td style={adminTdStyle}>{b.limit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {data.byApp.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Por conta Spotify</div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={adminThStyle}>Conta</th>
+                    <th style={adminThStyle}>Consultas</th>
+                    <th style={adminThStyle}>Pediu espera</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.byApp.map((a) => (
+                    <tr key={a.app}>
+                      <td style={adminTdStyle}>{friendlySpotifyApp(a.app)}</td>
+                      <td style={adminTdStyle}>{a.total}</td>
+                      <td
+                        style={{
+                          ...adminTdStyle,
+                          color: a.e429 > 0 ? "#dc2626" : undefined,
+                          fontWeight: a.e429 > 0 ? 700 : undefined,
+                        }}
+                      >
+                        {a.e429 > 0 ? `${a.e429}×` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Por tipo de consulta</div>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={adminThStyle}>O que pediu</th>
+                  <th style={adminThStyle}>Consultas</th>
+                  <th style={adminThStyle}>Tempo médio</th>
+                  <th style={adminThStyle}>Pediu espera</th>
+                  <th style={adminThStyle}>Motivos mais comuns</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.byEndpoint.map((e) => (
+                  <tr key={e.endpoint}>
+                    <td style={adminTdStyle}>
+                      <div>{friendlySpotifyEndpoint(e.endpoint)}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{e.endpoint}</div>
+                    </td>
+                    <td style={adminTdStyle}>{e.total}</td>
+                    <td style={adminTdStyle}>{formatDuration(e.avgDurationMs)}</td>
+                    <td
+                      style={{
+                        ...adminTdStyle,
+                        color: e.e429 > 0 ? "#dc2626" : undefined,
+                        fontWeight: e.e429 > 0 ? 700 : undefined,
+                      }}
+                    >
+                      {e.e429 > 0 ? `${e.e429}×` : "—"}
+                    </td>
+                    <td style={{ ...adminTdStyle, fontSize: 12 }}>
+                      {e.topCallers
+                        .map((c) => `${friendlySpotifyCaller(c.caller)} (${c.count})`)
+                        .join(", ")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {data.byHour.length > 0 && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Por hora</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Consultas por hora</div>
               <div style={{ display: "flex", gap: 4, alignItems: "flex-end", flexWrap: "wrap" }}>
                 {data.byHour.map((h) => {
                   const max = Math.max(...data.byHour.map((x) => x.total), 1);
@@ -284,7 +444,7 @@ function SpotifyUsagePanel() {
                     <div key={h.hourIso} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                       <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{h.total}</span>
                       <div
-                        title={`${hourLabel}h — ${h.total} chamadas, ${h.e429} × 429`}
+                        title={`${hourLabel}h — ${h.total} consultas${h.e429 > 0 ? `, ${h.e429} pediram espera` : ""}`}
                         style={{
                           width: 18,
                           height,
@@ -300,27 +460,100 @@ function SpotifyUsagePanel() {
             </div>
           )}
 
-          {data.recent429s.length > 0 && (
+          {data.recentCalls && data.recentCalls.length > 0 && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: "#dc2626" }}>Últimos 429</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Últimas consultas</div>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
                     <th style={adminThStyle}>Horário</th>
-                    <th style={adminThStyle}>Endpoint</th>
-                    <th style={adminThStyle}>App</th>
-                    <th style={adminThStyle}>Retry-After</th>
-                    <th style={adminThStyle}>Origem</th>
+                    <th style={adminThStyle}>Quem pediu</th>
+                    <th style={adminThStyle}>Tipo</th>
+                    <th style={adminThStyle}>O que pediu</th>
+                    <th style={adminThStyle}>Consumo</th>
+                    <th style={adminThStyle}>Resultado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.recentCalls.slice(0, 25).map((r, i) => (
+                    <tr key={`${r.ts}-${i}`}>
+                      <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>
+                        {formatBrasilia(new Date(r.ts).toISOString())}
+                      </td>
+                      <td style={adminTdStyle}>
+                        <div>{r.who}</div>
+                        {r.path && (
+                          <div style={{ fontSize: 11, color: "var(--text-muted)" }} title={r.path}>
+                            {friendlyApiPath(r.path)}
+                          </div>
+                        )}
+                      </td>
+                      <td style={adminTdStyle}>
+                        <span style={triggerBadgeStyle(r.trigger)}>{triggerLabel(r.trigger)}</span>
+                      </td>
+                      <td style={adminTdStyle}>
+                        <div>{friendlySpotifyEndpoint(r.endpoint)}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                          {friendlySpotifyCaller(r.caller)} · {friendlySpotifyApp(r.app)}
+                        </div>
+                      </td>
+                      <td style={adminTdStyle}>
+                        1 consulta
+                        {r.durationMs != null ? ` · ${formatDuration(r.durationMs)}` : ""}
+                      </td>
+                      <td style={adminTdStyle}>
+                        {r.status == null ? (
+                          <span style={{ color: "#dc2626", fontWeight: 600 }}>Falhou</span>
+                        ) : r.status === 429 ? (
+                          <span style={{ color: "#dc2626", fontWeight: 600 }}>Pediu espera</span>
+                        ) : r.status >= 200 && r.status < 300 ? (
+                          <span style={{ color: "#16a34a", fontWeight: 600 }}>OK</span>
+                        ) : (
+                          <span style={{ color: "#dc2626", fontWeight: 600 }}>Erro {r.status}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {data.recent429s.length > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: "#dc2626" }}>
+                Quando o Spotify pediu para esperar
+              </div>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={adminThStyle}>Horário</th>
+                    <th style={adminThStyle}>Quem pediu</th>
+                    <th style={adminThStyle}>O que pediu</th>
+                    <th style={adminThStyle}>Esperar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.recent429s.map((r, i) => (
                     <tr key={`${r.ts}-${i}`}>
-                      <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>{formatBrasilia(new Date(r.ts).toISOString())}</td>
-                      <td style={{ ...adminTdStyle, fontFamily: "monospace", fontSize: 12 }}>{r.endpoint}</td>
-                      <td style={adminTdStyle}>{r.app}</td>
-                      <td style={adminTdStyle}>{r.retryAfterS ? formatWaitTime(r.retryAfterS * 1000) : "—"}</td>
-                      <td style={{ ...adminTdStyle, fontSize: 12 }}>{r.caller}</td>
+                      <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>
+                        {formatBrasilia(new Date(r.ts).toISOString())}
+                      </td>
+                      <td style={adminTdStyle}>
+                        <div>{r.who}</div>
+                        <span style={{ ...triggerBadgeStyle(r.trigger), marginTop: 4 }}>
+                          {triggerLabel(r.trigger)}
+                        </span>
+                      </td>
+                      <td style={adminTdStyle}>
+                        {friendlySpotifyEndpoint(r.endpoint)}
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                          {friendlySpotifyCaller(r.caller)} · {friendlySpotifyApp(r.app)}
+                        </div>
+                      </td>
+                      <td style={adminTdStyle}>
+                        {r.retryAfterS ? formatWaitTime(r.retryAfterS * 1000) : "alguns minutos"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -331,12 +564,6 @@ function SpotifyUsagePanel() {
       )}
     </AdminPanel>
   );
-}
-
-function sourceLabel(source: string): string {
-  if (source === "system") return "Sistema (cron)";
-  if (source === "user") return "Usuário";
-  return "Anônimo";
 }
 
 function sourceBadgeStyle(source: string) {
@@ -359,6 +586,10 @@ function sourceBadgeStyle(source: string) {
 }
 
 export function LogsAdminClient({
+  auditLogs,
+  auditPage,
+  auditTotalPages,
+  auditTotal,
   logs,
   page,
   totalPages,
@@ -367,6 +598,10 @@ export function LogsAdminClient({
   source,
   status,
 }: {
+  auditLogs: AuditRow[];
+  auditPage: number;
+  auditTotalPages: number;
+  auditTotal: number;
   logs: LogRow[];
   page: number;
   totalPages: number;
@@ -378,85 +613,186 @@ export function LogsAdminClient({
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(query);
 
-  function pushParams(next: { q?: string; source?: string; status?: string; page?: number }) {
+  function pushParams(next: {
+    q?: string;
+    source?: string;
+    status?: string;
+    page?: number;
+    auditPage?: number;
+  }) {
     const params = new URLSearchParams();
     const q = next.q ?? query;
     const src = next.source ?? source;
     const st = next.status ?? status;
     const pg = next.page ?? 1;
+    const ap = next.auditPage ?? auditPage;
     if (q) params.set("q", q);
     if (src !== "all") params.set("source", src);
     if (st !== "all") params.set("status", st);
     if (pg > 1) params.set("page", String(pg));
+    if (ap > 1) params.set("auditPage", String(ap));
     router.push(`/admin/logs${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
   function onSearchSubmit(e: FormEvent) {
     e.preventDefault();
-    pushParams({ q: searchInput.trim() });
+    pushParams({ q: searchInput.trim(), page: 1, auditPage: 1 });
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <AdminPanel maxWidth={1200}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Auditoria do site</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
+          Registro permanente do que as pessoas fizeram — por exemplo, quem criou cada parada e
+          quantas consultas ao Spotify foram usadas. Fica guardado mesmo se o app reiniciar.
+        </div>
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+          <form onSubmit={onSearchSubmit} style={{ flex: 1, minWidth: 220 }}>
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar por nome, @handle ou texto (ex: criou a parada)"
+              style={adminInputStyle}
+            />
+          </form>
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{auditTotal} registros</div>
+        </div>
+
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={adminThStyle}>Horário (Brasília)</th>
+              <th style={adminThStyle}>O que aconteceu</th>
+              <th style={adminThStyle}>Tipo</th>
+              <th style={adminThStyle}>Consumo Spotify</th>
+            </tr>
+          </thead>
+          <tbody>
+            {auditLogs.length === 0 && (
+              <tr>
+                <td style={adminTdStyle} colSpan={4}>
+                  Ainda não há auditoria. Quando alguém publicar uma parada, aparece aqui.
+                </td>
+              </tr>
+            )}
+            {auditLogs.map((a) => (
+              <tr key={a.id}>
+                <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>{formatBrasilia(a.createdAt)}</td>
+                <td style={adminTdStyle}>
+                  <div style={{ fontWeight: 600, lineHeight: 1.4 }}>{a.summary}</div>
+                  {a.entityId && (
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                      {a.entityType === "chart" ? (
+                        <Link href={`/chart/${a.entityId}`}>Ver parada</Link>
+                      ) : (
+                        a.entityId
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td style={adminTdStyle}>
+                  <span style={triggerBadgeStyle(a.trigger)}>{triggerLabel(a.trigger)}</span>
+                </td>
+                <td style={adminTdStyle}>
+                  {a.spotifyCalls <= 0
+                    ? "Nenhuma consulta"
+                    : a.spotifyCalls === 1
+                      ? "1 consulta"
+                      : `${a.spotifyCalls} consultas`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {auditTotalPages > 1 && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 12 }}>
+            {auditPage > 1 && (
+              <Link
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  pushParams({ auditPage: auditPage - 1 });
+                }}
+              >
+                ← Anterior
+              </Link>
+            )}
+            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              Página {auditPage} de {auditTotalPages}
+            </span>
+            {auditPage < auditTotalPages && (
+              <Link
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  pushParams({ auditPage: auditPage + 1 });
+                }}
+              >
+                Próxima →
+              </Link>
+            )}
+          </div>
+        )}
+      </AdminPanel>
+
+      <AdminPanel maxWidth={1200}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Status do Spotify</div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
-          Principal e reserva (BACKUP) servem o app inteiro. BACKUP2 só entra na criação/import de paradas de
-          usuário, quando as duas primeiras estão fora.
+          Conta principal e reserva atendem o site. A reserva 2 é para criação/import de paradas. A
+          reserva 3 (BACKUP3) serve Crownnote e os backfills com busca (capas/catálogo).
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <SpotifyProbeButton target="primary" label="API principal" />
-          <SpotifyProbeButton target="backup" label="API reserva (BACKUP)" />
-          <SpotifyProbeButton target="backup2" label="API reserva 2 (criação de paradas)" />
-          <SpotifyProbeButton target="backup3" label="API reserva 3 (crownnote)" />
+          <SpotifyProbeButton target="primary" label="conta principal" />
+          <SpotifyProbeButton target="backup" label="conta reserva" />
+          <SpotifyProbeButton target="backup2" label="conta reserva 2 (paradas)" />
+          <SpotifyProbeButton target="backup3" label="conta reserva 3 (Crownnote + backfill)" />
         </div>
       </AdminPanel>
 
       <SpotifyUsagePanel />
 
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <form onSubmit={onSearchSubmit} style={{ flex: 1, minWidth: 220 }}>
-          <input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar por rota (ex: /api/admin/lancamentos)"
-            style={adminInputStyle}
-          />
-        </form>
-
-        <select
-          value={source}
-          onChange={(e) => pushParams({ source: e.target.value })}
-          style={{ ...adminInputStyle, width: "auto" }}
-        >
-          <option value="all">Todas as origens</option>
-          <option value="user">Usuário</option>
-          <option value="system">Sistema (cron)</option>
-          <option value="anonymous">Anônimo</option>
-        </select>
-
-        <select
-          value={status}
-          onChange={(e) => pushParams({ status: e.target.value })}
-          style={{ ...adminInputStyle, width: "auto" }}
-        >
-          <option value="all">Ok e erro</option>
-          <option value="ok">Só ok</option>
-          <option value="error">Só erro</option>
-        </select>
-
-        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{total} chamadas</div>
-      </div>
-
       <AdminPanel maxWidth={1200}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Chamadas internas do ChartFM</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
+          Registro técnico de quem acionou cada rota do site: pessoa (manual) ou tarefa automática do sistema.
+        </div>
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+          <select
+            value={source}
+            onChange={(e) => pushParams({ source: e.target.value, page: 1 })}
+            style={{ ...adminInputStyle, width: "auto" }}
+          >
+            <option value="all">Todos</option>
+            <option value="user">Pessoas (manual)</option>
+            <option value="system">Sistema (automática)</option>
+            <option value="anonymous">Visitantes</option>
+          </select>
+
+          <select
+            value={status}
+            onChange={(e) => pushParams({ status: e.target.value, page: 1 })}
+            style={{ ...adminInputStyle, width: "auto" }}
+          >
+            <option value="all">Ok e erro</option>
+            <option value="ok">Só ok</option>
+            <option value="error">Só erro</option>
+          </select>
+
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{total} registros</div>
+        </div>
+
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th style={adminThStyle}>Horário (Brasília)</th>
-              <th style={adminThStyle}>Método</th>
-              <th style={adminThStyle}>Rota</th>
-              <th style={adminThStyle}>Quem</th>
-              <th style={adminThStyle}>Status</th>
+              <th style={adminThStyle}>O que aconteceu</th>
+              <th style={adminThStyle}>Quem pediu</th>
+              <th style={adminThStyle}>Tipo</th>
+              <th style={adminThStyle}>Resultado</th>
             </tr>
           </thead>
           <tbody>
@@ -465,33 +801,53 @@ export function LogsAdminClient({
                 <td style={adminTdStyle} colSpan={5}>Nenhuma chamada encontrada.</td>
               </tr>
             )}
-            {logs.map((log) => (
-              <tr key={log.id}>
-                <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>{formatBrasilia(log.createdAt)}</td>
-                <td style={adminTdStyle}>{log.method}</td>
-                <td style={{ ...adminTdStyle, fontFamily: "monospace", fontSize: 12 }}>{log.path}</td>
-                <td style={adminTdStyle}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={sourceBadgeStyle(log.source)}>{sourceLabel(log.source)}</span>
-                    {log.source === "user" && (
+            {logs.map((log) => {
+              const trigger = log.source === "system" ? "automatic" : "manual";
+              return (
+                <tr key={log.id}>
+                  <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>{formatBrasilia(log.createdAt)}</td>
+                  <td style={adminTdStyle}>
+                    <div>{friendlyApiPath(log.path)}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      {log.method} {log.path}
+                    </div>
+                  </td>
+                  <td style={adminTdStyle}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <span style={sourceBadgeStyle(log.source)}>
+                        {log.source === "system"
+                          ? "Sistema"
+                          : log.source === "user"
+                            ? "Pessoa"
+                            : "Visitante"}
+                      </span>
                       <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        {log.userName ?? "?"} {log.userHandle ? `(@${log.userHandle})` : ""}
+                        {sourceWhoLabel({
+                          source: log.source,
+                          userName: log.userName,
+                          userHandle: log.userHandle,
+                        })}
+                      </span>
+                    </div>
+                  </td>
+                  <td style={adminTdStyle}>
+                    <span style={triggerBadgeStyle(trigger)}>{triggerLabel(trigger)}</span>
+                  </td>
+                  <td style={adminTdStyle}>
+                    {log.ok ? (
+                      <span style={{ color: "#16a34a", fontWeight: 700 }}>
+                        Deu certo{log.statusCode ? ` (${log.statusCode})` : ""}
+                      </span>
+                    ) : (
+                      <span style={{ color: "#dc2626", fontWeight: 700 }} title={log.errorMessage ?? undefined}>
+                        Deu erro{log.statusCode ? ` (${log.statusCode})` : ""}
+                        {log.errorMessage ? `: ${log.errorMessage.slice(0, 80)}` : ""}
                       </span>
                     )}
-                  </div>
-                </td>
-                <td style={adminTdStyle}>
-                  {log.ok ? (
-                    <span style={{ color: "#16a34a", fontWeight: 700 }}>OK{log.statusCode ? ` (${log.statusCode})` : ""}</span>
-                  ) : (
-                    <span style={{ color: "#dc2626", fontWeight: 700 }} title={log.errorMessage ?? undefined}>
-                      Erro{log.statusCode ? ` (${log.statusCode})` : ""}
-                      {log.errorMessage ? `: ${log.errorMessage.slice(0, 80)}` : ""}
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </AdminPanel>

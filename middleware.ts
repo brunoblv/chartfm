@@ -57,24 +57,46 @@ function shouldLogApiCall(pathname: string): boolean {
  * O status de erro real (crash/exceção) é preenchido depois por
  * instrumentation.ts:onRequestError, correlacionado pelo header x-log-id.
  */
+function classifyApiCall(
+  request: NextRequest,
+  token: { prismaUserId?: string; name?: string; handle?: string } | null,
+): {
+  source: ApiCallSource;
+  trigger: "manual" | "automatic";
+  userId: string | null;
+  userName: string | null;
+  userHandle: string | null;
+} {
+  const secret = process.env.CRON_SECRET;
+  const isSystem = Boolean(secret) && request.headers.get("authorization") === `Bearer ${secret}`;
+  const source: ApiCallSource = isSystem ? "system" : token?.prismaUserId ? "user" : "anonymous";
+  return {
+    source,
+    // Cron/sistema = automática; clique de usuário (ou visitante) = manual.
+    trigger: source === "system" ? "automatic" : "manual",
+    userId: token?.prismaUserId ?? null,
+    userName: token?.name ?? null,
+    userHandle: token?.handle ?? null,
+  };
+}
+
 function logApiCall(
   request: NextRequest,
   event: NextFetchEvent,
   token: { prismaUserId?: string; name?: string; handle?: string } | null,
-): string {
+): { id: string; meta: ReturnType<typeof classifyApiCall> } {
   const id = crypto.randomUUID();
   const secret = process.env.CRON_SECRET;
-  const isSystem = Boolean(secret) && request.headers.get("authorization") === `Bearer ${secret}`;
-  const source: ApiCallSource = isSystem ? "system" : token?.prismaUserId ? "user" : "anonymous";
+  const meta = classifyApiCall(request, token);
 
   const payload = {
     id,
     method: request.method,
     path: request.nextUrl.pathname,
-    source,
-    userId: token?.prismaUserId ?? null,
-    userName: token?.name ?? null,
-    userHandle: token?.handle ?? null,
+    source: meta.source,
+    userId: meta.userId,
+    userName: meta.userName,
+    userHandle: meta.userHandle,
   };
 
   const logUrl = new URL("/api/internal/log-request", request.nextUrl.origin);
@@ -89,7 +111,7 @@ function logApiCall(
     }).catch(() => null),
   );
 
-  return id;
+  return { id, meta };
 }
 
 /** Redireciona visitantes para /manutencao quando MAINTENANCE_MODE está ativo. */
@@ -164,13 +186,19 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   if (shouldLogApiCall(pathname)) {
-    const logId = logApiCall(request, event, {
+    const { id: logId, meta } = logApiCall(request, event, {
       prismaUserId: token?.prismaUserId as string | undefined,
       name: token?.name as string | undefined,
       handle: token?.handle as string | undefined,
     });
     const headersWithLogId = new Headers(request.headers);
     headersWithLogId.set("x-log-id", logId);
+    // Contexto para logs de APIs externas (Spotify etc.) — lido em lib/api-call-context.ts
+    headersWithLogId.set("x-api-source", meta.source);
+    headersWithLogId.set("x-api-trigger", meta.trigger);
+    headersWithLogId.set("x-api-path", pathname);
+    if (meta.userName) headersWithLogId.set("x-api-user-name", meta.userName);
+    if (meta.userHandle) headersWithLogId.set("x-api-user-handle", meta.userHandle);
     return ensureLocaleCookie(request, headersWithLogId);
   }
 

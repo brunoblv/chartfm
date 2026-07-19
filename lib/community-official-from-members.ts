@@ -20,8 +20,8 @@ import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { recomputePersistedChartEntryStatsForParada } from "@/lib/chart-entry-stats";
 import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
 import {
+  applyCommunityPointRules,
   parseCommunityPointsConfig,
-  type CommunityPointsConfig,
 } from "@/lib/community-chart";
 import {
   aggregateGlobalSongs,
@@ -49,23 +49,6 @@ const entrySelect = {
     },
   },
 } as const;
-
-function applyCommunityPointRules(
-  entries: WeeklyChartEntryRow[],
-  config: CommunityPointsConfig,
-): WeeklyChartEntryRow[] {
-  let filtered = entries;
-  if (config.memberPositionLimit != null) {
-    filtered = entries.filter((e) => e.position <= config.memberPositionLimit!);
-  }
-  if (config.pointsMode === "custom" && config.customPoints?.length) {
-    return filtered.map((e) => ({
-      ...e,
-      points: config.customPoints![e.position - 1] ?? 0,
-    }));
-  }
-  return filtered;
-}
 
 async function loadMemberChartEntries(
   memberIds: string[],
@@ -308,28 +291,20 @@ export async function publishCommunityOfficialWeekFromMembers(
 }
 
 /**
- * Comunidades que já operam em modo parada oficial (têm ao menos um Chart com communityId).
+ * Lista todas as comunidades (todas passam a ter snapshot semanal create-only).
  */
-export async function listCommunitiesWithOfficialCharts(): Promise<
+export async function listAllCommunitiesForOfficialPublish(): Promise<
   Array<{ id: string; slug: string; name: string }>
 > {
-  const rows = await prisma.chart.findMany({
-    where: { communityId: { not: null }, isPublished: true },
-    select: { communityId: true },
-    distinct: ["communityId"],
-  });
-  const ids = rows.map((r) => r.communityId).filter((id): id is string => Boolean(id));
-  if (!ids.length) return [];
   return prisma.community.findMany({
-    where: { id: { in: ids } },
     select: { id: true, slug: true, name: true },
     orderBy: { slug: "asc" },
   });
 }
 
 /**
- * Congela a semana de ranking atual para todas as comunidades com parada oficial.
- * Create-only (não sobrescreve), alinhado ao publish-weekly-globals.
+ * Congela a semana de ranking atual para todas as comunidades.
+ * Create-only (não sobrescreve), alinhado ao publish-weekly-globals / Global 100.
  */
 export async function publishAllCommunityOfficialWeeksFromMembers(
   now: Date = new Date(),
@@ -337,7 +312,7 @@ export async function publishAllCommunityOfficialWeeksFromMembers(
 ) {
   const slot = await getGlobalPublishSlot();
   const { weekIndex } = getRankingWeekReference(now, slot);
-  const communities = await listCommunitiesWithOfficialCharts();
+  const communities = await listAllCommunitiesForOfficialPublish();
 
   const results: PublishCommunityOfficialWeekResult[] = [];
   for (const community of communities) {

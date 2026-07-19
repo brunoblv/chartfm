@@ -27,8 +27,8 @@ export default async function AdminMusicNewPage() {
   return (
     <Shell title="Admin" subtitle="Nova música">
       <div>
-        <Link href="/admin/music" style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
-          ← Voltar para editar músicas
+        <Link href="/admin/dados/catalogo" style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
+          ← Voltar para músicas
         </Link>
         <h1 style={{ fontSize: 26, margin: "14px 0 6px" }}>Nova música</h1>
         <p style={{ color: "#86868B", marginTop: 0, marginBottom: 8 }}>Preencha os dados abaixo. Não é necessário usar a API do Spotify.</p>

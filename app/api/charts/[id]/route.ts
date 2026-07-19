@@ -20,6 +20,11 @@ import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import { lookupNumberOnes } from "@/lib/song-stats-key";
 import { buildChartContext } from "@/lib/entity-context-text";
 import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
+import { runCountingSpotifyCalls } from "@/lib/api-call-context";
+import {
+  auditParadaUpdateSummary,
+  recordSiteAudit,
+} from "@/lib/site-audit-log";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -425,7 +430,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       weekIndex: true,
       weekLabel: true,
       dateRange: true,
-      parada: { select: { isPrimary: true, cadence: true } },
+      parada: { select: { name: true, isPrimary: true, cadence: true } },
     },
   });
   if (!chart) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -500,10 +505,12 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     songId: e.songId?.trim() || null,
   }));
 
-  const songs = await runWithSpotifyUserChartsPool(async () => {
-    const resolvedInner = await resolveSongsForFastPublish(prisma, normalizedEntries);
-    return finalizeSongsForChartPublish(prisma, normalizedEntries, resolvedInner);
-  });
+  const { result: songs, spotifyCalls } = await runCountingSpotifyCalls(() =>
+    runWithSpotifyUserChartsPool(async () => {
+      const resolvedInner = await resolveSongsForFastPublish(prisma, normalizedEntries);
+      return finalizeSongsForChartPublish(prisma, normalizedEntries, resolvedInner);
+    }),
+  );
   if (songs.length !== entries.length || songs.some((s) => !s?.id)) {
     return NextResponse.json({ error: "Não foi possível resolver todas as músicas." }, { status: 400 });
   }
@@ -584,6 +591,33 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const recomputeFrom =
     targetWeekIndex !== oldWeekIndex ? Math.min(oldWeekIndex, targetWeekIndex) : targetWeekIndex;
   await recomputePersistedChartEntryStatsForParada(prisma, chart.paradaId, recomputeFrom);
+
+  void recordSiteAudit({
+    action: "parada.update",
+    summary: auditParadaUpdateSummary({
+      userName: session.user.name,
+      userHandle: session.user.handle,
+      paradaName: chart.parada.name,
+      weekLabel: targetWeekLabel,
+      entryCount: entries.length,
+      spotifyCalls,
+    }),
+    trigger: "manual",
+    userId: session.user.id,
+    userName: session.user.name ?? null,
+    userHandle: session.user.handle ?? null,
+    entityType: "chart",
+    entityId: chartId,
+    spotifyCalls,
+    meta: {
+      paradaId: chart.paradaId,
+      paradaName: chart.parada.name,
+      weekIndex: targetWeekIndex,
+      weekLabel: targetWeekLabel,
+      dateRange: targetDateRange,
+      entryCount: entries.length,
+    },
+  });
 
   return NextResponse.json({ ok: true });
   } catch (err) {

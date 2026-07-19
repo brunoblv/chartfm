@@ -1438,6 +1438,30 @@ model ApiRequestLog {
   @@map("api_request_logs")
 }
 
+/// Auditoria legível do site (ex.: "Bruno criou a parada X e consumiu 12 consultas").
+model SiteAuditLog {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now()) @map("created_at")
+  /// ex.: parada.create | parada.update
+  action       String
+  /// Frase em português para leitura no /admin/logs
+  summary      String   @db.Text
+  /// manual | automatic
+  trigger      String   @default("manual")
+  userId       String?  @map("user_id")
+  userName     String?  @map("user_name")
+  userHandle   String?  @map("user_handle")
+  entityType   String?  @map("entity_type")
+  entityId     String?  @map("entity_id")
+  spotifyCalls Int      @default(0) @map("spotify_calls")
+  meta         Json?
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([userId, createdAt])
+  @@map("site_audit_logs")
+}
+
 model AnalyticsEvent {
   id        BigInt   @id @default(autoincrement())
   sessionId String   @map("session_id")
@@ -1936,7 +1960,7 @@ model RetroSongProfile {
   /// 0-100; null = usar o valor calculado pelo motor.
   importance          Int?
   importanceLocked    Boolean  @default(false) @map("importance_locked")
-  /// "1","top3","top5","top10","top20","top40","top100","out"; null = calculado.
+  /// "1","top5","top10","top20"…"top100" (de 10 em 10),"out"; null = calculado.
   peakPotential       String?  @map("peak_potential")
   peakPotentialLocked Boolean  @default(false) @map("peak_potential_locked")
   /// Somado ao Score Final. Faixa -50..+50.

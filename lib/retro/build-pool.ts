@@ -29,7 +29,7 @@
 import { prisma } from "@/lib/prisma";
 import { fetchTopTracks, fetchTracksBetweenUnix, fetchTrackUserPlaycount, type TopTrack } from "@/lib/lastfm";
 import { normalizeTrackMatchKey } from "@/lib/lastfm-import";
-import type { ReleaseRefSource, RetroMode, RetroSongInput } from "@/lib/retro/scoring";
+import { normalizePeakPotential, type ReleaseRefSource, type RetroMode, type RetroSongInput } from "@/lib/retro/scoring";
 
 /** Parada-alvo da geração: define a cadeia de datas da estreia. */
 export type RetroTarget = "hot100" | "clipes";
@@ -403,7 +403,7 @@ export function buildRetroPoolFromSources(sources: RetroSources, args: BuildPool
       numberOnes: agg.numberOnes,
       manualImportance: profile?.importance ?? null,
       importanceLocked: profile?.importanceLocked ?? false,
-      manualPeakPotential: (profile?.peakPotential as RetroSongInput["manualPeakPotential"]) ?? null,
+      manualPeakPotential: normalizePeakPotential(profile?.peakPotential),
       manualAdjustment: profile?.manualAdjustment ?? 0,
       eraOverrideWeight: eraBySong.get(song.id) ?? null,
     });

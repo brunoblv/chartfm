@@ -1,16 +1,15 @@
 /**
- * Backfill da parada oficial da comunidade a partir das paradas primárias dos membros.
+ * Backfill da parada oficial (snapshot) da comunidade a partir das paradas primárias dos membros.
  *
- * Motivo: comunidades com histórico oficial (ex.: UCC importada da planilha) entram no
- * modo "parada oficial" e deixam de agregar membros ao vivo. Semanas novas precisam ser
- * persistidas — este script (e o cron publish-weekly-globals) fazem isso.
+ * Create-only por padrão (não sobrescreve semana já congelada) — igual Global 100.
+ * Use --force só para regenerar de propósito.
  *
  * Usage:
  *   npx tsx scripts/backfill-community-parada-from-members.ts --dry-run
- *   npx tsx scripts/backfill-community-parada-from-members.ts
- *   npx tsx scripts/backfill-community-parada-from-members.ts --slug=hit-parade-paradas-pessoais-ucc --from=2026-01-01 --until=2026-07-19
- *   npx tsx scripts/backfill-community-parada-from-members.ts --from=202601 --until=202629 --force
- *   npx tsx scripts/backfill-community-parada-from-members.ts --week=202627
+ *   npx tsx scripts/backfill-community-parada-from-members.ts --slug=hit-parade-paradas-pessoais-ucc --from=202601 --until=202629
+ *   npx tsx scripts/backfill-community-parada-from-members.ts --all --from=202601 --until=202629
+ *   npx tsx scripts/backfill-community-parada-from-members.ts --all --live-only --from=202601
+ *   npx tsx scripts/backfill-community-parada-from-members.ts --week=202627 --force
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -23,7 +22,7 @@ import {
 import { getGlobalPublishSlot } from "../lib/global-publish-schedule";
 import { recomputePersistedChartEntryStatsForParada } from "../lib/chart-entry-stats";
 import {
-  listCommunitiesWithOfficialCharts,
+  listAllCommunitiesForOfficialPublish,
   listWeekIndexesInclusive,
   publishCommunityOfficialWeekFromMembers,
 } from "../lib/community-official-from-members";
@@ -44,6 +43,9 @@ const DEFAULT_SLUG = "hit-parade-paradas-pessoais-ucc";
 const DRY_RUN = process.argv.includes("--dry-run");
 const FORCE = process.argv.includes("--force");
 const VERBOSE = process.argv.includes("--verbose");
+const ALL = process.argv.includes("--all");
+/** Com --all: só comunidades que ainda não têm nenhum Chart oficial. */
+const LIVE_ONLY = process.argv.includes("--live-only");
 
 function argValue(prefix: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(prefix));
@@ -80,33 +82,61 @@ async function resolveFromUntil(): Promise<{ from: number; until: number }> {
   return { from, until };
 }
 
-async function main() {
-  const slug = argValue("--slug=") ?? DEFAULT_SLUG;
-  const { from, until } = await resolveFromUntil();
-  const weeks = listWeekIndexesInclusive(from, until);
+type CommunityTarget = {
+  id: string;
+  slug: string;
+  name: string;
+  paradaName: string;
+  ownerId: string | null;
+};
 
+async function resolveCommunities(): Promise<CommunityTarget[]> {
+  if (ALL) {
+    const all = await prisma.community.findMany({
+      select: { id: true, slug: true, name: true, paradaName: true, ownerId: true },
+      orderBy: { slug: "asc" },
+    });
+    if (!LIVE_ONLY) return all;
+
+    const withOfficial = await prisma.chart.findMany({
+      where: { communityId: { not: null }, isPublished: true },
+      select: { communityId: true },
+      distinct: ["communityId"],
+    });
+    const officialIds = new Set(
+      withOfficial.map((r) => r.communityId).filter((id): id is string => Boolean(id)),
+    );
+    return all.filter((c) => !officialIds.has(c.id));
+  }
+
+  const slug = argValue("--slug=") ?? DEFAULT_SLUG;
   const community = await prisma.community.findUnique({
     where: { slug },
     select: { id: true, slug: true, name: true, paradaName: true, ownerId: true },
   });
   if (!community) {
-    const official = await listCommunitiesWithOfficialCharts();
+    const known = await listAllCommunitiesForOfficialPublish();
     console.error(`[erro] Comunidade "${slug}" não encontrada.`);
-    if (official.length) {
-      console.error("Comunidades com parada oficial:", official.map((c) => c.slug).join(", "));
+    if (known.length) {
+      console.error("Comunidades:", known.map((c) => c.slug).join(", "));
     }
     process.exitCode = 1;
-    return;
+    return [];
   }
+  return [community];
+}
 
-  console.log(`[info] Comunidade: ${community.name} (${community.slug})`);
-  console.log(`[info] Semanas: ${from} → ${until} (${weeks.length} semanas)`);
-  console.log(`[info] dry-run=${DRY_RUN} force=${FORCE}`);
-
+async function backfillCommunity(
+  community: CommunityTarget,
+  weeks: number[],
+  from: number,
+): Promise<{ created: number; updated: number; skipped: number; empty: number }> {
   let created = 0;
   let updated = 0;
   let skipped = 0;
   let empty = 0;
+
+  console.log(`\n=== ${community.name} (${community.slug}) ===`);
 
   for (const weekIndex of weeks) {
     const result = await publishCommunityOfficialWeekFromMembers(community.id, weekIndex, {
@@ -143,8 +173,36 @@ async function main() {
     }
   }
 
+  return { created, updated, skipped, empty };
+}
+
+async function main() {
+  const { from, until } = await resolveFromUntil();
+  const weeks = listWeekIndexesInclusive(from, until);
+  const communities = await resolveCommunities();
+  if (!communities.length) return;
+
+  console.log(
+    `[info] Comunidades: ${communities.length} | Semanas: ${from} → ${until} (${weeks.length})`,
+  );
+  console.log(`[info] dry-run=${DRY_RUN} force=${FORCE} all=${ALL} live-only=${LIVE_ONLY}`);
+
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+  let empty = 0;
+
+  for (const community of communities) {
+    const r = await backfillCommunity(community, weeks, from);
+    created += r.created;
+    updated += r.updated;
+    skipped += r.skipped;
+    empty += r.empty;
+  }
+
   console.log("");
-  console.log("=== RESUMO ===");
+  console.log("=== RESUMO GERAL ===");
+  console.log(`Comunidades: ${communities.length}`);
   console.log(`Criados: ${created}`);
   console.log(`Atualizados: ${updated}`);
   console.log(`Pulados (já existiam): ${skipped}`);

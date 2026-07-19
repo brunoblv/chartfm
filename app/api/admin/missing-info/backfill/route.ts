@@ -11,6 +11,7 @@ import {
   getSpotifyTrackMetadataById,
   spotifyConfigured,
 } from "@/lib/spotify-server";
+import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
 import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
 import { buildSongPath } from "@/lib/music-routes";
 
@@ -223,42 +224,46 @@ export async function POST(req: NextRequest) {
     ...albums.map((album) => ({ type: "album" as const, ref: album })),
   ].slice(0, limit);
 
-  let updated = 0;
-  let skipped = 0;
-  let failed = 0;
-  const errors: string[] = [];
-  const manualItems: {
-    type: "song" | "artist" | "album";
-    id: string;
-    label: string;
-    href: string;
-    reason: string;
-  }[] = [];
+  const { updated, skipped, failed, errors, manualItems } = await runWithSpotifyBackfillPool(async () => {
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    const manualItems: {
+      type: "song" | "artist" | "album";
+      id: string;
+      label: string;
+      href: string;
+      reason: string;
+    }[] = [];
 
-  for (const [index, item] of queue.entries()) {
-    if (index > 0) await sleep(SPOTIFY_ITEM_DELAY_MS);
+    for (const [index, item] of queue.entries()) {
+      if (index > 0) await sleep(SPOTIFY_ITEM_DELAY_MS);
 
-    try {
-      const result =
-        item.type === "song"
-          ? await updateSong(item.ref)
-          : item.type === "artist"
-            ? await updateArtist(item.ref)
-            : await updateAlbum(item.ref);
+      try {
+        const result =
+          item.type === "song"
+            ? await updateSong(item.ref)
+            : item.type === "artist"
+              ? await updateArtist(item.ref)
+              : await updateAlbum(item.ref);
 
-      if (result.updated) updated += 1;
-      else {
-        skipped += 1;
-        errors.push(`${item.type}: ${result.reason}`);
-        manualItems.push(await makeManualItem(item, result.reason));
+        if (result.updated) updated += 1;
+        else {
+          skipped += 1;
+          errors.push(`${item.type}: ${result.reason}`);
+          manualItems.push(await makeManualItem(item, result.reason));
+        }
+      } catch (err) {
+        failed += 1;
+        const reason = err instanceof Error ? err.message : "update_failed";
+        errors.push(`${item.type}: ${reason}`);
+        manualItems.push(await makeManualItem(item, reason));
       }
-    } catch (err) {
-      failed += 1;
-      const reason = err instanceof Error ? err.message : "update_failed";
-      errors.push(`${item.type}: ${reason}`);
-      manualItems.push(await makeManualItem(item, reason));
     }
-  }
+
+    return { updated, skipped, failed, errors, manualItems };
+  });
 
   const [songRemaining, artistRemaining, albumRemaining] = await Promise.all([
     prisma.song.count({ where: songMissingWhere }),

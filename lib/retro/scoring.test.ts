@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   buildRetroChart,
   computeEraWeight,
+  derivePeakPotential,
   evaluateEligibility,
   monthsBetween,
+  normalizePeakPotential,
+  peakScore,
   playsScore,
   releaseRefOf,
   type RetroContext,
@@ -123,6 +126,36 @@ describe("pré-2010: força estimada = overall × eraWeight", () => {
     const rows = buildRetroChart([s], ctx());
     // com pool de 1 música, o próprio máximo → força normalizada = 1
     expect(rows[0].periodStrength).toBeCloseTo(1, 5);
+  });
+});
+
+describe("peakScore — #1, Top 5, Top 10, depois de 10 em 10", () => {
+  it("respeita as faixas", () => {
+    expect(peakScore(null)).toBe(0);
+    expect(peakScore(1)).toBe(1);
+    expect(peakScore(5)).toBe(0.85);
+    expect(peakScore(10)).toBe(0.7);
+    expect(peakScore(11)).toBe(0.55);
+    expect(peakScore(20)).toBe(0.55);
+    expect(peakScore(21)).toBeCloseTo(0.4, 5);
+  });
+});
+
+describe("derivePeakPotential", () => {
+  it("usa #1 → Top 5 → Top 10 → de 10 em 10", () => {
+    expect(derivePeakPotential(95)).toBe("1");
+    expect(derivePeakPotential(85)).toBe("top5");
+    expect(derivePeakPotential(75)).toBe("top10");
+    expect(derivePeakPotential(65)).toBe("top20");
+    expect(derivePeakPotential(55)).toBe("top30");
+    expect(derivePeakPotential(45)).toBe("top40");
+    expect(derivePeakPotential(8)).toBe("top100");
+    expect(derivePeakPotential(0)).toBe("out");
+  });
+
+  it("normaliza legado top3 → top5", () => {
+    expect(normalizePeakPotential("top3")).toBe("top5");
+    expect(normalizePeakPotential("top30")).toBe("top30");
   });
 });
 

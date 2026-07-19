@@ -16,8 +16,8 @@ type CreatedAlbum = {
   artist: { id: number; name: string };
 };
 
-export function CreateAlbumClient() {
-  const [open, setOpen] = useState(false);
+export function CreateAlbumClient({ defaultOpen = false }: { defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [title, setTitle] = useState("");
   const [artistName, setArtistName] = useState("");
   const [romanization, setRomanization] = useState("");
@@ -111,9 +111,11 @@ export function CreateAlbumClient() {
 
   return (
     <div style={{ marginBottom: 24 }}>
-      <button type="button" onClick={() => { setOpen((o) => !o); setCreated(null); setError(null); }} style={toggleStyle}>
-        {open ? "Cancelar" : "+ Criar álbum"}
-      </button>
+      {!defaultOpen && (
+        <button type="button" onClick={() => { setOpen((o) => !o); setCreated(null); setError(null); }} style={toggleStyle}>
+          {open ? "Cancelar" : "+ Criar álbum"}
+        </button>
+      )}
 
       {open && (
         <div style={{ marginTop: 12, background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", padding: 18, display: "grid", gap: 14 }}>

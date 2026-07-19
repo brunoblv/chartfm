@@ -7,8 +7,10 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { __setSpotifyAppPoolGetter, probeSpotifyApi } from "@/lib/spotify-server";
+// Garante o resolvedor de "quem pediu" também quando este módulo carrega (rotas de parada).
+import "@/lib/api-call-context";
 
-type SpotifyAppPool = "default" | "user-charts" | "crownnote";
+type SpotifyAppPool = "default" | "user-charts" | "crownnote" | "backfill";
 
 const spotifyPoolStorage = new AsyncLocalStorage<{ pool: SpotifyAppPool }>();
 
@@ -24,7 +26,17 @@ export function runWithSpotifyCrownnotePool<T>(fn: () => Promise<T>): Promise<T>
   return spotifyPoolStorage.run({ pool: "crownnote" }, fn);
 }
 
+/** Escopo de backfills com busca (capas/catálogo) — usa o mesmo BACKUP3 do Crownnote. */
+export function runWithSpotifyBackfillPool<T>(fn: () => Promise<T>): Promise<T> {
+  return spotifyPoolStorage.run({ pool: "backfill" }, fn);
+}
+
 /** Probe no pool de paradas de usuário (principal → backup → BACKUP2). */
 export async function probeSpotifyApiForUserCharts() {
   return runWithSpotifyUserChartsPool(() => probeSpotifyApi());
+}
+
+/** Probe no pool de backfill (BACKUP3 quando configurado). */
+export async function probeSpotifyApiForBackfill() {
+  return runWithSpotifyBackfillPool(() => probeSpotifyApi());
 }

@@ -8,7 +8,32 @@
  * Todos os limiares ficam em `THRESHOLDS`/`WEIGHTS` para facilitar tuning.
  */
 
-export type PeakPotential = "1" | "top3" | "top5" | "top10" | "top20" | "top40" | "top100" | "out";
+/** #1 → Top 5 → Top 10 → depois de 10 em 10 até Top 100. */
+export const PEAK_POTENTIALS = [
+  "1",
+  "top5",
+  "top10",
+  "top20",
+  "top30",
+  "top40",
+  "top50",
+  "top60",
+  "top70",
+  "top80",
+  "top90",
+  "top100",
+  "out",
+] as const;
+export type PeakPotential = (typeof PEAK_POTENTIALS)[number];
+export const PEAK_POTENTIAL_SET: ReadonlySet<string> = new Set(PEAK_POTENTIALS);
+
+/** Normaliza valor persistido (ex.: legado `top3` → `top5`). */
+export function normalizePeakPotential(value: string | null | undefined): PeakPotential | null {
+  if (value == null) return null;
+  if (value === "top3") return "top5";
+  if (PEAK_POTENTIAL_SET.has(value)) return value as PeakPotential;
+  return null;
+}
 export type HitLevel = "diamond" | "platinum" | "gold" | "silver" | "bronze" | "none";
 export type Priority = "S" | "A" | "B" | "C" | "D";
 export type Confidence = "alta" | "media" | "baixa";
@@ -200,10 +225,18 @@ export function computeEraWeight(s: RetroSongInput, ctx: RetroContext): number {
 // Componentes normalizados
 // ---------------------------------------------------------------------------
 
-/** Pico Top20 → 0..1 (1 = melhor). null (nunca entrou) = 0. */
-function peakScore(bestPeak: number | null): number {
-  if (bestPeak == null) return 0;
-  return clamp01((21 - bestPeak) / 20);
+/**
+ * Pico Top20 → 0..1: #1 → Top 5 → Top 10 → depois faixas de 10.
+ * #1 = 1 · #2–5 = 0.85 · #6–10 = 0.7 · #11–20 = 0.55 · …
+ */
+export function peakScore(bestPeak: number | null): number {
+  if (bestPeak == null || bestPeak < 1) return 0;
+  if (bestPeak === 1) return 1;
+  if (bestPeak <= 5) return 0.85;
+  if (bestPeak <= 10) return 0.7;
+  // de 10 em 10: 11–20 → 0.55, 21–30 → 0.40, …
+  const band = Math.ceil(bestPeak / 10); // 2, 3, …
+  return clamp01((70 - (band - 1) * 15) / 100);
 }
 
 /** Recência do último scrobble → 0..1 (mais recente = maior). */
@@ -251,12 +284,17 @@ function computeImportance(s: RetroSongInput, ctx: RetroContext, pool: PoolMax):
 
 export function derivePeakPotential(scoreFinal: number): PeakPotential {
   if (scoreFinal >= 90) return "1";
-  if (scoreFinal >= 85) return "top3";
-  if (scoreFinal >= 78) return "top5";
-  if (scoreFinal >= 62) return "top10";
-  if (scoreFinal >= 45) return "top20";
-  if (scoreFinal >= 30) return "top40";
-  if (scoreFinal >= 15) return "top100";
+  if (scoreFinal >= 80) return "top5";
+  if (scoreFinal >= 70) return "top10";
+  if (scoreFinal >= 60) return "top20";
+  if (scoreFinal >= 50) return "top30";
+  if (scoreFinal >= 40) return "top40";
+  if (scoreFinal >= 30) return "top50";
+  if (scoreFinal >= 25) return "top60";
+  if (scoreFinal >= 20) return "top70";
+  if (scoreFinal >= 15) return "top80";
+  if (scoreFinal >= 10) return "top90";
+  if (scoreFinal >= 5) return "top100";
   return "out";
 }
 

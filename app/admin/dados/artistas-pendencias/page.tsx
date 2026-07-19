@@ -59,7 +59,7 @@ export default async function ArtistasUnificadosPage({
   return (
     <DadosShell active="artistas-pendencias" subtitle="Busque, filtre e corrija artistas.">
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <Link href="/admin/artists" style={{ ...adminNavChipStyle, background: "#FA243C", color: "#fff", border: "none" }}>
+        <Link href="/admin/artists/new" style={{ ...adminNavChipStyle, background: "#FA243C", color: "#fff", border: "none" }}>
           + Novo artista
         </Link>
       </div>

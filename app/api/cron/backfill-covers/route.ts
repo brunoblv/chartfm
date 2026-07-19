@@ -7,11 +7,14 @@ import {
   findSongsMissingCovers,
 } from "@/lib/resolve-publish-songs";
 import {
+  backup3SpotifyConfigured,
   markPrimaryLimited,
   probeSpotifyApi,
   probeSpotifyBackupApi,
+  probeSpotifyBackup3Api,
   spotifyConfigured,
 } from "@/lib/spotify-server";
+import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -33,20 +36,28 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Spotify não configurado" }, { status: 500 });
     }
 
-    // Principal com erro → tenta o app de backup antes de pular; só desiste se os dois
-    // falharem (o próximo cron tenta de novo).
-    const probe = await probeSpotifyApi();
-    if (!probe.ok) {
-      const backupProbe = await probeSpotifyBackupApi();
-      if (!backupProbe.ok) {
+    // Preferência: BACKUP3 (pool backfill). Sem BACKUP3, cai no principal → backup.
+    if (backup3SpotifyConfigured()) {
+      const probe3 = await probeSpotifyBackup3Api();
+      if (!probe3.ok) {
         return NextResponse.json(
-          { ok: false, skipped: true, error: probe.error, backupError: backupProbe.error },
+          { ok: false, skipped: true, error: probe3.error, app: "backup3" },
           { status: 200 },
         );
       }
-      // Backup ok: marca o principal como limitado para o lote inteiro rodar no backup.
-      markPrimaryLimited(probe.retryAfterMs ?? undefined);
-      console.warn(`[cron/backfill-covers] app principal com erro (${probe.error}) — rodando no backup`);
+    } else {
+      const probe = await probeSpotifyApi();
+      if (!probe.ok) {
+        const backupProbe = await probeSpotifyBackupApi();
+        if (!backupProbe.ok) {
+          return NextResponse.json(
+            { ok: false, skipped: true, error: probe.error, backupError: backupProbe.error },
+            { status: 200 },
+          );
+        }
+        markPrimaryLimited(probe.retryAfterMs ?? undefined);
+        console.warn(`[cron/backfill-covers] app principal com erro (${probe.error}) — rodando no backup`);
+      }
     }
 
     const pending = await findSongsMissingCovers(prisma, CRON_BATCH);
@@ -54,10 +65,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: true, processed: 0, updated: 0, remaining: 0 });
     }
 
-    const result = await enrichSongsWithSpotifyMetadataByIds(
-      prisma,
-      pending.map((s) => s.id),
-      { searchFallback: true, deadlineAt: Date.now() + CRON_TIME_BUDGET_MS, markNotFoundOnFail: true },
+    const result = await runWithSpotifyBackfillPool(() =>
+      enrichSongsWithSpotifyMetadataByIds(
+        prisma,
+        pending.map((s) => s.id),
+        { searchFallback: true, deadlineAt: Date.now() + CRON_TIME_BUDGET_MS, markNotFoundOnFail: true },
+      ),
     );
     const remaining = await countSongsMissingCovers(prisma);
 
@@ -69,6 +82,7 @@ export async function GET(req: NextRequest) {
       viaSearch: result.viaSearch,
       deferred: result.deferredIds.length,
       remaining,
+      app: backup3SpotifyConfigured() ? "backup3" : "default",
     });
   } catch (err) {
     console.error("[cron/backfill-covers]", err);

@@ -7,16 +7,16 @@
  * - backup2 (…_BACKUP2): exclusivo do pool "user-charts" — criação/import de paradas de
  *   usuário (POST /api/charts, /api/charts/[id], /api/lastfm/import). Só cai pro
  *   principal/backup se o BACKUP2 tomar 429.
- * - backup3 (…_BACKUP3): exclusivo do pool "crownnote" — tela /admin/crownnote-export,
- *   isolado da contenção dos outros três apps
+ * - backup3 (…_BACKUP3): pools "crownnote" + "backfill" — Crownnote e pesquisas/backfill
+ *   de capas/catálogo, isolado da contenção dos outros três apps
  *   (ver lib/spotify-user-charts-pool.ts — não importar async_hooks aqui: este arquivo
  *   também é puxado por componentes client via lib/copa.ts)
  */
 
 import { isInstrumentalTitle } from "./is-instrumental-title";
-import { recordSpotifyCall } from "./spotify-usage-log";
+import { recordSpotifyCall, resolveApiCallContext } from "./spotify-usage-log";
 
-type SpotifyAppPool = "default" | "user-charts" | "crownnote";
+type SpotifyAppPool = "default" | "user-charts" | "crownnote" | "backfill";
 
 /** Injetado por lib/spotify-user-charts-pool.ts (server-only) no boot das rotas de parada. */
 let spotifyAppPoolGetter: () => SpotifyAppPool = () => "default";
@@ -107,8 +107,8 @@ const backup2TokenState: TokenState = {
   accessToken: null,
   expiresAt: 0,
 };
-// BACKUP3 — exclusivo do pool "crownnote" (tela /admin/crownnote-export), isolado dos
-// outros apps para não competir por rate limit com o resto do site.
+// BACKUP3 — pools "crownnote" + "backfill" (export Crownnote e backfills com busca),
+// isolado dos outros apps para não competir por rate limit com o resto do site.
 const backup3TokenState: TokenState = {
   accessToken: null,
   expiresAt: 0,
@@ -208,6 +208,7 @@ async function spotifyFetch(
 ): Promise<Response | null> {
   let triedBackup = false;
   let triedPrimaryFromBackup2 = false;
+  const callCtx = await resolveApiCallContext();
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     await acquireCallSlot();
     let res: Response;
@@ -216,10 +217,19 @@ async function spotifyFetch(
       init.signal
         ? AbortSignal.any([init.signal as AbortSignal, timeoutSignal])
         : timeoutSignal;
+    const startedAt = Date.now();
     try {
       res = await fetch(input, { ...init, signal: mergedSignal });
     } catch {
-      recordSpotifyCall({ input, app: appForAuthHeader(init, input), status: null });
+      recordSpotifyCall({
+        input,
+        app: appForAuthHeader(init, input),
+        status: null,
+        durationMs: Date.now() - startedAt,
+        who: callCtx?.who,
+        trigger: callCtx?.trigger,
+        path: callCtx?.path,
+      });
       if (attempt >= maxAttempts) return null;
       await sleep(SPOTIFY_RETRY_BASE_DELAY_MS * attempt);
       continue;
@@ -231,6 +241,10 @@ async function spotifyFetch(
       status: res.status,
       retryAfterS:
         res.status === 429 ? Math.round((parseRetryAfterMs(res.headers.get("retry-after")) ?? 0) / 1000) || null : null,
+      durationMs: Date.now() - startedAt,
+      who: callCtx?.who,
+      trigger: callCtx?.trigger,
+      path: callCtx?.path,
     });
 
     if (res.ok) return res;
@@ -253,8 +267,8 @@ async function spotifyFetch(
     const onBackup3 =
       Boolean(backup3TokenState.accessToken) && authHeader === `Bearer ${backup3TokenState.accessToken}`;
 
-    // BACKUP3 é isolado (pool "crownnote"): só se marca como limitado, sem cadeia de
-    // failover pros outros apps — evita reintroduzir a contenção que ele existe pra evitar.
+    // BACKUP3 é isolado (pools crownnote/backfill): só se marca como limitado, sem
+    // cadeia de failover pros outros apps — evita reintroduzir a contenção.
     if (failoverEligible && onBackup3) {
       backup3LimitedUntil = Math.max(backup3LimitedUntil, Date.now() + limitMs);
     }
@@ -401,7 +415,7 @@ export async function getBackup2AccessToken(): Promise<string | null> {
   return fetchClientCredentialsToken(clientId, clientSecret, backup2TokenState);
 }
 
-/** Token do BACKUP3 — dedicado ao pool "crownnote" (tela /admin/crownnote-export). */
+/** Token do BACKUP3 — dedicado aos pools "crownnote" e "backfill". */
 export async function getBackup3AccessToken(): Promise<string | null> {
   const clientId = process.env.SPOTIFY_CLIENT_ID_BACKUP3;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET_BACKUP3;
@@ -417,10 +431,10 @@ export async function getAccessToken(): Promise<string | null> {
   const pool = currentSpotifyPool();
   const now = Date.now();
 
-  // Pool "crownnote": usa o BACKUP3 dedicado, isolado da contenção dos outros três
-  // apps. Só cai pro fluxo normal abaixo se o BACKUP3 não estiver configurado ou o
-  // token dele falhar.
-  if (pool === "crownnote" && backup3SpotifyConfigured()) {
+  // Pools "crownnote" / "backfill": usam o BACKUP3 dedicado (Crownnote + backfills
+  // com busca), isolado da contenção dos outros três apps. Só cai pro fluxo normal
+  // abaixo se o BACKUP3 não estiver configurado ou o token dele falhar.
+  if ((pool === "crownnote" || pool === "backfill") && backup3SpotifyConfigured()) {
     const backup3Token = await getBackup3AccessToken();
     if (backup3Token) return backup3Token;
   }
@@ -548,7 +562,7 @@ export async function probeSpotifyBackup2Api(): Promise<SpotifyProbeResult> {
   return { ok: true };
 }
 
-/** Testa o BACKUP3 (pool "crownnote"), sem failover para os outros apps. */
+/** Testa o BACKUP3 (pools crownnote/backfill), sem failover para os outros apps. */
 export async function probeSpotifyBackup3Api(): Promise<SpotifyProbeResult> {
   if (!backup3SpotifyConfigured()) {
     return {

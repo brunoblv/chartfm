@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
-type PeakPotential = "1" | "top3" | "top5" | "top10" | "top20" | "top40" | "top100" | "out";
+type PeakPotential =
+  | "1" | "top5" | "top10" | "top20" | "top30" | "top40"
+  | "top50" | "top60" | "top70" | "top80" | "top90" | "top100" | "out";
 type HitLevel = "diamond" | "platinum" | "gold" | "silver" | "bronze" | "none";
 type Priority = "S" | "A" | "B" | "C" | "D";
 type Confidence = "alta" | "media" | "baixa";
@@ -76,10 +78,24 @@ const MONTHS = [
 ];
 
 const PEAK_LABEL: Record<PeakPotential, string> = {
-  "1": "#1", top3: "Top 3", top5: "Top 5", top10: "Top 10",
-  top20: "Top 20", top40: "Top 40", top100: "Top 100", out: "Fora",
+  "1": "#1",
+  top5: "Top 5",
+  top10: "Top 10",
+  top20: "Top 20",
+  top30: "Top 30",
+  top40: "Top 40",
+  top50: "Top 50",
+  top60: "Top 60",
+  top70: "Top 70",
+  top80: "Top 80",
+  top90: "Top 90",
+  top100: "Top 100",
+  out: "Fora",
 };
-const PEAK_ORDER: PeakPotential[] = ["1", "top3", "top5", "top10", "top20", "top40", "top100", "out"];
+const PEAK_ORDER: PeakPotential[] = [
+  "1", "top5", "top10", "top20", "top30", "top40",
+  "top50", "top60", "top70", "top80", "top90", "top100", "out",
+];
 
 const HIT_BADGE: Record<HitLevel, { label: string; fg: string; bg: string }> = {
   diamond: { label: "Diamond", fg: "#06B6D4", bg: "rgba(6, 182, 212, 0.13)" },
