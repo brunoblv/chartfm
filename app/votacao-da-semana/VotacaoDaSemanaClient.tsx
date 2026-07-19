@@ -22,6 +22,15 @@ import type {
 type PollResponse = {
   poll: WeeklyPollView | null;
   loggedIn: boolean;
+  isMember?: boolean;
+  community?: { slug: string; name: string };
+};
+
+export type VotacaoDaSemanaClientProps = {
+  /** Padrão: enquete global. Em comunidade, só membros votam. */
+  scope?: "global" | "community";
+  communitySlug?: string;
+  communityName?: string;
 };
 
 const CATEGORY_META: Record<
@@ -133,11 +142,15 @@ function CategoryRanking({
   poll,
   category,
   loggedIn,
+  canVote,
+  voteUrl,
   onSaved,
 }: {
   poll: WeeklyPollView;
   category: SpotlightCategory;
   loggedIn: boolean;
+  canVote: boolean;
+  voteUrl: string;
   onSaved: () => void;
 }) {
   const meta = CATEGORY_META[category];
@@ -202,7 +215,7 @@ function CategoryRanking({
     setError(null);
     const positions = ranking.map((o, i) => ({ optionId: o.id, position: i + 1 }));
     try {
-      const res = await fetch("/api/weekly-poll/vote", {
+      const res = await fetch(voteUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category, positions }),
@@ -278,6 +291,10 @@ function CategoryRanking({
             ))}
           </div>
         </>
+      ) : !canVote ? (
+        <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+          Só membros da comunidade podem votar nesta enquete. Entre na comunidade para participar.
+        </div>
       ) : total === 0 ? (
         <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
           Só há a sua própria indicação nesta categoria — nada para ranquear.
@@ -495,14 +512,27 @@ function CategoryRanking({
   );
 }
 
-export function VotacaoDaSemanaClient() {
+export function VotacaoDaSemanaClient({
+  scope = "global",
+  communitySlug,
+  communityName,
+}: VotacaoDaSemanaClientProps = {}) {
+  const isCommunity = scope === "community" && Boolean(communitySlug);
+  const fetchUrl = isCommunity
+    ? `/api/communities/${encodeURIComponent(communitySlug!)}/weekly-poll`
+    : "/api/weekly-poll";
+  const voteUrl = isCommunity
+    ? `/api/communities/${encodeURIComponent(communitySlug!)}/weekly-poll/vote`
+    : "/api/weekly-poll/vote";
+  const communityHref = isCommunity ? `/community/${encodeURIComponent(communitySlug!)}` : null;
+
   const [data, setData] = useState<PollResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/weekly-poll", { cache: "no-store" });
+      const res = await fetch(fetchUrl, { cache: "no-store" });
       if (!res.ok) throw new Error();
       setData((await res.json()) as PollResponse);
     } catch {
@@ -510,7 +540,7 @@ export function VotacaoDaSemanaClient() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchUrl]);
 
   useEffect(() => {
     void load();
@@ -518,10 +548,15 @@ export function VotacaoDaSemanaClient() {
 
   const poll = data?.poll ?? null;
   const pollOpen = poll?.status === "open";
+  const resolvedName = data?.community?.name ?? communityName ?? null;
+  const canVote = isCommunity ? Boolean(data?.isMember) : true;
+  const title = isCommunity
+    ? `Votação · ${resolvedName ?? "Comunidade"}`
+    : "Votação da Semana";
 
   return (
     <Shell
-      title="Votação da Semana"
+      title={title}
       subtitle={poll ? `${poll.weekLabel} · ${poll.dateRange}` : "Melhor da Semana e Flashback da Semana"}
     >
       {loading ? (
@@ -540,8 +575,25 @@ export function VotacaoDaSemanaClient() {
             lineHeight: 1.7,
           }}
         >
-          Ainda não há votação aberta. A enquete abre todo domingo às 23:59 com as músicas indicadas
-          como Destaque e Flashback nas paradas pessoais da semana.
+          {isCommunity ? (
+            <>
+              Ainda não há votação aberta nesta comunidade. A enquete abre todo domingo às 23:59 com as
+              músicas indicadas como Destaque e Flashback nas paradas pessoais dos membros.
+              {communityHref ? (
+                <>
+                  {" "}
+                  <Link href={communityHref} style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
+                    Voltar à comunidade →
+                  </Link>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <>
+              Ainda não há votação aberta. A enquete abre todo domingo às 23:59 com as músicas indicadas
+              como Destaque e Flashback nas paradas pessoais da semana.
+            </>
+          )}
         </div>
       ) : (
         <>
@@ -557,7 +609,17 @@ export function VotacaoDaSemanaClient() {
               color: "var(--text-muted)",
             }}
           >
-            {pollOpen ? (
+            {isCommunity ? (
+              pollOpen ? (
+                <>
+                  Arraste para ordenar sua preferência em cada categoria — a 1ª posição vale 20 pontos, a
+                  última vale 1. Só membros de {resolvedName ?? "esta comunidade"} podem votar. A votação
+                  encerra na terça de madrugada.
+                </>
+              ) : (
+                <>A votação desta semana em {resolvedName ?? "esta comunidade"} já foi encerrada. As vencedoras estão destacadas abaixo.</>
+              )
+            ) : pollOpen ? (
               <>
                 Arraste para ordenar sua preferência em cada categoria — a 1ª posição vale 20 pontos, a
                 última vale 1. A música com mais pontos no total vence e vira o card da{" "}
@@ -587,6 +649,8 @@ export function VotacaoDaSemanaClient() {
               poll={poll}
               category={category}
               loggedIn={Boolean(data?.loggedIn)}
+              canVote={canVote}
+              voteUrl={voteUrl}
               onSaved={() => void load()}
             />
           ))}

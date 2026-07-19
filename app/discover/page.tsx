@@ -168,9 +168,12 @@ async function loadPageData(
       getTasteMatches(session?.user?.id ?? null, myGenres?.genres ?? [], followingIds, 3),
       getMomentsFeed({ viewerId: session?.user?.id ?? null, locale, scope: "all", limit: 10 }),
       getAutoMoments(locale, 4),
-      prisma.weeklySpotlightPoll.findFirst({ where: { status: "open" }, select: { id: true } }),
       prisma.weeklySpotlightPoll.findFirst({
-        where: { status: "closed" },
+        where: { status: "open", communityId: null },
+        select: { id: true },
+      }),
+      prisma.weeklySpotlightPoll.findFirst({
+        where: { status: "closed", communityId: null },
         orderBy: { weekIndex: "desc" },
         select: { weekIndex: true },
       }),

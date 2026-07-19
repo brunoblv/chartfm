@@ -12,8 +12,13 @@ import {
 import { broadcastAdminAnnouncement } from "@/lib/admin-broadcast";
 import { onWeeklyPollOpened } from "@/lib/social/events";
 import { aggregatePushVotePoints } from "@/lib/push-scoring";
+import { getCommunityMemberRole, getCommunityMemberUserIds } from "@/lib/community-auth";
 
 export const WEEKLY_POLL_PATH = "/votacao-da-semana";
+
+export function communityWeeklyPollPath(slug: string) {
+  return `/community/${encodeURIComponent(slug)}/votacao`;
+}
 
 export type SpotlightCategory = "destaque" | "flashback";
 
@@ -65,18 +70,95 @@ export type OpenWeeklyPollResult = {
   weekIndex: number;
   options: number;
   notified: number;
+  communityId?: string | null;
   reason?: string;
 };
 
+type NominationCharts = {
+  userId: string;
+  flashbackSongId: string | null;
+  destaqueSongId: string | null;
+}[];
+
+function groupNominations(charts: NominationCharts) {
+  const grouped: Record<SpotlightCategory, Map<string, Set<string>>> = {
+    destaque: new Map(),
+    flashback: new Map(),
+  };
+  for (const chart of charts) {
+    if (chart.destaqueSongId) {
+      const set = grouped.destaque.get(chart.destaqueSongId) ?? new Set<string>();
+      set.add(chart.userId);
+      grouped.destaque.set(chart.destaqueSongId, set);
+    }
+    if (chart.flashbackSongId) {
+      const set = grouped.flashback.get(chart.flashbackSongId) ?? new Set<string>();
+      set.add(chart.userId);
+      grouped.flashback.set(chart.flashbackSongId, set);
+    }
+  }
+  return grouped;
+}
+
+async function excludePriorWinners(
+  grouped: Record<SpotlightCategory, Map<string, Set<string>>>,
+  communityId: string | null,
+) {
+  const priorWinners = await prisma.weeklySpotlightOption.findMany({
+    where: {
+      isWinner: true,
+      poll: { communityId },
+    },
+    select: { category: true, songId: true },
+  });
+  for (const winner of priorWinners) {
+    const category = winner.category as SpotlightCategory;
+    grouped[category].delete(winner.songId);
+  }
+}
+
+async function createPollWithOptions(
+  week: { weekIndex: number; weekLabel: string; dateRange: string },
+  communityId: string | null,
+  grouped: Record<SpotlightCategory, Map<string, Set<string>>>,
+) {
+  await prisma.$transaction(async (tx) => {
+    const poll = await tx.weeklySpotlightPoll.create({
+      data: {
+        weekIndex: week.weekIndex,
+        weekLabel: week.weekLabel,
+        dateRange: week.dateRange,
+        status: "open",
+        communityId,
+      },
+    });
+
+    for (const category of ["destaque", "flashback"] as const) {
+      for (const [songId, userIds] of grouped[category]) {
+        await tx.weeklySpotlightOption.create({
+          data: {
+            pollId: poll.id,
+            category,
+            songId,
+            nominations: {
+              create: [...userIds].map((userId) => ({ userId })),
+            },
+          },
+        });
+      }
+    }
+  });
+}
+
 /**
- * Abre a enquete da semana (create-only): agrupa as indicações de Melhor da Semana
+ * Abre a enquete global da semana (create-only): agrupa as indicações de Melhor da Semana
  * (destaque) e Flashback das paradas pessoais publicadas na semana e avisa todo mundo.
  */
 export async function openWeeklySpotlightPoll(now: Date = new Date()): Promise<OpenWeeklyPollResult> {
   const week = getWeeklyPollTargetWeek(now);
 
-  const existing = await prisma.weeklySpotlightPoll.findUnique({
-    where: { weekIndex: week.weekIndex },
+  const existing = await prisma.weeklySpotlightPoll.findFirst({
+    where: { weekIndex: week.weekIndex, communityId: null },
     select: { id: true },
   });
   if (existing) {
@@ -98,64 +180,15 @@ export async function openWeeklySpotlightPoll(now: Date = new Date()): Promise<O
     },
   });
 
-  // categoria → songId → usuários que indicaram
-  const grouped: Record<SpotlightCategory, Map<string, Set<string>>> = {
-    destaque: new Map(),
-    flashback: new Map(),
-  };
-  for (const chart of charts) {
-    if (chart.destaqueSongId) {
-      const set = grouped.destaque.get(chart.destaqueSongId) ?? new Set<string>();
-      set.add(chart.userId);
-      grouped.destaque.set(chart.destaqueSongId, set);
-    }
-    if (chart.flashbackSongId) {
-      const set = grouped.flashback.get(chart.flashbackSongId) ?? new Set<string>();
-      set.add(chart.userId);
-      grouped.flashback.set(chart.flashbackSongId, set);
-    }
-  }
-
-  // Música que já venceu a categoria (destaque ou flashback) uma vez não compete de novo nela.
-  const priorWinners = await prisma.weeklySpotlightOption.findMany({
-    where: { isWinner: true },
-    select: { category: true, songId: true },
-  });
-  for (const winner of priorWinners) {
-    const category = winner.category as SpotlightCategory;
-    grouped[category].delete(winner.songId);
-  }
+  const grouped = groupNominations(charts);
+  await excludePriorWinners(grouped, null);
 
   const totalOptions = grouped.destaque.size + grouped.flashback.size;
   if (totalOptions === 0) {
     return { created: false, weekIndex: week.weekIndex, options: 0, notified: 0, reason: "sem indicações" };
   }
 
-  await prisma.$transaction(async (tx) => {
-    const poll = await tx.weeklySpotlightPoll.create({
-      data: {
-        weekIndex: week.weekIndex,
-        weekLabel: week.weekLabel,
-        dateRange: week.dateRange,
-        status: "open",
-      },
-    });
-
-    for (const category of ["destaque", "flashback"] as const) {
-      for (const [songId, userIds] of grouped[category]) {
-        await tx.weeklySpotlightOption.create({
-          data: {
-            pollId: poll.id,
-            category,
-            songId,
-            nominations: {
-              create: [...userIds].map((userId) => ({ userId })),
-            },
-          },
-        });
-      }
-    }
-  });
+  await createPollWithOptions(week, null, grouped);
 
   const notified = await broadcastAdminAnnouncement({
     text: `A votação da semana está aberta! Escolha a Melhor da Semana e o Flashback da Semana (${week.weekLabel}). Você pode votar em quantas quiser, as vencedoras aparecem na Parada Global de terça.`,
@@ -165,28 +198,139 @@ export async function openWeeklySpotlightPoll(now: Date = new Date()): Promise<O
   });
   onWeeklyPollOpened(week.weekIndex).catch((e) => console.error("[weekly-spotlight-poll] onWeeklyPollOpened", e));
 
-  return { created: true, weekIndex: week.weekIndex, options: totalOptions, notified };
+  return { created: true, weekIndex: week.weekIndex, options: totalOptions, notified, communityId: null };
+}
+
+/**
+ * Abre a enquete de uma comunidade com indicações das paradas pessoais dos membros.
+ * Só membros são notificados e só eles podem votar.
+ */
+export async function openCommunitySpotlightPoll(
+  communityId: string,
+  now: Date = new Date(),
+): Promise<OpenWeeklyPollResult> {
+  const week = getWeeklyPollTargetWeek(now);
+
+  const community = await prisma.community.findUnique({
+    where: { id: communityId },
+    select: { id: true, slug: true, name: true },
+  });
+  if (!community) {
+    return { created: false, weekIndex: week.weekIndex, options: 0, notified: 0, communityId, reason: "comunidade não existe" };
+  }
+
+  const existing = await prisma.weeklySpotlightPoll.findFirst({
+    where: { weekIndex: week.weekIndex, communityId },
+    select: { id: true },
+  });
+  if (existing) {
+    return {
+      created: false,
+      weekIndex: week.weekIndex,
+      options: 0,
+      notified: 0,
+      communityId,
+      reason: "já existe",
+    };
+  }
+
+  const memberIds = await getCommunityMemberUserIds(communityId);
+  if (memberIds.length === 0) {
+    return {
+      created: false,
+      weekIndex: week.weekIndex,
+      options: 0,
+      notified: 0,
+      communityId,
+      reason: "sem membros",
+    };
+  }
+
+  const charts = await prisma.chart.findMany({
+    where: {
+      weekIndex: week.weekIndex,
+      isPublished: true,
+      communityId: null,
+      userId: { in: memberIds },
+      parada: { deletedAt: null, isCommunityOfficial: false },
+      OR: [{ flashbackSongId: { not: null } }, { destaqueSongId: { not: null } }],
+    },
+    select: {
+      userId: true,
+      flashbackSongId: true,
+      destaqueSongId: true,
+    },
+  });
+
+  const grouped = groupNominations(charts);
+  await excludePriorWinners(grouped, communityId);
+
+  const totalOptions = grouped.destaque.size + grouped.flashback.size;
+  if (totalOptions === 0) {
+    return {
+      created: false,
+      weekIndex: week.weekIndex,
+      options: 0,
+      notified: 0,
+      communityId,
+      reason: "sem indicações",
+    };
+  }
+
+  await createPollWithOptions(week, communityId, grouped);
+
+  const targetUrl = communityWeeklyPollPath(community.slug);
+  const text = `A votação da semana em ${community.name} está aberta! Escolha a Melhor da Semana e o Flashback (${week.weekLabel}). Só membros da comunidade podem votar.`;
+  await prisma.notification.createMany({
+    data: memberIds.map((recipientId) => ({
+      recipientId,
+      actorId: null,
+      type: "community_weekly_poll_open",
+      text,
+      targetUrl,
+      read: false,
+    })),
+  });
+
+  return {
+    created: true,
+    weekIndex: week.weekIndex,
+    options: totalOptions,
+    notified: memberIds.length,
+    communityId,
+  };
+}
+
+/** Abre enquetes de todas as comunidades que tiverem indicações de membros na semana. */
+export async function openAllCommunitySpotlightPolls(now: Date = new Date()) {
+  const communities = await prisma.community.findMany({ select: { id: true } });
+  const results: OpenWeeklyPollResult[] = [];
+  for (const community of communities) {
+    results.push(await openCommunitySpotlightPoll(community.id, now));
+  }
+  return {
+    communities: communities.length,
+    created: results.filter((r) => r.created).length,
+    results,
+  };
 }
 
 export type CloseWeeklyPollResult = {
   closed: boolean;
   weekIndex: number;
   winners: number;
+  communityId?: string | null;
   reason?: string;
 };
 
-/**
- * Fecha a enquete da semana e apura: congela voteCount/totalPoints por opção e marca
- * como vencedora(s) a(s) de maior pontuação de cada categoria (ranking com pontos
- * 20→1 por posição, mesma curva do Push — empate = todas; ninguém ranqueou = sem vencedora).
- */
-export async function closeWeeklySpotlightPoll(weekIndex: number): Promise<CloseWeeklyPollResult> {
-  const poll = await prisma.weeklySpotlightPoll.findUnique({
-    where: { weekIndex },
-    select: { id: true, status: true, options: { select: { id: true, category: true } } },
-  });
-  if (!poll) return { closed: false, weekIndex, winners: 0, reason: "enquete não existe" };
-  if (poll.status === "closed") return { closed: false, weekIndex, winners: 0, reason: "já fechada" };
+async function closePollById(
+  poll: { id: string; status: string; options: { id: string; category: string }[] },
+  weekIndex: number,
+  communityId: string | null,
+): Promise<CloseWeeklyPollResult> {
+  if (poll.status === "closed") {
+    return { closed: false, weekIndex, winners: 0, communityId, reason: "já fechada" };
+  }
 
   const allVotes = await prisma.weeklySpotlightVote.findMany({
     where: { pollId: poll.id },
@@ -228,13 +372,48 @@ export async function closeWeeklySpotlightPoll(weekIndex: number): Promise<Close
     });
   });
 
-  return { closed: true, weekIndex, winners: winnerIds.length };
+  return { closed: true, weekIndex, winners: winnerIds.length, communityId };
 }
 
-/** Vencedoras da enquete fechada da semana — para os cards na Parada Global. */
-export async function getWeeklySpotlightWinners(weekIndex: number): Promise<WeeklySpotlightWinner[]> {
-  const poll = await prisma.weeklySpotlightPoll.findUnique({
-    where: { weekIndex },
+/**
+ * Fecha a enquete da semana (global se `communityId` for null) e apura vencedoras.
+ */
+export async function closeWeeklySpotlightPoll(
+  weekIndex: number,
+  communityId: string | null = null,
+): Promise<CloseWeeklyPollResult> {
+  const poll = await prisma.weeklySpotlightPoll.findFirst({
+    where: { weekIndex, communityId },
+    select: { id: true, status: true, options: { select: { id: true, category: true } } },
+  });
+  if (!poll) return { closed: false, weekIndex, winners: 0, communityId, reason: "enquete não existe" };
+  return closePollById(poll, weekIndex, communityId);
+}
+
+/** Fecha a enquete global e todas as enquetes de comunidade da semana. */
+export async function closeAllWeeklySpotlightPolls(weekIndex: number) {
+  const polls = await prisma.weeklySpotlightPoll.findMany({
+    where: { weekIndex, status: "open" },
+    select: { id: true, status: true, communityId: true, options: { select: { id: true, category: true } } },
+  });
+  const results: CloseWeeklyPollResult[] = [];
+  for (const poll of polls) {
+    results.push(await closePollById(poll, weekIndex, poll.communityId));
+  }
+  return {
+    weekIndex,
+    closed: results.filter((r) => r.closed).length,
+    results,
+  };
+}
+
+/** Vencedoras da enquete fechada da semana — para os cards na Parada Global (só poll global). */
+export async function getWeeklySpotlightWinners(
+  weekIndex: number,
+  communityId: string | null = null,
+): Promise<WeeklySpotlightWinner[]> {
+  const poll = await prisma.weeklySpotlightPoll.findFirst({
+    where: { weekIndex, communityId },
     select: {
       status: true,
       options: {
@@ -280,25 +459,41 @@ export type WeeklyPollView = {
   weekLabel: string;
   dateRange: string;
   status: "open" | "closed";
+  communityId: string | null;
   options: WeeklyPollOptionView[];
 };
 
-/** Enquete mais recente (aberta ou fechada) com opções, indicadores e ranking — para a página de votação. */
-export async function getLatestWeeklyPollView(userId: string | null): Promise<WeeklyPollView | null> {
-  const poll = await prisma.weeklySpotlightPoll.findFirst({
-    orderBy: { weekIndex: "desc" },
+const POLL_VIEW_INCLUDE = {
+  options: {
     include: {
-      options: {
-        include: {
-          song: { include: SPOTLIGHT_SONG_INCLUDE },
-          nominations: { include: { user: { select: NOMINATOR_SELECT } } },
-          _count: { select: { votes: true } },
-        },
-      },
+      song: { include: SPOTLIGHT_SONG_INCLUDE },
+      nominations: { include: { user: { select: NOMINATOR_SELECT } } },
+      _count: { select: { votes: true } },
     },
-  });
-  if (!poll) return null;
+  },
+} as const;
 
+async function buildWeeklyPollView(
+  poll: {
+    id: string;
+    weekIndex: number;
+    weekLabel: string;
+    dateRange: string;
+    status: string;
+    communityId: string | null;
+    options: Array<{
+      id: string;
+      category: string;
+      song: Parameters<typeof mapPrismaSpotlightSong>[0];
+      nominations: Array<{ userId: string; user: SpotlightNominator }>;
+      voteCount: number;
+      totalPoints: number;
+      isWinner: boolean;
+      _count: { votes: number };
+    }>;
+  },
+  userId: string | null,
+): Promise<WeeklyPollView> {
   const myVotes = userId
     ? await prisma.weeklySpotlightVote.findMany({
         where: { pollId: poll.id, userId },
@@ -331,8 +526,34 @@ export async function getLatestWeeklyPollView(userId: string | null): Promise<We
     weekLabel: poll.weekLabel,
     dateRange: poll.dateRange,
     status: poll.status as "open" | "closed",
+    communityId: poll.communityId,
     options,
   };
+}
+
+/** Enquete global mais recente (aberta ou fechada) — para `/votacao-da-semana`. */
+export async function getLatestWeeklyPollView(userId: string | null): Promise<WeeklyPollView | null> {
+  const poll = await prisma.weeklySpotlightPoll.findFirst({
+    where: { communityId: null },
+    orderBy: { weekIndex: "desc" },
+    include: POLL_VIEW_INCLUDE,
+  });
+  if (!poll) return null;
+  return buildWeeklyPollView(poll, userId);
+}
+
+/** Enquete mais recente de uma comunidade — para `/community/[slug]/votacao`. */
+export async function getLatestCommunityWeeklyPollView(
+  communityId: string,
+  userId: string | null,
+): Promise<WeeklyPollView | null> {
+  const poll = await prisma.weeklySpotlightPoll.findFirst({
+    where: { communityId },
+    orderBy: { weekIndex: "desc" },
+    include: POLL_VIEW_INCLUDE,
+  });
+  if (!poll) return null;
+  return buildWeeklyPollView(poll, userId);
 }
 
 /** Salva o ranking completo do usuário para uma categoria da enquete aberta (excluindo a própria indicação). */
@@ -346,6 +567,7 @@ export async function submitWeeklyPollRanking(
     where: { id: pollId },
     select: {
       status: true,
+      communityId: true,
       options: {
         where: { category },
         select: { id: true, nominations: { select: { userId: true } } },
@@ -354,6 +576,13 @@ export async function submitWeeklyPollRanking(
   });
   if (!poll) return { ok: false, error: "Enquete não encontrada." };
   if (poll.status !== "open") return { ok: false, error: "A votação desta semana já foi encerrada." };
+
+  if (poll.communityId) {
+    const role = await getCommunityMemberRole(poll.communityId, userId);
+    if (!role) {
+      return { ok: false, error: "Só membros da comunidade podem votar nesta enquete." };
+    }
+  }
 
   const eligibleIds = new Set(
     poll.options.filter((o) => !o.nominations.some((n) => n.userId === userId)).map((o) => o.id),

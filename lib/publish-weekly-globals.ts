@@ -8,7 +8,7 @@ import { publishAllCommunityOfficialWeeksFromMembers } from "@/lib/community-off
 import { publishGlobalGenreSnapshotsForRankingWeek } from "@/lib/global-genre-snapshot";
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
-import { closeWeeklySpotlightPoll } from "@/lib/weekly-spotlight-poll";
+import { closeAllWeeklySpotlightPolls } from "@/lib/weekly-spotlight-poll";
 import { syncGlobal100FixedSpotifyPlaylistSafely } from "@/lib/global-100-playlist-sync";
 import { onChartPublished } from "@/lib/social/events";
 
@@ -19,12 +19,12 @@ import { onChartPublished } from "@/lib/social/events";
 export async function publishWeeklyGlobalRankings(now: Date = new Date()) {
   const global = await getOrCreateRankingWeekSnapshot(now);
 
-  // Apura a enquete da semana (Melhor da Semana + Flashback) — vencedoras entram nos cards do Global 100
-  let weeklyPoll: Awaited<ReturnType<typeof closeWeeklySpotlightPoll>> | null = null;
+  // Apura a enquete global e as de comunidade (Melhor da Semana + Flashback)
+  let weeklyPoll: Awaited<ReturnType<typeof closeAllWeeklySpotlightPolls>> | null = null;
   try {
-    weeklyPoll = await closeWeeklySpotlightPoll(global.weekIndex);
+    weeklyPoll = await closeAllWeeklySpotlightPolls(global.weekIndex);
   } catch (e) {
-    console.error("[publish-weekly-globals] closeWeeklySpotlightPoll", e);
+    console.error("[publish-weekly-globals] closeAllWeeklySpotlightPolls", e);
   }
 
   const [airplay, albums, curators, genreSnapshots] = await Promise.all([

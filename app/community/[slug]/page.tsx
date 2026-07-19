@@ -35,7 +35,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
     isCommunityAdmin(row.id, userId),
     userId ? getCommunityMemberRole(row.id, userId) : Promise.resolve(null),
     prisma.weeklySpotlightPoll.findFirst({
-      where: { status: "open" },
+      where: { status: "open", communityId: row.id },
       select: { weekLabel: true, dateRange: true },
       orderBy: { weekIndex: "desc" },
     }),

@@ -20,7 +20,7 @@ import { saveCuratorsSnapshotForWeek } from "@/lib/curators-snapshot";
 import { saveGlobalGenreSnapshotForWeek } from "@/lib/global-genre-snapshot";
 import { GLOBAL_GENRE_CHARTS } from "@/lib/global-genre-charts";
 import { publishAllCommunityLastfmSnapshots } from "@/lib/community-lastfm";
-import { closeWeeklySpotlightPoll } from "@/lib/weekly-spotlight-poll";
+import { closeAllWeeklySpotlightPolls } from "@/lib/weekly-spotlight-poll";
 import { syncGlobal100FixedSpotifyPlaylist } from "@/lib/global-100-playlist-sync";
 import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "@/lib/youtube-user";
 import { onChartPublished } from "@/lib/social/events";
@@ -226,9 +226,9 @@ export async function runGlobalAdminAction(action: GlobalAdminAction, weekIndex:
   switch (action) {
     case "publish": {
       const snapshots = await ensureSnapshots(weekIndex, false);
-      let weeklyPoll: Awaited<ReturnType<typeof closeWeeklySpotlightPoll>> | null = null;
+      let weeklyPoll: Awaited<ReturnType<typeof closeAllWeeklySpotlightPolls>> | null = null;
       try {
-        weeklyPoll = await closeWeeklySpotlightPoll(weekIndex);
+        weeklyPoll = await closeAllWeeklySpotlightPolls(weekIndex);
       } catch (e) {
         console.error("[admin-global-ops] poll-close", e);
       }
@@ -333,7 +333,7 @@ export async function runGlobalAdminAction(action: GlobalAdminAction, weekIndex:
     }
 
     case "poll-close": {
-      const weeklyPoll = await closeWeeklySpotlightPoll(weekIndex);
+      const weeklyPoll = await closeAllWeeklySpotlightPolls(weekIndex);
       return { action, weekIndex, weekLabel: meta.weekLabel, weeklyPoll };
     }
 

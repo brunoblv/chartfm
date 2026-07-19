@@ -520,6 +520,7 @@ model Community {
   owner               User?             @relation("CommunityOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   charts              Chart[]
   paradaComments      ParadaComment[]
+  weeklySpotlightPolls WeeklySpotlightPoll[]
 
   @@index([ownerId], map: "communities_ownerId_fkey")
 }
@@ -1524,17 +1525,22 @@ model SupportTicketMessage {
 
 /// Enquete semanal (Melhor da Semana + Flashback da Semana). Abre domingo 23:59 BRT
 /// com as indicações das paradas da semana; fecha na terça junto com o snapshot global.
+/// `communityId` null = Parada Global; preenchido = enquete só dos membros daquela comunidade.
 model WeeklySpotlightPoll {
-  id        String                  @id @default(cuid())
-  weekIndex Int                     @unique @map("week_index")
-  weekLabel String                  @map("week_label")
-  dateRange String                  @map("date_range")
-  status    String                  @default("open") // "open" | "closed"
-  openedAt  DateTime                @default(now()) @map("opened_at")
-  closedAt  DateTime?               @map("closed_at")
-  options   WeeklySpotlightOption[]
-  votes     WeeklySpotlightVote[]
+  id          String                  @id @default(cuid())
+  weekIndex   Int                     @map("week_index")
+  weekLabel   String                  @map("week_label")
+  dateRange   String                  @map("date_range")
+  status      String                  @default("open") // "open" | "closed"
+  communityId String?                 @map("community_id")
+  openedAt    DateTime                @default(now()) @map("opened_at")
+  closedAt    DateTime?               @map("closed_at")
+  community   Community?              @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  options     WeeklySpotlightOption[]
+  votes       WeeklySpotlightVote[]
 
+  @@index([weekIndex])
+  @@index([communityId, status])
   @@map("weekly_spotlight_polls")
 }
 

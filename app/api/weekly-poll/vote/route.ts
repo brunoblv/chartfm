@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   const poll = await prisma.weeklySpotlightPoll.findFirst({
+    where: { communityId: null },
     orderBy: { weekIndex: "desc" },
     select: { id: true },
   });

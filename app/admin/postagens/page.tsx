@@ -40,7 +40,11 @@ export default async function AdminPostagensPage() {
     prisma.globalSnapshot.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
     prisma.globalAirplaySnapshot.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
     prisma.globalAlbumsSnapshot.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
-    prisma.weeklySpotlightPoll.findFirst({ orderBy: { weekIndex: "desc" }, select: { weekIndex: true } }),
+    prisma.weeklySpotlightPoll.findFirst({
+      where: { communityId: null },
+      orderBy: { weekIndex: "desc" },
+      select: { weekIndex: true },
+    }),
   ]);
 
   // Última semana com dados congelados por tipo de evento — evita pré-preencher a "semana atual"

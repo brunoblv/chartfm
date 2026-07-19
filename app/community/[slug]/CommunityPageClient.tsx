@@ -843,11 +843,11 @@ export function CommunityPageClient({
               {weeklyPollOpen ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                    A votação da Parada Global está aberta — {weeklyPollOpen.weekLabel}
-                    {weeklyPollOpen.dateRange ? ` (${weeklyPollOpen.dateRange})` : ""}.
+                    A votação da comunidade está aberta — {weeklyPollOpen.weekLabel}
+                    {weeklyPollOpen.dateRange ? ` (${weeklyPollOpen.dateRange})` : ""}. Só membros podem votar.
                   </div>
                   <Link
-                    href="/votacao-da-semana"
+                    href={`/community/${encodeURIComponent(dbCommunity.slug)}/votacao`}
                     style={{
                       alignSelf: "flex-start",
                       padding: "8px 14px",
@@ -859,12 +859,12 @@ export function CommunityPageClient({
                       textDecoration: "none",
                     }}
                   >
-                    Votar na enquete da semana
+                    {dbCommunity.isMember ? "Votar na enquete da semana" : "Ver enquete da semana"}
                   </Link>
                 </div>
               ) : (
                 <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  Não há enquete da Parada Global aberta no momento.
+                  Não há enquete da comunidade aberta no momento.
                 </div>
               )}
             </div>
