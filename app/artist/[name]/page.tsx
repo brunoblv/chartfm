@@ -22,6 +22,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { getSpotifyArtistById } from "@/lib/spotify-server";
 import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
 import { buildArtistContext } from "@/lib/entity-context-text";
+import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
 
 function artistColor(name: string): [string, string] {
   let hash = 0;
@@ -858,6 +859,9 @@ export default async function ArtistPage({
                 <Link href={`/artist/${name}/edit`} style={{ color: "white", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>
                   Editar artista
                 </Link>
+                <div style={{ marginTop: 8 }}>
+                  <EntityBackfillButtons kind="artists" id={artistRef.id} />
+                </div>
               </div>
             ) : null}
           </div>

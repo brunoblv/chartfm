@@ -1,6 +1,13 @@
 import { prisma } from "./prisma";
 import { enrichSongMetadataAfterSave } from "@/lib/resolve-song-genres";
 import { getSpotifyArtistById, type SpotifyTrackMetadata } from "./spotify-server";
+import { cleanVersionTag } from "@/lib/clean-version-tag";
+
+/** Remove sufixos como "(Deluxe Edition)"/"- Anniversary Edition" do nome do álbum vindo do Spotify. */
+function cleanAlbumTitle(title: string): string {
+  const cleaned = cleanVersionTag(title, "edition");
+  return cleaned || title;
+}
 
 export type ApplySpotifyMetadataResult =
   | { ok: true; reason: "updated" | "dry_run" }
@@ -65,11 +72,13 @@ export async function applySpotifyMetadataToSong(
 
   if (primaryArtist) await upsertArtist(primaryArtist.spotifyId, primaryArtist.name);
 
+  const albumTitle = meta.album.title ? cleanAlbumTitle(meta.album.title) : meta.album.title;
+
   if (primaryArtist && albumSpotifyId) {
     await prisma.album.upsert({
       where: { spotifyId: albumSpotifyId },
       update: {
-        title: meta.album.title ?? undefined,
+        title: albumTitle ?? undefined,
         artistSpotifyId: primaryArtist.spotifyId,
         albumType: meta.album.albumType ?? undefined,
         releaseDate: meta.album.releaseDate ?? undefined,
@@ -79,7 +88,7 @@ export async function applySpotifyMetadataToSong(
       },
       create: {
         spotifyId: albumSpotifyId,
-        title: meta.album.title ?? "Álbum",
+        title: albumTitle ?? "Álbum",
         artistSpotifyId: primaryArtist.spotifyId,
         albumType: meta.album.albumType ?? undefined,
         releaseDate: meta.album.releaseDate ?? null,
@@ -90,7 +99,7 @@ export async function applySpotifyMetadataToSong(
     });
   }
 
-  const albumName = owner.album?.trim() ? owner.album : (meta.album.title ?? null);
+  const albumName = owner.album?.trim() ? owner.album : (albumTitle ?? null);
 
   await prisma.song.update({
     where: { id: localSongId },

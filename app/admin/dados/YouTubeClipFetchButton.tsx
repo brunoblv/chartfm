@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { Youtube } from "lucide-react";
 
 type FetchState =
@@ -38,6 +39,7 @@ export function YouTubeClipFetchButton({
   /** Sem margem superior — para ficar na mesma linha de Ver/Editar. */
   inline?: boolean;
 }) {
+  const router = useRouter();
   const [state, setState] = useState<FetchState>({ status: "idle" });
 
   async function run() {
@@ -72,6 +74,7 @@ export function YouTubeClipFetchButton({
         link: youtubeLink,
         message: data.message ?? "",
       });
+      if (data.found) router.refresh();
     } catch {
       setState({ status: "error", message: "erro de rede" });
     }

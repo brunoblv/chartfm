@@ -1971,10 +1971,12 @@ model RetroSongProfile {
   peakPotentialLocked Boolean  @default(false) @map("peak_potential_locked")
   /// Somado ao Score Final. Faixa -50..+50.
   manualAdjustment    Int      @default(0) @map("manual_adjustment")
-  /// Data de estreia da música na Billboard Hot 100 real (conhecimento do usuário,
-  /// não vem de nenhuma fonte automática). Só usada no target "hot100": se anterior
-  /// à data do single E à 1ª entrada da música na Top20 do usuário, vence as duas.
+  /// Override manual da estreia Billboard Hot 100 (conhecimento do usuário).
+  /// No target hot100, no automático a Billboard vence o single quando presente
+  /// (exceto se a Top20 pessoal for mais antiga, ou se debutSourcePreferred travar outra fonte).
   billboardHot100DebutDate DateTime? @map("billboard_hot100_debut_date") @db.Date
+  /// Fonte de estreia travada: "single"|"album"|"clipe"|"top20"|"billboard"; null = automático.
+  debutSourcePreferred String? @map("debut_source_preferred")
   /// Observação pessoal ("marcou minha adolescência") — insumo futuro para IA.
   note                String?
   createdAt           DateTime @default(now()) @map("created_at")

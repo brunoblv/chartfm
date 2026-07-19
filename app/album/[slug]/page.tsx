@@ -18,6 +18,7 @@ import { parseAlbumSlug, buildArtistPath, buildSongPath, slugify } from "@/lib/m
 import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { buildAlbumContext } from "@/lib/entity-context-text";
+import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
 import { AlbumDetailClient } from "./AlbumDetailClient";
 
 function albumColor(name: string): [string, string] {
@@ -345,6 +346,11 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                     </Link>
                   )}
                 </div>
+                {canEditAlbum && albumDbId ? (
+                  <div style={{ marginTop: 8 }}>
+                    <EntityBackfillButtons kind="albums" id={albumDbId} />
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -748,6 +754,11 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                 </Link>
               )}
             </div>
+            {canEditAlbum && albumDbId ? (
+              <div style={{ marginTop: 8 }}>
+                <EntityBackfillButtons kind="albums" id={albumDbId} />
+              </div>
+            ) : null}
           </div>
 
         </div>

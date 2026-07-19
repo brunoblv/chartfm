@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
+import type { SourceConflict } from "@/lib/edicao-de-dados-source-fetch";
+import { SourceConflictMergeModal } from "./SourceConflictMergeModal";
 
 type Kind = "music" | "albums" | "artists";
 type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
@@ -40,7 +43,15 @@ const triedChipStyle: CSSProperties = {
 type FetchState =
   | { status: "idle" }
   | { status: "loading"; source: Source }
-  | { status: "done"; source: Source; found: string[]; applied: string[]; link?: string; skipped?: boolean }
+  | {
+      status: "done";
+      source: Source;
+      found: string[];
+      applied: string[];
+      link?: string;
+      skipped?: boolean;
+      conflict?: SourceConflict;
+    }
   | { status: "error"; source: Source; message: string }
   | { status: "forcing"; source: Source };
 
@@ -56,6 +67,7 @@ async function callFetchSource(kind: Kind, id: string | number, source: Source, 
     applied?: string[];
     link?: string;
     skipped?: boolean;
+    conflict?: SourceConflict;
     error?: string;
   };
   if (!res.ok || !data.ok) throw new Error(data.error ?? "erro na consulta");
@@ -73,6 +85,7 @@ export function SourceFetchButtons({
   id,
   notFound = [],
   inline = false,
+  onApplied,
 }: {
   kind: Kind;
   id: string | number;
@@ -80,33 +93,56 @@ export function SourceFetchButtons({
   notFound?: string[];
   /** Sem margem superior — para ficar na mesma linha de Ver/Editar. */
   inline?: boolean;
+  /** Chamado quando uma busca aplica pelo menos um campo novo. */
+  onApplied?: () => void;
 }) {
+  const router = useRouter();
   const [state, setState] = useState<FetchState>({ status: "idle" });
   const [tried, setTried] = useState<Set<string>>(new Set(notFound));
   const [forcingAll, setForcingAll] = useState(false);
+  const [mergeConflict, setMergeConflict] = useState<SourceConflict | null>(null);
 
   const sourcesForKind = SOURCES.filter((s) => s.kinds.includes(kind));
   const busy = state.status === "loading" || state.status === "forcing" || forcingAll;
+
+  function applyDoneState(
+    source: Source,
+    data: {
+      found?: string[];
+      applied?: string[];
+      link?: string;
+      skipped?: boolean;
+      conflict?: SourceConflict;
+    },
+  ) {
+    setTried((prev) => {
+      const next = new Set(prev);
+      if ((data.found?.length ?? 0) > 0) next.delete(source);
+      else next.add(source);
+      return next;
+    });
+    setState({
+      status: "done",
+      source,
+      found: data.found ?? [],
+      applied: data.applied ?? [],
+      link: data.link,
+      skipped: data.skipped,
+      conflict: data.conflict,
+    });
+    if (data.conflict) setMergeConflict(data.conflict);
+    if ((data.applied?.length ?? 0) > 0) {
+      router.refresh();
+      onApplied?.();
+    }
+  }
 
   async function run(source: Source, force = false) {
     if (busy) return;
     setState({ status: "loading", source });
     try {
       const data = await callFetchSource(kind, id, source, force);
-      setTried((prev) => {
-        const next = new Set(prev);
-        if ((data.found?.length ?? 0) > 0) next.delete(source);
-        else next.add(source);
-        return next;
-      });
-      setState({
-        status: "done",
-        source,
-        found: data.found ?? [],
-        applied: data.applied ?? [],
-        link: data.link,
-        skipped: data.skipped,
-      });
+      applyDoneState(source, data);
     } catch (err) {
       setState({ status: "error", source, message: err instanceof Error ? err.message : "erro de rede" });
     }
@@ -120,19 +156,8 @@ export function SourceFetchButtons({
         setState({ status: "forcing", source: s.key });
         try {
           const data = await callFetchSource(kind, id, s.key, true);
-          setTried((prev) => {
-            const next = new Set(prev);
-            if ((data.found?.length ?? 0) > 0) next.delete(s.key);
-            else next.add(s.key);
-            return next;
-          });
-          setState({
-            status: "done",
-            source: s.key,
-            found: data.found ?? [],
-            applied: data.applied ?? [],
-            link: data.link,
-          });
+          applyDoneState(s.key, data);
+          if (data.conflict) break;
         } catch (err) {
           setState({ status: "error", source: s.key, message: err instanceof Error ? err.message : "erro de rede" });
         }
@@ -192,10 +217,31 @@ export function SourceFetchButtons({
       </div>
 
       {state.status === "done" && (
-        <div style={{ marginTop: 4, fontSize: 11, lineHeight: 1.5, maxWidth: 260 }}>
+        <div style={{ marginTop: 4, fontSize: 11, lineHeight: 1.5, maxWidth: 280 }}>
           <span style={{ fontWeight: 800, color: "var(--text-muted)" }}>{sourceLabel(state.source)}:</span>{" "}
           {state.skipped ? (
             <span style={{ color: "var(--text-muted)" }}>já buscado, sem resultado (pulado) — use FORÇAR</span>
+          ) : state.conflict ? (
+            <>
+              <span style={{ color: "#B45309", fontWeight: 700 }}>{state.conflict.label}</span>
+              {" — "}
+              <button
+                type="button"
+                onClick={() => setMergeConflict(state.conflict!)}
+                style={{
+                  border: "none",
+                  background: "none",
+                  padding: 0,
+                  color: "#FA243C",
+                  fontWeight: 800,
+                  fontSize: 11,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                abrir merge
+              </button>
+            </>
           ) : state.found.length === 0 ? (
             <span style={{ color: "var(--text-muted)" }}>nada encontrado</span>
           ) : (
@@ -211,7 +257,7 @@ export function SourceFetchButtons({
               )}
             </>
           )}
-          {state.link && (
+          {state.link && !state.conflict && (
             <>
               {" "}
               <a href={state.link} target="_blank" rel="noreferrer" style={{ color: "#FA243C", fontWeight: 700 }}>
@@ -225,6 +271,18 @@ export function SourceFetchButtons({
         <div style={{ marginTop: 4, fontSize: 11, color: "#C41E3A", maxWidth: 260 }}>
           {sourceLabel(state.source)}: {state.message}
         </div>
+      )}
+
+      {mergeConflict && (
+        <SourceConflictMergeModal
+          conflict={mergeConflict}
+          onClose={() => setMergeConflict(null)}
+          onMerged={() => {
+            setState({ status: "idle" });
+            setMergeConflict(null);
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );

@@ -52,6 +52,9 @@ interface RetroEntry {
   manualAdjustment: number;
   note: string | null;
   billboardHot100DebutDate: string | null;
+  songBillboardHot100DebutDate: string | null;
+  top20FirstEntryDate: string | null;
+  debutSourcePreferred: ReleaseRefSource | null;
 }
 
 interface RetroResponse {
@@ -321,6 +324,7 @@ interface Draft {
   adjust: number;
   note: string;
   billboardDebut: string; // yyyy-mm-dd ou ""
+  debutSource: ReleaseRefSource | "auto";
 }
 
 function draftFrom(e: RetroEntry): Draft {
@@ -331,7 +335,23 @@ function draftFrom(e: RetroEntry): Draft {
     adjust: e.manualAdjustment,
     note: e.note ?? "",
     billboardDebut: e.billboardHot100DebutDate ?? "",
+    debutSource: e.debutSourcePreferred ?? "auto",
   };
+}
+
+/** Datas candidatas a estreia (só as que existem), para o seletor de fonte. */
+function debutCandidates(e: RetroEntry): { source: ReleaseRefSource; date: string; label: string }[] {
+  const effectiveBb = e.billboardHot100DebutDate ?? e.songBillboardHot100DebutDate;
+  const rows: { source: ReleaseRefSource; date: string | null; label: string }[] = [
+    { source: "single", date: e.singleReleaseDate, label: "Single" },
+    { source: "billboard", date: effectiveBb, label: "Billboard" },
+    { source: "album", date: e.albumReleaseDate, label: "Álbum" },
+    { source: "clipe", date: e.youtubeReleaseDate, label: "Clipe" },
+    { source: "top20", date: e.top20FirstEntryDate, label: "Top 20" },
+  ];
+  return rows
+    .filter((r): r is { source: ReleaseRefSource; date: string; label: string } => r.date != null)
+    .map((r) => ({ source: r.source, date: r.date, label: r.label }));
 }
 
 // ── geração de histórico (estreia + carry-over → Chart/ChartEntry reais) ──
@@ -989,6 +1009,7 @@ export function RetroClient() {
           manualAdjustment: draft.adjust,
           note: draft.note.trim() === "" ? null : draft.note,
           billboardHot100DebutDate: draft.billboardDebut.trim() === "" ? null : draft.billboardDebut,
+          debutSourcePreferred: draft.debutSource === "auto" ? null : draft.debutSource,
         }),
       });
       if (res.ok) {
@@ -1259,6 +1280,9 @@ export function RetroClient() {
                         {e.releaseRefSource && (
                           <span style={{ ...badgeStyle("var(--text-subtle)", "var(--fill-subtle)"), marginLeft: 6, fontWeight: 600 }}>
                             {SOURCE_LABEL[e.releaseRefSource]}
+                            {e.debutSourcePreferred && (
+                              <span title="Fonte travada manualmente" style={{ marginLeft: 3, color: "var(--accent)" }}>✎</span>
+                            )}
                           </span>
                         )}
                       </td>
@@ -1304,7 +1328,7 @@ export function RetroClient() {
                   {pageRows.length === 0 && (
                     <tr>
                       <td colSpan={17} style={{ ...tdStyle, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
-                        {search ? "Nenhuma música encontrada para a busca." : "Nenhum lançamento seu neste mês (pela cadeia single → álbum → clipe → 1ª entrada Top 20)."}
+                        {search ? "Nenhuma música encontrada para a busca." : "Nenhum lançamento seu neste mês (pela regra de estreia: Top 20 mais antiga → Billboard → single → álbum → clipe)."}
                       </td>
                     </tr>
                   )}
@@ -1481,9 +1505,55 @@ export function RetroClient() {
                 </select>
               </div>
 
-              {/* Estreia na Billboard Hot 100 */}
+              {/* Qual data de estreia está certa */}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Data de estreia</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8, fontSize: 12, color: "var(--text-subtle)" }}>
+                  {debutCandidates(selected).map((c) => (
+                    <div key={c.source} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <span>
+                        {c.label}
+                        {selected.releaseRefSource === c.source ? (
+                          <span style={{ marginLeft: 6, ...badgeStyle("var(--accent)", "var(--fill-subtle)"), fontWeight: 600 }}>usada</span>
+                        ) : null}
+                      </span>
+                      <span style={num}>{fmtDate(c.date)}</span>
+                    </div>
+                  ))}
+                  {debutCandidates(selected).length === 0 && (
+                    <span style={{ color: "var(--text-muted)" }}>Nenhuma data candidata.</span>
+                  )}
+                </div>
+                <select
+                  value={draft.debutSource}
+                  onChange={(ev) => setDraft({ ...draft, debutSource: ev.target.value as Draft["debutSource"] })}
+                  style={{ ...inputStyle, width: "100%" }}
+                >
+                  <option value="auto">
+                    Automático
+                    {selected.releaseRefSource && !selected.debutSourcePreferred
+                      ? ` (${SOURCE_LABEL[selected.releaseRefSource]})`
+                      : ""}
+                  </option>
+                  {debutCandidates(selected).map((c) => (
+                    <option key={c.source} value={c.source}>
+                      {c.label} ({fmtDate(c.date)})
+                    </option>
+                  ))}
+                </select>
+                <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)" }}>
+                  Automático: Top 20 se for a mais antiga; senão Billboard (Hot 100); senão single → álbum → clipe.
+                </div>
+              </div>
+
+              {/* Override Billboard Hot 100 */}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Estreia na Billboard Hot 100</div>
+                {selected.songBillboardHot100DebutDate && !draft.billboardDebut && (
+                  <div style={{ marginBottom: 4, fontSize: 11, color: "var(--text-muted)" }}>
+                    Importada: {fmtDate(selected.songBillboardHot100DebutDate)}
+                  </div>
+                )}
                 <input
                   type="date"
                   value={draft.billboardDebut}
@@ -1492,7 +1562,7 @@ export function RetroClient() {
                   style={{ ...inputStyle, width: "100%" }}
                 />
                 <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)" }}>
-                  Só usada na Hot 100 de Singles: se for anterior à data do single e à 1ª entrada dela na sua Top 20, vence as duas como data de estreia.
+                  Override manual (Hot 100 de Singles). No automático, a Billboard tem prioridade sobre o single.
                 </div>
               </div>
 

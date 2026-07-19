@@ -29,7 +29,13 @@
 import { prisma } from "@/lib/prisma";
 import { fetchTopTracks, fetchTracksBetweenUnix, fetchTrackUserPlaycount, type TopTrack } from "@/lib/lastfm";
 import { normalizeTrackMatchKey } from "@/lib/lastfm-import";
-import { normalizePeakPotential, type ReleaseRefSource, type RetroMode, type RetroSongInput } from "@/lib/retro/scoring";
+import {
+  normalizePeakPotential,
+  RELEASE_REF_SOURCE_SET,
+  type ReleaseRefSource,
+  type RetroMode,
+  type RetroSongInput,
+} from "@/lib/retro/scoring";
 
 /** Parada-alvo da geração: define a cadeia de datas da estreia. */
 export type RetroTarget = "hot100" | "clipes";
@@ -64,8 +70,14 @@ export interface RetroSongMeta {
   note: string | null;
   /** De onde veio a data de estreia (single/álbum/clipe/1ª entrada Top 20/Billboard). */
   releaseRefSource: ReleaseRefSource | null;
-  /** Data de estreia na Billboard Hot 100 informada manualmente (target "hot100"), se houver. */
+  /** Fonte travada pelo usuário; null = automático. */
+  debutSourcePreferred: ReleaseRefSource | null;
+  /** Override manual de estreia Billboard no perfil. */
   billboardHot100DebutDate: Date | null;
+  /** Estreia Billboard Hot 100 importada na Song (sem override). */
+  songBillboardHot100DebutDate: Date | null;
+  /** 1ª entrada da música na Top 20 pessoal. */
+  top20FirstEntryDate: Date | null;
 }
 
 export interface BuildPoolResult {
@@ -210,60 +222,127 @@ export function aggregateTop20Lifetime(points: Top20Point[] | undefined): Top20A
 }
 
 /** A mais antiga entre duas datas, ignorando nulas (ou null se ambas nulas). */
-function earliestOf(a: Date | null, b: Date | null): Date | null {
-  if (a == null) return b;
-  if (b == null) return a;
-  return a.getTime() < b.getTime() ? a : b;
+/**
+ * Billboard efetiva: override do perfil → Hot 100 importada → chart de gênero.
+ * (Hot 100 antes do gênero — evita estreia puxada por chart secundário antigo.)
+ */
+export function effectiveBillboardDebut(
+  song: SongRow,
+  profileBillboardDebutDate: Date | null,
+): Date | null {
+  return (
+    profileBillboardDebutDate ??
+    song.billboardHot100DebutDate ??
+    song.billboardGenreChartDebutDate ??
+    null
+  );
+}
+
+function dateBySource(
+  source: ReleaseRefSource,
+  song: SongRow,
+  firstEntryDate: Date | null,
+  billboard: Date | null,
+): Date | null {
+  switch (source) {
+    case "single":
+      return song.singleReleaseDate;
+    case "album":
+      return song.albumReleaseDate;
+    case "clipe":
+      return song.youtubeReleaseDate;
+    case "top20":
+      return firstEntryDate;
+    case "billboard":
+      return billboard;
+  }
+}
+
+/** True se `candidate` é estritamente anterior a todas as outras datas não-nulas. */
+function isStrictlyOldest(candidate: Date, others: Array<Date | null>): boolean {
+  const t = candidate.getTime();
+  for (const d of others) {
+    if (d != null && d.getTime() <= t) return false;
+  }
+  return true;
 }
 
 /**
- * Data de estreia + origem, na cadeia da parada-alvo:
- *   hot100: single → álbum → clipe → 1ª entrada Top 20
- *   clipes: clipe → álbum → single → 1ª entrada Top 20
+ * Data de estreia + origem, na cadeia da parada-alvo.
  *
- * Só no target "hot100": se há uma data real de estreia na Billboard
- * (`billboardDebutDate`, override manual do usuário; na ausência dele, cai
- * para o mais antigo entre `song.billboardHot100DebutDate` e
- * `song.billboardGenreChartDebutDate`, importados automaticamente) E ela é
- * anterior TANTO à data do single QUANTO à 1ª entrada da música na Top20 do
- * usuário, ela vence as duas — corrige casos em que a data de lançamento
- * cadastrada (ou a própria Top20 pessoal) é mais tardia que a estreia real
- * em algum chart americano.
+ * hot100 (automático):
+ *   1) Top20 pessoal se for estritamente mais antiga que as demais candidatas
+ *   2) Billboard (se houver) — vence single errado/cedo demais
+ *   3) single → álbum → clipe → top20
+ *
+ * clipes (automático):
+ *   1) Top20 se for a mais antiga entre clipe/álbum/single/top20
+ *   2) clipe → álbum → single → top20
+ *   (Billboard ignorada)
+ *
+ * `preferred`: trava a fonte (só usa se a data existir).
  */
 export function debutRefFor(
   target: RetroTarget,
   song: SongRow,
   firstEntryDate: Date | null,
   billboardDebutDate: Date | null,
+  preferred: ReleaseRefSource | null = null,
 ): { date: Date | null; source: ReleaseRefSource | null } {
-  const effectiveBillboardDebutDate =
-    billboardDebutDate ?? earliestOf(song.billboardHot100DebutDate, song.billboardGenreChartDebutDate);
+  const billboard = target === "hot100" ? effectiveBillboardDebut(song, billboardDebutDate) : null;
 
-  if (target === "hot100" && effectiveBillboardDebutDate != null) {
-    const earlierThanSingle =
-      song.singleReleaseDate == null || effectiveBillboardDebutDate.getTime() < song.singleReleaseDate.getTime();
-    const earlierThanTop20 = firstEntryDate == null || effectiveBillboardDebutDate.getTime() < firstEntryDate.getTime();
-    if (earlierThanSingle && earlierThanTop20) return { date: effectiveBillboardDebutDate, source: "billboard" };
+  if (preferred != null) {
+    const locked = dateBySource(preferred, song, firstEntryDate, billboard);
+    if (locked != null) return { date: locked, source: preferred };
   }
 
-  const chain: [ReleaseRefSource, Date | null][] =
-    target === "clipes"
-      ? [
-          ["clipe", song.youtubeReleaseDate],
-          ["album", song.albumReleaseDate],
-          ["single", song.singleReleaseDate],
-          ["top20", firstEntryDate],
-        ]
-      : [
-          ["single", song.singleReleaseDate],
-          ["album", song.albumReleaseDate],
-          ["clipe", song.youtubeReleaseDate],
-          ["top20", firstEntryDate],
-        ];
-  for (const [source, date] of chain) {
+  if (target === "clipes") {
+    if (
+      firstEntryDate != null &&
+      isStrictlyOldest(firstEntryDate, [song.youtubeReleaseDate, song.albumReleaseDate, song.singleReleaseDate])
+    ) {
+      return { date: firstEntryDate, source: "top20" };
+    }
+    for (const [source, date] of [
+      ["clipe", song.youtubeReleaseDate],
+      ["album", song.albumReleaseDate],
+      ["single", song.singleReleaseDate],
+      ["top20", firstEntryDate],
+    ] as const) {
+      if (date != null) return { date, source };
+    }
+    return { date: null, source: null };
+  }
+
+  // hot100
+  if (
+    firstEntryDate != null &&
+    isStrictlyOldest(firstEntryDate, [
+      song.singleReleaseDate,
+      song.albumReleaseDate,
+      song.youtubeReleaseDate,
+      billboard,
+    ])
+  ) {
+    return { date: firstEntryDate, source: "top20" };
+  }
+  if (billboard != null) return { date: billboard, source: "billboard" };
+
+  for (const [source, date] of [
+    ["single", song.singleReleaseDate],
+    ["album", song.albumReleaseDate],
+    ["clipe", song.youtubeReleaseDate],
+    ["top20", firstEntryDate],
+  ] as const) {
     if (date != null) return { date, source };
   }
   return { date: null, source: null };
+}
+
+export function normalizeDebutSourcePreferred(value: string | null | undefined): ReleaseRefSource | null {
+  if (value == null) return null;
+  if (RELEASE_REF_SOURCE_SET.has(value)) return value as ReleaseRefSource;
+  return null;
 }
 
 /** Plays reais por música no mês (pós-Out/2010), casados pela chave normalizada. */
@@ -295,7 +374,15 @@ export interface RetroSources {
   top20Points: Map<string, Top20Point[]>;
   profileBySong: Map<
     string,
-    { importance: number | null; importanceLocked: boolean; peakPotential: string | null; manualAdjustment: number; note: string | null; billboardHot100DebutDate: Date | null }
+    {
+      importance: number | null;
+      importanceLocked: boolean;
+      peakPotential: string | null;
+      manualAdjustment: number;
+      note: string | null;
+      billboardHot100DebutDate: Date | null;
+      debutSourcePreferred: ReleaseRefSource | null;
+    }
   >;
   /** year → songId → weight (0-100) */
   eraOverridesByYear: Map<number, Map<string, number>>;
@@ -320,6 +407,10 @@ export async function loadRetroSources(userId: string, lastfmUser: string): Prom
         manualAdjustment: p.manualAdjustment,
         note: p.note,
         billboardHot100DebutDate: p.billboardHot100DebutDate,
+        debutSourcePreferred: normalizeDebutSourcePreferred(
+          // Campo novo: cast até o `prisma generate` pegar o schema (DLL pode estar locked pelo next).
+          (p as { debutSourcePreferred?: string | null }).debutSourcePreferred,
+        ),
       },
     ]),
   );
@@ -370,13 +461,14 @@ export function buildRetroPoolFromSources(sources: RetroSources, args: BuildPool
     if (added.has(song.id)) return false;
 
     const agg = aggregateTop20Lifetime(sources.top20Points.get(song.id));
-    const billboardDebutDate = sources.profileBySong.get(song.id)?.billboardHot100DebutDate ?? null;
-    const debut = debutRefFor(target, song, agg.firstEntryDate, billboardDebutDate);
+    const profile = sources.profileBySong.get(song.id) ?? null;
+    const billboardDebutDate = profile?.billboardHot100DebutDate ?? null;
+    const preferred = profile?.debutSourcePreferred ?? null;
+    const debut = debutRefFor(target, song, agg.firstEntryDate, billboardDebutDate, preferred);
     if (debut.date == null) return false; // sem data → só entra via liberação manual (F6)
     const ts = debut.date.getTime();
     if (ts < monthStart.getTime() || ts > chartDate.getTime()) return false;
 
-    const profile = sources.profileBySong.get(song.id) ?? null;
     added.add(song.id);
     meta.set(song.id, {
       title: song.title,
@@ -385,7 +477,10 @@ export function buildRetroPoolFromSources(sources: RetroSources, args: BuildPool
       coverUrl: song.coverUrl,
       note: profile?.note ?? null,
       releaseRefSource: debut.source,
+      debutSourcePreferred: preferred,
       billboardHot100DebutDate: billboardDebutDate,
+      songBillboardHot100DebutDate: song.billboardHot100DebutDate,
+      top20FirstEntryDate: agg.firstEntryDate,
     });
 
     songs.push({

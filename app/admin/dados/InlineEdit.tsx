@@ -2,8 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import type { SourceConflict } from "@/lib/edicao-de-dados-source-fetch";
+import { SourceConflictMergeModal } from "./SourceConflictMergeModal";
 
 type Kind = "music" | "albums" | "artists";
+
+type InlineError = Error & { conflict?: SourceConflict };
 
 async function patchInline(kind: Kind, id: string | number, field: string, value: unknown) {
   const res = await fetch("/api/admin/edicao-de-dados/inline", {
@@ -12,8 +16,10 @@ async function patchInline(kind: Kind, id: string | number, field: string, value
     body: JSON.stringify({ kind, id, field, value }),
   });
   if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error ?? "update_failed");
+    const data = (await res.json().catch(() => ({}))) as { error?: string; conflict?: SourceConflict };
+    const err = new Error(data.error ?? "update_failed") as InlineError;
+    if (data.conflict) err.conflict = data.conflict;
+    throw err;
   }
 }
 
@@ -65,6 +71,8 @@ export function InlineField({
   const [saved, setSaved] = useState(value ?? "");
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [conflict, setConflict] = useState<SourceConflict | null>(null);
+  const [showMerge, setShowMerge] = useState(false);
   const escapedRef = useRef(false);
 
   // quando a busca devolve novas linhas, ressincroniza com o servidor
@@ -97,10 +105,17 @@ export function InlineField({
       setSaved(next);
       setText(next);
       setStatus("idle");
+      setConflict(null);
+      setShowMerge(false);
     } catch (err) {
       setText(saved);
       setStatus("error");
       setErrorMsg(errorLabel(err));
+      const nextConflict = err instanceof Error ? (err as InlineError).conflict : undefined;
+      if (nextConflict) {
+        setConflict(nextConflict);
+        setShowMerge(true);
+      }
     }
   }
 
@@ -137,7 +152,43 @@ export function InlineField({
         }}
       />
       {status === "saving" && <span style={{ ...statusStyle, color: "var(--text-muted)", display: "block" }}>salvando…</span>}
-      {status === "error" && <span style={{ ...statusStyle, color: "#C41E3A", display: "block" }}>{errorMsg}</span>}
+      {status === "error" && (
+        <span style={{ ...statusStyle, color: "#C41E3A", display: "block" }}>
+          {errorMsg}
+          {conflict && (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={() => setShowMerge(true)}
+                style={{
+                  border: "none",
+                  background: "none",
+                  padding: 0,
+                  color: "#FA243C",
+                  fontWeight: 800,
+                  fontSize: 11,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                abrir merge
+              </button>
+            </>
+          )}
+        </span>
+      )}
+      {showMerge && conflict && (
+        <SourceConflictMergeModal
+          conflict={conflict}
+          onClose={() => setShowMerge(false)}
+          onMerged={() => {
+            setStatus("idle");
+            setConflict(null);
+            setShowMerge(false);
+          }}
+        />
+      )}
     </span>
   );
 }

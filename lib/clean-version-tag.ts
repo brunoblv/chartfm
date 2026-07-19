@@ -46,6 +46,12 @@ export const VERSION_TAG_CLEANERS = {
     matchPattern: "extended|radio\\s+edit|single\\s+edit",
     description: 'Remove trechos como "(Extended)", "- Radio Edit", etc.',
   },
+  edition: {
+    label: "Edition / Deluxe",
+    searchTerms: ["deluxe", "edition", "anniversary", "expanded", "bonus"],
+    matchPattern: "deluxe|expanded|anniversary|bonus(?:\\s+track)?|edition|version",
+    description: 'Remove trechos como "(Deluxe Version)", "- Anniversary Edition", etc.',
+  },
   outros: {
     label: "Outros",
     searchTerms: ["cover", "reprise", "sped up", "slowed"],

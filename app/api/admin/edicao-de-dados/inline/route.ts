@@ -5,6 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { withReleaseDatesNotFoundCleared } from "@/app/admin/dados/lib";
 import { refreshSnapshotsForSong } from "@/lib/entity-page-snapshot/refresh-song";
+import {
+  buildAlbumSourceConflict,
+  buildArtistSourceConflict,
+  buildSongSourceConflict,
+} from "@/lib/edicao-de-dados-source-fetch";
 
 export const runtime = "nodejs";
 
@@ -73,6 +78,16 @@ export async function PATCH(req: NextRequest) {
       if (field === "title") {
         const title = asTrimmed(body.value);
         if (!title) return NextResponse.json({ error: "title_required" }, { status: 400 });
+        const current = await prisma.song.findUnique({ where: { id }, select: { artist: true } });
+        if (!current) return NextResponse.json({ error: "not_found" }, { status: 404 });
+        const taken = await prisma.song.findFirst({
+          where: { title, artist: current.artist, NOT: { id } },
+          select: { id: true },
+        });
+        if (taken) {
+          const conflict = await buildSongSourceConflict(id, `title_artist_conflict:${taken.id}`);
+          return NextResponse.json({ error: "conflict", conflict }, { status: 409 });
+        }
         await prisma.song.update({
           where: { id },
           data: withReleaseDatesNotFoundCleared({ title }),
@@ -81,6 +96,16 @@ export async function PATCH(req: NextRequest) {
       }
       if (field === "spotifyId") {
         const spotifyId = asTrimmed(body.value);
+        if (spotifyId) {
+          const taken = await prisma.song.findFirst({
+            where: { spotifyId, NOT: { id } },
+            select: { id: true },
+          });
+          if (taken) {
+            const conflict = await buildSongSourceConflict(id, `spotify_id_conflict:${taken.id}`);
+            return NextResponse.json({ error: "conflict", conflict }, { status: 409 });
+          }
+        }
         await prisma.song.update({
           where: { id },
           data: withReleaseDatesNotFoundCleared({ spotifyId: spotifyId || null }),
@@ -192,6 +217,61 @@ export async function PATCH(req: NextRequest) {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("Unique constraint")) {
+      try {
+        if (kind === "music" && typeof body.id === "string") {
+          const id = body.id.trim();
+          if (field === "spotifyId") {
+            const spotifyId = asTrimmed(body.value);
+            const taken = spotifyId
+              ? await prisma.song.findFirst({ where: { spotifyId, NOT: { id } }, select: { id: true } })
+              : null;
+            if (taken) {
+              const conflict = await buildSongSourceConflict(id, `spotify_id_conflict:${taken.id}`);
+              return NextResponse.json({ error: "conflict", conflict }, { status: 409 });
+            }
+          }
+        }
+        if (kind === "albums" && Number.isInteger(Number(body.id))) {
+          const id = Number(body.id);
+          const spotifyId = asTrimmed(body.value);
+          if (field === "spotifyId" && spotifyId) {
+            const taken = await prisma.album.findFirst({
+              where: { spotifyId, NOT: { id } },
+              select: { id: true },
+            });
+            if (taken) {
+              const conflict = await buildAlbumSourceConflict(
+                id,
+                taken.id,
+                "spotify_id_conflict",
+                "Spotify ID já vinculado a outro álbum",
+              );
+              return NextResponse.json({ error: "conflict", conflict }, { status: 409 });
+            }
+          }
+        }
+        if (kind === "artists" && Number.isInteger(Number(body.id))) {
+          const id = Number(body.id);
+          const spotifyId = asTrimmed(body.value);
+          if (field === "spotifyId" && spotifyId) {
+            const taken = await prisma.artist.findFirst({
+              where: { spotifyId, NOT: { id } },
+              select: { id: true },
+            });
+            if (taken) {
+              const conflict = await buildArtistSourceConflict(
+                id,
+                taken.id,
+                "spotify_id_conflict",
+                "Spotify ID já vinculado a outro artista",
+              );
+              return NextResponse.json({ error: "conflict", conflict }, { status: 409 });
+            }
+          }
+        }
+      } catch {
+        // ignora e devolve conflict genérico
+      }
       return NextResponse.json({ error: "conflict" }, { status: 409 });
     }
     if (msg.includes("No record was found") || msg.includes("Record to update not found")) {

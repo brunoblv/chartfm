@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireBruno } from "@/lib/require-bruno";
-import { PEAK_POTENTIAL_SET } from "@/lib/retro/scoring";
+import { PEAK_POTENTIAL_SET, RELEASE_REF_SOURCE_SET } from "@/lib/retro/scoring";
+
 const NOTE_MAX = 1000;
 
 function clampInt(v: unknown, min: number, max: number): number | null {
@@ -93,6 +94,16 @@ export async function POST(req: NextRequest) {
       data.billboardHot100DebutDate = d;
     } else {
       return NextResponse.json({ error: "invalid_billboard_date" }, { status: 400 });
+    }
+  }
+
+  if ("debutSourcePreferred" in body) {
+    if (body.debutSourcePreferred === null) {
+      data.debutSourcePreferred = null;
+    } else if (typeof body.debutSourcePreferred === "string" && RELEASE_REF_SOURCE_SET.has(body.debutSourcePreferred)) {
+      data.debutSourcePreferred = body.debutSourcePreferred;
+    } else {
+      return NextResponse.json({ error: "invalid_debut_source_preferred" }, { status: 400 });
     }
   }
 

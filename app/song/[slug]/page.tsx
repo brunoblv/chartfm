@@ -20,6 +20,7 @@ import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
 import { buildSongContext } from "@/lib/entity-context-text";
 import { SongFlagButton } from "@/components/song/SongFlagButton";
 import { SongMergeButton } from "@/components/song/SongMergeButton";
+import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getServerSession(authOptions);
@@ -399,6 +400,9 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
                 </Link>
                 <div style={{ marginTop: 6 }}>
                   <SongMergeButton songId={songId} title={title} artist={artist} />
+                </div>
+                <div style={{ marginTop: 6 }}>
+                  <EntityBackfillButtons kind="music" id={songId} />
                 </div>
               </div>
             )}

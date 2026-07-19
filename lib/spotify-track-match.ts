@@ -39,15 +39,30 @@ function normalize(value: string): string {
 
 /**
  * true quando o candidato só "bate" com o título buscado porque tem uma tag de
- * versão a mais (live, remix, acoustic, remaster, etc.) que o título buscado não
- * tem — ex.: buscar "Genie In a Bottle" não pode aceitar "Genie In a Bottle -
- * Live from the Crazy Horse". Músicas cujo título já contém a palavra (ex.
- * "Show Me How to Live") não caem aqui porque batem por igualdade exata antes.
+ * versão a mais (live, remix, acoustic, etc.) que o título buscado não tem —
+ * ex.: buscar "Genie In a Bottle" não pode aceitar "Genie In a Bottle - Live
+ * from the Crazy Horse". Músicas cujo título já contém a palavra (ex. "Show Me
+ * How to Live") não caem aqui porque batem por igualdade exata antes.
+ *
+ * "remaster" e "edition" (deluxe/anniversary/etc.) ficam de fora dessa
+ * checagem de propósito: são a mesma gravação/lançamento, só que
+ * remasterizada ou reeditada, e é comum o Spotify só ter essa versão
+ * disponível — rejeitar o candidato faria o backfill relatar "não
+ * encontrado" para uma faixa que na verdade existe.
  */
 function hasUnwantedVersionTag(candidateTitle: string, wantedTitle: string): boolean {
+  const REJECTABLE_VERSION_TAGS: VersionTagType[] = [
+    "live",
+    "acoustic",
+    "remix",
+    "instrumental",
+    "demo",
+    "extended",
+    "outros",
+  ];
   const candidateBase = normalize(stripFeatFromTitle(candidateTitle));
   const wantedBase = normalize(stripFeatFromTitle(wantedTitle));
-  for (const type of Object.keys(VERSION_TAG_CLEANERS) as VersionTagType[]) {
+  for (const type of REJECTABLE_VERSION_TAGS) {
     const cleanedCandidate = normalize(stripFeatFromTitle(cleanVersionTag(candidateTitle, type)));
     const cleanedWanted = normalize(stripFeatFromTitle(cleanVersionTag(wantedTitle, type)));
     const candidateHasTag = cleanedCandidate !== candidateBase;
@@ -59,7 +74,7 @@ function hasUnwantedVersionTag(candidateTitle: string, wantedTitle: string): boo
   return false;
 }
 
-function titleMatches(candidateTitle: string, wantedTitle: string): boolean {
+export function titleMatches(candidateTitle: string, wantedTitle: string): boolean {
   const c = normalize(stripFeatFromTitle(candidateTitle));
   const w = normalize(stripFeatFromTitle(wantedTitle));
   if (!c || !w) return false;

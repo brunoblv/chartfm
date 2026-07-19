@@ -3,6 +3,14 @@
  * https://musicbrainz.org/doc/MusicBrainz_API
  */
 
+import dns from "node:dns";
+
+// instrumentation.ts já faz isso para requests via Next (app/api/**), mas
+// scripts/*.ts rodam com tsx direto e nunca passam pelo register() do Next —
+// sem isso o fetch para musicbrainz.org tenta IPv6 primeiro e quebra em redes
+// com IPv6 mal configurado (fetch failed).
+dns.setDefaultResultOrder("ipv4first");
+
 const API_BASE = "https://musicbrainz.org/ws/2";
 const MIN_INTERVAL_MS = 1100;
 

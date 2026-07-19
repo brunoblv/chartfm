@@ -34,9 +34,9 @@ import { lookupBugsAlbum, lookupBugsRelease } from "@/lib/bugs-lookup";
  * Fonte por registro: consulta UMA fonte (Last.fm, Spotify, MusicBrainz,
  * Wikipedia ou Bugs) e preenche só os campos vazios. Compartilhado entre os
  * botões individuais por linha (SourceFetchButtons) e o backfill em lote por
- * fonte (SourceBatchBackfillClient). Exceção: datas de single/clipe da
- * Wikipedia SOBRESCREVEM valores divergentes (datas de YouTube podem ser de
- * repostagens anos depois — quando divergir, vale a da Wikipedia).
+ * fonte (SourceBatchBackfillClient). Exceção: datas de single/clipe (músicas)
+ * e data de lançamento (álbuns) da Wikipedia SOBRESCREVEM valores divergentes
+ * — quando divergir, vale a da Wikipedia.
  *
  * Bugs (music.bugs.co.kr) é API não-oficial (mobile), boa cobertura de kpop:
  * cobre capa/data de single/data de álbum/data de clipe. Grupos de kpop às
@@ -59,15 +59,163 @@ function fmtDate(d: Date): string {
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+/** Entidade envolvida num conflito de ID/unicidade (para UI de merge). */
+export type SourceConflictEntity = {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string | null;
+  spotifyId: string | null;
+  entriesCount: number;
+};
+
+export type SourceConflict = {
+  kind: "music" | "albums" | "artists";
+  /** Ex.: spotify_id_conflict, title_artist_conflict */
+  reason: string;
+  label: string;
+  current: SourceConflictEntity;
+  other: SourceConflictEntity;
+};
+
 export type FetchResult = {
   found: string[];
   applied: string[];
   link?: string;
   /** true quando a fonte já estava marcada como sem resultado e foi pulada (sem bater na API). */
   skipped?: boolean;
+  /** Quando a aplicação falhou por duplicata — UI pode oferecer merge. */
+  conflict?: SourceConflict;
 };
 
 const nothing: FetchResult = { found: [], applied: [] };
+
+async function loadSongConflictEntity(id: string): Promise<SourceConflictEntity | null> {
+  const song = await prisma.song.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      artist: true,
+      spotifyId: true,
+      albumRef: { select: { coverUrl: true } },
+      _count: { select: { entries: true } },
+    },
+  });
+  if (!song) return null;
+  return {
+    id: song.id,
+    title: song.title,
+    artist: song.artist,
+    coverUrl: song.albumRef?.coverUrl ?? null,
+    spotifyId: song.spotifyId,
+    entriesCount: song._count.entries,
+  };
+}
+
+async function loadAlbumConflictEntity(id: number): Promise<SourceConflictEntity | null> {
+  const album = await prisma.album.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      spotifyId: true,
+      coverUrl: true,
+      artist: { select: { name: true } },
+      _count: { select: { songs: true } },
+    },
+  });
+  if (!album) return null;
+  return {
+    id: String(album.id),
+    title: album.title,
+    artist: album.artist.name,
+    coverUrl: album.coverUrl,
+    spotifyId: album.spotifyId,
+    entriesCount: album._count.songs,
+  };
+}
+
+async function loadArtistConflictEntity(id: number): Promise<SourceConflictEntity | null> {
+  const artist = await prisma.artist.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      spotifyId: true,
+      imageUrl: true,
+      _count: { select: { songs: true } },
+    },
+  });
+  if (!artist) return null;
+  return {
+    id: String(artist.id),
+    title: artist.name,
+    artist: artist.name,
+    coverUrl: artist.imageUrl,
+    spotifyId: artist.spotifyId,
+    entriesCount: artist._count.songs,
+  };
+}
+
+/** Monta payload de conflito song↔song a partir do reason `*_conflict:<id>`. */
+export async function buildSongSourceConflict(
+  currentId: string,
+  reason: string,
+): Promise<SourceConflict | null> {
+  const match = reason.match(/^([a-z0-9_]+_conflict):(.+)$/i);
+  if (!match) return null;
+  const conflictReason = match[1];
+  const otherId = match[2].trim();
+  if (!otherId) return null;
+
+  const [current, other] = await Promise.all([
+    loadSongConflictEntity(currentId),
+    loadSongConflictEntity(otherId),
+  ]);
+  if (!current || !other) return null;
+
+  const labels: Record<string, string> = {
+    spotify_id_conflict: "Spotify ID já vinculado a outra música",
+    title_artist_conflict: "Já existe música com o mesmo título e artista",
+  };
+
+  return {
+    kind: "music",
+    reason: conflictReason,
+    label: labels[conflictReason] ?? `Conflito: ${conflictReason.replaceAll("_", " ")}`,
+    current,
+    other,
+  };
+}
+
+export async function buildAlbumSourceConflict(
+  currentId: number,
+  otherId: number,
+  reason: string,
+  label: string,
+): Promise<SourceConflict | null> {
+  const [current, other] = await Promise.all([
+    loadAlbumConflictEntity(currentId),
+    loadAlbumConflictEntity(otherId),
+  ]);
+  if (!current || !other) return null;
+  return { kind: "albums", reason, label, current, other };
+}
+
+export async function buildArtistSourceConflict(
+  currentId: number,
+  otherId: number,
+  reason: string,
+  label: string,
+): Promise<SourceConflict | null> {
+  const [current, other] = await Promise.all([
+    loadArtistConflictEntity(currentId),
+    loadArtistConflictEntity(otherId),
+  ]);
+  if (!current || !other) return null;
+  return { kind: "artists", reason, label, current, other };
+}
 
 /** Persiste a marcação de "sem resultado" por fonte, só quando o estado muda. */
 async function persistSourceOutcome(
@@ -128,9 +276,17 @@ export async function fetchForSong(
       const meta = await getSpotifyTrackMetadataById(spotifyId, "BR", { maxAttempts: 1 });
       if (!meta) return nothing;
       const result = await applySpotifyMetadataToSong(song.id, meta, false);
+      if (result.ok) {
+        return {
+          found: [`faixa "${meta.title}" no Spotify`],
+          applied: ["metadados do Spotify (álbum, capa, duração, links)"],
+        };
+      }
+      const conflict = await buildSongSourceConflict(song.id, result.reason);
       return {
         found: [`faixa "${meta.title}" no Spotify`],
-        applied: result.ok ? ["metadados do Spotify (álbum, capa, duração, links)"] : [`não aplicado: ${result.reason}`],
+        applied: conflict ? [] : [`não aplicado: ${result.reason}`],
+        conflict: conflict ?? undefined,
       };
     }
 
@@ -297,11 +453,15 @@ export async function fetchForSong(
   })();
 
   if (!("error" in outcome)) {
+    // Conflito não gravou nada — não limpa sourcesNotFound; "não aplicado:" também não conta.
+    const appliedSomething =
+      !outcome.conflict &&
+      outcome.applied.some((a) => !a.startsWith("não aplicado"));
     await persistSourceOutcome(
       (sourcesNotFound) => prisma.song.update({ where: { id: song.id }, data: { sourcesNotFound } }),
       song.sourcesNotFound,
       source,
-      outcome.applied.length > 0,
+      appliedSomething,
     );
   }
   return outcome;
@@ -431,16 +591,23 @@ export async function fetchForAlbum(
       return { found, applied, link: `https://music.bugs.co.kr/album/${result.match.albumId}` };
     }
 
-    // wikipedia
+    // wikipedia — mesma regra das músicas: data divergente SOBRESCREVE.
+    // Antes só preenchia se releaseDate estivesse null; álbuns com data errada
+    // do Spotify/MB nunca eram corrigidos e ainda entravam em sourcesNotFound.
     const info = await getWikipediaAlbumInfo(album.title, album.artist.name);
     if (!info) return nothing;
     const found: string[] = [];
     const applied: string[] = [];
+    const sameDay = (a: Date | null, b: Date) => a != null && a.getTime() === b.getTime();
     if (info.releaseDate) {
       found.push(`data: ${fmtDate(info.releaseDate)}`);
-      if (!album.releaseDate) {
+      if (!sameDay(album.releaseDate, info.releaseDate)) {
         await prisma.album.update({ where: { id: album.id }, data: { releaseDate: info.releaseDate } });
-        applied.push("data de lançamento");
+        applied.push(
+          album.releaseDate
+            ? `data corrigida (${fmtDate(album.releaseDate)} → ${fmtDate(info.releaseDate)})`
+            : "data de lançamento",
+        );
       }
     }
     return { found, applied, link: info.pageUrl };
