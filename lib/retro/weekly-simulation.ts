@@ -78,28 +78,76 @@ const CURVE = {
   floorPower: 4,
 } as const;
 
+/**
+ * Jitter invisível no ranking (não entra no Score Final da curadoria).
+ * Sem isso, músicas com score parecido + mesma idade na curva se movem em
+ * bloco (ex.: 10 faixas subindo +24 na mesma semana). Determinístico por
+ * songId/semana → republicar dá o mesmo chart.
+ */
+const JITTER = {
+  /** Offset fixo por música (±) — desincroniza curvas idênticas. */
+  stickyAmp: 3.8,
+  /** Micro-variação semanal (±) — movimento orgânico sem flip-flop grande. */
+  weekAmp: 1.4,
+  /** Variação do pico (± semanas) e do decay (±) por música. */
+  peakWeekAmp: 1.5,
+  decayAmp: 0.025,
+} as const;
+
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 
-function peakWeekFor(scoreFinal: number): number {
-  const t = clamp01(scoreFinal / 100);
-  return Math.round(CURVE.minPeakWeek + t * (CURVE.maxPeakWeek - CURVE.minPeakWeek));
+/** Hash FNV-1a → [0, 1). Estável entre runs/processos. */
+function hash01(...parts: string[]): number {
+  let h = 2166136261;
+  const s = parts.join("\0");
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967296;
 }
 
-function decayFactorFor(scoreFinal: number): number {
+function unitToSigned(u: number): number {
+  return u * 2 - 1;
+}
+
+function stickyBias(songId: string): number {
+  return unitToSigned(hash01("sticky", songId)) * JITTER.stickyAmp;
+}
+
+function weekWobble(songId: string, weekIndex: number): number {
+  return unitToSigned(hash01("wobble", songId, String(weekIndex))) * JITTER.weekAmp;
+}
+
+function peakWeekFor(scoreFinal: number, songId?: string): number {
   const t = clamp01(scoreFinal / 100);
-  return CURVE.minDecay + t * (CURVE.maxDecay - CURVE.minDecay);
+  const base = CURVE.minPeakWeek + t * (CURVE.maxPeakWeek - CURVE.minPeakWeek);
+  const j = songId ? unitToSigned(hash01("peak", songId)) * JITTER.peakWeekAmp : 0;
+  return Math.round(Math.min(CURVE.maxPeakWeek + 1, Math.max(CURVE.minPeakWeek, base + j)));
+}
+
+function decayFactorFor(scoreFinal: number, songId?: string): number {
+  const t = clamp01(scoreFinal / 100);
+  const base = CURVE.minDecay + t * (CURVE.maxDecay - CURVE.minDecay);
+  const j = songId ? unitToSigned(hash01("decay", songId)) * JITTER.decayAmp : 0;
+  return Math.min(0.985, Math.max(0.75, base + j));
 }
 
 /** Poder da música na semana `weeksOnChart` (0 = semana de estreia). */
-export function powerAt(scoreFinal: number, weeksOnChart: number): number {
+export function powerAt(scoreFinal: number, weeksOnChart: number, songId?: string): number {
   if (weeksOnChart <= 0) return scoreFinal * CURVE.entryFactor;
-  const peakWeek = peakWeekFor(scoreFinal);
+  const peakWeek = peakWeekFor(scoreFinal, songId);
   if (weeksOnChart < peakWeek) {
     const t = weeksOnChart / peakWeek;
     return scoreFinal * (CURVE.entryFactor + t * (1 - CURVE.entryFactor));
   }
-  const decay = decayFactorFor(scoreFinal);
+  const decay = decayFactorFor(scoreFinal, songId);
   return scoreFinal * Math.pow(decay, weeksOnChart - peakWeek);
+}
+
+/** Poder usado só para ordenar o chart (curva + jitter invisível). */
+function rankPower(scoreFinal: number, weeksOnChart: number, songId: string, weekIndex: number): number {
+  return powerAt(scoreFinal, weeksOnChart, songId) + stickyBias(songId) + weekWobble(songId, weekIndex);
 }
 
 // ---------------------------------------------------------------------------
@@ -214,10 +262,15 @@ export function simulateWeeklyChart(args: SimulateWeeklyChartArgs): WeeklySnapsh
 
     // 3) Poder de todo mundo ainda "vivo" (acima do piso) — inclui quem está
     //    "borbulhando" fora do chart visível (ex.: subindo, ainda não entrou no
-    //    top N). Só sai de vez quando o poder cai abaixo do piso (sem reentrada).
+    //    top N). Só sai de vez quando o poder da curva (sem wobble semanal) cai
+    //    abaixo do piso. O ranking usa jitter para evitar blocos com o mesmo Δ.
     const alive = Array.from(tracked.values())
-      .map((t) => ({ t, power: powerAt(t.scoreFinal, t.weeksOnChart) }))
-      .filter((r) => r.power >= CURVE.floorPower)
+      .map((t) => {
+        const curve = powerAt(t.scoreFinal, t.weeksOnChart, t.songId);
+        const power = rankPower(t.scoreFinal, t.weeksOnChart, t.songId, wi);
+        return { t, curve, power };
+      })
+      .filter((r) => r.curve + stickyBias(r.t.songId) >= CURVE.floorPower)
       .sort((a, b) => b.power - a.power || b.t.scoreFinal - a.t.scoreFinal || a.t.songId.localeCompare(b.t.songId));
 
     const aliveIds = new Set(alive.map((r) => r.t.songId));
@@ -253,7 +306,8 @@ export function simulateWeeklyChart(args: SimulateWeeklyChartArgs): WeeklySnapsh
       t.peak = peak;
       t.prevPos = position;
 
-      return { songId: t.songId, position, power: r.power, status, delta, prevPos, peak, weeks };
+      // Expõe o poder da curva (sem jitter) — o jitter só decide a ordem.
+      return { songId: t.songId, position, power: r.curve, status, delta, prevPos, peak, weeks };
     });
 
     if (entries.length > 0) {

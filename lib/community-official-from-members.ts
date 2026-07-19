@@ -218,8 +218,8 @@ export async function publishCommunityOfficialWeekFromMembers(
 
   const entryPayload = ranked.map((row) => ({
     position: row.position,
-    songId: row.song.id,
-    songSpotifyId: row.song.spotifyId,
+    songId: row.song.id!,
+    songSpotifyId: row.song.spotifyId ?? null,
     albumSpotifyId: null as string | null,
     points: Math.max(0, Math.round(row.points)),
     status: row.status,

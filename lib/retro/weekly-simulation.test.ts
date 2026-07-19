@@ -119,4 +119,49 @@ describe("simulateWeeklyChart", () => {
     });
     expect(snapshots[0].entries.length).toBeLessThanOrEqual(10);
   });
+
+  it("jitter quebra bloco: scores iguais não ficam todos com o mesmo delta", () => {
+    const week1 = mondayOfIsoWeek1UTC(2005);
+    // 30 faixas idênticas + 5 hits que estreiam, empurram o bloco e depois saem
+    // (sem jitter, o bloco inteiro subiria o mesmo Δ quando os hits saíssem).
+    const debuts: WeeklyDebut[] = [
+      ...Array.from({ length: 30 }, (_, i) => ({
+        songId: `pack-${i}`,
+        debutDate: week1,
+        scoreFinal: 55,
+      })),
+      ...Array.from({ length: 5 }, (_, i) => ({
+        songId: `hit-${i}`,
+        debutDate: week1,
+        scoreFinal: 95,
+      })),
+    ];
+    const snapshots = simulateWeeklyChart({
+      debuts,
+      startYear: 2005,
+      endWeekIndexExclusive: 200520,
+      chartSize: 20,
+    });
+
+    // Semana em que há ups/downs entre as pack-* (depois da estreia)
+    let foundDiverse = false;
+    for (const snap of snapshots.slice(1)) {
+      const packDeltas = snap.entries
+        .filter((e) => e.songId.startsWith("pack-") && e.delta != null)
+        .map((e) => e.delta as number);
+      if (packDeltas.length < 4) continue;
+      const unique = new Set(packDeltas);
+      if (unique.size >= 2) {
+        foundDiverse = true;
+        break;
+      }
+    }
+    expect(foundDiverse).toBe(true);
+
+    // Ordem não é só lexicográfica de songId (jitter reordena)
+    const mid = snapshots[3] ?? snapshots[snapshots.length - 1];
+    const packOrder = mid.entries.filter((e) => e.songId.startsWith("pack-")).map((e) => e.songId);
+    const lex = [...packOrder].sort((a, b) => a.localeCompare(b));
+    expect(packOrder).not.toEqual(lex);
+  });
 });
