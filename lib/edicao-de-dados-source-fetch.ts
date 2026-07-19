@@ -45,9 +45,10 @@ import { lookupBugsAlbum, lookupBugsRelease } from "@/lib/bugs-lookup";
  * reportado (found), sem gravar no banco, para não sujar dados por colisão
  * de nome.
  *
- * Cada fonte sem resultado fica marcada em `sourcesNotFound` — a próxima
- * chamada pula essa fonte sem bater na API, a menos que `opts.force` seja
- * passado. Um resultado (mesmo sem nada a aplicar) limpa a marcação.
+ * Cada fonte que não aplica nada de novo (nada encontrado, ou encontrado mas
+ * já presente no banco) fica marcada em `sourcesNotFound` — a próxima chamada
+ * pula essa fonte sem bater na API, a menos que `opts.force` seja passado.
+ * Só um resultado que efetivamente grava algo novo limpa a marcação.
  */
 
 export type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
@@ -73,12 +74,12 @@ async function persistSourceOutcome(
   update: (sourcesNotFound: string[]) => Promise<unknown>,
   currentList: string[],
   source: Source,
-  found: boolean,
+  appliedSomething: boolean,
 ) {
   const has = currentList.includes(source);
-  if (found && has) {
+  if (appliedSomething && has) {
     await update(currentList.filter((s) => s !== source));
-  } else if (!found && !has) {
+  } else if (!appliedSomething && !has) {
     await update([...currentList, source]);
   }
 }
@@ -300,7 +301,7 @@ export async function fetchForSong(
       (sourcesNotFound) => prisma.song.update({ where: { id: song.id }, data: { sourcesNotFound } }),
       song.sourcesNotFound,
       source,
-      outcome.found.length > 0,
+      outcome.applied.length > 0,
     );
   }
   return outcome;
@@ -450,7 +451,7 @@ export async function fetchForAlbum(
       (sourcesNotFound) => prisma.album.update({ where: { id: album.id }, data: { sourcesNotFound } }),
       album.sourcesNotFound,
       source,
-      outcome.found.length > 0,
+      outcome.applied.length > 0,
     );
   }
   return outcome;
@@ -559,7 +560,7 @@ export async function fetchForArtist(
       (sourcesNotFound) => prisma.artist.update({ where: { id: artist.id }, data: { sourcesNotFound } }),
       artist.sourcesNotFound,
       source,
-      outcome.found.length > 0,
+      outcome.applied.length > 0,
     );
   }
   return outcome;
