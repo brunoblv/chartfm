@@ -52,7 +52,7 @@ export function Avatar({ user, imageUrl, size = 40, ring = false, className }: A
           sizes={`${size * 2}px`}
           style={{ objectFit: "cover" }}
           onError={() => setImgError(true)}
-          unoptimized={isLocalUpload}
+          unoptimized={!isLocalUpload}
         />
       </div>
     );

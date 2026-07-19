@@ -5,17 +5,14 @@ import type { Cover as CoverType, Song } from "@/lib/types";
 
 type SongRef = Pick<Song, "title" | "artist"> & Partial<Pick<Song, "imageUrl" | "album" | "spotifyId">>;
 
-// Hosts com allowlist em next.config.ts (`images.remotePatterns`). Qualquer outro host
-// externo cai em `unoptimized` para não quebrar com "hostname not configured".
-const OPTIMIZABLE_HOSTS = new Set(["lh3.googleusercontent.com", "i.scdn.co", "coverartarchive.org"]);
-
+// Capas remotas (Spotify, Google, Cover Art Archive) já vêm pré-otimizadas pelas
+// próprias CDNs. Deixamos `unoptimized` para essas: a otimização via /_next/image
+// exige que a própria VPS busque a imagem no upstream, e isso vinha travando
+// ("upstream image response timed out") por causa da conexão de saída da VPS,
+// deixando as capas quebradas em produção. Só uploads locais (`/...`) passam pelo
+// otimizador do Next, já que são servidos localmente.
 function isOptimizableImageHost(url: string): boolean {
-  if (url.startsWith("/")) return true;
-  try {
-    return OPTIMIZABLE_HOSTS.has(new URL(url).hostname);
-  } catch {
-    return false;
-  }
+  return url.startsWith("/");
 }
 
 interface CoverProps {
