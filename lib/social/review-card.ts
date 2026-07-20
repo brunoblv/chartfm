@@ -204,7 +204,7 @@ export async function renderReviewCard(input: ReviewCardInput, variant: ReviewCa
   const vh = H / 1920;
 
   try {
-    const bgBuffer = await fs.readFile(path.join(process.cwd(), bg));
+    const bgBuffer = await fs.readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), bg));
     const canvas = createCanvas(W, H);
     const ctx = canvas.getContext("2d");
 
