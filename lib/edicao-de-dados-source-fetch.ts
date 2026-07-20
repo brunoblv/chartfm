@@ -8,6 +8,7 @@ import {
   spotifyConfigured,
 } from "@/lib/spotify-server";
 import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
+import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
 import {
   findRecordingMbidBySpotifyTrackId,
   getCoverArtArchiveUrl,
@@ -36,6 +37,7 @@ import {
   searchDeezerAlbum,
   searchDeezerArtist,
   searchDeezerTrack,
+  type DeezerAlbumDetail,
 } from "@/lib/deezer";
 
 /**
@@ -240,6 +242,56 @@ async function persistSourceOutcome(
   }
 }
 
+/**
+ * Aplica os campos vazios de um álbum local a partir do detalhe Deezer
+ * (capa, data, tipo, faixas, selo) — mesma lógica usada tanto ao rodar Deezer
+ * direto no registro do álbum quanto ao rodar Deezer numa música já ligada a
+ * um álbum local (espelha o que o Spotify faz: música e álbum são
+ * enriquecidos juntos, ver applySpotifyMetadataToSong).
+ */
+async function applyDeezerAlbumDetail(
+  album: {
+    id: number;
+    coverUrl: string | null;
+    releaseDate: Date | null;
+    albumType: string | null;
+    totalTracks: number | null;
+    label: string | null;
+  },
+  detail: DeezerAlbumDetail,
+): Promise<{ found: string[]; applied: string[] }> {
+  const found: string[] = [`álbum "${detail.title}" no Deezer`];
+  const applied: string[] = [];
+  const data: Record<string, unknown> = {};
+
+  if (!album.coverUrl?.trim() && detail.coverUrl) {
+    data.coverUrl = detail.coverUrl;
+    applied.push("capa");
+  }
+  if (!album.releaseDate && detail.releaseDate) {
+    data.releaseDate = detail.releaseDate;
+    applied.push(`data (${fmtDate(detail.releaseDate)})`);
+  }
+  if (!album.albumType) {
+    const mapped = deezerRecordTypeToAlbumType(detail.recordType);
+    if (mapped) {
+      data.albumType = mapped;
+      applied.push("tipo");
+    }
+  }
+  if (album.totalTracks == null && detail.totalTracks != null) {
+    data.totalTracks = detail.totalTracks;
+    applied.push("faixas");
+  }
+  if (!album.label?.trim() && detail.label) {
+    data.label = detail.label;
+    applied.push("selo");
+  }
+  if (detail.releaseDate) found.push(`data: ${fmtDate(detail.releaseDate)}`);
+  if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
+  return { found, applied };
+}
+
 // ---------------------------------------------------------------------------
 // Músicas
 // ---------------------------------------------------------------------------
@@ -257,6 +309,7 @@ export async function fetchForSong(
       artist: true,
       album: true,
       spotifyId: true,
+      albumSpotifyId: true,
       recordingMbid: true,
       isrc: true,
       genres: true,
@@ -274,29 +327,31 @@ export async function fetchForSong(
   const outcome = await (async (): Promise<FetchResult | { error: string }> => {
     if (source === "spotify") {
       if (!spotifyConfigured()) return { error: "spotify_nao_configurado" };
-      let spotifyId = song.spotifyId;
-      if (!spotifyId) {
-        // Só aceita faixa em álbum/single do próprio artista (nunca coletânea)
-        // e valida título+artista; tenta variantes de query e mercados BR→US.
-        const hit = await findSpotifyTrackForSong(song.title, song.artist, { maxAttempts: 1 });
-        spotifyId = hit?.spotifyId ?? null;
-      }
-      if (!spotifyId) return nothing;
-      const meta = await getSpotifyTrackMetadataById(spotifyId, "BR", { maxAttempts: 1 });
-      if (!meta) return nothing;
-      const result = await applySpotifyMetadataToSong(song.id, meta, false);
-      if (result.ok) {
+      return runWithSpotifyBackfillPool(async () => {
+        let spotifyId = song.spotifyId;
+        if (!spotifyId) {
+          // Só aceita faixa em álbum/single do próprio artista (nunca coletânea)
+          // e valida título+artista; tenta variantes de query e mercados BR→US.
+          const hit = await findSpotifyTrackForSong(song.title, song.artist, { maxAttempts: 1 });
+          spotifyId = hit?.spotifyId ?? null;
+        }
+        if (!spotifyId) return nothing;
+        const meta = await getSpotifyTrackMetadataById(spotifyId, "BR", { maxAttempts: 1 });
+        if (!meta) return nothing;
+        const result = await applySpotifyMetadataToSong(song.id, meta, false);
+        if (result.ok) {
+          return {
+            found: [`faixa "${meta.title}" no Spotify`],
+            applied: ["metadados do Spotify (álbum, capa, duração, links)"],
+          };
+        }
+        const conflict = await buildSongSourceConflict(song.id, result.reason);
         return {
           found: [`faixa "${meta.title}" no Spotify`],
-          applied: ["metadados do Spotify (álbum, capa, duração, links)"],
+          applied: conflict ? [] : [`não aplicado: ${result.reason}`],
+          conflict: conflict ?? undefined,
         };
-      }
-      const conflict = await buildSongSourceConflict(song.id, result.reason);
-      return {
-        found: [`faixa "${meta.title}" no Spotify`],
-        applied: conflict ? [] : [`não aplicado: ${result.reason}`],
-        conflict: conflict ?? undefined,
-      };
+      });
     }
 
     if (source === "musicbrainz") {
@@ -401,14 +456,17 @@ export async function fetchForSong(
           applied.push("data do single");
         }
       }
-      if (song.genres.length === 0 && track.albumId) {
-        const albumDetail = await getDeezerAlbumById(track.albumId);
-        if (albumDetail?.genres.length) {
-          found.push(`gêneros: ${albumDetail.genres.slice(0, 5).join(", ")}`);
-          data.genres = albumDetail.genres;
-          data.genreSource = "deezer";
-          applied.push("gêneros");
-        }
+
+      // Busca o detalhe do álbum no Deezer uma vez só — usado tanto pros
+      // gêneros da música quanto pra enriquecer o álbum local vinculado
+      // (capa/data/tipo/faixas/selo), espelhando o que o Spotify faz.
+      const albumDetail = track.albumId ? await getDeezerAlbumById(track.albumId) : null;
+
+      if (song.genres.length === 0 && albumDetail?.genres.length) {
+        found.push(`gêneros: ${albumDetail.genres.slice(0, 5).join(", ")}`);
+        data.genres = albumDetail.genres;
+        data.genreSource = "deezer";
+        applied.push("gêneros");
       }
 
       if (Object.keys(data).length > 0) {
@@ -417,6 +475,21 @@ export async function fetchForSong(
           data: songDataWithOptionalDatesNotFoundClear(data),
         });
       }
+
+      if (song.albumSpotifyId && albumDetail) {
+        const localAlbum = await prisma.album.findUnique({
+          where: { spotifyId: song.albumSpotifyId },
+          select: { id: true, coverUrl: true, releaseDate: true, albumType: true, totalTracks: true, label: true },
+        });
+        if (localAlbum) {
+          const albumResult = await applyDeezerAlbumDetail(localAlbum, albumDetail);
+          if (albumResult.applied.length > 0) {
+            found.push(...albumResult.found.map((f) => `[álbum] ${f}`));
+            applied.push(...albumResult.applied.map((a) => `álbum: ${a}`));
+          }
+        }
+      }
+
       return { found, applied, link: track.link ?? undefined };
     }
 
@@ -552,34 +625,36 @@ export async function fetchForAlbum(
   const outcome = await (async (): Promise<FetchResult | { error: string }> => {
     if (source === "spotify") {
       if (!spotifyConfigured()) return { error: "spotify_nao_configurado" };
-      const meta = await getSpotifyAlbumMetadataById(album.spotifyId, "MX", { maxAttempts: 1 });
-      if (!meta) return nothing;
-      const found: string[] = [`álbum no Spotify`];
-      const applied: string[] = [];
-      const data: Record<string, unknown> = {};
-      if (!album.coverUrl?.trim() && meta.coverUrl) {
-        data.coverUrl = meta.coverUrl;
-        applied.push("capa");
-      }
-      if (!album.releaseDate && meta.releaseDate) {
-        data.releaseDate = meta.releaseDate;
-        applied.push(`data (${fmtDate(meta.releaseDate)})`);
-      }
-      if (!album.albumType && meta.albumType) {
-        data.albumType = meta.albumType;
-        applied.push("tipo");
-      }
-      if (album.totalTracks == null && meta.totalTracks != null) {
-        data.totalTracks = meta.totalTracks;
-        applied.push("faixas");
-      }
-      if (!album.spotifyUrl && meta.spotifyUrl) {
-        data.spotifyUrl = meta.spotifyUrl;
-        applied.push("link");
-      }
-      if (meta.releaseDate) found.push(`data: ${fmtDate(meta.releaseDate)}`);
-      if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
-      return { found, applied };
+      return runWithSpotifyBackfillPool(async () => {
+        const meta = await getSpotifyAlbumMetadataById(album.spotifyId, "MX", { maxAttempts: 1 });
+        if (!meta) return nothing;
+        const found: string[] = [`álbum no Spotify`];
+        const applied: string[] = [];
+        const data: Record<string, unknown> = {};
+        if (!album.coverUrl?.trim() && meta.coverUrl) {
+          data.coverUrl = meta.coverUrl;
+          applied.push("capa");
+        }
+        if (!album.releaseDate && meta.releaseDate) {
+          data.releaseDate = meta.releaseDate;
+          applied.push(`data (${fmtDate(meta.releaseDate)})`);
+        }
+        if (!album.albumType && meta.albumType) {
+          data.albumType = meta.albumType;
+          applied.push("tipo");
+        }
+        if (album.totalTracks == null && meta.totalTracks != null) {
+          data.totalTracks = meta.totalTracks;
+          applied.push("faixas");
+        }
+        if (!album.spotifyUrl && meta.spotifyUrl) {
+          data.spotifyUrl = meta.spotifyUrl;
+          applied.push("link");
+        }
+        if (meta.releaseDate) found.push(`data: ${fmtDate(meta.releaseDate)}`);
+        if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
+        return { found, applied };
+      });
     }
 
     if (source === "musicbrainz") {
@@ -617,35 +692,7 @@ export async function fetchForAlbum(
     if (source === "deezer") {
       const result = await searchDeezerAlbum(album.title, album.artist.name);
       if (!result) return nothing;
-      const found: string[] = [`álbum "${result.title}" no Deezer`];
-      const applied: string[] = [];
-      const data: Record<string, unknown> = {};
-
-      if (!album.coverUrl?.trim() && result.coverUrl) {
-        data.coverUrl = result.coverUrl;
-        applied.push("capa");
-      }
-      if (!album.releaseDate && result.releaseDate) {
-        data.releaseDate = result.releaseDate;
-        applied.push(`data (${fmtDate(result.releaseDate)})`);
-      }
-      if (!album.albumType) {
-        const mapped = deezerRecordTypeToAlbumType(result.recordType);
-        if (mapped) {
-          data.albumType = mapped;
-          applied.push("tipo");
-        }
-      }
-      if (album.totalTracks == null && result.totalTracks != null) {
-        data.totalTracks = result.totalTracks;
-        applied.push("faixas");
-      }
-      if (!album.label?.trim() && result.label) {
-        data.label = result.label;
-        applied.push("selo");
-      }
-      if (result.releaseDate) found.push(`data: ${fmtDate(result.releaseDate)}`);
-      if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
+      const { found, applied } = await applyDeezerAlbumDetail(album, result);
       return { found, applied, link: result.link ?? undefined };
     }
 
@@ -742,26 +789,28 @@ export async function fetchForArtist(
   const outcome = await (async (): Promise<FetchResult | { error: string }> => {
     if (source === "spotify") {
       if (!spotifyConfigured()) return { error: "spotify_nao_configurado" };
-      const profile = await getSpotifyArtistById(artist.spotifyId, { maxAttempts: 1 });
-      if (!profile) return nothing;
-      const found: string[] = [`perfil "${profile.name}" no Spotify`];
-      const applied: string[] = [];
-      const data: Record<string, unknown> = {};
-      if (!artist.imageUrl?.trim() && profile.imageUrl) {
-        data.imageUrl = profile.imageUrl;
-        applied.push("imagem");
-      }
-      if (artist.genres.length === 0 && profile.genres.length > 0) {
-        data.genres = profile.genres;
-        applied.push("gêneros");
-      }
-      if (!artist.spotifyUrl && profile.spotifyUrl) {
-        data.spotifyUrl = profile.spotifyUrl;
-        applied.push("link");
-      }
-      if (profile.genres.length) found.push(`gêneros: ${profile.genres.slice(0, 5).join(", ")}`);
-      if (Object.keys(data).length > 0) await prisma.artist.update({ where: { id: artist.id }, data });
-      return { found, applied };
+      return runWithSpotifyBackfillPool(async () => {
+        const profile = await getSpotifyArtistById(artist.spotifyId, { maxAttempts: 1 });
+        if (!profile) return nothing;
+        const found: string[] = [`perfil "${profile.name}" no Spotify`];
+        const applied: string[] = [];
+        const data: Record<string, unknown> = {};
+        if (!artist.imageUrl?.trim() && profile.imageUrl) {
+          data.imageUrl = profile.imageUrl;
+          applied.push("imagem");
+        }
+        if (artist.genres.length === 0 && profile.genres.length > 0) {
+          data.genres = profile.genres;
+          applied.push("gêneros");
+        }
+        if (!artist.spotifyUrl && profile.spotifyUrl) {
+          data.spotifyUrl = profile.spotifyUrl;
+          applied.push("link");
+        }
+        if (profile.genres.length) found.push(`gêneros: ${profile.genres.slice(0, 5).join(", ")}`);
+        if (Object.keys(data).length > 0) await prisma.artist.update({ where: { id: artist.id }, data });
+        return { found, applied };
+      });
     }
 
     if (source === "lastfm") {

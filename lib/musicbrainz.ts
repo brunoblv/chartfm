@@ -464,7 +464,9 @@ export async function getCoverArtArchiveUrl(
   const images = data?.images ?? [];
   const front = images.find((img) => img.front) ?? images[0];
   if (!front) return null;
-  return front.thumbnails?.["500"] ?? front.image ?? null;
+  const url = front.thumbnails?.["500"] ?? front.image ?? null;
+  // A API do Cover Art Archive devolve URLs http:// — força https pra não violar CSP img-src.
+  return url?.replace(/^http:\/\//, "https://") ?? null;
 }
 
 /** Tags/gêneros de um artista via busca por nome. */
