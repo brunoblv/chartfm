@@ -32,6 +32,7 @@ import {
   enrichSongsWithSpotifyMetadataByIds,
   findSongsMissingCovers,
 } from "../lib/resolve-publish-songs";
+import { runWithSpotifyBackfillPool } from "../lib/spotify-user-charts-pool";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const SEARCH_FALLBACK = process.argv.includes("--search");
@@ -46,6 +47,10 @@ function sleep(ms: number) {
 }
 
 async function main() {
+  return runWithSpotifyBackfillPool(() => run());
+}
+
+async function run() {
   const allCandidates = await findSongsMissingCovers(prisma, LIMIT);
   const withValidSpotifyId = allCandidates.filter((r) => r.spotifyId && isSpotifyTrackId(r.spotifyId));
   const invalidIds = allCandidates.filter((r) => r.spotifyId && !isSpotifyTrackId(r.spotifyId));
