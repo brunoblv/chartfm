@@ -123,7 +123,15 @@ export async function POST(req: NextRequest) {
 
   const source = body.source;
   const runAll = source === "all";
-  if (!runAll && source !== "lastfm" && source !== "spotify" && source !== "musicbrainz" && source !== "wikipedia" && source !== "bugs") {
+  if (
+    !runAll &&
+    source !== "lastfm" &&
+    source !== "spotify" &&
+    source !== "musicbrainz" &&
+    source !== "wikipedia" &&
+    source !== "bugs" &&
+    source !== "deezer"
+  ) {
     return NextResponse.json({ ok: false, error: "invalid_source" }, { status: 400 });
   }
 

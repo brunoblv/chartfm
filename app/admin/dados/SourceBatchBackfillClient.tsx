@@ -6,13 +6,14 @@ import Link from "next/link";
 import { Layers, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
 
 type Kind = "music" | "albums" | "artists";
-type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs" | "all";
+type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs" | "deezer" | "all";
 
 const SOURCES: { key: Source; label: string; title: string; kinds: Kind[] }[] = [
-  { key: "all", label: "Todas as APIs", title: "Roda Spotify, MusicBrainz, Last.fm e Wikipedia, nessa ordem, para cada item (Bugs fica de fora — só cobre bem música asiática, use o filtro dedicado)", kinds: ["music", "albums", "artists"] },
+  { key: "all", label: "Todas as APIs", title: "Roda Spotify, MusicBrainz, Last.fm, Wikipedia e Deezer, nessa ordem, para cada item (Bugs fica de fora — só cobre bem música asiática, use o filtro dedicado)", kinds: ["music", "albums", "artists"] },
   { key: "spotify", label: "Spotify", title: "Só Spotify", kinds: ["music", "albums", "artists"] },
   { key: "musicbrainz", label: "MusicBrainz", title: "Só MusicBrainz", kinds: ["music", "albums", "artists"] },
   { key: "lastfm", label: "Last.fm", title: "Só Last.fm", kinds: ["music", "albums", "artists"] },
+  { key: "deezer", label: "Deezer", title: "Só Deezer — capa, data de lançamento, tipo, faixas, selo, imagem de artista; match por ISRC quando disponível", kinds: ["music", "albums", "artists"] },
   { key: "wikipedia", label: "Wikipedia", title: "Só Wikipedia", kinds: ["music", "albums", "artists"] },
   { key: "bugs", label: "Bugs", title: "Só Bugs (music.bugs.co.kr) — capa, data de single, data de álbum e data de clipe; boa cobertura de kpop", kinds: ["music", "albums"] },
 ];

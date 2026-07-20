@@ -5,6 +5,7 @@ import {
   getSpotifyAlbumMetadataById,
   getSpotifyArtistById,
   getSpotifyTrackMetadataById,
+  probeSpotifyApi,
   spotifyConfigured,
 } from "@/lib/spotify-server";
 import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
@@ -29,6 +30,14 @@ import {
   getWikipediaSongInfo,
 } from "@/lib/wikipedia";
 import { lookupBugsAlbum, lookupBugsRelease } from "@/lib/bugs-lookup";
+import {
+  deezerRecordTypeToAlbumType,
+  getDeezerAlbumById,
+  getDeezerTrackByIsrc,
+  searchDeezerAlbum,
+  searchDeezerArtist,
+  searchDeezerTrack,
+} from "@/lib/deezer";
 
 /**
  * Fonte por registro: consulta UMA fonte (Last.fm, Spotify, MusicBrainz,
@@ -51,9 +60,9 @@ import { lookupBugsAlbum, lookupBugsRelease } from "@/lib/bugs-lookup";
  * Só um resultado que efetivamente grava algo novo limpa a marcação.
  */
 
-export type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
+export type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs" | "deezer";
 /** "Todas as APIs" não inclui Bugs — cobertura só é boa para música asiática (kpop/jpop/cpop/tpop); rodar via fonte dedicada no filtro "Música asiática". */
-export const ALL_SOURCES: Source[] = ["spotify", "musicbrainz", "lastfm", "wikipedia"];
+export const ALL_SOURCES: Source[] = ["spotify", "musicbrainz", "lastfm", "wikipedia", "deezer"];
 
 function fmtDate(d: Date): string {
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
@@ -89,6 +98,29 @@ export type FetchResult = {
 };
 
 const nothing: FetchResult = { found: [], applied: [] };
+const deezerBlockedBySpotify: FetchResult = {
+  found: ["Spotify ainda não tentado (ou disponível) — rode Spotify antes do Deezer"],
+  applied: [],
+  // não persiste em sourcesNotFound: é um bloqueio temporário, não um "sem resultado" do Deezer.
+  skipped: true,
+};
+
+/**
+ * Deezer é fallback do Spotify, nunca corre por cima: só é consultado quando
+ * o Spotify já foi tentado sem resultado (`sourcesNotFound` inclui
+ * "spotify"), está indisponível (não configurado) ou está em rate limit
+ * (429) no momento. Evita que o Deezer preencha um campo antes do Spotify
+ * ter a chance — como nenhuma fonte sobrescreve campo já preenchido, quem
+ * chega primeiro "trava" o valor.
+ */
+async function spotifyBlocksDeezer(sourcesNotFound: string[], force: boolean | undefined): Promise<boolean> {
+  if (force) return false; // FORÇAR ignora a prioridade do Spotify também
+  if (!spotifyConfigured()) return false;
+  if (sourcesNotFound.includes("spotify")) return false;
+  const probe = await probeSpotifyApi();
+  if (!probe.ok) return false; // 429, credencial ou rede — trata como indisponível, não bloqueia
+  return true;
+}
 
 async function loadSongConflictEntity(id: string): Promise<SourceConflictEntity | null> {
   const song = await prisma.song.findUnique({
@@ -250,6 +282,7 @@ export async function fetchForSong(
       album: true,
       spotifyId: true,
       recordingMbid: true,
+      isrc: true,
       genres: true,
       singleReleaseDate: true,
       musicVideoReleaseDate: true,
@@ -369,6 +402,50 @@ export async function fetchForSong(
       return { found, applied };
     }
 
+    if (source === "deezer") {
+      if (await spotifyBlocksDeezer(song.sourcesNotFound, opts?.force)) return deezerBlockedBySpotify;
+
+      // ISRC é o match mais confiável (sem ambiguidade de nome); título+artista é o fallback.
+      const track = song.isrc
+        ? await getDeezerTrackByIsrc(song.isrc)
+        : await searchDeezerTrack(song.title, song.artist);
+      if (!track) return nothing;
+
+      const found: string[] = [`faixa "${track.title}" no Deezer`];
+      const applied: string[] = [];
+      const data: Record<string, unknown> = {};
+
+      if (!song.album?.trim() && track.albumTitle) {
+        found.push(`álbum: ${track.albumTitle}`);
+        data.album = track.albumTitle;
+        applied.push("álbum");
+      }
+      if (track.releaseDate) {
+        found.push(`lançamento: ${fmtDate(track.releaseDate)}`);
+        if (!song.singleReleaseDate) {
+          data.singleReleaseDate = track.releaseDate;
+          applied.push("data do single");
+        }
+      }
+      if (song.genres.length === 0 && track.albumId) {
+        const albumDetail = await getDeezerAlbumById(track.albumId);
+        if (albumDetail?.genres.length) {
+          found.push(`gêneros: ${albumDetail.genres.slice(0, 5).join(", ")}`);
+          data.genres = albumDetail.genres;
+          data.genreSource = "deezer";
+          applied.push("gêneros");
+        }
+      }
+
+      if (Object.keys(data).length > 0) {
+        await prisma.song.update({
+          where: { id: song.id },
+          data: songDataWithOptionalDatesNotFoundClear(data),
+        });
+      }
+      return { found, applied, link: track.link ?? undefined };
+    }
+
     if (source === "bugs") {
       const result = await lookupBugsRelease(song.title, song.artist);
       if (!result.matches.length) return nothing;
@@ -452,7 +529,7 @@ export async function fetchForSong(
     return { found, applied, link: info.pageUrl };
   })();
 
-  if (!("error" in outcome)) {
+  if (!("error" in outcome) && !outcome.skipped) {
     // Conflito não gravou nada — não limpa sourcesNotFound; "não aplicado:" também não conta.
     const appliedSomething =
       !outcome.conflict &&
@@ -487,6 +564,7 @@ export async function fetchForAlbum(
       albumType: true,
       totalTracks: true,
       spotifyUrl: true,
+      label: true,
       sourcesNotFound: true,
       artist: { select: { name: true } },
     },
@@ -562,6 +640,43 @@ export async function fetchForAlbum(
       return { found: [`tags: ${tags.slice(0, 6).join(", ")}`], applied: [] };
     }
 
+    if (source === "deezer") {
+      if (await spotifyBlocksDeezer(album.sourcesNotFound, opts?.force)) return deezerBlockedBySpotify;
+
+      const result = await searchDeezerAlbum(album.title, album.artist.name);
+      if (!result) return nothing;
+      const found: string[] = [`álbum "${result.title}" no Deezer`];
+      const applied: string[] = [];
+      const data: Record<string, unknown> = {};
+
+      if (!album.coverUrl?.trim() && result.coverUrl) {
+        data.coverUrl = result.coverUrl;
+        applied.push("capa");
+      }
+      if (!album.releaseDate && result.releaseDate) {
+        data.releaseDate = result.releaseDate;
+        applied.push(`data (${fmtDate(result.releaseDate)})`);
+      }
+      if (!album.albumType) {
+        const mapped = deezerRecordTypeToAlbumType(result.recordType);
+        if (mapped) {
+          data.albumType = mapped;
+          applied.push("tipo");
+        }
+      }
+      if (album.totalTracks == null && result.totalTracks != null) {
+        data.totalTracks = result.totalTracks;
+        applied.push("faixas");
+      }
+      if (!album.label?.trim() && result.label) {
+        data.label = result.label;
+        applied.push("selo");
+      }
+      if (result.releaseDate) found.push(`data: ${fmtDate(result.releaseDate)}`);
+      if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
+      return { found, applied, link: result.link ?? undefined };
+    }
+
     if (source === "bugs") {
       const result = await lookupBugsAlbum(album.title, album.artist.name);
       if (!result.match) return nothing;
@@ -613,7 +728,7 @@ export async function fetchForAlbum(
     return { found, applied, link: info.pageUrl };
   })();
 
-  if (!("error" in outcome)) {
+  if (!("error" in outcome) && !outcome.skipped) {
     await persistSourceOutcome(
       (sourcesNotFound) => prisma.album.update({ where: { id: album.id }, data: { sourcesNotFound } }),
       album.sourcesNotFound,
@@ -704,6 +819,22 @@ export async function fetchForArtist(
       return { found, applied, link: `https://musicbrainz.org/artist/${result.mbid}` };
     }
 
+    if (source === "deezer") {
+      if (await spotifyBlocksDeezer(artist.sourcesNotFound, opts?.force)) return deezerBlockedBySpotify;
+
+      const result = await searchDeezerArtist(artist.name);
+      if (!result) return nothing;
+      const found = [`perfil "${result.name}" no Deezer`];
+      const applied: string[] = [];
+      const data: Record<string, unknown> = {};
+      if (!artist.imageUrl?.trim() && result.imageUrl) {
+        data.imageUrl = result.imageUrl;
+        applied.push("imagem");
+      }
+      if (Object.keys(data).length > 0) await prisma.artist.update({ where: { id: artist.id }, data });
+      return { found, applied, link: result.link ?? undefined };
+    }
+
     if (source === "bugs") {
       // Bugs não tem bio/gêneros de artista úteis aqui — só capa/datas de
       // faixa e álbum (ver fetchForSong/fetchForAlbum).
@@ -722,7 +853,7 @@ export async function fetchForArtist(
     return { found, applied, link: info.pageUrl };
   })();
 
-  if (!("error" in outcome)) {
+  if (!("error" in outcome) && !outcome.skipped) {
     await persistSourceOutcome(
       (sourcesNotFound) => prisma.artist.update({ where: { id: artist.id }, data: { sourcesNotFound } }),
       artist.sourcesNotFound,

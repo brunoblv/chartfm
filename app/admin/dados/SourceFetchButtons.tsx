@@ -8,12 +8,13 @@ import type { SourceConflict } from "@/lib/edicao-de-dados-source-fetch";
 import { SourceConflictMergeModal } from "./SourceConflictMergeModal";
 
 type Kind = "music" | "albums" | "artists";
-type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs";
+type Source = "lastfm" | "spotify" | "musicbrainz" | "wikipedia" | "bugs" | "deezer";
 
 const SOURCES: { key: Source; label: string; title: string; kinds: Kind[] }[] = [
   { key: "lastfm", label: "LFM", title: "Buscar no Last.fm (tags/gêneros)", kinds: ["music", "albums", "artists"] },
   { key: "spotify", label: "SPT", title: "Buscar no Spotify (metadados, capa, links)", kinds: ["music", "albums", "artists"] },
   { key: "musicbrainz", label: "MB", title: "Buscar no MusicBrainz (MBID, datas de single/clipe, tags)", kinds: ["music", "albums", "artists"] },
+  { key: "deezer", label: "DZR", title: "Buscar no Deezer (capa, data de lançamento, tipo, faixas, selo, imagem de artista) — match por ISRC quando disponível", kinds: ["music", "albums", "artists"] },
   { key: "wikipedia", label: "WIKI", title: "Buscar na Wikipedia (datas de lançamento, bio) — datas divergentes são corrigidas: vale a da Wikipedia", kinds: ["music", "albums", "artists"] },
   { key: "bugs", label: "BUGS", title: "Buscar no Bugs (music.bugs.co.kr) — capa, data de single, data de álbum e data de clipe; boa cobertura de kpop", kinds: ["music", "albums"] },
 ];

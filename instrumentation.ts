@@ -22,13 +22,12 @@ function extractLogId(request: unknown): string | null {
 }
 
 export async function register() {
-  // Hosts com AAAA (ex.: musicbrainz.org) fazem o fetch nativo tentar IPv6
-  // primeiro; em redes com IPv6 mal configurado (comum em fibra residencial no
-  // Brasil) a conexão trava e o fetch quebra com "fetch failed", sem fallback
-  // pro IPv4. Força IPv4 primeiro pra evitar isso.
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const dns = await import("node:dns");
-    dns.setDefaultResultOrder("ipv4first");
+    // Hosts com AAAA (ex.: musicbrainz.org) fazem o fetch nativo tentar IPv6
+    // primeiro; em redes com IPv6 mal configurado (comum em fibra residencial
+    // no Brasil) a conexão trava e o fetch quebra com "fetch failed". Força
+    // IPv4 via dispatcher global do undici.
+    await import("@/lib/force-ipv4-fetch");
     // Liga o resolvedor de "quem pediu" para o log do Spotify (headers do middleware).
     await import("@/lib/api-call-context");
   }

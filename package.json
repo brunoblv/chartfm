@@ -45,7 +45,8 @@
     "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "undici": "^6.27.0"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
