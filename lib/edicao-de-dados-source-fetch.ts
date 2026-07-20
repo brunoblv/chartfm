@@ -5,7 +5,6 @@ import {
   getSpotifyAlbumMetadataById,
   getSpotifyArtistById,
   getSpotifyTrackMetadataById,
-  probeSpotifyApi,
   spotifyConfigured,
 } from "@/lib/spotify-server";
 import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
@@ -98,29 +97,6 @@ export type FetchResult = {
 };
 
 const nothing: FetchResult = { found: [], applied: [] };
-const deezerBlockedBySpotify: FetchResult = {
-  found: ["Spotify ainda não tentado (ou disponível) — rode Spotify antes do Deezer"],
-  applied: [],
-  // não persiste em sourcesNotFound: é um bloqueio temporário, não um "sem resultado" do Deezer.
-  skipped: true,
-};
-
-/**
- * Deezer é fallback do Spotify, nunca corre por cima: só é consultado quando
- * o Spotify já foi tentado sem resultado (`sourcesNotFound` inclui
- * "spotify"), está indisponível (não configurado) ou está em rate limit
- * (429) no momento. Evita que o Deezer preencha um campo antes do Spotify
- * ter a chance — como nenhuma fonte sobrescreve campo já preenchido, quem
- * chega primeiro "trava" o valor.
- */
-async function spotifyBlocksDeezer(sourcesNotFound: string[], force: boolean | undefined): Promise<boolean> {
-  if (force) return false; // FORÇAR ignora a prioridade do Spotify também
-  if (!spotifyConfigured()) return false;
-  if (sourcesNotFound.includes("spotify")) return false;
-  const probe = await probeSpotifyApi();
-  if (!probe.ok) return false; // 429, credencial ou rede — trata como indisponível, não bloqueia
-  return true;
-}
 
 async function loadSongConflictEntity(id: string): Promise<SourceConflictEntity | null> {
   const song = await prisma.song.findUnique({
@@ -403,8 +379,6 @@ export async function fetchForSong(
     }
 
     if (source === "deezer") {
-      if (await spotifyBlocksDeezer(song.sourcesNotFound, opts?.force)) return deezerBlockedBySpotify;
-
       // ISRC é o match mais confiável (sem ambiguidade de nome); título+artista é o fallback.
       const track = song.isrc
         ? await getDeezerTrackByIsrc(song.isrc)
@@ -529,7 +503,7 @@ export async function fetchForSong(
     return { found, applied, link: info.pageUrl };
   })();
 
-  if (!("error" in outcome) && !outcome.skipped) {
+  if (!("error" in outcome)) {
     // Conflito não gravou nada — não limpa sourcesNotFound; "não aplicado:" também não conta.
     const appliedSomething =
       !outcome.conflict &&
@@ -641,8 +615,6 @@ export async function fetchForAlbum(
     }
 
     if (source === "deezer") {
-      if (await spotifyBlocksDeezer(album.sourcesNotFound, opts?.force)) return deezerBlockedBySpotify;
-
       const result = await searchDeezerAlbum(album.title, album.artist.name);
       if (!result) return nothing;
       const found: string[] = [`álbum "${result.title}" no Deezer`];
@@ -728,7 +700,7 @@ export async function fetchForAlbum(
     return { found, applied, link: info.pageUrl };
   })();
 
-  if (!("error" in outcome) && !outcome.skipped) {
+  if (!("error" in outcome)) {
     await persistSourceOutcome(
       (sourcesNotFound) => prisma.album.update({ where: { id: album.id }, data: { sourcesNotFound } }),
       album.sourcesNotFound,
@@ -820,8 +792,6 @@ export async function fetchForArtist(
     }
 
     if (source === "deezer") {
-      if (await spotifyBlocksDeezer(artist.sourcesNotFound, opts?.force)) return deezerBlockedBySpotify;
-
       const result = await searchDeezerArtist(artist.name);
       if (!result) return nothing;
       const found = [`perfil "${result.name}" no Deezer`];
@@ -853,7 +823,7 @@ export async function fetchForArtist(
     return { found, applied, link: info.pageUrl };
   })();
 
-  if (!("error" in outcome) && !outcome.skipped) {
+  if (!("error" in outcome)) {
     await persistSourceOutcome(
       (sourcesNotFound) => prisma.artist.update({ where: { id: artist.id }, data: { sourcesNotFound } }),
       artist.sourcesNotFound,
