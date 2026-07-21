@@ -1,10 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Play, Music2 } from "lucide-react";
 import {
   EDITORIAL_CATEGORY_LABELS,
   type EditorialPick,
 } from "@/lib/editorial-picks-data";
-import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type Props = {
   pick: EditorialPick;
@@ -35,8 +37,8 @@ export function estimateReadingMinutes(pick: EditorialPick): number {
   return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
 }
 
-export async function EditorialPostPreviewCard({ pick, previewImage, variant = "full", stacked = false }: Props) {
-  const { t, locale } = await getServerTranslations();
+export function EditorialPostPreviewCard({ pick, previewImage, variant = "full", stacked = false }: Props) {
+  const { t, locale } = useTranslations();
   const hasYoutube = Boolean(pick.youtubeUrl);
   const hasSpotify = Boolean(pick.spotifyUrl);
 
