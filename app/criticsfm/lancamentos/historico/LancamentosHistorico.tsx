@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { WeeklyReleaseData, WeeklyReleaseAlbumInfo } from "@/lib/weekly-releases";
+import { useTranslations } from "@/hooks/useTranslations";
 
 function albumHue(title: string): number {
   return Math.abs(title.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
@@ -21,10 +22,11 @@ function MiniCover({ title, coverUrl }: { title: string; coverUrl?: string | nul
 }
 
 function WeekRow({ release }: { release: WeeklyReleaseData }) {
+  const { t } = useTranslations();
   return (
     <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)" }}>
-        Semana de {release.weekLabel}
+        {t("criticsfm.weekOfLabel", { week: release.weekLabel })}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {release.albums.map((album) => (
@@ -41,13 +43,13 @@ function WeekRow({ release }: { release: WeeklyReleaseData }) {
                 rel="noopener noreferrer"
                 style={{ fontSize: 11, fontWeight: 700, color: "#1DB954", textDecoration: "none", flexShrink: 0 }}
               >
-                Spotify ↗
+                {t("criticsfm.spotifyLinkLabel")}
               </a>
             )}
           </div>
         ))}
         {release.albums.length === 0 && (
-          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Sem álbuns registrados.</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("criticsfm.noAlbumsRegistered")}</div>
         )}
       </div>
     </div>
@@ -55,6 +57,7 @@ function WeekRow({ release }: { release: WeeklyReleaseData }) {
 }
 
 export function LancamentosHistorico({ history }: { history: WeeklyReleaseData[] }) {
+  const { t } = useTranslations();
   const [q, setQ] = useState("");
 
   const filtered = q.trim()
@@ -76,13 +79,13 @@ export function LancamentosHistorico({ history }: { history: WeeklyReleaseData[]
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Buscar por semana, álbum ou artista…"
+        placeholder={t("criticsfm.searchByWeekAlbumArtist")}
         style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid var(--divider-strong)", fontSize: 14, fontFamily: "inherit", background: "var(--fill-inset)", color: "var(--text)", outline: "none", width: "100%", boxSizing: "border-box" }}
       />
 
       {filtered.length === 0 && (
         <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14, padding: 40 }}>
-          {history.length === 0 ? "Nenhum histórico ainda." : "Nenhuma semana encontrada."}
+          {history.length === 0 ? t("criticsfm.noHistoryYet") : t("criticsfm.noWeekFound")}
         </div>
       )}
 

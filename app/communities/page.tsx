@@ -100,32 +100,32 @@ const GENRES = [
 const HOW_IT_WORKS = [
   {
     icon: <Users size={18} />,
-    title: "Entre ou crie",
-    desc: "Qualquer pessoa pode entrar em comunidades públicas ou criar a sua.",
+    titleKey: "howItWorksJoinTitle",
+    descKey: "howItWorksJoinDesc",
   },
   {
     icon: <BarChart2 size={18} />,
-    title: "Parada coletiva",
-    desc: "Toda semana, uma parada é gerada a partir dos charts dos membros.",
+    titleKey: "howItWorksChartTitle",
+    descKey: "howItWorksChartDesc",
   },
   {
     icon: <MessageCircle size={18} />,
-    title: "Discuta e compartilhe",
-    desc: "Poste, comente lançamentos e descubra o que os membros ouvem.",
+    titleKey: "howItWorksDiscussTitle",
+    descKey: "howItWorksDiscussDesc",
   },
   {
     icon: <Star size={18} />,
-    title: "Acompanhe tendências",
-    desc: "Veja artistas subindo e como o gosto do grupo muda semana a semana.",
+    titleKey: "howItWorksTrendsTitle",
+    descKey: "howItWorksTrendsDesc",
   },
-];
+] as const;
 
 export default async function CommunitiesPage({
   searchParams,
 }: {
   searchParams?: Promise<{ q?: string | string[] }>;
 }) {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
   const params = await searchParams;
@@ -228,7 +228,7 @@ export default async function CommunitiesPage({
           <input
             name="q"
             defaultValue={query}
-            placeholder="Buscar comunidades..."
+            placeholder={t("communities.searchPlaceholder")}
             style={{
               border: "none",
               outline: "none",
@@ -253,7 +253,7 @@ export default async function CommunitiesPage({
             whiteSpace: "nowrap",
           }}
         >
-          Criar comunidade
+          {t("communities.create")}
         </Link>
       </div>
 
@@ -261,7 +261,7 @@ export default async function CommunitiesPage({
       {userId && (
         <section style={{ marginBottom: 48 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>
-            Suas comunidades
+            {t("communities.yours")}
           </h2>
           {myComms.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
@@ -311,10 +311,12 @@ export default async function CommunitiesPage({
                         {c.name}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        {c.members.toLocaleString("pt-BR")} membros
+                        {t("communities.members", { count: c.members.toLocaleString(locale) })}
                       </div>
                       <div style={{ fontSize: 12, color: "#FA243C", fontWeight: 600, marginTop: 2 }}>
-                        {c.newPosts === 1 ? "1 post novo" : `${c.newPosts} posts novos`}
+                        {c.newPosts === 1
+                          ? t("communities.newPost")
+                          : t("communities.newPosts", { count: c.newPosts })}
                       </div>
                     </div>
                   </div>
@@ -332,7 +334,7 @@ export default async function CommunitiesPage({
                 fontSize: 14,
               }}
             >
-              Você ainda não participa de nenhuma comunidade.
+              {t("communities.notJoined")}
             </div>
           )}
         </section>
@@ -341,7 +343,7 @@ export default async function CommunitiesPage({
       {/* ===== EXPLORAR ===== */}
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>
-          Explorar comunidades
+          {t("communities.explore")}
         </h2>
         {exploreComms.length > 0 ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
@@ -395,7 +397,7 @@ export default async function CommunitiesPage({
                       borderRadius: 20,
                     }}
                   >
-                    {c.members.toLocaleString("pt-BR")} membros
+                    {t("communities.members", { count: c.members.toLocaleString(locale) })}
                   </div>
                 </div>
 
@@ -421,11 +423,11 @@ export default async function CommunitiesPage({
                   <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
                     <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
                       <MessageCircle size={12} />
-                      {c.posts.toLocaleString("pt-BR")} posts
+                      {t("communities.postsCount", { count: c.posts.toLocaleString(locale) })}
                     </span>
                     {c.newPosts > 0 && (
                       <span style={{ fontSize: 12, color: "#FA243C", fontWeight: 600 }}>
-                        +{c.newPosts} hoje
+                        {t("communities.today", { count: c.newPosts })}
                       </span>
                     )}
                   </div>
@@ -455,7 +457,7 @@ export default async function CommunitiesPage({
                         fontWeight: 700,
                       }}
                     >
-                      {myCommunityIds.has(c.id) ? "Abrir" : "Participar"}
+                      {myCommunityIds.has(c.id) ? t("communities.open") : t("communities.join")}
                     </Link>
                   </div>
                 </div>
@@ -473,9 +475,7 @@ export default async function CommunitiesPage({
               fontSize: 14,
             }}
           >
-            {query
-              ? "Nenhuma comunidade encontrada para essa busca."
-              : "Nenhuma comunidade pública foi criada ainda."}
+            {query ? t("communities.noResultsForSearch") : t("communities.noPublicCommunities")}
           </div>
         )}
       </section>
@@ -492,7 +492,7 @@ export default async function CommunitiesPage({
             marginBottom: 12,
           }}
         >
-          Buscar por gênero
+          {t("communities.searchByGenre")}
         </h2>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
           {GENRES.map((g) => (
@@ -524,23 +524,23 @@ export default async function CommunitiesPage({
       {/* ===== EDITORIAL: condensado, no fim ===== */}
       <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 32 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 14px 0" }}>
-          Como funcionam as comunidades
+          {t("communities.howItWorksTitle")}
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14, marginBottom: 24 }}>
           {HOW_IT_WORKS.map((step) => (
-            <div key={step.title}>
+            <div key={step.titleKey}>
               <div style={{ color: "#FA243C", marginBottom: 8 }}>{step.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{step.title}</div>
-              <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.55 }}>{step.desc}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{t(`communities.${step.titleKey}`)}</div>
+              <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.55 }}>{t(`communities.${step.descKey}`)}</div>
             </div>
           ))}
         </div>
         <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>
-          Não encontrou a comunidade certa?{" "}
+          {t("communities.ctaFooterPrefix")}{" "}
           <Link href="/community/create" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Crie a sua
+            {t("communities.ctaFooterLink")}
           </Link>{" "}
-          e convide quem você quiser.
+          {t("communities.ctaFooterSuffix")}
         </p>
       </section>
     </Shell>

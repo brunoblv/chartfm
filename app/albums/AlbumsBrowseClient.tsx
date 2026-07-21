@@ -160,7 +160,7 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
             {t("albums.topRated")}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
-            Álbuns com score ≥ 75
+            {t("albums.scoreMin")}
           </div>
           <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 8 }}>
             {bestRated.map((a) => (
@@ -183,7 +183,9 @@ export function AlbumsBrowseClient({ albums }: { albums: AlbumRow[] }) {
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em" }}>
             {t("albums.allAlbums")}
           </div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{filtered.length} álbuns</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {t("albums.albumCount", { count: filtered.length })}
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -339,6 +341,7 @@ function ScoreBadge({ score, size = "sm" }: { score: number; size?: "sm" | "md" 
 }
 
 function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumPath: BuildAlbumPath }) {
+  const { t } = useTranslations();
   const genres = getGenres(album);
 
   return (
@@ -374,7 +377,7 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
             letterSpacing: "0.02em",
           }}
         >
-          DESTAQUE
+          {t("albums.featuredBadge")}
         </div>
         <div
           style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.05, marginBottom: 4 }}
@@ -387,8 +390,8 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 18 }}>
           {genres.slice(0, 2).join(" · ")}
           {album.releaseDate ? ` · ${album.releaseDate.slice(0, 4)}` : ""}
-          {album.totalTracks ? ` · ${album.totalTracks} faixas` : ""}
-          {album.reviewCount > 0 ? ` · ${album.reviewCount} reviews` : ""}
+          {album.totalTracks ? ` · ${t("albums.tracksCount", { count: album.totalTracks })}` : ""}
+          {album.reviewCount > 0 ? ` · ${t("albums.reviewsCount", { count: album.reviewCount })}` : ""}
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <ScoreBadge score={album.score} size="md" />
@@ -399,10 +402,12 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
               >
                 {scoreLabel(album.score)}
               </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{album.ratingCount} avaliações</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                {t("albums.ratingsCount", { count: album.ratingCount })}
+              </div>
             </div>
           ) : (
-            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Seja o primeiro a avaliar</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("albums.beFirstToRate")}</div>
           )}
         </div>
       </div>
@@ -411,6 +416,7 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
 }
 
 function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumPath: BuildAlbumPath }) {
+  const { t } = useTranslations();
   const genres = getGenres(album);
 
   return (
@@ -464,7 +470,7 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
               fontWeight: 600,
             }}
           >
-            {album.reviewCount} reviews
+            {t("albums.reviewsCount", { count: album.reviewCount })}
           </div>
         )}
       </div>
@@ -496,7 +502,7 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
           <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>
-            {genres[0] ?? "Música"}
+            {genres[0] ?? t("albums.genreFallback")}
           </span>
           <span style={{ opacity: 0.3 }}>·</span>
           <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>
@@ -509,6 +515,7 @@ function AlbumGridCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumP
 }
 
 function AlbumCompactCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumPath: BuildAlbumPath }) {
+  const { t } = useTranslations();
   return (
     <a
       href={albumHref(album, buildAlbumPath)}
@@ -544,7 +551,9 @@ function AlbumCompactCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlb
         </div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{album.artist}</div>
         <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-          {album.reviewCount > 0 ? `${album.reviewCount} reviews` : "Sem reviews ainda"}
+          {album.reviewCount > 0
+            ? t("albums.reviewsCount", { count: album.reviewCount })
+            : t("albums.noReviewsYet")}
         </div>
       </div>
       <ScoreBadge score={album.score} size="md" />

@@ -20,6 +20,7 @@ import {
   MobileReorderToolbar,
 } from "@/components/mobile-reorder";
 import type { Song, Cover as CoverModel, Chart } from "@/lib/types";
+import { useTranslations } from "@/hooks/useTranslations";
 
 
 type ChartDetailResponse = {
@@ -64,6 +65,7 @@ const SPOTIFY_SEARCH_DISABLED = false;
 export default function EditChartPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "DEV";
@@ -108,8 +110,8 @@ export default function EditChartPage() {
     fetch(`/api/charts/${encodeURIComponent(chartId)}`)
       .then(async (res) => {
         if (!res.ok) {
-          if (res.status === 403) throw new Error("Você não pode editar esta parada.");
-          throw new Error("Não foi possível carregar a parada.");
+          if (res.status === 403) throw new Error(t("chart.cannotEdit"));
+          throw new Error(t("chart.edit.loadError"));
         }
         const data = (await res.json()) as ChartDetailResponse;
         setParadaId(data.paradaId ?? null);
@@ -297,7 +299,7 @@ export default function EditChartPage() {
       };
       if (!res.ok) {
         if (runId !== lastfmImportRunRef.current) return;
-        setError(data.error ?? "Erro ao importar do Last.fm.");
+        setError(data.error ?? t("chart.edit.lastfmImportError"));
         return;
       }
       if (runId !== lastfmImportRunRef.current) return;
@@ -313,7 +315,7 @@ export default function EditChartPage() {
     } catch (e: unknown) {
       if (runId !== lastfmImportRunRef.current) return;
       if (e instanceof Error && e.name === "AbortError") return;
-      setError("Erro de conexão ao importar do Last.fm.");
+      setError(t("chart.edit.lastfmConnectionError"));
     } finally {
       if (runId === lastfmImportRunRef.current) setImportingLastfm(false);
     }
@@ -322,7 +324,7 @@ export default function EditChartPage() {
   const saveChart = async () => {
     if (!chartId) return;
     if (entries.length === 0) {
-      setError("Adicione ao menos uma música.");
+      setError(t("chart.edit.addOneSong"));
       return;
     }
     setSaving(true);
@@ -347,15 +349,15 @@ export default function EditChartPage() {
       const data = await res.json().catch(() => null) as { error?: string } | null;
       if (!res.ok) {
         if (res.status === 502 || res.status === 504) {
-          setError("Salvar demorou demais ou o Spotify ficou indisponível. Tente de novo.");
+          setError(t("chart.edit.saveTimeout"));
           return;
         }
-        setError(data?.error ?? "Erro ao salvar alterações.");
+        setError(data?.error ?? t("chart.edit.saveError"));
         return;
       }
       router.push(`/chart/${chartId}`);
     } catch {
-      setError("Erro de conexão ao salvar.");
+      setError(t("chart.edit.saveConnectionError"));
     } finally {
       setSaving(false);
     }
@@ -380,7 +382,7 @@ export default function EditChartPage() {
                 rel="noopener noreferrer"
                 onClick={(ev) => ev.stopPropagation()}
                 style={{ color: "#1DB954", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 600 }}
-                title="Abrir no Spotify"
+                title={t("chart.edit.openSpotify")}
               >
                 <ExternalLink size={10} />
                 Spotify
@@ -392,7 +394,7 @@ export default function EditChartPage() {
                 rel="noopener noreferrer"
                 onClick={(ev) => ev.stopPropagation()}
                 style={{ color: "#D51007", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 600 }}
-                title="Abrir no Last.fm"
+                title={t("chart.edit.openLastfm")}
               >
                 <ExternalLink size={10} />
                 Last.fm
@@ -425,15 +427,15 @@ export default function EditChartPage() {
 
   const searchPanel = (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Buscar música</div>
+      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>{t("chart.edit.searchSongTitle")}</div>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-          Catálogo
+          {t("chart.edit.catalogLabel")}
         </div>
         <input
           value={dbQuery}
           onChange={(e) => setDbQuery(e.target.value)}
-          placeholder="Pesquisar no catálogo local"
+          placeholder={t("create.searchLocal")}
           style={{
             width: "100%",
             border: "1px solid var(--divider-strong)",
@@ -449,7 +451,7 @@ export default function EditChartPage() {
         />
         {dbQuery.trim().length >= 2 ? (
           <>
-            {dbLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
+            {dbLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("recommendations.searching")}</div>}
             {!dbLoading &&
               (dbSongs.length > 0 ? (
                 dbSongs.map((song) => {
@@ -457,13 +459,13 @@ export default function EditChartPage() {
                   return renderSongRow(song, added);
                 })
               ) : (
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhuma música no catálogo.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("create.noCatalogSongs")}</div>
               ))}
           </>
         ) : (
           <>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.45 }}>
-              Digite ao menos 2 caracteres para buscar no catálogo completo. 
+              {t("chart.edit.catalogHint")}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {filtered.map((song) => {
@@ -524,12 +526,12 @@ export default function EditChartPage() {
 
       <div style={{ marginBottom: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-          Spotify
+          {t("chart.edit.spotifyLabel")}
         </div>
         <input
           value={spotifyQuery}
           onChange={(e) => setSpotifyQuery(e.target.value)}
-          placeholder={SPOTIFY_SEARCH_DISABLED ? "Spotify desativado temporariamente" : "Pesquisar no Spotify"}
+          placeholder={SPOTIFY_SEARCH_DISABLED ? t("chart.edit.spotifySearchDisabledPlaceholder") : t("chart.edit.spotifySearchPlaceholder")}
           disabled={SPOTIFY_SEARCH_DISABLED}
           style={{
             width: "100%",
@@ -546,23 +548,23 @@ export default function EditChartPage() {
           }}
         />
         {SPOTIFY_SEARCH_DISABLED ? (
-          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Busca no Spotify está desativada no momento.</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.spotifySearchDisabledBody")}</div>
         ) : spotifyQuery.trim().length < 1 ? (
-          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Spotify.</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.typeToSearchSpotify")}</div>
         ) : (
           <>
-            {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
+            {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("recommendations.searching")}</div>}
             {!spotifyLoading && !spotifyConfigured && (
               <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Configure <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> e <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> no arquivo{" "}
+                {t("chart.edit.spotifyConfigMissingPrefix")} <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> {t("chart.edit.spotifyConfigMissingMiddle")} <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> {t("chart.edit.spotifyConfigMissingSuffix")}{" "}
                 <code style={{ fontSize: 11 }}>.env</code>.
               </div>
             )}
             {!spotifyLoading && spotifyConfigured && spotifyUnavailable && (
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Spotify indisponível no momento. Tente novamente.</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.spotifyUnavailable")}</div>
             )}
             {!spotifyLoading && spotifyConfigured && !spotifyUnavailable && spotifyTracks.length === 0 && (
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Spotify.</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.noSpotifyResults")}</div>
             )}
             {!spotifyLoading &&
               spotifyTracks.map((song) => {
@@ -588,14 +590,14 @@ export default function EditChartPage() {
           flexWrap: "wrap",
         }}
       >
-        <div style={{ fontSize: 16, fontWeight: 700 }}>Top {entries.length}</div>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>{t("chart.edit.topCount", { count: entries.length })}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {isAdmin && (
             <button
               type="button"
               onClick={importFromLastfm}
               disabled={importingLastfm}
-              title="Substitui a lista pelas top tracks do Last.fm conforme o mês da parada"
+              title={t("chart.edit.lastfmImportTooltip")}
               style={{
                 border: "1px solid rgba(250,36,60,0.3)",
                 background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -609,7 +611,7 @@ export default function EditChartPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {importingLastfm ? "Last.fm…" : "↺ Last.fm"}
+              {importingLastfm ? t("chart.edit.lastfmImporting") : "↺ Last.fm"}
             </button>
           )}
           {entries.length > 0 && (
@@ -617,7 +619,7 @@ export default function EditChartPage() {
               type="button"
               onClick={() => setEntries([])}
               disabled={saving}
-              title="Limpar todas as músicas da lista"
+              title={t("chart.edit.clearAllTooltip")}
               style={{
                 border: "1px solid var(--divider-strong)",
                 background: "var(--surface)",
@@ -631,7 +633,7 @@ export default function EditChartPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              Limpar lista
+              {t("chart.edit.clearList")}
             </button>
           )}
           <button
@@ -648,7 +650,7 @@ export default function EditChartPage() {
               cursor: saving || entries.length === 0 ? "not-allowed" : "pointer",
             }}
           >
-            {saving ? "Salvando..." : "Salvar edição"}
+            {saving ? t("chart.saving") : t("chart.saveEdit")}
           </button>
         </div>
       </div>
@@ -733,7 +735,7 @@ export default function EditChartPage() {
       ) : null}
       {entries.length === 0 && !loading && (
         <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-          {isMobile ? "Use a busca abaixo e adicione à parada" : "Adicione músicas na busca ao lado →"}
+          {isMobile ? t("chart.edit.emptyMobile") : t("chart.edit.emptyDesktop")}
         </div>
       )}
     </div>
@@ -755,9 +757,9 @@ export default function EditChartPage() {
           style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, textDecoration: "none", marginBottom: 12 }}
         >
           <ChevronLeft size={16} />
-          Voltar para a parada
+          {t("chart.edit.backToChart")}
         </Link>
-        <h1 style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-0.04em", margin: 0 }}>Editar parada</h1>
+        <h1 style={{ fontSize: 40, fontWeight: 800, letterSpacing: "-0.04em", margin: 0 }}>{t("chart.editTitle")}</h1>
         <div
           style={{
             display: "flex",
@@ -771,7 +773,7 @@ export default function EditChartPage() {
           {periodLabel ? (
             <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>{periodLabel}</p>
           ) : (
-            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>Carregando período…</p>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", margin: 0 }}>{t("chart.edit.loadingPeriod")}</p>
           )}
           {!loading && weekDate ? (
             <WeekCalendar
@@ -779,7 +781,7 @@ export default function EditChartPage() {
               onChange={setWeekDate}
               paradaId={paradaId}
               mode={paradaCadence}
-              label={paradaCadence === "daily" ? "Dia" : "Semana"}
+              label={paradaCadence === "daily" ? t("create.day") : t("create.week")}
             />
           ) : null}
         </div>
@@ -802,7 +804,7 @@ export default function EditChartPage() {
         )}
 
         {loading ? (
-          <div style={{ marginTop: 24, color: "var(--text-muted)" }}>Carregando parada...</div>
+          <div style={{ marginTop: 24, color: "var(--text-muted)" }}>{t("chart.loading")}</div>
         ) : isMobile ? (
           <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
             {searchPanel}

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { buildAlbumPath } from "@/lib/music-routes";
 import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
 import { getSpotifyAlbumDetails } from "@/lib/spotify-server";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { AlbumReviewsClient } from "./AlbumReviewsClient";
 
 export const revalidate = 60;
@@ -17,6 +18,7 @@ export default async function CriticsFMAlbumPage({
 }: {
   params: Promise<{ albumId: string }>;
 }) {
+  const { t } = await getServerTranslations();
   const { albumId: rawId } = await params;
   const albumId = parseInt(rawId, 10);
   if (isNaN(albumId)) notFound();
@@ -113,7 +115,7 @@ export default async function CriticsFMAlbumPage({
           }}
         >
           <ChevronLeft size={15} />
-          CriticsFM
+          {t("criticsfm.title")}
         </Link>
 
         <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
@@ -187,7 +189,7 @@ export default async function CriticsFMAlbumPage({
                     href={albumHref}
                     style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}
                   >
-                    Ver nas paradas →
+                    {t("criticsfm.viewInCharts")}
                   </Link>
                 </div>
               </div>
@@ -219,8 +221,11 @@ export default async function CriticsFMAlbumPage({
                   )}
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                     {reviewCount > 0
-                      ? `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"}`
-                      : "Sem avaliações"}
+                      ? t(
+                          reviewCount === 1 ? "criticsfm.reviewCountSingular" : "criticsfm.reviewCountPlural",
+                          { count: reviewCount },
+                        )
+                      : t("criticsfm.noReviewsShort")}
                   </div>
                   <div
                     style={{
@@ -232,7 +237,7 @@ export default async function CriticsFMAlbumPage({
                       marginTop: 4,
                     }}
                   >
-                    CriticsFM
+                    {t("criticsfm.title")}
                   </div>
                 </div>
               </div>

@@ -8,18 +8,20 @@ import { parseSongSlug } from "@/lib/music-routes";
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { Shell } from "@/components/layout/Shell";
 import { SongEditClient } from "./SongEditClient";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
 export default async function SongEditPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return (
       <Shell title="">
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p>Você precisa entrar para editar músicas.</p>
+          <p>{t("song.signInRequired")}</p>
         </div>
       </Shell>
     );
@@ -30,7 +32,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
     return (
       <Shell title="">
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p>Acesso permitido somente para DEV e ADMIN.</p>
+          <p>{t("song.devAdminOnly")}</p>
         </div>
       </Shell>
     );
@@ -42,7 +44,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
     return (
       <Shell title="">
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p>Música não encontrada.</p>
+          <p>{t("song.songNotFound")}</p>
         </div>
       </Shell>
     );
@@ -53,7 +55,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
     return (
       <Shell title="">
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p>Música não encontrada.</p>
+          <p>{t("song.songNotFound")}</p>
         </div>
       </Shell>
     );
@@ -81,7 +83,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
     return (
       <Shell title="">
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p>Música não encontrada.</p>
+          <p>{t("song.songNotFound")}</p>
         </div>
       </Shell>
     );
@@ -100,10 +102,10 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
     <Shell title="">
       <div style={{ margin: "32px 0", padding: "0 20px 48px" }}>
         <Link href={`/song/${slug}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
-          ← Voltar para a música
+          {t("song.backToSong")}
         </Link>
-        <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>Editar música</h1>
-        <p style={{ color: "#86868B", marginTop: 0 }}>Disponível apenas para perfis DEV e ADMIN.</p>
+        <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>{t("song.editSong")}</h1>
+        <p style={{ color: "#86868B", marginTop: 0 }}>{t("song.editAvailableDevAdmin")}</p>
         <SongEditClient
           initialSong={{
             id: song.id,

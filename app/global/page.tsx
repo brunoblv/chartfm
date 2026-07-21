@@ -31,7 +31,7 @@ async function getGlobal100Preview(limit = 5): Promise<{ weekLabel: string; song
   return { weekLabel: latest.weekLabel, songs };
 }
 
-function statusChip(entry: GlobalChartEntry) {
+function statusChip(entry: GlobalChartEntry, t: (key: string, params?: Record<string, string | number>) => string) {
   if (entry.status === "new") {
     return (
       <span
@@ -46,7 +46,7 @@ function statusChip(entry: GlobalChartEntry) {
           flexShrink: 0,
         }}
       >
-        Nova
+        {t("global.hubStatusNew")}
       </span>
     );
   }
@@ -92,12 +92,12 @@ export default async function GlobalHubPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FA243C", boxShadow: "0 0 0 3px rgba(250,36,60,0.25)" }} />
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>
-                  Ao vivo · {preview.weekLabel}
+                  {t("global.hubLiveLabel", { week: preview.weekLabel })}
                 </span>
               </div>
               <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>Global 100</div>
               <p style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, margin: "0 0 22px 0" }}>
-                As músicas mais populares da semana, formadas pelas paradas pessoais publicadas pela comunidade — sem reprodução automática.
+                {t("global.hubHeroDesc")}
               </p>
               <Link
                 href="/global/100"
@@ -113,7 +113,7 @@ export default async function GlobalHubPage() {
                   boxShadow: "0 4px 16px rgba(250,36,60,0.35)",
                 }}
               >
-                Ver Global 100 completo →
+                {t("global.hubViewFullGlobal100")}
               </Link>
             </div>
             <div style={{ padding: "24px 28px", background: "rgba(255,255,255,0.04)" }}>
@@ -153,13 +153,13 @@ export default async function GlobalHubPage() {
                         </div>
                         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{entry.song.artist}</div>
                       </div>
-                      {statusChip(entry)}
+                      {statusChip(entry, t)}
                     </div>
                   ))}
                 </div>
               ) : (
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", padding: "20px 0" }}>
-                  A parada desta semana ainda está sendo formada.
+                  {t("global.hubFormingWeek")}
                 </div>
               )}
             </div>
@@ -175,10 +175,10 @@ export default async function GlobalHubPage() {
       {/* ===== GÊNEROS: LISTA COMPACTA ===== */}
       <section style={{ marginBottom: 48 }}>
         <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.02em", margin: "0 0 6px 0" }}>
-          Paradas por gênero
+          {t("global.hubGenresTitle")}
         </h2>
         <p style={{ fontSize: 13.5, color: "var(--text-muted)", margin: "0 0 18px 0", lineHeight: 1.6 }}>
-          Top 50 de cada estilo, filtrado pelas tags das faixas.
+          {t("global.hubGenresDesc")}
         </p>
         <GlobalGenreList />
       </section>
@@ -199,10 +199,10 @@ export default async function GlobalHubPage() {
         >
           <div style={{ flex: 1, minWidth: 240 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>
-              Sua parada também conta para a Global 100
+              {t("global.hubCtaTitle")}
             </div>
             <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 4 }}>
-              Cada posição que você publica soma pontos para o ranking coletivo da semana.
+              {t("global.hubCtaDesc")}
             </div>
           </div>
           <Link
@@ -218,7 +218,7 @@ export default async function GlobalHubPage() {
               textDecoration: "none",
             }}
           >
-            Montar minha parada
+            {t("global.hubCtaButton")}
           </Link>
         </div>
       </section>
@@ -230,7 +230,7 @@ export default async function GlobalHubPage() {
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>{t("global.hubHowTitle")}</h2>
         <ul style={{ margin: 0, paddingLeft: 20, color: "var(--text-muted)", fontSize: 14, lineHeight: 1.8 }}>
           <li>{t("global.hubHowCharts")}</li>
-          <li>Top 50 por gênero - Rock, Brasil, Urban, Asian, Pop, Alternative e Eletrônica.</li>
+          <li>{t("global.hubHowGenres")}</li>
           <li>{t("global.hubHowAirplay")}</li>
           <li>{t("global.hubHowAlbums")}</li>
         </ul>

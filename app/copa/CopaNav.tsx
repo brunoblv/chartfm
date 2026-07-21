@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const NAV = [
-  { href: "/copa", label: "Início", exact: true },
-  { href: "/copa/ao-vivo", label: "Ao Vivo" },
-  { href: "/copa/meu-time", label: "Meu Time" },
-  { href: "/copa/grupos", label: "Grupos" },
-  { href: "/copa/chaveamento", label: "Chaveamento" },
-  { href: "/copa/regras", label: "Regras" },
-];
+import { useTranslations } from "@/hooks/useTranslations";
 
 export function CopaNav() {
   const pathname = usePathname();
+  const { t } = useTranslations();
+
+  const NAV = [
+    { href: "/copa", label: t("copa.navHome"), exact: true },
+    { href: "/copa/ao-vivo", label: t("copa.navLive") },
+    { href: "/copa/meu-time", label: t("copa.navMySquad") },
+    { href: "/copa/grupos", label: t("copa.navGroups") },
+    { href: "/copa/chaveamento", label: t("copa.navBracket") },
+    { href: "/copa/regras", label: t("copa.navRules") },
+  ];
 
   return (
     <div
@@ -57,7 +59,7 @@ export function CopaNav() {
               lineHeight: 1,
             }}
           >
-            Copa ChartFM
+            {t("copa.navTitle")}
           </div>
           <div
             style={{
@@ -66,7 +68,7 @@ export function CopaNav() {
               marginTop: 2,
             }}
           >
-            Torneio Musical
+            {t("copa.navSubtitle")}
           </div>
         </div>
       </div>

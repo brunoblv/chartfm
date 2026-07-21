@@ -20,6 +20,7 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { buildAlbumContext } from "@/lib/entity-context-text";
 import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
 import { AlbumDetailClient } from "./AlbumDetailClient";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 function albumColor(name: string): [string, string] {
   let hash = 0;
@@ -29,6 +30,7 @@ function albumColor(name: string): [string, string] {
 }
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const me = session?.user?.id
     ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } })
@@ -42,11 +44,11 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
   if (!parsed) {
     return (
-      <Shell title="Álbum" subtitle="Não encontrado">
+      <Shell title={t("albums.albumLabel")} subtitle={t("albums.notFoundPage")}>
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>URL de álbum inválida.</p>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("albums.invalidSlug")}</p>
           <Link href="/discover" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("albums.backDiscover")}
           </Link>
         </div>
       </Shell>
@@ -158,11 +160,11 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         </div>
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden", marginBottom: 40 }}>
           <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)" }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Faixas</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>{t("albums.tracks")}</h2>
           </div>
           <div style={{ padding: "0 8px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
-              {["#", "", "Música", "Pontos", "Semanas", "Pico", "#1s"].map((h, i) => (
+              {["#", "", t("albums.colTrack"), t("albums.colPoints"), t("albums.colWeeks"), t("albums.colPeak"), "#1s"].map((h, i) => (
                 <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "8px 6px" }}>{h}</div>
               ))}
             </div>
@@ -203,7 +205,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         </div>
         {topFans.length > 0 && (
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs do álbum</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>{t("albums.topFans")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
               {topFans.map(({ user, points }) => (
                 <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
@@ -211,7 +213,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                     <Avatar user={user} imageUrl={user.image} size={56} />
                     <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{user.name}</div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>@{user.handle}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>Pontos no álbum</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{t("albums.pointsInAlbum")}</div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
                   </div>
                 </Link>
@@ -227,10 +229,10 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "50px minmax(0,1fr) 90px 90px 90px", padding: "12px 24px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid var(--divider)" }}>
             <div>#</div>
-            <div>Música</div>
-            <div style={{ textAlign: "right" }}>Pontos</div>
-            <div style={{ textAlign: "right" }}>Semanas</div>
-            <div style={{ textAlign: "right" }}>Pico</div>
+            <div>{t("albums.colTrack")}</div>
+            <div style={{ textAlign: "right" }}>{t("albums.colPoints")}</div>
+            <div style={{ textAlign: "right" }}>{t("albums.colWeeks")}</div>
+            <div style={{ textAlign: "right" }}>{t("albums.colPeak")}</div>
           </div>
           {songs.map((s, i) => (
             <div
@@ -342,7 +344,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                   )}
                   {canEditAlbum && (
                     <Link href={`/album/${slug}/edit`} style={{ color: "rgba(255,255,255,0.8)", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>
-                      Editar álbum
+                      {t("albums.editAlbum")}
                     </Link>
                   )}
                 </div>
@@ -411,11 +413,11 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
   if (albumEntries.length === 0) {
     return (
-      <Shell title="Álbum" subtitle="Não encontrado">
+      <Shell title={t("albums.albumLabel")} subtitle={t("albums.notFoundPage")}>
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para este álbum.</p>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("albums.noDataFound")}</p>
           <Link href="/discover" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("albums.backDiscover")}
           </Link>
         </div>
       </Shell>
@@ -481,10 +483,10 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   let songs = [...songsMap.values()].sort((a, b) => b.points - a.points);
   let topFans: AlbumPageSnapshotPayload["topFans"] = [];
   let stats: AlbumPageSnapshotPayload["stats"] = [
-    { label: "Pontos totais", value: totalPoints, color: "var(--accent)" },
-    { label: "Ouvintes únicos", value: listenersSet.size, color: "#8338EC" },
-    { label: "Faixas rankeadas", value: songsMap.size, color: "#3A86FF" },
-    { label: "Número 1s", value: number1sAlbum, color: "#FFD700" },
+    { label: t("albums.totalPoints"), value: totalPoints, color: "var(--accent)" },
+    { label: t("albums.uniqueListeners"), value: listenersSet.size, color: "#8338EC" },
+    { label: t("albums.rankedTracks"), value: songsMap.size, color: "#3A86FF" },
+    { label: t("albums.numberOnes"), value: number1sAlbum, color: "#FFD700" },
   ];
 
   if (cachedSnapshot) {
@@ -566,11 +568,11 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden", marginBottom: 40 }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)" }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>Faixas</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>{t("albums.tracks")}</h2>
         </div>
         <div style={{ padding: "0 8px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
-            {["#", "", "Música", "Pontos", "Semanas", "Pico", "#1s"].map((h, i) => (
+            {["#", "", t("albums.colTrack"), t("albums.colPoints"), t("albums.colWeeks"), t("albums.colPeak"), "#1s"].map((h, i) => (
               <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "8px 6px" }}>{h}</div>
             ))}
           </div>
@@ -612,7 +614,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
       {topFans.length > 0 && (
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs do álbum</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>{t("albums.topFans")}</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
             {topFans.map(({ user, points }) => (
               <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
@@ -620,7 +622,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                   <Avatar user={user} imageUrl={user.image} size={56} />
                   <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{user.name}</div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>@{user.handle}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>Pontos no álbum</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{t("albums.pointsInAlbum")}</div>
                   <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
                 </div>
               </Link>
@@ -637,10 +639,10 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
         <div style={{ display: "grid", gridTemplateColumns: "50px minmax(0,1fr) 90px 90px 90px", padding: "12px 24px", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", borderBottom: "1px solid var(--divider)" }}>
           <div>#</div>
-          <div>Música</div>
-          <div style={{ textAlign: "right" }}>Pontos</div>
-          <div style={{ textAlign: "right" }}>Semanas</div>
-          <div style={{ textAlign: "right" }}>Pico</div>
+          <div>{t("albums.colTrack")}</div>
+          <div style={{ textAlign: "right" }}>{t("albums.colPoints")}</div>
+          <div style={{ textAlign: "right" }}>{t("albums.colWeeks")}</div>
+          <div style={{ textAlign: "right" }}>{t("albums.colPeak")}</div>
         </div>
         {songs.map((s, i) => (
           <div
@@ -703,7 +705,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
           <div style={{ color: "white", flex: 1, minWidth: 280 }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>
-              Álbum
+              {t("albums.albumLabel")}
             </div>
             <h1 style={{ fontSize: 56, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 12 }}>
               {canonicalAlbum}
@@ -718,9 +720,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
               {releaseDate && (
                 <span>{releaseDate.getFullYear()}</span>
               )}
-              <span><strong>{listenersSet.size}</strong> ouvintes</span>
-              <span><strong>{songsMap.size}</strong> faixas</span>
-              <span><strong>{totalPoints}</strong> pontos</span>
+              <span><strong>{listenersSet.size}</strong> {t("albums.listenersWord")}</span>
+              <span><strong>{songsMap.size}</strong> {t("albums.tracksWord")}</span>
+              <span><strong>{totalPoints}</strong> {t("albums.pointsWord")}</span>
             </div>
             <div style={{ display: "flex", gap: 12, marginTop: 16, alignItems: "center", flexWrap: "wrap" }}>
               {albumDbId && (
@@ -742,7 +744,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                   }}
                 >
                   <MessageSquare size={14} />
-                  Reviews no CriticsFM
+                  {t("albums.criticsReviews")}
                 </Link>
               )}
               {canEditAlbum && (
@@ -750,7 +752,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
                   href={`/album/${slug}/edit`}
                   style={{ color: "rgba(255,255,255,0.8)", textDecoration: "none", fontSize: 13, fontWeight: 700 }}
                 >
-                  Editar álbum
+                  {t("albums.editAlbum")}
                 </Link>
               )}
             </div>
@@ -784,7 +786,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
             marginBottom: 6,
           }}
         >
-          Contexto no ChartFM
+          {t("albums.contextHeading")}
         </div>
         <h2
           style={{
@@ -795,14 +797,13 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
             marginBottom: 16,
           }}
         >
-          Desempenho no ChartFM
+          {t("albums.performanceHeading")}
         </h2>
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: 16 }}>
           {albumContextText}
         </p>
         <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", margin: 0 }}>
-          A tabela de faixas mostra os pontos acumulados por cada música do álbum, quantas semanas ela passou
-          no Global 100 e sua melhor posição no ranking coletivo.
+          {t("albums.tracklistExplainer")}
         </p>
       </div>
 

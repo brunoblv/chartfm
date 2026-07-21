@@ -3,12 +3,14 @@
 import Link from "next/link";
 import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
 import { ScoreSquare } from "@/components/ui/ScoreSquare";
+import { useTranslations } from "@/hooks/useTranslations";
 
 function albumHue(title: string): number {
   return Math.abs(title.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
 }
 
 function TopAlbumCarouselCard({ album }: { album: CriticsFMAlbum }) {
+  const { t } = useTranslations();
   const hue = albumHue(album.title);
 
   return (
@@ -83,7 +85,10 @@ function TopAlbumCarouselCard({ album }: { album: CriticsFMAlbum }) {
             {album.artist}
           </div>
           <div style={{ fontSize: 10, color: "var(--text-disabled)", marginTop: 3 }}>
-            {album.reviewCount} {album.reviewCount === 1 ? "review" : "reviews"}
+            {t(
+              album.reviewCount === 1 ? "criticsfm.reviewCountSingular" : "criticsfm.reviewCountPlural",
+              { count: album.reviewCount },
+            )}
           </div>
         </div>
       </div>
@@ -92,6 +97,7 @@ function TopAlbumCarouselCard({ album }: { album: CriticsFMAlbum }) {
 }
 
 export function TopAlbumsSection({ albums }: { albums: CriticsFMAlbum[] }) {
+  const { t } = useTranslations();
   if (albums.length === 0) return null;
 
   return (
@@ -114,10 +120,10 @@ export function TopAlbumsSection({ albums }: { albums: CriticsFMAlbum[] }) {
             color: "var(--text-muted)",
           }}
         >
-          Melhores avaliados
+          {t("criticsfm.topRated")}
         </div>
         <span style={{ fontSize: 12, color: "var(--text-disabled)", fontWeight: 400 }}>
-          mín. 2 reviews
+          {t("criticsfm.minReviewsShort")}
         </span>
         <div style={{ flex: 1 }} />
         <Link
@@ -132,7 +138,7 @@ export function TopAlbumsSection({ albums }: { albums: CriticsFMAlbum[] }) {
             textDecoration: "none",
           }}
         >
-          Ver todos os reviews
+          {t("criticsfm.viewAllReviews")}
           <svg
             width="13"
             height="13"

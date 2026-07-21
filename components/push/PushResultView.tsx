@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
+import { useTranslations } from "@/hooks/useTranslations";
 import type { RoundData } from "./push-types";
 import { PODIUM_COLORS } from "./push-helpers";
 import { TrackCover, RankBadge } from "./PushAtoms";
 
 function RankingsTab({ season }: { season?: number }) {
+  const { t } = useTranslations();
   const [data, setData] = useState<{ rank: number; handle: string; name: string; points: number; wins: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,8 +22,8 @@ function RankingsTab({ season }: { season?: number }) {
       .finally(() => setLoading(false));
   }, [season]);
 
-  if (loading) return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Carregando ranking…</div>;
-  if (data.length === 0) return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Nenhuma rodada concluída ainda.</div>;
+  if (loading) return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>{t("push.loadingRanking")}</div>;
+  if (data.length === 0) return <div style={{ color: "var(--text-muted)", fontSize: 13 }}>{t("push.noRoundsCompleted")}</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
@@ -44,6 +46,7 @@ function RankingsTab({ season }: { season?: number }) {
 }
 
 export function ResultView({ round }: { round: RoundData }) {
+  const { t } = useTranslations();
   const [resultTab, setResultTab] = useState<"round" | "season" | "geral">("round");
   const results  = round.results ?? [];
   const myResult = results.find((r) => r.submissionId === round.mySubmission?.id) ?? null;
@@ -52,7 +55,7 @@ export function ResultView({ round }: { round: RoundData }) {
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ paddingBottom: 14, borderBottom: "1px solid var(--divider)", marginBottom: 18 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 10 }}>
-          Resultado · Rodada #{round.number}
+          {t("push.resultRoundLabel", { number: round.number })}
         </div>
 
         {round.mySubmission && myResult && (
@@ -63,17 +66,17 @@ export function ResultView({ round }: { round: RoundData }) {
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{round.mySubmission.song.artist}</div>
             </div>
             <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
-              <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: ".05em", textTransform: "uppercase" as const, marginBottom: 3 }}>Posição</div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", letterSpacing: ".05em", textTransform: "uppercase" as const, marginBottom: 3 }}>{t("push.positionLabel")}</div>
               <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, letterSpacing: "-.03em", color: myResult.rank <= 3 ? PODIUM_COLORS[myResult.rank - 1] : "var(--text)" }}>
                 #{myResult.rank}
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>+{myResult.totalPoints} pts</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t("push.resultPts", { points: myResult.totalPoints })}</div>
             </div>
           </div>
         )}
 
         <div style={{ display: "flex", background: "var(--fill-subtle)", borderRadius: 10, padding: 3 }}>
-          {([ ["round", "Rodada"], ["season", "Temporada"], ["geral", "Geral"] ] as const).map(([id, label]) => (
+          {([ ["round", t("push.tabRound")], ["season", t("push.tabSeason")], ["geral", t("push.tabGeral")] ] as const).map(([id, label]) => (
             <button key={id} type="button" onClick={() => setResultTab(id)}
               style={{
                 flex: 1, padding: "7px 4px", borderRadius: 8, border: "none",
@@ -123,16 +126,17 @@ export function ResultView({ round }: { round: RoundData }) {
 }
 
 export function NoRoundView() {
+  const { t } = useTranslations();
   return (
     <div style={{ padding: "48px 16px", textAlign: "center", color: "var(--text-muted)" }}>
       <Trophy size={40} style={{ opacity: 0.3, marginBottom: 12, display: "block", margin: "0 auto 12px" }} />
-      <p style={{ margin: "0 0 16px" }}>Nenhuma rodada ativa no momento.</p>
+      <p style={{ margin: "0 0 16px" }}>{t("push.noActiveRound")}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
         <Link href="/push/ranking" style={{ fontSize: 13, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-          Ver ranking →
+          {t("push.seeRanking")} →
         </Link>
         <Link href="/push/historico" style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
-          Ver histórico de rodadas →
+          {t("push.seeHistory")} →
         </Link>
       </div>
     </div>

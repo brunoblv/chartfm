@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Radio, Disc3 } from "lucide-react";
 import { GLOBAL_GENRE_CHARTS } from "@/lib/global-genre-charts";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type SecondaryCard = {
   href: string;
@@ -13,27 +14,27 @@ type SecondaryCard = {
   gradient: string;
 };
 
-const SECONDARY_CARDS: SecondaryCard[] = [
-  {
-    href: "/global/airplay",
-    title: "Global 100 Airplay",
-    description: "As músicas mais ouvidas de verdade pela comunidade, via histórico do Last.fm.",
-    badge: "Last.fm",
-    icon: <Radio size={21} strokeWidth={2} />,
-    gradient: "linear-gradient(135deg, #8338EC 0%, #3A86FF 100%)",
-  },
-  {
-    href: "/global/albums",
-    title: "Global 100 Álbuns",
-    description: "Os álbuns mais ouvidos pela comunidade na semana, via Last.fm.",
-    badge: "Last.fm",
-    icon: <Disc3 size={21} strokeWidth={2} />,
-    gradient: "linear-gradient(135deg, #06D6A0 0%, #073B4C 100%)",
-  },
-];
-
 /** Airplay e Álbuns — um degrau abaixo do hero da Global 100. */
 export function GlobalSecondaryCards() {
+  const { t } = useTranslations();
+  const SECONDARY_CARDS: SecondaryCard[] = [
+    {
+      href: "/global/airplay",
+      title: t("global.airplayTitle"),
+      description: t("global.hubCardAirplayDesc"),
+      badge: "Last.fm",
+      icon: <Radio size={21} strokeWidth={2} />,
+      gradient: "linear-gradient(135deg, #8338EC 0%, #3A86FF 100%)",
+    },
+    {
+      href: "/global/albums",
+      title: t("global.albumsTitle"),
+      description: t("global.hubCardAlbumsDesc"),
+      badge: "Last.fm",
+      icon: <Disc3 size={21} strokeWidth={2} />,
+      gradient: "linear-gradient(135deg, #06D6A0 0%, #073B4C 100%)",
+    },
+  ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
       {SECONDARY_CARDS.map((card) => (
@@ -93,7 +94,7 @@ export function GlobalSecondaryCards() {
             </p>
           </div>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--accent)", marginTop: "auto" }}>
-            Ver ranking →
+            {t("global.viewRanking")}
           </div>
         </Link>
       ))}

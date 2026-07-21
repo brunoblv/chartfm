@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Heart, SkipForward } from "lucide-react";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { Avatar } from "@/components/ui/Avatar";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type MysteryTrack = {
   title: string;
@@ -29,6 +30,7 @@ function maskTitle(title: string): string {
 }
 
 export function MysteryTrackCard() {
+  const { t } = useTranslations();
   const [track, setTrack] = useState<MysteryTrack | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
@@ -66,7 +68,7 @@ export function MysteryTrackCard() {
           fontSize: 13,
         }}
       >
-        Carregando…
+        {t("moments.mysteryLoading")}
       </div>
     );
   }
@@ -84,7 +86,7 @@ export function MysteryTrackCard() {
           fontSize: 13.5,
         }}
       >
-        Ainda não há paradas suficientes na comunidade para sortear uma faixa. Volte em breve.
+        {t("moments.mysteryEmpty")}
       </div>
     );
   }
@@ -139,11 +141,11 @@ export function MysteryTrackCard() {
                   marginBottom: 8,
                 }}
               >
-                Faixa misteriosa · da parada de alguém da comunidade
+                {t("moments.mysteryBadge")}
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>{maskTitle(track.title)}</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginTop: 4 }}>
-                Artista revelado depois da sua reação
+                {t("moments.mysteryArtistHidden")}
               </div>
             </div>
           ) : (
@@ -158,7 +160,7 @@ export function MysteryTrackCard() {
                   marginBottom: 8,
                 }}
               >
-                Revelado
+                {t("moments.mysteryRevealed")}
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>{track.title}</div>
               <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>{track.artist}</div>
@@ -170,7 +172,7 @@ export function MysteryTrackCard() {
                 />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)" }}>
-                    Indicada por{" "}
+                    {t("moments.mysteryNominatedBy")}{" "}
                     <Link
                       href={`/profile/${track.publisher.handle}`}
                       style={{ color: "#fff", fontWeight: 700, textDecoration: "none" }}
@@ -206,7 +208,7 @@ export function MysteryTrackCard() {
                 }}
               >
                 <Heart size={16} />
-                Curti, quero saber quem é
+                {t("moments.mysteryLikeReveal")}
               </button>
             )}
             <button
@@ -228,7 +230,7 @@ export function MysteryTrackCard() {
               }}
             >
               <SkipForward size={16} />
-              {revealed ? "Próxima faixa" : "Pular para a próxima"}
+              {revealed ? t("moments.mysteryNextTrack") : t("moments.mysterySkipToNext")}
             </button>
           </div>
         </div>

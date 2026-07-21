@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "../../CopaArtistAvatar";
 import { CopaBannerCarousel } from "../../CopaBannerCarousel";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ArtistInfo = {
   id: string;
@@ -62,9 +63,10 @@ function LiveDot() {
 }
 
 function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
+  const { t } = useTranslations();
   useEffect(() => {
-    const t = setTimeout(onDone, 1800);
-    return () => clearTimeout(t);
+    const timer = setTimeout(onDone, 1800);
+    return () => clearTimeout(timer);
   }, [onDone]);
   return (
     <div
@@ -91,7 +93,7 @@ function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
           animation: "fadeUp .3s .12s both",
         }}
       >
-        GOL de {name}!
+        {t("copa.goalScored", { name })}
       </div>
     </div>
   );
@@ -99,6 +101,7 @@ function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
 
 export function MatchClient({ fixture: init, userId }: Props) {
   const router = useRouter();
+  const { t } = useTranslations();
   const [data, setData] = useState(init);
   const [myVote, setMyVote] = useState(init.myVote);
   const [goalSide, setGoalSide] = useState<"A" | "B" | null>(null);
@@ -158,13 +161,13 @@ export function MatchClient({ fixture: init, userId }: Props) {
   const total = data.votesA + data.votesB || 1;
   const pctA = (data.votesA / total) * 100;
   const phaseLabels: Record<string, string> = {
-    GROUP: `GRUPO ${data.groupLetter} · RODADA ${data.round} de 3`,
-    R32: "1/16 DE FINAL",
-    R16: "OITAVAS DE FINAL",
-    QF: "QUARTAS DE FINAL",
-    SF: "SEMI-FINAL",
-    THIRD_PLACE: "DISPUTA PELO 3º LUGAR",
-    FINAL: "FINAL",
+    GROUP: t("copa.groupRoundLabel", { letter: data.groupLetter ?? "", round: data.round ?? "" }).toUpperCase(),
+    R32: t("copa.phaseR32").toUpperCase(),
+    R16: t("copa.phaseR16").toUpperCase(),
+    QF: t("copa.phaseQF").toUpperCase(),
+    SF: t("copa.phaseSF").toUpperCase(),
+    THIRD_PLACE: t("copa.phaseThirdPlace").toUpperCase(),
+    FINAL: t("copa.phaseFinal").toUpperCase(),
   };
 
   return (
@@ -187,15 +190,15 @@ export function MatchClient({ fixture: init, userId }: Props) {
             cursor: "pointer",
           }}
         >
-          ← Voltar
+          {t("copa.matchBackButton")}
         </button>
         {isLive ? (
           <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            <LiveDot />AO VIVO
+            <LiveDot />{t("copa.liveBadge").toUpperCase()}
           </span>
         ) : (
           <span style={{ fontSize: 10, fontWeight: 700, background: "var(--fill-inset)", color: "var(--text-muted)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            {data.status === "DONE" ? "Encerrado" : "Em breve"}
+            {data.status === "DONE" ? t("copa.statusEnded") : t("copa.matchStatusUpcoming")}
           </span>
         )}
         <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
@@ -230,8 +233,8 @@ export function MatchClient({ fixture: init, userId }: Props) {
                 <span style={{ fontSize: 40, color: "var(--text-muted)", margin: "0 8px" }}>-</span>
                 <span style={{ fontSize: 72, fontWeight: 900, letterSpacing: "-0.06em", lineHeight: 1, color: data.goalsB >= data.goalsA ? "var(--text)" : "var(--text-muted)" }}>{data.goalsB}</span>
               </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>gols (2 votos = 1 gol)</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", marginTop: 3 }}>{data.votesA} × {data.votesB} votos</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("copa.matchGoalsHint")}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", marginTop: 3 }}>{t("copa.votesXVotes", { a: data.votesA, b: data.votesB })}</div>
             </div>
 
             {/* Artist B */}
@@ -265,11 +268,11 @@ export function MatchClient({ fixture: init, userId }: Props) {
         {isLive && (
           myVote ? (
             <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "var(--up-fg)", padding: 14, background: "var(--up-bg)", borderRadius: 12, marginBottom: 14 }}>
-              ✓ Voto registrado para {myVote === "A" ? data.artistA.artistName : data.artistB.artistName}!
+              {t("copa.voteRegistered", { name: myVote === "A" ? data.artistA.artistName : data.artistB.artistName })}
             </div>
           ) : !userId ? (
             <div style={{ textAlign: "center", fontSize: 13, color: "var(--text-muted)", padding: 14, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, marginBottom: 14 }}>
-              Entre na sua conta para votar
+              {t("copa.matchLoginToVote")}
             </div>
           ) : (
             <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
@@ -303,7 +306,7 @@ export function MatchClient({ fixture: init, userId }: Props) {
                     onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--divider)"; e.currentTarget.style.background = "var(--fill-inset)"; }}
                   >
                     <CopaArtistAvatar {...art} coverUrl={side === "A" ? data.singleACover : data.singleBCover} size={36} />
-                    <span>Votar em {art.artistName.split(" ")[0]}</span>
+                    <span>{t("copa.voteForButton", { name: art.artistName.split(" ")[0] })}</span>
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>"{singleName}"</span>
                   </button>
                 );

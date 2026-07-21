@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const CHART_SIZE_MIN = 1;
 const CHART_SIZE_MAX = 100;
@@ -29,6 +30,7 @@ export function ParadaEditPanel({
   onClose,
   onSaved,
 }: ParadaEditPanelProps) {
+  const { t } = useTranslations();
   const [name, setName] = useState(initialName);
   const [chartSize, setChartSize] = useState<number | null>(initialChartSize);
   const [cadence, setCadence] = useState<"weekly" | "daily">(initialCadence);
@@ -40,7 +42,7 @@ export function ParadaEditPanel({
   const save = async () => {
     const trimmed = name.trim();
     if (trimmed.length < 2) {
-      setError("Nome muito curto.");
+      setError(t("chart.settingsNameTooShort"));
       return;
     }
     setSaving(true);
@@ -58,7 +60,7 @@ export function ParadaEditPanel({
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
-        setError(data.error ?? "Erro ao salvar.");
+        setError(data.error ?? t("chart.setup.saveError"));
         return;
       }
       onSaved({
@@ -68,7 +70,7 @@ export function ParadaEditPanel({
       });
       onClose();
     } catch {
-      setError("Erro de conexão.");
+      setError(t("chart.settingsConnectionError"));
     } finally {
       setSaving(false);
     }
@@ -86,13 +88,13 @@ export function ParadaEditPanel({
       );
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
-        setError(data.error ?? "Erro ao enviar logo.");
+        setError(data.error ?? t("chart.settingsLogoUploadError"));
         return;
       }
       const data = (await res.json()) as { url?: string };
       if (data.url) onSaved({ name, chartSize, cadence, logo: data.url });
     } catch {
-      setError("Erro ao enviar logo.");
+      setError(t("chart.settingsLogoUploadError"));
     } finally {
       setUploading(false);
     }
@@ -138,7 +140,7 @@ export function ParadaEditPanel({
             color: "var(--text)",
           }}
         >
-          Configurações da parada
+          {t("chart.settingsTitle")}
         </div>
         <button
           type="button"
@@ -155,7 +157,7 @@ export function ParadaEditPanel({
             cursor: "pointer",
             color: "var(--text-muted)",
           }}
-          aria-label="Fechar"
+          aria-label={t("chart.settingsClose")}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <path d="M18 6 6 18M6 6l12 12" />
@@ -183,12 +185,12 @@ export function ParadaEditPanel({
               marginBottom: 8,
             }}
           >
-            Nome da parada
+            {t("chart.settingsNameLabel")}
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nome da sua parada"
+            placeholder={t("chart.settingsNamePlaceholder")}
             style={{
               width: "100%",
               padding: "12px 14px",
@@ -216,7 +218,7 @@ export function ParadaEditPanel({
               marginBottom: 8,
             }}
           >
-            Tamanho do chart
+            {t("chart.settingsSizeLabel")}
           </label>
           <input
             type="number"
@@ -236,7 +238,7 @@ export function ParadaEditPanel({
                   : Math.min(CHART_SIZE_MAX, Math.max(CHART_SIZE_MIN, v)),
               );
             }}
-            placeholder="Ex: 30"
+            placeholder={t("chart.settingsSizePlaceholder")}
             style={{
               width: "100%",
               padding: "12px 14px",
@@ -251,7 +253,7 @@ export function ParadaEditPanel({
             }}
           />
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
-            Digite de {CHART_SIZE_MIN} a {CHART_SIZE_MAX} posições.
+            {t("chart.settingsSizeHint", { min: CHART_SIZE_MIN, max: CHART_SIZE_MAX })}
           </div>
         </div>
 
@@ -267,7 +269,7 @@ export function ParadaEditPanel({
               marginBottom: 8,
             }}
           >
-            Cadência
+            {t("chart.settingsCadenceLabel")}
           </label>
           <div style={{ display: "flex", gap: 8 }}>
             {(["weekly", "daily"] as const).map((c) => (
@@ -282,7 +284,7 @@ export function ParadaEditPanel({
                   cursor: isPrimary && c === "daily" ? "not-allowed" : "pointer",
                 }}
               >
-                {c === "weekly" ? "Semanal" : "Diária"}
+                {c === "weekly" ? t("chart.settingsCadenceWeekly") : t("chart.settingsCadenceDaily")}
               </button>
             ))}
           </div>
@@ -300,7 +302,7 @@ export function ParadaEditPanel({
               marginBottom: 8,
             }}
           >
-            Logo da parada
+            {t("chart.settingsLogoLabel")}
           </label>
           <input
             ref={fileRef}
@@ -329,10 +331,10 @@ export function ParadaEditPanel({
           >
             <div style={{ fontSize: 28, marginBottom: 8 }}>🖼</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
-              {uploading ? "Enviando…" : "Arraste uma imagem ou clique para escolher"}
+              {uploading ? t("chart.settingsUploading") : t("chart.settingsUploadHint")}
             </div>
             <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4, opacity: 0.7 }}>
-              PNG, JPG, WebP · máx. 5 MB · 1:1 recomendado
+              {t("chart.settingsUploadFormats")}
             </div>
           </button>
         </div>
@@ -366,7 +368,7 @@ export function ParadaEditPanel({
             fontFamily: "inherit",
           }}
         >
-          Cancelar
+          {t("chart.settingsCancel")}
         </button>
         <button
           type="button"
@@ -386,7 +388,7 @@ export function ParadaEditPanel({
             opacity: saving ? 0.7 : 1,
           }}
         >
-          {saving ? "Salvando…" : "Salvar alterações"}
+          {saving ? t("chart.settingsSaving") : t("chart.settingsSave")}
         </button>
       </div>
     </div>

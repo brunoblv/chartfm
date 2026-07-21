@@ -560,7 +560,7 @@ function SidebarContent({
               </Link>
               <Link href="/admin/radar-lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/radar-lancamentos")}>
                 <Radar size={14} />
-                <span>Radar de Lançamentos</span>
+                <span>{t("nav.adminRadarLancamentos")}</span>
               </Link>
               <Link href="/admin/gerador-de-imagens" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/gerador-de-imagens")}>
                 <ImagePlay size={14} />

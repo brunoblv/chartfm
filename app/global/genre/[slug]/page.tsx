@@ -159,7 +159,7 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
         }}
       >
         <ChevronLeft size={16} />
-        Todas as paradas globais
+        {t("global.backToHub")}
       </Link>
 
       <section style={{ marginBottom: 32 }}>
@@ -167,7 +167,7 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
           {chart.description}
         </p>
         <p style={{ fontSize: 13, lineHeight: 1.65, color: "var(--text-muted)", margin: 0 }}>
-          <span style={{ fontWeight: 700, color: "var(--text)" }}>Subgêneros incluídos: </span>
+          <span style={{ fontWeight: 700, color: "var(--text)" }}>{t("global.subgenresLabel")}</span>
           {formatGenreChartTags(chart, 32)}
           {chart.tags.length > 32 ? "…" : ""}
         </p>
@@ -175,7 +175,7 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
 
       <GlobalHero
         title={chart.name}
-        pointsRule="Apenas músicas com tags deste gênero entram no ranking. Pontos das paradas pessoais da comunidade."
+        pointsRule={t("global.genrePointsRule")}
         basePath={basePath}
         weekNow={weekNow}
         weekRangeNow={weekRangeNow}
@@ -200,10 +200,10 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
 
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
-          Rankings da semana {weekNow}
+          {t("global.weekRankingsTitle", { week: weekNow })}
         </h2>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          Top 50 filtrado por tags da faixa (MusicBrainz / Last.fm). Semanas: {weekRangeNow}.
+          {t("global.top50FilterDesc", { range: weekRangeNow })}
         </p>
 
         {globalSongs.length === 0 ? (
@@ -218,11 +218,11 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
               textAlign: "center",
             }}
           >
-            Nenhuma música deste gênero nas paradas desta semana. Rode o backfill de tags em{" "}
+            {t("global.noGenreSongsWeekPrefix")}{" "}
             <Link href="/admin/song-genres" style={{ color: "var(--accent)", fontWeight: 600 }}>
               /admin/song-genres
             </Link>{" "}
-            para melhorar a cobertura.
+            {t("global.noGenreSongsWeekSuffix")}
           </div>
         ) : (
           <GlobalTabs

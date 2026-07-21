@@ -6,9 +6,11 @@ import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { prisma } from "@/lib/prisma";
 import { loadCommunityHeader } from "@/lib/community-page-data";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export default async function CommunityMembersPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const { t } = await getServerTranslations();
   const { community, notFound: missing } = await loadCommunityHeader(slug);
   if (missing) notFound();
 
@@ -43,8 +45,8 @@ export default async function CommunityMembersPage({ params }: { params: Promise
               borderBottom: "1px solid var(--divider)",
             }}
           >
-            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Membros da comunidade</div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{members.length} membros</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{t("communities.membersPageTitle")}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{t("communities.members", { count: members.length })}</div>
           </div>
           <div
             style={{
@@ -56,7 +58,7 @@ export default async function CommunityMembersPage({ params }: { params: Promise
               borderBottom: "1px solid var(--divider)",
             }}
           >
-            {["#", "", "Membro", "Posts", "Last.fm", ""].map((h, i) => (
+            {["#", "", t("communities.colMember"), "Posts", "Last.fm", ""].map((h, i) => (
               <div
                 key={i}
                 style={{
@@ -74,7 +76,7 @@ export default async function CommunityMembersPage({ params }: { params: Promise
           </div>
           {members.length === 0 ? (
             <div style={{ padding: 28, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-              Nenhum membro ainda.
+              {t("communities.noMembersYet")}
             </div>
           ) : (
             members.map((m, i) => (
@@ -115,7 +117,7 @@ export default async function CommunityMembersPage({ params }: { params: Promise
                       fontWeight: 700,
                     }}
                   >
-                    {m.role === "owner" ? "Dono" : m.role === "admin" ? "Admin" : "Membro"}
+                    {m.role === "owner" ? t("communities.roleOwner") : m.role === "admin" ? t("communities.roleAdmin") : t("communities.roleMember")}
                   </span>
                 </div>
               </div>

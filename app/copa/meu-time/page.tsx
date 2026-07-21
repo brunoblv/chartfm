@@ -5,12 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { MySquadClient } from "./MySquadClient";
 import { computeStandings, getCopaSinglesEditWindow, getLockedSingleSlots } from "@/lib/copa";
 import { getR32WinnerArtistIds } from "@/lib/copa-knockout";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export const dynamic = "force-dynamic";
 
 export default async function MeuTimePage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
+  const { t } = await getServerTranslations();
 
   const copa = await prisma.copaEdition.findFirst({
     where: { status: { not: "FINISHED" } },
@@ -20,7 +22,7 @@ export default async function MeuTimePage() {
   if (!copa) {
     return (
       <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma Copa ativa.
+        {t("copa.noActiveCopa")}
       </div>
     );
   }
@@ -34,7 +36,7 @@ export default async function MeuTimePage() {
     if (copa.status === "REGISTRATION") redirect("/copa");
     return (
       <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-        Você não é participante desta Copa.
+        {t("copa.squadNotParticipant")}
       </div>
     );
   }

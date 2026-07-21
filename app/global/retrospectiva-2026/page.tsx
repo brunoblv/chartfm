@@ -7,16 +7,21 @@ import { loadYearRetrospective } from "@/lib/global-retrospective";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { prisma } from "@/lib/prisma";
 import { ChevronLeft } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 const YEAR = 2026;
 
-export const metadata: Metadata = {
-  title: "Retrospectiva 2026 do Global 100 | ChartFM",
-  description: "As músicas e artistas mais pontuados de 2026 no Global 100 do ChartFM, somando todas as semanas consolidadas no ano.",
-  alternates: { canonical: "/global/retrospectiva-2026" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("globalRetrospective.metaTitle", { year: YEAR }),
+    description: t("globalRetrospective.metaDescription", { year: YEAR }),
+    alternates: { canonical: "/global/retrospectiva-2026" },
+  };
+}
 
 export default async function GlobalRetrospective2026Page() {
+  const { t } = await getServerTranslations();
   const data = await loadYearRetrospective(YEAR);
 
   const songIds = [
@@ -27,11 +32,20 @@ export default async function GlobalRetrospective2026Page() {
   const hasData = data.weeksCount > 0;
 
   const introText = hasData
-    ? `Em ${data.weeksCount} ${data.weeksCount === 1 ? "semana consolidada" : "semanas consolidadas"} do Global 100 em ${YEAR} (${data.firstDateRange} até ${data.lastDateRange}), ${data.distinctSongsCount} músicas diferentes e ${data.distinctArtistsCount} artistas diferentes entraram no ranking semanal, somando ${data.totalParadas} paradas pessoais publicadas no período.`
-    : `Ainda não há semanas consolidadas do Global 100 em ${YEAR}.`;
+    ? t("globalRetrospective.introWithData", {
+        weeksCount: data.weeksCount,
+        weekWord: data.weeksCount === 1 ? t("globalRetrospective.weekConsolidatedSingular") : t("globalRetrospective.weekConsolidatedPlural"),
+        year: YEAR,
+        firstRange: data.firstDateRange ?? "",
+        lastRange: data.lastDateRange ?? "",
+        songsCount: data.distinctSongsCount,
+        artistsCount: data.distinctArtistsCount,
+        paradasCount: data.totalParadas,
+      })
+    : t("globalRetrospective.introEmpty", { year: YEAR });
 
   return (
-    <Shell title={`Retrospectiva ${YEAR}`} subtitle="O ano no Global 100, em números reais">
+    <Shell title={t("globalRetrospective.title", { year: YEAR })} subtitle={t("globalRetrospective.subtitle")}>
       <Link
         href="/global/100"
         style={{
@@ -46,16 +60,14 @@ export default async function GlobalRetrospective2026Page() {
         }}
       >
         <ChevronLeft size={16} />
-        Voltar para o Global 100
+        {t("globalRetrospective.backToGlobal100")}
       </Link>
 
       <section style={{ marginBottom: 32 }}>
         <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-muted)", margin: 0 }}>{introText}</p>
         {hasData && (
           <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 12 }}>
-            {YEAR} é o primeiro ano de histórico do Global 100 - por isso toda música e todo artista desta lista
-            estreou no ranking em {YEAR}. O ranking soma os pontos de cada música e artista em todas as semanas em
-            que apareceram no top 100 semanal do ano.
+            {t("globalRetrospective.firstYearNote", { year: YEAR })}
           </p>
         )}
       </section>
@@ -64,7 +76,7 @@ export default async function GlobalRetrospective2026Page() {
         <>
           <section style={{ marginBottom: 48 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>
-              Top {data.topSongs.length} músicas de {YEAR}
+              {t("globalRetrospective.topSongsTitle", { count: data.topSongs.length, year: YEAR })}
             </h2>
             <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 16, overflow: "hidden" }}>
               {data.topSongs.map((row, i) => {
@@ -104,7 +116,11 @@ export default async function GlobalRetrospective2026Page() {
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{row.totalPoints}</div>
                       <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                        {row.weeksOnChart} {row.weeksOnChart === 1 ? "semana" : "semanas"} · pico #{row.bestPosition}
+                        {t("globalRetrospective.weeksOnChart", {
+                          count: row.weeksOnChart,
+                          weekWord: row.weeksOnChart === 1 ? t("globalRetrospective.weekSingular") : t("globalRetrospective.weekPlural"),
+                          position: row.bestPosition,
+                        })}
                       </div>
                     </div>
                   </Link>
@@ -115,7 +131,7 @@ export default async function GlobalRetrospective2026Page() {
 
           <section style={{ marginBottom: 24 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>
-              Top {data.topArtists.length} artistas de {YEAR}
+              {t("globalRetrospective.topArtistsTitle", { count: data.topArtists.length, year: YEAR })}
             </h2>
             <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 16, overflow: "hidden" }}>
               {data.topArtists.map((row, i) => (
@@ -142,7 +158,11 @@ export default async function GlobalRetrospective2026Page() {
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{row.totalPoints}</div>
                     <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      {row.weeksOnChart} {row.weeksOnChart === 1 ? "semana" : "semanas"} · pico #{row.bestPosition}
+                      {t("globalRetrospective.weeksOnChart", {
+                        count: row.weeksOnChart,
+                        weekWord: row.weeksOnChart === 1 ? t("globalRetrospective.weekSingular") : t("globalRetrospective.weekPlural"),
+                        position: row.bestPosition,
+                      })}
                     </div>
                   </div>
                 </Link>

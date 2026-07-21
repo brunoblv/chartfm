@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Regras · Copa ChartFM",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("copa.rulesMetaTitle"),
+  };
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -107,36 +111,39 @@ function MiniTable({
   );
 }
 
-export default function CopaRegrasPage() {
+export default async function CopaRegrasPage() {
+  const { t } = await getServerTranslations();
+
   return (
     <div style={{ padding: "20px 24px 40px", maxWidth: 720, margin: "0 auto" }}>
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>
-        Regulamento Oficial
+        {t("copa.rulesEyebrow")}
       </p>
       <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 6 }}>
-        Copa de Artistas - 64 Artistas
+        {t("copa.rulesTitle")}
       </h1>
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 28 }}>
-        Como funciona o torneio musical da comunidade ChartFM, do sorteio dos grupos até a final.
+        {t("copa.rulesSubtitle")}
       </p>
 
-      <Section title="1. Participantes">
+      <Section title={t("copa.rulesSection1Title")}>
         <List
           items={[
-            "A competição é disputada por 64 artistas.",
-            "Cada artista tem um representante (técnico) responsável pela inscrição e pela estratégia.",
-            "O representante escolhe uma lista de 8 músicas do artista, que serão usadas ao longo de toda a campanha.",
+            t("copa.rulesS1i1"),
+            t("copa.rulesS1i2"),
+            t("copa.rulesS1i3"),
           ]}
         />
       </Section>
 
-      <Section title="2. Escalação">
+      <Section title={t("copa.rulesSection2Title")}>
         <p style={{ marginBottom: 10 }}>
-          O representante define 8 músicas do artista, em ordem de utilização (Música 1 a Música 8). A ordem enviada é{" "}
-          <strong>definitiva</strong> - ela determina qual música entra em cada partida da campanha.
+          {t("copa.rulesS2ParaPrefix")}
+          <strong>{t("copa.rulesS2ParaBold")}</strong>
+          {t("copa.rulesS2ParaSuffix")}
         </p>
         <Card>
-          <p style={{ fontWeight: 700, marginBottom: 8 }}>Exemplo - Paramore</p>
+          <p style={{ fontWeight: 700, marginBottom: 8 }}>{t("copa.rulesExampleLabel")} - Paramore</p>
           <OrderedList
             items={[
               "Misery Business",
@@ -152,155 +159,149 @@ export default function CopaRegrasPage() {
         </Card>
       </Section>
 
-      <Section title="3. Fase de Grupos">
+      <Section title={t("copa.rulesSection3Title")}>
         <List
           items={[
-            "Os 64 artistas são divididos em 16 grupos de 4.",
-            "Cada artista enfrenta os outros três integrantes do grupo - 3 partidas por artista.",
+            t("copa.rulesS3i1"),
+            t("copa.rulesS3i2"),
             <>
-              Pontuação: <strong>vitória = 3 pontos</strong>, <strong>empate = 1 ponto</strong>,{" "}
-              <strong>derrota = 0 ponto</strong>.
+              {t("copa.rulesS3ScorePrefix")} <strong>{t("copa.rulesS3ScoreWin")}</strong>, <strong>{t("copa.rulesS3ScoreDraw")}</strong>,{" "}
+              <strong>{t("copa.rulesS3ScoreLoss")}</strong>.
             </>,
-            "Classificam-se o 1º e o 2º colocado de cada grupo, avançando ao 1/16 de Final.",
+            t("copa.rulesS3i4"),
           ]}
         />
       </Section>
 
-      <Section title="4. Utilização das Músicas">
+      <Section title={t("copa.rulesSection4Title")}>
         <p style={{ marginBottom: 10 }}>
-          A música usada em cada partida depende do número do jogo do artista na competição - as músicas não podem ser
-          repetidas.
+          {t("copa.rulesS4Para")}
         </p>
         <MiniTable
-          head={["Partida", "Música utilizada"]}
+          head={[t("copa.rulesColMatch"), t("copa.rulesColSongUsed")]}
           rows={[
-            ["Grupo · Jogo 1", "Música 1"],
-            ["Grupo · Jogo 2", "Música 2"],
-            ["Grupo · Jogo 3", "Música 3"],
-            ["1/16 de Final", "Música 4"],
-            ["Oitavas de Final", "Música 5"],
-            ["Quartas de Final", "Música 6"],
-            ["Semifinal", "Música 7"],
-            ["Final / 3º Lugar", "Música 8"],
+            [t("copa.rulesRowGroupGame1"), t("copa.rulesSongN", { n: 1 })],
+            [t("copa.rulesRowGroupGame2"), t("copa.rulesSongN", { n: 2 })],
+            [t("copa.rulesRowGroupGame3"), t("copa.rulesSongN", { n: 3 })],
+            [t("copa.phaseR32"), t("copa.rulesSongN", { n: 4 })],
+            [t("copa.phaseR16"), t("copa.rulesSongN", { n: 5 })],
+            [t("copa.phaseQF"), t("copa.rulesSongN", { n: 6 })],
+            [t("copa.phaseSF"), t("copa.rulesSongN", { n: 7 })],
+            [t("copa.rulesRowFinalThird"), t("copa.rulesSongN", { n: 8 })],
           ]}
         />
       </Section>
 
-      <Section title="5. Votação das Partidas">
+      <Section title={t("copa.rulesSection5Title")}>
         <p style={{ marginBottom: 10 }}>
-          Cada confronto é formado por uma música de cada artista. Os torcedores votam na música preferida. Os votos
-          são convertidos em gols no placar (conforme a configuração da edição - ex.: 2 votos = 1 gol).
+          {t("copa.rulesS5Para")}
         </p>
         <List
           items={[
             <>
-              <strong>Fase de grupos:</strong> vence quem tiver mais gols. Empate no placar = 1 ponto para cada
-              artista.
+              <strong>{t("copa.rulesS5GroupBold")}</strong>{t("copa.rulesS5GroupText")}
             </>,
             <>
-              <strong>Eliminatórias:</strong> não há empate - se o placar em gols empatar, vence quem tiver mais votos
-              no total (desempate nos &quot;pênaltis&quot;).
+              <strong>{t("copa.rulesS5KnockoutBold")}</strong>{t("copa.rulesS5KnockoutText")}
             </>,
           ]}
         />
         <div style={{ marginTop: 10 }}>
           <Card>
-            <p style={{ fontWeight: 700, marginBottom: 6 }}>Exemplo</p>
+            <p style={{ fontWeight: 700, marginBottom: 6 }}>{t("copa.rulesExampleLabel")}</p>
             <p style={{ color: "var(--text-muted)" }}>Paramore: &quot;Decode&quot; × Avril Lavigne: &quot;Complicated&quot;</p>
           </Card>
         </div>
       </Section>
 
-      <Section title="6. Critérios de Desempate - Fase de Grupos">
-        <p style={{ marginBottom: 10 }}>Em caso de empate na tabela do grupo, a ordem de critérios é:</p>
+      <Section title={t("copa.rulesSection6Title")}>
+        <p style={{ marginBottom: 10 }}>{t("copa.rulesS6Para")}</p>
         <OrderedList
           items={[
-            "Maior número de pontos",
-            "Confronto direto (apenas em empate entre dois artistas)",
-            "Saldo de gols",
-            "Maior número de gols marcados",
-            "Número de vitórias",
-            "Sorteio",
+            t("copa.rulesS6i1"),
+            t("copa.rulesS6i2"),
+            t("copa.rulesS6i3"),
+            t("copa.rulesS6i4"),
+            t("copa.rulesS6i5"),
+            t("copa.rulesS6i6"),
           ]}
         />
       </Section>
 
-      <Section title="Fases Eliminatórias">
+      <Section title={t("copa.rulesKnockoutSectionTitle")}>
         <List
           items={[
             <>
-              <strong>1/16 de Final (32 artistas):</strong> 1º do Grupo A × 2º do Grupo B, 1º do Grupo B × 2º do Grupo A,
-              e assim sucessivamente.
+              <strong>{t("copa.rulesKoR32Bold")}</strong>{t("copa.rulesKoR32Text")}
             </>,
             <>
-              <strong>Oitavas de Final:</strong> os vencedores do 1/16 avançam.
+              <strong>{t("copa.rulesKoR16Bold")}</strong>{t("copa.rulesKoR16Text")}
             </>,
             <>
-              <strong>Quartas de Final:</strong> os oito artistas restantes disputam quatro partidas.
+              <strong>{t("copa.rulesKoQFBold")}</strong>{t("copa.rulesKoQFText")}
             </>,
             <>
-              <strong>Semifinais:</strong> os quatro artistas restantes disputam duas partidas.
+              <strong>{t("copa.rulesKoSFBold")}</strong>{t("copa.rulesKoSFText")}
             </>,
             <>
-              <strong>Final:</strong> os vencedores das semifinais disputam o título.
+              <strong>{t("copa.rulesKoFinalBold")}</strong>{t("copa.rulesKoFinalText")}
             </>,
             <>
-              <strong>Disputa de 3º Lugar:</strong> os derrotados das semifinais disputam a terceira colocação.
+              <strong>{t("copa.rulesKoThirdBold")}</strong>{t("copa.rulesKoThirdText")}
             </>,
           ]}
         />
       </Section>
 
-      <Section title="Empates no Mata-Mata">
+      <Section title={t("copa.rulesTiebreakKnockoutTitle")}>
         <p style={{ marginBottom: 10 }}>
-          Um jogo eliminatório nunca termina empatado. O desempate segue, em ordem:
+          {t("copa.rulesTkPara")}
         </p>
         <OrderedList
           items={[
-            "Placar em gols - quem tiver mais gols vence.",
-            "Empate em gols: vence quem tiver mais votos no total (pênaltis).",
-            "Empate também em votos: vence a música com mais pontos no Global 100.",
+            t("copa.rulesTk1"),
+            t("copa.rulesTk2"),
+            t("copa.rulesTk3"),
           ]}
         />
       </Section>
 
-      <Section title="A Escalação é Definitiva">
+      <Section title={t("copa.rulesFinalLineupTitle")}>
         <p style={{ marginBottom: 10 }}>
-          As músicas enviadas no início da competição valem para toda a campanha. Não são permitidas:
+          {t("copa.rulesFlPara")}
         </p>
-        <List items={["Trocas de músicas", "Alteração da ordem", "Substituições"]} />
+        <List items={[t("copa.rulesFl1"), t("copa.rulesFl2"), t("copa.rulesFl3")]} />
       </Section>
 
-      <Section title="Exemplo da Campanha do Campeão">
+      <Section title={t("copa.rulesChampionExampleTitle")}>
         <MiniTable
-          head={["Fase", "Música"]}
+          head={[t("copa.rulesColPhase"), t("copa.rulesColSongHeader")]}
           rows={[
-            ["Grupo - Rodada 1", "Música 1"],
-            ["Grupo - Rodada 2", "Música 2"],
-            ["Grupo - Rodada 3", "Música 3"],
-            ["1/16 de Final", "Música 4"],
-            ["Oitavas", "Música 5"],
-            ["Quartas", "Música 6"],
-            ["Semifinal", "Música 7"],
-            ["Final", "Música 8"],
+            [t("copa.rulesChampRowGroup1"), t("copa.rulesSongN", { n: 1 })],
+            [t("copa.rulesChampRowGroup2"), t("copa.rulesSongN", { n: 2 })],
+            [t("copa.rulesChampRowGroup3"), t("copa.rulesSongN", { n: 3 })],
+            [t("copa.phaseR32"), t("copa.rulesSongN", { n: 4 })],
+            [t("copa.rulesChampRowR16"), t("copa.rulesSongN", { n: 5 })],
+            [t("copa.rulesChampRowQF"), t("copa.rulesSongN", { n: 6 })],
+            [t("copa.rulesChampRowSF"), t("copa.rulesSongN", { n: 7 })],
+            [t("copa.rulesChampRowFinal"), t("copa.rulesSongN", { n: 8 })],
           ]}
         />
       </Section>
 
-      <Section title="Estratégia">
+      <Section title={t("copa.rulesStrategyTitle")}>
         <p style={{ marginBottom: 10 }}>
-          O representante atua como o técnico do artista. Ele precisa decidir:
+          {t("copa.rulesStPara")}
         </p>
         <List
           items={[
-            "Colocar os maiores sucessos na fase de grupos para garantir a classificação.",
-            "Guardar músicas fortes para as fases decisivas.",
-            "Equilibrar a escalação pensando em toda a campanha.",
+            t("copa.rulesSt1"),
+            t("copa.rulesSt2"),
+            t("copa.rulesSt3"),
           ]}
         />
         <p style={{ marginTop: 10, color: "var(--text-muted)" }}>
-          Uma música usada no início pode garantir a vaga, mas uma música guardada para a final pode ser decisiva para
-          conquistar o título. Por isso, a ordem das músicas é tão importante quanto as próprias escolhas.
+          {t("copa.rulesStClosing")}
         </p>
       </Section>
     </div>

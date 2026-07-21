@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
 import { CopaLiveCommentsPanel, CopaLiveCommentsScrollButton } from "@/components/copa/CopaLiveComments";
+import { useTranslations } from "@/hooks/useTranslations";
+
+type TFn = ReturnType<typeof useTranslations>["t"];
 
 type ArtistSlot = {
   artistName: string;
@@ -30,24 +33,27 @@ type Game = {
   artistB: ArtistSlot;
 };
 
-const PHASE_LABELS: Record<string, string> = {
-  R32: "1/16 de Final",
-  R16: "Oitavas de Final",
-  QF: "Quartas de Final",
-  SF: "Semifinal",
-  THIRD_PLACE: "Disputa pelo 3º Lugar",
-  FINAL: "Final",
-};
+function getPhaseLabels(t: TFn): Record<string, string> {
+  return {
+    R32: t("copa.phaseR32"),
+    R16: t("copa.phaseR16"),
+    QF: t("copa.phaseQF"),
+    SF: t("copa.phaseSF"),
+    THIRD_PLACE: t("copa.phaseThirdPlace"),
+    FINAL: t("copa.phaseFinal"),
+  };
+}
 
-function phaseLabel(g: Game): string {
-  if (g.phase === "GROUP") return `Grupo ${g.groupLetter} · Rodada ${g.round} de 3`;
-  return PHASE_LABELS[g.phase] ?? g.phase;
+function phaseLabel(g: Game, t: TFn): string {
+  if (g.phase === "GROUP") return t("copa.groupRoundLabel", { letter: g.groupLetter ?? "", round: g.round ?? "" });
+  return getPhaseLabels(t)[g.phase] ?? g.phase;
 }
 
 function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
+  const { t } = useTranslations();
   useEffect(() => {
-    const t = setTimeout(onDone, 1500);
-    return () => clearTimeout(t);
+    const timer = setTimeout(onDone, 1500);
+    return () => clearTimeout(timer);
   }, [onDone]);
   return (
     <div
@@ -75,7 +81,7 @@ function GoalOverlay({ name, onDone }: { name: string; onDone: () => void }) {
           textAlign: "center",
         }}
       >
-        GOL de {name}!
+        {t("copa.goalScored", { name })}
       </div>
     </div>
   );
@@ -93,6 +99,7 @@ type VoteArenaProps = {
 const ADVANCE_DELAY = 900;
 
 function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteArenaProps) {
+  const { t } = useTranslations();
   const [voting, setVoting] = useState(false);
   const [voted, setVoted] = useState<"A" | "B" | null>(null);
   const [goalName, setGoalName] = useState<string | null>(null);
@@ -174,12 +181,12 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            {phaseLabel(game)}
+            {phaseLabel(game, t)}
           </span>
           {/* ✅ FIX: badge live usa var(--accent-tint) + var(--accent) */}
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
-            Ao Vivo
+            {t("copa.liveBadge")}
           </span>
         </div>
 
@@ -197,7 +204,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
               <span style={{ fontSize: 20, color: "var(--text-muted)" }}>-</span>
               <span style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: game.goalsB >= game.goalsA ? "var(--text)" : "var(--text-muted)" }}>{game.goalsB}</span>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{game.votesA} × {game.votesB} votos</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{t("copa.votesXVotes", { a: game.votesA, b: game.votesB })}</div>
           </div>
 
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
@@ -216,7 +223,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
         {voted ? (
           // ✅ FIX: var(--up-bg) + var(--up-fg) em vez de rgba(52,199,89,.1) + #34C759
           <div style={{ textAlign: "center", fontSize: 14, fontWeight: 700, color: "var(--up-fg)", padding: 14, background: "var(--up-bg)", borderRadius: 12, marginTop: 16 }}>
-            ✓ Voto registrado para {(voted === "A" ? game.artistA : game.artistB).artistName}!
+            {t("copa.voteRegistered", { name: (voted === "A" ? game.artistA : game.artistB).artistName })}
           </div>
         ) : (
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
@@ -249,7 +256,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
                   onMouseOut={(e) => { e.currentTarget.style.borderColor = "var(--divider)"; e.currentTarget.style.background = "var(--fill-inset)"; }}
                 >
                   <CopaArtistAvatar {...art} coverUrl={side === "A" ? game.singleACover : game.singleBCover} size={34} />
-                  <span>Votar em {art.artistName.split(" ")[0]}</span>
+                  <span>{t("copa.voteForButton", { name: art.artistName.split(" ")[0] })}</span>
                 </button>
               );
             })}
@@ -272,7 +279,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
             padding: "6px 12px",
           }}
         >
-          Pular esta disputa →
+          {t("copa.liveSkipButton")}
         </button>
       )}
 
@@ -282,6 +289,7 @@ function VoteArena({ game, copaId, position, total, onResult, onAdvance }: VoteA
 }
 
 function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
+  const { t } = useTranslations();
   const total = g.votesA + g.votesB || 1;
   const pctA = (g.votesA / total) * 100;
   return (
@@ -298,12 +306,12 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          {phaseLabel(g)}
+          {phaseLabel(g, t)}
         </span>
         {/* ✅ FIX: badge live usa var(--accent-tint) + var(--accent) */}
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
-          Ao Vivo
+          {t("copa.liveBadge")}
         </span>
       </div>
 
@@ -320,7 +328,7 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
             <span style={{ fontSize: 18, color: "var(--text-muted)" }}>-</span>
             <span style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: g.goalsB >= g.goalsA ? "var(--text)" : "var(--text-muted)" }}>{g.goalsB}</span>
           </div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{g.votesA} × {g.votesB} votos</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>{t("copa.votesXVotes", { a: g.votesA, b: g.votesB })}</div>
         </div>
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
@@ -337,8 +345,8 @@ function ResultCard({ g, onClick }: { g: Game; onClick: () => void }) {
       {/* ✅ FIX: votado usa var(--up-fg), não votado usa var(--accent) */}
       <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, fontWeight: 700, color: g.myVote ? "var(--up-fg)" : "var(--accent)" }}>
         {g.myVote
-          ? `✓ Você votou em ${g.myVote === "A" ? g.artistA.artistName : g.artistB.artistName}`
-          : "Toque para votar →"}
+          ? t("copa.liveYouVotedFor", { name: g.myVote === "A" ? g.artistA.artistName : g.artistB.artistName })
+          : t("copa.tapToVote")}
       </div>
     </div>
   );
@@ -357,6 +365,7 @@ function PlaylistLinks({
   playlists: DayPlaylists | null;
   onCommentsClick: () => void;
 }) {
+  const { t } = useTranslations();
   const hasPlaylist = !!(playlists?.spotifyUrl || playlists?.youtubeUrl);
   if (!hasPlaylist) {
     return (
@@ -376,7 +385,7 @@ function PlaylistLinks({
       }}
     >
       <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-        🎧 Playlist dos jogos de hoje
+        {t("copa.livePlaylistTitle")}
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         {playlists!.spotifyUrl && (
@@ -386,7 +395,7 @@ function PlaylistLinks({
             rel="noopener noreferrer"
             style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#fff", background: "#1DB954", padding: "8px 14px", borderRadius: 99, textDecoration: "none" }}
           >
-            Ouvir no Spotify
+            {t("copa.liveListenSpotify")}
           </a>
         )}
         {playlists!.youtubeUrl && (
@@ -396,7 +405,7 @@ function PlaylistLinks({
             rel="noopener noreferrer"
             style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: "#fff", background: "#FF0000", padding: "8px 14px", borderRadius: 99, textDecoration: "none" }}
           >
-            Ver no YouTube
+            {t("copa.liveWatchYoutube")}
           </a>
         )}
         <CopaLiveCommentsScrollButton onClick={onCommentsClick} />
@@ -419,6 +428,7 @@ export function LiveClient({
   userId: string | null;
 }) {
   const router = useRouter();
+  const { t } = useTranslations();
   const [castVotes, setCastVotes] = useState<Record<string, Game>>({});
   const [queue, setQueue] = useState<string[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -461,22 +471,22 @@ export function LiveClient({
 
   return (
     <div style={{ padding: "20px 16px 28px" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", margin: "0 8px 4px" }}>Jogos de Hoje</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", margin: "0 8px 4px" }}>{t("copa.livePageTitle")}</h1>
       <div style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 8px 18px" }}>
-        Vote em uma disputa e a próxima aparece automaticamente
+        {t("copa.livePageSubtitle")}
       </div>
 
       <PlaylistLinks playlists={playlists} onCommentsClick={scrollToComments} />
 
       {games.length === 0 ? (
         <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 14, padding: "40px 24px", background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14 }}>
-          ⏳ Nenhum jogo ao vivo agora.<br />
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Os jogos do dia abrem no horário definido.</span>
+          {t("copa.liveNoGamesTitle")}<br />
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("copa.liveNoGamesSubtitle")}</span>
         </div>
       ) : !canVote ? (
         <>
           <div style={{ textAlign: "center", fontSize: 13, color: "var(--text-muted)", padding: 14, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, marginBottom: 12 }}>
-            Entre na sua conta para votar nas disputas
+            {t("copa.liveLoginToVote")}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {allGames.map((g) => (
@@ -500,10 +510,10 @@ export function LiveClient({
           <div style={{ textAlign: "center", padding: "18px 16px", background: "var(--up-bg)", border: "1px solid transparent", borderRadius: 14, marginBottom: 14 }}>
             <div style={{ fontSize: 32, marginBottom: 4 }}>🎉</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: "var(--up-fg)" }}>
-              Você votou em {votedCount} {votedCount === 1 ? "disputa" : "disputas"}!
+              {t(votedCount === 1 ? "copa.liveVotedCountSingular" : "copa.liveVotedCountPlural", { count: votedCount })}
             </div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-              Acompanhe os placares ao vivo abaixo.
+              {t("copa.liveFollowScoresBelow")}
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

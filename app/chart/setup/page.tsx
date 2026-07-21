@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "@/hooks/useTranslations";
 
 function ChevronRight() {
   return (
@@ -14,6 +15,7 @@ function ChevronRight() {
 export default function ParadaSetupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslations();
   const isSecondSlot = searchParams.get("slot") === "2";
   const [nome, setNome] = useState("");
   const [saving, setSaving] = useState(false);
@@ -22,7 +24,7 @@ export default function ParadaSetupPage() {
   const handleContinue = async () => {
     const trimmed = nome.trim();
     if (trimmed.length < 2) {
-      setError("O nome precisa ter pelo menos 2 caracteres.");
+      setError(t("chart.setup.nameError"));
       return;
     }
     setSaving(true);
@@ -36,7 +38,7 @@ export default function ParadaSetupPage() {
         });
         if (!res.ok) {
           const data = await res.json();
-          setError(data.error ?? "Erro ao criar segunda parada.");
+          setError(data.error ?? t("chart.setup.secondCreateError"));
           return;
         }
         const data = (await res.json()) as { parada?: { id: string } };
@@ -51,12 +53,12 @@ export default function ParadaSetupPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Erro ao salvar.");
+        setError(data.error ?? t("chart.setup.saveError"));
         return;
       }
       router.push("/create");
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("chart.setup.connectionError"));
     } finally {
       setSaving(false);
     }
@@ -81,26 +83,24 @@ export default function ParadaSetupPage() {
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 0 32px" }}>
         <div style={{ width: "100%", maxWidth: 480, padding: "0 20px" }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
-            {isSecondSlot ? "Segunda parada" : "Primeira vez aqui"}
+            {isSecondSlot ? t("chart.setupSecond") : t("chart.setupFirst")}
           </div>
           <h1 style={{ fontSize: "clamp(28px, 8vw, 42px)", fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 12px 0", lineHeight: 1.05 }}>
             {isSecondSlot ? (
-              <>Nome da sua<br />2ª parada</>
+              <>{t("chart.setup.secondHeadingLine1")}<br />{t("chart.setup.secondHeadingLine2")}</>
             ) : (
-              <>Como vai se chamar<br />a sua parada?</>
+              <>{t("chart.setup.firstHeadingLine1")}<br />{t("chart.setup.firstHeadingLine2")}</>
             )}
           </h1>
           <p style={{ fontSize: 15, color: "#6B6B70", lineHeight: 1.55, marginBottom: 28, maxWidth: 400 }}>
-            {isSecondSlot
-              ? "Use um tema ou gênero diferente da parada principal. Não entra no ranking global."
-              : "Esse é o nome que aparece nas suas publicações semanais. Pode ser algo pessoal, criativo, o que quiser."}
+            {isSecondSlot ? t("chart.setup.secondDesc") : t("chart.setup.firstDesc")}
           </p>
 
           <input
             value={nome}
             onChange={(e) => { setNome(e.target.value); setError(null); }}
             onKeyDown={(e) => e.key === "Enter" && handleContinue()}
-            placeholder={isSecondSlot ? "Ex: Parada K-Pop, Top Rock…" : "Ex: Parada do João, Top da Semana…"}
+            placeholder={isSecondSlot ? t("chart.setup.secondPlaceholder") : t("chart.setup.firstPlaceholder")}
             maxLength={60}
             style={{
               width: "100%",

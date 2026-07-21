@@ -7,10 +7,10 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
-import { useTranslations } from "@/hooks/useTranslations";
+import { useLocale, useTranslations } from "@/hooks/useTranslations";
 
-function formatCount(n: number): string {
-  if (n >= 1000) return `+${(n / 1000).toFixed(0)} mil`;
+function formatCount(n: number, locale: string): string {
+  if (n >= 1000) return `+${(n / 1000).toFixed(0)}${locale === "en" ? "k" : " mil"}`;
   return `+${n}`;
 }
 
@@ -287,14 +287,15 @@ export function AuthTermsFooter() {
 }
 
 export function useCuratorCount() {
-  const [curatorCount, setCuratorCount] = React.useState("+12 mil");
+  const { locale } = useLocale();
+  const [curatorCount, setCuratorCount] = React.useState(formatCount(12000, locale));
   React.useEffect(() => {
     fetch("/api/stats/weekly-curators")
       .then((r) => r.json())
       .then((d) => {
-        if (typeof d.count === "number" && d.count > 0) setCuratorCount(formatCount(d.count));
+        if (typeof d.count === "number" && d.count > 0) setCuratorCount(formatCount(d.count, locale));
       })
       .catch(() => {});
-  }, []);
+  }, [locale]);
   return curatorCount;
 }

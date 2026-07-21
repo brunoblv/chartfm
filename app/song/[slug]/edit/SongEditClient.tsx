@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 import { DuplicateConflictNotice } from "@/components/admin/DuplicateConflictNotice";
 import type { DuplicateSongConflict } from "@/lib/duplicate-conflict-payload";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type SongEditInitial = {
   id: string;
@@ -32,6 +33,7 @@ function usableAlbumOptions(items: AlbumOption[]) {
 }
 
 export function SongEditClient({ initialSong, initialFeats }: { initialSong: SongEditInitial; initialFeats: FeatEntry[] }) {
+  const { t } = useTranslations();
   const [title, setTitle] = useState(initialSong.title);
   const [spotifyId, setSpotifyId] = useState(initialSong.spotifyId);
   const [romanization, setRomanization] = useState(initialSong.romanization);
@@ -140,12 +142,12 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
           setConflict(data.conflict);
           return;
         }
-        setError(data.message ?? data.error ?? "Não foi possível salvar.");
+        setError(data.message ?? data.error ?? t("song.couldNotSave"));
         return;
       }
-      setMessage("Música atualizada com sucesso.");
+      setMessage(t("song.songUpdated"));
     } catch {
-      setError("Erro de conexão ao salvar.");
+      setError(t("song.saveConnError"));
     } finally {
       setSaving(false);
     }
@@ -155,26 +157,26 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
     <>
       <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome da música</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldTitle")}</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldSpotifyId")}</span>
           <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
         </label>
 
         <label style={{ display: "grid", gap: 6, position: "relative" }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Artista (buscar cadastrados)</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldArtist")}</span>
           <input
             value={artistQuery}
             onChange={(e) => {
               setArtistTypeaheadActive(true);
               const v = e.target.value;
               setArtistQuery(v);
-              const t = v.trim();
+              const trimmed = v.trim();
               const initA = initialSong.artist.trim();
               const initId = initialSong.artistSpotifyId.trim();
-              if (initId && t.toLowerCase() === initA.toLowerCase()) {
+              if (initId && trimmed.toLowerCase() === initA.toLowerCase()) {
                 setArtistSpotifyId(initialSong.artistSpotifyId);
               } else {
                 setArtistSpotifyId("");
@@ -203,17 +205,17 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
         </label>
 
         <label style={{ display: "grid", gap: 6, position: "relative" }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Álbum (buscar cadastrados)</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldAlbum")}</span>
           <input
             value={albumQuery}
             onChange={(e) => {
               setAlbumTypeaheadActive(true);
               const v = e.target.value;
               setAlbumQuery(v);
-              const t = v.trim();
+              const trimmed = v.trim();
               const initAl = initialSong.album.trim();
               const initId = initialSong.albumSpotifyId.trim();
-              if (initId && t.toLowerCase() === initAl.toLowerCase()) {
+              if (initId && trimmed.toLowerCase() === initAl.toLowerCase()) {
                 setAlbumSpotifyId(initialSong.albumSpotifyId);
               } else {
                 setAlbumSpotifyId("");
@@ -242,16 +244,16 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
         </label>
 
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldRomanization")}</span>
           <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nota editorial (Contexto no ChartFM)</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldEditorialNote")}</span>
           <textarea
             value={editorialNote}
             onChange={(e) => setEditorialNote(e.target.value)}
             rows={5}
-            placeholder="Contexto da música na comunidade ChartFM"
+            placeholder={t("song.editorialNotePlaceholder")}
             style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
           />
         </label>
@@ -277,7 +279,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
             cursor: canSave ? "pointer" : "not-allowed",
           }}
         >
-          {saving ? "Salvando..." : "Salvar alterações"}
+          {saving ? t("song.saving") : t("song.saveChanges")}
         </button>
         {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
         {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
@@ -296,6 +298,7 @@ function FeatsSection({
   hasSongSpotifyId: boolean;
   initialFeats: FeatEntry[];
 }) {
+  const { t } = useTranslations();
   const [feats, setFeats] = useState<FeatEntry[]>(initialFeats);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<ArtistOption[]>([]);
@@ -341,12 +344,12 @@ function FeatsSection({
       });
       const data = (await res.json()) as { error?: string; feat?: FeatEntry };
       if (!res.ok) {
-        setFeatError(data.error === "feat_already_exists" ? "Artista já é feat desta música." : (data.error ?? "Erro ao adicionar."));
+        setFeatError(data.error === "feat_already_exists" ? t("song.featAlreadyExists") : (data.error ?? t("song.errorAdding")));
         return;
       }
       if (data.feat) setFeats((prev) => [...prev, data.feat!]);
     } catch {
-      setFeatError("Erro de conexão.");
+      setFeatError(t("song.connError"));
     } finally {
       setAdding(false);
     }
@@ -361,25 +364,25 @@ function FeatsSection({
         body: JSON.stringify({ featId }),
       });
       if (!res.ok) {
-        setFeatError("Erro ao remover feat.");
+        setFeatError(t("song.errorRemovingFeat"));
         return;
       }
       setFeats((prev) => prev.filter((f) => f.id !== featId));
     } catch {
-      setFeatError("Erro de conexão.");
+      setFeatError(t("song.connError"));
     }
   }
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, margin: "0 0 4px" }}>Participações (feat.)</h2>
+      <h2 style={{ fontSize: 20, margin: "0 0 4px" }}>{t("song.featsHeading")}</h2>
       <p style={{ color: "#86868B", marginTop: 0, marginBottom: 16, fontSize: 14 }}>
-        Artistas que participam desta música além do artista principal.
+        {t("song.featsDesc")}
       </p>
 
       {!hasSongSpotifyId ? (
         <p style={{ fontSize: 13, color: "#86868B", background: "rgba(0,0,0,0.04)", borderRadius: 10, padding: "10px 14px" }}>
-          Esta música não possui Spotify ID. Adicione um Spotify ID e salve para gerenciar participações.
+          {t("song.noSpotifyIdForFeats")}
         </p>
       ) : (
         <>
@@ -415,7 +418,7 @@ function FeatsSection({
                       padding: 0,
                       fontWeight: 700,
                     }}
-                    title="Remover"
+                    title={t("song.removeFeat")}
                   >
                     ×
                   </button>
@@ -428,7 +431,7 @@ function FeatsSection({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar artista para adicionar feat…"
+              placeholder={t("song.featSearchPlaceholder")}
               disabled={adding}
               style={{ ...inputStyle, width: "100%", opacity: adding ? 0.6 : 1 }}
             />
@@ -445,7 +448,7 @@ function FeatsSection({
 
           {featError && <p style={{ color: "#C5291C", fontSize: 13, marginTop: 8 }}>{featError}</p>}
           {feats.length === 0 && !featError && (
-            <p style={{ color: "#86868B", fontSize: 13, marginTop: 8 }}>Nenhuma participação cadastrada.</p>
+            <p style={{ color: "#86868B", fontSize: 13, marginTop: 8 }}>{t("song.noFeatsRegistered")}</p>
           )}
         </>
       )}

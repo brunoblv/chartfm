@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CopaArtistAvatar } from "./CopaArtistAvatar";
+import { useTranslations } from "@/hooks/useTranslations";
+
+type TFn = ReturnType<typeof useTranslations>["t"];
 
 type SimpleFixture = {
   id: string;
@@ -35,25 +38,27 @@ type Props = {
   myArtists: { id: string; artistName: string; artistImage: string | null; artistColor: string; artistInitials: string; groupLetter: string; standingRank: number }[];
 };
 
-const FIXTURE_PHASE_LABELS: Record<string, string> = {
-  R32: "1/16 de Final",
-  R16: "Oitavas de Final",
-  QF: "Quartas de Final",
-  SF: "Semifinal",
-  FINAL: "Final",
-  THIRD_PLACE: "Disputa pelo 3º Lugar",
-};
-
-function fixtureContextLabel(f: SimpleFixture): string {
-  if (f.phase === "GROUP") return `Grupo ${f.groupLetter} · Rodada ${f.round} de 3`;
-  return FIXTURE_PHASE_LABELS[f.phase] ?? f.phase;
+function getFixturePhaseLabels(t: TFn): Record<string, string> {
+  return {
+    R32: t("copa.phaseR32"),
+    R16: t("copa.phaseR16"),
+    QF: t("copa.phaseQF"),
+    SF: t("copa.phaseSF"),
+    FINAL: t("copa.phaseFinal"),
+    THIRD_PLACE: t("copa.phaseThirdPlace"),
+  };
 }
 
-function livePhaseSummary(liveFixture: SimpleFixture | null, liveCount: number): string | null {
+function fixtureContextLabel(f: SimpleFixture, t: TFn): string {
+  if (f.phase === "GROUP") return t("copa.groupRoundLabel", { letter: f.groupLetter ?? "", round: f.round ?? "" });
+  return getFixturePhaseLabels(t)[f.phase] ?? f.phase;
+}
+
+function livePhaseSummary(liveFixture: SimpleFixture | null, liveCount: number, t: TFn): string | null {
   if (!liveFixture || liveCount === 0) return null;
-  const phase = FIXTURE_PHASE_LABELS[liveFixture.phase] ?? liveFixture.phase;
-  if (liveCount === 1) return `${phase} ao vivo agora`;
-  return `${liveCount} jogos ao vivo · ${phase}`;
+  const phase = getFixturePhaseLabels(t)[liveFixture.phase] ?? liveFixture.phase;
+  if (liveCount === 1) return t("copa.homeLivePhaseSingle", { phase });
+  return t("copa.homeLivePhaseMulti", { count: liveCount, phase });
 }
 
 function LiveDot() {
@@ -102,6 +107,7 @@ function Badge({ children, variant }: { children: React.ReactNode; variant: "liv
 
 function ScoreRow({ f }: { f: SimpleFixture }) {
   const router = useRouter();
+  const { t } = useTranslations();
   return (
     <div
       onClick={() => router.push(`/copa/jogo/${f.id}`)}
@@ -125,13 +131,14 @@ function ScoreRow({ f }: { f: SimpleFixture }) {
       </span>
       <span style={{ flex: 1, fontSize: 13, fontWeight: 700, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.artistB.artistName}</span>
       <CopaArtistAvatar {...f.artistB} coverUrl={f.singleBCover} size={26} />
-      {f.status === "LIVE" ? <Badge variant="live">Ao vivo</Badge> : <Badge variant="done">R{f.round}</Badge>}
+      {f.status === "LIVE" ? <Badge variant="live">{t("copa.liveBadge")}</Badge> : <Badge variant="done">R{f.round}</Badge>}
     </div>
   );
 }
 
 export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDone, upcoming, myArtists }: Props) {
   const router = useRouter();
+  const { t } = useTranslations();
   const [joining, setJoining] = useState(false);
 
   const isFull = copa.participants.length >= copa.maxParticipants;
@@ -147,7 +154,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
       const res = await fetch(`/api/copa/${copa.id}/join`, { method: "POST" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.error ?? "Erro ao se inscrever");
+        alert(err.error ?? t("copa.homeJoinError"));
         return;
       }
       router.push("/copa/meu-time");
@@ -157,10 +164,10 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
   }
 
   const phaseLabel: Record<string, string> = {
-    REGISTRATION: "Fase de Inscrições",
-    GROUP_STAGE: "Fase de Grupos",
-    KNOCKOUT: "Fase Eliminatória",
-    FINISHED: "Encerrado",
+    REGISTRATION: t("copa.homeStatusRegistration"),
+    GROUP_STAGE: t("copa.homeStatusGroupStage"),
+    KNOCKOUT: t("copa.homeStatusKnockout"),
+    FINISHED: t("copa.homeStatusFinished"),
   };
 
   return (
@@ -173,12 +180,12 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
         {/* ✅ FIX: var(--text-muted) em vez de var(--text-disabled) */}
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
           🏆 {phaseLabel[copa.status] ?? copa.status}
-          {livePhaseSummary(liveFixture, liveCount) && ` · ${livePhaseSummary(liveFixture, liveCount)}`}
+          {livePhaseSummary(liveFixture, liveCount, t) && ` · ${livePhaseSummary(liveFixture, liveCount, t)}`}
         </div>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
-          Um torneio de artistas decidido pelo voto da comunidade: você vota nas partidas, acompanha os grupos e o chaveamento até a final.{" "}
+          {t("copa.homeIntroText")}{" "}
           <Link href="/guides/como-funciona-a-copa" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
-            Como funciona a Copa →
+            {t("copa.homeHowItWorksLink")}
           </Link>
         </div>
       </div>
@@ -188,7 +195,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
         <>
           {/* ✅ FIX: var(--text-muted) */}
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-            Ao vivo agora
+            {t("copa.homeLiveNow")}
           </p>
           <div
             onClick={() => router.push(`/copa/jogo/${liveFixture.id}`)}
@@ -205,11 +212,11 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <Badge variant="live">Ao vivo</Badge>
+              <Badge variant="live">{t("copa.liveBadge")}</Badge>
               {/* ✅ FIX: var(--text-muted) */}
               <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>
-                {fixtureContextLabel(liveFixture).toUpperCase()}
-                {liveCount > 1 ? ` · +${liveCount - 1} jogos` : ""}
+                {fixtureContextLabel(liveFixture, t).toUpperCase()}
+                {liveCount > 1 ? t("copa.homeMoreGamesSuffix", { count: liveCount - 1 }) : ""}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -224,7 +231,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
                   <span style={{ fontSize: 26, color: "var(--text-muted)", margin: "0 8px" }}>-</span>
                   <span style={{ fontSize: 48, fontWeight: 900, letterSpacing: "-0.05em" }}>{liveFixture.goalsB}</span>
                 </div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{liveFixture.votesA} × {liveFixture.votesB} votos</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("copa.votesXVotes", { a: liveFixture.votesA, b: liveFixture.votesB })}</div>
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                 <CopaArtistAvatar {...liveFixture.artistB} coverUrl={liveFixture.singleBCover} size={56} />
@@ -236,10 +243,10 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
             <div style={{ marginTop: 14, fontSize: 12, fontWeight: 700, color: "var(--accent)", textAlign: "center" }}>
               {liveCount > 1 ? (
                 <span onClick={(e) => { e.stopPropagation(); router.push("/copa/ao-vivo"); }}>
-                  Ver todos os {liveCount} jogos →
+                  {t("copa.homeViewAllGamesLink", { count: liveCount })}
                 </span>
               ) : (
-                "Toque para votar →"
+                t("copa.tapToVote")
               )}
             </div>
           </div>
@@ -259,12 +266,21 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
           }}
         >
           <div style={{ fontSize: 36, marginBottom: 12 }}>⚽</div>
-          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Inscrições abertas</div>
+          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>{t("copa.homeRegistrationOpenTitle")}</div>
           <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
-            {copa.participants.length}/{copa.maxParticipants} participante{copa.participants.length !== 1 ? "s" : ""}
+            {t(
+              copa.participants.length !== 1 ? "copa.homeParticipantsCountPlural" : "copa.homeParticipantsCountSingular",
+              { count: copa.participants.length, max: copa.maxParticipants },
+            )}
             {copa.isParticipant
-              ? ` · Cadastre seus ${copa.artistsPerUser} artista${copa.artistsPerUser !== 1 ? "s" : ""}`
-              : ` · Inscreva-se e escolha ${copa.artistsPerUser} artista${copa.artistsPerUser !== 1 ? "s" : ""}`}
+              ? t(
+                  copa.artistsPerUser !== 1 ? "copa.homeRegisterArtistsPlural" : "copa.homeRegisterArtistsSingular",
+                  { n: copa.artistsPerUser },
+                )
+              : t(
+                  copa.artistsPerUser !== 1 ? "copa.homeJoinChooseArtistsPlural" : "copa.homeJoinChooseArtistsSingular",
+                  { n: copa.artistsPerUser },
+                )}
           </div>
           {copa.isParticipant ? (
             <button
@@ -280,7 +296,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
                 cursor: "pointer",
               }}
             >
-              Ir para Meu Time →
+              {t("copa.homeGoToMySquadButton")}
             </button>
           ) : (
             <button
@@ -299,7 +315,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
                 opacity: joining ? 0.6 : 1,
               }}
             >
-              {isFull ? "Vagas esgotadas" : joining ? "Inscrevendo…" : "Inscrever-se na Copa →"}
+              {isFull ? t("copa.homeSlotsFullButton") : joining ? t("copa.homeJoiningButton") : t("copa.homeJoinButton")}
             </button>
           )}
         </div>
@@ -310,7 +326,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
         <>
           {/* ✅ FIX: var(--text-muted) */}
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-            Meu time
+            {t("copa.homeMySquadSectionLabel")}
           </p>
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
             {myArtists.map((art) => {
@@ -338,11 +354,11 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
                   <div style={{ fontSize: 11, fontWeight: 700, textAlign: "center", lineHeight: 1.2 }}>
                     {art.artistName.split(" ")[0]}
                   </div>
-                  {drawn && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>GRP {art.groupLetter}</div>}
+                  {drawn && <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{t("copa.homeGroupAbbrev", { letter: art.groupLetter })}</div>}
                   {qual && (
                     // ✅ FIX: var(--up-bg) + var(--up-fg) em vez de rgba(52,199,89,.12) + #34C759
                     <span style={{ fontSize: 9, fontWeight: 700, color: "var(--up-fg)", background: "var(--up-bg)", padding: "2px 7px", borderRadius: 99 }}>
-                      ✓ CLASSIF.
+                      {t("copa.homeQualifiedBadge")}
                     </span>
                   )}
                 </div>
@@ -357,7 +373,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
         <>
           {/* ✅ FIX: var(--text-muted) */}
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-            Próximo jogo
+            {t("copa.homeNextGameLabel")}
           </p>
           <div
             style={{
@@ -373,7 +389,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
           >
             <CopaArtistAvatar {...upcoming.artistA} coverUrl={upcoming.singleACover} size={32} />
             <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{upcoming.artistA.artistName}</span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>vs</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>{t("copa.homeVsLabel")}</span>
             <span style={{ flex: 1, fontSize: 13, fontWeight: 700, textAlign: "right" }}>{upcoming.artistB.artistName}</span>
             <CopaArtistAvatar {...upcoming.artistB} coverUrl={upcoming.singleBCover} size={32} />
             <Badge variant="next">GRP {upcoming.groupLetter} R{upcoming.round}</Badge>
@@ -386,7 +402,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
         <>
           {/* ✅ FIX: var(--text-muted) */}
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-            Resultados recentes
+            {t("copa.homeRecentResultsLabel")}
           </p>
           {recentDone.map((f) => (
             <ScoreRow key={f.id} f={f} />
@@ -397,7 +413,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
       {/* Participants */}
       {/* ✅ FIX: var(--text-muted) */}
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10, marginTop: 24 }}>
-        Participantes
+        {t("copa.homeParticipantsLabel")}
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 32 }}>
         {copa.participants.map((p) => (
@@ -430,7 +446,7 @@ export function CopaHomeClient({ copa, userId, liveFixture, liveCount, recentDon
             </div>
             <span style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</span>
             {p.userId === userId && (
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#FFD426" }}>você</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#FFD426" }}>{t("copa.homeYouBadge")}</span>
             )}
           </div>
         ))}

@@ -5,6 +5,7 @@ import { computePushRoundScores } from "@/lib/push-scoring";
 import { pushRoundTitle } from "@/lib/push-format";
 import { ExternalLink, Trophy } from "lucide-react";
 import { PushNav } from "../PushNav";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export const revalidate = 60;
 
@@ -51,15 +52,16 @@ async function getHistory() {
 }
 
 export default async function PushHistoricoPage() {
+  const { t } = await getServerTranslations();
   const rounds = await getHistory();
 
   return (
     <Shell
-      title="Push · Histórico"
-      subtitle="Todas as rodadas concluídas"
+      title={t("push.historicoTitle")}
+      subtitle={t("push.historicoSubtitle")}
       headerRight={
         <Link href="/push" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textDecoration: "none" }}>
-          ← Rodada atual
+          {t("push.backToCurrentRound")}
         </Link>
       }
     >
@@ -70,7 +72,7 @@ export default async function PushHistoricoPage() {
         {rounds.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" }}>
             <Trophy size={48} style={{ opacity: 0.2, marginBottom: 16, display: "block", margin: "0 auto 16px" }} />
-            Nenhuma rodada concluída ainda. Fique de olho!
+            {t("push.historicoEmpty")}
           </div>
         )}
 
@@ -88,7 +90,7 @@ export default async function PushHistoricoPage() {
             <div style={{ padding: "18px 22px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>
-                  Rodada #{round.number} · Temporada {round.season}
+                  {t("push.roundLabel", { number: round.number, season: round.season })}
                 </div>
                 <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
                   {pushRoundTitle(round.season, round.number)}
@@ -114,7 +116,7 @@ export default async function PushHistoricoPage() {
                   }}
                 >
                   <ExternalLink size={12} />
-                  Playlist
+                  {t("push.playlist")}
                 </a>
               )}
             </div>
@@ -148,7 +150,7 @@ export default async function PushHistoricoPage() {
                     </div>
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", flexShrink: 0 }}>
-                    {r.totalPoints} pts
+                    {t("push.pts", { points: r.totalPoints })}
                   </div>
                   {r.song.spotifyUrl && (
                     <a href={r.song.spotifyUrl} target="_blank" rel="noopener noreferrer">

@@ -9,141 +9,126 @@ import {
   InstitutionalSection,
   InstitutionalTitle,
 } from "@/components/institutional/InstitutionalPrimitives";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Exclusão de Dados | ChartFM",
-  description:
-    "Instruções para solicitar a exclusão da sua conta e dos seus dados pessoais no ChartFM, conforme a LGPD.",
-  alternates: { canonical: "/data-deletion" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("dataDeletion.metaTitle"),
+    description: t("dataDeletion.metaDescription"),
+    alternates: { canonical: "/data-deletion" },
+  };
+}
 
-const DELETED_DATA = [
-  "Dados de cadastro (nome, e-mail e senha)",
-  "Perfil, bio, avatar e preferências da conta",
-  "Paradas criadas, curtidas, reposts e comentários",
-  "Publicações, respostas e interações em comunidades",
-  "Notificações e histórico de atividade vinculado à conta",
-];
+export default async function DataDeletionPage() {
+  const { t } = await getServerTranslations();
 
-export default function DataDeletionPage() {
+  const DELETED_DATA = [
+    t("dataDeletion.deletedData1"),
+    t("dataDeletion.deletedData2"),
+    t("dataDeletion.deletedData3"),
+    t("dataDeletion.deletedData4"),
+    t("dataDeletion.deletedData5"),
+  ];
+
   return (
     <InstitutionalLayout>
       <InstitutionalTitle
         updatedAt="julho de 2026"
-        subtitle="Como solicitar a exclusão da sua conta e dos seus dados pessoais no ChartFM."
+        subtitle={t("dataDeletion.subtitle")}
       >
-        Exclusão de dados
+        {t("dataDeletion.title")}
       </InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 28, fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
-        <InstitutionalSection title="1. Visão geral">
-          <InstitutionalParagraph>
-            Você pode solicitar a exclusão da sua conta e dos dados pessoais associados a ela a qualquer momento.
-            A exclusão é permanente e não pode ser desfeita após a confirmação.
-          </InstitutionalParagraph>
+        <InstitutionalSection title={t("dataDeletion.section1Title")}>
+          <InstitutionalParagraph>{t("dataDeletion.section1Body")}</InstitutionalParagraph>
           <div style={{ marginTop: 10 }}>
             <InstitutionalParagraph>
-              Para informações gerais sobre como tratamos seus dados, consulte nossa{" "}
-              <InstitutionalInlineLink href="/privacy-policy">Política de Privacidade</InstitutionalInlineLink>.
+              {t("dataDeletion.section1LinkPrefix")}{" "}
+              <InstitutionalInlineLink href="/privacy-policy">{t("dataDeletion.section1LinkText")}</InstitutionalInlineLink>.
             </InstitutionalParagraph>
           </div>
         </InstitutionalSection>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="2. Excluir pela plataforma (recomendado)">
-          <InstitutionalParagraph>
-            Se você tem acesso à sua conta, a forma mais rápida de excluir seus dados é diretamente nas
-            configurações:
-          </InstitutionalParagraph>
+        <InstitutionalSection title={t("dataDeletion.section2Title")}>
+          <InstitutionalParagraph>{t("dataDeletion.section2Intro")}</InstitutionalParagraph>
           <div style={{ marginTop: 10 }}>
             <InstitutionalList
               items={[
-                "Faça login no ChartFM com a conta que deseja excluir",
-                "Acesse Configurações (ícone de engrenagem no menu ou em /settings)",
-                "Abra a aba Conta",
-                "Role até a seção Excluir conta e clique em Excluir minha conta",
-                "Confirme a exclusão no aviso exibido",
+                t("dataDeletion.section2Step1"),
+                t("dataDeletion.section2Step2"),
+                t("dataDeletion.section2Step3"),
+                t("dataDeletion.section2Step4"),
+                t("dataDeletion.section2Step5"),
               ]}
             />
           </div>
           <div style={{ marginTop: 14 }}>
-            <InstitutionalCallout>
-              Após a confirmação, sua conta e todos os dados vinculados a ela são removidos imediatamente do
-              ChartFM.
-            </InstitutionalCallout>
+            <InstitutionalCallout>{t("dataDeletion.section2Callout")}</InstitutionalCallout>
           </div>
         </InstitutionalSection>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="3. Solicitar exclusão por e-mail">
+        <InstitutionalSection title={t("dataDeletion.section3Title")}>
           <InstitutionalParagraph>
-            Se você não consegue acessar sua conta ou prefere solicitar a exclusão por outro canal, envie um
-            e-mail para{" "}
-            <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span> com o assunto{" "}
-            <strong style={{ color: "var(--text)" }}>Exclusão de dados</strong> e inclua:
+            {t("dataDeletion.section3Prefix")}{" "}
+            <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span> {t("dataDeletion.section3Middle")}{" "}
+            <strong style={{ color: "var(--text)" }}>{t("dataDeletion.section3SubjectBold")}</strong> {t("dataDeletion.section3Suffix")}
           </InstitutionalParagraph>
           <div style={{ marginTop: 10 }}>
             <InstitutionalList
               items={[
-                "O e-mail associado à sua conta no ChartFM",
-                "Seu nome de usuário (handle), se souber",
-                "Uma confirmação de que deseja excluir permanentemente a conta e todos os dados vinculados",
+                t("dataDeletion.section3Item1"),
+                t("dataDeletion.section3Item2"),
+                t("dataDeletion.section3Item3"),
               ]}
             />
           </div>
           <div style={{ marginTop: 10 }}>
-            <InstitutionalParagraph>
-              Para sua segurança, podemos solicitar informações adicionais para confirmar que você é o titular da
-              conta antes de processar a exclusão.
-            </InstitutionalParagraph>
+            <InstitutionalParagraph>{t("dataDeletion.section3Outro")}</InstitutionalParagraph>
           </div>
         </InstitutionalSection>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="4. O que é excluído">
-          <InstitutionalParagraph>
-            Ao excluir sua conta, removemos permanentemente os seguintes dados:
-          </InstitutionalParagraph>
+        <InstitutionalSection title={t("dataDeletion.section4Title")}>
+          <InstitutionalParagraph>{t("dataDeletion.section4Intro")}</InstitutionalParagraph>
           <div style={{ marginTop: 10 }}>
             <InstitutionalList items={DELETED_DATA} />
           </div>
           <div style={{ marginTop: 10 }}>
-            <InstitutionalParagraph>
-              Dados agregados e anonimizados usados apenas para estatísticas gerais da plataforma podem ser
-              mantidos, desde que não permitam a sua identificação.
-            </InstitutionalParagraph>
+            <InstitutionalParagraph>{t("dataDeletion.section4Outro")}</InstitutionalParagraph>
           </div>
         </InstitutionalSection>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="5. Prazo de processamento">
+        <InstitutionalSection title={t("dataDeletion.section5Title")}>
           <InstitutionalParagraph>
-            Exclusões feitas pela plataforma são processadas imediatamente. Solicitações por e-mail são
-            respondidas em até <strong style={{ color: "var(--text)" }}>15 dias úteis</strong>, conforme previsto
-            pela LGPD.
+            {t("dataDeletion.section5Prefix")}{" "}
+            <strong style={{ color: "var(--text)" }}>{t("dataDeletion.section5Bold")}</strong>
+            {t("dataDeletion.section5Suffix")}
           </InstitutionalParagraph>
         </InstitutionalSection>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="6. Outros direitos">
+        <InstitutionalSection title={t("dataDeletion.section6Title")}>
           <InstitutionalParagraph>
-            Além da exclusão, você pode solicitar acesso, correção ou portabilidade dos seus dados. Na aba Conta
-            das configurações, use a opção Baixar meus dados para exportar uma cópia em JSON. Para outras
-            solicitações, entre em contato pelo e-mail{" "}
+            {t("dataDeletion.section6Body")}{" "}
             <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span>.
           </InstitutionalParagraph>
         </InstitutionalSection>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="7. Contato">
+        <InstitutionalSection title={t("dataDeletion.section7Title")}>
           <InstitutionalParagraph>
-            Dúvidas sobre exclusão de dados ou privacidade:{" "}
+            {t("dataDeletion.section7Prefix")}{" "}
             <span style={{ color: "var(--accent)", fontWeight: 600 }}>contato@chartfm.com.br</span>
           </InstitutionalParagraph>
         </InstitutionalSection>

@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type SearchItem = { label: string; href: string; type: "Guia" | "FAQ" };
 
 export function HelpSearch({ items }: { items: SearchItem[] }) {
+  const { t } = useTranslations();
   const [query, setQuery] = useState("");
 
   const results = useMemo(() => {
@@ -34,7 +36,7 @@ export function HelpSearch({ items }: { items: SearchItem[] }) {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder='Buscar por "Global 100", "Copa", "Last.fm"...'
+          placeholder={t("helpCenter.searchPlaceholder")}
           style={{
             flex: 1,
             border: "none",
@@ -91,13 +93,13 @@ export function HelpSearch({ items }: { items: SearchItem[] }) {
                     borderRadius: 100,
                   }}
                 >
-                  {item.type}
+                  {item.type === "Guia" ? t("helpCenter.typeGuide") : t("helpCenter.typeFaq")}
                 </span>
               </Link>
             ))
           ) : (
             <div style={{ padding: "16px", fontSize: 13, color: "var(--text-muted)" }}>
-              Nada encontrado — veja os guias abaixo ou fale com o suporte.
+              {t("helpCenter.searchNoResults")}
             </div>
           )}
         </div>

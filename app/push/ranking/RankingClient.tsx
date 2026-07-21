@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { RankBadge } from "@/components/push/PushAtoms";
 import { PODIUM_COLORS } from "@/components/push/push-helpers";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type RankEntry = {
   rank: number;
@@ -15,14 +16,15 @@ type RankEntry = {
 };
 
 function RankingList({ entries, loading }: { entries: RankEntry[]; loading: boolean }) {
+  const { t } = useTranslations();
   if (loading) {
-    return <div style={{ color: "var(--text-muted)", fontSize: 13, padding: "32px 0", textAlign: "center" }}>Carregando…</div>;
+    return <div style={{ color: "var(--text-muted)", fontSize: 13, padding: "32px 0", textAlign: "center" }}>{t("push.loading")}</div>;
   }
   if (entries.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)" }}>
         <Trophy size={36} style={{ opacity: 0.25, marginBottom: 12, display: "block", margin: "0 auto 12px" }} />
-        <div style={{ fontSize: 14 }}>Nenhuma rodada concluída nessa temporada ainda.</div>
+        <div style={{ fontSize: 14 }}>{t("push.rankingEmpty")}</div>
       </div>
     );
   }
@@ -70,7 +72,7 @@ function RankingList({ entries, loading }: { entries: RankEntry[]; loading: bool
               <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".05em", marginTop: 2 }}>PTS</div>
               {entry.wins > 0 && (
                 <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
-                  {entry.wins} {entry.wins === 1 ? "vitória" : "vitórias"}
+                  {entry.wins} {entry.wins === 1 ? t("push.winsSingular") : t("push.winsPlural")}
                 </div>
               )}
             </div>
@@ -82,6 +84,7 @@ function RankingList({ entries, loading }: { entries: RankEntry[]; loading: bool
 }
 
 export default function RankingClient({ seasons }: { seasons: number[] }) {
+  const { t } = useTranslations();
   const [activeTab, setActiveTab] = useState<"geral" | number>("geral");
   const [entries, setEntries] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +101,7 @@ export default function RankingClient({ seasons }: { seasons: number[] }) {
   }, [activeTab]);
 
   const tabs: Array<{ id: "geral" | number; label: string }> = [
-    { id: "geral", label: "Geral" },
+    { id: "geral", label: t("push.tabGeral") },
     ...seasons.map((s) => ({ id: s as "geral" | number, label: `T${s}` })),
   ];
 
@@ -145,7 +148,7 @@ export default function RankingClient({ seasons }: { seasons: number[] }) {
 
       {/* Context label */}
       <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 12 }}>
-        {activeTab === "geral" ? "Ranking Geral · Todas as temporadas" : `Ranking · Temporada ${activeTab}`}
+        {activeTab === "geral" ? t("push.contextGeral") : t("push.contextSeason", { season: activeTab })}
       </div>
 
       <RankingList entries={entries} loading={loading} />

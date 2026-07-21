@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Zap } from "lucide-react";
-
-const NAV = [
-  { href: "/push/sobre", label: "Sobre" },
-  { href: "/push", label: "Início", exact: true },
-  { href: "/push/ranking", label: "Ranking" },
-  { href: "/push/historico", label: "Histórico" },
-];
+import { useTranslations } from "@/hooks/useTranslations";
 
 export function PushNav() {
   const pathname = usePathname();
+  const { t } = useTranslations();
+
+  const NAV = [
+    { href: "/push/sobre", label: t("push.navSobre") },
+    { href: "/push", label: t("push.navInicio"), exact: true },
+    { href: "/push/ranking", label: t("push.navRanking") },
+    { href: "/push/historico", label: t("push.navHistorico") },
+  ];
 
   return (
     <div
@@ -64,7 +66,7 @@ export function PushNav() {
               marginTop: 2,
             }}
           >
-            Jogo de descoberta musical
+            {t("push.tagline")}
           </div>
         </div>
       </div>

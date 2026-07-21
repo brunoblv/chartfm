@@ -14,6 +14,7 @@ import {
   readImageFileAsDataUrl,
   validateCommunityCoverFile,
 } from "@/lib/community-cover";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const CHART_SIZE_OPTIONS = [10, 15, 20, 25, 30, 40, 50, 75, 100] as const;
 
@@ -44,10 +45,10 @@ type SettingsData = {
 
 type Section = "identity" | "parada" | "members";
 
-const SECTIONS: { key: Section; label: string; icon: typeof Palette }[] = [
-  { key: "identity", label: "Identidade", icon: Palette },
-  { key: "parada", label: "Parada", icon: Trophy },
-  { key: "members", label: "Membros", icon: Users2 },
+const SECTIONS: { key: Section; labelKey: string; icon: typeof Palette }[] = [
+  { key: "identity", labelKey: "settingsSectionIdentity", icon: Palette },
+  { key: "parada", labelKey: "settingsSectionParada", icon: Trophy },
+  { key: "members", labelKey: "settingsSectionMembers", icon: Users2 },
 ];
 
 export function CommunitySettingsClient({
@@ -58,6 +59,7 @@ export function CommunitySettingsClient({
   initial: SettingsData;
 }) {
   const router = useRouter();
+  const { t } = useTranslations();
   const fileRef = useRef<HTMLInputElement>(null);
   const coverFileRef = useRef<HTMLInputElement>(null);
   const [activeSection, setActiveSection] = useState<Section>("identity");
@@ -128,13 +130,13 @@ export function CommunitySettingsClient({
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Erro ao salvar.");
+        setError(data.error ?? t("communities.settingsSaveError"));
         return;
       }
-      setSuccess("Configurações salvas.");
+      setSuccess(t("communities.settingsSaveSuccess"));
       router.refresh();
     } catch {
-      setError("Erro de rede.");
+      setError(t("communities.settingsNetworkError"));
     } finally {
       setSaving(false);
     }
@@ -155,7 +157,7 @@ export function CommunitySettingsClient({
       const dataUrl = await readImageFileAsDataUrl(file);
       setCoverImageUrl(dataUrl);
     } catch {
-      setError("Não foi possível ler a imagem da capa.");
+      setError(t("communities.settingsCoverReadError"));
     }
   }
 
@@ -163,7 +165,7 @@ export function CommunitySettingsClient({
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
     if (file.size > 1 * 1024 * 1024) {
-      setError("Imagem muito grande (máx. 1 MB).");
+      setError(t("communities.postImageTooLarge"));
       return;
     }
     const reader = new FileReader();
@@ -270,10 +272,10 @@ export function CommunitySettingsClient({
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, fontSize: 14 }}>
             <span style={{ fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
             <span style={{ color: "var(--divider-strong)" }}>/</span>
-            <span style={{ color: "var(--text-muted)" }}>Configurações</span>
+            <span style={{ color: "var(--text-muted)" }}>{t("communities.settingsBreadcrumb")}</span>
           </div>
           <button type="button" onClick={() => void saveSettings()} disabled={saving} style={saveBtnStyle}>
-            {saving ? "Salvando..." : "Salvar alterações"}
+            {saving ? t("settings.saving") : t("settings.saveChanges")}
           </button>
         </div>
       </div>
@@ -308,7 +310,7 @@ export function CommunitySettingsClient({
                 }}
               >
                 <Icon size={15} />
-                <span>{sec.label}</span>
+                <span>{t(`communities.${sec.labelKey}`)}</span>
               </button>
             );
           })}
@@ -318,26 +320,26 @@ export function CommunitySettingsClient({
           {activeSection === "identity" && (
             <>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)" }}>Identidade</div>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Nome, privacidade, ícone e aparência visual da comunidade</div>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)" }}>{t("communities.settingsIdentityTitle")}</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>{t("communities.settingsIdentitySubtitle")}</div>
               </div>
 
               <div style={cardStyle}>
                 <div style={{ display: "grid", gap: 14 }}>
                   <div>
-                    <div style={fieldLabel}>Nome da comunidade</div>
+                    <div style={fieldLabel}>{t("communities.createNameLabel")}</div>
                     <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
                   </div>
                   <div>
-                    <div style={fieldLabel}>Descrição</div>
+                    <div style={fieldLabel}>{t("communities.settingsDescriptionLabel")}</div>
                     <input value={tagline} onChange={(e) => setTagline(e.target.value)} style={inputStyle} />
                   </div>
                   <div>
-                    <div style={fieldLabel}>Nome da parada</div>
+                    <div style={fieldLabel}>{t("communities.settingsParadaNameLabel")}</div>
                     <input value={paradaName} onChange={(e) => setParadaName(e.target.value)} style={inputStyle} />
                   </div>
                   <div>
-                    <div style={fieldLabel}>Privacidade</div>
+                    <div style={fieldLabel}>{t("communities.createPrivacyLabel")}</div>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                       {(["public", "private"] as const).map((p) => (
                         <button
@@ -357,10 +359,10 @@ export function CommunitySettingsClient({
                           }}
                         >
                           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>
-                            {p === "public" ? "Pública" : "Privada"}
+                            {p === "public" ? t("communities.settingsPublicLabel") : t("communities.settingsPrivateLabel")}
                           </div>
                           <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>
-                            {p === "public" ? "Qualquer pessoa pode entrar" : "Apenas por convite"}
+                            {p === "public" ? t("communities.createPublicDesc") : t("communities.createPrivateDesc")}
                           </div>
                         </button>
                       ))}
@@ -370,9 +372,9 @@ export function CommunitySettingsClient({
               </div>
 
               <div style={cardStyle}>
-                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 16, color: "var(--text)" }}>Aparência</div>
+                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 16, color: "var(--text)" }}>{t("communities.settingsAppearanceTitle")}</div>
                 <div style={{ marginBottom: 18 }}>
-                  <div style={fieldLabel}>Capa do header</div>
+                  <div style={fieldLabel}>{t("communities.settingsCoverLabel")}</div>
                   <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 10px 0", lineHeight: 1.55 }}>
                     {communityCoverSizeHint()}
                   </p>
@@ -393,7 +395,7 @@ export function CommunitySettingsClient({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={coverImageUrl}
-                        alt="Prévia da capa"
+                        alt={t("communities.settingsCoverPreviewAlt")}
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                       />
                     ) : (
@@ -430,7 +432,7 @@ export function CommunitySettingsClient({
                         fontFamily: "inherit",
                       }}
                     >
-                      Enviar capa
+                      {t("communities.settingsUploadCover")}
                     </button>
                     {coverImageUrl && (
                       <button
@@ -441,7 +443,7 @@ export function CommunitySettingsClient({
                         }}
                         style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
                       >
-                        Remover capa
+                        {t("communities.settingsRemoveCover")}
                       </button>
                     )}
                     <input ref={coverFileRef} type="file" accept="image/*" onChange={(e) => void onCoverFile(e)} style={{ display: "none" }} />
@@ -453,21 +455,21 @@ export function CommunitySettingsClient({
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
                   <div>
-                    <div style={fieldLabel}>Ícone</div>
+                    <div style={fieldLabel}>{t("communities.settingsIconLabel")}</div>
                     <input value={icon} onChange={(e) => setIcon(e.target.value)} style={inputStyle} maxLength={8} />
                   </div>
                   <div>
-                    <div style={fieldLabel}>Cor A (fallback)</div>
+                    <div style={fieldLabel}>{t("communities.settingsColorALabel")}</div>
                     <input type="color" value={coverA} onChange={(e) => setCoverA(e.target.value)} style={{ ...inputStyle, padding: 4, height: 42 }} />
                   </div>
                   <div>
-                    <div style={fieldLabel}>Cor B (fallback)</div>
+                    <div style={fieldLabel}>{t("communities.settingsColorBLabel")}</div>
                     <input type="color" value={coverB} onChange={(e) => setCoverB(e.target.value)} style={{ ...inputStyle, padding: 4, height: 42 }} />
                   </div>
                 </div>
 
                 <div>
-                  <div style={fieldLabel}>Logo</div>
+                  <div style={fieldLabel}>{t("communities.settingsLogoLabel")}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div
                       style={{
@@ -504,7 +506,7 @@ export function CommunitySettingsClient({
                         fontFamily: "inherit",
                       }}
                     >
-                      Enviar imagem
+                      {t("communities.settingsUploadImage")}
                     </button>
                     {logoUrl && (
                       <button
@@ -512,7 +514,7 @@ export function CommunitySettingsClient({
                         onClick={() => setLogoUrl(null)}
                         style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
                       >
-                        Remover
+                        {t("communities.settingsRemove")}
                       </button>
                     )}
                     <input ref={fileRef} type="file" accept="image/*" onChange={onLogoFile} style={{ display: "none" }} />
@@ -525,13 +527,13 @@ export function CommunitySettingsClient({
           {activeSection === "parada" && (
             <>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)" }}>Parada</div>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Configurações da parada coletiva da comunidade</div>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)" }}>{t("communities.settingsSectionParada")}</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>{t("communities.settingsParadaSubtitle")}</div>
               </div>
 
               <div style={cardStyle}>
-                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>Tamanho do ranking</div>
-                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>Quantas posições a parada da comunidade terá</div>
+                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>{t("communities.settingsRankingSizeTitle")}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>{t("communities.settingsRankingSizeDesc")}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {CHART_SIZE_OPTIONS.map((n) => (
                     <button
@@ -550,15 +552,15 @@ export function CommunitySettingsClient({
                         color: maxSongs === n ? "var(--bg)" : "var(--text)",
                       }}
                     >
-                      Top {n}
+                      {t("communities.settingsTopN", { count: n })}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div style={cardStyle}>
-                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>Modo de pontuação</div>
-                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>Como os pontos dos membros são calculados para a parada</div>
+                <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>{t("communities.settingsPointsModeTitle")}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>{t("communities.settingsPointsModeDesc")}</div>
                 <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
                   <button
                     type="button"
@@ -575,8 +577,8 @@ export function CommunitySettingsClient({
                       fontFamily: "inherit",
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>Pontos da parada</div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>Usa a pontuação da parada individual de cada membro</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>{t("communities.settingsPointsModeChartTitle")}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{t("communities.settingsPointsModeChartDesc")}</div>
                   </button>
                   <button
                     type="button"
@@ -593,8 +595,8 @@ export function CommunitySettingsClient({
                       fontFamily: "inherit",
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>Pontos personalizados</div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>Define valores por posição manualmente</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>{t("communities.settingsPointsModeCustomTitle")}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{t("communities.settingsPointsModeCustomDesc")}</div>
                   </button>
                 </div>
 
@@ -606,11 +608,11 @@ export function CommunitySettingsClient({
                       onChange={(e) => setUseLimit(e.target.checked)}
                       style={{ width: 16, height: 16, cursor: "pointer" }}
                     />
-                    <span>Limitar posições contadas de cada membro</span>
+                    <span>{t("communities.settingsLimitPositionsLabel")}</span>
                   </label>
                   {useLimit && (
                     <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10, paddingLeft: 26, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 14, color: "var(--text-subtle)" }}>Contar as</span>
+                      <span style={{ fontSize: 14, color: "var(--text-subtle)" }}>{t("communities.settingsCountFirstPrefix")}</span>
                       <input
                         type="number"
                         min={1}
@@ -619,7 +621,7 @@ export function CommunitySettingsClient({
                         onChange={(e) => setMemberPositionLimit(Number(e.target.value))}
                         style={{ ...inputStyle, width: 76, textAlign: "center" }}
                       />
-                      <span style={{ fontSize: 14, color: "var(--text-subtle)" }}>primeiras posições de cada membro</span>
+                      <span style={{ fontSize: 14, color: "var(--text-subtle)" }}>{t("communities.settingsCountFirstSuffix")}</span>
                     </div>
                   )}
                 </div>
@@ -627,8 +629,8 @@ export function CommunitySettingsClient({
 
               {pointsMode === "custom" && (
                 <div style={cardStyle}>
-                  <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>Pontos por posição</div>
-                  <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>Defina manualmente quantos pontos cada posição vale</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>{t("communities.settingsPointsPerPositionTitle")}</div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>{t("communities.settingsPointsPerPositionDesc")}</div>
                   <div
                     style={{
                       display: "grid",
@@ -670,8 +672,8 @@ export function CommunitySettingsClient({
           {activeSection === "members" && (
             <>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)" }}>Membros</div>
-                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>Gerencie funções e permissões</div>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)" }}>{t("communities.settingsSectionMembers")}</div>
+                <div style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>{t("communities.settingsMembersSubtitle")}</div>
               </div>
 
               <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", overflow: "hidden" }}>
@@ -703,7 +705,7 @@ export function CommunitySettingsClient({
                         fontWeight: 700,
                       }}
                     >
-                      {m.role === "owner" ? "Dono" : m.role === "admin" ? "Admin" : "Membro"}
+                      {m.role === "owner" ? t("communities.roleOwner") : m.role === "admin" ? t("communities.roleAdmin") : t("communities.roleMember")}
                     </span>
                     {m.role === "member" && (
                       <button
@@ -722,7 +724,7 @@ export function CommunitySettingsClient({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        Tornar admin
+                        {t("communities.settingsPromote")}
                       </button>
                     )}
                     {m.role === "admin" && (
@@ -742,7 +744,7 @@ export function CommunitySettingsClient({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        Remover admin
+                        {t("communities.settingsDemote")}
                       </button>
                     )}
                   </div>
@@ -753,7 +755,7 @@ export function CommunitySettingsClient({
 
           <div style={{ marginTop: 8, paddingTop: 20, borderTop: "1px solid var(--divider)", display: "flex", alignItems: "center", gap: 12 }}>
             <button type="button" onClick={() => void saveSettings()} disabled={saving} style={saveBtnStyle}>
-              {saving ? "Salvando..." : "Salvar configurações"}
+              {saving ? t("settings.saving") : t("communities.settingsSaveConfig")}
             </button>
             {error && <span style={{ fontSize: 13, color: "#DC2626" }}>{error}</span>}
             {success && <span style={{ fontSize: 13, color: "#16A34A" }}>{success}</span>}

@@ -190,26 +190,11 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
   }));
 
   const FAQ_GLOBAL = [
-    {
-      q: "O que é o Global 100?",
-      a: "É a parada coletiva do ChartFM: as músicas mais populares da semana, com base nas paradas pessoais publicadas pelos usuários.",
-    },
-    {
-      q: "Com que frequência a parada é atualizada?",
-      a: "O Global 100 fecha toda terça-feira à meia-noite (horário de Brasília) e o snapshot da semana é processado horas depois, refletindo as charts publicadas pelos usuários durante a semana anterior. O histórico de semanas anteriores também está disponível para consulta.",
-    },
-    {
-      q: "Como participar da parada global?",
-      a: "Basta criar uma conta no ChartFM e publicar sua parada pessoal semanal. Assim que você submete sua chart, as músicas escolhidas entram automaticamente no cálculo do ranking global daquela semana.",
-    },
-    {
-      q: "As charts pessoais influenciam o ranking?",
-      a: "Sim, diretamente. Cada parada publicada por um usuário contribui para o Global 100. Quanto mais fãs de música incluem uma música em suas charts, maior o impacto dela no ranking coletivo. É a democracia musical em ação.",
-    },
-    {
-      q: "A parada global é igual às charts de streaming?",
-      a: "Não. O Global 100 do ChartFM não mede reproduções automáticas nem algoritmos de plataformas. Cada entrada representa uma escolha deliberada e intencional de um usuário real. Isso torna o ranking mais representativo do gosto musical genuíno da comunidade.",
-    },
+    { q: t("global.faq1Q"), a: t("global.faq1A") },
+    { q: t("global.faq2Q"), a: t("global.faq2A") },
+    { q: t("global.faq3Q"), a: t("global.faq3A") },
+    { q: t("global.faq4Q"), a: t("global.faq4A") },
+    { q: t("global.faq5Q"), a: t("global.faq5A") },
   ];
 
   return (
@@ -228,28 +213,28 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         }}
       >
         <ChevronLeft size={16} />
-        Todas as paradas globais
+        {t("global.backToHub")}
       </Link>
 
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" as const, marginBottom: 24 }}>
         <Link href="/global/100/arquivo" style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
-          Ver todas as semanas do Global 100 →
+          {t("global.archiveLink")}
         </Link>
         <Link href="/global/retrospectiva-2026" style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
-          Retrospectiva 2026 →
+          {t("global.retrospectiveLink")}
         </Link>
       </div>
 
       <section style={{ marginBottom: 48 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
-          Sobre a parada
+          {t("global.aboutTitle")}
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
           {[
-            { icon: <Music size={20} />, title: "Curadoria da comunidade", desc: "Cada música entra porque alguém escolheu colocá-la na própria parada." },
-            { icon: <Users size={20} />, title: "Mais fãs de música, mais força", desc: "Quanto mais usuários incluem uma música, maior sua presença no ranking." },
-            { icon: <BarChart2 size={20} />, title: "Atualizado toda semana", desc: "A semana fecha toda terça-feira à meia-noite e a consolidação ocorre horas depois, com base nas paradas da semana anterior." },
-            { icon: <TrendingUp size={20} />, title: "Histórico preservado", desc: "Cada semana gera um snapshot permanente para consulta histórica." },
+            { icon: <Music size={20} />, title: t("global.featureCommunityTitle"), desc: t("global.featureCommunityDesc") },
+            { icon: <Users size={20} />, title: t("global.featureMoreFansTitle"), desc: t("global.featureMoreFansDesc") },
+            { icon: <BarChart2 size={20} />, title: t("global.featureUpdatedTitle"), desc: t("global.featureUpdatedDesc") },
+            { icon: <TrendingUp size={20} />, title: t("global.featureHistoryTitle"), desc: t("global.featureHistoryDesc") },
           ].map((item) => (
             <div key={item.title} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14, padding: "18px 20px" }}>
               <div style={{ color: "#FA243C", marginBottom: 10 }}>{item.icon}</div>
@@ -335,7 +320,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
       <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 40 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 24, display: "flex", alignItems: "center", gap: 8 }}>
           <BookOpen size={18} color="#FA243C" />
-          Perguntas frequentes sobre o Global 100
+          {t("global.faqSectionTitle")}
         </h2>
         <div style={{ display: "flex", flexDirection: "column" }}>
           {FAQ_GLOBAL.map((item, i) => (

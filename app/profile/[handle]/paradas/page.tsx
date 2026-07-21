@@ -8,6 +8,7 @@ import { Shell } from "@/components/layout/Shell";
 import { ParadaListCard, type ParadaListCardData } from "@/components/paradas/ParadaListCard";
 import { PAGE_GUTTER_X } from "@/lib/page-layout";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ParadasListResponse = {
   handle: string;
@@ -25,6 +26,7 @@ export default function ParadasListPage() {
   const { data: session } = useSession();
   const isMobile = useIsMobile();
   const gutterX = isMobile ? PAGE_GUTTER_X.mobile : PAGE_GUTTER_X.desktop;
+  const { t } = useTranslations();
 
   const [phase, setPhase] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [data, setData] = useState<ParadasListResponse | null>(null);
@@ -62,16 +64,18 @@ export default function ParadasListPage() {
   const isOwn =
     data?.isOwn ??
     (session?.user?.handle != null && session.user.handle === handle);
-  const title = isOwn ? "Minhas Paradas" : "Paradas";
+  const title = isOwn ? t("profile.myParadasTitle") : t("profile.paradasNav");
   const countLabel =
     data?.paradas.length === 1
-      ? "1 parada"
-      : `${data?.paradas.length ?? 0} paradas`;
+      ? t("profile.paradaCountSingular")
+      : t("profile.paradaCountPlural", { count: data?.paradas.length ?? 0 });
 
   if (phase === "loading") {
     return (
       <Shell hideGlobalFooter noPadding>
-        <div style={{ padding: gutterX, color: "var(--text-muted)" }}>Carregando…</div>
+        <div style={{ padding: gutterX, color: "var(--text-muted)" }}>
+          {t("profile.loadingGeneric")}
+        </div>
       </Shell>
     );
   }
@@ -81,10 +85,12 @@ export default function ParadasListPage() {
       <Shell hideGlobalFooter noPadding>
         <div style={{ padding: gutterX, textAlign: "center", paddingTop: 80 }}>
           <p style={{ color: "var(--text-muted)" }}>
-            {phase === "missing" ? "Perfil não encontrado." : "Erro ao carregar paradas."}
+            {phase === "missing"
+              ? t("profile.profileNotFound")
+              : t("profile.loadParadasError")}
           </p>
           <Link href="/" style={{ color: "var(--accent)", fontWeight: 600 }}>
-            Voltar ao início
+            {t("profile.backToHomeNoArrow")}
           </Link>
         </div>
       </Shell>
@@ -105,7 +111,7 @@ export default function ParadasListPage() {
               marginBottom: 6,
             }}
           >
-            Perfil · @{handle}
+            {t("profile.profileHandleLabel", { handle })}
           </div>
           <div
             style={{
@@ -136,7 +142,7 @@ export default function ParadasListPage() {
                   letterSpacing: "-0.01em",
                 }}
               >
-                {countLabel} · clique para ver estatísticas e publicações
+                {countLabel} · {t("profile.clickForStats")}
               </p>
             </div>
             {data?.canCreate && (
@@ -162,7 +168,7 @@ export default function ParadasListPage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                Nova parada
+                {t("profile.newChart")}
               </Link>
             )}
           </div>
@@ -179,11 +185,11 @@ export default function ParadasListPage() {
             }}
           >
             <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 16 }}>
-              Nenhuma parada publicada ainda.
+              {t("profile.noCharts")}
             </p>
             {isOwn && (
               <Link href="/create" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
-                Criar primeira parada →
+                {t("profile.createFirstChart")}
               </Link>
             )}
           </div>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { WeeklyReleaseData } from "@/lib/weekly-releases";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export function WeeklyReleaseBanner({ release }: { release: WeeklyReleaseData }) {
+export async function WeeklyReleaseBanner({ release }: { release: WeeklyReleaseData }) {
+  const { t } = await getServerTranslations();
   const previewAlbums = release.albums.slice(0, 4);
 
   return (
@@ -29,10 +31,15 @@ export function WeeklyReleaseBanner({ release }: { release: WeeklyReleaseData })
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            Lançamentos da semana de {release.weekLabel}
+            {t("criticsfm.bannerTitle", { week: release.weekLabel })}
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-            {release.albums.length} álbum{release.albums.length !== 1 ? "s" : ""} para ouvir · Clique para ver
+            {t(
+              release.albums.length === 1
+                ? "criticsfm.bannerSubtitleSingular"
+                : "criticsfm.bannerSubtitlePlural",
+              { count: release.albums.length },
+            )}
           </div>
         </div>
         <div style={{ fontSize: 18, color: "var(--text-muted)", flexShrink: 0 }}>→</div>

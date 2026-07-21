@@ -182,22 +182,22 @@ export default function SettingsPage() {
     if (!spotifyParam && !youtubeParam) return;
 
     if (spotifyParam === "connected" || spotifyParam === "connected_no_playlist") {
-      setSuccess("Spotify conectado com sucesso!");
+      setSuccess(t("settings.spotifyConnectedSuccess"));
       setSpotifyConnected(true);
     } else if (spotifyParam) {
       setError(
         spotifyConnectErrorMessage(spotifyParam, spotifyReason) ??
-          "Erro ao conectar o Spotify. Tente novamente.",
+          t("settings.spotifyConnectGenericError"),
       );
     }
 
     if (youtubeParam === "connected") {
-      setSuccess("YouTube @chartFM conectado com sucesso!");
+      setSuccess(t("settings.youtubeConnectedSuccess"));
       setYoutubeConnected(true);
     } else if (youtubeParam) {
       setError(
         youtubeConnectErrorMessage(youtubeParam, youtubeReason) ??
-          "Erro ao conectar o YouTube. Tente novamente.",
+          t("settings.youtubeConnectGenericError"),
       );
     }
 
@@ -219,7 +219,7 @@ export default function SettingsPage() {
           router.replace("/login?from=/settings");
           return null;
         }
-        if (!res.ok) throw new Error("Não foi possível carregar seus dados.");
+        if (!res.ok) throw new Error(t("settings.loadDataError"));
         return (await res.json()) as ProfileData;
       })
       .then((data) => {
@@ -285,13 +285,13 @@ export default function SettingsPage() {
       });
       const data = await profileRes.json();
       if (!profileRes.ok) {
-        setError(data.error ?? "Erro ao salvar.");
+        setError(data.error ?? t("settings.saveError"));
         return;
       }
       await updateSession();
-      setSuccess("Perfil atualizado com sucesso.");
+      setSuccess(t("settings.profileUpdated"));
     } catch {
-      setError("Erro de conexão.");
+      setError(t("settings.connectionError"));
     } finally {
       setSaving(false);
     }
@@ -305,7 +305,7 @@ export default function SettingsPage() {
       for (const p of paradaDrafts) {
         const trimmed = p.name.trim();
         if (trimmed.length < 2) {
-          setError(`O nome da parada "${trimmed || "sem nome"}" precisa ter pelo menos 2 caracteres.`);
+          setError(t("settings.chartNameMinLengthError", { name: trimmed || t("settings.unnamed") }));
           return;
         }
       }
@@ -330,15 +330,15 @@ export default function SettingsPage() {
       for (const res of results) {
         if (!res.ok) {
           const pd = await res.json();
-          setError(pd.error ?? "Erro ao salvar uma das paradas.");
+          setError(pd.error ?? t("settings.saveChartError"));
           return;
         }
       }
 
       await loadParadas();
-      setSuccess("Paradas atualizadas com sucesso.");
+      setSuccess(t("settings.savedChartsSuccess"));
     } catch {
-      setError("Erro de conexão.");
+      setError(t("settings.connectionError"));
     } finally {
       setSaving(false);
     }
@@ -355,7 +355,7 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Erro ao definir parada principal.");
+        setError(data.error ?? t("settings.setPrimaryError"));
         return;
       }
       setParadaDrafts((prev) =>
@@ -365,9 +365,9 @@ export default function SettingsPage() {
           cadence: p.id === paradaId ? "weekly" : p.cadence,
         })),
       );
-      setSuccess("Parada principal atualizada.");
+      setSuccess(t("settings.setPrimarySuccess"));
     } catch {
-      setError("Erro de conexão.");
+      setError(t("settings.connectionError"));
     }
   }
 
@@ -400,14 +400,14 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setDeleteParadaError(data.error ?? "Erro ao excluir parada.");
+        setDeleteParadaError(data.error ?? t("settings.deleteChartGenericError"));
         return;
       }
       setDeleteParadaTarget(null);
       setDeleteParadaStep(null);
       await loadParadas();
     } catch {
-      setDeleteParadaError("Erro de conexão.");
+      setDeleteParadaError(t("settings.connectionError"));
     } finally {
       setDeletingParada(false);
     }
@@ -424,12 +424,12 @@ export default function SettingsPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setRestoreError(data.error ?? "Erro ao restaurar parada.");
+        setRestoreError(data.error ?? t("settings.restoreError"));
         return;
       }
       await loadParadas();
     } catch {
-      setRestoreError("Erro de conexão.");
+      setRestoreError(t("settings.connectionError"));
     } finally {
       setRestoringParadaId(null);
     }
@@ -438,7 +438,7 @@ export default function SettingsPage() {
   async function createSecondParada() {
     const trimmed = newParadaName.trim();
     if (trimmed.length < 2) {
-      setError("Informe um nome com pelo menos 2 caracteres para a segunda parada.");
+      setError(t("settings.createChartNameError"));
       return;
     }
     setCreatingParada(true);
@@ -451,15 +451,15 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Erro ao criar segunda parada.");
+        setError(data.error ?? t("settings.createChartError"));
         return;
       }
       setNewParadaName("");
       setNewParadaCadence("weekly");
       await loadParadas();
-      setSuccess("Segunda parada criada.");
+      setSuccess(t("settings.createChartSuccess"));
     } catch {
-      setError("Erro de conexão.");
+      setError(t("settings.connectionError"));
     } finally {
       setCreatingParada(false);
     }
@@ -477,17 +477,17 @@ export default function SettingsPage() {
       try {
         data = (await res.json()) as { url?: string; error?: string };
       } catch {
-        setAvatarError("Erro ao enviar foto.");
+        setAvatarError(t("settings.avatarUploadError"));
         return;
       }
       if (!res.ok) {
-        setAvatarError(data.error ?? "Erro ao enviar foto.");
+        setAvatarError(data.error ?? t("settings.avatarUploadError"));
         return;
       }
       setForm((f) => ({ ...f, image: data.url ?? f.image }));
       await updateSession();
     } catch (e) {
-      setAvatarError(e instanceof Error ? e.message : "Erro de conexão.");
+      setAvatarError(e instanceof Error ? e.message : t("settings.connectionError"));
     } finally {
       setUploadingAvatar(false);
     }
@@ -499,13 +499,13 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/user/avatar", { method: "DELETE" });
       if (!res.ok) {
-        setAvatarError("Erro ao remover foto.");
+        setAvatarError(t("settings.avatarRemoveError"));
         return;
       }
       setForm((f) => ({ ...f, image: null }));
       await updateSession();
     } catch {
-      setAvatarError("Erro de conexão.");
+      setAvatarError(t("settings.connectionError"));
     } finally {
       setUploadingAvatar(false);
     }
@@ -523,7 +523,7 @@ export default function SettingsPage() {
         body: fd,
       });
       if (!res.ok) {
-        let message = "Erro ao enviar logo.";
+        let message = t("settings.logoUploadError");
         try {
           const data = await res.json();
           message = data.error ?? message;
@@ -538,7 +538,7 @@ export default function SettingsPage() {
         );
       }
     } catch {
-      setLogoErrorByParada((e) => ({ ...e, [paradaId]: "Erro de conexão." }));
+      setLogoErrorByParada((e) => ({ ...e, [paradaId]: t("settings.connectionError") }));
     } finally {
       setLogoUploadParadaId(null);
     }
@@ -552,14 +552,14 @@ export default function SettingsPage() {
         method: "DELETE",
       });
       if (!res.ok) {
-        setLogoErrorByParada((e) => ({ ...e, [paradaId]: "Erro ao remover logo." }));
+        setLogoErrorByParada((e) => ({ ...e, [paradaId]: t("settings.logoRemoveError") }));
         return;
       }
       setParadaDrafts((prev) =>
         prev.map((p) => (p.id === paradaId ? { ...p, logo: null } : p)),
       );
     } catch {
-      setLogoErrorByParada((e) => ({ ...e, [paradaId]: "Erro de conexão." }));
+      setLogoErrorByParada((e) => ({ ...e, [paradaId]: t("settings.connectionError") }));
     } finally {
       setLogoUploadParadaId(null);
     }
@@ -600,14 +600,14 @@ export default function SettingsPage() {
       const res = await fetch("/api/user/account", { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        setDeleteError(data.error ?? "Erro ao excluir conta.");
+        setDeleteError(data.error ?? t("settings.deleteAccountError"));
         setDeleting(false);
         return;
       }
       await signOut({ redirect: false });
       router.replace("/");
     } catch {
-      setDeleteError("Erro de conexão.");
+      setDeleteError(t("settings.connectionError"));
       setDeleting(false);
     }
   }
@@ -636,7 +636,7 @@ export default function SettingsPage() {
           }}
         >
           <ChevronLeft size={16} />
-          Voltar
+          {t("settings.back")}
         </Link>
 
         {/* Tabs */}
@@ -674,7 +674,7 @@ export default function SettingsPage() {
         </div>
 
         {loading ? (
-          <div style={{ color: "var(--text-muted)", fontSize: 14 }}>Carregando...</div>
+          <div style={{ color: "var(--text-muted)", fontSize: 14 }}>{t("settings.loading")}</div>
         ) : (
           <>
             {/* Aba Perfil */}
@@ -692,7 +692,7 @@ export default function SettingsPage() {
               >
                 {/* Avatar upload */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Foto de perfil</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.profilePhoto")}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{ position: "relative", flexShrink: 0 }}>
                       <Avatar user={avatarUser} imageUrl={form.image} size={72} />
@@ -736,7 +736,7 @@ export default function SettingsPage() {
                           opacity: uploadingAvatar ? 0.6 : 1,
                         }}
                       >
-                        {uploadingAvatar ? "Enviando..." : "Trocar foto"}
+                        {uploadingAvatar ? t("settings.uploading") : t("settings.changePhoto")}
                       </button>
                       {form.image && (
                         <button
@@ -757,7 +757,7 @@ export default function SettingsPage() {
                           }}
                         >
                           <Trash2 size={12} />
-                          Remover foto
+                          {t("settings.removePhoto")}
                         </button>
                       )}
                     </div>
@@ -766,7 +766,7 @@ export default function SettingsPage() {
                     <span style={{ fontSize: 12, color: "#B91C1C" }}>{avatarError}</span>
                   )}
                   <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                    JPG, PNG ou WebP · máx. 5 MB
+                    {t("settings.photoHint")}
                   </span>
                   <input
                     ref={avatarInputRef}
@@ -784,7 +784,7 @@ export default function SettingsPage() {
                 <div style={{ height: 1, background: "var(--divider)" }} />
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Nome</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.name")}</span>
                   <input
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -793,7 +793,7 @@ export default function SettingsPage() {
                 </label>
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>User</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.handleLabel")}</span>
                   <input
                     value={form.handle}
                     onChange={(e) =>
@@ -808,7 +808,7 @@ export default function SettingsPage() {
                 </label>
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Bio</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.bio")}</span>
                   <textarea
                     value={form.bio ?? ""}
                     onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
@@ -818,7 +818,7 @@ export default function SettingsPage() {
                 </label>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Redes sociais</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t("settings.socialNetworks")}</span>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>X (Twitter)</span>
@@ -831,7 +831,7 @@ export default function SettingsPage() {
                           const match = raw.match(/(?:x\.com|twitter\.com)\/([^/?#\s]+)/i);
                           setForm((f) => ({ ...f, twitterUser: match ? match[1] : e.target.value.replace(/^@/, "") }));
                         }}
-                        placeholder="seu_usuario"
+                        placeholder={t("settings.usernamePlaceholder")}
                         style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
                       />
                     </div>
@@ -848,7 +848,7 @@ export default function SettingsPage() {
                           const match = raw.match(/instagram\.com\/([^/?#\s]+)/i);
                           setForm((f) => ({ ...f, instagramUser: match ? match[1] : e.target.value.replace(/^@/, "") }));
                         }}
-                        placeholder="seu_usuario"
+                        placeholder={t("settings.usernamePlaceholder")}
                         style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
                       />
                     </div>
@@ -863,21 +863,21 @@ export default function SettingsPage() {
                         const match = raw.match(/last\.fm\/user\/([^/?#\s]+)/i);
                         setForm((f) => ({ ...f, lastfmUser: match ? match[1] : e.target.value }));
                       }}
-                      placeholder="seu-usuario-lastfm"
+                      placeholder={t("settings.lastfmUsernamePlaceholder")}
                       style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                     />
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      Cole o link do perfil ou só o nome de usuário, o usuário é extraído automaticamente.
+                      {t("settings.lastfmHint")}
                     </span>
                   </div>
 
                   {canUseSpotifyImport && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Spotify</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.spotify")}</span>
                     {spotifyConnected ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ flex: 1, border: "1px solid rgba(30,215,96,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 14, background: "rgba(30,215,96,0.06)", color: "#1DB954", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 16 }}>✓</span> Conta conectada
+                          <span style={{ fontSize: 16 }}>✓</span> {t("settings.spotifyConnected")}
                         </div>
                         <button
                           type="button"
@@ -886,9 +886,9 @@ export default function SettingsPage() {
                             try {
                               await fetch("/api/spotify/disconnect", { method: "POST" });
                               setSpotifyConnected(false);
-                              setSuccess("Spotify desconectado.");
+                              setSuccess(t("settings.spotifyDisconnected"));
                             } catch {
-                              setError("Erro ao desconectar o Spotify.");
+                              setError(t("settings.spotifyDisconnectError"));
                             } finally {
                               setDisconnectingSpotify(false);
                             }
@@ -896,7 +896,7 @@ export default function SettingsPage() {
                           disabled={disconnectingSpotify}
                           style={{ border: "1px solid var(--divider-strong)", background: "var(--fill-subtle)", color: "var(--text-muted)", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: disconnectingSpotify ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: disconnectingSpotify ? 0.6 : 1 }}
                         >
-                          {disconnectingSpotify ? "Desconectando…" : "Desconectar"}
+                          {disconnectingSpotify ? t("settings.disconnecting") : t("settings.disconnect")}
                         </button>
                       </div>
                     ) : (
@@ -905,23 +905,23 @@ export default function SettingsPage() {
                         onClick={() => startOAuthConnect("/api/spotify/connect?from=/settings&reconnect=1")}
                         style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(30,215,96,0.35)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 600, color: "#1DB954", background: "rgba(30,215,96,0.06)", cursor: "pointer", fontFamily: "inherit" }}
                       >
-                        <span style={{ fontSize: 16 }}>♪</span> Conectar Spotify
+                        <span style={{ fontSize: 16 }}>♪</span> {t("settings.connectSpotify")}
                       </button>
                     )}
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      Permite importar músicas recentes e criar playlists das suas paradas no Spotify.
+                      {t("settings.spotifyHint")}
                     </span>
                   </div>
                   )}
 
                   {canUseYoutubePush && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>YouTube @chartFM</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.youtubeChannel")}</span>
                     {youtubeConnected ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ flex: 1, border: "1px solid rgba(255,0,0,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 14, background: "rgba(255,0,0,0.06)", color: "#FF0000", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ fontSize: 16 }}>✓</span>
-                          {youtubeChannelHandle ? `@${youtubeChannelHandle}` : "Canal conectado"}
+                          {youtubeChannelHandle ? `@${youtubeChannelHandle}` : t("settings.youtubeChannelConnected")}
                         </div>
                         <button
                           type="button"
@@ -931,9 +931,9 @@ export default function SettingsPage() {
                               await fetch("/api/youtube/disconnect", { method: "POST" });
                               setYoutubeConnected(false);
                               setYoutubeChannelHandle(null);
-                              setSuccess("YouTube desconectado.");
+                              setSuccess(t("settings.youtubeDisconnected"));
                             } catch {
-                              setError("Erro ao desconectar o YouTube.");
+                              setError(t("settings.youtubeDisconnectError"));
                             } finally {
                               setDisconnectingYoutube(false);
                             }
@@ -941,7 +941,7 @@ export default function SettingsPage() {
                           disabled={disconnectingYoutube}
                           style={{ border: "1px solid var(--divider-strong)", background: "var(--fill-subtle)", color: "var(--text-muted)", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 600, cursor: disconnectingYoutube ? "not-allowed" : "pointer", whiteSpace: "nowrap", opacity: disconnectingYoutube ? 0.6 : 1 }}
                         >
-                          {disconnectingYoutube ? "Desconectando…" : "Desconectar"}
+                          {disconnectingYoutube ? t("settings.disconnecting") : t("settings.disconnect")}
                         </button>
                       </div>
                     ) : (
@@ -950,11 +950,11 @@ export default function SettingsPage() {
                         onClick={() => startOAuthConnect("/api/youtube/connect?from=/settings")}
                         style={{ display: "inline-flex", alignItems: "center", gap: 8, border: "1px solid rgba(255,0,0,0.35)", borderRadius: 10, padding: "10px 14px", fontSize: 14, fontWeight: 600, color: "#FF0000", background: "rgba(255,0,0,0.06)", cursor: "pointer", fontFamily: "inherit" }}
                       >
-                        <span style={{ fontSize: 16 }}>▶</span> Conectar YouTube @chartFM
+                        <span style={{ fontSize: 16 }}>▶</span> {t("settings.connectYoutube")}
                       </button>
                     )}
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      Use a conta Google do canal youtube.com/@chartFM para criar playlists do Push.
+                      {t("settings.youtubeHint")}
                     </span>
                   </div>
                   )}
@@ -979,7 +979,7 @@ export default function SettingsPage() {
                       opacity: saving ? 0.7 : 1,
                     }}
                   >
-                    {saving ? "Salvando..." : "Salvar alterações"}
+                    {saving ? t("settings.saving") : t("settings.saveChanges")}
                   </button>
                 </div>
               </div>
@@ -1015,7 +1015,7 @@ export default function SettingsPage() {
                             letterSpacing: 0.6,
                           }}
                         >
-                          {p.isPrimary ? "Parada principal" : "Parada secundária"}
+                          {p.isPrimary ? t("settings.primaryChart") : t("settings.secondaryChart")}
                         </span>
                         {!p.isPrimary && (
                           <button
@@ -1032,7 +1032,7 @@ export default function SettingsPage() {
                               color: "var(--text)",
                             }}
                           >
-                            Tornar principal
+                            {t("settings.makePrimary")}
                           </button>
                         )}
                       </div>
@@ -1084,7 +1084,7 @@ export default function SettingsPage() {
                             }}
                           >
                             <ImagePlus size={13} />
-                            {isUploading ? "Enviando..." : p.logo ? "Trocar logo" : "Enviar logo"}
+                            {isUploading ? t("settings.uploading") : p.logo ? t("settings.changeLogo") : t("settings.uploadLogo")}
                           </button>
                           {p.logo && (
                             <button
@@ -1105,11 +1105,11 @@ export default function SettingsPage() {
                               }}
                             >
                               <Trash2 size={12} />
-                              Remover logo
+                              {t("settings.removeLogo")}
                             </button>
                           )}
                           <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                            JPG, PNG ou WebP · máx. 5 MB
+                            {t("settings.photoHint")}
                           </span>
                         </div>
                       </div>
@@ -1117,7 +1117,7 @@ export default function SettingsPage() {
 
                       {/* Nome */}
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Nome da parada</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.chartNameLabel")}</span>
                         <input
                           value={p.name}
                           onChange={(e) => updateParadaDraft(p.id, { name: e.target.value })}
@@ -1135,14 +1135,14 @@ export default function SettingsPage() {
                       {/* Descrição */}
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>
-                          Descrição (opcional)
+                          {t("settings.description")}
                         </span>
                         <textarea
                           value={p.description ?? ""}
                           onChange={(e) => updateParadaDraft(p.id, { description: e.target.value })}
                           maxLength={500}
                           rows={3}
-                          placeholder="Conte um pouco sobre esta parada…"
+                          placeholder={t("settings.descriptionPlaceholder")}
                           style={{
                             border: "1px solid var(--divider-strong)",
                             borderRadius: 10,
@@ -1158,7 +1158,7 @@ export default function SettingsPage() {
 
                       {/* Gêneros */}
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Gêneros</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.genres")}</span>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {ALL_GENRES.map((genre) => {
                             const active = p.genres.includes(genre);
@@ -1189,12 +1189,12 @@ export default function SettingsPage() {
                       {!p.isPrimary && (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>
-                            Frequência da parada
+                            {t("settings.cadence")}
                           </span>
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                             {([
-                              { id: "weekly" as const, label: "Semanal" },
-                              { id: "daily" as const, label: "Diária" },
+                              { id: "weekly" as const, label: t("settings.cadenceWeekly") },
+                              { id: "daily" as const, label: t("settings.cadenceDaily") },
                             ]).map(({ id, label }) => {
                               const active = (p.cadence ?? "weekly") === id;
                               return (
@@ -1219,14 +1219,14 @@ export default function SettingsPage() {
                             })}
                           </div>
                           <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                            Paradas diárias publicam uma lista por dia. Continuam fora do ranking global.
+                            {t("settings.cadenceHint")}
                           </span>
                         </div>
                       )}
 
                       {/* Tamanho */}
                       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Tamanho da parada</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{t("settings.chartSize")}</span>
                         <input
                           type="number"
                           min={1}
@@ -1236,7 +1236,7 @@ export default function SettingsPage() {
                             const v = parseInt(e.target.value, 10);
                             updateParadaDraft(p.id, { chartSize: isNaN(v) ? null : Math.min(100, Math.max(1, v)) });
                           }}
-                          placeholder="Ex: 20"
+                          placeholder={t("settings.chartSizePlaceholder")}
                           style={{
                             border: "1px solid var(--divider-strong)",
                             borderRadius: 10,
@@ -1249,7 +1249,7 @@ export default function SettingsPage() {
                           }}
                         />
                         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                          Quantas músicas tem esta parada (máx. 100). Ao publicar, só as primeiras N músicas são salvas.
+                          {t("settings.chartSizeHint")}
                         </span>
                       </label>
 
@@ -1269,7 +1269,7 @@ export default function SettingsPage() {
                             cursor: "pointer",
                           }}
                         >
-                          Excluir parada
+                          {t("settings.deleteChart")}
                         </button>
                       </div>
                     </div>
@@ -1289,7 +1289,7 @@ export default function SettingsPage() {
                       gap: 14,
                     }}
                   >
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Lixeira</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("settings.trash")}</div>
                     {restoreError && <div style={{ fontSize: 12, color: "#B91C1C" }}>{restoreError}</div>}
                     {trashedParadas.map((tp) => (
                       <div
@@ -1331,10 +1331,10 @@ export default function SettingsPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{tp.name}</div>
                           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                            {tp.weekCount} {tp.weekCount === 1 ? "semana cadastrada" : "semanas cadastradas"} ·{" "}
+                            {tp.weekCount} {tp.weekCount === 1 ? t("settings.weekSingular") : t("settings.weekPlural")} ·{" "}
                             {tp.daysLeft > 0
-                              ? `restam ${tp.daysLeft} ${tp.daysLeft === 1 ? "dia" : "dias"} para restaurar`
-                              : "será excluída permanentemente em breve"}
+                              ? t(tp.daysLeft === 1 ? "settings.daysLeftSingular" : "settings.daysLeftPlural", { count: tp.daysLeft })
+                              : t("settings.willBeDeletedSoon")}
                           </div>
                         </div>
                         <button
@@ -1354,7 +1354,7 @@ export default function SettingsPage() {
                             flexShrink: 0,
                           }}
                         >
-                          {restoringParadaId === tp.id ? "Restaurando..." : "Restaurar"}
+                          {restoringParadaId === tp.id ? t("settings.restoring") : t("settings.restore")}
                         </button>
                       </div>
                     ))}
@@ -1376,16 +1376,16 @@ export default function SettingsPage() {
                   >
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                        Criar segunda parada
+                        {t("settings.createSecondChart")}
                       </div>
                       <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                        Você pode ter até 2 paradas. A secundária é independente e não entra no ranking global. Escolha se ela será semanal ou diária.
+                        {t("settings.createSecondChartDesc")}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {([
-                        { id: "weekly" as const, label: "Semanal" },
-                        { id: "daily" as const, label: "Diária" },
+                        { id: "weekly" as const, label: t("settings.cadenceWeekly") },
+                        { id: "daily" as const, label: t("settings.cadenceDaily") },
                       ]).map(({ id, label }) => {
                         const active = newParadaCadence === id;
                         return (
@@ -1413,7 +1413,7 @@ export default function SettingsPage() {
                       <input
                         value={newParadaName}
                         onChange={(e) => setNewParadaName(e.target.value)}
-                        placeholder="Nome da segunda parada"
+                        placeholder={t("settings.secondChartNamePlaceholder")}
                         style={{
                           flex: 1,
                           border: "1px solid var(--divider-strong)",
@@ -1440,7 +1440,7 @@ export default function SettingsPage() {
                           opacity: creatingParada ? 0.7 : 1,
                         }}
                       >
-                        {creatingParada ? "Criando..." : "Criar"}
+                        {creatingParada ? t("settings.creating") : t("settings.create")}
                       </button>
                     </div>
                   </div>
@@ -1465,7 +1465,7 @@ export default function SettingsPage() {
                       opacity: saving ? 0.7 : 1,
                     }}
                   >
-                    {saving ? "Salvando..." : "Salvar alterações"}
+                    {saving ? t("settings.saving") : t("settings.saveChanges")}
                   </button>
                 </div>
 
@@ -1637,11 +1637,12 @@ export default function SettingsPage() {
             }}
           >
             <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
-              Excluir conta?
+              {t("settings.deleteConfirmTitle")}
             </div>
             <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}>
-              Essa ação é <strong style={{ color: "var(--text)" }}>permanente e irreversível</strong>. Todos os seus dados
-              (paradas, curtidas, comentários, seguidores e configurações) serão excluídos para sempre.
+              {t("settings.deleteAccountModalPrefix")}{" "}
+              <strong style={{ color: "var(--text)" }}>{t("settings.deleteAccountModalBold")}</strong>.{" "}
+              {t("settings.deleteAccountModalSuffix")}
             </div>
             {deleteError && (
               <div style={{ fontSize: 13, color: "#B91C1C" }}>{deleteError}</div>
@@ -1662,7 +1663,7 @@ export default function SettingsPage() {
                   opacity: deleting ? 0.5 : 1,
                 }}
               >
-                Cancelar
+                {t("settings.cancel")}
               </button>
               <button
                 onClick={deleteAccount}
@@ -1679,7 +1680,7 @@ export default function SettingsPage() {
                   opacity: deleting ? 0.7 : 1,
                 }}
               >
-                {deleting ? "Excluindo..." : "Sim, excluir minha conta"}
+                {deleting ? t("settings.deleting") : t("settings.confirmDelete")}
               </button>
             </div>
           </div>
@@ -1717,16 +1718,15 @@ export default function SettingsPage() {
             {deleteParadaStep === 1 ? (
               <>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
-                  Excluir a parada &quot;{deleteParadaTarget.name}&quot;?
+                  {t("settings.deleteConfirmTitleChart", { name: deleteParadaTarget.name })}
                 </div>
                 <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}>
-                  Essa parada tem{" "}
+                  {t("settings.deleteChartHasWeeks")}{" "}
                   <strong style={{ color: "var(--text)" }}>
                     {deleteParadaTarget.weekCount}{" "}
-                    {deleteParadaTarget.weekCount === 1 ? "semana cadastrada" : "semanas cadastradas"}
+                    {deleteParadaTarget.weekCount === 1 ? t("settings.weekSingular") : t("settings.weekPlural")}
                   </strong>
-                  . Ela vai para a lixeira e pode ser restaurada em até 7 dias. Depois disso, será
-                  excluída para sempre, junto com todas as músicas, curtidas e comentários dela.
+                  . {t("settings.deleteChartWarning")}
                 </div>
                 <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                   <button
@@ -1742,7 +1742,7 @@ export default function SettingsPage() {
                       cursor: "pointer",
                     }}
                   >
-                    Cancelar
+                    {t("settings.cancel")}
                   </button>
                   <button
                     onClick={advanceDeleteParadaStep}
@@ -1757,20 +1757,21 @@ export default function SettingsPage() {
                       cursor: "pointer",
                     }}
                   >
-                    Continuar
+                    {t("settings.continue")}
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
-                  Tem certeza mesmo?
+                  {t("settings.areYouSure")}
                 </div>
                 <div style={{ fontSize: 14, color: "var(--text-subtle)", lineHeight: 1.6 }}>
-                  Você está prestes a excluir <strong style={{ color: "var(--text)" }}>&quot;{deleteParadaTarget.name}&quot;</strong>{" "}
+                  {t("settings.deleteChartFinalWarningPrefix")}{" "}
+                  <strong style={{ color: "var(--text)" }}>&quot;{deleteParadaTarget.name}&quot;</strong>{" "}
                   ({deleteParadaTarget.weekCount}{" "}
-                  {deleteParadaTarget.weekCount === 1 ? "semana" : "semanas"}). Você terá 7 dias para
-                  restaurar antes da exclusão definitiva.
+                  {deleteParadaTarget.weekCount === 1 ? t("settings.weekCountSingular") : t("settings.weekCountPlural")}).{" "}
+                  {t("settings.deleteChartFinalWarningSuffix")}
                 </div>
                 {deleteParadaError && (
                   <div style={{ fontSize: 13, color: "#B91C1C" }}>{deleteParadaError}</div>
@@ -1791,7 +1792,7 @@ export default function SettingsPage() {
                       opacity: deletingParada ? 0.5 : 1,
                     }}
                   >
-                    Cancelar
+                    {t("settings.cancel")}
                   </button>
                   <button
                     onClick={confirmDeleteParadaFinal}
@@ -1808,7 +1809,7 @@ export default function SettingsPage() {
                       opacity: deletingParada ? 0.7 : 1,
                     }}
                   >
-                    {deletingParada ? "Excluindo..." : "Sim, excluir parada"}
+                    {deletingParada ? t("settings.deleting") : t("settings.confirmDeleteChart")}
                   </button>
                 </div>
               </>

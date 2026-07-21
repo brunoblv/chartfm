@@ -8,6 +8,9 @@ import type { ClubeRoundData, ClubeWinner, UiPhase } from "@/lib/clube-album";
 import { MIN_POLL_VOTES } from "@/lib/clube-album-shared";
 import { formatCountdown } from "@/lib/clube-schedule";
 import { scoreColor } from "@/lib/album-score";
+import { useTranslations } from "@/hooks/useTranslations";
+
+type TFn = ReturnType<typeof useTranslations>["t"];
 
 type SpotifySearchHit = {
   spotifyId: string;
@@ -94,6 +97,7 @@ function SearchModal({
   onClose: () => void;
   onSelect: (album: PickAlbum) => void;
 }) {
+  const { t } = useTranslations();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SpotifySearchHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -182,7 +186,7 @@ function SearchModal({
       >
         <div style={{ padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
           <SpotifyIcon size={18} />
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Buscar no Spotify</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("criticsfm.searchSpotify")}</span>
           <button
             onClick={onClose}
             style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 22, lineHeight: 1, padding: 4 }}
@@ -194,7 +198,7 @@ function SearchModal({
           <input
             ref={inputRef}
             type="text"
-            placeholder="Nome do álbum ou artista…"
+            placeholder={t("criticsfm.spotifyPanelPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             style={{
@@ -212,9 +216,9 @@ function SearchModal({
           />
         </div>
         <div style={{ maxHeight: 380, overflowY: "auto", padding: "0 12px 16px" }}>
-          {loading && <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>Buscando…</div>}
+          {loading && <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>{t("criticsfm.searching")}</div>}
           {!loading && q.trim() && results.length === 0 && (
-            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>Nenhum resultado</div>
+            <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>{t("criticsfm.noResultsShort")}</div>
           )}
           {!loading &&
             results.map((hit) => {
@@ -239,15 +243,15 @@ function SearchModal({
                   </div>
                   {taken ? (
                     <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", padding: "5px 10px", borderRadius: 100, background: "var(--fill-inset)", whiteSpace: "nowrap" }}>
-                      Já indicado
+                      {t("criticsfm.nominatedBadge")}
                     </span>
                   ) : takenPrev ? (
-                    <span title="Este álbum já foi indicado em uma rodada anterior" style={{ fontSize: 11, fontWeight: 600, color: "#b45309", padding: "5px 10px", borderRadius: 100, background: "rgba(180,83,9,0.10)", whiteSpace: "nowrap" }}>
-                      Rodada anterior
+                    <span title={t("criticsfm.previousRoundTooltip")} style={{ fontSize: 11, fontWeight: 600, color: "#b45309", padding: "5px 10px", borderRadius: 100, background: "rgba(180,83,9,0.10)", whiteSpace: "nowrap" }}>
+                      {t("criticsfm.previousRoundBadge")}
                     </span>
                   ) : selected ? (
                     <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", padding: "5px 10px", borderRadius: 100, background: "var(--fill-inset)", whiteSpace: "nowrap" }}>
-                      Selecionado
+                      {t("criticsfm.selectedBadge")}
                     </span>
                   ) : (
                     <button
@@ -267,7 +271,7 @@ function SearchModal({
                         opacity: adding === hit.spotifyId ? 0.6 : 1,
                       }}
                     >
-                      {adding === hit.spotifyId ? "…" : "Indicar"}
+                      {adding === hit.spotifyId ? "…" : t("criticsfm.nominateAction")}
                     </button>
                   )}
                 </div>
@@ -279,14 +283,18 @@ function SearchModal({
   );
 }
 
-const PHASE_META = [
-  { id: "1", label: "Inscrições" },
-  { id: "2", label: "Enquete" },
-  { id: "3", label: "Resultado" },
-  { id: "4", label: "Escuta" },
-];
+function getPhaseMeta(t: TFn) {
+  return [
+    { id: "1", label: t("criticsfm.phaseSignups") },
+    { id: "2", label: t("criticsfm.phasePoll") },
+    { id: "3", label: t("criticsfm.phaseResult") },
+    { id: "4", label: t("criticsfm.phaseListening") },
+  ];
+}
 
 function PhaseSteps({ current, isMobile }: { current: UiPhase; isMobile?: boolean }) {
+  const { t } = useTranslations();
+  const PHASE_META = getPhaseMeta(t);
   const ci = current === "0" ? 0 : parseInt(current);
   const circleSize = isMobile ? 24 : 28;
   return (
@@ -343,22 +351,25 @@ function PhaseSteps({ current, isMobile }: { current: UiPhase; isMobile?: boolea
   );
 }
 
-const PHASE_STATUS: Record<UiPhase, { label: string; dot: string }> = {
-  "0": { label: "Aguardando inscrições", dot: "#86868B" },
-  "1": { label: "Inscrições abertas", dot: "#1B873F" },
-  "2": { label: "Enquete aberta", dot: "#E09F00" },
-  "3": { label: "Resultado publicado", dot: "var(--accent)" },
-  "4": { label: "Período de escuta", dot: "#5856D6" },
-};
+function getPhaseStatus(t: TFn): Record<UiPhase, { label: string; dot: string }> {
+  return {
+    "0": { label: t("criticsfm.waitingSignups"), dot: "#86868B" },
+    "1": { label: t("criticsfm.signupsOpen"), dot: "#1B873F" },
+    "2": { label: t("criticsfm.pollOpen"), dot: "#E09F00" },
+    "3": { label: t("criticsfm.resultPublished"), dot: "var(--accent)" },
+    "4": { label: t("criticsfm.listeningPeriod"), dot: "#5856D6" },
+  };
+}
 
 function ClubHeader({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
-  const s = PHASE_STATUS[round.phase];
+  const { t } = useTranslations();
+  const s = getPhaseStatus(t)[round.phase];
   return (
     <div style={{ display: "flex", alignItems: "flex-start", marginBottom: isMobile ? 16 : 22, gap: 8 }}>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, marginBottom: 8, flexWrap: "wrap" }}>
-          <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", margin: 0 }}>Clube do Álbum</h2>
-          <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-disabled)" }}>Rodada #{round.number}</span>
+          <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", margin: 0 }}>{t("criticsfm.albumClub")}</h2>
+          <span style={{ fontSize: 12, fontWeight: 400, color: "var(--text-disabled)" }}>{t("criticsfm.roundNumber", { number: round.number })}</span>
         </div>
         <span
           style={{
@@ -383,12 +394,13 @@ function ClubHeader({ round, isMobile }: { round: ClubeRoundData; isMobile?: boo
 }
 
 function HowItWorks() {
+  const { t } = useTranslations();
   const [open, setOpen] = useState(false);
   const steps = [
-    { num: "1", title: "Inscrições", desc: "Cada membro indica até 2 álbuns de acordo com o tema da semana." },
-    { num: "2", title: "Enquete", desc: "Com as indicações reunidas, uma enquete é aberta. Vote em pelo menos 7 álbuns." },
-    { num: "3", title: "Resultado", desc: "Os 2 álbuns com mais votos são escolhidos para a semana." },
-    { num: "4", title: "Escuta", desc: "Ouça os álbuns escolhidos. Quem indicou e a nota CriticsFM são revelados na quarta às 20h." },
+    { num: "1", title: t("criticsfm.phaseSignups"), desc: t("criticsfm.stepSignupsDesc") },
+    { num: "2", title: t("criticsfm.phasePoll"), desc: t("criticsfm.stepPollDesc") },
+    { num: "3", title: t("criticsfm.phaseResult"), desc: t("criticsfm.stepResultDesc") },
+    { num: "4", title: t("criticsfm.phaseListening"), desc: t("criticsfm.stepListeningDesc") },
   ];
   return (
     <div style={{ marginBottom: 24 }}>
@@ -401,7 +413,7 @@ function HowItWorks() {
           <path d="M12 16v-4" />
           <path d="M12 8h.01" />
         </svg>
-        Como funciona?
+        {t("criticsfm.howItWorks")}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }}>
           <polyline points="6 9 12 15 18 9" />
         </svg>
@@ -410,7 +422,7 @@ function HowItWorks() {
         <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
           {steps.map((s) => (
             <div key={s.num} style={{ background: "var(--fill-inset)", borderRadius: 12, padding: "12px 14px", border: "1px solid var(--divider)" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", marginBottom: 5 }}>Fase {s.num} - {s.title}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", marginBottom: 5 }}>{t("criticsfm.phaseNumTitle", { num: s.num, title: s.title })}</div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.55 }}>{s.desc}</div>
             </div>
           ))}
@@ -421,12 +433,13 @@ function HowItWorks() {
 }
 
 function WinnerCard({ album, idx, revealed }: { album: ClubeWinner; idx: number; revealed: boolean }) {
+  const { t } = useTranslations();
   const hue = albumHue(album.title);
   return (
     <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", width: "100%" }}>
       <Link
         href={`/criticsfm/${album.albumId}`}
-        title={`Avaliar ${album.title}`}
+        title={t("criticsfm.rateAlbumTitle", { album: album.title })}
         style={{
           display: "block",
           width: "50%",
@@ -461,25 +474,32 @@ function WinnerCard({ album, idx, revealed }: { album: ClubeWinner; idx: number;
       </Link>
       <div style={{ padding: "16px" }}>
         <Link href={`/criticsfm/${album.albumId}`} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--accent)", textDecoration: "none", marginBottom: 8 }}>
-          Avaliar álbum →
+          {t("criticsfm.rateAlbumLink")}
         </Link>
         <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text)", marginBottom: 2 }}>{album.title}</div>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14 }}>{album.artist} · {album.year}</div>
         {revealed && album.nominatedBy && (
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
-            Indicado por <strong style={{ color: "var(--text)" }}>@{album.nominatedBy}</strong>
+            {t("criticsfm.nominatedByPrefix")} <strong style={{ color: "var(--text)" }}>@{album.nominatedBy}</strong>
             {album.reviewCount > 0 && album.score !== null && (
-              <span> · {album.reviewCount} review{album.reviewCount !== 1 ? "s" : ""}</span>
+              <span>
+                {" "}
+                ·{" "}
+                {t(
+                  album.reviewCount === 1 ? "criticsfm.reviewCountSingular" : "criticsfm.reviewCountPlural",
+                  { count: album.reviewCount },
+                )}
+              </span>
             )}
           </div>
         )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            <strong style={{ color: "var(--text)" }}>{album.votes}</strong> votos
+            <strong style={{ color: "var(--text)" }}>{album.votes}</strong> {t("criticsfm.votesLabel")}
           </span>
           {album.spotifyUrl && (
             <a href={album.spotifyUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#1DB954", color: "white", padding: "7px 14px", borderRadius: 100, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
-              <SpotifyIcon size={11} /> Ouvir
+              <SpotifyIcon size={11} /> {t("criticsfm.listenAction")}
             </a>
           )}
         </div>
@@ -489,6 +509,7 @@ function WinnerCard({ album, idx, revealed }: { album: ClubeWinner; idx: number;
 }
 
 function Phase0({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
+  const { t } = useTranslations();
   const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
@@ -504,11 +525,11 @@ function Phase0({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
     <div>
       <div style={{ background: "var(--fill-inset)", border: "1px solid var(--divider)", borderRadius: 16, padding: isMobile ? "20px 16px" : "28px 24px", textAlign: "center", marginBottom: 24 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-          Próxima rodada
+          {t("criticsfm.nextRound")}
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: 8 }}>{round.theme}</div>
         <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
-          Inscrições abrem em <strong style={{ color: "var(--text)" }}>{round.nominationsOpenAt}</strong>
+          {t("criticsfm.signupsOpenAtPrefix")} <strong style={{ color: "var(--text)" }}>{round.nominationsOpenAt}</strong>
         </div>
         {countdown && (
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--surface)", borderRadius: 100, padding: "8px 16px", border: "1px solid var(--divider)", fontSize: 14, fontWeight: 700, color: "var(--accent)", fontVariantNumeric: "tabular-nums" }}>
@@ -521,13 +542,14 @@ function Phase0({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
         )}
       </div>
       <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.55 }}>
-        O tema já foi definido. Volte na quarta-feira às 6h para fazer suas indicações.
+        {t("criticsfm.phase0Description")}
       </p>
     </div>
   );
 }
 
 function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
+  const { t } = useTranslations();
   const router = useRouter();
   const alreadyNominated = (round.myNominations?.length ?? 0) === 2;
   const [myNoms, setMyNoms] = useState<(PickAlbum | null)[]>(
@@ -549,7 +571,7 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
   async function confirm() {
     if (!myNoms[0] || !myNoms[1]) return;
     if (!round.isLoggedIn) {
-      setError("Faça login para indicar álbuns");
+      setError(t("criticsfm.loginToNominate"));
       return;
     }
     setSubmitting(true);
@@ -562,7 +584,7 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Erro ao confirmar");
+        setError(data.error ?? t("criticsfm.confirmErrorFallback"));
         return;
       }
       setSubmitted(true);
@@ -592,26 +614,26 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
       )}
 
       <div style={{ background: "linear-gradient(135deg,var(--accent) 0%,#FF5858 100%)", borderRadius: 16, padding: isMobile ? "16px 18px" : "22px 24px", marginBottom: 28, color: "white", boxShadow: "0 4px 20px rgba(250,36,60,0.22)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.8, marginBottom: 6 }}>Tema desta semana</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.8, marginBottom: 6 }}>{t("criticsfm.themeThisWeek")}</div>
         <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>{round.theme}</div>
         <div style={{ fontSize: 13, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
-          Inscrições até {round.nominationsDeadline}
+          {t("criticsfm.signupsUntil", { date: round.nominationsDeadline })}
         </div>
       </div>
 
       {!round.isLoggedIn && (
         <div style={{ background: "var(--fill-inset)", border: "1px solid var(--divider)", borderRadius: 12, padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "var(--text-muted)" }}>
-          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>Entre na sua conta</Link> para fazer suas indicações.
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>{t("criticsfm.signInToVote")}</Link> {t("criticsfm.toNominateSuffix")}
         </div>
       )}
 
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>
-          {submitted ? "Suas indicações ✓" : "Suas indicações - escolha 2 álbuns"}
+          {submitted ? t("criticsfm.yourNominationsConfirmed") : t("criticsfm.yourNominations")}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
           {[0, 1].map((i) => (
@@ -643,7 +665,7 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
                     <line x1="12" y1="8" x2="12" y2="16" />
                     <line x1="8" y1="12" x2="16" y2="12" />
                   </svg>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Indicação {i + 1}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{t("criticsfm.nominationSlot", { num: i + 1 })}</span>
                 </button>
               )}
             </div>
@@ -658,32 +680,32 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
             disabled={submitting}
             style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: "var(--accent)", color: "white", fontSize: 14, fontWeight: 700, cursor: submitting ? "default" : "pointer", fontFamily: "inherit", boxShadow: "0 2px 12px rgba(250,36,60,0.28)", opacity: submitting ? 0.7 : 1 }}
           >
-            {submitting ? "Confirmando…" : "Confirmar indicações"}
+            {submitting ? t("criticsfm.confirmingAction") : t("criticsfm.confirmNominations")}
           </button>
         )}
 
         {submitted && (
           <div style={{ background: "rgba(27,135,63,0.08)", border: "1px solid rgba(27,135,63,0.2)", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, color: "#1B873F", fontSize: 13, fontWeight: 600 }}>
-            Indicações confirmadas! Aguarde a abertura da enquete.
+            {t("criticsfm.nominationsConfirmedMsg")}
           </div>
         )}
       </div>
 
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span>Indicações da rodada</span>
+          <span>{t("criticsfm.roundNominations")}</span>
           <span style={{ fontSize: 12, letterSpacing: 0, textTransform: "none", fontWeight: 400, color: "var(--text-muted)" }}>
-            {round.nominations.length} álbuns · {round.participantCount} membros
+            {t("criticsfm.roundNominationsStats", { albums: round.nominations.length, members: round.participantCount })}
           </span>
         </div>
         {!round.identitiesRevealed && round.revealsAt && (
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, padding: "10px 12px", background: "var(--fill-inset)", borderRadius: 10, border: "1px solid var(--divider)" }}>
-            Quem indicou cada álbum será revelado em {round.revealsAt}.
+            {t("criticsfm.identitiesRevealAt", { date: round.revealsAt })}
           </div>
         )}
         {round.nominations.length === 0 ? (
           <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--text-muted)", fontSize: 13, background: "var(--fill-inset)", borderRadius: 12, border: "1px solid var(--divider)" }}>
-            Nenhuma indicação ainda. Seja o primeiro!
+            {t("criticsfm.noNominationsYet")}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -707,6 +729,7 @@ function Phase1({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
 }
 
 function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
+  const { t } = useTranslations();
   const router = useRouter();
   const [savedVotes, setSavedVotes] = useState<string[]>(round.myVoteNominationIds ?? []);
   const [selected, setSelected] = useState<string[]>(round.myVoteNominationIds ?? []);
@@ -737,7 +760,7 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
   async function vote() {
     if (selected.length < MIN_POLL_VOTES) return;
     if (!round.isLoggedIn) {
-      setError("Faça login para votar");
+      setError(t("criticsfm.loginToVote"));
       return;
     }
     setSubmitting(true);
@@ -750,7 +773,7 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Erro ao votar");
+        setError(data.error ?? t("criticsfm.voteErrorFallback"));
         return;
       }
       setSavedVotes([...selected]);
@@ -763,16 +786,16 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
   return (
     <div>
       <div style={{ background: "linear-gradient(135deg,var(--accent) 0%,#FF5858 100%)", borderRadius: 16, padding: isMobile ? "16px 18px" : "22px 24px", marginBottom: 28, color: "white", boxShadow: "0 4px 20px rgba(250,36,60,0.22)" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.8, marginBottom: 6 }}>Enquete · {round.theme}</div>
-        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>Vote nos álbuns que quer ouvir</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.8, marginBottom: 6 }}>{t("criticsfm.pollHeader", { theme: round.theme })}</div>
+        <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>{t("criticsfm.voteForAlbums")}</div>
         <div style={{ fontSize: 13, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
-          Enquete aberta até {round.pollDeadline}
+          {t("criticsfm.pollOpenUntil", { date: round.pollDeadline })}
         </div>
       </div>
 
       {!round.isLoggedIn && (
         <div style={{ background: "var(--fill-inset)", border: "1px solid var(--divider)", borderRadius: 12, padding: "12px 16px", marginBottom: 20, fontSize: 13, color: "var(--text-muted)" }}>
-          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>Entre na sua conta</Link> para votar.
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>{t("criticsfm.signInToVote")}</Link> {t("criticsfm.toVoteSuffix")}
         </div>
       )}
 
@@ -782,14 +805,14 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
             <div style={{ height: "100%", width: `${Math.min(100, (selected.length / MIN_POLL_VOTES) * 100)}%`, background: selected.length >= MIN_POLL_VOTES ? "#1B873F" : "var(--accent)", borderRadius: 100, transition: "width 0.2s, background 0.2s" }} />
           </div>
           <span style={{ fontSize: 12, fontWeight: 700, color: selected.length >= MIN_POLL_VOTES ? "#1B873F" : "var(--text-muted)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
-            {selected.length} / {MIN_POLL_VOTES} mín.
+            {t("criticsfm.minVotesProgress", { selected: selected.length, min: MIN_POLL_VOTES })}
           </span>
         </div>
       )}
 
       {hasVoted && !isDirty && (
         <div style={{ background: "rgba(27,135,63,0.08)", border: "1px solid rgba(27,135,63,0.2)", borderRadius: 12, padding: "12px 16px", marginBottom: 20, color: "#1B873F", fontSize: 13, fontWeight: 600, lineHeight: 1.5 }}>
-          Voto registrado em {savedVotes.length} álbuns. Toque nos cards para alterar - você pode editar até {round.pollDeadline}.
+          {t("criticsfm.voteRegisteredMsg", { count: savedVotes.length, date: round.pollDeadline })}
         </div>
       )}
 
@@ -830,10 +853,10 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
             style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: round.isLoggedIn ? "var(--accent)" : "var(--fill-inset)", color: round.isLoggedIn ? "white" : "var(--text-disabled)", fontSize: 14, fontWeight: 700, cursor: round.isLoggedIn ? "pointer" : "default", fontFamily: "inherit" }}
           >
             {submitting
-              ? "Registrando…"
+              ? t("criticsfm.registeringAction")
               : hasVoted
-                ? `Salvar alterações (${selected.length} álbuns)`
-                : `Votar em ${selected.length} álbuns →`}
+                ? t("criticsfm.saveChangesCount", { count: selected.length })
+                : t("criticsfm.voteInCount", { count: selected.length })}
           </button>
           {hasVoted && isDirty && (
             <button
@@ -842,7 +865,7 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
               disabled={submitting}
               style={{ width: "100%", padding: "11px", borderRadius: 12, border: "1px solid var(--divider)", background: "transparent", color: "var(--text-muted)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
             >
-              Descartar alterações
+              {t("criticsfm.discardChanges")}
             </button>
           )}
         </div>
@@ -852,8 +875,13 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
           style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: "var(--fill-inset)", color: "var(--text-disabled)", fontSize: 14, fontWeight: 700, fontFamily: "inherit" }}
         >
           {selected.length < MIN_POLL_VOTES
-            ? `Selecione mais ${MIN_POLL_VOTES - selected.length} álbum${MIN_POLL_VOTES - selected.length !== 1 ? "s" : ""}`
-            : `Votar em ${selected.length} álbuns →`}
+            ? t(
+                MIN_POLL_VOTES - selected.length === 1
+                  ? "criticsfm.selectMoreAlbumsSingular"
+                  : "criticsfm.selectMoreAlbumsPlural",
+                { count: MIN_POLL_VOTES - selected.length },
+              )
+            : t("criticsfm.voteInCount", { count: selected.length })}
         </button>
       ) : null}
     </div>
@@ -861,6 +889,7 @@ function Phase2({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
 }
 
 function Phase3({ round }: { round: ClubeRoundData }) {
+  const { t } = useTranslations();
   const winnerIds = new Set(round.winners.map((w) => w.nominationId));
   const others = round.nominations.filter((a) => !winnerIds.has(a.id));
 
@@ -868,7 +897,7 @@ function Phase3({ round }: { round: ClubeRoundData }) {
     <div>
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--accent-tint)", color: "var(--accent)", borderRadius: 100, padding: "5px 14px", fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 16 }}>
-          Escolhidos da semana
+          {t("criticsfm.chosenOfTheWeek")}
         </div>
         <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", margin: 0 }}>{round.theme}</h2>
       </div>
@@ -880,12 +909,12 @@ function Phase3({ round }: { round: ClubeRoundData }) {
           ))}
         </div>
       ) : (
-        <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", marginBottom: 32 }}>Resultado em breve…</div>
+        <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", marginBottom: 32 }}>{t("criticsfm.resultComingSoon")}</div>
       )}
 
       {others.length > 0 && (
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>Outras indicações</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>{t("criticsfm.otherNominations")}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(96px,1fr))", gap: 10 }}>
             {others.map((a) => (
               <div key={a.id} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, overflow: "hidden" }}>
@@ -906,6 +935,7 @@ function Phase3({ round }: { round: ClubeRoundData }) {
 }
 
 function Phase4({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean }) {
+  const { t } = useTranslations();
   const [countdown, setCountdown] = useState("");
 
   useEffect(() => {
@@ -921,17 +951,17 @@ function Phase4({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
     <div>
       <div style={{ background: "linear-gradient(135deg,#1D1D1F 0%,#3A3A3C 100%)", borderRadius: 16, padding: isMobile ? "16px 18px" : "22px 24px", marginBottom: 28, color: "white" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", opacity: 0.5, marginBottom: 6 }}>
-          {round.identitiesRevealed ? "Rodada encerrada" : "Período de escuta"} · {round.theme}
+          {round.identitiesRevealed ? t("criticsfm.roundClosed") : t("criticsfm.listeningPeriod")} · {round.theme}
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 10 }}>
-          {round.identitiesRevealed ? "Resultados finais da rodada" : "Hora de ouvir os escolhidos!"}
+          {round.identitiesRevealed ? t("criticsfm.finalResults") : t("criticsfm.timeToListen")}
         </div>
         {round.identitiesRevealed ? (
-          <div style={{ fontSize: 13, opacity: 0.75 }}>Notas CriticsFM e indicadores revelados</div>
+          <div style={{ fontSize: 13, opacity: 0.75 }}>{t("criticsfm.scoresRevealed")}</div>
         ) : round.listeningDeadline ? (
           <div style={{ fontSize: 13, opacity: 0.6 }}>
-            Escuta até {round.listeningDeadline}
-            {round.revealsAt && ` · Revelação em ${round.revealsAt}`}
+            {t("criticsfm.listenUntil", { date: round.listeningDeadline })}
+            {round.revealsAt && t("criticsfm.revealAtSuffix", { date: round.revealsAt })}
           </div>
         ) : null}
       </div>
@@ -943,7 +973,7 @@ function Phase4({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
           ))}
         </div>
       ) : (
-        <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)" }}>Aguardando definição dos escolhidos…</div>
+        <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)" }}>{t("criticsfm.waitingSelected")}</div>
       )}
 
       {round.nextRoundStartsAt && (
@@ -956,10 +986,12 @@ function Phase4({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>
-              Próxima rodada {countdown ? `em ${countdown}` : ""}
+              {countdown ? t("criticsfm.nextRoundInLabel", { countdown }) : t("criticsfm.nextRound")}
             </div>
             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              {round.nextRoundCountdown ? `Inscrições em ${round.nextRoundCountdown}` : "O tema ainda não foi revelado. Fique de olho!"}
+              {round.nextRoundCountdown
+                ? t("criticsfm.signupsIn", { countdown: round.nextRoundCountdown })
+                : t("criticsfm.themeNotRevealedYet")}
             </div>
           </div>
         </div>
@@ -969,15 +1001,16 @@ function Phase4({ round, isMobile }: { round: ClubeRoundData; isMobile?: boolean
 }
 
 export function ClubeDoAlbum({ round }: { round: ClubeRoundData | null }) {
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
 
   if (!round) {
     return (
       <div style={{ marginBottom: 40, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 20, padding: isMobile ? "32px 20px" : "48px 28px", textAlign: "center" }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Clube do Álbum</div>
-        <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>Nenhuma rodada ativa no momento.</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>{t("criticsfm.albumClub")}</div>
+        <div style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>{t("criticsfm.noActiveRound")}</div>
         <Link href="/criticsfm/clube/historico" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-          Ver histórico de rodadas →
+          {t("criticsfm.viewHistoryLink")}
         </Link>
       </div>
     );

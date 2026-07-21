@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { CopaHomeClient } from "./CopaHomeClient";
 import { computeStandings, getVoteCounts, pickSingleCover, resolveSongCoverUrls } from "@/lib/copa";
 
@@ -9,6 +10,7 @@ export const revalidate = 10;
 export default async function CopaPage() {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
+  const { t } = await getServerTranslations();
 
   const copa = await prisma.copaEdition.findFirst({
     where: { status: { not: "FINISHED" } },
@@ -24,8 +26,8 @@ export default async function CopaPage() {
     return (
       <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)" }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
-        <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Nenhuma Copa ativa</div>
-        <div style={{ fontSize: 14 }}>Aguarde o início da próxima edição.</div>
+        <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>{t("copa.noActiveCopaTitle")}</div>
+        <div style={{ fontSize: 14 }}>{t("copa.noActiveCopaSubtitle")}</div>
       </div>
     );
   }

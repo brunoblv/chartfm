@@ -1,64 +1,70 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Como funciona a Copa ChartFM | Guias ChartFM",
-  description:
-    "Guia rápido para participar da Copa ChartFM: como votar nas partidas, acompanhar o chaveamento e ver os grupos.",
-  alternates: { canonical: "/guides/como-funciona-a-copa" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("guides.copaMetaTitle"),
+    description: t("guides.copaMetaDescription"),
+    alternates: { canonical: "/guides/como-funciona-a-copa" },
+  };
+}
 
-export default function GuideComoFuncionaACopa() {
+export default async function GuideComoFuncionaACopa() {
+  const { t } = await getServerTranslations();
   return (
     <LegalPage
-      title="Como funciona a Copa ChartFM"
-      subtitle="Guia rápido para participar do torneio de artistas"
+      title={t("guides.copaTitle")}
+      subtitle={t("guides.copaSubtitle")}
       sections={[
         {
-          title: "O que é a Copa",
-          body: [
-            "A Copa ChartFM é um torneio de artistas disputado pela comunidade. Cada artista tem um representante que escala 8 músicas antes do início da competição, e essas músicas se enfrentam em partidas contra outros artistas ao longo de uma fase de grupos e depois de um mata-mata. Quem decide o resultado de cada partida é o voto dos usuários.",
-          ],
+          title: t("guides.copaSec1Title"),
+          body: [t("guides.copaSec1Body1")],
         },
         {
-          title: "Como participar votando",
+          title: t("guides.copaSec2Title"),
           body: [
-            "Você participa da Copa votando nas partidas em andamento. Cada partida coloca uma música de um artista contra uma música de outro artista, e você escolhe a que prefere. A música com mais votos vence a partida.",
+            t("guides.copaSec2Body1"),
             <>
-              As partidas de cada dia ficam disponíveis em{" "}
-              <InstitutionalInlineLink href="/copa/ao-vivo">/copa/ao-vivo</InstitutionalInlineLink>, junto com o placar em tempo real de quem está na frente.
+              {t("guides.copaSec2Prefix")}{" "}
+              <InstitutionalInlineLink href="/copa/ao-vivo">/copa/ao-vivo</InstitutionalInlineLink>
+              {t("guides.copaSec2Suffix")}
             </>,
-            "Não é preciso torcer para os mesmos artistas o torneio inteiro - você pode votar partida por partida, conforme as músicas em disputa.",
+            t("guides.copaSec2Body3"),
           ],
         },
         {
-          title: "Acompanhar os grupos",
+          title: t("guides.copaSec3Title"),
           body: [
             <>
-              Na fase inicial, os artistas são divididos em grupos. Para ver a composição de cada grupo e a tabela de pontos atualizada, acesse{" "}
-              <InstitutionalInlineLink href="/copa/grupos">/copa/grupos</InstitutionalInlineLink>.
+              {t("guides.copaSec3Prefix")}{" "}
+              <InstitutionalInlineLink href="/copa/grupos">/copa/grupos</InstitutionalInlineLink>
+              {t("guides.copaSec3Suffix")}
             </>,
-            "Os dois primeiros colocados de cada grupo avançam para a fase eliminatória.",
+            t("guides.copaSec3Body2"),
           ],
         },
         {
-          title: "Acompanhar o chaveamento",
+          title: t("guides.copaSec4Title"),
           body: [
             <>
-              Depois da fase de grupos, a competição vira mata-mata. Para ver o chaveamento completo (quem enfrenta quem em cada fase, até a final) acesse{" "}
-              <InstitutionalInlineLink href="/copa/chaveamento">/copa/chaveamento</InstitutionalInlineLink>.
+              {t("guides.copaSec4Prefix")}{" "}
+              <InstitutionalInlineLink href="/copa/chaveamento">/copa/chaveamento</InstitutionalInlineLink>
+              {t("guides.copaSec4Suffix")}
             </>,
-            "O chaveamento é atualizado conforme os resultados das partidas saem, então dá para acompanhar a trajetória de um artista específico até onde ele for.",
+            t("guides.copaSec4Body2"),
           ],
         },
         {
-          title: "Formato resumido e regras completas",
+          title: t("guides.copaSec5Title"),
           body: [
-            "Em resumo: são 64 artistas divididos em 16 grupos de 4, com 12 dias de competição. Cada artista enfrenta os outros três do seu grupo; os dois melhores de cada grupo avançam a um mata-mata de 32 artistas até a final. Na fase de grupos, empate no placar vale 1 ponto para cada lado. No mata-mata, empates em gols são decididos pelos votos totais (pênaltis) e, se necessário, pela pontuação no Global 100.",
+            t("guides.copaSec5Body1"),
             <>
-              Esse resumo cobre o essencial para acompanhar e votar. Para o regulamento oficial completo, com todos os critérios de desempate e detalhes da escalação, veja{" "}
-              <InstitutionalInlineLink href="/copa/regras">/copa/regras</InstitutionalInlineLink>.
+              {t("guides.copaSec5Prefix")}{" "}
+              <InstitutionalInlineLink href="/copa/regras">/copa/regras</InstitutionalInlineLink>
+              {t("guides.copaSec5Suffix")}
             </>,
           ],
         },

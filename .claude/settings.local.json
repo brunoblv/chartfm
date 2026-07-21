@@ -152,7 +152,9 @@
       "Bash(curl -s http://localhost:3000/api/auth/session -H 'Cookie: next-auth.session-token=__TRACKED_VAR__' --max-time 30)",
       "Bash(python -c ' *)",
       "Bash(cygpath -w /tmp/prof_anon.json)",
-      "Bash(rm -f scripts/_tmp_diag_hyune.ts scripts/_tmp_diag_hyune2.ts scripts/_tmp_diag_hyune3.ts scripts/_tmp_diag_hyune4.ts scripts/_tmp_diag_lastlog.ts scripts/_tmp_diag_logs2.ts scripts/_tmp_diag_logs3.ts scripts/_tmp_make_token.ts /tmp/hyune_token.txt && npx tsc --noEmit 2>&1 | tail -5)"
+      "Bash(rm -f scripts/_tmp_diag_hyune.ts scripts/_tmp_diag_hyune2.ts scripts/_tmp_diag_hyune3.ts scripts/_tmp_diag_hyune4.ts scripts/_tmp_diag_lastlog.ts scripts/_tmp_diag_logs2.ts scripts/_tmp_diag_logs3.ts scripts/_tmp_make_token.ts /tmp/hyune_token.txt && npx tsc --noEmit 2>&1 | tail -5)",
+      "Bash(grep -rlE \">[A-Za-zÀ-ÿ]{3,}[^<]*<\" app --include=\"*.tsx\")",
+      "Bash(grep -rlE \">[A-Za-zÀ-ÿ]{3,}[^<]*<\" components --include=\"*.tsx\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

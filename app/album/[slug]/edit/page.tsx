@@ -7,17 +7,19 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { parseAlbumSlug, slugify } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
 import { AlbumEditClient } from "./AlbumEditClient";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
 export default async function AlbumEditPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>Você precisa entrar para editar álbuns.</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.signInRequired")}</div>
       </Shell>
     );
   }
@@ -26,7 +28,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   if (!isPrivilegedRole(me?.role)) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>Acesso permitido somente para DEV e ADMIN.</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.devAdminOnly")}</div>
       </Shell>
     );
   }
@@ -36,7 +38,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   if (!parsed) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>Álbum não encontrado.</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.albumNotFound")}</div>
       </Shell>
     );
   }
@@ -73,7 +75,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   if (!album) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>Álbum não encontrado.</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.albumNotFound")}</div>
       </Shell>
     );
   }
@@ -88,10 +90,10 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
     <Shell title="">
       <div style={{ margin: "32px 0", padding: "0 20px 48px" }}>
         <Link href={`/album/${slug}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
-          ← Voltar para álbum
+          {t("albums.backToAlbum")}
         </Link>
-        <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>Editar álbum</h1>
-        <p style={{ color: "#86868B", marginTop: 0 }}>Disponível apenas para perfis DEV e ADMIN.</p>
+        <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>{t("albums.editAlbum")}</h1>
+        <p style={{ color: "#86868B", marginTop: 0 }}>{t("albums.editAvailableDevAdmin")}</p>
         <AlbumEditClient
           initialAlbum={{
             id: album.id,

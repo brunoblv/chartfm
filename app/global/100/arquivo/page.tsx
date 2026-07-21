@@ -6,12 +6,16 @@ import { Cover } from "@/components/ui/Cover";
 import { loadCoverUrlsForSongIds } from "@/lib/chart-entry-cover";
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import { ChevronLeft } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Arquivo do Global 100 - todas as semanas | ChartFM",
-  description: "Todas as semanas já consolidadas do Global 100 do ChartFM, com a música número 1 de cada uma e link para a parada completa.",
-  alternates: { canonical: "/global/100/arquivo" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("globalArchive.metaTitle"),
+    description: t("globalArchive.metaDescription"),
+    alternates: { canonical: "/global/100/arquivo" },
+  };
+}
 
 type WeekRow = {
   weekIndex: number;
@@ -21,6 +25,7 @@ type WeekRow = {
 };
 
 export default async function GlobalArchivePage() {
+  const { t } = await getServerTranslations();
   const snapshots = await prisma.globalSnapshot.findMany({
     select: { weekIndex: true, weekLabel: true, dateRange: true, weeklySongs: true },
     orderBy: { weekIndex: "desc" },
@@ -52,11 +57,18 @@ export default async function GlobalArchivePage() {
 
   const introText =
     totalWeeks > 0
-      ? `O ChartFM já consolidou ${totalWeeks} ${totalWeeks === 1 ? "semana" : "semanas"} do Global 100, desde a ${oldest?.weekLabel} (${oldest?.dateRange}) até a ${newest?.weekLabel} (${newest?.dateRange}).`
-      : "Ainda não há semanas consolidadas do Global 100.";
+      ? t("globalArchive.introWithData", {
+          count: totalWeeks,
+          weekWord: totalWeeks === 1 ? t("globalArchive.weekSingular") : t("globalArchive.weekPlural"),
+          oldestLabel: oldest?.weekLabel ?? "",
+          oldestRange: oldest?.dateRange ?? "",
+          newestLabel: newest?.weekLabel ?? "",
+          newestRange: newest?.dateRange ?? "",
+        })
+      : t("globalArchive.introEmpty");
 
   return (
-    <Shell title="Arquivo do Global 100" subtitle="Todas as semanas já consolidadas, em ordem cronológica">
+    <Shell title={t("globalArchive.title")} subtitle={t("globalArchive.subtitle")}>
       <Link
         href="/global/100"
         style={{
@@ -71,7 +83,7 @@ export default async function GlobalArchivePage() {
         }}
       >
         <ChevronLeft size={16} />
-        Voltar para o Global 100
+        {t("globalArchive.backToGlobal100")}
       </Link>
 
       <section style={{ marginBottom: 32 }}>
@@ -96,8 +108,8 @@ export default async function GlobalArchivePage() {
             }}
           >
             <div>#</div>
-            <div>Semana</div>
-            <div style={{ textAlign: "right" }}>Nº 1 da semana</div>
+            <div>{t("globalArchive.colWeek")}</div>
+            <div style={{ textAlign: "right" }}>{t("globalArchive.colNumberOne")}</div>
           </div>
           {weeks.map((w, i) => {
             const topSong = w.topSong;

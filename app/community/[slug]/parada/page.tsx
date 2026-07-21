@@ -14,6 +14,7 @@ import {
 import { getCommunityBySlug } from "@/lib/community-auth";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 async function resolveArtistImages(artists: { name: string; spotifyId: string | null }[]) {
   const imageMap = new Map<string, string | null>();
@@ -42,6 +43,7 @@ type CommunityParadaPageProps = {
 
 export default async function CommunityParadaPage({ params, searchParams }: CommunityParadaPageProps) {
   const { slug } = await params;
+  const { t } = await getServerTranslations();
   const { community, notFound: missing } = await loadCommunityHeader(slug);
   if (missing) notFound();
 
@@ -81,9 +83,8 @@ export default async function CommunityParadaPage({ params, searchParams }: Comm
       : null;
 
   const basePath = `/community/${slug}/parada`;
-  const pointsRule =
-    "Parada semanal congelada da comunidade — snapshot das paradas primárias dos membros (não reconta com membros novos).";
-  const statPrimaryLabel = `${chart.overallChartCount} semanas no histórico`;
+  const pointsRule = t("communities.paradaPointsRule");
+  const statPrimaryLabel = t("communities.paradaStatWeeksInHistory", { count: chart.overallChartCount });
 
   const imageMap = await resolveArtistImages(
     [...chart.weeklyArtists, ...chart.overallArtists].map((a) => ({

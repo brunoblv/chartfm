@@ -2,24 +2,30 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { StepCard, ScoreTable } from "@/components/push/PushIntroView";
-import { STEPS, SCORE_ROWS } from "@/components/push/push-content";
+import { getSteps, getScoreRows } from "@/components/push/push-content";
 import { PUSH_NO_VOTE_PENALTY } from "@/lib/push-scoring";
 import { PushNav } from "../PushNav";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Push · Sobre | ChartFM",
-  description:
-    "Como funciona o Push: indique uma música pouco conhecida, ouça a playlist da rodada, rankeie e acompanhe a pontuação.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("push.sobreMetaTitle"),
+    description: t("push.sobreMetaDescription"),
+  };
+}
 
-export default function PushSobrePage() {
+export default async function PushSobrePage() {
+  const { t } = await getServerTranslations();
+  const STEPS = getSteps(t);
+  const SCORE_ROWS = getScoreRows(t);
   return (
     <Shell
-      title="Push · Sobre"
-      subtitle="O jogo de descoberta musical do ChartFM"
+      title={t("push.sobreTitle")}
+      subtitle={t("push.sobreSubtitle")}
       headerRight={
         <Link href="/push" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textDecoration: "none" }}>
-          ← Rodada atual
+          {t("push.backToCurrentRound")}
         </Link>
       }
     >
@@ -46,15 +52,14 @@ export default function PushSobrePage() {
               marginBottom: 10,
             }}
           >
-            O que é o Push
+            {t("push.sobreEyebrow")}
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 12, lineHeight: 1.3 }}>
-            Descubra um artista ou música que quase ninguém conhece — e mostre para o mundo.
+            {t("push.sobreHeroTitle")}
           </div>
           <p style={{ fontSize: 14.5, color: "rgba(255,255,255,0.8)", lineHeight: 1.7, margin: 0 }}>
-            Inspirado no antigo <b>MTV Push</b>, que lançava artistas para o grande público: aqui, toda rodada, cada
-            participante indica uma faixa desconhecida. As indicações ficam ocultas até todo mundo ouvir e rankear —
-            só então se revela quem indicou o quê. Quem somar mais pontos, ganha.
+            {t("push.sobreHeroPrefix")} <b>{t("push.sobreHeroBold")}</b>
+            {t("push.sobreHeroSuffix")}
           </p>
         </div>
 
@@ -68,7 +73,7 @@ export default function PushSobrePage() {
             margin: "0 0 16px 0",
           }}
         >
-          Como funciona
+          {t("push.sobreHowItWorks")}
         </h2>
         <div
           style={{
@@ -93,28 +98,25 @@ export default function PushSobrePage() {
             margin: "0 0 16px 0",
           }}
         >
-          Como pontuar
+          {t("push.sobreHowToScore")}
         </h2>
         <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7, margin: "0 0 16px 0" }}>
-          Sua música recebe pontos de cada ouvinte, conforme a posição em que ele a colocou no próprio ranking:
-          quem tira 1º lugar de alguém ganha {SCORE_ROWS[0].pts} pontos, e o valor cai numa curva suave até 1 ponto
-          para o último colocado. Os pontos de todos os ouvintes da rodada são somados no final.
+          {t("push.sobreScorePrefix")} {SCORE_ROWS[0].pts} {t("push.sobreScoreMid")}
         </p>
         <ScoreTable isMobile={false} />
         <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 14, lineHeight: 1.6 }}>
-          Quem não avalia a rodada não fica neutro: cada participante que não envia seu ranking dá +{PUSH_NO_VOTE_PENALTY} pontos
-          de bônus para todas as outras músicas da rodada — um incentivo para todo mundo ouvir e votar.
+          {t("push.sobrePenaltyPrefix")}{PUSH_NO_VOTE_PENALTY} {t("push.sobrePenaltySuffix")}
         </p>
 
         <div style={{ marginTop: 32, display: "flex", gap: 16, flexWrap: "wrap" }}>
           <Link href="/push" style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
-            Participar da rodada atual →
+            {t("push.sobreParticipateLink")}
           </Link>
           <Link href="/push/historico" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textDecoration: "none" }}>
-            Ver histórico de rodadas →
+            {t("push.sobreHistoryLink")}
           </Link>
           <Link href="/push/ranking" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textDecoration: "none" }}>
-            Ver ranking →
+            {t("push.sobreRankingLink")}
           </Link>
         </div>
       </div>

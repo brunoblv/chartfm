@@ -3,39 +3,18 @@ import Link from "next/link";
 import { LifeBuoy, Mail } from "lucide-react";
 import { InstitutionalLayout } from "@/components/institutional/InstitutionalLayout";
 import { GUIDES, FAQ_ITEMS } from "@/lib/content/helpContent";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { HelpSearch } from "./HelpSearch";
 import { AjudaTwoColumn } from "./AjudaTwoColumn";
 
-export const metadata: Metadata = {
-  title: "Central de Ajuda | ChartFM",
-  description:
-    "Guias, perguntas frequentes e suporte do ChartFM em um só lugar: como criar sua parada, entender o Global 100, a Copa, comunidades e mais.",
-  alternates: { canonical: "/ajuda" },
-};
-
-const QUICK_START = [
-  {
-    step: "Passo 1",
-    title: "Crie sua conta",
-    description: "Cadastro gratuito com e-mail.",
-    href: "/signup",
-    highlight: true,
-  },
-  {
-    step: "Passo 2",
-    title: "Conecte o Last.fm",
-    description: "Importe seu histórico de audições para preencher sua parada automaticamente.",
-    href: "/settings",
-    highlight: false,
-  },
-  {
-    step: "Passo 3",
-    title: "Publique sua primeira parada",
-    description: "Revise a ordem das músicas e publique — ela já entra na semana atual.",
-    href: "/create",
-    highlight: false,
-  },
-];
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("helpCenter.metaTitle"),
+    description: t("helpCenter.metaDescription"),
+    alternates: { canonical: "/ajuda" },
+  };
+}
 
 function guideByHref(href: string) {
   const guide = GUIDES.find((g) => g.href === href);
@@ -43,37 +22,63 @@ function guideByHref(href: string) {
   return guide;
 }
 
-const GUIDE_CATEGORIES = [
-  {
-    label: "Paradas & pontuação",
-    hrefs: [
-      "/guides/como-criar-sua-parada",
-      "/guides/como-funciona-o-global-100",
-      "/guides/como-funciona-a-pontuacao",
-      "/guides/como-importar-historico",
-    ],
-  },
-  {
-    label: "Comunidade & competições",
-    hrefs: [
-      "/guides/como-participar-de-comunidades",
-      "/guides/como-funciona-a-copa",
-      "/guides/como-descobrir-musicas",
-      "/guides/como-avaliar-albuns",
-    ],
-  },
-  {
-    label: "Referência",
-    hrefs: ["/guides/glossario"],
-  },
-].map((category) => ({ ...category, guides: category.hrefs.map((href) => guideByHref(href!)) }));
+export default async function AjudaPage() {
+  const { t } = await getServerTranslations();
 
-const SEARCH_ITEMS = [
-  ...GUIDE_CATEGORIES.flatMap((c) => c.guides.map((g) => ({ label: g.title, href: g.href as string, type: "Guia" as const }))),
-  ...FAQ_ITEMS.map((item) => ({ label: item.question, href: "/faq", type: "FAQ" as const })),
-];
+  const QUICK_START = [
+    {
+      step: t("helpCenter.step1Label"),
+      title: t("helpCenter.step1Title"),
+      description: t("helpCenter.step1Desc"),
+      href: "/signup",
+      highlight: true,
+    },
+    {
+      step: t("helpCenter.step2Label"),
+      title: t("helpCenter.step2Title"),
+      description: t("helpCenter.step2Desc"),
+      href: "/settings",
+      highlight: false,
+    },
+    {
+      step: t("helpCenter.step3Label"),
+      title: t("helpCenter.step3Title"),
+      description: t("helpCenter.step3Desc"),
+      href: "/create",
+      highlight: false,
+    },
+  ];
 
-export default function AjudaPage() {
+  const GUIDE_CATEGORIES = [
+    {
+      label: t("helpCenter.categoryParadas"),
+      hrefs: [
+        "/guides/como-criar-sua-parada",
+        "/guides/como-funciona-o-global-100",
+        "/guides/como-funciona-a-pontuacao",
+        "/guides/como-importar-historico",
+      ],
+    },
+    {
+      label: t("helpCenter.categoryComunidade"),
+      hrefs: [
+        "/guides/como-participar-de-comunidades",
+        "/guides/como-funciona-a-copa",
+        "/guides/como-descobrir-musicas",
+        "/guides/como-avaliar-albuns",
+      ],
+    },
+    {
+      label: t("helpCenter.categoryReferencia"),
+      hrefs: ["/guides/glossario"],
+    },
+  ].map((category) => ({ ...category, guides: category.hrefs.map((href) => guideByHref(href!)) }));
+
+  const SEARCH_ITEMS = [
+    ...GUIDE_CATEGORIES.flatMap((c) => c.guides.map((g) => ({ label: g.title, href: g.href as string, type: "Guia" as const }))),
+    ...FAQ_ITEMS.map((item) => ({ label: t(item.questionKey), href: "/faq", type: "FAQ" as const })),
+  ];
+
   const previewFaq = FAQ_ITEMS.slice(0, 3);
 
   return (
@@ -90,13 +95,13 @@ export default function AjudaPage() {
             marginBottom: 10,
           }}
         >
-          Central de Ajuda
+          {t("helpCenter.eyebrow")}
         </div>
         <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 10px 0", color: "var(--text)" }}>
-          Como podemos ajudar?
+          {t("helpCenter.heroTitle")}
         </h1>
         <p style={{ fontSize: 14.5, color: "var(--text-subtle)", margin: "0 0 24px 0" }}>
-          Guias, respostas rápidas e suporte direto com a equipe do ChartFM.
+          {t("helpCenter.heroSubtitle")}
         </p>
         <HelpSearch items={SEARCH_ITEMS} />
       </div>
@@ -112,7 +117,7 @@ export default function AjudaPage() {
             margin: "0 0 16px 0",
           }}
         >
-          Primeiros passos
+          {t("helpCenter.quickStartTitle")}
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           {QUICK_START.map((step) => (
@@ -159,7 +164,7 @@ export default function AjudaPage() {
               margin: "0 0 16px 0",
             }}
           >
-            Guias por tema
+            {t("helpCenter.guidesByTopicTitle")}
           </h2>
           {GUIDE_CATEGORIES.map((category) => (
             <div key={category.label} style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 28 }}>
@@ -211,7 +216,7 @@ export default function AjudaPage() {
               scrollMarginTop: 80,
             }}
           >
-            Perguntas frequentes
+            {t("helpCenter.faqTitle")}
           </h2>
           <div
             style={{
@@ -226,9 +231,9 @@ export default function AjudaPage() {
             }}
           >
             {previewFaq.map((item) => (
-              <div key={item.question} style={{ background: "var(--surface)", padding: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{item.question}</div>
-                <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>{item.answer}</div>
+              <div key={item.questionKey} style={{ background: "var(--surface)", padding: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{t(item.questionKey)}</div>
+                <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>{t(item.answerKey)}</div>
               </div>
             ))}
             <Link
@@ -242,7 +247,7 @@ export default function AjudaPage() {
                 textDecoration: "none",
               }}
             >
-              Ver todas as perguntas →
+              {t("helpCenter.faqViewAll")}
             </Link>
           </div>
 
@@ -257,7 +262,7 @@ export default function AjudaPage() {
               scrollMarginTop: 80,
             }}
           >
-            Falar com a gente
+            {t("helpCenter.talkTitle")}
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Link
@@ -288,8 +293,8 @@ export default function AjudaPage() {
                 <LifeBuoy size={17} />
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Abrir chamado de suporte</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Bugs e sugestões direto para a equipe</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("helpCenter.supportCardTitle")}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("helpCenter.supportCardDesc")}</div>
               </div>
             </Link>
             <Link
@@ -320,8 +325,8 @@ export default function AjudaPage() {
                 <Mail size={17} />
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Contato geral</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Parcerias, imprensa e dúvidas gerais</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{t("helpCenter.contactCardTitle")}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("helpCenter.contactCardDesc")}</div>
               </div>
             </Link>
           </div>

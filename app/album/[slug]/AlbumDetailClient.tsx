@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export type AlbumDetailClientProps = {
   albumDbId: number | null;
@@ -15,11 +16,12 @@ export function AlbumDetailClient({
   statsSection,
   tracklistSection,
 }: AlbumDetailClientProps) {
+  const { t } = useTranslations();
   const [activeTab, setActiveTab] = useState<"stats" | "tracklist">("stats");
 
   const tabs = [
-    { id: "stats" as const, label: "Estatísticas" },
-    { id: "tracklist" as const, label: "Tracklist" },
+    { id: "stats" as const, label: t("albums.tabStats") },
+    { id: "tracklist" as const, label: t("albums.tabTracklist") },
   ];
 
   return (

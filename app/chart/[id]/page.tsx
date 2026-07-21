@@ -1304,10 +1304,7 @@ export default function ChartDetailPage() {
                   color: "var(--text-muted)",
                 }}
               >
-                Cada usuário do ChartFM publica uma parada por semana com as
-                músicas que mais marcaram seus dias, em ordem de preferência.
-                As posições desta lista geram pontos para o Global 100, o
-                ranking coletivo da plataforma.
+                {t("chart.explainerText")}
               </p>
             </div>
           )}
@@ -1331,7 +1328,7 @@ export default function ChartDetailPage() {
                     `${t("chart.tabDropouts")}${dropouts.length > 0 ? ` (${dropouts.length})` : ""}`,
                   ],
                   ["overlap", t("chart.tabCommon")],
-                  ...(canViewMyTrlDetails ? [["detalhes", "Detalhes"] as [Tab, string]] : []),
+                  ...(canViewMyTrlDetails ? [["detalhes", t("chart.tabDetails")] as [Tab, string]] : []),
                 ] as [Tab, string][]
               ).map(([tabKey, label]) => (
                 <button

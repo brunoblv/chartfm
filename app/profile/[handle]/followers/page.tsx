@@ -8,6 +8,7 @@ import { ChevronLeft, BadgeCheck } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { FollowButton } from "@/components/ui/FollowButton";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type UserRow = {
   id: string;
@@ -34,6 +35,7 @@ export default function FollowersPage() {
   const searchParams = useSearchParams();
   const type = searchParams.get("type") === "following" ? "following" : "followers";
   const { data: session } = useSession();
+  const { t, locale } = useTranslations();
 
   const [users, setUsers] = useState<UserRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -72,7 +74,8 @@ export default function FollowersPage() {
     fetchPage(1, true);
   }, [fetchPage]);
 
-  const title = type === "followers" ? "Seguidores" : "Seguindo";
+  const title =
+    type === "followers" ? t("profile.followersTab") : t("profile.followingTab");
 
   return (
     <Shell title="">
@@ -115,7 +118,7 @@ export default function FollowersPage() {
               @{handle}
             </h1>
             <p style={{ margin: 0, fontSize: 13, color: "#86868B" }}>
-              {loading ? "-" : total.toLocaleString("pt-BR")} {title.toLowerCase()}
+              {loading ? "-" : total.toLocaleString(locale)} {title.toLowerCase()}
             </p>
           </div>
         </div>
@@ -128,13 +131,16 @@ export default function FollowersPage() {
             marginBottom: 20,
           }}
         >
-          {(["followers", "following"] as const).map((t) => {
-            const active = type === t;
-            const label = t === "followers" ? "Seguidores" : "Seguindo";
+          {(["followers", "following"] as const).map((tabKey) => {
+            const active = type === tabKey;
+            const label =
+              tabKey === "followers"
+                ? t("profile.followersTab")
+                : t("profile.followingTab");
             return (
               <Link
-                key={t}
-                href={`/profile/${handle}/followers?type=${t}`}
+                key={tabKey}
+                href={`/profile/${handle}/followers?type=${tabKey}`}
                 style={{
                   padding: "10px 20px",
                   fontSize: 14,
@@ -169,8 +175,8 @@ export default function FollowersPage() {
             }}
           >
             {type === "followers"
-              ? "Nenhum seguidor ainda."
-              : "Não está seguindo ninguém ainda."}
+              ? t("profile.noFollowers")
+              : t("profile.notFollowingAnyone")}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -201,7 +207,7 @@ export default function FollowersPage() {
                 opacity: loadingMore ? 0.6 : 1,
               }}
             >
-              {loadingMore ? "Carregando..." : "Carregar mais"}
+              {loadingMore ? t("profile.loading") : t("profile.loadMore")}
             </button>
           </div>
         )}
@@ -217,6 +223,7 @@ function UserRow({
   user: UserRow;
   currentUserId?: string;
 }) {
+  const { t, locale } = useTranslations();
   return (
     <div
       style={{
@@ -268,7 +275,7 @@ function UserRow({
             @{user.handle}
             {user.followers > 0 && (
               <span style={{ marginLeft: 8 }}>
-                · {user.followers.toLocaleString("pt-BR")} seguidores
+                · {user.followers.toLocaleString(locale)} {t("profile.followers")}
               </span>
             )}
           </div>

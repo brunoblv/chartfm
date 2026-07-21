@@ -3,15 +3,17 @@ import { ExternalLink } from "lucide-react";
 import { Cover } from "@/components/ui/Cover";
 import { Avatar } from "@/components/ui/Avatar";
 import type { WeeklySpotlightWinner } from "@/lib/weekly-spotlight-poll";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 type Props = {
   winner: WeeklySpotlightWinner;
 };
 
 /** Card da vencedora da Votação da Semana exibido na Parada Global (como na parada de usuário). */
-export function GlobalSpotlightWinnerCard({ winner }: Props) {
+export async function GlobalSpotlightWinnerCard({ winner }: Props) {
+  const { t } = await getServerTranslations();
   const isFlashback = winner.category === "flashback";
-  const label = isFlashback ? "Flashback da Semana" : "Melhor da Semana";
+  const label = isFlashback ? t("moments.spotlightFlashbackOfWeek") : t("moments.spotlightBestOfWeek");
   const color = isFlashback ? "#7C3AED" : "var(--accent)";
   const { song, nominators, totalPoints } = winner;
   const spotifyUrl =

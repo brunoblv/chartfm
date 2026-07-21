@@ -7,9 +7,11 @@ import { loadCommunityHeader } from "@/lib/community-page-data";
 import { getOrCreateCommunityLastfmSnapshot } from "@/lib/community-lastfm";
 import { getCommunityBySlug } from "@/lib/community-auth";
 import { parseCommunityPointsConfig } from "@/lib/community-chart";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export default async function CommunityAirplayPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const { t } = await getServerTranslations();
   const { community, notFound: missing } = await loadCommunityHeader(slug);
   if (missing) notFound();
 
@@ -25,8 +27,8 @@ export default async function CommunityAirplayPage({ params }: { params: Promise
       <CommunityHeader community={community} activeTab="airplay" />
       <div style={{ padding: "28px 40px 80px 40px" }}>
         <GlobalLastfmHero
-          title="Airplay"
-          pointsRule="Baseado no Last.fm dos membros desta comunidade (mesma regra do global)."
+          title={t("communities.airplayTitle")}
+          pointsRule={t("communities.airplayPointsRule")}
           basePath={`/community/${slug}/airplay`}
           weekNow={data.weekLabel}
           weekRangeNow={data.scoringWindow || data.dateRange}
@@ -40,7 +42,7 @@ export default async function CommunityAirplayPage({ params }: { params: Promise
           <GlobalLastfmRanking
             entries={data.entries}
             mode="airplay"
-            emptyMessage="Nenhum membro com Last.fm conectado ou sem reproduções nesta semana."
+            emptyMessage={t("communities.airplayEmpty")}
           />
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
   getChartGenreBySlug,
   matchesChartGenre,
 } from "@/lib/genre-taxonomy";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 function pointsForPosition(position: number) {
   return calcularPontosPrimary(position);
@@ -25,6 +26,7 @@ export default async function DiscoverGenrePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const { t } = await getServerTranslations();
   const { slug } = await params;
   const selectedGenre = getChartGenreBySlug(slug);
   if (!selectedGenre) notFound();
@@ -92,21 +94,21 @@ export default async function DiscoverGenrePage({
     .slice(0, 100);
 
   return (
-    <Shell title={`${selectedGenre.name}`} subtitle={`Músicas do gênero • ${rankingWeek.weekLabel}`}>
+    <Shell title={`${selectedGenre.name}`} subtitle={t("discoverGenre.subtitle", { week: rankingWeek.weekLabel })}>
       <section style={{ marginBottom: 28 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>
-            Lista de músicas de {selectedGenre.name}
+            {t("discoverGenre.listTitle", { genre: selectedGenre.name })}
           </h2>
           <Link href="/discover" style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("discoverGenre.backToDiscover")}
           </Link>
         </div>
       </section>
 
       {songs.length === 0 ? (
         <div style={{ fontSize: 14, color: "var(--text-muted)" }}>
-          Ainda não há músicas desse gênero nas paradas da semana.
+          {t("discoverGenre.empty")}
         </div>
       ) : (
         <div style={{ display: "grid", gap: 8 }}>
@@ -139,8 +141,8 @@ export default async function DiscoverGenrePage({
                   {song.artist}
                 </Link>
               </div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>{song.users.size} usuários</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{song.points} pts</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600 }}>{song.users.size} {t("discoverGenre.users")}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{song.points} {t("discoverGenre.pts")}</div>
             </div>
           ))}
         </div>

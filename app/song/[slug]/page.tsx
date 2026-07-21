@@ -21,8 +21,10 @@ import { buildSongContext } from "@/lib/entity-context-text";
 import { SongFlagButton } from "@/components/song/SongFlagButton";
 import { SongMergeButton } from "@/components/song/SongMergeButton";
 import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const me = session?.user?.id
     ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } })
@@ -32,11 +34,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const parsed = parseSongSlug(slug);
   if (!parsed) {
     return (
-      <Shell title="Música" subtitle="Não encontrada">
+      <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos essa música.</p>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.notFoundSong")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("song.backDiscover")}
           </Link>
         </div>
       </Shell>
@@ -46,11 +48,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const songId = await resolveSongIdFromParsed(parsed);
   if (!songId) {
     return (
-      <Shell title="Música" subtitle="Não encontrada">
+      <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para essa música.</p>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("song.backDiscover")}
           </Link>
         </div>
       </Shell>
@@ -129,11 +131,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
 
   if (!songRow) {
     return (
-      <Shell title="Música" subtitle="Não encontrada">
+      <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para essa música.</p>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("song.backDiscover")}
           </Link>
         </div>
       </Shell>
@@ -333,7 +335,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
       <div className="song-page-outer">
         <Link href="/discover" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, fontWeight: 500, textDecoration: "none", marginBottom: 24 }}>
           <ChevronLeft size={16} />
-          Voltar
+          {t("song.back")}
         </Link>
         <div className="song-page-hero">
           <Cover
@@ -396,7 +398,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             {canEditSong && (
               <div style={{ marginTop: 10 }}>
                 <Link href={`/song/${slug}/edit`} style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>
-                  Editar música
+                  {t("song.editSong")}
                 </Link>
                 <div style={{ marginTop: 6 }}>
                   <SongMergeButton songId={songId} title={title} artist={artist} />
@@ -431,7 +433,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
               marginBottom: 6,
             }}
           >
-            Contexto no ChartFM
+            {t("song.contextHeading")}
           </div>
           <h2
             style={{
@@ -442,7 +444,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
               marginBottom: 16,
             }}
           >
-            Desempenho da comunidade
+            {t("song.performanceHeading")}
           </h2>
           <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: publicEditorialNote ? 16 : 0 }}>
             {buildSongContext({
@@ -463,13 +465,9 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             </p>
           )}
           <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 16 }}>
-            Os números desta página vêm das paradas publicadas pelos usuários do ChartFM. Cada vez que alguém
-            inclui a música em sua parada semanal, ela ganha pontos conforme a posição: 1.000 no 1º lugar, 900
-            no 2º, 850 no 3º, e uma curva decrescente até a 100ª posição, que vale 10 pontos. A melhor posição
-            no Global 100 (o ranking coletivo semanal) usa um cálculo separado, somando essas paradas de forma
-            diferente, veja como em{" "}
+            {t("song.explainerPrefix")}{" "}
             <Link href="/guides/como-funciona-o-global-100" style={{ color: "var(--accent)" }}>
-              Como funciona o Global 100
+              {t("song.explainerLinkText")}
             </Link>
             .
           </p>
@@ -489,11 +487,11 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
 
         {!hasChartPresence && (
           <div style={{ marginTop: 20, padding: 14, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)" }}>
-            Esta faixa ainda não aparece em nenhuma parada publicada. Os números abaixo ficam zerados até alguém votar com ela.
+            {t("song.noChartPresence")}
           </div>
         )}
         <div style={{ marginTop: 24, fontSize: 13, color: "var(--text-muted)" }}>
-          Entradas em paradas principais: {chartEntries}
+          {t("song.primaryEntriesCount", { count: chartEntries })}
         </div>
       </div>
     </Shell>

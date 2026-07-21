@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const ALL_GENRES = [
   "Pop", "Indie", "Rock", "R&B", "Hip Hop",
@@ -101,6 +102,7 @@ export default function OnboardingPage() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { t } = useTranslations();
 
   useEffect(() => {
     if (status === "unauthenticated" || (status === "authenticated" && !session?.user?.id)) {
@@ -212,10 +214,10 @@ export default function OnboardingPage() {
     : "#86868B";
 
   const handleStatusText =
-    handleStatus === "available" ? "Disponível"
-    : handleStatus === "taken" ? "Já em uso"
-    : handleStatus === "invalid" ? "Use letras, números ou _ (mín. 3 caracteres)"
-    : handleStatus === "checking" ? "Verificando…"
+    handleStatus === "available" ? t("onboarding.handleAvailable")
+    : handleStatus === "taken" ? t("onboarding.handleTaken")
+    : handleStatus === "invalid" ? t("onboarding.handleInvalid")
+    : handleStatus === "checking" ? t("onboarding.handleChecking")
     : "";
 
   const canContinueHandle = handleStatus === "available" && !savingHandle;
@@ -277,7 +279,7 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div style={{ fontSize: 13, color: "#86868B" }}>Etapa {step} de 3</div>
+        <div style={{ fontSize: 13, color: "#86868B" }}>{t("onboarding.stepOf", { step })}</div>
       </div>
 
       {/* ── STEP 1: Handle picker ── */}
@@ -287,13 +289,18 @@ export default function OnboardingPage() {
           {/* Left */}
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
-              Bem-vindo ao ChartFM
+              {t("onboarding.step1Badge")}
             </div>
             <h1 style={{ fontSize: isMobile ? 32 : 46, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05 }}>
-              Escolha seu<br />nome de usuário.
+              {t("onboarding.step1Title").split("\n").map((line, i, arr) => (
+                <Fragment key={i}>
+                  {line}
+                  {i < arr.length - 1 && <br />}
+                </Fragment>
+              ))}
             </h1>
             <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
-              É com esse nome que os outros fãs de música vão te encontrar e seguir. Você pode mudar depois nas configurações.
+              {t("onboarding.step1Subhead")}
             </p>
 
             {/* Google account card */}
@@ -316,10 +323,10 @@ export default function OnboardingPage() {
           {/* Right: handle input */}
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", marginBottom: 4 }}>
-              SEU NOME DE USUÁRIO
+              {t("onboarding.yourHandle")}
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 18 }}>
-              Como quer ser chamado?
+              {t("onboarding.howToBeCalled")}
             </div>
 
             {/* Input */}
@@ -331,7 +338,7 @@ export default function OnboardingPage() {
               <input
                 value={handle}
                 onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                placeholder="seunome"
+                placeholder={t("onboarding.handlePlaceholder")}
                 maxLength={28}
                 autoFocus
                 style={{
@@ -373,7 +380,7 @@ export default function OnboardingPage() {
             {suggestions.length > 0 && (
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 10 }}>
-                  SUGESTÕES
+                  {t("onboarding.suggestions")}
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {suggestions.map((s) => (
@@ -401,7 +408,7 @@ export default function OnboardingPage() {
 
             <div style={{ marginTop: 28, padding: 18, background: "linear-gradient(135deg, #FFF4F5, white)", borderRadius: 14, border: "1px solid rgba(250,36,60,0.15)" }}>
               <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>
-                Letras minúsculas, números e _ · Mínimo 3 caracteres · Máximo 28
+                {t("onboarding.handleHint")}
               </div>
             </div>
 
@@ -425,7 +432,7 @@ export default function OnboardingPage() {
                   opacity: canContinueHandle ? 1 : 0.55,
                 }}
               >
-                {savingHandle ? "Salvando…" : "Continuar"}
+                {savingHandle ? t("onboarding.saving") : t("onboarding.continueBtn")}
                 {!savingHandle && <ChevronRight />}
               </button>
             </div>
@@ -440,13 +447,18 @@ export default function OnboardingPage() {
           {/* Left */}
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
-              Quase lá
+              {t("onboarding.step2Badge")}
             </div>
             <h1 style={{ fontSize: isMobile ? 32 : 46, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.05 }}>
-              Conectado como<br />{firstName}.
+              {t("onboarding.step2Title", { name: firstName }).split("\n").map((line, i, arr) => (
+                <Fragment key={i}>
+                  {line}
+                  {i < arr.length - 1 && <br />}
+                </Fragment>
+              ))}
             </h1>
             <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
-              Importamos seu nome e foto do Google. Agora me conta: o que você curte ouvir? Vamos usar isso pra montar seu feed.
+              {t("onboarding.step2Subhead")}
             </p>
 
             {/* Google account card */}
@@ -466,7 +478,7 @@ export default function OnboardingPage() {
                 onClick={() => router.push("/login")}
                 style={{ background: "none", border: "1px solid rgba(0,0,0,0.1)", padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
               >
-                Trocar
+                {t("onboarding.swap")}
               </button>
             </div>
 
@@ -475,10 +487,10 @@ export default function OnboardingPage() {
           {/* Right: genre picker */}
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", marginBottom: 4 }}>
-              SEUS GÊNEROS · {selected.length}/5+ selecionados
+              {t("onboarding.yourGenres", { count: selected.length })}
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 18 }}>
-              Escolha pelo menos 5 que combinam com você
+              {t("onboarding.pickAtLeast5")}
             </div>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -514,10 +526,10 @@ export default function OnboardingPage() {
             <div style={{ marginTop: 32, padding: 18, background: "linear-gradient(135deg, #FFF4F5, white)", borderRadius: 14, border: "1px solid rgba(250,36,60,0.15)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, color: "#1D1D1F", marginBottom: 6 }}>
                 <span style={{ color: "#FA243C" }}><FlameIcon /></span>
-                Próxima etapa
+                {t("onboarding.nextStep")}
               </div>
               <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>
-                Vamos te apresentar 12 fãs de música com gosto parecido com o seu pra você seguir e ver as paradas deles.
+                {t("onboarding.nextStepBody")}
               </div>
             </div>
 
@@ -541,7 +553,7 @@ export default function OnboardingPage() {
                   opacity: savingGenres ? 0.7 : 1,
                 }}
               >
-                {savingGenres ? "Salvando…" : "Continuar"}
+                {savingGenres ? t("onboarding.saving") : t("onboarding.continueBtn")}
                 {!savingGenres && <ChevronRight />}
               </button>
             </div>

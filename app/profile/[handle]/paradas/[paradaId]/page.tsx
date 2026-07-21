@@ -17,6 +17,7 @@ import { PAGE_GUTTER_X } from "@/lib/page-layout";
 import type { ParadaScoringTier } from "@/lib/parada-points";
 import type { UserWithCharts } from "@/lib/types";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ParadaInfo = {
   id: string;
@@ -53,6 +54,7 @@ export default function ParadaDetailPage() {
   const { data: session } = useSession();
   const isMobile = useIsMobile();
   const gutterX = isMobile ? PAGE_GUTTER_X.mobile : PAGE_GUTTER_X.desktop;
+  const { t, locale } = useTranslations();
 
   const [phase, setPhase] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [payload, setPayload] = useState<ApiProfile | null>(null);
@@ -147,7 +149,9 @@ export default function ParadaDetailPage() {
   if (phase === "loading") {
     return (
       <Shell hideGlobalFooter noPadding>
-        <div style={{ padding: gutterX, color: "var(--text-muted)" }}>Carregando parada…</div>
+        <div style={{ padding: gutterX, color: "var(--text-muted)" }}>
+          {t("profile.paradaDetailLoading")}
+        </div>
       </Shell>
     );
   }
@@ -157,10 +161,12 @@ export default function ParadaDetailPage() {
       <Shell hideGlobalFooter noPadding>
         <div style={{ padding: gutterX, textAlign: "center", paddingTop: 80 }}>
           <p style={{ color: "var(--text-muted)" }}>
-            {phase === "missing" ? "Parada não encontrada." : "Erro ao carregar parada."}
+            {phase === "missing"
+              ? t("profile.paradaNotFoundMessage")
+              : t("profile.paradaLoadErrorMessage")}
           </p>
           <Link href={listHref} style={{ color: "var(--accent)", fontWeight: 600 }}>
-            ← Minhas Paradas
+            ← {t("profile.myParadasTitle")}
           </Link>
         </div>
       </Shell>
@@ -168,10 +174,10 @@ export default function ParadaDetailPage() {
   }
 
   const statCells = [
-    { label: isDaily ? "Dias" : "Semanas", value: totalCharts },
-    { label: "#1 pessoais", value: numberOnes },
-    { label: "Músicas rankeadas", value: totalRanked },
-    { label: "Artistas únicos", value: uniqueArtists },
+    { label: isDaily ? t("profile.days") : t("profile.weeks"), value: totalCharts },
+    { label: t("profile.personalNumberOnes"), value: numberOnes },
+    { label: t("profile.rankedSongsLabel"), value: totalRanked },
+    { label: t("profile.uniqueArtistsLabel"), value: uniqueArtists },
   ];
 
   return (
@@ -208,7 +214,7 @@ export default function ParadaDetailPage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            {isOwn ? "Minhas Paradas" : "Paradas"}
+            {isOwn ? t("profile.myParadasTitle") : t("profile.paradasNav")}
           </Link>
           {isOwn && (
             <Link
@@ -232,7 +238,7 @@ export default function ParadaDetailPage() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-              Nova parada
+              {t("profile.newChart")}
             </Link>
           )}
         </div>
@@ -290,7 +296,7 @@ export default function ParadaDetailPage() {
                         letterSpacing: "0.03em",
                       }}
                     >
-                      ★ Principal
+                      ★ {t("profile.primaryBadge")}
                     </span>
                   )}
                   <span
@@ -303,7 +309,7 @@ export default function ParadaDetailPage() {
                       color: "var(--text-muted)",
                     }}
                   >
-                    {isDaily ? "Diária" : "Semanal"}
+                    {isDaily ? t("profile.dailyBadge") : t("profile.weeklyBadge")}
                   </span>
                 </div>
                 {parada.genres.length > 0 && (
@@ -352,13 +358,13 @@ export default function ParadaDetailPage() {
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
-                  Configurações
+                  {t("profile.paradaSettingsButton")}
                 </button>
               )}
             </div>
             {latestChart && (
               <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-                Última publicação:{" "}
+                {t("profile.lastPublicationPrefix")}{" "}
                 <b style={{ color: "var(--text-subtle)" }}>{latestChart.weekLabel}</b>
                 {" · "}
                 {latestChart.dateRange}
@@ -438,7 +444,7 @@ export default function ParadaDetailPage() {
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {value.toLocaleString("pt-BR")}
+                  {value.toLocaleString(locale)}
                 </div>
               </div>
             );

@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
 import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution, SCORE_BANDS } from "@/lib/album-score";
 import { downloadReview, downloadAlbumScore, type ExportFormat } from "@/lib/review-story-export";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ReviewUser = { id: string; handle: string; name: string; avatarColor: string; image: string | null };
 
@@ -57,6 +58,7 @@ export function AlbumReviewsClient({
   initialReviews,
   albumDetails,
 }: Props) {
+  const { t, locale } = useTranslations();
   const { data: session } = useSession();
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [sort, setSort] = useState<"likes" | "recent">("likes");
@@ -114,7 +116,9 @@ export function AlbumReviewsClient({
       <div style={{ order: isMobile ? 2 : undefined }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>
-            Reviews{reviewCount > 0 ? ` (${reviewCount})` : ""}
+            {reviewCount > 0
+              ? t("criticsfm.reviewsHeaderCount", { count: reviewCount })
+              : t("criticsfm.reviewsHeader")}
           </div>
           <div style={{ flex: 1 }} />
           {reviews.length > 0 && (
@@ -143,7 +147,7 @@ export function AlbumReviewsClient({
                     boxShadow: sort === id ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
                   }}
                 >
-                  {id === "likes" ? "Mais curtidas" : "Recentes"}
+                  {id === "likes" ? t("criticsfm.sortMostLiked") : t("criticsfm.sortRecent")}
                 </button>
               ))}
             </div>
@@ -185,9 +189,9 @@ export function AlbumReviewsClient({
             >
               <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
               <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-                Seja o primeiro a escrever uma review
+                {t("criticsfm.beFirstToReview")}
               </div>
-              <div style={{ fontSize: 14 }}>Compartilhe sua opinião sobre {albumTitle}</div>
+              <div style={{ fontSize: 14 }}>{t("criticsfm.shareYourOpinion", { album: albumTitle })}</div>
             </div>
           ) : null
         ) : (
@@ -223,7 +227,7 @@ export function AlbumReviewsClient({
           }}
         >
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 14 }}>
-            Score CriticsFM
+            {t("criticsfm.scoreCriticsFm")}
           </div>
           {reviewCount > 0 ? (
             <>
@@ -250,7 +254,10 @@ export function AlbumReviewsClient({
                     {scoreLabel(avgScore)}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-                    {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
+                    {t(
+                      reviewCount === 1 ? "criticsfm.reviewCountSingular" : "criticsfm.reviewCountPlural",
+                      { count: reviewCount },
+                    )}
                   </div>
                 </div>
               </div>
@@ -354,7 +361,7 @@ export function AlbumReviewsClient({
               >
                 -
               </div>
-              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Sem avaliações ainda</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("criticsfm.noReviewsYet")}</div>
             </div>
           )}
         </div>
@@ -384,12 +391,13 @@ function MyReviewCard({
   onEdit: () => void;
   onDeleted: (id: string) => void;
 }) {
+  const { t } = useTranslations();
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [expanded, setExpanded] = useState(false);
 
   const deleteReview = async () => {
-    if (!confirm("Excluir sua review?")) return;
+    if (!confirm(t("criticsfm.confirmDeleteReview"))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/albums/${albumDbId}/reviews/${review.id}`, { method: "DELETE" });
@@ -433,7 +441,7 @@ function MyReviewCard({
       }}
     >
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>
-        Sua avaliação
+        {t("criticsfm.yourRatingLabel")}
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: review.body ? 12 : 0 }}>
@@ -492,7 +500,7 @@ function MyReviewCard({
                   marginTop: 4,
                 }}
               >
-                Ler mais
+                {t("criticsfm.readMore")}
               </button>
             </>
           ) : (
@@ -501,14 +509,14 @@ function MyReviewCard({
         </div>
       ) : (
         <div style={{ fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 14 }}>
-          Você deu nota sem escrever texto.
+          {t("criticsfm.ratedWithoutText")}
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingTop: 12, borderTop: "1px solid var(--divider-soft)" }}>
         <button type="button" onClick={onEdit} style={actionBtnStyle}>
           <Pencil size={14} />
-          Editar
+          {t("criticsfm.editAction")}
         </button>
         <ExportFormatButtons exporting={exporting} onExport={exportImage} />
         <button
@@ -518,7 +526,7 @@ function MyReviewCard({
           style={{ ...actionBtnStyle, color: "#C5291C" }}
         >
           <Trash2 size={14} />
-          {deleting ? "…" : "Excluir"}
+          {deleting ? "…" : t("criticsfm.deleteAction")}
         </button>
       </div>
     </div>
@@ -546,19 +554,20 @@ function ExportFormatButtons({
   exporting: ExportFormat | null;
   onExport: (type: ExportFormat) => void;
 }) {
+  const { t } = useTranslations();
   return (
     <>
-      <button type="button" onClick={() => onExport("story")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem para story do Instagram">
+      <button type="button" onClick={() => onExport("story")} disabled={exporting !== null} style={actionBtnStyle} title={t("criticsfm.downloadStoryTitle")}>
         <Instagram size={14} />
-        {exporting === "story" ? "Baixando…" : "Story"}
+        {exporting === "story" ? t("criticsfm.downloading") : t("criticsfm.storyLabel")}
       </button>
-      <button type="button" onClick={() => onExport("square")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem quadrada para feed do Instagram">
+      <button type="button" onClick={() => onExport("square")} disabled={exporting !== null} style={actionBtnStyle} title={t("criticsfm.downloadSquareTitle")}>
         <Instagram size={14} />
-        {exporting === "square" ? "Baixando…" : "Quadrado"}
+        {exporting === "square" ? t("criticsfm.downloading") : t("criticsfm.squareLabel")}
       </button>
-      <button type="button" onClick={() => onExport("twitter")} disabled={exporting !== null} style={actionBtnStyle} title="Baixar imagem retangular para post no X (Twitter)">
+      <button type="button" onClick={() => onExport("twitter")} disabled={exporting !== null} style={actionBtnStyle} title={t("criticsfm.downloadTwitterTitle")}>
         <IconX size={13} />
-        {exporting === "twitter" ? "Baixando…" : "X"}
+        {exporting === "twitter" ? t("criticsfm.downloading") : "X"}
       </button>
     </>
   );
@@ -577,6 +586,7 @@ function CommunityExportButtons({
   rating: number;
   reviewCount: number;
 }) {
+  const { t } = useTranslations();
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
 
   const exportImage = async (type: ExportFormat) => {
@@ -594,7 +604,7 @@ function CommunityExportButtons({
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--divider-soft)" }}>
       <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>
-        Baixar nota da comunidade
+        {t("criticsfm.downloadCommunityScore")}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <ExportFormatButtons exporting={exporting} onExport={exportImage} />
@@ -613,31 +623,32 @@ function IconX({ size = 16 }: { size?: number }) {
 
 // ——— Album Details Card ———
 function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
+  const { t, locale } = useTranslations();
   const formatDate = (iso: string) => {
     const d = new Date(iso + "T12:00:00");
-    return d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+    return d.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
   };
 
-  const formatType = (t: string | null) => {
-    if (!t) return null;
-    if (t === "ALBUM") return "LP";
-    if (t === "EP") return "EP";
-    if (t === "SINGLE") return "Single";
-    if (t === "COMPILATION") return "Compilação";
-    return t;
+  const formatType = (albumType: string | null) => {
+    if (!albumType) return null;
+    if (albumType === "ALBUM") return "LP";
+    if (albumType === "EP") return "EP";
+    if (albumType === "SINGLE") return "Single";
+    if (albumType === "COMPILATION") return t("criticsfm.compilation");
+    return albumType;
   };
 
   const rows: { value: string; key: string }[] = [];
 
   if (details.releaseDate) {
-    rows.push({ value: formatDate(details.releaseDate), key: "data de lançamento" });
+    rows.push({ value: formatDate(details.releaseDate), key: t("criticsfm.releaseDateLabel") });
   }
   const fmt = formatType(details.albumType);
-  if (fmt) rows.push({ value: fmt, key: "formato" });
-  if (details.totalTracks) rows.push({ value: String(details.totalTracks), key: "faixas" });
-  if (details.label) rows.push({ value: details.label, key: "gravadora" });
+  if (fmt) rows.push({ value: fmt, key: t("criticsfm.formatLabel") });
+  if (details.totalTracks) rows.push({ value: String(details.totalTracks), key: t("criticsfm.tracksLabel") });
+  if (details.label) rows.push({ value: details.label, key: t("criticsfm.labelLabel") });
   if (details.genres.length > 0) {
-    rows.push({ value: details.genres.slice(0, 3).join(", "), key: "gênero" });
+    rows.push({ value: details.genres.slice(0, 3).join(", "), key: t("criticsfm.genreLabel") });
   }
 
   return (
@@ -659,11 +670,11 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
           marginBottom: 14,
         }}
       >
-        Detalhes
+        {t("criticsfm.detailsLabel")}
       </div>
 
       {rows.length === 0 ? (
-        <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>Sem informações disponíveis</div>
+        <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>{t("criticsfm.noInfo")}</div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           {rows.map(({ value, key }) => (
@@ -704,7 +715,7 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="#1DB954">
             <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
           </svg>
-          VER NO SPOTIFY
+          {t("criticsfm.viewOnSpotify")}
         </a>
       )}
     </div>
@@ -721,6 +732,7 @@ function ReviewCard({
   albumDbId: number;
   onDeleted?: (id: string) => void;
 }) {
+  const { t } = useTranslations();
   const { data: session } = useSession();
   const [likes, setLikes] = useState(review.helpful);
   const [liked, setLiked] = useState(review.likedByMe ?? false);
@@ -751,7 +763,7 @@ function ReviewCard({
   };
 
   const deleteReview = async () => {
-    if (!confirm("Excluir sua review?")) return;
+    if (!confirm(t("criticsfm.confirmDeleteReview"))) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/albums/${albumDbId}/reviews/${review.id}`, { method: "DELETE" });
@@ -766,11 +778,11 @@ function ReviewCard({
     const d = new Date(review.createdAt);
     const diff = Date.now() - d.getTime();
     const days = Math.floor(diff / 86400000);
-    if (days === 0) return "hoje";
-    if (days === 1) return "ontem";
-    if (days < 30) return `há ${days} dias`;
+    if (days === 0) return t("criticsfm.timeToday");
+    if (days === 1) return t("criticsfm.timeYesterday");
+    if (days < 30) return t("criticsfm.timeDaysAgo", { days });
     const months = Math.floor(days / 30);
-    return months === 1 ? "há 1 mês" : `há ${months} meses`;
+    return months === 1 ? t("criticsfm.timeOneMonthAgo") : t("criticsfm.timeMonthsAgo", { months });
   })();
 
   const isLong = (review.body?.length ?? 0) > 200;
@@ -811,7 +823,7 @@ function ReviewCard({
           <button
             onClick={deleteReview}
             disabled={deleting}
-            title="Excluir review"
+            title={t("criticsfm.deleteReviewTitle")}
             style={{
               background: "none",
               border: "none",
@@ -849,7 +861,7 @@ function ReviewCard({
                   marginTop: 4,
                 }}
               >
-                Ler mais
+                {t("criticsfm.readMore")}
               </button>
             </>
           ) : (
@@ -900,6 +912,7 @@ function InlineReviewForm({
   onCancel?: () => void;
   onSubmitted: (r: Review) => void;
 }) {
+  const { t } = useTranslations();
   const { data: session } = useSession();
   const [rating, setRating] = useState(initialRating ?? 70);
   const [body, setBody] = useState(initialBody ?? "");
@@ -923,9 +936,9 @@ function InlineReviewForm({
       >
         <span>
           <a href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Entre
+            {t("criticsfm.signInLinkText")}
           </a>{" "}
-          para escrever uma review
+          {t("criticsfm.signInSuffix")}
         </span>
       </div>
     );
@@ -933,7 +946,7 @@ function InlineReviewForm({
 
   const submit = async () => {
     if (body.trim().length > 0 && body.trim().length < 50) {
-      setError("Se quiser escrever uma review, precisa ter pelo menos 50 caracteres.");
+      setError(t("criticsfm.minCharsError"));
       return;
     }
     setSubmitting(true);
@@ -946,7 +959,7 @@ function InlineReviewForm({
       });
       if (!res.ok) {
         const d = (await res.json()) as { error?: string };
-        setError(d.error ?? "Erro ao publicar.");
+        setError(d.error ?? t("criticsfm.publishErrorFallback"));
         return;
       }
       const apiReview = (await res.json()) as Omit<Review, "user">;
@@ -963,14 +976,14 @@ function InlineReviewForm({
         user: {
           id: user.id ?? "",
           handle: user.handle ?? "",
-          name: user.name ?? "Você",
+          name: user.name ?? t("criticsfm.youFallback"),
           avatarColor: user.avatarColor ?? "#FA243C",
           image: user.image ?? null,
         },
       };
       onSubmitted(fullReview);
     } catch {
-      setError("Erro de rede. Tente novamente.");
+      setError(t("criticsfm.networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -990,7 +1003,7 @@ function InlineReviewForm({
     >
       {isEditing && (
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 12 }}>
-          Editando sua avaliação
+          {t("criticsfm.editingYourReview")}
         </div>
       )}
 
@@ -1002,7 +1015,7 @@ function InlineReviewForm({
         />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
-            {user?.name ?? "Você"}
+            {user?.name ?? t("criticsfm.youFallback")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <input
@@ -1042,7 +1055,7 @@ function InlineReviewForm({
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder={`O que achou de ${albumTitle}? Fale sobre produção, letras, faixas favoritas…`}
+        placeholder={t("criticsfm.reviewPlaceholderDetailed", { album: albumTitle })}
         rows={4}
         style={{
           width: "100%",
@@ -1063,8 +1076,8 @@ function InlineReviewForm({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, gap: 8, flexWrap: "wrap" }}>
         <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
           {body.trim().length > 0
-            ? `${body.length}/2000 · mínimo 50 caracteres`
-            : "Review opcional"}
+            ? t("criticsfm.charCountMin", { count: body.length })
+            : t("criticsfm.reviewOptional")}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {onCancel && (
@@ -1083,7 +1096,7 @@ function InlineReviewForm({
                 cursor: submitting ? "not-allowed" : "pointer",
               }}
             >
-              Cancelar
+              {t("criticsfm.cancelAction")}
             </button>
           )}
           <button
@@ -1103,7 +1116,11 @@ function InlineReviewForm({
               transition: "opacity 0.15s",
             }}
           >
-            {submitting ? "Salvando…" : isEditing ? "Salvar" : "Publicar"}
+            {submitting
+              ? t("criticsfm.savingAction")
+              : isEditing
+                ? t("criticsfm.saveAction")
+                : t("criticsfm.publishAction")}
           </button>
         </div>
       </div>

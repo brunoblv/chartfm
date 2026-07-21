@@ -19,6 +19,7 @@ import type { ParadaScoringTier } from "@/lib/parada-points";
 import type { Chart, UserWithCharts } from "@/lib/types";
 import { formatSongArtist } from "@/lib/song-artist";
 import { ParadaPagination, usePublicationGridLayout } from "@/components/paradas/ParadaPagination";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ProfileChartsResponse = {
   user: UserWithCharts;
@@ -51,6 +52,7 @@ export function ParadaDetailTabs({
   isMobile: boolean;
   gutterX: number;
 }) {
+  const { t } = useTranslations();
   const [tab, setTab] = useState<ParadaTab>("charts");
   const [statsPage, setStatsPage] = useState(1);
   const hasCharts = user.charts.length > 0;
@@ -96,10 +98,10 @@ export function ParadaDetailTabs({
   }, [tab, statsPage, numberOnesRows.length, artistsRows.length, songsRows.length]);
 
   const tabs: { id: ParadaTab; label: string }[] = [
-    { id: "charts", label: "Publicações" },
-    { id: "numberOnes", label: "#1s" },
-    { id: "artists", label: "Artistas" },
-    { id: "songs", label: "Músicas" },
+    { id: "charts", label: t("chart.detailTabPublications") },
+    { id: "numberOnes", label: t("chart.colOnes") },
+    { id: "artists", label: t("chart.detailTabArtists") },
+    { id: "songs", label: t("chart.detailTabSongs") },
   ];
 
   return (
@@ -220,6 +222,7 @@ function PublicationsGrid({
   isMobile: boolean;
   cadence?: "weekly" | "daily";
 }) {
+  const { t } = useTranslations();
   const { gridRef, perPage, gridTemplateColumns } = usePublicationGridLayout(isMobile);
   const [page, setPage] = useState(1);
   const [charts, setCharts] = useState<Chart[]>([]);
@@ -280,7 +283,7 @@ function PublicationsGrid({
         }}
       >
         <p style={{ fontSize: 15, color: "var(--text-muted)", margin: 0 }}>
-          Nenhuma publicação ainda.
+          {t("chart.detailNoPublications")}
         </p>
       </div>
     );
@@ -290,7 +293,7 @@ function PublicationsGrid({
     <>
       {loading && (
         <div style={{ marginBottom: 12, color: "var(--text-muted)", fontSize: 13 }}>
-          Carregando publicações…
+          {t("chart.detailLoadingPublications")}
         </div>
       )}
       <div
@@ -322,6 +325,7 @@ function WeekPreviewCard({
   chart: Chart;
   cadence?: "weekly" | "daily";
 }) {
+  const { t } = useTranslations();
   const preview = chart.entries.slice(0, PREVIEW_ENTRIES);
 
   return (
@@ -411,7 +415,7 @@ function WeekPreviewCard({
             letterSpacing: "-0.01em",
           }}
         >
-          Ver {cadence === "daily" ? "dia" : "semana"} completa →
+          {cadence === "daily" ? t("chart.detailViewDayFull") : t("chart.detailViewWeekFull")}
         </Link>
       </div>
     </div>
@@ -425,6 +429,7 @@ function NumberOnesList({
   rows: NumberOneRow[];
   total: number;
 }) {
+  const { t } = useTranslations();
   if (total === 0) {
     return (
       <div
@@ -438,7 +443,7 @@ function NumberOnesList({
       >
         <Trophy size={36} color="#FFD700" fill="#FFD700" style={{ marginBottom: 12 }} />
         <p style={{ fontSize: 15, color: "var(--text-muted)", margin: 0 }}>
-          Nenhuma música chegou ao #1 nesta parada ainda.
+          {t("chart.detailNoNumberOnes")}
         </p>
       </div>
     );
@@ -464,10 +469,10 @@ function NumberOnesList({
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
-          Músicas que chegaram ao #1
+          {t("chart.detailNumberOnesHeader")}
         </div>
         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          {total} {total === 1 ? "música" : "músicas"}
+          {t(total === 1 ? "chart.detailSongCountSingular" : "chart.detailSongCountPlural", { count: total })}
         </div>
       </div>
       {rows.map((row) => {
@@ -513,7 +518,7 @@ function NumberOnesList({
                 {row.artist}
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3, fontWeight: 500 }}>
-                Última: {row.lastDateRange}
+                {t("chart.detailLastDateRange", { range: row.lastDateRange })}
               </div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -555,7 +560,8 @@ function ArtistsTable({
   rows: ArtistTableRow[];
   cadence?: "weekly" | "daily";
 }) {
-  const tenureLabel = cadence === "daily" ? "Dias" : "Sem";
+  const { t } = useTranslations();
+  const tenureLabel = cadence === "daily" ? t("chart.stats.daysShort") : t("chart.detailTenureWeeks");
   return (
     <div
       style={{
@@ -575,21 +581,26 @@ function ArtistsTable({
             alignItems: "center",
           }}
         >
-          {["#", "Mov.", "Artista", "Pontos", tenureLabel, "Pico", "#1s"].map((h) => (
-            <div
-              key={h}
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                color: "var(--text-muted)",
-                textAlign: h === "Pontos" || h === tenureLabel || h === "Pico" || h === "#1s" ? "right" : undefined,
-              }}
-            >
-              {h}
-            </div>
-          ))}
+          {(() => {
+            const colPoints = t("chart.detailColPoints");
+            const colPeak = t("chart.colPeak");
+            const colOnes = t("chart.colOnes");
+            return ["#", t("chart.detailColMov"), t("chart.detailColArtist"), colPoints, tenureLabel, colPeak, colOnes].map((h) => (
+              <div
+                key={h}
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  color: "var(--text-muted)",
+                  textAlign: h === colPoints || h === tenureLabel || h === colPeak || h === colOnes ? "right" : undefined,
+                }}
+              >
+                {h}
+              </div>
+            ));
+          })()}
         </div>
         {rows.map((artist) => (
           <div
@@ -656,7 +667,8 @@ function SongsTable({
   rows: SongTableRow[];
   cadence?: "weekly" | "daily";
 }) {
-  const tenureLabel = cadence === "daily" ? "Dias" : "Sem";
+  const { t } = useTranslations();
+  const tenureLabel = cadence === "daily" ? t("chart.stats.daysShort") : t("chart.detailTenureWeeks");
   return (
     <div
       style={{
@@ -678,11 +690,11 @@ function SongsTable({
         >
           <div style={{ width: 36, fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>#</div>
           <div style={{ width: 36 }} />
-          <div style={{ flex: 1, fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>Música</div>
-          <div style={{ width: 60, textAlign: "right", fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>Pontos</div>
+          <div style={{ flex: 1, fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>{t("chart.colSong")}</div>
+          <div style={{ width: 60, textAlign: "right", fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>{t("chart.detailColPoints")}</div>
           <div style={{ width: 44, textAlign: "right", fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>{tenureLabel}</div>
-          <div style={{ width: 44, textAlign: "right", fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>Pico</div>
-          <div style={{ width: 40, textAlign: "right", fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>#1s</div>
+          <div style={{ width: 44, textAlign: "right", fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>{t("chart.colPeak")}</div>
+          <div style={{ width: 40, textAlign: "right", fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "var(--text-muted)" }}>{t("chart.colOnes")}</div>
         </div>
         {rows.map((song) => {
           const songHref = buildSongPath({

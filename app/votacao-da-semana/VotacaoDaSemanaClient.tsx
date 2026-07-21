@@ -18,6 +18,7 @@ import type {
   WeeklyPollOptionView,
   WeeklyPollView,
 } from "@/lib/weekly-spotlight-poll";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type PollResponse = {
   poll: WeeklyPollView | null;
@@ -33,29 +34,34 @@ export type VotacaoDaSemanaClientProps = {
   communityName?: string;
 };
 
-const CATEGORY_META: Record<
+type TFn = ReturnType<typeof useTranslations>["t"];
+
+function getCategoryMeta(t: TFn): Record<
   SpotlightCategory,
   { title: string; description: string; color: string; icon: React.ReactNode }
-> = {
-  destaque: {
-    title: "Melhor da Semana",
-    description: "As músicas indicadas como Destaque nas paradas pessoais desta semana.",
-    color: "#FA243C",
-    icon: <Star size={18} />,
-  },
-  flashback: {
-    title: "Flashback da Semana",
-    description: "As músicas indicadas como Flashback nas paradas pessoais desta semana.",
-    color: "#7C3AED",
-    icon: <History size={18} />,
-  },
-};
+> {
+  return {
+    destaque: {
+      title: t("weeklyPoll.destaqueTitle"),
+      description: t("weeklyPoll.destaqueDescription"),
+      color: "#FA243C",
+      icon: <Star size={18} />,
+    },
+    flashback: {
+      title: t("weeklyPoll.flashbackTitle"),
+      description: t("weeklyPoll.flashbackDescription"),
+      color: "#7C3AED",
+      icon: <History size={18} />,
+    },
+  };
+}
 
 function NominatorsRow({ nominators }: { nominators: WeeklyPollOptionView["nominators"] }) {
+  const { t } = useTranslations();
   if (nominators.length === 0) return null;
   return (
     <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Indicada por</span>
+      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("moments.mysteryNominatedBy")}</span>
       {nominators.map((n) => (
         <Link
           key={n.id}
@@ -70,6 +76,7 @@ function NominatorsRow({ nominators }: { nominators: WeeklyPollOptionView["nomin
 }
 
 function ResultRow({ option, color, rank }: { option: WeeklyPollOptionView; color: string; rank: number }) {
+  const { t } = useTranslations();
   const spotifyUrl =
     option.song.spotifyUrl ??
     (option.song.spotifyId ? `https://open.spotify.com/track/${option.song.spotifyId}` : null);
@@ -103,7 +110,7 @@ function ResultRow({ option, color, rank }: { option: WeeklyPollOptionView; colo
               marginBottom: 4,
             }}
           >
-            <Crown size={13} /> Vencedora
+            <Crown size={13} /> {t("weeklyPoll.winner")}
           </div>
         )}
         <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.35 }}>{option.song.title}</div>
@@ -126,7 +133,7 @@ function ResultRow({ option, color, rank }: { option: WeeklyPollOptionView; colo
             }}
           >
             <ExternalLink size={13} />
-            Ouvir
+            {t("weeklyPoll.listen")}
           </a>
         )}
       </div>
@@ -153,7 +160,8 @@ function CategoryRanking({
   voteUrl: string;
   onSaved: () => void;
 }) {
-  const meta = CATEGORY_META[category];
+  const { t } = useTranslations();
+  const meta = getCategoryMeta(t)[category];
   const isMobile = useIsMobile();
   const options = poll.options.filter((o) => o.category === category);
   const myOption = options.find((o) => o.excludedForMe) ?? null;
@@ -222,13 +230,13 @@ function CategoryRanking({
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Erro ao salvar");
+        setError(data.error ?? t("weeklyPoll.saveError"));
         return;
       }
       setSaved(true);
       onSaved();
     } catch {
-      setError("Erro de conexão.");
+      setError(t("weeklyPoll.connectionError"));
     } finally {
       setSaving(false);
     }
@@ -254,7 +262,7 @@ function CategoryRanking({
       <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>{meta.description}</p>
 
       {options.length === 0 ? (
-        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Nenhuma indicação nesta categoria esta semana.</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("weeklyPoll.noNominationsCategory")}</div>
       ) : !pollOpen ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {options.map((option, i) => (
@@ -265,7 +273,7 @@ function CategoryRanking({
         <>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
             <Link href="/login" style={{ color: meta.color, fontWeight: 600, textDecoration: "none" }}>
-              Entre para ranquear →
+              {t("weeklyPoll.loginToRank")}
             </Link>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -293,11 +301,11 @@ function CategoryRanking({
         </>
       ) : !canVote ? (
         <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
-          Só membros da comunidade podem votar nesta enquete. Entre na comunidade para participar.
+          {t("weeklyPoll.membersOnly")}
         </div>
       ) : total === 0 ? (
         <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-          Só há a sua própria indicação nesta categoria — nada para ranquear.
+          {t("weeklyPoll.onlyOwnNomination")}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -313,7 +321,7 @@ function CategoryRanking({
                   marginBottom: 8,
                 }}
               >
-                Sua indicação
+                {t("weeklyPoll.yourNomination")}
               </div>
               <div
                 style={{
@@ -345,15 +353,15 @@ function CategoryRanking({
                   <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{myOption.song.title}</div>
                   <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{myOption.song.artist}</div>
                 </div>
-                <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>Fora do ranking</span>
+                <span style={{ fontSize: 10, color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>{t("weeklyPoll.outOfRanking")}</span>
               </div>
             </div>
           )}
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
             <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-              {!isMobile && "Arraste para ordenar · "}#1 = 20 pts · #{total} = 1 pt
-              {hasVoted && <span style={{ color: "#10b981", fontWeight: 600 }}> · ✓ Ranking salvo</span>}
+              {!isMobile && t("weeklyPoll.dragToOrder")}{t("weeklyPoll.pointsRange", { total })}
+              {hasVoted && <span style={{ color: "#10b981", fontWeight: 600 }}>{t("weeklyPoll.rankingSaved")}</span>}
             </span>
           </div>
 
@@ -498,12 +506,12 @@ function CategoryRanking({
                 <div style={{ width: 20, height: 20, borderRadius: 10, background: "rgba(255,255,255,.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <CheckIcon size={10} />
                 </div>
-                Ranking enviado com sucesso!
+                {t("weeklyPoll.rankingSubmitted")}
               </>
             ) : saving ? (
-              "Salvando…"
+              t("chart.setup.saving")
             ) : (
-              "Confirmar meu ranking"
+              t("weeklyPoll.confirmRanking")
             )}
           </button>
         </div>
@@ -517,6 +525,7 @@ export function VotacaoDaSemanaClient({
   communitySlug,
   communityName,
 }: VotacaoDaSemanaClientProps = {}) {
+  const { t } = useTranslations();
   const isCommunity = scope === "community" && Boolean(communitySlug);
   const fetchUrl = isCommunity
     ? `/api/communities/${encodeURIComponent(communitySlug!)}/weekly-poll`
@@ -536,11 +545,11 @@ export function VotacaoDaSemanaClient({
       if (!res.ok) throw new Error();
       setData((await res.json()) as PollResponse);
     } catch {
-      setError("Não foi possível carregar a votação. Tente novamente.");
+      setError(t("weeklyPoll.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [fetchUrl]);
+  }, [fetchUrl, t]);
 
   useEffect(() => {
     void load();
@@ -551,17 +560,17 @@ export function VotacaoDaSemanaClient({
   const resolvedName = data?.community?.name ?? communityName ?? null;
   const canVote = isCommunity ? Boolean(data?.isMember) : true;
   const title = isCommunity
-    ? `Votação · ${resolvedName ?? "Comunidade"}`
-    : "Votação da Semana";
+    ? t("weeklyPoll.communityTitle", { name: resolvedName ?? t("weeklyPoll.communityFallback") })
+    : t("weeklyPoll.title");
 
   return (
     <Shell
       title={title}
-      subtitle={poll ? `${poll.weekLabel} · ${poll.dateRange}` : "Melhor da Semana e Flashback da Semana"}
+      subtitle={poll ? `${poll.weekLabel} · ${poll.dateRange}` : t("weeklyPoll.subtitleFallback")}
     >
       {loading ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-muted)", fontSize: 14 }}>
-          <Loader2 size={16} className="animate-spin" /> Carregando votação…
+          <Loader2 size={16} className="animate-spin" /> {t("weeklyPoll.loadingPoll")}
         </div>
       ) : !poll ? (
         <div
@@ -577,21 +586,19 @@ export function VotacaoDaSemanaClient({
         >
           {isCommunity ? (
             <>
-              Ainda não há votação aberta nesta comunidade. A enquete abre todo domingo às 23:59 com as
-              músicas indicadas como Destaque e Flashback nas paradas pessoais dos membros.
+              {t("weeklyPoll.emptyCommunity")}
               {communityHref ? (
                 <>
                   {" "}
                   <Link href={communityHref} style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-                    Voltar à comunidade →
+                    {t("weeklyPoll.backToCommunity")}
                   </Link>
                 </>
               ) : null}
             </>
           ) : (
             <>
-              Ainda não há votação aberta. A enquete abre todo domingo às 23:59 com as músicas indicadas
-              como Destaque e Flashback nas paradas pessoais da semana.
+              {t("weeklyPoll.emptyGlobal")}
             </>
           )}
         </div>
@@ -612,27 +619,24 @@ export function VotacaoDaSemanaClient({
             {isCommunity ? (
               pollOpen ? (
                 <>
-                  Arraste para ordenar sua preferência em cada categoria — a 1ª posição vale 20 pontos, a
-                  última vale 1. Só membros de {resolvedName ?? "esta comunidade"} podem votar. A votação
-                  encerra na terça de madrugada.
+                  {t("weeklyPoll.communityOpenBanner", { name: resolvedName ?? t("weeklyPoll.communityFallback2") })}
                 </>
               ) : (
-                <>A votação desta semana em {resolvedName ?? "esta comunidade"} já foi encerrada. As vencedoras estão destacadas abaixo.</>
+                <>{t("weeklyPoll.communityClosedBanner", { name: resolvedName ?? t("weeklyPoll.communityFallback2") })}</>
               )
             ) : pollOpen ? (
               <>
-                Arraste para ordenar sua preferência em cada categoria — a 1ª posição vale 20 pontos, a
-                última vale 1. A música com mais pontos no total vence e vira o card da{" "}
+                {t("weeklyPoll.globalOpenPrefix")}{" "}
                 <Link href="/global/100" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-                  Parada Global
+                  {t("home.globalChart")}
                 </Link>{" "}
-                de terça-feira. A votação encerra na terça de madrugada.
+                {t("weeklyPoll.globalOpenSuffix")}
               </>
             ) : (
               <>
-                A votação desta semana já foi encerrada. As vencedoras estão destacadas abaixo e nos cards da{" "}
+                {t("weeklyPoll.globalClosedPrefix")}{" "}
                 <Link href="/global/100" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-                  Parada Global
+                  {t("home.globalChart")}
                 </Link>
                 .
               </>
@@ -643,7 +647,7 @@ export function VotacaoDaSemanaClient({
             <div style={{ color: "#FA243C", fontSize: 13, fontWeight: 600, marginBottom: 16 }}>{error}</div>
           )}
 
-          {(Object.keys(CATEGORY_META) as SpotlightCategory[]).map((category) => (
+          {(Object.keys(getCategoryMeta(t)) as SpotlightCategory[]).map((category) => (
             <CategoryRanking
               key={category}
               poll={poll}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { USERS_DATA, COVER_PALETTES } from "@/lib/data";
 import { Avatar } from "@/components/ui/Avatar";
@@ -372,19 +373,19 @@ export function LandingPage({
       <section id="como-funciona" style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "var(--surface)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center" as const, marginBottom: 60 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Como funciona</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>{t("landing.howItWorks")}</div>
             <h2 style={{ fontSize: isMobile ? 32 : 48, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 14px 0", lineHeight: 1.1, color: "var(--text)" }}>
-            Toda semana, uma nova parada.
+            {t("landing.stepsTitle")}
             </h2>
             <p style={{ fontSize: 17, color: "var(--text-subtle)", maxWidth: 560, margin: "0 auto", lineHeight: 1.5 }}>
-            Monte seu ranking, compartilhe com a comunidade e ajude a definir as paradas globais.
+            {t("landing.stepsSubtitle")}
             </p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 24 }}>
             {[
-              { n: "01", title: "Monte sua parada", desc: "Escolha suas músicas favoritas da semana e organize sua parada do seu jeito.", accent: "#FA243C" },
-              { n: "02", title: "Compartilhe seu gosto", desc: "Publique sua parada, siga outros usuários e interaja com fãs de música como você.", accent: "#8338EC" },
-              { n: "03", title: "Influencie as paradas", desc: "Cada posição do seu ranking gera pontos para as músicas e ajuda a formar as paradas globais do ChartFM.", accent: "#06D6A0" },
+              { n: "01", title: t("landing.step1Title"), desc: t("landing.step1Desc"), accent: "#FA243C" },
+              { n: "02", title: t("landing.step2Title"), desc: t("landing.step2Desc"), accent: "#8338EC" },
+              { n: "03", title: t("landing.step3Title"), desc: t("landing.step3Desc"), accent: "#06D6A0" },
             ].map((s) => (
               <div key={s.n} style={{ background: "var(--fill-subtle)", borderRadius: 20, padding: 30, border: "1px solid var(--divider)" }}>
                 <div style={{ fontSize: 54, fontWeight: 800, letterSpacing: "-0.04em", color: s.accent, lineHeight: 1, marginBottom: 14 }}>{s.n}</div>
@@ -417,9 +418,9 @@ export function LandingPage({
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#FA243C", boxShadow: "0 0 0 3px rgba(250,36,60,0.2)" }} />
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "rgba(255,255,255,0.75)" }}>Parada global · ao vivo</div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: "rgba(255,255,255,0.75)" }}>{t("landing.globalLiveLabel")}</div>
                 <div style={{ flex: 1 }} />
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>{top10[0]?.voters ?? 0}+ fãs de música</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>{t("landing.fansCount", { count: top10[0]?.voters ?? 0 })}</div>
               </div>
               {top10.map((entry, i) => {
                 return (
@@ -462,12 +463,12 @@ export function LandingPage({
 
           {/* Right: copy */}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14 }}>Parada Global</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 14 }}>{t("landing.globalChart")}</div>
             <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 18px 0", lineHeight: 1.1 }}>
-              O que o mundo<br />está ouvindo.
+              {t("landing.globalCopyTitle1")}<br />{t("landing.globalCopyTitle2")}
             </h2>
             <p style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.55, margin: "0 0 30px 0" }}>
-            Toda semana, os rankings dos usuários se transformam nas paradas globais do ChartFM. Quanto mais alta uma música aparece, mais pontos ela recebe.
+            {t("landing.globalCopyBody")}
             </p>
             <Link
               href="/global/100"
@@ -481,7 +482,7 @@ export function LandingPage({
                 textDecoration: "none",
               }}
             >
-              Ver parada completa →
+              {t("landing.viewFullChartCta")}
             </Link>
           </div>
         </div>
@@ -491,41 +492,23 @@ export function LandingPage({
       <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "var(--bg)" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>
-            Como funciona
+            {t("landing.howItWorks")}
           </div>
           <h2 style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 22px 0", lineHeight: 1.15, color: "var(--text)" }}>
-            Como o Global 100 é calculado
+            {t("landing.calcTitle")}
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 16, fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
-            <p style={{ margin: 0 }}>
-              O Global 100 é a parada coletiva do ChartFM, formada toda semana a partir das paradas pessoais
-              publicadas pelos usuários. Não existe algoritmo de reprodução automática aqui: cada posição no
-              ranking coletivo vem de uma escolha deliberada de alguém, feita ao montar a própria parada.
-            </p>
-            <p style={{ margin: 0 }}>
-              O cálculo usa uma curva geométrica: a música na 1ª posição de uma parada pessoal vale 1.000
-              pontos, e cada posição abaixo vale 95% da posição anterior - a 2ª vale 950, a 5ª vale 815, a 10ª
-              vale 630. Esses pontos são somados entre todas as paradas publicadas na semana para formar o
-              ranking coletivo.
-            </p>
-            <p style={{ margin: 0 }}>
-              Essa curva foi escolhida de propósito: ela valoriza o topo das paradas pessoais mais do que o
-              volume. Uma música que aparece em poucas paradas, sempre bem colocada, pontua mais do que uma
-              música que aparece em muitas paradas só nas posições finais.
-            </p>
-            <p style={{ margin: 0 }}>
-              A semana do Global 100 fecha toda segunda-feira às 17:00 (horário de Brasília); paradas
-              publicadas depois desse horário contam para a semana seguinte. O snapshot de cada semana é
-              processado horas depois e vira um registro permanente - o histórico completo fica sempre
-              disponível para consulta.
-            </p>
+            <p style={{ margin: 0 }}>{t("landing.calcP1")}</p>
+            <p style={{ margin: 0 }}>{t("landing.calcP2")}</p>
+            <p style={{ margin: 0 }}>{t("landing.calcP3")}</p>
+            <p style={{ margin: 0 }}>{t("landing.calcP4")}</p>
           </div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" as const, marginTop: 24 }}>
             <Link href="/guides/como-funciona-o-global-100" style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>
-              Guia completo do Global 100 →
+              {t("landing.calcGuideLink")}
             </Link>
             <Link href="/guides/como-funciona-a-pontuacao" style={{ fontSize: 13, fontWeight: 700, color: "#FA243C", textDecoration: "none" }}>
-              Tabela de pontos e exemplos →
+              {t("landing.calcPointsTableLink")}
             </Link>
           </div>
         </div>
@@ -535,9 +518,14 @@ export function LandingPage({
       <section style={{ padding: isMobile ? "60px 24px" : "100px 56px", background: "var(--surface)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center" as const, marginBottom: 50 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>Recursos</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase" as const, marginBottom: 12 }}>{t("landing.featuresBadge")}</div>
             <h2 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.1, color: "var(--text)" }}>
-              Tudo para acompanhar<br />seu gosto musical.
+              {t("landing.featuresTitle").split("\n").map((line, i, arr) => (
+                <Fragment key={i}>
+                  {line}
+                  {i < arr.length - 1 && <br />}
+                </Fragment>
+              ))}
             </h2>
           </div>
           <div style={{
@@ -546,10 +534,10 @@ export function LandingPage({
             gap: 18,
           }}>
             {[
-              { title: "Estatísticas completas", desc: "Acompanhe pico, semanas na parada, entradas, quedas e o histórico de cada música." },
-              { title: "Pessoas com o seu gosto", desc: "Descubra usuários com gostos parecidos e encontre novas músicas através das paradas deles." },
-              { title: "A trajetória das músicas", desc: "Veja como cada faixa subiu, caiu ou permaneceu na sua parada ao longo das semanas." },
-              { title: "Importe suas músicas", desc: "Conecte seu last.fm para montar suas paradas a partir do seu histórico de reprodução." },
+              { title: t("landing.feature1Title"), desc: t("landing.feature1Desc") },
+              { title: t("landing.feature2Title"), desc: t("landing.feature2Desc") },
+              { title: t("landing.feature3Title"), desc: t("landing.feature3Desc") },
+              { title: t("landing.feature4Title"), desc: t("landing.feature4Desc") },
             ].map((f) => (
               <div key={f.title} style={{ padding: 24, borderRadius: 16, border: "1px solid var(--divider)", background: "var(--fill-subtle)" }}>
                 <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 6, color: "var(--text)" }}>{f.title}</div>

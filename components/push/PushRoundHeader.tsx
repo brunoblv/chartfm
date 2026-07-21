@@ -2,15 +2,18 @@
 
 import type { ReactNode } from "react";
 import { pushRoundTitle } from "@/lib/push-format";
+import { useTranslations } from "@/hooks/useTranslations";
 import type { RoundData } from "./push-types";
-import { STAGES, PHASE_TO_STAGE, isListenAndRankPhase, phaseLabel, phaseColor, useTimeRemaining } from "./push-helpers";
+import { getStages, PHASE_TO_STAGE, isListenAndRankPhase, phaseLabel, phaseColor, useTimeRemaining } from "./push-helpers";
 import { CheckIcon, ParticipantAvatar } from "./PushAtoms";
 
 export function StageBar({ phase }: { phase: RoundData["phase"] }) {
+  const { t } = useTranslations();
+  const stages = getStages(t);
   const activeIdx = PHASE_TO_STAGE[phase];
   const items: ReactNode[] = [];
 
-  STAGES.forEach((label, i) => {
+  stages.forEach((label, i) => {
     const done = i < activeIdx;
     const cur  = i === activeIdx;
     items.push(
@@ -21,7 +24,7 @@ export function StageBar({ phase }: { phase: RoundData["phase"] }) {
         </div>
       </div>
     );
-    if (i < STAGES.length - 1) {
+    if (i < stages.length - 1) {
       items.push(
         <div key={"l" + i} style={{ flex: 1, height: 1, background: done ? "var(--accent)" : "var(--text-disabled)", marginBottom: 11 }} />
       );
@@ -32,11 +35,12 @@ export function StageBar({ phase }: { phase: RoundData["phase"] }) {
 }
 
 export function RoundHeader({ round, isMobile }: { round: RoundData; isMobile: boolean }) {
+  const { t } = useTranslations();
   const endIso =
     round.phase === "SUBMISSION" ? round.submissionEndsAt
     : isListenAndRankPhase(round.phase) ? round.rankingEndsAt
     : null;
-  const timeLeft = useTimeRemaining(endIso);
+  const timeLeft = useTimeRemaining(endIso, t);
   const color = phaseColor(round.phase);
 
   return (
@@ -54,7 +58,7 @@ export function RoundHeader({ round, isMobile }: { round: RoundData; isMobile: b
             background: color + "18", color, border: `1px solid ${color}33`,
             fontSize: 10, fontWeight: 800, letterSpacing: ".04em", textTransform: "uppercase" as const,
           }}>
-            {phaseLabel(round.phase)}
+            {phaseLabel(round.phase, t)}
           </span>
           {timeLeft && (
             <span style={{ fontSize: 10, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
@@ -69,6 +73,7 @@ export function RoundHeader({ round, isMobile }: { round: RoundData; isMobile: b
 }
 
 export function ParticipantsSection({ round }: { round: RoundData }) {
+  const { t } = useTranslations();
   const submitted = round.participants;
   const total = round.submissionCount;
 
@@ -76,10 +81,10 @@ export function ParticipantsSection({ round }: { round: RoundData }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)" }}>
-          Participantes
+          {t("push.participants")}
         </span>
         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-          {submitted.length}/{total > submitted.length ? total : submitted.length} indicaram
+          {t("push.submittedCount", { submitted: submitted.length, total: total > submitted.length ? total : submitted.length })}
         </span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
@@ -97,7 +102,7 @@ export function ParticipantsSection({ round }: { round: RoundData }) {
               <CheckIcon size={7} />
             </div>
             <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>
-              {p.isMe ? "Você" : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
+              {p.isMe ? t("push.you") : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
             </span>
           </div>
         ))}
@@ -107,25 +112,26 @@ export function ParticipantsSection({ round }: { round: RoundData }) {
 }
 
 export function StatsSidebar({ round }: { round: RoundData }) {
+  const { t } = useTranslations();
   const endIso =
     round.phase === "SUBMISSION" ? round.submissionEndsAt
     : isListenAndRankPhase(round.phase) ? round.rankingEndsAt
     : null;
-  const timeLeft = useTimeRemaining(endIso);
+  const timeLeft = useTimeRemaining(endIso, t);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {round.participants.length > 0 && (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)", marginBottom: 14 }}>
-            Participantes
+            {t("push.participants")}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
             {round.participants.map((p) => (
               <div key={p.userId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <ParticipantAvatar p={p} size={30} />
                 <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: p.isMe ? "var(--accent)" : "var(--text)" }}>
-                  {p.isMe ? "Você" : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
+                  {p.isMe ? t("push.you") : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
                 </div>
                 <div style={{ width: 18, height: 18, borderRadius: 9, background: "#1DB954", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <CheckIcon color="white" size={8} />
@@ -134,24 +140,24 @@ export function StatsSidebar({ round }: { round: RoundData }) {
             ))}
           </div>
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--divider)", fontSize: 12, color: "var(--text-muted)", textAlign: "center" as const }}>
-            {round.participants.length}/{round.submissionCount} indicaram
+            {t("push.submittedCount", { submitted: round.participants.length, total: round.submissionCount })}
           </div>
         </div>
       )}
 
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)", marginBottom: 12 }}>
-          Rodada #{round.number}
+          {t("push.roundNumberLabel", { number: round.number })}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {[
-            { label: "Temporada",      value: String(round.season),          accent: false },
-            { label: "Músicas",        value: String(round.submissionCount), accent: false },
-            { label: "Fase atual",     value: phaseLabel(round.phase),       accent: true  },
+            { label: t("push.seasonLabel"),      value: String(round.season),          accent: false },
+            { label: t("push.songsLabel"),        value: String(round.submissionCount), accent: false },
+            { label: t("push.currentPhaseLabel"),     value: phaseLabel(round.phase, t),       accent: true  },
             ...(isListenAndRankPhase(round.phase)
-              ? [{ label: "Escuta até", value: new Date(round.rankingEndsAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }), accent: false }]
+              ? [{ label: t("push.listenUntilLabel"), value: new Date(round.rankingEndsAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }), accent: false }]
               : []),
-            ...(timeLeft ? [{ label: "Tempo restante", value: timeLeft, accent: false }] : []),
+            ...(timeLeft ? [{ label: t("push.timeRemainingLabel"), value: timeLeft, accent: false }] : []),
           ].map(({ label, value, accent }) => (
             <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
               <span style={{ color: "var(--text-muted)" }}>{label}</span>
@@ -163,16 +169,16 @@ export function StatsSidebar({ round }: { round: RoundData }) {
 
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "18px 20px", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)", marginBottom: 12 }}>
-          Regras
+          {t("push.rulesTitle")}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {[
-            "Lançamento máx. 12 meses",
-            "1 indicação por participante",
-            "Músicas ficam ocultas até a revelação",
-            "Escuta começa logo após a revelação",
-            "#1 = 20 pts · último = 1 pt",
-            "Não avaliar = +20 pts para as outras músicas",
+            t("push.rule1"),
+            t("push.rule2"),
+            t("push.rule3"),
+            t("push.rule4"),
+            t("push.rule5"),
+            t("push.rule6"),
           ].map((rule, i) => (
             <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
               <div style={{
@@ -195,8 +201,8 @@ export function StatsSidebar({ round }: { round: RoundData }) {
         border: "1px solid var(--divider)", textDecoration: "none",
       }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>Histórico</div>
-          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>Ver todas as rodadas</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t("push.navHistorico")}</div>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{t("push.seeAllRounds")}</div>
         </div>
         <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={2} strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
       </a>

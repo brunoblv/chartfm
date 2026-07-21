@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
 import type { StandingRow } from "@/lib/copa";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ArtistData = {
   id: string;
@@ -49,12 +50,13 @@ type Props = {
 };
 
 function StatusBadge({ status, round }: { status: string; round: number | null }) {
+  const { t } = useTranslations();
   if (status === "LIVE") {
     return (
       // ✅ FIX: var(--accent-tint) + var(--accent) em vez de rgba vermelha + #FA243C
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, background: "var(--accent-tint)", color: "var(--accent)", padding: "3px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
-        Ao vivo
+        {t("copa.liveBadge")}
       </span>
     );
   }
@@ -66,6 +68,7 @@ function StatusBadge({ status, round }: { status: string; round: number | null }
 
 export function GroupsClient({ groups, userId, copaId }: Props) {
   const router = useRouter();
+  const { t } = useTranslations();
   const [sel, setSel] = useState(groups[0]?.letter ?? "A");
 
   const group = groups.find((g) => g.letter === sel);
@@ -109,15 +112,24 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
           {/* Standings table */}
           {/* ✅ FIX: var(--text-muted) em vez de var(--text-disabled) */}
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-            Classificação · Grupo {group.letter}
+            {t("copa.groupsStandingsTitle", { letter: group.letter })}
           </p>
           <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 14, overflow: "hidden", marginBottom: 12 }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
                   <th style={{ padding: "8px 14px 8px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)" }}>#</th>
-                  <th style={{ padding: "8px 9px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)" }}>Artista</th>
-                  {["PJ","V","E","D","GP","GC","SG","Pts"].map((h) => (
+                  <th style={{ padding: "8px 9px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)" }}>{t("copa.groupsColArtist")}</th>
+                  {[
+                    t("copa.groupsColPlayed"),
+                    t("copa.groupsColWins"),
+                    t("copa.groupsColDraws"),
+                    t("copa.groupsColLosses"),
+                    t("copa.groupsColGoalsFor"),
+                    t("copa.groupsColGoalsAgainst"),
+                    t("copa.groupsColGoalDiff"),
+                    t("copa.groupsColPoints"),
+                  ].map((h) => (
                     <th key={h} style={{ padding: "8px 6px", textAlign: "right", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)" }}>{h}</th>
                   ))}
                 </tr>
@@ -143,7 +155,7 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                           <span style={{ color: isQual ? "var(--text)" : "var(--text-muted)" }}>{art?.artistName}</span>
                           {isMe && (
                             <span style={{ fontSize: 9, fontWeight: 700, background: "rgba(255,212,38,.15)", color: "#FFD426", padding: "2px 6px", borderRadius: 99 }}>
-                              MEU
+                              {t("copa.groupsMyBadge")}
                             </span>
                           )}
                         </div>
@@ -164,13 +176,13 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
           </div>
           {/* ✅ FIX: var(--text-muted) */}
           <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 20 }}>
-            ● 1º e 2º classificados avançam para o 1/16 de Final
+            {t("copa.groupsQualifyNote")}
           </div>
 
           {/* Fixtures */}
           {/* ✅ FIX: var(--text-muted) */}
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
-            Jogos · Grupo {group.letter}
+            {t("copa.groupsMatchesTitle", { letter: group.letter })}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {group.fixtures.map((f) => {
@@ -202,7 +214,7 @@ export function GroupsClient({ groups, userId, copaId }: Props) {
                   </div>
                   {/* ✅ Score: min-width fixo para alinhar em todas as linhas */}
                   <span style={{ fontSize: 14, fontWeight: 800, minWidth: 52, textAlign: "center", flexShrink: 0, color: f.status === "UPCOMING" ? "var(--text-muted)" : "var(--text)" }}>
-                    {f.status === "UPCOMING" ? "- vs -" : `${f.goalsA} - ${f.goalsB}`}
+                    {f.status === "UPCOMING" ? t("copa.groupsVsPlaceholder") : `${f.goalsA} - ${f.goalsB}`}
                   </span>
                   <div style={{ flex: 1, textAlign: "right" }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{artB?.artistName}</div>

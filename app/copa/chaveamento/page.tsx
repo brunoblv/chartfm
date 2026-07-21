@@ -4,12 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { BracketClient } from "./BracketClient";
 import { getVoteCounts, knockoutPendingMatchLabels } from "@/lib/copa";
 import { removePrematureKnockoutFixtures } from "@/lib/copa-knockout";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export const revalidate = 30;
 
 export default async function ChaveamentoPage() {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
+  const { t } = await getServerTranslations();
 
   const copa = await prisma.copaEdition.findFirst({
     where: { status: { not: "FINISHED" } },
@@ -19,7 +21,7 @@ export default async function ChaveamentoPage() {
   if (!copa) {
     return (
       <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma Copa ativa.
+        {t("copa.noActiveCopa")}
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import type { WeeklyReleaseData, WeeklyReleaseAlbumInfo } from "@/lib/weekly-releases";
 import { AlbumQuickRating } from "./AlbumQuickRating";
+import { useTranslations } from "@/hooks/useTranslations";
 
 function albumHue(title: string): number {
   return Math.abs(title.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
@@ -34,6 +35,7 @@ function SpotifyIcon({ size = 14 }: { size?: number }) {
 }
 
 function AlbumCard({ album }: { album: WeeklyReleaseAlbumInfo }) {
+  const { t } = useTranslations();
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: 20, background: "var(--surface)", borderRadius: 20, border: "1px solid var(--divider)", textAlign: "center" }}>
       <AlbumCover title={album.title} coverUrl={album.coverUrl} size={140} />
@@ -51,7 +53,7 @@ function AlbumCard({ album }: { album: WeeklyReleaseAlbumInfo }) {
           style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 20, background: "#1DB954", color: "white", fontSize: 12, fontWeight: 700, textDecoration: "none" }}
         >
           <SpotifyIcon size={13} />
-          Ouvir no Spotify
+          {t("criticsfm.listenOnSpotify")}
         </a>
       )}
     </div>
@@ -59,12 +61,13 @@ function AlbumCard({ album }: { album: WeeklyReleaseAlbumInfo }) {
 }
 
 export function LancamentosDaSemana({ release }: { release: WeeklyReleaseData | null }) {
+  const { t } = useTranslations();
   if (!release) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 20, border: "1px solid var(--divider)", padding: "40px 24px", textAlign: "center" }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>Nenhum lançamento esta semana</div>
-        <div style={{ fontSize: 14, color: "var(--text-muted)" }}>Os álbuns em destaque aparecerão aqui em breve.</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{t("criticsfm.noReleaseWeekShort")}</div>
+        <div style={{ fontSize: 14, color: "var(--text-muted)" }}>{t("criticsfm.featuredAlbumsWillAppear")}</div>
       </div>
     );
   }
@@ -73,11 +76,14 @@ export function LancamentosDaSemana({ release }: { release: WeeklyReleaseData | 
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>
-          Semana de {release.weekLabel}
+          {t("criticsfm.weekOfLabel", { week: release.weekLabel })}
         </span>
         <span style={{ fontSize: 13, color: "var(--text-muted)" }}>·</span>
         <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-          {release.albums.length} álbum{release.albums.length !== 1 ? "s" : ""} para ouvir
+          {t(
+            release.albums.length === 1 ? "criticsfm.albumsToListenSingular" : "criticsfm.albumsToListenPlural",
+            { count: release.albums.length },
+          )}
         </span>
       </div>
 

@@ -1,77 +1,63 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Como descobrir músicas no ChartFM | Guias ChartFM",
-  description:
-    "Use o Discover do ChartFM para encontrar novos artistas, seguir fãs de música com gosto parecido e explorar charts por gênero. Guia completo para descoberta musical.",
-  alternates: { canonical: "/guides/como-descobrir-musicas" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("guides.descobrirMetaTitle"),
+    description: t("guides.descobrirMetaDescription"),
+    alternates: { canonical: "/guides/como-descobrir-musicas" },
+  };
+}
 
-export default function GuideDescobrir() {
+export default async function GuideDescobrir() {
+  const { t } = await getServerTranslations();
   return (
     <LegalPage
-      title="Como descobrir músicas no ChartFM"
-      subtitle="Encontre novos artistas, fãs de música e tendências musicais"
+      title={t("guides.descobrirTitle")}
+      subtitle={t("guides.descobrirSubtitle")}
       sections={[
         {
-          title: "Por que descobrir música pelo ChartFM?",
-          body: [
-            "Plataformas de streaming recomendam músicas com base em algoritmos que analisam seu histórico de reprodução. O resultado é muitas vezes uma câmara de eco: você descobre mais do mesmo, raramente algo que verdadeiramente surpreende.",
-            "O ChartFM oferece uma alternativa baseada em pessoas reais. Ao seguir fãs de música com gosto musical parecido com o seu, você descobre músicas através de alguém que deliberadamente escolheu incluí-las em sua lista da semana, não porque um algoritmo as recomendou, mas porque genuinamente as valorizou.",
-            "Essa forma de descoberta é mais lenta, mas mais rica. As músicas que você encontra pelo ChartFM tendem a ser escolhas com mais contexto e significado por trás.",
-          ],
+          title: t("guides.descobrirSec1Title"),
+          body: [t("guides.descobrirSec1Body1"), t("guides.descobrirSec1Body2"), t("guides.descobrirSec1Body3")],
         },
         {
-          title: "Usando a página Discover",
-          body: [
-            "A página Discover é o ponto central de descoberta do ChartFM. Acesse pelo menu lateral para ver fãs de música em destaque da semana, rankings de artistas e músicas mais chartadas, e atalhos para explorar por gênero musical.",
-            "Os rankings exibidos no Discover são atualizados semanalmente e refletem as paradas publicadas pela comunidade naquele período. Artistas que aparecem em múltiplas charts de usuários diferentes sobem naturalmente no ranking.",
-            "Explore as abas disponíveis: a aba de Artistas mostra quem está crescendo mais rápido dentro da plataforma. A aba de Músicas mostra as faixas com mais presença nas charts da semana.",
-          ],
+          title: t("guides.descobrirSec2Title"),
+          body: [t("guides.descobrirSec2Body1"), t("guides.descobrirSec2Body2"), t("guides.descobrirSec2Body3")],
         },
         {
-          title: "Seguindo fãs de música",
-          body: [
-            "A forma mais eficiente de descobrir música no ChartFM é seguir fãs de música cujo gosto você já admira. Quando eles publicam novas paradas semanais, você recebe essas atualizações no seu feed.",
-            "Para encontrar bons fãs de música, explore o Discover e veja quem está em destaque. Clique no perfil de um fã de música para ver seu histórico de charts, que artistas ele mais defende e como seu gosto se compara ao seu.",
-            "Também é possível descobrir fãs de música através das comunidades. Membros ativos de comunidades que você frequenta costumam ter gostos alinhados com o seu, tornando-os candidatos naturais para seguir.",
-          ],
+          title: t("guides.descobrirSec3Title"),
+          body: [t("guides.descobrirSec3Body1"), t("guides.descobrirSec3Body2"), t("guides.descobrirSec3Body3")],
         },
         {
-          title: "Explorando por gênero",
-          body: [
-            "No Discover, você pode filtrar artistas e músicas por gênero musical. Os gêneros disponíveis incluem Pop, Hip-Hop/Rap, Sertanejo, R&B/Soul, Indie/Alt, Funk, Eletrônica e K-Pop, entre outros.",
-            "Cada página de gênero exibe os artistas e músicas mais chartados dentro daquele estilo por usuários do ChartFM. É uma forma de ver o que está em alta dentro de um nicho específico, sem ser influenciado pelo que domina o ranking geral.",
-            "Se você é fã de um estilo mais específico, as páginas de gênero são especialmente úteis para descobrir artistas que a mídia mainstream raramente destaca mas que têm uma base de fãs dedicada dentro da plataforma.",
-          ],
+          title: t("guides.descobrirSec4Title"),
+          body: [t("guides.descobrirSec4Body1"), t("guides.descobrirSec4Body2"), t("guides.descobrirSec4Body3")],
         },
         {
-          title: "Usando o Global 100 como ferramenta de descoberta",
-          body: [
-            "O Global 100 não serve apenas para acompanhar o ranking, é também uma excelente ferramenta de descoberta. Músicas que aparecem no ranking foram colocadas ali por múltiplos usuários diferentes, o que indica relevância genuína.",
-            "Preste atenção especialmente nas entradas marcadas como 'nova' ou 'retorno'. Estreias no ranking muitas vezes indicam artistas ou músicas que estão ganhando força rapidamente dentro da comunidade, potenciais descobertas antes que se tornem amplamente conhecidas.",
-            "Navegue também pelo histórico de semanas anteriores. Acompanhar como um artista cresceu no ranking ao longo de meses revela trajetórias interessantes e ajuda a entender quais artistas têm bases de fãs sólidas versus aqueles que tiveram apenas um momento viral.",
-          ],
+          title: t("guides.descobrirSec5Title"),
+          body: [t("guides.descobrirSec5Body1"), t("guides.descobrirSec5Body2"), t("guides.descobrirSec5Body3")],
         },
         {
-          title: "Dica: explore o perfil dos artistas",
-          body: [
-            "Cada artista no ChartFM tem uma página de perfil com informações sobre sua discografia, histórico de aparições no ranking global e avaliações de álbuns feitas pela comunidade. Visitar o perfil de um artista que você acabou de descobrir é um bom jeito de entender rapidamente como a comunidade o percebe.",
-            "A página de perfil também mostra quais usuários mais chartaram aquele artista, o que pode ajudar a encontrar fãs de música com gosto parecido com o seu para seguir.",
-          ],
+          title: t("guides.descobrirSec6Title"),
+          body: [t("guides.descobrirSec6Body1"), t("guides.descobrirSec6Body2")],
         },
         {
-          title: "Leia também",
+          title: t("guides.descobrirSec7Title"),
           body: [
             <>
-              Explore o{" "}
-              <InstitutionalInlineLink href="/discover">Discover</InstitutionalInlineLink>, entenda{" "}
-              <InstitutionalInlineLink href="/guides/como-funciona-o-global-100">como funciona o Global 100</InstitutionalInlineLink>{" "}
-              e veja como{" "}
-              <InstitutionalInlineLink href="/guides/como-participar-de-comunidades">participar de comunidades</InstitutionalInlineLink>{" "}
-              para descobrir fãs de música com gosto parecido com o seu.
+              {t("guides.descobrirSec7Prefix")}{" "}
+              <InstitutionalInlineLink href="/discover">{t("guides.descobrirSec7Link1")}</InstitutionalInlineLink>
+              {t("guides.descobrirSec7Mid1")}{" "}
+              <InstitutionalInlineLink href="/guides/como-funciona-o-global-100">
+                {t("guides.descobrirSec7Link2")}
+              </InstitutionalInlineLink>{" "}
+              {t("guides.descobrirSec7Mid2")}{" "}
+              <InstitutionalInlineLink href="/guides/como-participar-de-comunidades">
+                {t("guides.descobrirSec7Link3")}
+              </InstitutionalInlineLink>{" "}
+              {t("guides.descobrirSec7Suffix")}
             </>,
           ],
         },

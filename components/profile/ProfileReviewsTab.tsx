@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Instagram, Trash2 } from "lucide-react";
 import { scoreBg, scoreColor, scoreLabel } from "@/lib/album-score";
 import { downloadReview, type ExportFormat } from "@/lib/review-story-export";
+import { useTranslations } from "@/hooks/useTranslations";
+
+type TFn = (key: string, params?: Record<string, string | number>) => string;
 
 export type ProfileReview = {
   id: string;
@@ -27,17 +30,18 @@ type Props = {
   isMobile?: boolean;
 };
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, t: TFn) {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return "hoje";
-  if (days === 1) return "ontem";
-  if (days < 30) return `há ${days} dias`;
+  if (days === 0) return t("profile.reviewsTimeToday");
+  if (days === 1) return t("profile.reviewsTimeYesterday");
+  if (days < 30) return t("profile.reviewsTimeDaysAgo", { days });
   const months = Math.floor(days / 30);
-  return months === 1 ? "há 1 mês" : `há ${months} meses`;
+  return months === 1 ? t("profile.reviewsTimeMonthAgo") : t("profile.reviewsTimeMonthsAgo", { months });
 }
 
 export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) {
+  const { t } = useTranslations();
   const [reviews, setReviews] = useState<ProfileReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -66,7 +70,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
   }, [fetchReviews]);
 
   const deleteReview = async (review: ProfileReview) => {
-    if (!confirm("Excluir esta review?")) return;
+    if (!confirm(t("profile.reviewsDeleteConfirm"))) return;
     setDeletingId(review.id);
     try {
       const res = await fetch(`/api/albums/${review.album.id}/reviews/${review.id}`, { method: "DELETE" });
@@ -103,7 +107,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
   if (loading && reviews.length === 0) {
     return (
       <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 15 }}>
-        Carregando reviews…
+        {t("profile.reviewsLoading")}
       </div>
     );
   }
@@ -113,14 +117,14 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center" }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>📝</div>
         <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>
-          {isOwn ? "Você ainda não avaliou nenhum álbum" : "Nenhuma review publicada ainda"}
+          {isOwn ? t("profile.reviewsEmptyOwn") : t("profile.reviewsEmptyOther")}
         </p>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: isOwn ? 20 : 0 }}>
-          {isOwn ? "Explore álbuns no CriticsFM e compartilhe sua opinião." : "Quando houver reviews elas aparecerão aqui."}
+          {isOwn ? t("profile.reviewsEmptyOwnDesc") : t("profile.reviewsEmptyOtherDesc")}
         </p>
         {isOwn && (
           <Link href="/criticsfm" style={{ color: "#FA243C", fontWeight: 700, textDecoration: "none", fontSize: 15 }}>
-            Ir para o CriticsFM →
+            {t("profile.reviewsGoToCriticsFM")}
           </Link>
         )}
       </div>
@@ -130,7 +134,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
   return (
     <div>
       <div style={{ marginBottom: 16, fontSize: 14, color: "var(--text-muted)" }}>
-        <span style={{ fontWeight: 700, color: "var(--text)" }}>{total}</span> review{total === 1 ? "" : "s"}
+        <span style={{ fontWeight: 700, color: "var(--text)" }}>{total}</span> {t(total === 1 ? "profile.reviewsCountSingular" : "profile.reviewsCountPlural")}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
@@ -175,7 +179,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
                       {review.album.artistName}
                     </div>
                   </Link>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>{timeAgo(review.createdAt)}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>{timeAgo(review.createdAt, t)}</div>
                 </div>
                 <div
                   style={{
@@ -206,7 +210,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
                 </div>
               ) : (
                 <div style={{ padding: "0 20px 16px", fontSize: 13, color: "var(--text-muted)", fontStyle: "italic" }}>
-                  Apenas nota, sem texto
+                  {t("profile.reviewsOnlyRating")}
                 </div>
               )}
 
@@ -224,7 +228,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
                   href={`/criticsfm/${review.album.id}`}
                   style={{ fontSize: 13, color: "#FA243C", fontWeight: 600, textDecoration: "none", marginRight: "auto" }}
                 >
-                  Ver álbum →
+                  {t("profile.reviewsViewAlbum")}
                 </Link>
                 {isOwn && (
                   <>
@@ -233,40 +237,40 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
                       onClick={() => exportImage(review, "story")}
                       disabled={exporting?.id === review.id}
                       style={actionBtnStyle}
-                      title="Baixar imagem para story do Instagram"
+                      title={t("profile.reviewsDownloadStoryTooltip")}
                     >
                       <Instagram size={15} />
-                      {exporting?.id === review.id && exporting.type === "story" ? "Baixando…" : "Story"}
+                      {exporting?.id === review.id && exporting.type === "story" ? t("profile.reviewsDownloading") : t("profile.reviewsStory")}
                     </button>
                     <button
                       type="button"
                       onClick={() => exportImage(review, "square")}
                       disabled={exporting?.id === review.id}
                       style={actionBtnStyle}
-                      title="Baixar imagem quadrada para feed do Instagram"
+                      title={t("profile.reviewsDownloadSquareTooltip")}
                     >
                       <Instagram size={15} />
-                      {exporting?.id === review.id && exporting.type === "square" ? "Baixando…" : "Quadrado"}
+                      {exporting?.id === review.id && exporting.type === "square" ? t("profile.reviewsDownloading") : t("profile.reviewsSquare")}
                     </button>
                     <button
                       type="button"
                       onClick={() => exportImage(review, "twitter")}
                       disabled={exporting?.id === review.id}
                       style={actionBtnStyle}
-                      title="Baixar imagem retangular para post no X (Twitter)"
+                      title={t("profile.reviewsDownloadTwitterTooltip")}
                     >
                       <IconX size={14} />
-                      {exporting?.id === review.id && exporting.type === "twitter" ? "Baixando…" : "X"}
+                      {exporting?.id === review.id && exporting.type === "twitter" ? t("profile.reviewsDownloading") : "X"}
                     </button>
                     <button
                       type="button"
                       onClick={() => deleteReview(review)}
                       disabled={deletingId === review.id}
                       style={{ ...actionBtnStyle, color: "#C5291C" }}
-                      title="Excluir review"
+                      title={t("profile.reviewsDeleteTooltip")}
                     >
                       <Trash2 size={15} />
-                      {deletingId === review.id ? "…" : "Excluir"}
+                      {deletingId === review.id ? "…" : t("profile.reviewsDelete")}
                     </button>
                   </>
                 )}
@@ -284,7 +288,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
             onClick={() => fetchReviews(page - 1)}
             style={pageBtnStyle}
           >
-            ← Anterior
+            {t("profile.reviewsPrev")}
           </button>
           <span style={{ fontSize: 13, color: "var(--text-muted)", alignSelf: "center", padding: "0 8px" }}>
             {page} / {totalPages}
@@ -295,7 +299,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
             onClick={() => fetchReviews(page + 1)}
             style={pageBtnStyle}
           >
-            Próxima →
+            {t("profile.reviewsNext")}
           </button>
         </div>
       )}

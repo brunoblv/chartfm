@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ChevronLeft, ImagePlus, X } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const ICONS = ["🎵", "🎸", "🎤", "🎹", "🥁", "🎺", "🎻", "🎷", "🎧", "🔥", "👑", "💿"];
 const PALETTES: [string, string][] = [
@@ -21,6 +22,7 @@ const LOGO_MAX_BYTES = 1 * 1024 * 1024;
 
 export default function CreateCommunityPage() {
   const router = useRouter();
+  const { t } = useTranslations();
   const { data: session, status } = useSession();
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
@@ -55,11 +57,11 @@ export default function CreateCommunityPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setLogoError("Envie um arquivo de imagem (JPG, PNG ou WebP).");
+      setLogoError(t("communities.createLogoTypeError"));
       return;
     }
     if (file.size > LOGO_MAX_BYTES) {
-      setLogoError("A imagem deve ter no máximo 1 MB.");
+      setLogoError(t("communities.createLogoSizeError"));
       return;
     }
     setLogoFile(file);
@@ -86,13 +88,13 @@ export default function CreateCommunityPage() {
       return;
     }
     const n = name.trim();
-    const t = tagline.trim();
+    const desc = tagline.trim();
     if (n.length < 2) {
-      setSubmitError("Informe um nome com pelo menos 2 caracteres.");
+      setSubmitError(t("communities.createNameTooShort"));
       return;
     }
-    if (t.length < 3) {
-      setSubmitError("Informe uma descrição curta com pelo menos 3 caracteres.");
+    if (desc.length < 3) {
+      setSubmitError(t("communities.createTaglineTooShort"));
       return;
     }
 
@@ -101,11 +103,11 @@ export default function CreateCommunityPage() {
       try {
         logoUrl = await readLogoDataUrl(logoFile);
       } catch {
-        setSubmitError("Não foi possível ler a imagem do logo.");
+        setSubmitError(t("communities.createLogoReadError"));
         return;
       }
       if (logoUrl.length > 1_400_000) {
-        setSubmitError("Logo muito grande. Tente uma imagem menor (até 1 MB).");
+        setSubmitError(t("communities.createLogoTooLarge"));
         return;
       }
     }
@@ -117,7 +119,7 @@ export default function CreateCommunityPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: n,
-          tagline: t,
+          tagline: desc,
           icon,
           coverA: palette[0],
           coverB: palette[1],
@@ -127,13 +129,13 @@ export default function CreateCommunityPage() {
       });
       const data = (await res.json()) as { slug?: string; error?: string };
       if (!res.ok) {
-        setSubmitError(data.error ?? "Não foi possível publicar.");
+        setSubmitError(data.error ?? t("communities.createPublishError"));
         return;
       }
       if (data.slug) router.push(`/community/${encodeURIComponent(data.slug)}`);
-      else setSubmitError("Resposta inválida do servidor.");
+      else setSubmitError(t("communities.createInvalidResponse"));
     } catch {
-      setSubmitError("Erro de rede. Tente novamente.");
+      setSubmitError(t("communities.createNetworkError"));
     } finally {
       setSubmitting(false);
     }
@@ -145,10 +147,10 @@ export default function CreateCommunityPage() {
         <div style={{ marginBottom: 32 }}>
           <Link href="/communities" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#86868B", fontSize: 14, textDecoration: "none", marginBottom: 12 }}>
             <ChevronLeft size={16} />
-            Voltar para comunidades
+            {t("communities.createBack")}
           </Link>
-          <h1 style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.05 }}>Criar comunidade</h1>
-          <p style={{ fontSize: 15, color: "#86868B", marginTop: 8, marginBottom: 0 }}>Monte um espaço para sua tribo musical</p>
+          <h1 style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.05 }}>{t("communities.createTitle")}</h1>
+          <p style={{ fontSize: 15, color: "#86868B", marginTop: 8, marginBottom: 0 }}>{t("communities.createSubtitle")}</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
@@ -156,11 +158,11 @@ export default function CreateCommunityPage() {
           <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 28, display: "flex", flexDirection: "column", gap: 22 }}>
             {/* Name */}
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>Nome da comunidade</label>
+              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>{t("communities.createNameLabel")}</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Indie BR, Pop 2000s..."
+                placeholder={t("communities.createNamePlaceholder")}
                 style={{ width: "100%", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none" }}
               />
             </div>
@@ -168,13 +170,13 @@ export default function CreateCommunityPage() {
             {/* Tagline */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>
-                Descrição curta
-                <span style={{ fontSize: 12, color: "#86868B", fontWeight: 400, marginLeft: 6 }}>máx 80 chars</span>
+                {t("communities.createTaglineLabel")}
+                <span style={{ fontSize: 12, color: "#86868B", fontWeight: 400, marginLeft: 6 }}>{t("communities.createTaglineMax")}</span>
               </label>
               <input
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value.slice(0, 80))}
-                placeholder="Uma frase sobre sua comunidade..."
+                placeholder={t("communities.createTaglinePlaceholder")}
                 style={{ width: "100%", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none" }}
               />
               <div style={{ fontSize: 11, color: "#86868B", textAlign: "right", marginTop: 4 }}>{tagline.length}/80</div>
@@ -182,9 +184,9 @@ export default function CreateCommunityPage() {
 
             {/* Logo (square photo) */}
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>Logo da comunidade</label>
+              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>{t("communities.createLogoLabel")}</label>
               <p style={{ fontSize: 12, color: "#86868B", margin: "0 0 10px 0", lineHeight: 1.5 }}>
-                Envie uma foto quadrada (recomendado 512×512 px ou maior). Ela aparecerá como identidade visual da comunidade.
+                {t("communities.createLogoHint")}
               </p>
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={onLogoFileChange} style={{ display: "none" }} />
               <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
@@ -204,7 +206,7 @@ export default function CreateCommunityPage() {
                 >
                   {logoPreview ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoPreview} alt="Prévia do logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={logoPreview} alt={t("communities.createLogoPreviewAlt")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
                     <ImagePlus size={28} color="#86868B" strokeWidth={1.5} />
                   )}
@@ -225,7 +227,7 @@ export default function CreateCommunityPage() {
                       cursor: "pointer",
                     }}
                   >
-                    Escolher imagem
+                    {t("communities.createChooseImage")}
                   </button>
                   {logoPreview && (
                     <button
@@ -247,7 +249,7 @@ export default function CreateCommunityPage() {
                       }}
                     >
                       <X size={14} />
-                      Remover foto
+                      {t("communities.createRemovePhoto")}
                     </button>
                   )}
                 </div>
@@ -257,8 +259,8 @@ export default function CreateCommunityPage() {
 
             {/* Icon fallback when no logo */}
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: "block" }}>Ícone alternativo</label>
-              <p style={{ fontSize: 12, color: "#86868B", margin: "0 0 10px 0" }}>Usado na prévia se você não enviar uma foto de logo.</p>
+              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: "block" }}>{t("communities.createIconLabel")}</label>
+              <p style={{ fontSize: 12, color: "#86868B", margin: "0 0 10px 0" }}>{t("communities.createIconHint")}</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {ICONS.map((ic) => (
                   <button
@@ -286,7 +288,7 @@ export default function CreateCommunityPage() {
 
             {/* Cover color */}
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, display: "block" }}>Cor de capa</label>
+              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, display: "block" }}>{t("communities.createCoverLabel")}</label>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {PALETTES.map((p, i) => (
                   <button
@@ -310,7 +312,7 @@ export default function CreateCommunityPage() {
 
             {/* Privacy */}
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, display: "block" }}>Privacidade</label>
+              <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 10, display: "block" }}>{t("communities.createPrivacyLabel")}</label>
               <div style={{ display: "flex", gap: 12 }}>
                 {(["public", "private"] as const).map((p) => (
                   <button
@@ -327,9 +329,9 @@ export default function CreateCommunityPage() {
                       background: privacy === p ? "rgba(250,36,60,0.04)" : "white",
                     }}
                   >
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{p === "public" ? "🌍 Pública" : "🔒 Privada"}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{p === "public" ? t("communities.createPublicOption") : t("communities.createPrivateOption")}</div>
                     <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>
-                      {p === "public" ? "Qualquer pessoa pode entrar" : "Apenas por convite"}
+                      {p === "public" ? t("communities.createPublicDesc") : t("communities.createPrivateDesc")}
                     </div>
                   </button>
                 ))}
@@ -359,7 +361,7 @@ export default function CreateCommunityPage() {
                 opacity: submitting || status === "loading" ? 0.75 : 1,
               }}
             >
-              {submitting ? "Publicando…" : "Publicar comunidade"}
+              {submitting ? t("communities.createPublishing") : t("communities.createPublish")}
             </button>
           </div>
 
@@ -407,12 +409,12 @@ export default function CreateCommunityPage() {
                     borderRadius: 20,
                   }}
                 >
-                  0 membros
+                  {t("communities.createPreviewZeroMembers")}
                 </div>
               </div>
               <div style={{ padding: "16px 18px 18px" }}>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>{name || "Nome da comunidade"}</div>
-                <div style={{ fontSize: 13, color: "#86868B", marginTop: 4, marginBottom: 14 }}>{tagline || "Descrição curta aqui"}</div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>{name || t("communities.createPreviewNamePlaceholder")}</div>
+                <div style={{ fontSize: 13, color: "#86868B", marginTop: 4, marginBottom: 14 }}>{tagline || t("communities.createPreviewTaglinePlaceholder")}</div>
                 <button
                   type="button"
                   style={{
@@ -427,7 +429,7 @@ export default function CreateCommunityPage() {
                     cursor: "default",
                   }}
                 >
-                  Participar
+                  {t("communities.createPreviewJoin")}
                 </button>
               </div>
             </div>
@@ -440,11 +442,11 @@ export default function CreateCommunityPage() {
                 padding: 20,
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Como funciona a Parada da Comunidade</div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("communities.createHowChartWorksTitle")}</div>
               <ul style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.7, paddingLeft: 16, margin: 0 }}>
-                <li>Membros publicam suas paradas semanais</li>
-                <li>Cada semana gera um snapshot congelado (como o Global 100)</li>
-                <li>Membros novos não alteram semanas já publicadas</li>
+                <li>{t("communities.createHowChartWorksItem1")}</li>
+                <li>{t("communities.createHowChartWorksItem2")}</li>
+                <li>{t("communities.createHowChartWorksItem3")}</li>
               </ul>
             </div>
           </div>

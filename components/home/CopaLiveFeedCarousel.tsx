@@ -5,11 +5,13 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CopaArtistAvatar } from "@/app/copa/CopaArtistAvatar";
 import type { CopaLiveFeedData, CopaLiveFeedFixture } from "@/lib/copa-live-feed";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const SLIDE_MS = 5500;
 const REFRESH_MS = 12000;
 
 function LiveBadge() {
+  const { t } = useTranslations();
   return (
     <span
       style={{
@@ -36,12 +38,13 @@ function LiveBadge() {
           animation: "copaFeedPulse 1.4s ease-in-out infinite",
         }}
       />
-      Ao vivo
+      {t("copaLiveFeed.live")}
     </span>
   );
 }
 
 function FixtureSlide({ f }: { f: CopaLiveFeedFixture }) {
+  const { t } = useTranslations();
   const totalVotes = f.votesA + f.votesB || 1;
   const pctA = (f.votesA / totalVotes) * 100;
 
@@ -75,7 +78,7 @@ function FixtureSlide({ f }: { f: CopaLiveFeedFixture }) {
             </span>
           </div>
           <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", marginTop: 4 }}>
-            {f.votesA} × {f.votesB} votos
+            {f.votesA} × {f.votesB} {t("copaLiveFeed.votes")}
           </div>
         </div>
 
@@ -106,14 +109,15 @@ function FixtureSlide({ f }: { f: CopaLiveFeedFixture }) {
 
       <div style={{ textAlign: "center", marginTop: 12, fontSize: 13, fontWeight: 700, color: f.myVote ? "var(--up-fg)" : "var(--accent)" }}>
         {f.myVote
-          ? `✓ Você votou em ${f.myVote === "A" ? f.artistA.artistName : f.artistB.artistName}`
-          : "Toque para votar nesta disputa →"}
+          ? t("copaLiveFeed.youVotedFor", { name: f.myVote === "A" ? f.artistA.artistName : f.artistB.artistName })
+          : t("copaLiveFeed.tapToVote")}
       </div>
     </div>
   );
 }
 
 export function CopaLiveFeedCarousel({ initial }: { initial: CopaLiveFeedData }) {
+  const { t } = useTranslations();
   const [data, setData] = useState(initial);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -183,7 +187,7 @@ export function CopaLiveFeedCarousel({ initial }: { initial: CopaLiveFeedData })
             ⚽ {data.copaName}
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-            {total} {total === 1 ? "disputa ao vivo" : "disputas ao vivo"} - vote agora
+            {total} {total === 1 ? t("copaLiveFeed.liveDisputeSingular") : t("copaLiveFeed.liveDisputePlural")}
           </div>
         </div>
         <LiveBadge />
@@ -207,7 +211,7 @@ export function CopaLiveFeedCarousel({ initial }: { initial: CopaLiveFeedData })
             <button
               type="button"
               onClick={prev}
-              aria-label="Disputa anterior"
+              aria-label={t("copaLiveFeed.prevDispute")}
               style={{
                 width: 28,
                 height: 28,
@@ -228,7 +232,7 @@ export function CopaLiveFeedCarousel({ initial }: { initial: CopaLiveFeedData })
                 <button
                   key={f.id}
                   type="button"
-                  aria-label={`Ir para disputa ${i + 1}`}
+                  aria-label={t("copaLiveFeed.goToDispute", { n: i + 1 })}
                   onClick={() => setIndex(i)}
                   style={{
                     width: i === safeIndex ? 18 : 6,
@@ -246,7 +250,7 @@ export function CopaLiveFeedCarousel({ initial }: { initial: CopaLiveFeedData })
             <button
               type="button"
               onClick={next}
-              aria-label="Próxima disputa"
+              aria-label={t("copaLiveFeed.nextDispute")}
               style={{
                 width: 28,
                 height: 28,
@@ -277,7 +281,7 @@ export function CopaLiveFeedCarousel({ initial }: { initial: CopaLiveFeedData })
             whiteSpace: "nowrap",
           }}
         >
-          Ver todos →
+          {t("copaLiveFeed.viewAll")}
         </Link>
       </div>
 

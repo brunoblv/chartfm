@@ -4,6 +4,7 @@ import {
   EDITORIAL_CATEGORY_LABELS,
   type EditorialPick,
 } from "@/lib/editorial-picks-data";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 type Props = {
   pick: EditorialPick;
@@ -19,8 +20,8 @@ type Props = {
   stacked?: boolean;
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", {
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso + "T12:00:00").toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -34,7 +35,8 @@ export function estimateReadingMinutes(pick: EditorialPick): number {
   return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
 }
 
-export function EditorialPostPreviewCard({ pick, previewImage, variant = "full", stacked = false }: Props) {
+export async function EditorialPostPreviewCard({ pick, previewImage, variant = "full", stacked = false }: Props) {
+  const { t, locale } = await getServerTranslations();
   const hasYoutube = Boolean(pick.youtubeUrl);
   const hasSpotify = Boolean(pick.spotifyUrl);
 
@@ -66,7 +68,7 @@ export function EditorialPostPreviewCard({ pick, previewImage, variant = "full",
               marginBottom: 10,
             }}
           >
-            {EDITORIAL_CATEGORY_LABELS[pick.category]} · Em destaque
+            {EDITORIAL_CATEGORY_LABELS[pick.category]} · {t("editorial.featuredBadge")}
           </span>
           <div
             style={{
@@ -97,7 +99,7 @@ export function EditorialPostPreviewCard({ pick, previewImage, variant = "full",
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "var(--text-muted)" }}>
             <span>{pick.author}</span>
             <span>·</span>
-            <span>{estimateReadingMinutes(pick)} min de leitura</span>
+            <span>{t("editorial.readTime", { min: estimateReadingMinutes(pick) })}</span>
           </div>
         </div>
         <div
@@ -260,7 +262,7 @@ export function EditorialPostPreviewCard({ pick, previewImage, variant = "full",
             {pick.author} · {estimateReadingMinutes(pick)} min
           </div>
         </div>
-        <div style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: "var(--accent)" }}>Ler →</div>
+        <div style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: "var(--accent)" }}>{t("editorial.readRow")}</div>
       </Link>
     );
   }
@@ -355,7 +357,7 @@ export function EditorialPostPreviewCard({ pick, previewImage, variant = "full",
             >
               {EDITORIAL_CATEGORY_LABELS[pick.category]}
             </span>
-            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{formatDate(pick.publishedAt)}</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{formatDate(pick.publishedAt, locale)}</span>
           </div>
 
           <h2
@@ -375,7 +377,7 @@ export function EditorialPostPreviewCard({ pick, previewImage, variant = "full",
             {pick.title}
           </h2>
 
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>Ler artigo completo →</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{t("editorial.readArticle")}</span>
         </div>
       </Link>
     );
@@ -484,7 +486,7 @@ export function EditorialPostPreviewCard({ pick, previewImage, variant = "full",
           >
             {EDITORIAL_CATEGORY_LABELS[pick.category]}
           </span>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{formatDate(pick.publishedAt)}</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{formatDate(pick.publishedAt, locale)}</span>
         </div>
 
         <h2
@@ -521,7 +523,7 @@ export function EditorialPostPreviewCard({ pick, previewImage, variant = "full",
           {pick.excerpt}
         </p>
 
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>Ler artigo completo →</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>{t("editorial.readArticle")}</span>
       </div>
     </Link>
   );

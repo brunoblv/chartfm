@@ -7,39 +7,62 @@ import {
   InstitutionalTitle,
 } from "@/components/institutional/InstitutionalPrimitives";
 import { GUIDES } from "@/lib/content/helpContent";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Guias | ChartFM",
-  description:
-    "Aprenda a usar o ChartFM: criar paradas, seguir usuários, entender o feed e os rankings globais.",
-  alternates: { canonical: "/guides" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("guides.indexMetaTitle"),
+    description: t("guides.indexMetaDescription"),
+    alternates: { canonical: "/guides" },
+  };
+}
 
-export default function GuidesPage() {
+const CARD_KEYS = [
+  "cardCriarParada",
+  "cardTemporadas",
+  "cardSeguir",
+  "cardFeed",
+  "cardPontuacao",
+  "cardPrivacidade",
+  "cardComunidades",
+  "cardDescobrir",
+  "cardAvaliar",
+  "cardImportar",
+  "cardCopa",
+  "cardFormula",
+  "cardGlossario",
+] as const;
+
+export default async function GuidesPage() {
+  const { t } = await getServerTranslations();
+
   return (
     <InstitutionalLayout>
-      <InstitutionalTitle subtitle="Aprenda a usar o ChartFM do zero ou tire dúvidas específicas.">
-        Guias
-      </InstitutionalTitle>
+      <InstitutionalTitle subtitle={t("guides.indexSubtitle")}>{t("guides.indexTitle")}</InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {GUIDES.map((guide) => (
-          <InstitutionalIconCard
-            key={guide.title}
-            icon={guide.icon}
-            title={guide.title}
-            description={guide.body}
-            href={guide.href}
-          />
-        ))}
+        {GUIDES.map((guide, index) => {
+          const key = CARD_KEYS[index];
+          return (
+            <InstitutionalIconCard
+              key={guide.title}
+              icon={guide.icon}
+              title={t(`guides.${key}Title`)}
+              description={t(`guides.${key}Body`)}
+              href={guide.href}
+            />
+          );
+        })}
       </div>
 
       <div style={{ marginTop: 32 }}>
         <InstitutionalMutedCallout>
-          Não encontrou o que procurava? Veja também as{" "}
-          <InstitutionalInlineLink href="/faq">Perguntas frequentes</InstitutionalInlineLink> ou envie sua dúvida pela
-          página <InstitutionalInlineLink href="/contact">Contato</InstitutionalInlineLink> - respondemos em até 2 dias
-          úteis.
+          {t("guides.indexCalloutPrefix")}{" "}
+          <InstitutionalInlineLink href="/faq">{t("guides.indexCalloutFaqLink")}</InstitutionalInlineLink>{" "}
+          {t("guides.indexCalloutMiddle")}{" "}
+          <InstitutionalInlineLink href="/contact">{t("guides.indexCalloutContactLink")}</InstitutionalInlineLink>{" "}
+          {t("guides.indexCalloutSuffix")}
         </InstitutionalMutedCallout>
       </div>
     </InstitutionalLayout>

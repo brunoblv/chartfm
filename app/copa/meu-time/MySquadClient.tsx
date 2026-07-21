@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { COPA_SINGLES_COUNT, SLOT_LABELS, applyCopaSingleMoveFromEditable, getLockedSlotIndexes, isSingleSlotEditableInWindow, mergeArtistSingles, validateArtistSingleAssignment, type CopaSinglesEditWindow, type LockedSingleSlot } from "@/lib/copa";
 import { readCopaSongDrag, slotDropKey, writeCopaSongDrag } from "@/lib/copa-song-dnd";
 import { searchCopaSongs } from "@/lib/copa-song-search-client";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type SingleData = { slotIndex: number; songName: string; songId: string | null };
 
@@ -46,6 +47,7 @@ type SpotifyArtist = {
 
 export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWindow, myArtists: initArtists, takenSpotifyIds }: Props) {
   const router = useRouter();
+  const { t } = useTranslations();
   const [artists, setArtists] = useState(initArtists);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQ, setSearchQ] = useState("");
@@ -98,7 +100,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
   function openReplaceModal(artistId: string, artistName: string) {
     const art = artists.find((a) => a.id === artistId);
     const hasSongs = art?.singles.some((s) => !s.songName.startsWith("Single "));
-    if (hasSongs && !confirm(`Trocar ${artistName}? As músicas já escolhidas para esse artista serão perdidas.`)) {
+    if (hasSongs && !confirm(t("copa.squadConfirmReplaceArtist", { name: artistName }))) {
       return;
     }
     setReplaceTarget({ id: artistId, name: artistName });
@@ -123,7 +125,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.error ?? "Erro ao cadastrar artista");
+        alert(err.error ?? t("copa.squadErrorAddArtist"));
         return;
       }
       const { artist } = await res.json();
@@ -164,7 +166,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.error ?? "Erro ao remover artista");
+        alert(err.error ?? t("copa.squadErrorRemoveArtist"));
         return;
       }
       setArtists((prev) => prev.filter((a) => a.id !== artistId));
@@ -197,7 +199,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      alert(err.error ?? "Não foi possível salvar a música");
+      alert(err.error ?? t("copa.squadErrorSaveSong"));
       return false;
     }
     const json = await res.json();
@@ -225,7 +227,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
     const art = artists.find((a) => a.id === artistId);
     if (!art) return false;
     if (!isSingleSlotEditableInWindow(slotIndex, editWindow, art.slotLocks, artistId)) {
-      alert("Este slot não pode ser alterado agora.");
+      alert(t("copa.squadSlotLockedAlert"));
       return false;
     }
 
@@ -259,7 +261,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
       !isSingleSlotEditableInWindow(fromSlotIndex, editWindow, art.slotLocks, artistId) ||
       !isSingleSlotEditableInWindow(toSlotIndex, editWindow, art.slotLocks, artistId)
     ) {
-      alert("Um ou mais slots não podem ser alterados agora.");
+      alert(t("copa.squadSlotsLockedAlert"));
       return false;
     }
 
@@ -289,7 +291,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
     const art = artists.find((a) => a.id === artistId);
     if (!art) return false;
     if (!isSingleSlotEditableInWindow(slotIndex, editWindow, art.slotLocks, artistId)) {
-      alert("Este slot não pode ser alterado agora.");
+      alert(t("copa.squadSlotLockedAlert"));
       return false;
     }
     setSavingSingle(true);
@@ -316,7 +318,14 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
     if (!art) return;
     const slots = clearableSlots(art);
     if (slots.length === 0) return;
-    if (!confirm(`Limpar as ${slots.length} música${slots.length !== 1 ? "s" : ""} de ${art.artistName}? Fases já disputadas não são alteradas.`)) {
+    if (
+      !confirm(
+        t(slots.length !== 1 ? "copa.squadConfirmClearSongsPlural" : "copa.squadConfirmClearSongsSingular", {
+          count: slots.length,
+          name: art.artistName,
+        }),
+      )
+    ) {
       return;
     }
     setSavingSingle(true);
@@ -370,17 +379,17 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
   return (
     <div>
       <div style={{ padding: "24px 24px 0" }}>
-        <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>Meu Time</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>{t("copa.squadPageTitle")}</h1>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, marginBottom: 20 }}>
           {claiming
-            ? `${artists.length}/${maxArtists} artistas · escolha seu time, depois você define as músicas`
+            ? t("copa.squadSubtitleClaiming", { count: artists.length, max: maxArtists })
             : isRegistration
-              ? "Time completo! Agora escolha as músicas de cada artista"
+              ? t("copa.squadSubtitleRosterComplete")
               : editWindow.open
                 ? isMobile
-                  ? "Toque na música ou em Editável para escolher · ordene com ↑↓, trocar ou posição"
-                  : "Toque na música ou em Editável, use ✏ ou arraste entre slots editáveis"
-                : "Visualize suas músicas · edição indisponível agora"}
+                  ? t("copa.squadSubtitleEditableMobile")
+                  : t("copa.squadSubtitleEditableDesktop")
+                : t("copa.squadSubtitleReadOnly")}
         </div>
       </div>
 
@@ -407,7 +416,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                 onClick={() => removeArtist(art.id)}
                 disabled={adding}
                 style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 4px" }}
-                aria-label="Remover artista"
+                aria-label={t("copa.squadRemoveArtistAria")}
               >
                 ×
               </button>
@@ -433,11 +442,14 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
             }}
           >
             <span style={{ fontSize: 20 }}>+</span>
-            Adicionar artista ({artists.length}/{maxArtists})
+            {t("copa.squadAddArtistButton", { count: artists.length, max: maxArtists })}
           </div>
 
           <div style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", marginTop: 8 }}>
-            Faltam {maxArtists - artists.length} artista{maxArtists - artists.length !== 1 ? "s" : ""} para liberar a escolha das músicas.
+            {t(
+              maxArtists - artists.length !== 1 ? "copa.squadMissingArtistsPlural" : "copa.squadMissingArtistsSingular",
+              { n: maxArtists - artists.length },
+            )}
           </div>
         </div>
       )}
@@ -460,14 +472,14 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
           {editWindow.open ? (
             <>
               <strong style={{ color: "var(--up-fg)" }}>
-                {isRegistration ? "Inscrições abertas." : "Janela de edição aberta."}
+                {isRegistration ? t("copa.squadRegistrationOpenStrong") : t("copa.squadEditWindowOpenStrong")}
               </strong>{" "}
-              {editWindow.message} Cada música só pode ser usada uma vez por artista.
-              {isRegistration && " O sorteio dos grupos acontece quando todos terminarem."}
+              {editWindow.message}{t("copa.squadOneSongPerArtist")}
+              {isRegistration && t("copa.squadDrawNote")}
             </>
           ) : (
             <>
-              <strong style={{ color: "var(--text)" }}>Edição fechada.</strong>{" "}
+              <strong style={{ color: "var(--text)" }}>{t("copa.squadEditClosedStrong")}</strong>{" "}
               {editWindow.message}
             </>
           )}
@@ -492,8 +504,8 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                   <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em" }}>{art.artistName}</div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
                     {isRegistration
-                      ? "Defina as músicas"
-                      : `Grupo ${art.groupLetter} · ${art.standings.pts}pts · ${art.standings.pj} PJ`}
+                      ? t("copa.squadDefineSongs")
+                      : t("copa.squadGroupStatsLabel", { letter: art.groupLetter, pts: art.standings.pts, pj: art.standings.pj })}
                   </div>
                 </div>
                 {clearableSlots(art).length > 0 && (
@@ -512,7 +524,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                       marginRight: 6,
                     }}
                   >
-                    Limpar músicas
+                    {t("copa.squadClearSongsButton")}
                   </button>
                 )}
                 {isRegistration ? (
@@ -530,15 +542,15 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                       cursor: adding ? "not-allowed" : "pointer",
                     }}
                   >
-                    Trocar
+                    {t("copa.squadReplaceButton")}
                   </button>
                 ) : qual ? (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "var(--up-bg)", color: "var(--up-fg)", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    ✓ Classificado
+                    {t("copa.squadQualifiedBadge")}
                   </span>
                 ) : (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "var(--fill-inset)", color: "var(--text-muted)", padding: "4px 9px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Em andamento
+                    {t("copa.squadInProgressBadge")}
                   </span>
                 )}
               </div>
@@ -616,7 +628,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                           openArtistEditor(art.id, i);
                         }}
                       >
-                        {isEmpty ? (canEdit ? "Escolher música…" : "-") : single!.songName}
+                        {isEmpty ? (canEdit ? t("copa.squadChooseSongPlaceholder") : "-") : single!.songName}
                         {canEdit && (
                           <span style={{ color: "var(--text-muted)", marginLeft: 4, fontSize: 10 }}>✏</span>
                         )}
@@ -641,7 +653,7 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                           flexShrink: 0,
                         }}
                       >
-                        Editável
+                        {t("copa.squadEditableBadge")}
                       </button>
                     ) : (
                     <span
@@ -668,11 +680,11 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                     >
                       {lock
                         ? lock.status === "LIVE"
-                          ? "Em jogo"
-                          : "Disputado"
+                          ? t("copa.squadStatusLive")
+                          : t("copa.squadStatusDisputed")
                         : editWindow.competingArtistIds?.length
-                          ? "Eliminado"
-                          : "Fechado"}
+                          ? t("copa.squadStatusEliminated")
+                          : t("copa.squadStatusClosed")}
                     </span>
                     )}
                   </div>
@@ -697,19 +709,19 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid var(--divider)", flexShrink: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 800 }}>
-                {replaceTarget ? `Trocar ${replaceTarget.name}` : "Adicionar Artista"}
+                {replaceTarget ? t("copa.squadModalReplaceTitle", { name: replaceTarget.name }) : t("copa.squadModalAddTitle")}
               </div>
               <button onClick={closeAddModal} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 26, cursor: "pointer", lineHeight: 1 }}>×</button>
             </div>
             <div style={{ overflowY: "auto", flex: 1, padding: "14px 20px" }}>
               {copaType === "PUSH" && (
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", background: "var(--fill-inset)", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
-                  Copa Push: só artistas com menos de 1.500.000 ouvintes mensais no Spotify podem ser escolhidos.
+                  {t("copa.squadPushNote")}
                 </div>
               )}
               <input
                 autoFocus
-                placeholder="Buscar artista no Spotify…"
+                placeholder={t("copa.squadSearchPlaceholder")}
                 value={searchQ}
                 onChange={(e) => searchArtists(e.target.value)}
                 style={{
@@ -728,12 +740,12 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
               />
               {searching && (
                 <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>
-                  Buscando…
+                  {t("copa.squadSearchingLabel")}
                 </div>
               )}
               {!searching && searchQ.length > 1 && searchResults.length === 0 && (
                 <div style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>
-                  Nenhum artista encontrado.
+                  {t("copa.squadNoArtistsFound")}
                 </div>
               )}
               {searchResults.map((art) => {
@@ -764,12 +776,12 @@ export function MySquadClient({ copaId, copaStatus, copaType, maxArtists, editWi
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 700 }}>{art.name}</div>
                       <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                        {taken ? "Já cadastrado por outro participante" : art.genres.slice(0, 2).join(", ") || "Artista"}
+                        {taken ? t("copa.squadArtistTaken") : art.genres.slice(0, 2).join(", ") || t("copa.squadArtistFallbackLabel")}
                       </div>
                     </div>
                     {!taken && (
                       <span style={{ fontSize: 10, fontWeight: 700, background: "var(--up-bg)", color: "var(--up-fg)", padding: "3px 8px", borderRadius: 99 }}>
-                        Livre
+                        {t("copa.squadFreeBadge")}
                       </span>
                     )}
                   </div>

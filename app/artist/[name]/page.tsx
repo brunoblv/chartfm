@@ -23,6 +23,9 @@ import { getSpotifyArtistById } from "@/lib/spotify-server";
 import { publishedPrimaryParadaChartWhere } from "@/lib/paradas";
 import { buildArtistContext } from "@/lib/entity-context-text";
 import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
+
+type T = (key: string, params?: Record<string, string | number>) => string;
 
 function artistColor(name: string): [string, string] {
   let hash = 0;
@@ -79,6 +82,7 @@ function PaginationBar({
   totalItems,
   pageSize,
   inCard = true,
+  t,
 }: {
   artistSlug: string;
   tab: Tab;
@@ -88,6 +92,7 @@ function PaginationBar({
   totalItems: number;
   pageSize: number;
   inCard?: boolean;
+  t: T;
 }) {
   if (totalItems <= pageSize) return null;
 
@@ -105,9 +110,13 @@ function PaginationBar({
       }}
     >
       <span style={{ fontSize: 13, color: "#86868B" }}>
-        {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, totalItems)} de {totalItems}
+        {t("artist.paginationRange", {
+          start: (safePage - 1) * pageSize + 1,
+          end: Math.min(safePage * pageSize, totalItems),
+          total: totalItems,
+        })}
         {" · "}
-        Página {safePage} de {totalPages}
+        {t("artist.paginationPage", { current: safePage, total: totalPages })}
       </span>
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         {safePage > 1 ? (
@@ -204,6 +213,7 @@ export default async function ArtistPage({
   params: Promise<{ name: string }>;
   searchParams: Promise<{ tab?: string; page?: string }>;
 }) {
+  const { t } = await getServerTranslations();
   const [{ name }, sp] = await Promise.all([params, searchParams]);
   const tab: Tab = VALID_TABS.includes(sp.tab as Tab) ? (sp.tab as Tab) : "songs";
   const currentPage = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
@@ -273,11 +283,11 @@ export default async function ArtistPage({
 
   if (entryOrFilters.length === 0) {
     return (
-      <Shell title="Artista" subtitle="Não encontrado">
+      <Shell title={t("artist.notFoundLabel")} subtitle={t("artist.notFoundPage")}>
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para este artista.</p>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("artist.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("artist.backDiscover")}
           </Link>
         </div>
       </Shell>
@@ -297,7 +307,7 @@ export default async function ArtistPage({
     (parsed.type === "slug" ? parsed.name : "") ||
     slugNameHint ||
     canonicalDbName ||
-    "Artista";
+    t("artist.fallbackName");
   let palette = artistColor(canonicalName);
   if (cachedSnapshot) {
     canonicalName = cachedSnapshot.payload.canonicalName;
@@ -342,11 +352,11 @@ export default async function ArtistPage({
   const hasArtistIdentity = Boolean(artistRef ?? spotifyProfile);
   if (allEntries.length === 0 && !hasArtistIdentity) {
     return (
-      <Shell title="Artista" subtitle="Não encontrado">
+      <Shell title={t("artist.notFoundLabel")} subtitle={t("artist.notFoundPage")}>
         <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>Não encontramos dados para este artista.</p>
+          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("artist.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            ← Voltar para descobrir
+            {t("artist.backDiscover")}
           </Link>
         </div>
       </Shell>
@@ -356,8 +366,8 @@ export default async function ArtistPage({
   const songCatalogOr: Prisma.SongWhereInput[] = [];
   for (const sid of spotifyIdsForSong) songCatalogOr.push({ artistSpotifyId: sid });
   for (const n of nameCandidates) {
-    const t = n?.trim();
-    if (t) songCatalogOr.push({ artist: { equals: t, mode: "insensitive" }, artistSpotifyId: null });
+    const trimmed = n?.trim();
+    if (trimmed) songCatalogOr.push({ artist: { equals: trimmed, mode: "insensitive" }, artistSpotifyId: null });
   }
   // Músicas onde o artista aparece como feat
   if (artistRef?.id != null) {
@@ -778,29 +788,29 @@ export default async function ArtistPage({
   const heroSpotifyUrl =
     artistRef?.spotifyUrl ?? spotifyProfile?.spotifyUrl ?? cachedSnapshot?.payload.heroSpotifyUrl ?? null;
   const globalStats = [
-    { label: "Usuários únicos", value: listenersCount, icon: "🎧", color: "#FA243C" },
-    { label: "Músicas cadastradas", value: songs.length, icon: "🎵", color: "#8338EC" },
-    { label: "Número 1s", value: number1sTotal, icon: "👑", color: "#FFD700" },
-    { label: "Pontos totais", value: totalPointsCached, icon: "⭐", color: "#FB5607" },
+    { label: t("artist.uniqueUsers"), value: listenersCount, icon: "🎧", color: "#FA243C" },
+    { label: t("artist.registeredSongs"), value: songs.length, icon: "🎵", color: "#8338EC" },
+    { label: t("artist.numberOnes"), value: number1sTotal, icon: "👑", color: "#FFD700" },
+    { label: t("artist.totalPoints"), value: totalPointsCached, icon: "⭐", color: "#FB5607" },
   ];
 
   const userStatsCards = [
-    { label: "Músicas votadas", value: userSongs.length, icon: "🎵", color: "#8338EC" },
-    { label: "Semanas nas paradas", value: userTotalAppearances, icon: "🎧", color: "#FA243C" },
-    { label: "#1s seus", value: userNumber1s, icon: "👑", color: "#FFD700" },
-    { label: "Seus pontos", value: userTotalPoints, icon: "⭐", color: "#FB5607" },
+    { label: t("artist.votedSongs"), value: userSongs.length, icon: "🎵", color: "#8338EC" },
+    { label: t("artist.chartWeeks"), value: userTotalAppearances, icon: "🎧", color: "#FA243C" },
+    { label: t("artist.yourNumberOnes"), value: userNumber1s, icon: "👑", color: "#FFD700" },
+    { label: t("artist.yourPoints"), value: userTotalPoints, icon: "⭐", color: "#FB5607" },
   ];
 
   const activeStats = showUserStats ? userStatsCards : isUserTab ? [] : globalStats;
 
   const globalSubTabs: { id: Tab; label: string }[] = [
-    { id: "songs", label: "Músicas" },
-    { id: "albums", label: "Álbuns" },
+    { id: "songs", label: t("artist.songsTab") },
+    { id: "albums", label: t("artist.albumsTab") },
   ];
 
   const userSubTabs: { id: Tab; label: string }[] = [
-    { id: "user-songs", label: "Músicas" },
-    { id: "user-albums", label: "Álbuns" },
+    { id: "user-songs", label: t("artist.songsTab") },
+    { id: "user-albums", label: t("artist.albumsTab") },
   ];
 
   const subTabs = isUserTab ? userSubTabs : globalSubTabs;
@@ -815,7 +825,7 @@ export default async function ArtistPage({
       }}>
         <Link href="/discover" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 500, textDecoration: "none", marginBottom: 32 }}>
           <ChevronLeft size={16} />
-          Voltar
+          {t("artist.back")}
         </Link>
         <div style={{ display: "flex", gap: 40, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div style={{
@@ -826,22 +836,22 @@ export default async function ArtistPage({
             boxShadow: "0 16px 40px rgba(0,0,0,0.3)",
           }} />
           <div style={{ color: "white", flex: 1, minWidth: 280 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>Artista</div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>{t("artist.artistLabel")}</div>
             <h1 style={{ fontSize: 72, fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1, marginBottom: 16 }}>{canonicalName}</h1>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 14, opacity: 0.9, marginBottom: 24 }}>
               {showUserStats ? (
                 <>
-                  <span><strong>{userSongs.length}</strong> músicas votadas</span>
-                  <span><strong>{userTotalAppearances}</strong> semanas nas paradas</span>
-                  <span><strong>{userNumber1s}</strong> #1s seus</span>
-                  <span><strong>{userTotalPoints}</strong> seus pontos</span>
+                  <span><strong>{userSongs.length}</strong> {t("artist.votedSongsWord")}</span>
+                  <span><strong>{userTotalAppearances}</strong> {t("artist.chartWeeksWord")}</span>
+                  <span><strong>{userNumber1s}</strong> {t("artist.yourNumberOnesWord")}</span>
+                  <span><strong>{userTotalPoints}</strong> {t("artist.yourPointsWord")}</span>
                 </>
               ) : (
                 <>
-                  <span><strong>{listenersCount}</strong> ouvintes</span>
-                  <span><strong>{songs.length}</strong> músicas cadastradas</span>
-                  <span><strong>{number1sTotal}</strong> #1s</span>
-                  <span><strong>{totalPointsCached}</strong> pontos</span>
+                  <span><strong>{listenersCount}</strong> {t("artist.listenersWord")}</span>
+                  <span><strong>{songs.length}</strong> {t("artist.registeredSongsWord")}</span>
+                  <span><strong>{number1sTotal}</strong> {t("artist.numberOnesWord")}</span>
+                  <span><strong>{totalPointsCached}</strong> {t("artist.pointsWord")}</span>
                 </>
               )}
             </div>
@@ -852,12 +862,12 @@ export default async function ArtistPage({
               style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "white", color: palette[0], padding: "12px 24px", borderRadius: 100, fontSize: 14, fontWeight: 700, textDecoration: "none" }}
             >
               <Play size={16} fill={palette[0]} />
-              Ouvir
+              {t("artist.listen")}
             </a>
             {canEditArtist && artistRef?.id ? (
               <div style={{ marginTop: 10 }}>
                 <Link href={`/artist/${name}/edit`} style={{ color: "white", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>
-                  Editar artista
+                  {t("artist.editArtist")}
                 </Link>
                 <div style={{ marginTop: 8 }}>
                   <EntityBackfillButtons kind="artists" id={artistRef.id} />
@@ -873,7 +883,7 @@ export default async function ArtistPage({
         <div style={{ display: "flex", gap: 0, marginBottom: 0, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
           {(["songs", "user-songs"] as const).map((superTab) => {
             const isActive = isUserTab ? superTab === "user-songs" : superTab === "songs";
-            const label = superTab === "songs" ? "Global 100" : "Do usuário";
+            const label = superTab === "songs" ? t("artist.globalTab") : t("artist.userTab");
             // preserve the sub-tab (music vs album) when switching super-tab
             const targetTab = superTab === "songs"
               ? (tab === "user-albums" ? "albums" : "songs")
@@ -918,7 +928,7 @@ export default async function ArtistPage({
               marginBottom: 6,
             }}
           >
-            No ChartFM
+            {t("artist.onChartFM")}
           </div>
           <h2
             style={{
@@ -929,7 +939,7 @@ export default async function ArtistPage({
               marginBottom: 16,
             }}
           >
-            {canonicalName} na comunidade
+            {t("artist.artistInCommunity", { name: canonicalName })}
           </h2>
           {artistRef?.bio && (
             <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: 16 }}>
@@ -942,10 +952,7 @@ export default async function ArtistPage({
             </p>
           )}
           <p style={{ fontSize: 13, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 16 }}>
-            Esta página reúne o desempenho de todas as músicas do artista nas paradas da comunidade, com pontos
-            acumulados, semanas no ranking, pico e número de vezes em 1º lugar no Global 100. As músicas que estão
-            no Global 100 nesta semana aparecem primeiro, ordenadas pela posição atual; as demais são listadas por
-            pontos acumulados.
+            {t("artist.pageExplainer")}
           </p>
         </div>
 
@@ -964,24 +971,24 @@ export default async function ArtistPage({
 
         {/* Sub-tab nav: Músicas | Álbuns */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 0 }}>
-          {subTabs.map((t) => (
+          {subTabs.map((subTab) => (
             <Link
-              key={t.id}
-              href={artistPageHref(name, t.id)}
+              key={subTab.id}
+              href={artistPageHref(name, subTab.id)}
               style={{
                 padding: "10px 18px",
                 fontSize: 14,
                 fontWeight: 600,
                 textDecoration: "none",
                 borderRadius: "8px 8px 0 0",
-                color: tab === t.id ? palette[0] : "#86868B",
-                borderBottom: tab === t.id ? `2px solid ${palette[0]}` : "2px solid transparent",
+                color: tab === subTab.id ? palette[0] : "#86868B",
+                borderBottom: tab === subTab.id ? `2px solid ${palette[0]}` : "2px solid transparent",
                 marginBottom: -1,
                 transition: "color 0.15s",
                 whiteSpace: "nowrap",
               }}
             >
-              {t.label}
+              {subTab.label}
             </Link>
           ))}
         </div>
@@ -992,43 +999,43 @@ export default async function ArtistPage({
             {tab === "user-songs" && !currentUserId ? (
               <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>Faça login para ver suas músicas</div>
-                <div style={{ fontSize: 14, marginBottom: 20 }}>Veja quais músicas deste artista aparecem nas suas paradas pessoais.</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>{t("artist.loginToSeeSongs")}</div>
+                <div style={{ fontSize: 14, marginBottom: 20 }}>{t("artist.loginToSeeSongsDesc")}</div>
                 <Link href="/login" style={{ display: "inline-block", background: palette[0], color: "white", textDecoration: "none", padding: "10px 24px", borderRadius: 100, fontSize: 14, fontWeight: 700 }}>
-                  Entrar
+                  {t("artist.signIn")}
                 </Link>
               </div>
             ) : tab === "user-songs" && userSongs.length === 0 ? (
               <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhuma música nas suas paradas</div>
-                <div style={{ fontSize: 14 }}>Você ainda não adicionou músicas deste artista às suas paradas.</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("artist.noSongsInCharts")}</div>
+                <div style={{ fontSize: 14 }}>{t("artist.noSongsAddedYet")}</div>
               </div>
             ) : tab === "songs" && songs.length === 0 ? (
               <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhuma música cadastrada</div>
-                <div style={{ fontSize: 14 }}>Ainda não há faixas deste artista no banco de dados.</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("artist.noSongsRegistered")}</div>
+                <div style={{ fontSize: 14 }}>{t("artist.noSongsInDb")}</div>
               </div>
             ) : (
               <>
                 <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--divider)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>
-                    {tab === "user-songs" ? "Nas suas paradas" : "Músicas"}
+                    {tab === "user-songs" ? t("artist.inYourCharts") : t("artist.songsTab")}
                   </h2>
-                  <span style={{ fontSize: 13, color: "#86868B" }}>{activeSongs.length} no total</span>
+                  <span style={{ fontSize: 13, color: "#86868B" }}>{t("artist.totalCount", { count: activeSongs.length })}</span>
                 </div>
                 <div style={{ padding: "0 8px" }}>
                   {/* Header */}
                   {tab === "songs" ? (
                     <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
-                      {["#", "", "Música", "Pontos", "Semanas", "Pico", "#1s"].map((h, i) => (
+                      {["#", "", t("artist.colTrack"), t("artist.colPoints"), t("artist.colWeeks"), t("artist.colPeak"), t("artist.colNumberOnes")].map((h, i) => (
                         <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
                       ))}
                     </div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 80px 110px", padding: "8px 16px", gap: 0 }}>
-                      {["#", "", "Música", "Seus pontos", "Semanas", "#1s", "Melhor pos."].map((h, i) => (
+                      {["#", "", t("artist.colTrack"), t("artist.colYourPoints"), t("artist.colWeeks"), t("artist.colNumberOnes"), t("artist.colBestPos")].map((h, i) => (
                         <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
                       ))}
                     </div>
@@ -1109,6 +1116,7 @@ export default async function ArtistPage({
                   totalPages={songTotalPages}
                   totalItems={activeSongs.length}
                   pageSize={PAGE_SIZE}
+                  t={t}
                 />
               </>
             )}
@@ -1121,32 +1129,32 @@ export default async function ArtistPage({
             {tab === "user-albums" && !currentUserId ? (
               <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>Faça login para ver seus álbuns</div>
-                <div style={{ fontSize: 14, marginBottom: 20 }}>Veja quais álbuns deste artista você mais pontuou nas suas paradas.</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>{t("artist.loginToSeeAlbums")}</div>
+                <div style={{ fontSize: 14, marginBottom: 20 }}>{t("artist.loginToSeeAlbumsDesc")}</div>
                 <Link href="/login" style={{ display: "inline-block", background: palette[0], color: "white", textDecoration: "none", padding: "10px 24px", borderRadius: 100, fontSize: 14, fontWeight: 700 }}>
-                  Entrar
+                  {t("artist.signIn")}
                 </Link>
               </div>
             ) : tab === "user-albums" && userAlbums.length === 0 ? (
               <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>💿</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhum álbum nas suas paradas</div>
-                <div style={{ fontSize: 14 }}>Você ainda não adicionou músicas deste artista às suas paradas.</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("artist.noAlbumsInCharts")}</div>
+                <div style={{ fontSize: 14 }}>{t("artist.noSongsAddedYet")}</div>
               </div>
             ) : tab === "albums" && allAlbums.length === 0 ? (
               <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>💿</div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>Nenhum álbum cadastrado</div>
-                <div style={{ fontSize: 14 }}>Ainda não há álbuns deste artista vinculados no banco ou nas paradas.</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("artist.noAlbumsRegistered")}</div>
+                <div style={{ fontSize: 14 }}>{t("artist.noAlbumsInDb")}</div>
               </div>
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>
-                    {tab === "user-albums" ? "Seus álbuns favoritos" : "Álbuns"}
+                    {tab === "user-albums" ? t("artist.yourFavoriteAlbums") : t("artist.albumsTab")}
                   </h2>
                   <span style={{ fontSize: 13, color: "#86868B" }}>
-                    {activeAlbums.length} álbuns
+                    {t("artist.albumCount", { count: activeAlbums.length })}
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 16 }}>
@@ -1155,8 +1163,8 @@ export default async function ArtistPage({
                       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 16 }}>
                         <Cover cover={album.cover} song={{ title: album.name, artist: canonicalName, album: album.name }} size={128} rounded={10} />
                         <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.name}</div>
-                        <div style={{ fontSize: 12, color: "#86868B" }}>{album.songs} {album.songs === 1 ? "faixa" : "faixas"}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: palette[0], marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{album.points} pts</div>
+                        <div style={{ fontSize: 12, color: "#86868B" }}>{album.songs} {album.songs === 1 ? t("artist.trackSingular") : t("artist.trackPlural")}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: palette[0], marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{album.points} {t("artist.ptsAbbr")}</div>
                       </div>
                     </Link>
                   ))}
@@ -1170,6 +1178,7 @@ export default async function ArtistPage({
                   totalItems={activeAlbums.length}
                   pageSize={ALBUM_PAGE_SIZE}
                   inCard={false}
+                  t={t}
                 />
               </>
             )}
@@ -1179,7 +1188,7 @@ export default async function ArtistPage({
         {/* Top fans — só na visão Global 100 */}
         {!isUserTab && allEntries.length > 0 ? (
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>Maiores fãs</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16 }}>{t("artist.topFans")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
               {bigFans.map(({ user, points }) => (
                 <Link key={user.id} href={`/profile/${user.handle}`} style={{ textDecoration: "none" }}>
@@ -1187,7 +1196,7 @@ export default async function ArtistPage({
                     <Avatar user={user} imageUrl={user.image} size={56} />
                     <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{user.name}</div>
                     <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>Pontos no artista</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{t("artist.pointsInArtist")}</div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
                   </div>
                 </Link>

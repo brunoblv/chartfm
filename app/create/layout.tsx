@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export default function CreateLayout({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Carregando editor…</div>}>{children}</Suspense>;
+export default async function CreateLayout({ children }: { children: React.ReactNode }) {
+  const { t } = await getServerTranslations();
+  return <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>{t("create.loadingFallback")}</div>}>{children}</Suspense>;
 }

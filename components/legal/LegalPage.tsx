@@ -7,13 +7,14 @@ import {
   InstitutionalSection,
   InstitutionalTitle,
 } from "@/components/institutional/InstitutionalPrimitives";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 type Section = {
   title: string;
   body: ReactNode[];
 };
 
-export function LegalPage({
+export async function LegalPage({
   title,
   subtitle,
   updatedAt,
@@ -24,6 +25,7 @@ export function LegalPage({
   updatedAt?: string;
   sections: Section[];
 }) {
+  const { t } = await getServerTranslations();
   return (
     <InstitutionalLayout>
       <InstitutionalTitle subtitle={subtitle} updatedAt={updatedAt}>
@@ -48,11 +50,11 @@ export function LegalPage({
       <div style={{ marginTop: 32 }}>
         <InstitutionalParagraph>
           <Link href="/guides" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Guias
+            {t("guides.footerGuidesLink")}
           </Link>
           {" · "}
           <Link href="/contact" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            Contato
+            {t("guides.footerContactLink")}
           </Link>
         </InstitutionalParagraph>
       </div>

@@ -5,8 +5,10 @@ import Link from "next/link";
 import { ChevronLeft, Heart, MessageCircle, Repeat2, Share, ChevronUp, ChevronDown, Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { POSTS, POST_REPLIES, COMMUNITIES, USERS_DATA } from "@/lib/data";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export default function ImmersiveFeedPage({ params }: { params: { slug: string } }) {
+  const { t } = useTranslations();
   const community = COMMUNITIES.find((c) => c.slug === params.slug) ?? COMMUNITIES[0];
   const [idx, setIdx] = useState(0);
   const [liked, setLiked] = useState<Set<string>>(new Set());
@@ -61,7 +63,7 @@ export default function ImmersiveFeedPage({ params }: { params: { slug: string }
           </div>
 
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.7, letterSpacing: "0.04em", textTransform: "uppercase" }}>Imersivo · Comunidade</div>
+            <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.7, letterSpacing: "0.04em", textTransform: "uppercase" }}>{t("communities.feedImmersiveLabel")}</div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>{community.name}</div>
           </div>
 
@@ -73,7 +75,7 @@ export default function ImmersiveFeedPage({ params }: { params: { slug: string }
                 background: feedMode === mode ? "white" : "transparent",
                 color: feedMode === mode ? "#1D1D1F" : "rgba(255,255,255,0.7)",
               }}>
-                {mode === "foryou" ? "Pra você" : "Seguindo"}
+                {mode === "foryou" ? t("communities.feedForYou") : t("communities.feedFollowing")}
               </button>
             ))}
           </div>
@@ -96,7 +98,7 @@ export default function ImmersiveFeedPage({ params }: { params: { slug: string }
                 <div style={{ fontSize: 12, opacity: 0.7 }}>@{post.user.handle} · {post.postedAgo}</div>
               </div>
               <button style={{ background: "white", color: "#1D1D1F", border: "none", padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: 700 }}>
-                Seguir
+                {t("communities.followCta")}
               </button>
             </div>
             <p style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.5 }}>{post.text}</p>
@@ -117,7 +119,7 @@ export default function ImmersiveFeedPage({ params }: { params: { slug: string }
             { icon: <Heart size={22} fill={isLiked ? "white" : "none"} />, label: isLiked ? post.likes + 1 : post.likes, action: () => toggleLike(post.id) },
             { icon: <MessageCircle size={22} />, label: post.replies, action: undefined },
             { icon: <Repeat2 size={22} />, label: post.shares, action: undefined },
-            { icon: <Share size={22} />, label: "Compartilhar", action: undefined },
+            { icon: <Share size={22} />, label: t("recommendations.shareButton"), action: undefined },
           ].map(({ icon, label, action }, i) => (
             <button
               key={i}
@@ -167,8 +169,8 @@ export default function ImmersiveFeedPage({ params }: { params: { slug: string }
       <div style={{ width: 380, background: "#0F0F0F", borderLeft: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column" }}>
         {/* Header */}
         <div style={{ padding: "20px 20px 16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Respostas</div>
-          <div style={{ fontSize: 13, opacity: 0.5, marginTop: 2 }}>{post.replies} respostas</div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>{t("communities.feedRepliesTitle")}</div>
+          <div style={{ fontSize: 13, opacity: 0.5, marginTop: 2 }}>{t("recommendations.replyCount", { count: post.replies })}</div>
         </div>
 
         {/* Replies list */}
@@ -187,7 +189,7 @@ export default function ImmersiveFeedPage({ params }: { params: { slug: string }
                     <Heart size={12} /> {r.likes}
                   </button>
                   <button style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 12, cursor: "pointer" }}>
-                    Responder
+                    {t("communities.replyCta")}
                   </button>
                 </div>
               </div>
@@ -205,7 +207,7 @@ export default function ImmersiveFeedPage({ params }: { params: { slug: string }
             <input
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              placeholder="Responder..."
+              placeholder={t("communities.feedReplyPlaceholder")}
               style={{ border: "none", background: "transparent", outline: "none", color: "white", fontSize: 13, flex: 1 }}
             />
           </div>

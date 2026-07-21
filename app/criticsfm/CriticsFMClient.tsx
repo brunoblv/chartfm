@@ -7,6 +7,9 @@ import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
 import { ScoreSquare } from "@/components/ui/ScoreSquare";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Ad } from "@/components/ui/Ad";
+import { useTranslations } from "@/hooks/useTranslations";
+
+type TFn = ReturnType<typeof useTranslations>["t"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +28,7 @@ type SpotifySearchHit = {
 // ─── SpotifySearchPanel (unchanged) ──────────────────────────────────────────
 
 function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => void; initialQuery?: string }) {
+  const { t } = useTranslations();
   const router = useRouter();
   const [q, setQ] = useState(initialQuery);
   const [results, setResults] = useState<SpotifySearchHit[]>([]);
@@ -82,22 +86,22 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DB954">
             <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
           </svg>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Buscar no Spotify</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("criticsfm.searchSpotify")}</span>
           <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
         </div>
         <div style={{ padding: "14px 20px" }}>
           <input
             ref={inputRef}
             type="text"
-            placeholder="Nome do álbum ou artista…"
+            placeholder={t("criticsfm.spotifyPanelPlaceholder")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             style={{ width: "100%", padding: "10px 16px", borderRadius: 12, border: "1px solid var(--divider-strong)", fontSize: 14, fontFamily: "inherit", outline: "none", background: "var(--fill-inset)", color: "var(--text)", boxSizing: "border-box" }}
           />
         </div>
         <div style={{ maxHeight: 400, overflowY: "auto", padding: "0 12px 16px" }}>
-          {loading && <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>Buscando…</div>}
-          {!loading && q.trim() && results.length === 0 && <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>Nenhum resultado encontrado.</div>}
+          {loading && <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>{t("criticsfm.searching")}</div>}
+          {!loading && q.trim() && results.length === 0 && <div style={{ textAlign: "center", padding: "24px 0", color: "var(--text-muted)", fontSize: 13 }}>{t("criticsfm.noResultsFound")}</div>}
           {!loading && results.map((hit) => (
             <div key={hit.spotifyId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 8px", borderRadius: 12, borderBottom: "1px solid var(--divider-soft)" }}>
               {hit.coverUrl
@@ -117,7 +121,7 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
                 disabled={adding === hit.spotifyId}
                 style={{ padding: "7px 16px", borderRadius: 100, border: "none", background: hit.inDb ? "var(--fill-subtle)" : "var(--btn-dark-bg)", color: hit.inDb ? "var(--text)" : "var(--btn-dark-fg)", fontSize: 12, fontWeight: 600, cursor: adding === hit.spotifyId ? "default" : "pointer", flexShrink: 0, opacity: adding === hit.spotifyId ? 0.6 : 1, fontFamily: "inherit" }}
               >
-                {adding === hit.spotifyId ? "…" : hit.inDb ? "Ver" : "Adicionar"}
+                {adding === hit.spotifyId ? "…" : hit.inDb ? t("criticsfm.viewAction") : t("criticsfm.addAction")}
               </button>
             </div>
           ))}
@@ -129,24 +133,30 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SORT_OPTIONS = [
-  { id: "recent",  label: "Recentes",     short: "Recentes" },
-  { id: "score",   label: "Melhor score", short: "Score"    },
-  { id: "reviews", label: "Mais reviews", short: "Reviews"  },
-] as const;
-type SortId = (typeof SORT_OPTIONS)[number]["id"];
+const SORT_IDS = ["recent", "score", "reviews"] as const;
+type SortId = (typeof SORT_IDS)[number];
+
+function getSortOptions(t: TFn): { id: SortId; label: string; short: string }[] {
+  return [
+    { id: "recent",  label: t("criticsfm.sortRecent"),  short: t("criticsfm.sortRecentShort")  },
+    { id: "score",   label: t("criticsfm.sortScore"),   short: t("criticsfm.sortScoreShort")   },
+    { id: "reviews", label: t("criticsfm.sortReviews"), short: t("criticsfm.sortReviewsShort") },
+  ];
+}
 
 type ScoreFilter = "all" | "acclaimed" | "recommended" | "mixed" | "unfavorable" | "rejected" | "unrated";
 
-const SCORE_FILTERS: { id: ScoreFilter; label: string }[] = [
-  { id: "all",          label: "Todos"                    },
-  { id: "acclaimed",    label: "Aclamação universal 90+"  },
-  { id: "recommended",  label: "Muito recomendado 70+"    },
-  { id: "mixed",        label: "Recepção mista 50+"       },
-  { id: "unfavorable",  label: "Desfavorável 30+"         },
-  { id: "rejected",     label: "Repúdio generalizado"     },
-  { id: "unrated",      label: "Sem nota"                 },
-];
+function getScoreFilters(t: TFn): { id: ScoreFilter; label: string }[] {
+  return [
+    { id: "all",          label: t("criticsfm.filterAll")          },
+    { id: "acclaimed",    label: t("criticsfm.filterAcclaimed")    },
+    { id: "recommended",  label: t("criticsfm.filterRecommended")  },
+    { id: "mixed",        label: t("criticsfm.filterMixed")        },
+    { id: "unfavorable",  label: t("criticsfm.filterUnfavorable")  },
+    { id: "rejected",     label: t("criticsfm.filterRejected")     },
+    { id: "unrated",      label: t("criticsfm.noRating")           },
+  ];
+}
 
 const PAGE_SIZE = 16;
 
@@ -178,6 +188,7 @@ function AlbumCover({ coverUrl, title, size = 56 }: { coverUrl: string | null; t
 // ─── CriticsFMGridCard ────────────────────────────────────────────────────────
 
 function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
+  const { t } = useTranslations();
   return (
     <Link
       href={`/criticsfm/${album.id}`}
@@ -199,7 +210,10 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
         </div>
         {album.reviewCount > 0 && (
           <div style={{ position: "absolute", bottom: 12, right: 10, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", color: "white", padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600 }}>
-            {album.reviewCount} {album.reviewCount === 1 ? "review" : "reviews"}
+            {t(
+              album.reviewCount === 1 ? "criticsfm.reviewCountSingular" : "criticsfm.reviewCountPlural",
+              { count: album.reviewCount },
+            )}
           </div>
         )}
       </div>
@@ -220,6 +234,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
 // ─── CriticsFMListRow — mobile compact list view ──────────────────────────────
 
 function CriticsFMListRow({ album }: { album: CriticsFMAlbum }) {
+  const { t } = useTranslations();
   return (
     <Link
       href={`/criticsfm/${album.id}`}
@@ -233,7 +248,7 @@ function CriticsFMListRow({ album }: { album: CriticsFMAlbum }) {
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {album.reviewCount > 0
-              ? `${album.artist} · ${album.reviewCount} reviews`
+              ? `${album.artist} · ${t("criticsfm.reviewCountPlural", { count: album.reviewCount })}`
               : album.artist}
           </div>
         </div>
@@ -285,6 +300,7 @@ function GridIcon({ active }: { active: boolean }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: CriticsFMAlbum[]; showBreadcrumb?: boolean }) {
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [sortBy, setSortBy] = useState<SortId>("recent");
@@ -343,10 +359,10 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, fontSize: 13, color: "var(--text-muted)" }}>
           <Link href="/criticsfm" style={{ display: "flex", alignItems: "center", gap: 4, textDecoration: "none", color: "var(--text-muted)", fontWeight: 500 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
-            CriticsFM
+            {t("criticsfm.title")}
           </Link>
           <span>/</span>
-          <span style={{ color: "var(--text)", fontWeight: 600 }}>Reviews</span>
+          <span style={{ color: "var(--text)", fontWeight: 600 }}>{t("criticsfm.reviewsBreadcrumb")}</span>
         </div>
       )}
 
@@ -354,10 +370,10 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
       {showBreadcrumb && (
         <header style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: isMobile ? 32 : 44, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.05, color: "var(--text)" }}>
-            CriticsFM
+            {t("criticsfm.title")}
           </h1>
           <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 6, letterSpacing: "-0.01em" }}>
-            Reúne as avaliações da comunidade ChartFM em um único lugar.
+            {t("criticsfm.pageIntroReviews")}
           </p>
         </header>
       )}
@@ -366,7 +382,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
       {showTop && topAlbums.length > 0 && (
         <div style={{ marginBottom: 40 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 16 }}>
-            Melhores avaliados
+            {t("criticsfm.topRated")}
           </div>
           {/* Horizontal scroll carousel */}
           <div
@@ -446,7 +462,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input
             type="text"
-            placeholder="Buscar álbum ou artista…"
+            placeholder={t("criticsfm.searchAlbum")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -476,7 +492,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
             <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
               <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
             </svg>
-            {isMobile ? "Adicionar" : "Adicionar álbum"}
+            {isMobile ? t("criticsfm.addAlbumShort") : t("criticsfm.addAlbumFull")}
           </button>
         </div>
 
@@ -490,7 +506,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
             scrollbarWidth: "none",
           }}
         >
-          {SCORE_FILTERS.map((f) => (
+          {getScoreFilters(t).map((f) => (
             <button
               key={f.id}
               onClick={() => setScoreFilter(f.id)}
@@ -519,7 +535,10 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
         {/* Count */}
         <span style={{ fontSize: 12, color: "var(--text-muted)", flex: 1, fontVariantNumeric: "tabular-nums" }}>
-          {filtered.length} {filtered.length === 1 ? "álbum" : "álbuns"}
+          {t(
+            filtered.length === 1 ? "criticsfm.albumCountSingular" : "criticsfm.albumCountPlural",
+            { count: filtered.length },
+          )}
         </span>
 
         {/* View toggle — mobile only */}
@@ -550,7 +569,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
 
         {/* Sort */}
         <div style={{ display: "flex", gap: 3, background: "var(--fill-inset)", padding: 3, borderRadius: 10, flexShrink: 0 }}>
-          {SORT_OPTIONS.map((s) => (
+          {getSortOptions(t).map((s) => (
             <button
               key={s.id}
               onClick={() => setSortBy(s.id)}
@@ -578,10 +597,10 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
       {filtered.length === 0 ? (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
-          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Nenhum álbum encontrado</div>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t("criticsfm.noAlbumsFound")}</div>
           {search && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 13, color: "var(--text-disabled)", marginBottom: 12 }}>Quer adicionar este álbum ao catálogo?</div>
+              <div style={{ fontSize: 13, color: "var(--text-disabled)", marginBottom: 12 }}>{t("criticsfm.wantToAddAlbum")}</div>
               <button
                 onClick={() => setSpotifyPanelQuery(search)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "9px 20px", borderRadius: 100, border: "none", background: "#1DB954", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
@@ -589,7 +608,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
                   <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
                 </svg>
-                Buscar no Spotify
+                {t("criticsfm.searchSpotify")}
               </button>
             </div>
           )}
@@ -640,7 +659,10 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
                   boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                 }}
               >
-                Carregar mais - {Math.min(PAGE_SIZE, filtered.length - showCount)} de {filtered.length - showCount} restantes
+                {t("criticsfm.loadMore", {
+                  shown: Math.min(PAGE_SIZE, filtered.length - showCount),
+                  remaining: filtered.length - showCount,
+                })}
               </button>
             </div>
           )}

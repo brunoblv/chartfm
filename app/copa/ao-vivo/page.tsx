@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { getVoteCounts, fixtureBatchOrder, pickSingleCover, resolveSongCoverUrls } from "@/lib/copa";
 import { youtubePlaylistUrl } from "@/lib/youtube-user";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { LiveClient } from "./LiveClient";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function CopaAoVivoPage() {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
+  const { t } = await getServerTranslations();
 
   const copa = await prisma.copaEdition.findFirst({
     where: { status: { not: "FINISHED" } },
@@ -19,7 +21,7 @@ export default async function CopaAoVivoPage() {
   if (!copa) {
     return (
       <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-        Nenhuma Copa ativa.
+        {t("copa.noActiveCopa")}
       </div>
     );
   }

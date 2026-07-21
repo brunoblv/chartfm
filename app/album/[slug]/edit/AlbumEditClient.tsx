@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { isAdminMusicTypeaheadQueryReady } from "@/lib/admin-music-typeahead";
 import { DuplicateConflictNotice } from "@/components/admin/DuplicateConflictNotice";
 import type { DuplicateAlbumConflict, DuplicateSongConflict } from "@/lib/duplicate-conflict-payload";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type AlbumEditInitial = {
   id: number;
@@ -47,6 +48,7 @@ export function AlbumEditClient({
   initialAlbum: AlbumEditInitial;
   initialSongs: AlbumSongRow[];
 }) {
+  const { t } = useTranslations();
   const [title, setTitle] = useState(initialAlbum.title);
   const [spotifyId, setSpotifyId] = useState(initialAlbum.spotifyId);
   const [romanization, setRomanization] = useState(initialAlbum.romanization);
@@ -115,12 +117,12 @@ export function AlbumEditClient({
       };
       if (!res.ok) {
         setSpotifyTracks([]);
-        setSpotifyLoadMsg("Não foi possível carregar as faixas do Spotify.");
+        setSpotifyLoadMsg(t("albums.couldNotLoadSpotifyTracks"));
         return;
       }
       if (data.configured === false) {
         setSpotifyTracks([]);
-        setSpotifyLoadMsg(data.message ?? "Spotify não configurado.");
+        setSpotifyLoadMsg(data.message ?? t("albums.spotifyNotConfigured"));
         return;
       }
       setSpotifyTracks(data.tracks ?? []);
@@ -129,7 +131,7 @@ export function AlbumEditClient({
       }
     } catch {
       setSpotifyTracks([]);
-      setSpotifyLoadMsg("Erro de conexão ao buscar faixas no Spotify.");
+      setSpotifyLoadMsg(t("albums.spotifyConnError"));
     } finally {
       setLoadingSpotifyList(false);
     }
@@ -156,7 +158,7 @@ export function AlbumEditClient({
           setSongConflict(data.conflict);
           return;
         }
-        setSpotifyLoadMsg(data.message ?? data.error ?? "Não foi possível adicionar a faixa.");
+        setSpotifyLoadMsg(data.message ?? data.error ?? t("albums.couldNotAddTrack"));
         return;
       }
       if (data.song) {
@@ -172,7 +174,7 @@ export function AlbumEditClient({
         );
       }
     } catch {
-      setSpotifyLoadMsg("Erro de conexão ao adicionar faixa.");
+      setSpotifyLoadMsg(t("albums.addTrackConnError"));
     } finally {
       setAddingTrackId(null);
     }
@@ -187,12 +189,12 @@ export function AlbumEditClient({
       const res = await fetch(`/api/admin/album/${initialAlbum.id}/cover`, { method: "POST", body: fd });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) {
-        setCoverUploadError(data.error ?? "Não foi possível enviar a capa.");
+        setCoverUploadError(data.error ?? t("albums.couldNotUploadCover"));
         return;
       }
       setCoverUrl(data.url ?? "");
     } catch {
-      setCoverUploadError("Erro de conexão ao enviar capa.");
+      setCoverUploadError(t("albums.uploadCoverConnError"));
     } finally {
       setUploadingCover(false);
     }
@@ -222,12 +224,12 @@ export function AlbumEditClient({
           setAlbumConflict(data.conflict);
           return;
         }
-        setError(data.message ?? data.error ?? "Não foi possível salvar.");
+        setError(data.message ?? data.error ?? t("albums.couldNotSave"));
         return;
       }
-      setMessage("Álbum atualizado com sucesso.");
+      setMessage(t("albums.albumUpdated"));
     } catch {
-      setError("Erro de conexão ao salvar.");
+      setError(t("albums.saveConnError"));
     } finally {
       setSaving(false);
     }
@@ -236,16 +238,16 @@ export function AlbumEditClient({
   return (
     <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
       <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome</span>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldName")}</span>
         <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
       </label>
       <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldSpotifyId")}</span>
         <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
       </label>
 
       <label style={{ display: "grid", gap: 6, position: "relative" }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Artista (buscar cadastrados)</span>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldArtist")}</span>
         <input
           value={artistQuery}
           onChange={(e) => {
@@ -283,13 +285,13 @@ export function AlbumEditClient({
         )}
       </label>
       <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldRomanization")}</span>
         <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
       </label>
       <div style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa</span>
+        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldCover")}</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} style={{ ...inputStyle, flex: 1 }} placeholder="URL da imagem" />
+          <input value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} style={{ ...inputStyle, flex: 1 }} placeholder={t("albums.coverUrlPlaceholder")} />
           <label
             style={{
               display: "inline-flex",
@@ -306,7 +308,7 @@ export function AlbumEditClient({
               flexShrink: 0,
             }}
           >
-            {uploadingCover ? "Enviando…" : "Upload"}
+            {uploadingCover ? t("albums.uploading") : t("albums.upload")}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -324,7 +326,7 @@ export function AlbumEditClient({
         {coverUrl && (
           <img
             src={coverUrl.split("?")[0]}
-            alt="Capa do álbum"
+            alt={t("albums.coverAlt")}
             style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, marginTop: 4 }}
           />
         )}
@@ -339,12 +341,12 @@ export function AlbumEditClient({
           gap: 12,
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#1D1D1F" }}>Músicas no catálogo</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#1D1D1F" }}>{t("albums.songsInCatalog")}</div>
         <p style={{ margin: 0, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
-          Faixas ligadas a este álbum no banco ({songs.length}). Use o Spotify abaixo para importar as que faltam.
+          {t("albums.songsLinkedDesc", { count: songs.length })}
         </p>
         {songs.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#86868B" }}>Nenhuma música cadastrada para este álbum ainda.</div>
+          <div style={{ fontSize: 13, color: "#86868B" }}>{t("albums.noSongsYet")}</div>
         ) : (
           <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 6 }}>
             {songs.map((s) => (
@@ -384,7 +386,7 @@ export function AlbumEditClient({
 
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
           <button type="button" onClick={loadSpotifyTracklist} disabled={loadingSpotifyList} style={secondaryButtonStyle(loadingSpotifyList)}>
-            {loadingSpotifyList ? "Carregando…" : "Carregar faixas do Spotify"}
+            {loadingSpotifyList ? t("albums.loading") : t("albums.loadSpotifyTracks")}
           </button>
         </div>
         {spotifyLoadMsg && <div style={{ fontSize: 13, color: "#C5291C" }}>{spotifyLoadMsg}</div>}
@@ -393,9 +395,9 @@ export function AlbumEditClient({
         )}
         {spotifyTracks && spotifyTracks.length > 0 && (
           <div style={{ display: "grid", gap: 8, maxHeight: 320, overflowY: "auto", paddingRight: 4 }}>
-            {spotifyTracks.map((t) => (
+            {spotifyTracks.map((track) => (
               <div
-                key={t.spotifyId}
+                key={track.spotifyId}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -407,18 +409,18 @@ export function AlbumEditClient({
                 }}
               >
                 <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
-                  <span style={{ fontWeight: 600 }}>{t.title}</span>
+                  <span style={{ fontWeight: 600 }}>{track.title}</span>
                 </span>
-                {t.inDatabase ? (
-                  <span style={{ fontSize: 12, color: "#0F9D58", fontWeight: 600 }}>No catálogo</span>
+                {track.inDatabase ? (
+                  <span style={{ fontSize: 12, color: "#0F9D58", fontWeight: 600 }}>{t("albums.inCatalog")}</span>
                 ) : (
                   <button
                     type="button"
                     disabled={addingTrackId !== null}
-                    onClick={() => addTrackFromSpotify(t.spotifyId)}
+                    onClick={() => addTrackFromSpotify(track.spotifyId)}
                     style={smallAddButtonStyle(addingTrackId === null)}
                   >
-                    {addingTrackId === t.spotifyId ? "…" : "Adicionar"}
+                    {addingTrackId === track.spotifyId ? "…" : t("albums.add")}
                   </button>
                 )}
               </div>
@@ -429,7 +431,7 @@ export function AlbumEditClient({
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
         <button type="button" onClick={submit} disabled={!canSave} style={buttonStyle(canSave)}>
-          {saving ? "Salvando..." : "Salvar alterações"}
+          {saving ? t("albums.saving") : t("albums.saveChanges")}
         </button>
         {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
         {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}

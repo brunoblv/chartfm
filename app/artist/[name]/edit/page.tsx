@@ -7,17 +7,19 @@ import { isPrivilegedRole } from "@/lib/permissions";
 import { parseArtistSlug } from "@/lib/music-routes";
 import { Shell } from "@/components/layout/Shell";
 import { ArtistEditClient } from "./ArtistEditClient";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
 export default async function ArtistEditPage({ params }: { params: Promise<{ name: string }> }) {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>Você precisa entrar para editar artistas.</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("artist.signInRequired")}</div>
       </Shell>
     );
   }
@@ -26,7 +28,7 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
   if (!isPrivilegedRole(me?.role)) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>Acesso permitido somente para DEV e ADMIN.</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("artist.devAdminOnly")}</div>
       </Shell>
     );
   }
@@ -45,7 +47,7 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
   if (!artist) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>Artista não encontrado.</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("artist.artistNotFound")}</div>
       </Shell>
     );
   }
@@ -54,10 +56,10 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
     <Shell title="">
       <div style={{ margin: "32px 0", padding: "0 20px 48px" }}>
         <Link href={`/artist/${name}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
-          ← Voltar para artista
+          {t("artist.backToArtist")}
         </Link>
-        <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>Editar artista</h1>
-        <p style={{ color: "#86868B", marginTop: 0 }}>Disponível apenas para perfis DEV e ADMIN.</p>
+        <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>{t("artist.editArtist")}</h1>
+        <p style={{ color: "#86868B", marginTop: 0 }}>{t("artist.editAvailableDevAdmin")}</p>
         <ArtistEditClient
           initialArtist={{
             id: artist.id,

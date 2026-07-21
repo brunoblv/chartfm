@@ -25,6 +25,7 @@ import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
 import { canUseSpotifyFeatures, getWeightedLastfmImportConfig, isMyTrlOwner } from "@/lib/mytrl-access";
 import { SpotlightSearchCard } from "@/components/create/SpotlightSearchCard";
 import { ManualSongCreateModal } from "@/components/create/ManualSongCreateModal";
+import { useTranslations } from "@/hooks/useTranslations";
 
 const COVER_PALETTES_IMPORT = COVER_PALETTES;
 
@@ -98,6 +99,7 @@ const SPOTIFY_SEARCH_DISABLED = false;
 export default function CreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslations();
   const paradaIdFromUrl = searchParams.get("paradaId");
   const isMobile = useIsMobile();
   const { data: session } = useSession();
@@ -221,7 +223,7 @@ export default function CreatePage() {
       setSpotifyUserConnected(true);
       setShowSpotifyModal(true);
     } else {
-      setPublishError(spotifyConnectErrorMessage(status, reason) ?? "Não foi possível conectar sua conta do Spotify. Tente novamente.");
+      setPublishError(spotifyConnectErrorMessage(status, reason) ?? t("create.spotifyConnectError"));
     }
     // Limpa o parâmetro da URL sem recarregar.
     window.history.replaceState({}, "", "/create");
@@ -390,11 +392,11 @@ export default function CreatePage() {
 
   const publishChart = async () => {
     if (!session?.user?.id) {
-      setPublishError("Entre na sua conta para publicar. Use http://127.0.0.1:3000/login se o login não funcionar em localhost.");
+      setPublishError(t("create.loginRequiredPublish"));
       return;
     }
     if (entries.length === 0) {
-      setPublishError("Adicione ao menos uma música antes de publicar.");
+      setPublishError(t("create.addOneSong"));
       return;
     }
     setPublishing(true);
@@ -444,7 +446,7 @@ export default function CreatePage() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          setPublishError("Sessão expirada. Entre novamente em /login (prefira http://127.0.0.1:3000).");
+          setPublishError(t("create.sessionExpired"));
           return;
         }
         if (res.status === 409 && data?.id) {
@@ -452,19 +454,19 @@ export default function CreatePage() {
           return;
         }
         if (res.status === 504 || res.status === 502) {
-          setPublishError("A publicação demorou demais. Verifique no seu perfil se a parada foi criada antes de tentar de novo.");
+          setPublishError(t("create.publishTimeout"));
           return;
         }
-        setPublishError(data?.error ?? "Erro ao publicar parada.");
+        setPublishError(data?.error ?? t("create.publishError"));
         return;
       }
       if (!data?.id) {
-        setPublishError("Parada publicada, mas não foi possível abrir o detalhe. Veja no seu perfil.");
+        setPublishError(t("create.publishedNoDetail"));
         return;
       }
       router.push(`/chart/${data.id}`);
     } catch {
-      setPublishError("Erro de conexão. Verifique no seu perfil se a parada foi criada antes de tentar de novo.");
+      setPublishError(t("create.publishConnectionError"));
     } finally {
       setPublishing(false);
     }
@@ -475,8 +477,8 @@ export default function CreatePage() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(wd)) {
       setPublishError(
         activeParadaCadence === "daily"
-          ? "Selecione uma data válida no campo Data para importar a parada anterior."
-          : "Selecione uma data válida no campo Data para importar a parada da semana anterior.",
+          ? t("create.selectValidDateDaily")
+          : t("create.selectValidDateWeekly"),
       );
       return;
     }
@@ -491,16 +493,16 @@ export default function CreatePage() {
         if (res.status === 404) {
           setPublishError(
             activeParadaCadence === "daily"
-              ? "Não há parada publicada no dia anterior."
-              : "Não há parada publicada na semana anterior à do campo Data.",
+              ? t("create.noPrevDayChart")
+              : t("create.noPrevWeekChart"),
           );
           return;
         }
         if (res.status === 400) {
-          setPublishError(data.error ?? "Data inválida.");
+          setPublishError(data.error ?? t("create.invalidDate"));
           return;
         }
-        setPublishError(data.error ?? "Não foi possível importar a parada anterior.");
+        setPublishError(data.error ?? t("create.importPrevError"));
         return;
       }
       setEntries(
@@ -512,7 +514,7 @@ export default function CreatePage() {
         }))
       );
     } catch {
-      setPublishError("Erro de conexão ao importar a parada anterior.");
+      setPublishError(t("create.importPrevConnectionError"));
     } finally {
       setImportingLast(false);
     }
@@ -549,7 +551,7 @@ export default function CreatePage() {
       };
       if (!res.ok) {
         if (runId !== lastfmImportRunRef.current) return;
-        setPublishError(data.error ?? "Erro ao importar do Last.fm.");
+        setPublishError(data.error ?? t("chart.edit.lastfmImportError"));
         return;
       }
       if (runId !== lastfmImportRunRef.current) return;
@@ -565,7 +567,7 @@ export default function CreatePage() {
     } catch (e: unknown) {
       if (runId !== lastfmImportRunRef.current) return;
       if (e instanceof Error && e.name === "AbortError") return;
-      setPublishError("Erro de conexão ao importar do Last.fm.");
+      setPublishError(t("chart.edit.lastfmConnectionError"));
     } finally {
       if (runId === lastfmImportRunRef.current) setImportingLastfm(false);
     }
@@ -603,7 +605,7 @@ export default function CreatePage() {
           setSpotifyUserConnected(false);
           setShowSpotifyModal(true);
         }
-        setPublishError(data.error ?? "Erro ao importar do Spotify.");
+        setPublishError(data.error ?? t("create.spotifyImportError"));
         return;
       }
       if (runId !== spotifyImportRunRef.current) return;
@@ -616,14 +618,14 @@ export default function CreatePage() {
         imageUrl: s.imageUrl ?? undefined,
       }));
       if (songs.length === 0) {
-        setPublishError("Nenhuma música tocada recentemente encontrada no seu Spotify.");
+        setPublishError(t("create.noRecentSpotifySongs"));
         return;
       }
       setEntries(songs);
     } catch (e: unknown) {
       if (runId !== spotifyImportRunRef.current) return;
       if (e instanceof Error && e.name === "AbortError") return;
-      setPublishError("Erro de conexão ao importar do Spotify.");
+      setPublishError(t("create.spotifyConnectionError"));
     } finally {
       if (runId === spotifyImportRunRef.current) setImportingSpotify(false);
     }
@@ -660,7 +662,7 @@ export default function CreatePage() {
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 style={{ color: "#1DB954", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 600 }}
-                title="Abrir no Spotify"
+                title={t("chart.edit.openSpotify")}
               >
                 <ExternalLink size={10} />
                 Spotify
@@ -672,7 +674,7 @@ export default function CreatePage() {
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 style={{ color: "#D51007", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 2, fontWeight: 600 }}
-                title="Abrir no Last.fm"
+                title={t("chart.edit.openLastfm")}
               >
                 <ExternalLink size={10} />
                 Last.fm
@@ -703,8 +705,8 @@ export default function CreatePage() {
     );
   };
 
-  const tituloParada = paradaNome ?? "Monte sua parada";
-  const nomeParadaCard = paradaNome ?? "Sua parada";
+  const tituloParada = paradaNome ?? t("create.title");
+  const nomeParadaCard = paradaNome ?? t("create.yourChart");
   const activeParada = paradas.find((p) => p.id === activeParadaId);
   const activeParadaCadence = activeParada?.cadence ?? "weekly";
   const weekDateObj = fromInputDate(weekDate) ?? new Date();
@@ -713,22 +715,22 @@ export default function CreatePage() {
   const tituloParadaPeriodo =
     activeParadaCadence === "daily"
       ? `${nomeParadaCard} - ${buildDayLabelFromDate(weekDateObj)}`
-      : `${nomeParadaCard} - Semana ${semanaAtual} - ${anoSemanaIso}`;
+      : `${nomeParadaCard} - ${t("create.weekYearTitle", { week: semanaAtual, year: anoSemanaIso })}`;
   const { start: inicioSemana, end: fimSemana } = getChartWeekRange(weekDateObj);
   const subtituloPeriodo =
     activeParadaCadence === "daily"
       ? buildDayLabelFromDate(weekDateObj)
-      : `Semana ${semanaAtual} - de ${formatPtDayMonth(inicioSemana)} a ${formatPtDayMonth(fimSemana)}`;
+      : t("create.weekRangeSubtitle", { week: semanaAtual, start: formatPtDayMonth(inicioSemana), end: formatPtDayMonth(fimSemana) });
 
   const searchPanel = (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Buscar música</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>{t("create.searchSongTitle")}</div>
           <button
             type="button"
             onClick={() => setShowManualCreate(true)}
-            title="Cadastrar música manualmente (quando o Spotify estiver indisponível)"
+            title={t("create.manualCreateTooltip")}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -745,7 +747,7 @@ export default function CreatePage() {
             }}
           >
             <Plus size={12} />
-            Criar música
+            {t("create.manualCreateButton")}
           </button>
         </div>
         <div style={{ marginBottom: 14 }}>
@@ -753,17 +755,17 @@ export default function CreatePage() {
             href="/guides/como-criar-sua-parada"
             style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "underline" }}
           >
-            Não achou a música? Veja como funciona a busca
+            {t("create.searchHelpLink")}
           </Link>
         </div>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-            Catálogo
+            {t("chart.edit.catalogLabel")}
           </div>
           <input
             value={dbQuery}
             onChange={(e) => setDbQuery(e.target.value)}
-            placeholder="Pesquisar no catálogo local"
+            placeholder={t("create.searchLocal")}
             style={{
               width: "100%",
               border: "1px solid var(--divider-strong)",
@@ -779,7 +781,7 @@ export default function CreatePage() {
           />
           {dbQuery.trim().length >= 2 ? (
             <>
-              {dbLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
+              {dbLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("recommendations.searching")}</div>}
               {!dbLoading &&
                 (dbSongs.length > 0 ? (
                   dbSongs.map((song) => {
@@ -787,13 +789,13 @@ export default function CreatePage() {
                     return renderSongRow(song, added);
                   })
                 ) : (
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhuma música no catálogo.</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("create.noCatalogSongs")}</div>
                 ))}
             </>
           ) : (
             <>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.45 }}>
-                Digite ao menos 2 caracteres para buscar no catálogo completo.{globalTopSongs.length > 0 ? " Mais tocadas dos últimos 30 dias:" : ""}
+                {t("chart.edit.catalogHint")}{globalTopSongs.length > 0 ? ` ${t("create.topPlayedHint")}` : ""}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {(globalTopSongs.length > 0 ? globalTopSongs : SONG_POOL.slice(0, 5)).map((song) => {
@@ -855,12 +857,12 @@ export default function CreatePage() {
 
         <div style={{ marginBottom: 0 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8 }}>
-            Spotify
+            {t("chart.edit.spotifyLabel")}
           </div>
           <input
             value={spotifyQuery}
             onChange={(e) => setSpotifyQuery(e.target.value)}
-            placeholder={SPOTIFY_SEARCH_DISABLED ? "Spotify desativado temporariamente" : "Pesquisar no Spotify"}
+            placeholder={SPOTIFY_SEARCH_DISABLED ? t("chart.edit.spotifySearchDisabledPlaceholder") : t("chart.edit.spotifySearchPlaceholder")}
             disabled={SPOTIFY_SEARCH_DISABLED}
             style={{
               width: "100%",
@@ -877,23 +879,23 @@ export default function CreatePage() {
             }}
           />
           {SPOTIFY_SEARCH_DISABLED ? (
-            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Busca no Spotify está desativada no momento.</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.spotifySearchDisabledBody")}</div>
           ) : spotifyQuery.trim().length < 1 ? (
-            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Spotify.</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.typeToSearchSpotify")}</div>
           ) : (
             <>
-              {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
+              {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("recommendations.searching")}</div>}
               {!spotifyLoading && !spotifyConfigured && (
                 <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  Configure <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> e <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> no arquivo{" "}
+                  {t("chart.edit.spotifyConfigMissingPrefix")} <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_ID</code> {t("chart.edit.spotifyConfigMissingMiddle")} <code style={{ fontSize: 11 }}>SPOTIFY_CLIENT_SECRET</code> {t("chart.edit.spotifyConfigMissingSuffix")}{" "}
                   <code style={{ fontSize: 11 }}>.env</code>.
                 </div>
               )}
               {!spotifyLoading && spotifyConfigured && spotifyUnavailable && (
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Spotify indisponível no momento. Tente novamente.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.spotifyUnavailable")}</div>
               )}
               {!spotifyLoading && spotifyConfigured && !spotifyUnavailable && spotifyTracks.length === 0 && (
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Spotify.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.noSpotifyResults")}</div>
               )}
               {!spotifyLoading &&
                 spotifyTracks.map((song) => {
@@ -906,13 +908,13 @@ export default function CreatePage() {
       </div>
 
       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Extras da parada</div>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>{t("create.extrasTitle")}</div>
         <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, margin: "0 0 14px" }}>
-          Flashback e destaque aparecem ao lado da parada na página publicada.
+          {t("create.extrasDesc")}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <SpotlightSearchCard
-            label="Flashback"
+            label={t("create.flashbackLabel")}
             accentColor="#7C3AED"
             category="flashback"
             song={flashbackSong}
@@ -920,7 +922,7 @@ export default function CreatePage() {
             onClear={() => setFlashbackSong(null)}
           />
           <SpotlightSearchCard
-            label="Destaque"
+            label={t("create.destaqueLabel")}
             accentColor="var(--accent)"
             category="destaque"
             song={destaqueSong}
@@ -938,12 +940,12 @@ export default function CreatePage() {
           padding: 20,
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>📋 Regras</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("create.rulesTitle")}</div>
         <ul style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.7, paddingLeft: 16 }}>
-          <li>Adicione quantas músicas quiser e ordene arrastando</li>
-          <li>Prazo: domingo 23:59 (BRT)</li>
-          <li>Editável até a publicação</li>
-          <li>A ordem reflete o que mais marcou sua semana</li>
+          <li>{t("create.rule1")}</li>
+          <li>{t("create.rule2")}</li>
+          <li>{t("create.rule3")}</li>
+          <li>{t("create.rule4")}</li>
         </ul>
       </div>
     </div>
@@ -979,14 +981,14 @@ export default function CreatePage() {
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>
                 {activeParadaCadence === "daily"
                   ? buildDayLabelFromDate(weekDateObj)
-                  : `Semana ${semanaAtual} · ${anoSemanaIso}`}
+                  : t("create.weekYearShort", { week: semanaAtual, year: anoSemanaIso })}
               </div>
             </>
           ) : (
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{tituloParadaPeriodo}</div>
           )}
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-            {entries.length === 0 ? "Nenhuma música ainda" : `${entries.length} música${entries.length === 1 ? "" : "s"}`}
+            {entries.length === 0 ? t("create.noSongsYet") : entries.length === 1 ? t("create.songCountOne", { count: entries.length }) : t("create.songCount", { count: entries.length })}
           </div>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flexShrink: 0 }}>
@@ -1001,7 +1003,7 @@ export default function CreatePage() {
                   setShowLastfmModal(true);
                 }}
                 disabled={importingLastfm}
-                title={`Importar do Last.fm (últimos 30 dias, somente faixas da playlist ${weightedLastfmImport?.playlistLabel ?? "new hits"})`}
+                title={t("create.lastfmNewHitsTooltip", { playlist: weightedLastfmImport?.playlistLabel ?? "new hits" })}
                 style={{
                   border: "1px solid rgba(250,36,60,0.3)",
                   background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -1015,7 +1017,7 @@ export default function CreatePage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                {importingLastfm ? "Buscando Last.fm…" : `↺ ${weightedLastfmImport?.playlistLabel ?? "New Hits"}`}
+                {importingLastfm ? t("create.importingLastfm") : `↺ ${weightedLastfmImport?.playlistLabel ?? "New Hits"}`}
               </button>
             )}
             <button
@@ -1027,7 +1029,7 @@ export default function CreatePage() {
                 setShowLastfmModal(true);
               }}
               disabled={importingLastfm}
-              title="Importar do Last.fm (últimos 7 dias, com pesos)"
+              title={t("create.lastfm7DaysTooltip")}
               style={{
                 border: "1px solid rgba(250,36,60,0.3)",
                 background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -1041,7 +1043,7 @@ export default function CreatePage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {importingLastfm ? "Buscando Last.fm…" : "↺ Último 7 dias"}
+              {importingLastfm ? t("create.importingLastfm") : `↺ ${t("create.period7Days")}`}
             </button>
             <button
               type="button"
@@ -1052,7 +1054,7 @@ export default function CreatePage() {
                 setShowLastfmModal(true);
               }}
               disabled={importingLastfm}
-              title="Importar do Last.fm (últimos 30 dias, com pesos)"
+              title={t("create.lastfm30DaysTooltip")}
               style={{
                 border: "1px solid rgba(250,36,60,0.3)",
                 background: importingLastfm ? "rgba(250,36,60,0.05)" : "rgba(250,36,60,0.06)",
@@ -1066,14 +1068,14 @@ export default function CreatePage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {importingLastfm ? "Buscando Last.fm…" : "↺ Últimos 30 dias"}
+              {importingLastfm ? t("create.importingLastfm") : `↺ ${t("create.period30Days")}`}
             </button>
             {canUseSpotifyImport && (
             <button
               type="button"
               onClick={() => !importingSpotify && setShowSpotifyModal(true)}
               disabled={importingSpotify}
-              title="Importar suas músicas tocadas recentemente no Spotify"
+              title={t("create.spotifyImportTooltip")}
               style={{
                 border: "1px solid rgba(30,215,96,0.35)",
                 background: importingSpotify ? "rgba(30,215,96,0.05)" : "rgba(30,215,96,0.08)",
@@ -1087,7 +1089,7 @@ export default function CreatePage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {importingSpotify ? "Buscando Spotify…" : "↺ Spotify"}
+              {importingSpotify ? t("create.searchingSpotify") : "↺ Spotify"}
             </button>
             )}
           </>
@@ -1098,8 +1100,8 @@ export default function CreatePage() {
           disabled={importingLast}
           title={
             activeParadaCadence === "daily"
-              ? "Copia a parada que você publicou no dia imediatamente anterior ao do campo Data"
-              : "Copia a parada que você publicou na semana ISO imediatamente anterior à do campo Data"
+              ? t("create.importPrevDayTooltip")
+              : t("create.importPrevWeekTooltip")
           }
           style={{
             border: "1px solid var(--divider-strong)",
@@ -1114,14 +1116,14 @@ export default function CreatePage() {
             whiteSpace: "nowrap",
           }}
         >
-          {importingLast ? "Importando..." : "Importar anterior"}
+          {importingLast ? t("create.importing") : t("create.importPrevious")}
         </button>
         {entries.length > 0 && (
           <button
             type="button"
             onClick={() => setEntries([])}
             disabled={importingLastfm || importingLast || importingSpotify}
-            title="Limpar todas as músicas da lista"
+            title={t("chart.edit.clearAllTooltip")}
             style={{
               border: "1px solid var(--divider-strong)",
               background: "var(--surface)",
@@ -1135,7 +1137,7 @@ export default function CreatePage() {
               whiteSpace: "nowrap",
             }}
           >
-            Limpar lista
+            {t("chart.edit.clearList")}
           </button>
         )}
         </div>
@@ -1162,7 +1164,7 @@ export default function CreatePage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: isMobile ? "6px 12px" : "6px 20px", background: "rgba(250,36,60,0.04)" }}>
                   <div style={{ flex: 1, height: 1, background: "rgba(250,36,60,0.25)" }} />
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#FA243C", whiteSpace: "nowrap" }}>
-                    Corte da parada · posição {userChartSize}
+                    {t("create.cutoffLabel", { position: userChartSize })}
                   </span>
                   <div style={{ flex: 1, height: 1, background: "rgba(250,36,60,0.25)" }} />
                 </div>
@@ -1238,13 +1240,15 @@ export default function CreatePage() {
         {userChartSize !== null && entries.length > userChartSize && (
           <div style={{ padding: "10px 16px", background: "rgba(250,36,60,0.05)", borderTop: "1px solid rgba(250,36,60,0.1)", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, color: "#FA243C", fontWeight: 600 }}>
-              {entries.length - userChartSize} música{entries.length - userChartSize === 1 ? "" : "s"} além do tamanho da parada serão descartadas ao publicar.
+              {entries.length - userChartSize === 1
+                ? t("create.discardWarningSingular", { count: entries.length - userChartSize })
+                : t("create.discardWarningPlural", { count: entries.length - userChartSize })}
             </span>
           </div>
         )}
         {entries.length === 0 && (
           <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-            {isMobile ? "Use a busca de músicas e adicione à parada" : "Adicione músicas da busca ao lado →"}
+            {isMobile ? t("create.emptyMobile") : t("create.addFromSearch")}
           </div>
         )}
       </div>
@@ -1259,7 +1263,7 @@ export default function CreatePage() {
         <div style={{ marginBottom: 24 }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, textDecoration: "none", marginBottom: 12 }}>
             <ChevronLeft size={16} />
-            Voltar
+            {t("chart.setup.back")}
           </Link>
           <div style={{ display: "flex", alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 16 : 0 }}>
             <div style={{ flex: 1 }}>
@@ -1297,7 +1301,7 @@ export default function CreatePage() {
                   onChange={setWeekDate}
                   paradaId={activeParadaId}
                   mode={activeParadaCadence}
-                  label={activeParadaCadence === "daily" ? "Dia" : "Semana"}
+                  label={activeParadaCadence === "daily" ? t("create.day") : t("create.week")}
                 />
                 <button
                   onClick={publishChart}
@@ -1316,7 +1320,7 @@ export default function CreatePage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {publishing ? "Publicando…" : "Publicar parada"}
+                  {publishing ? t("create.publishing") : t("create.publishChart")}
                 </button>
               </div>
               <div
@@ -1335,13 +1339,13 @@ export default function CreatePage() {
                 <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 }}>
                   {activeParadaCadence === "daily" ? (
                     <>
-                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Dia da parada</strong> para escolher no calendário, inclusive dias passados.{" "}
-                      <span style={{ whiteSpace: "nowrap" }}>Bolinha verde = já publicou;</span> cinza = ainda sem parada.
+                      {t("create.calendarHintDailyPrefix")} <strong style={{ color: "var(--text)", fontWeight: 600 }}>{t("create.calendarHintDailyStrong")}</strong> {t("create.calendarHintDailySuffix")}{" "}
+                      <span style={{ whiteSpace: "nowrap" }}>{t("create.calendarHintGreenDot")}</span> {t("create.calendarHintGraySuffix")}
                     </>
                   ) : (
                     <>
-                      Clique em <strong style={{ color: "var(--text)", fontWeight: 600 }}>Semana da parada</strong> para escolher no calendário, inclusive semanas passadas.{" "}
-                      <span style={{ whiteSpace: "nowrap" }}>Bolinha verde = já publicou;</span> cinza = ainda sem parada.
+                      {t("create.calendarHintWeeklyPrefix")} <strong style={{ color: "var(--text)", fontWeight: 600 }}>{t("create.calendarHintWeeklyStrong")}</strong> {t("create.calendarHintWeeklySuffix")}{" "}
+                      <span style={{ whiteSpace: "nowrap" }}>{t("create.calendarHintGreenDot")}</span> {t("create.calendarHintGraySuffix")}
                     </>
                   )}
                 </p>
@@ -1416,16 +1420,16 @@ export default function CreatePage() {
                 </div>
                 <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>
                   {lastfmFilterNewHits
-                    ? `Importar do Last.fm (${weightedLastfmImport?.playlistLabel ?? "New Hits"})`
-                    : `Importar do Last.fm (${lastfmPeriod === "7days" ? "Último 7 dias" : "Últimos 30 dias"})`}
+                    ? t("create.lastfmModalTitleNewHits", { playlist: weightedLastfmImport?.playlistLabel ?? "New Hits" })
+                    : t("create.lastfmModalTitlePeriod", { period: lastfmPeriod === "7days" ? t("create.period7Days") : t("create.period30Days") })}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
                 {lastfmFilterNewHits
                   ? describeLastfmImportPeriod(weekDate, session?.user?.handle, true)
                   : lastfmPeriod === "7days"
-                    ? "Suas músicas dos últimos 7 dias serão importadas, ordenadas por plays."
-                    : "Suas músicas dos últimos 30 dias serão importadas, ordenadas por pontuação ponderada (7d ×20, demais ×10)."}
+                    ? t("create.lastfm7DaysDesc")
+                    : t("create.lastfm30DaysDesc")}
               </p>
             </div>
 
@@ -1437,7 +1441,7 @@ export default function CreatePage() {
                     <span style={{ fontSize: 14, color: "white", fontWeight: 800 }}>♪</span>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Conta Last.fm</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{t("create.lastfmAccountLabel")}</div>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>@{userLastfmUser}</div>
                   </div>
                 </>
@@ -1447,13 +1451,13 @@ export default function CreatePage() {
                     ⚠️
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#B91C1C" }}>Usuário Last.fm não configurado</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#B91C1C" }}>{t("create.lastfmNotConfigured")}</div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                      Configure nas{" "}
+                      {t("create.lastfmConfigurePrefix")}{" "}
                       <a href="/settings" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-                        configurações de perfil
+                        {t("create.lastfmConfigureLinkText")}
                       </a>
-                      {" "}para usar esta função.
+                      {" "}{t("create.lastfmConfigureSuffix")}
                     </div>
                   </div>
                 </>
@@ -1463,7 +1467,7 @@ export default function CreatePage() {
             {/* Quantidade de músicas */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <label style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
-                Quantas músicas importar?
+                {t("create.howManySongs")}
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <input
@@ -1494,8 +1498,8 @@ export default function CreatePage() {
                 {lastfmFilterNewHits
                   ? describeLastfmImportOrder(weekDate, session?.user?.handle, true)
                   : lastfmPeriod === "7days"
-                    ? "Máximo de 200 músicas. Período: últimos 7 dias."
-                    : "Máximo de 200 músicas. Período: últimos 30 dias, com pesos."}
+                    ? t("create.lastfmMax7")
+                    : t("create.lastfmMax30")}
               </div>
             </div>
 
@@ -1514,21 +1518,21 @@ export default function CreatePage() {
                 {userChartSize ? (
                   <>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
-                      Sua parada tem {userChartSize} posições
+                      {t("create.chartHasPositions", { count: userChartSize })}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
-                      Ao publicar, músicas além da {userChartSize}ª posição serão automaticamente descartadas. Importe mais músicas para ter opções e reordene a lista antes de publicar.
+                      {t("create.cutoffWarningLastfm", { position: userChartSize })}
                     </div>
                   </>
                 ) : (
                   <>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
-                      Tamanho da parada não definido
+                      {t("create.chartSizeNotDefined")}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
-                      Defina o tamanho da sua parada nas{" "}
-                      <a href="/settings" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>configurações</a>
-                      {" "}para que o corte seja aplicado automaticamente ao publicar.
+                      {t("create.defineSizePrefix")}{" "}
+                      <a href="/settings" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>{t("create.settingsLinkText")}</a>
+                      {" "}{t("create.defineSizeSuffix")}
                     </div>
                   </>
                 )}
@@ -1550,7 +1554,7 @@ export default function CreatePage() {
                   color: "#1D1D1F",
                 }}
               >
-                Cancelar
+                {t("create.cancel")}
               </button>
               <button
                 onClick={() => importFromLastfm(lastfmImportCount, lastfmFilterNewHits, lastfmPeriod)}
@@ -1568,7 +1572,9 @@ export default function CreatePage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                Importar {lastfmImportCount} música{lastfmImportCount === 1 ? "" : "s"}
+                {lastfmImportCount === 1
+                  ? t("create.importCountSingular", { count: lastfmImportCount })
+                  : t("create.importCountPlural", { count: lastfmImportCount })}
               </button>
             </div>
           </div>
@@ -1616,10 +1622,10 @@ export default function CreatePage() {
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(30,215,96,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
                   ↺
                 </div>
-                <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>Importar do Spotify</span>
+                <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>{t("create.spotifyModalTitle")}</span>
               </div>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Suas músicas tocadas mais recentemente no Spotify serão importadas na ordem em que foram ouvidas.
+                {t("create.spotifyModalDesc")}
               </p>
             </div>
 
@@ -1630,8 +1636,8 @@ export default function CreatePage() {
                     <span style={{ fontSize: 14, color: "white", fontWeight: 800 }}>♪</span>
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Conta Spotify</div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>Conectada</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{t("create.spotifyAccountLabel")}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{t("create.connected")}</div>
                   </div>
                 </>
               ) : (
@@ -1640,9 +1646,9 @@ export default function CreatePage() {
                     ⚠️
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#15803D" }}>Conta Spotify não conectada</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#15803D" }}>{t("create.spotifyNotConnected")}</div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                      Conecte sua conta para importar suas músicas recentes.
+                      {t("create.spotifyConnectPrompt")}
                     </div>
                   </div>
                   <a
@@ -1663,7 +1669,7 @@ export default function CreatePage() {
                       flexShrink: 0,
                     }}
                   >
-                    <span style={{ fontSize: 15 }}>♪</span> Conectar
+                    <span style={{ fontSize: 15 }}>♪</span> {t("create.connect")}
                   </a>
                 </>
               )}
@@ -1671,7 +1677,7 @@ export default function CreatePage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <label style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
-                Quantas músicas importar?
+                {t("create.howManySongs")}
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <input
@@ -1700,7 +1706,7 @@ export default function CreatePage() {
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                De 10 a 50 músicas. Ordenadas da mais recente para a mais antiga.
+                {t("create.spotifyRangeHint")}
               </div>
             </div>
 
@@ -1717,10 +1723,10 @@ export default function CreatePage() {
                 <span style={{ fontSize: 16, flexShrink: 0 }}>✂️</span>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
-                    Sua parada tem {userChartSize} posições
+                    {t("create.chartHasPositions", { count: userChartSize })}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
-                    Ao publicar, músicas além da {userChartSize}ª posição serão descartadas. Reordene antes de publicar.
+                    {t("create.cutoffWarningSpotify", { position: userChartSize })}
                   </div>
                 </div>
               </div>
@@ -1740,7 +1746,7 @@ export default function CreatePage() {
                   color: "#1D1D1F",
                 }}
               >
-                Cancelar
+                {t("create.cancel")}
               </button>
               <button
                 onClick={() => importFromSpotify(spotifyImportCount)}
@@ -1758,7 +1764,9 @@ export default function CreatePage() {
                   whiteSpace: "nowrap",
                 }}
               >
-                Importar {spotifyImportCount} música{spotifyImportCount === 1 ? "" : "s"}
+                {spotifyImportCount === 1
+                  ? t("create.importCountSingular", { count: spotifyImportCount })
+                  : t("create.importCountPlural", { count: spotifyImportCount })}
               </button>
             </div>
           </div>

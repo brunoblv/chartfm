@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CopaArtistAvatar } from "../CopaArtistAvatar";
 import { knockoutPendingMatchLabels } from "@/lib/copa";
+import { useTranslations } from "@/hooks/useTranslations";
+
+type TFn = ReturnType<typeof useTranslations>["t"];
 
 type ArtistSlot = {
   id: string;
@@ -35,24 +38,26 @@ type Props = {
 };
 
 const PHASE_ORDER = ["R32", "R16", "QF", "SF", "FINAL", "THIRD_PLACE"];
-const PHASE_LABELS: Record<string, string> = {
-  R32: "1/16 de Final",
-  R16: "Oitavas de Final",
-  QF: "Quartas de Final",
-  SF: "Semi-Finais",
-  FINAL: "Final",
-  THIRD_PLACE: "Disputa pelo 3º Lugar",
-};
+function getPhaseLabels(t: TFn): Record<string, string> {
+  return {
+    R32: t("copa.phaseR32"),
+    R16: t("copa.phaseR16"),
+    QF: t("copa.phaseQF"),
+    SF: t("copa.phaseSF"),
+    FINAL: t("copa.phaseFinal"),
+    THIRD_PLACE: t("copa.phaseThirdPlace"),
+  };
+}
 
 const PHASE_PLACEHOLDER_MATCHES: Record<string, number> = {
   R32: 16, R16: 8, QF: 4, SF: 2, FINAL: 1, THIRD_PLACE: 1,
 };
 
-function TBDSlot() {
+function TBDSlot({ t }: { t: TFn }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px" }}>
       <div style={{ width: 22, height: 22, borderRadius: 6, background: "var(--fill-inset)", flexShrink: 0 }} />
-      <span style={{ flex: 1, fontSize: 13, color: "var(--text-disabled)" }}>A definir</span>
+      <span style={{ flex: 1, fontSize: 13, color: "var(--text-disabled)" }}>{t("copa.bracketTbd")}</span>
       <span style={{ fontSize: 13, color: "var(--text-disabled)", fontWeight: 700 }}>-</span>
     </div>
   );
@@ -67,6 +72,7 @@ function BracketMatch({
   userId: string | null;
   onClick: () => void;
 }) {
+  const { t } = useTranslations();
   const canClick = f.status === "LIVE" || f.status === "DONE";
   const isDone = f.status === "DONE";
   const isLive = f.status === "LIVE";
@@ -109,7 +115,7 @@ function BracketMatch({
             color: isMe ? "#FFD426" : isWinner ? "var(--text)" : "var(--text-muted)",
           }}
         >
-          {art ? art.artistName : "A definir"}
+          {art ? art.artistName : t("copa.bracketTbd")}
         </span>
         {/* ✅ Score col — fixed min-width so it stays aligned across all rows */}
         <span
@@ -157,7 +163,7 @@ function BracketMatch({
             textTransform: "uppercase",
           }}
         >
-          Ao vivo
+          {t("copa.liveBadge")}
         </div>
       )}
     </div>
@@ -166,6 +172,8 @@ function BracketMatch({
 
 export function BracketClient({ copaId, userId, fixtures }: Props) {
   const router = useRouter();
+  const { t } = useTranslations();
+  const PHASE_LABELS = getPhaseLabels(t);
   const initialPhase =
     fixtures.find((f) => f.status === "LIVE")?.phase ??
     fixtures.find((f) => f.status === "UPCOMING")?.phase ??
@@ -177,38 +185,38 @@ export function BracketClient({ copaId, userId, fixtures }: Props) {
   function pendingPhaseMessage(p: string): string {
     if (p === "R16") {
       const r32 = fixtures.filter((f) => f.phase === "R32");
-      if (r32.length === 0) return "Aguardando o fim da fase de grupos.";
+      if (r32.length === 0) return t("copa.bracketPendingGroupStage");
       if (!r32.every((f) => f.status === "DONE"))
-        return "As oitavas serão montadas automaticamente quando o 1/16 de Final encerrar.";
+        return t("copa.bracketPendingR16");
     }
     if (p === "QF") {
       const r16 = fixtures.filter((f) => f.phase === "R16");
       if (r16.length === 0 || !r16.every((f) => f.status === "DONE"))
-        return "As quartas serão formadas pelos vencedores das oitavas.";
+        return t("copa.bracketPendingQF");
     }
     if (p === "SF") {
       const qf = fixtures.filter((f) => f.phase === "QF");
       if (qf.length === 0 || !qf.every((f) => f.status === "DONE"))
-        return "As semifinais serão formadas pelos vencedores das quartas.";
+        return t("copa.bracketPendingSF");
     }
     if (p === "FINAL") {
       const sf = fixtures.filter((f) => f.phase === "SF");
       if (sf.length === 0 || !sf.every((f) => f.status === "DONE"))
-        return "A final será formada pelos vencedores das semifinais.";
+        return t("copa.bracketPendingFinal");
     }
-    return "Esta fase começa após a conclusão das fases anteriores.";
+    return t("copa.bracketPendingDefault");
   }
 
-  const pendingLabels = knockoutPendingMatchLabels(phase);
+  const pendingLabels = knockoutPendingMatchLabels(phase, t);
 
   return (
     <div>
       <div style={{ padding: "24px 24px 0" }}>
         <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>
-          Chaveamento
+          {t("copa.bracketTitle")}
         </h1>
         <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, marginBottom: 0 }}>
-          Fase eliminatória da Copa ChartFM
+          {t("copa.bracketSubtitle")}
         </div>
       </div>
 
@@ -283,9 +291,9 @@ export function BracketClient({ copaId, userId, fixtures }: Props) {
                       {label}
                     </div>
                   )}
-                  <TBDSlot />
+                  <TBDSlot t={t} />
                   <div style={{ height: 1, background: "var(--divider)" }} />
-                  <TBDSlot />
+                  <TBDSlot t={t} />
                 </div>
               ))}
             </div>
@@ -293,9 +301,9 @@ export function BracketClient({ copaId, userId, fixtures }: Props) {
         ) : (
           <>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-              Artistas em{" "}
-              <span style={{ color: "#FFD426", fontWeight: 700 }}>dourado</span> pertencem ao seu
-              time
+              {t("copa.bracketGoldPrefix")}
+              <span style={{ color: "#FFD426", fontWeight: 700 }}>{t("copa.bracketGoldWord")}</span>
+              {t("copa.bracketGoldSuffix")}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {phaseFixtures
@@ -325,7 +333,7 @@ export function BracketClient({ copaId, userId, fixtures }: Props) {
                         margin: "16px 0 8px",
                       }}
                     >
-                      Disputa pelo 3º Lugar
+                      {t("copa.phaseThirdPlace")}
                     </div>
                     <div style={{ maxWidth: 280 }}>
                       <BracketMatch

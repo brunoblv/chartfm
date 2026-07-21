@@ -7,6 +7,7 @@ import {
   resolveEditorialPreviewImage,
   resolveEditorialPreviewImages,
 } from "@/lib/editorial-preview-image";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -20,7 +21,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const pick = await getEditorialPick(slug);
-  if (!pick) return { title: "Artigo não encontrado | ChartFM" };
+  const { t } = await getServerTranslations();
+  if (!pick) return { title: t("editorial.notFoundTitle") };
 
   return {
     title: `${pick.title} | Editorial ChartFM`,

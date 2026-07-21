@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ArtistEditInitial = {
   id: number;
@@ -14,6 +15,7 @@ type ArtistEditInitial = {
 };
 
 export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditInitial }) {
+  const { t } = useTranslations();
   const [name, setName] = useState(initialArtist.name);
   const [spotifyId, setSpotifyId] = useState(initialArtist.spotifyId);
   const [romanization, setRomanization] = useState(initialArtist.romanization);
@@ -44,12 +46,12 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Não foi possível salvar.");
+        setError(data.error ?? t("artist.couldNotSave"));
         return;
       }
-      setMessage("Artista atualizado com sucesso.");
+      setMessage(t("artist.artistUpdated"));
     } catch {
-      setError("Erro de conexão ao salvar.");
+      setError(t("artist.saveConnError"));
     } finally {
       setSaving(false);
     }
@@ -59,35 +61,35 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
     <>
       <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldName")}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldSpotifyId")}</span>
           <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldRomanization")}</span>
           <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa (URL da imagem)</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldCoverUrl")}</span>
           <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Bio editorial (No ChartFM)</span>
+          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldBio")}</span>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={5}
-            placeholder="Texto editorial sobre o artista na comunidade ChartFM"
+            placeholder={t("artist.bioPlaceholder")}
             style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
           />
         </label>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
           <button type="button" onClick={submit} disabled={!canSave} style={buttonStyle(canSave)}>
-            {saving ? "Salvando..." : "Salvar alterações"}
+            {saving ? t("artist.saving") : t("artist.saveChanges")}
           </button>
           {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
           {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}
@@ -101,6 +103,7 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
 }
 
 function ArtistCreateSection() {
+  const { t } = useTranslations();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [spotifyId, setSpotifyId] = useState("");
@@ -130,16 +133,16 @@ function ArtistCreateSection() {
       });
       const data = (await res.json()) as { error?: string; artist?: { name: string } };
       if (!res.ok) {
-        setError(data.error === "spotify_id_already_exists" ? "Spotify ID já cadastrado." : (data.error ?? "Não foi possível criar."));
+        setError(data.error === "spotify_id_already_exists" ? t("artist.spotifyIdExists") : (data.error ?? t("artist.couldNotCreate")));
         return;
       }
-      setMessage(`Artista "${data.artist?.name}" criado com sucesso.`);
+      setMessage(t("artist.artistCreatedSuccess", { name: data.artist?.name ?? "" }));
       setName("");
       setSpotifyId("");
       setRomanization("");
       setImageUrl("");
     } catch {
-      setError("Erro de conexão ao criar.");
+      setError(t("artist.createConnError"));
     } finally {
       setSaving(false);
     }
@@ -161,31 +164,31 @@ function ArtistCreateSection() {
           color: "#1D1D1F",
         }}
       >
-        {open ? "▲ Ocultar" : "▼ Criar novo artista"}
+        {open ? t("artist.hideLabel") : t("artist.createNewArtist")}
       </button>
 
       {open && (
         <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Nome *</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder="Nome do artista" />
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldNameRequired")}</span>
+            <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder={t("artist.artistNamePlaceholder")} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Spotify ID *</span>
-            <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} placeholder="Ex: 1Xyo4u8uXC1ZmMpatF05PJ" />
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldSpotifyIdRequired")}</span>
+            <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} placeholder={t("artist.spotifyIdPlaceholder")} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Romanização</span>
-            <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} placeholder="Nome em caracteres latinos (opcional)" />
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldRomanization")}</span>
+            <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} placeholder={t("artist.romanizationPlaceholder")} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>Capa (URL da imagem)</span>
-            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} placeholder="https://... (opcional)" />
+            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldCoverUrl")}</span>
+            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} placeholder={t("artist.coverUrlOptionalPlaceholder")} />
           </label>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button type="button" onClick={submit} disabled={!canSave} style={buttonStyle(canSave)}>
-              {saving ? "Criando..." : "Criar artista"}
+              {saving ? t("artist.creating") : t("artist.createArtist")}
             </button>
             {message && <span style={{ color: "#0F9D58", fontSize: 13 }}>{message}</span>}
             {error && <span style={{ color: "#C5291C", fontSize: 13 }}>{error}</span>}

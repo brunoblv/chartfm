@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { getActiveClubeRound } from "@/lib/clube-album";
 import { getCriticsFMAlbums } from "@/lib/criticsfm-data";
 import { getActiveWeeklyRelease } from "@/lib/weekly-releases";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { CriticsFMClient } from "./CriticsFMClient";
 import { ScoreScaleCard } from "./ScoreScaleCard";
 import type { ClubeRoundData } from "@/lib/clube-album";
@@ -12,13 +13,17 @@ import type { WeeklyReleaseData, WeeklyReleaseAlbumInfo } from "@/lib/weekly-rel
 
 export const revalidate = 60;
 
-const PHASE_STATUS: Record<string, { label: string; dot: string; cta: string }> = {
-  "0": { label: "Aguardando inscrições", dot: "#86868B", cta: "Ver clube" },
-  "1": { label: "Inscrições abertas", dot: "#1B873F", cta: "Indicar álbuns" },
-  "2": { label: "Enquete aberta", dot: "#E09F00", cta: "Votar agora" },
-  "3": { label: "Resultado publicado", dot: "var(--accent)", cta: "Ver resultado" },
-  "4": { label: "Período de escuta", dot: "#5856D6", cta: "Ver clube" },
-};
+type Translate = Awaited<ReturnType<typeof getServerTranslations>>["t"];
+
+function getPhaseStatus(t: Translate): Record<string, { label: string; dot: string; cta: string }> {
+  return {
+    "0": { label: t("criticsfm.waitingSignups"), dot: "#86868B", cta: t("criticsfm.viewClube") },
+    "1": { label: t("criticsfm.signupsOpen"), dot: "#1B873F", cta: t("criticsfm.ctaNominate") },
+    "2": { label: t("criticsfm.pollOpen"), dot: "#E09F00", cta: t("criticsfm.ctaVoteNow") },
+    "3": { label: t("criticsfm.resultPublished"), dot: "var(--accent)", cta: t("criticsfm.ctaViewResult") },
+    "4": { label: t("criticsfm.listeningPeriod"), dot: "#5856D6", cta: t("criticsfm.viewClube") },
+  };
+}
 
 function SectionHeader({
   title,
@@ -170,18 +175,23 @@ function LancamentoAlbumCard({ album }: { album: WeeklyReleaseAlbumInfo }) {
   );
 }
 
-function LancamentosSection({ release }: { release: WeeklyReleaseData | null }) {
+function LancamentosSection({ release, t }: { release: WeeklyReleaseData | null; t: Translate }) {
   return (
     <section style={{ marginBottom: 48 }}>
       <SectionHeader
-        title="Lançamentos da Semana"
+        title={t("criticsfm.weeklyReleasesTitle")}
         subtitle={
           release
-            ? `Semana de ${release.weekLabel} · ${release.albums.length} álbum${release.albums.length !== 1 ? "s" : ""} em destaque`
-            : "Álbuns em destaque para ouvir esta semana"
+            ? t(
+                release.albums.length === 1
+                  ? "criticsfm.weeklyReleaseSubtitleSingular"
+                  : "criticsfm.weeklyReleaseSubtitlePlural",
+                { week: release.weekLabel, count: release.albums.length },
+              )
+            : t("criticsfm.newAlbumsSubtitle")
         }
         href="/criticsfm/lancamentos"
-        linkText="Ver todos"
+        linkText={t("criticsfm.viewAll")}
       />
       {!release ? (
         <div
@@ -195,7 +205,7 @@ function LancamentosSection({ release }: { release: WeeklyReleaseData | null }) 
             fontSize: 14,
           }}
         >
-          Nenhum lançamento esta semana. Volte em breve.
+          {t("criticsfm.noReleasesThisWeek")}
         </div>
       ) : (
         <div
@@ -214,16 +224,17 @@ function LancamentosSection({ release }: { release: WeeklyReleaseData | null }) 
   );
 }
 
-function ClubeSection({ round }: { round: ClubeRoundData | null }) {
-  const phaseInfo = round ? (PHASE_STATUS[round.phase] ?? PHASE_STATUS["0"]) : null;
+function ClubeSection({ round, t }: { round: ClubeRoundData | null; t: Translate }) {
+  const phaseStatus = getPhaseStatus(t);
+  const phaseInfo = round ? (phaseStatus[round.phase] ?? phaseStatus["0"]) : null;
 
   return (
     <section style={{ marginBottom: 48 }}>
       <SectionHeader
-        title="Clube do Álbum"
-        subtitle="Curadoria coletiva semanal da comunidade ChartFM"
+        title={t("criticsfm.albumClub")}
+        subtitle={t("criticsfm.clubeSubtitle")}
         href="/criticsfm/clube"
-        linkText="Ver clube"
+        linkText={t("criticsfm.viewClube")}
       />
       <Link
         href="/criticsfm/clube"
@@ -248,7 +259,7 @@ function ClubeSection({ round }: { round: ClubeRoundData | null }) {
                 padding: "16px 0",
               }}
             >
-              Nenhuma rodada ativa no momento.
+              {t("criticsfm.noActiveRound")}
             </div>
           ) : (
             <div>
@@ -271,7 +282,7 @@ function ClubeSection({ round }: { round: ClubeRoundData | null }) {
                       marginBottom: 8,
                     }}
                   >
-                    Rodada #{round.number}
+                    {t("criticsfm.roundNumber", { number: round.number })}
                   </div>
                   <div
                     style={{
@@ -351,7 +362,7 @@ function ClubeSection({ round }: { round: ClubeRoundData | null }) {
                     {round.nominations.length}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                    indicações
+                    {t("criticsfm.nominationsLabel")}
                   </div>
                 </div>
                 <div>
@@ -366,7 +377,7 @@ function ClubeSection({ round }: { round: ClubeRoundData | null }) {
                     {round.participantCount}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                    membros
+                    {t("criticsfm.membersLabel")}
                   </div>
                 </div>
               </div>
@@ -379,6 +390,7 @@ function ClubeSection({ round }: { round: ClubeRoundData | null }) {
 }
 
 export default async function CriticsFMPage() {
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const [albums, round, weeklyRelease] = await Promise.all([
     getCriticsFMAlbums(),
@@ -387,8 +399,8 @@ export default async function CriticsFMPage() {
   ]);
   return (
     <Shell
-      title="CriticsFM"
-      subtitle="Reviews e curadoria musical da comunidade ChartFM"
+      title={t("criticsfm.title")}
+      subtitle={t("criticsfm.pageSubtitle")}
     >
       <p
         style={{
@@ -399,12 +411,11 @@ export default async function CriticsFMPage() {
           letterSpacing: "-0.01em",
         }}
       >
-        Um espaço para os membros do ChartFM avaliarem álbuns, descobrirem novos lançamentos
-        e curarem o repertório coletivo da semana através do Clube do Álbum.
+        {t("criticsfm.introText")}
       </p>
 
-      <LancamentosSection release={weeklyRelease} />
-      <ClubeSection round={round} />
+      <LancamentosSection release={weeklyRelease} t={t} />
+      <ClubeSection round={round} t={t} />
       <ScoreScaleCard />
 
       <section style={{ marginTop: 8 }}>

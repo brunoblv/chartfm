@@ -77,6 +77,7 @@ function statusStyle(status: TicketStatus): React.CSSProperties {
 }
 
 function TypeBadge({ type }: { type: TicketType }) {
+  const { t } = useTranslations();
   const isBug = type === "BUG";
   return (
     <span
@@ -90,7 +91,7 @@ function TypeBadge({ type }: { type: TicketType }) {
       }}
     >
       {isBug ? <Bug size={12} /> : <Lightbulb size={12} />}
-      {isBug ? "Bug" : "Sugestão"}
+      {isBug ? t("support.typeBug") : t("support.typeSuggestion")}
     </span>
   );
 }

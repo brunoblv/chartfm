@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Avatar } from "@/components/ui/Avatar";
+import { useTranslations } from "@/hooks/useTranslations";
 import type { RoundData } from "./push-types";
 import { isListenAndRankPhase, useTimeRemaining } from "./push-helpers";
-import { STEPS, SCORE_ROWS } from "./push-content";
+import { getSteps, getScoreRows } from "./push-content";
 
-export { STEPS, SCORE_ROWS } from "./push-content";
+export { getSteps, getScoreRows } from "./push-content";
 
 function BackIcon() {
   return (
@@ -20,6 +21,7 @@ function BackIcon() {
 export function PushIntroTopbar() {
   const { data: session } = useSession();
   const user = session?.user;
+  const { t } = useTranslations();
 
   return (
     <div style={{
@@ -44,7 +46,7 @@ export function PushIntroTopbar() {
         }}
       >
         <BackIcon />
-        Início
+        {t("push.navInicio")}
       </Link>
       <div style={{ flex: 1, textAlign: "center", fontSize: 17, fontWeight: 800, letterSpacing: "-.03em", color: "var(--text)" }}>
         Push
@@ -79,6 +81,7 @@ function ArrowIcon() {
 }
 
 function RelaunchBadge() {
+  const { t } = useTranslations();
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 6,
@@ -88,7 +91,7 @@ function RelaunchBadge() {
     }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block", flexShrink: 0 }} />
       <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".07em", color: "var(--accent)", textTransform: "uppercase" as const }}>
-        Relançamento
+        {t("push.relaunch")}
       </span>
     </div>
   );
@@ -113,7 +116,7 @@ function PushWordmark({ size = "mobile" }: { size?: "mobile" | "desktop" }) {
   );
 }
 
-function StepRow({ step, isFirst, isLast, isMobile }: { step: typeof STEPS[number]; isFirst: boolean; isLast: boolean; isMobile: boolean }) {
+function StepRow({ step, isFirst, isLast, isMobile }: { step: ReturnType<typeof getSteps>[number]; isFirst: boolean; isLast: boolean; isMobile: boolean }) {
   if (!isMobile) return null;
 
   return (
@@ -145,7 +148,7 @@ function StepRow({ step, isFirst, isLast, isMobile }: { step: typeof STEPS[numbe
   );
 }
 
-export function StepCard({ step, isFirst }: { step: typeof STEPS[number]; isFirst: boolean }) {
+export function StepCard({ step, isFirst }: { step: ReturnType<typeof getSteps>[number]; isFirst: boolean }) {
   return (
     <div style={{
       background: "var(--surface)", borderRadius: 14, padding: 20,
@@ -175,6 +178,8 @@ export function StepCard({ step, isFirst }: { step: typeof STEPS[number]; isFirs
 }
 
 export function ScoreTable({ isMobile }: { isMobile: boolean }) {
+  const { t } = useTranslations();
+  const SCORE_ROWS = getScoreRows(t);
   if (isMobile) {
     return (
       <div style={{ background: "var(--surface)", borderRadius: 14, overflow: "hidden", border: "1px solid var(--divider)" }}>
@@ -250,6 +255,7 @@ export function ScoreTable({ isMobile }: { isMobile: boolean }) {
 }
 
 function ParticipateButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslations();
   return (
     <button
       type="button"
@@ -263,7 +269,7 @@ function ParticipateButton({ onClick }: { onClick: () => void }) {
         letterSpacing: "-.02em", border: "none", cursor: "pointer", fontFamily: "inherit",
       }}
     >
-      Participar desta rodada
+      {t("push.participateButton")}
       <ArrowIcon />
     </button>
   );
@@ -278,18 +284,20 @@ export function PushIntroView({
   isMobile: boolean;
   onParticipate: () => void;
 }) {
+  const { t } = useTranslations();
+  const STEPS = getSteps(t);
   const endIso =
     round.phase === "SUBMISSION" ? round.submissionEndsAt
     : isListenAndRankPhase(round.phase) ? round.rankingEndsAt
     : null;
-  const timeLeft = useTimeRemaining(endIso);
+  const timeLeft = useTimeRemaining(endIso, t);
 
   const deadlineText = timeLeft
-    ? `Rodada encerra em ${timeLeft.replace(" restantes", "")}`
-    : round.phase === "RESULT" ? "Rodada encerrada" : null;
+    ? t("push.roundEndsIn", { time: timeLeft.replace(t("push.timeSuffix"), "") })
+    : round.phase === "RESULT" ? t("push.roundClosed") : null;
 
   const footerExtra = round.submissionCount > 0
-    ? `${round.submissionCount} participante${round.submissionCount === 1 ? "" : "s"}`
+    ? t(round.submissionCount === 1 ? "push.participantsCountSingular" : "push.participantsCountPlural", { count: round.submissionCount })
     : null;
 
   if (isMobile) {
@@ -306,10 +314,10 @@ export function PushIntroView({
           <RelaunchBadge />
           <PushWordmark />
           <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-.03em", color: "var(--text)", marginBottom: 7 }}>
-            O jogo musical da semana
+            {t("push.weeklyMusicGame")}
           </div>
           <div style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, maxWidth: 310 }}>
-            Indique uma música, ouça a playlist da comunidade e descubra seu lugar no ranking.
+            {t("push.introHeroDescMobile")}
           </div>
         </div>
 
@@ -317,7 +325,7 @@ export function PushIntroView({
 
         <div style={{ padding: "0 22px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: ".09em", color: "var(--text-muted)", marginBottom: 22 }}>
-            Como funciona
+            {t("push.sobreHowItWorks")}
           </div>
           {STEPS.map((step, i) => (
             <StepRow key={step.num} step={step} isFirst={i === 0} isLast={i === STEPS.length - 1} isMobile />
@@ -328,14 +336,14 @@ export function PushIntroView({
 
         <div style={{ padding: "0 22px 32px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: ".09em", color: "var(--text-muted)", marginBottom: 12 }}>
-            Como pontuar
+            {t("push.sobreHowToScore")}
           </div>
           <div style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.55, marginBottom: 14 }}>
-            Sua música recebe pontos de cada ouvinte conforme a posição que eles colocam ela no ranking deles.
+            {t("push.scoreDescMobile")}
           </div>
           <ScoreTable isMobile />
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5 }}>
-            Os pontos de todos os ouvintes são somados no final da rodada.
+            {t("push.scoreDescFooter")}
           </div>
         </div>
 
@@ -368,13 +376,13 @@ export function PushIntroView({
           <RelaunchBadge />
           <PushWordmark size="desktop" />
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.03em", color: "var(--text)" }}>
-            O jogo musical da semana
+            {t("push.weeklyMusicGame")}
           </div>
         </div>
 
         <div style={{ padding: "48px 40px 48px 48px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 22 }}>
           <div style={{ fontSize: 16, color: "var(--text-muted)", lineHeight: 1.65, maxWidth: 380 }}>
-            Indique uma música, ouça a playlist criada pela comunidade e descubra seu lugar no ranking semanal.
+            {t("push.heroDescDesktop")}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 300 }}>
             <ParticipateButton onClick={onParticipate} />
@@ -389,7 +397,7 @@ export function PushIntroView({
 
       <div style={{ padding: "36px 40px", borderBottom: "1px solid var(--divider)" }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: ".09em", color: "var(--text-muted)", marginBottom: 22 }}>
-          Como funciona
+          {t("push.sobreHowItWorks")}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {STEPS.map((step, i) => (
@@ -401,13 +409,13 @@ export function PushIntroView({
       <div style={{ padding: "36px 40px 44px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: ".09em", color: "var(--text-muted)", marginBottom: 12 }}>
-            Como pontuar
+            {t("push.sobreHowToScore")}
           </div>
           <div style={{ fontSize: 15, color: "var(--text-muted)", lineHeight: 1.65, marginBottom: 10 }}>
-            Sua música recebe pontos de cada ouvinte conforme a posição que eles colocam ela no ranking deles.
+            {t("push.scoreDescMobile")}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>
-            Os pontos de todos os ouvintes são somados no final da rodada.
+            {t("push.scoreDescFooter")}
           </div>
         </div>
         <ScoreTable isMobile={false} />
@@ -415,10 +423,10 @@ export function PushIntroView({
 
       <div style={{ padding: "0 40px 32px", display: "flex", gap: 16 }}>
         <Link href="/push/historico" style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
-          Ver histórico de rodadas →
+          {t("push.seeHistory")} →
         </Link>
         <Link href="/push/ranking" style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
-          Ver ranking →
+          {t("push.seeRanking")} →
         </Link>
       </div>
     </div>

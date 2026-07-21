@@ -481,20 +481,25 @@ export const R16_FROM_R32_PAIRING: ReadonlyArray<readonly [number, number]> = [
   [13, 15],
 ];
 
-export function knockoutPendingMatchLabels(phase: string): string[] {
+export function knockoutPendingMatchLabels(
+  phase: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string[] {
   switch (phase) {
     case "R16":
-      return R16_FROM_R32_PAIRING.map(
-        ([a, b], i) => `O${i + 1}: Vencedor J${a + 1} × Vencedor J${b + 1}`,
+      return R16_FROM_R32_PAIRING.map(([a, b], i) =>
+        t("copa.bracketPendingR16Label", { i: i + 1, a: a + 1, b: b + 1 }),
       );
     case "QF":
-      return Array.from({ length: 4 }, (_, i) => `Q${i + 1}: Vencedor O${i * 2 + 1} × Vencedor O${i * 2 + 2}`);
+      return Array.from({ length: 4 }, (_, i) =>
+        t("copa.bracketPendingQFLabel", { i: i + 1, a: i * 2 + 1, b: i * 2 + 2 }),
+      );
     case "SF":
-      return ["S1: Vencedor Q1 × Vencedor Q2", "S2: Vencedor Q3 × Vencedor Q4"];
+      return [t("copa.bracketPendingSF1Label"), t("copa.bracketPendingSF2Label")];
     case "FINAL":
-      return ["Final: Vencedor S1 × Vencedor S2"];
+      return [t("copa.bracketPendingFinalLabel")];
     case "THIRD_PLACE":
-      return ["3º lugar: Perdedor S1 × Perdedor S2"];
+      return [t("copa.bracketPendingThirdPlaceLabel")];
     default:
       return [];
   }

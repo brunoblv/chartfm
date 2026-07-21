@@ -201,7 +201,7 @@ export function GlobalLastfmRanking({ entries, mode, emptyMessage }: Props) {
           borderBottom: "1px solid var(--divider)",
         }}
       >
-        {[t("global.colPos"), "", mode === "albums" ? "Álbum" : t("global.colSong"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints")].map(
+        {[t("global.colPos"), "", mode === "albums" ? t("global.colAlbum") : t("global.colSong"), t("global.colWeeks"), t("global.colPeak"), t("global.colNumberOnes"), t("global.colPoints")].map(
           (h, i) => (
             <div
               key={i}

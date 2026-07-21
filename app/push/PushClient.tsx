@@ -12,6 +12,7 @@ import { ListenAndRankView } from "@/components/push/PushListenRankView";
 import { ResultView, NoRoundView } from "@/components/push/PushResultView";
 import { PushIntroView, dismissPushIntro, getPushIntroDismissed } from "@/components/push/PushIntroView";
 import { PushNav } from "./PushNav";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export type { RoundData, SongData } from "@/components/push/push-types";
 
@@ -22,6 +23,7 @@ function shouldSkipIntro(round: RoundData): boolean {
 }
 
 export default function PushClient({ initialRound }: { initialRound: RoundData | null }) {
+  const { t } = useTranslations();
   const [round, setRound] = useState<RoundData | null>(initialRound);
   const [showIntro, setShowIntro] = useState(false);
   const [introReady, setIntroReady] = useState(false);
@@ -88,11 +90,11 @@ export default function PushClient({ initialRound }: { initialRound: RoundData |
       {isMobile && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 28 }}>
           <Link href="/push/ranking" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
-            Ver ranking
+            {t("push.seeRanking")}
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
           </Link>
           <Link href="/push/historico" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
-            Ver histórico de rodadas
+            {t("push.seeHistory")}
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
           </Link>
         </div>

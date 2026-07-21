@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
+import { useTranslations } from "@/hooks/useTranslations";
 import type { Song } from "@/lib/types";
 import type { RoundData, SpotifyTrack, SongData } from "./push-types";
 import { formatReleaseDate } from "./push-helpers";
@@ -31,6 +32,7 @@ export function SubmissionView({
 }) {
   const { data: session } = useSession();
   const authed = !!session?.user?.id;
+  const { t } = useTranslations();
 
   const [query, setQuery]           = useState("");
   const [selected, setSelected]     = useState<SpotifyTrack | null>(null);
@@ -59,7 +61,7 @@ export function SubmissionView({
         error?: string; id?: string; song?: SongData;
         spotifyTrackId?: string; albumReleaseDate?: string | null;
       };
-      if (!res.ok) { setError(data.error ?? "Erro ao inscrever música"); return; }
+      if (!res.ok) { setError(data.error ?? t("push.submitError")); return; }
       onSubmitted({
         id: data.id!,
         spotifyTrackId: data.spotifyTrackId!,
@@ -69,7 +71,7 @@ export function SubmissionView({
       setSelected(null);
       setQuery("");
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("push.connectionErrorRetry"));
     } finally {
       setSubmitting(false);
     }
@@ -78,19 +80,19 @@ export function SubmissionView({
   if (!authed) {
     return (
       <div style={{ textAlign: "center", padding: "40px 20px" }}>
-        <p style={{ color: "var(--text-muted)", marginBottom: 16 }}>Faça login para participar do Push</p>
+        <p style={{ color: "var(--text-muted)", marginBottom: 16 }}>{t("push.loginToParticipate")}</p>
         <Link href="/login" style={{
           padding: "10px 24px", borderRadius: 100, background: "var(--accent)",
           color: "white", fontWeight: 700, textDecoration: "none", fontSize: 14,
         }}>
-          Entrar
+          {t("push.enter")}
         </Link>
       </div>
     );
   }
 
   const mySong = round.mySubmission;
-  const relDate = formatReleaseDate(mySong?.song.albumReleaseDate);
+  const relDate = formatReleaseDate(mySong?.song.albumReleaseDate, t);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -98,7 +100,7 @@ export function SubmissionView({
       {mySong && !editing && (
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const, marginBottom: 8 }}>
-            Sua indicação
+            {t("push.yourSubmission")}
           </div>
           <div style={{
             background: "var(--surface)",
@@ -115,13 +117,13 @@ export function SubmissionView({
               </div>
               <div style={{ fontSize: 10, color: "#1DB954", fontWeight: 600, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
                 <CheckIcon color="#1DB954" size={8} />
-                {relDate ? `Lançada em ${relDate} · Válida` : "Indicação confirmada"}
+                {relDate ? t("push.releasedOnValid", { date: relDate }) : t("push.submissionConfirmed")}
               </div>
             </div>
             <button type="button"
               onClick={() => { setEditing(true); setQuery(""); setSelected(null); }}
               style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "4px 8px", flexShrink: 0 }}>
-              Trocar
+              {t("push.change")}
             </button>
           </div>
         </div>
@@ -130,7 +132,7 @@ export function SubmissionView({
       {(!mySong || editing) && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: ".07em", textTransform: "uppercase" as const }}>
-            Indique sua música
+            {t("push.submitYourSong")}
           </div>
           <div style={{
             padding: "9px 13px", borderRadius: 11,
@@ -138,8 +140,8 @@ export function SubmissionView({
             border: "1px solid color-mix(in srgb, var(--accent) 18%, transparent)",
             fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5,
           }}>
-            <span style={{ color: "var(--accent)", fontWeight: 700 }}>Regras: </span>
-            Lançamento máx. 12 meses (data do álbum no Spotify). Música não pode ter sido indicada em nenhuma outra rodada.
+            <span style={{ color: "var(--accent)", fontWeight: 700 }}>{t("push.rulesLabel")}</span>
+            {t("push.rulesText")}
           </div>
           <div style={{ position: "relative" }}>
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={2.2} strokeLinecap="round"
@@ -148,7 +150,7 @@ export function SubmissionView({
             </svg>
             <input type="text" value={query}
               onChange={(e) => { setQuery(e.target.value); setSelected(null); }}
-              placeholder="Buscar no Spotify…"
+              placeholder={t("push.searchSpotifyPlaceholder")}
               style={{
                 width: "100%", padding: "11px 14px 11px 38px", borderRadius: 12,
                 border: "1px solid var(--divider)", background: "var(--surface)",
@@ -158,20 +160,20 @@ export function SubmissionView({
             />
           </div>
           {query.trim().length < 1 ? (
-            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Digite para pesquisar no Spotify.</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("push.typeToSearchSpotify")}</div>
           ) : (
             <>
-              {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Buscando…</div>}
+              {spotifyLoading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("push.searching")}</div>}
               {!spotifyLoading && !spotifyConfigured && (
                 <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  Spotify indisponível no momento.
+                  {t("push.spotifyUnavailable")}
                 </div>
               )}
               {!spotifyLoading && spotifyConfigured && spotifyUnavailable && (
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Spotify indisponível no momento. Tente novamente.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("push.spotifyUnavailableRetry")}</div>
               )}
               {!spotifyLoading && spotifyConfigured && !spotifyUnavailable && spotifyTracks.length === 0 && (
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Spotify.</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("push.noSpotifyResults")}</div>
               )}
               {!spotifyLoading && !selected && spotifyTracks.length > 0 && (
                 <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 13, overflow: "hidden" }}>
@@ -233,7 +235,7 @@ export function SubmissionView({
               cursor: selected && !submitting ? "pointer" : "not-allowed",
               fontFamily: "inherit", transition: "background 160ms",
             }}>
-            {submitting ? "Inscrevendo…" : "Confirmar indicação"}
+            {submitting ? t("push.submitting") : t("push.confirmSubmission")}
           </button>
         </div>
       )}
@@ -241,8 +243,8 @@ export function SubmissionView({
       {round.participants.length > 0 && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)" }}>Participantes</span>
-            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{round.participants.length}/{round.submissionCount} indicaram</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" as const, color: "var(--text-muted)" }}>{t("push.participants")}</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("push.submittedCount", { submitted: round.participants.length, total: round.submissionCount })}</span>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
             {round.participants.map((p) => (
@@ -256,7 +258,7 @@ export function SubmissionView({
                   <CheckIcon size={7} />
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>
-                  {p.isMe ? "Você" : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
+                  {p.isMe ? t("push.you") : (p.name?.split(" ")[0] ?? p.handle ?? "?")}
                 </span>
               </div>
             ))}

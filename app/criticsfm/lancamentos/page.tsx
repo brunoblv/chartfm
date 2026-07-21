@@ -21,7 +21,7 @@ export default async function LancamentosPage() {
           href="/criticsfm/lancamentos/historico"
           style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", textDecoration: "none" }}
         >
-          Ver histórico →
+          {t("criticsfm.viewHistoricoLink")}
         </Link>
       }
     >

@@ -8,6 +8,7 @@ import {
 import { extractYouTubeId, youtubeEmbedUrl } from "@/lib/youtube-id";
 import { spotifyEmbedUrl } from "@/lib/editorial-preview-image";
 import { EditorialPostPreviewCard } from "@/components/editorial/EditorialPostPreviewCard";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 type Props = {
   pick: EditorialPick;
@@ -15,15 +16,16 @@ type Props = {
   relatedPicks: { pick: EditorialPick; previewImage: string | null }[];
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", {
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso + "T12:00:00").toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
 }
 
-export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props) {
+export async function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props) {
+  const { t, locale } = await getServerTranslations();
   const youtubeId = pick.youtubeUrl ? extractYouTubeId(pick.youtubeUrl) : null;
   const spotifyEmbed = pick.spotifyUrl ? spotifyEmbedUrl(pick.spotifyUrl) : null;
 
@@ -42,7 +44,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
           marginBottom: 24,
         }}
       >
-        ← Voltar ao editorial
+        {t("editorial.backToEditorial")}
       </Link>
 
       <header style={{ marginBottom: 32, maxWidth: 720 }}>
@@ -58,7 +60,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
           >
             {EDITORIAL_CATEGORY_LABELS[pick.category]}
           </span>
-          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{formatDate(pick.publishedAt)}</span>
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{formatDate(pick.publishedAt, locale)}</span>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>·</span>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{pick.author}</span>
         </div>
@@ -208,7 +210,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
               margin: "0 0 14px 0",
             }}
           >
-            Leia também no ChartFM
+            {t("editorial.readAlsoOnChartFM")}
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {pick.relatedLinks.map((link) => (
@@ -251,7 +253,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
                 background: "var(--surface)",
               }}
             >
-              Abrir no YouTube ↗
+              {t("editorial.openYoutube")}
             </a>
           )}
           {pick.spotifyUrl && (
@@ -270,7 +272,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
                 background: "var(--surface)",
               }}
             >
-              Abrir no Spotify ↗
+              {t("editorial.openSpotify")}
             </a>
           )}
         </div>
@@ -287,7 +289,7 @@ export function EditorialPostDetail({ pick, previewImage, relatedPicks }: Props)
               color: "var(--text)",
             }}
           >
-            Mais do editorial
+            {t("editorial.moreFromEditorial")}
           </h2>
           <div
             style={{

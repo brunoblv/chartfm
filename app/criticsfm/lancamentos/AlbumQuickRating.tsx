@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export function AlbumQuickRating({ albumId }: { albumId: number }) {
+  const { t } = useTranslations();
   const { data: session, status } = useSession();
   const [value, setValue] = useState("");
   const [saved, setSaved] = useState<number | null>(null);
@@ -39,7 +41,7 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
   const save = async () => {
     if (!session?.user) return;
     if (value.trim() === "" || parsed === null) {
-      if (value.trim() !== "") setError("Digite uma nota de 0 a 100");
+      if (value.trim() !== "") setError(t("criticsfm.enterRating0to100"));
       return;
     }
     if (saved === parsed) {
@@ -56,14 +58,14 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
       });
       if (!res.ok) {
         const d = (await res.json()) as { error?: string };
-        setError(d.error ?? "Erro ao salvar");
+        setError(d.error ?? t("criticsfm.saveErrorFallback"));
         return;
       }
       setSaved(parsed);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 2000);
     } catch {
-      setError("Erro de rede. Tente novamente.");
+      setError(t("criticsfm.networkError"));
     } finally {
       setSaving(false);
     }
@@ -87,9 +89,9 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
     return (
       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
         <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-          Entre
+          {t("criticsfm.signInLinkText")}
         </Link>{" "}
-        para avaliar
+        {t("criticsfm.toRateSuffix")}
       </div>
     );
   }
@@ -106,7 +108,7 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
           marginBottom: 6,
         }}
       >
-        Sua nota
+        {t("criticsfm.yourScoreLabel")}
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <input
@@ -125,7 +127,7 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
           }}
           placeholder="-"
           disabled={saving}
-          aria-label="Sua nota para este álbum"
+          aria-label={t("criticsfm.yourRatingAriaLabel")}
           style={{
             width: 56,
             height: 44,
@@ -151,7 +153,7 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
         <div style={{ fontSize: 11, color: "#C5291C", marginTop: 4 }}>{error}</div>
       )}
       {justSaved && (
-        <div style={{ fontSize: 11, color: "#1B873F", marginTop: 4, fontWeight: 600 }}>Salva ✓</div>
+        <div style={{ fontSize: 11, color: "#1B873F", marginTop: 4, fontWeight: 600 }}>{t("criticsfm.savedCheckmark")}</div>
       )}
       <Link
         href={`/criticsfm/${albumId}`}
@@ -164,7 +166,7 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
           textDecoration: "none",
         }}
       >
-        Escrever review →
+        {t("criticsfm.writeReviewLink")}
       </Link>
     </div>
   );

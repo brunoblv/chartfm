@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Song } from "@/lib/types";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ArtistOption = { spotifyId: string; name: string };
 type AlbumOption = { spotifyId: string; title: string; artistName: string };
@@ -43,6 +44,7 @@ export function ManualSongCreateModal({
   onClose: () => void;
   onCreated: (song: Song) => void;
 }) {
+  const { t } = useTranslations();
   const [title, setTitle] = useState("");
   const [artistQuery, setArtistQuery] = useState("");
   const [artistSpotifyId, setArtistSpotifyId] = useState("");
@@ -80,12 +82,12 @@ export function ManualSongCreateModal({
         const code = data && "error" in data ? data.error : undefined;
         setError(
           code === "title_required"
-            ? "Informe o nome da música."
+            ? t("create.manualErrorTitleRequired")
             : code === "artist_required"
-              ? "Informe o artista."
+              ? t("create.manualErrorArtistRequired")
               : code === "instrumental_title"
-                ? "Faixas instrumentais não podem ser cadastradas."
-                : "Não foi possível cadastrar a música.",
+                ? t("create.manualErrorInstrumental")
+                : t("create.manualErrorGeneric"),
         );
         return;
       }
@@ -99,7 +101,7 @@ export function ManualSongCreateModal({
       });
       onClose();
     } catch {
-      setError("Erro de conexão ao cadastrar.");
+      setError(t("create.manualConnError"));
     } finally {
       setSaving(false);
     }
@@ -132,28 +134,26 @@ export function ManualSongCreateModal({
           boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
         }}
       >
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Criar música</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{t("create.manualCreateButton")}</div>
         <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, margin: "0 0 16px" }}>
-          Use quando o Spotify estiver indisponível. Artista e álbum são buscados no catálogo — se não
-          encontrar, o que você digitar é usado do mesmo jeito. A capa/vínculo com o Spotify é
-          preenchido depois.
+          {t("create.manualModalDesc")}
         </p>
 
         <div style={{ display: "grid", gap: 12 }}>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={labelStyle}>Nome da música</span>
+            <span style={labelStyle}>{t("create.manualSongNameLabel")}</span>
             <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} autoFocus />
           </label>
 
           <label style={{ display: "grid", gap: 6, position: "relative" }}>
-            <span style={labelStyle}>Artista</span>
+            <span style={labelStyle}>{t("create.manualArtistLabel")}</span>
             <input
               value={artistQuery}
               onChange={(e) => {
                 setArtistQuery(e.target.value);
                 setArtistSpotifyId("");
               }}
-              placeholder="Pesquisar ou digitar o artista"
+              placeholder={t("create.manualArtistPlaceholder")}
               style={inputStyle}
             />
             {artistOptions.length > 0 && (
@@ -176,14 +176,14 @@ export function ManualSongCreateModal({
           </label>
 
           <label style={{ display: "grid", gap: 6, position: "relative" }}>
-            <span style={labelStyle}>Álbum (opcional)</span>
+            <span style={labelStyle}>{t("create.manualAlbumLabel")}</span>
             <input
               value={albumQuery}
               onChange={(e) => {
                 setAlbumQuery(e.target.value);
                 setAlbumSpotifyId("");
               }}
-              placeholder="Pesquisar ou digitar o álbum"
+              placeholder={t("create.manualAlbumPlaceholder")}
               style={inputStyle}
             />
             {albumOptions.length > 0 && (
@@ -210,10 +210,10 @@ export function ManualSongCreateModal({
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 18 }}>
           <button type="button" onClick={onClose} style={secondaryBtn}>
-            Cancelar
+            {t("create.cancel")}
           </button>
           <button type="button" onClick={submit} disabled={!canSubmit} style={primaryBtn(canSubmit)}>
-            {saving ? "Criando…" : "Criar e adicionar"}
+            {saving ? t("create.manualCreating") : t("create.manualCreateAndAdd")}
           </button>
         </div>
       </div>

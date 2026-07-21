@@ -24,6 +24,7 @@ import {
   type ParadaScoringTier,
 } from "@/lib/parada-points";
 import { ProfileReviewsTab } from "@/components/profile/ProfileReviewsTab";
+import { useTranslations } from "@/hooks/useTranslations";
 
 type ProfileSection = "parada" | "reviews";
 type ParadaTab = "charts" | "artists" | "songs" | "numberOnes";
@@ -514,37 +515,49 @@ function buildAchievements(
   totalCharts: number,
   totalRanked: number,
   isDaily: boolean,
+  t: (key: string, params?: Record<string, string | number>) => string,
 ) {
-  const streakUnit = isDaily ? "dias" : "semanas";
+  const streakUnit = isDaily
+    ? t("profile.unitDaysLower")
+    : t("profile.unitWeeksLower");
   const list: { emoji: string; name: string; desc: string }[] = [
     {
       emoji: "🔥",
-      name: "Streak",
-      desc: `${user.streak} ${streakUnit} de streak`,
+      name: t("profile.achStreakName"),
+      desc: t("profile.achStreakDesc", {
+        count: user.streak,
+        unit: streakUnit,
+      }),
     },
     {
       emoji: "🎵",
-      name: "Fã de música",
+      name: t("profile.achMusicFanName"),
       desc:
         totalRanked >= 100
-          ? `${totalRanked}+ entradas no chart`
-          : `${totalRanked} músicas rankeadas`,
+          ? t("profile.achMusicFanEntries", { count: totalRanked })
+          : t("profile.achMusicFanSongs", { count: totalRanked }),
     },
     {
       emoji: "🏆",
-      name: "Chart topper",
+      name: t("profile.achChartTopperName"),
       desc:
         numberOnes > 0
-          ? `${numberOnes} faixa(s) em #1`
-          : "Busque o primeiro #1",
+          ? t("profile.achChartTopperCount", { count: numberOnes })
+          : t("profile.achChartTopperNone"),
     },
     {
       emoji: "🌟",
-      name: "Rede",
-      desc: `${user.followers.toLocaleString("pt-BR")} seguidores`,
+      name: t("profile.achNetworkName"),
+      desc: t("profile.achNetworkDesc", {
+        count: user.followers.toLocaleString("pt-BR"),
+      }),
     },
-    { emoji: "📊", name: "Paradas", desc: `${totalCharts} publicação(ões)` },
-    { emoji: "💎", name: "Membro", desc: "ChartFM" },
+    {
+      emoji: "📊",
+      name: t("profile.paradasNav"),
+      desc: t("profile.achChartsDesc", { count: totalCharts }),
+    },
+    { emoji: "💎", name: t("profile.achMemberName"), desc: "ChartFM" },
   ];
   return list;
 }
@@ -557,6 +570,7 @@ export default function ProfilePage() {
   );
 
   const { data: session, status } = useSession();
+  const { t } = useTranslations();
   const [profileSection, setProfileSection] =
     useState<ProfileSection>("parada");
   const [activeParadaId, setActiveParadaId] = useState<string | null>(null);
@@ -762,6 +776,7 @@ export default function ProfilePage() {
             totalChartsCount,
             sidebarRankedSlots,
             isDailyParada,
+            t,
           )
         : [],
     [
@@ -770,6 +785,7 @@ export default function ProfilePage() {
       totalChartsCount,
       sidebarRankedSlots,
       isDailyParada,
+      t,
     ],
   );
   const years = useMemo(() => {
@@ -879,7 +895,7 @@ export default function ProfilePage() {
             fontSize: 15,
           }}
         >
-          Carregando perfil…
+          {t("profile.loadingProfile")}
         </div>
       </Shell>
     );
@@ -887,7 +903,7 @@ export default function ProfilePage() {
 
   if (phase === "error") {
     return (
-      <Shell title="Perfil" subtitle="Erro ao carregar">
+      <Shell title={t("profile.title")} subtitle={t("profile.loadError")}>
         <div
           style={{
             maxWidth: 480,
@@ -897,8 +913,7 @@ export default function ProfilePage() {
           }}
         >
           <p style={{ fontSize: 16, marginBottom: 20 }}>
-            Não foi possível carregar o perfil de @{handle} agora. Tente
-            recarregar a página em instantes.
+            {t("profile.loadErrorMessage", { handle })}
           </p>
           <Link
             href="/"
@@ -908,7 +923,7 @@ export default function ProfilePage() {
               textDecoration: "none",
             }}
           >
-            ← Voltar ao início
+            {t("profile.backToHome")}
           </Link>
         </div>
       </Shell>
@@ -917,7 +932,7 @@ export default function ProfilePage() {
 
   if (phase === "missing" || !user) {
     return (
-      <Shell title="Perfil" subtitle="Usuário não encontrado">
+      <Shell title={t("profile.title")} subtitle={t("profile.notFound")}>
         <div
           style={{
             maxWidth: 480,
@@ -927,7 +942,7 @@ export default function ProfilePage() {
           }}
         >
           <p style={{ fontSize: 16, marginBottom: 20 }}>
-            Não encontramos ninguém com o handle @{handle}.
+            {t("profile.userNotFoundMessage", { handle })}
           </p>
           <Link
             href="/"
@@ -937,7 +952,7 @@ export default function ProfilePage() {
               textDecoration: "none",
             }}
           >
-            ← Voltar ao início
+            {t("profile.backToHome")}
           </Link>
         </div>
       </Shell>
@@ -972,7 +987,7 @@ export default function ProfilePage() {
           }}
         >
           <ChevronLeft size={16} />
-          Início
+          {t("profile.home")}
         </Link>
         <div
           style={{
@@ -1001,7 +1016,7 @@ export default function ProfilePage() {
                 marginBottom: 4,
               }}
             >
-              Perfil
+              {t("profile.title")}
             </div>
             <div
               style={{
@@ -1043,7 +1058,7 @@ export default function ProfilePage() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Staff
+                  {t("profile.staffBadge")}
                 </span>
               )}
             </div>
@@ -1081,7 +1096,7 @@ export default function ProfilePage() {
                       color: "#FA243C",
                     }}
                   >
-                    Principal
+                    {t("profile.primaryBadge")}
                   </span>
                 )}
                 {activeParada && !activeParada.isPrimary && (
@@ -1095,8 +1110,10 @@ export default function ProfilePage() {
                       color: "var(--text-muted)",
                     }}
                   >
-                    Secundária ·{" "}
-                    {activeParada.cadence === "daily" ? "Diária" : "Semanal"}
+                    {t("profile.secondaryBadge")} ·{" "}
+                    {activeParada.cadence === "daily"
+                      ? t("profile.dailyBadge")
+                      : t("profile.weeklyBadge")}
                   </span>
                 )}
               </div>
@@ -1149,8 +1166,7 @@ export default function ProfilePage() {
                   lineHeight: 1.5,
                 }}
               >
-                Ainda sem bio. As informações vêm da sua conta Google; em breve
-                poderá editar aqui.
+                {t("profile.noBioOwn")}
               </p>
             ) : null}
             {(twitterUser || instagramUser || lastfmUser) &&
@@ -1250,14 +1266,14 @@ export default function ProfilePage() {
                 <b style={{ color: "var(--text)" }}>
                   {user.followers.toLocaleString("pt-BR")}
                 </b>{" "}
-                seguidores
+                {t("profile.followers")}
               </Link>
               <Link
                 href={`/profile/${handle}/followers?type=following`}
                 style={{ color: "var(--text-muted)", textDecoration: "none" }}
               >
                 <b style={{ color: "var(--text)" }}>{user.following}</b>{" "}
-                seguindo
+                {t("profile.following")}
               </Link>
               {user.streak > 0 && (
                 <span
@@ -1270,8 +1286,10 @@ export default function ProfilePage() {
                   }}
                 >
                   <Flame size={14} fill="#FA243C" />
-                  <b>{user.streak}</b> {isDailyParada ? "dias" : "semanas"} de
-                  streak
+                  <b>{user.streak}</b>{" "}
+                  {isDailyParada
+                    ? t("profile.streakDays")
+                    : t("profile.streakWeeks")}
                 </span>
               )}
             </div>
@@ -1309,7 +1327,7 @@ export default function ProfilePage() {
                     alignItems: "center",
                   }}
                 >
-                  Nova parada
+                  {t("profile.newChart")}
                 </Link>
                 <Link
                   href="/settings"
@@ -1326,7 +1344,7 @@ export default function ProfilePage() {
                     alignItems: "center",
                   }}
                 >
-                  Editar perfil
+                  {t("profile.editProfile")}
                 </Link>
                 <Link
                   href={`/profile/${handle}/paradas`}
@@ -1343,7 +1361,7 @@ export default function ProfilePage() {
                     alignItems: "center",
                   }}
                 >
-                  Paradas
+                  {t("profile.paradasNav")}
                 </Link>
                 {paradas.length < 2 && (
                   <Link
@@ -1361,7 +1379,7 @@ export default function ProfilePage() {
                       alignItems: "center",
                     }}
                   >
-                    2ª parada
+                    {t("profile.secondChart")}
                   </Link>
                 )}
               </>
@@ -1386,7 +1404,7 @@ export default function ProfilePage() {
                     cursor: "pointer",
                   }}
                 >
-                  Comparar
+                  {t("profile.compare")}
                 </button>
               </>
             )}
@@ -1412,20 +1430,28 @@ export default function ProfilePage() {
           {[
             {
               label: paradaNome
-                ? `${activeParada?.cadence === "daily" ? "Dias" : "Semanas"} · ${paradaNome}`
+                ? `${activeParada?.cadence === "daily" ? t("profile.days") : t("profile.weeks")} · ${paradaNome}`
                 : activeParada?.cadence === "daily"
-                  ? "Dias"
-                  : "Semanas",
+                  ? t("profile.days")
+                  : t("profile.weeks"),
               value: totalCharts,
               icon: null,
             },
             {
-              label: "#1 pessoais",
+              label: t("profile.personalNumberOnes"),
               value: numberOnes,
               icon: <Trophy size={14} color="#FFD700" fill="#FFD700" />,
             },
-            { label: "Músicas", value: totalRankedSlots, icon: null },
-            { label: "Artistas", value: topArtists.length, icon: null },
+            {
+              label: t("profile.tabSongs"),
+              value: totalRankedSlots,
+              icon: null,
+            },
+            {
+              label: t("profile.tabArtists"),
+              value: topArtists.length,
+              icon: null,
+            },
           ].map(({ label, value, icon }, i) => {
             const isLastCol = isMobile ? i % 2 === 1 : i === 3;
             const isLastRow = isMobile ? i >= 2 : true;
@@ -1483,7 +1509,7 @@ export default function ProfilePage() {
                 letterSpacing: "-0.025em",
               }}
             >
-              Conquistas
+              {t("profile.achievements")}
             </h2>
             <div style={{ flex: 1 }} />
             <button
@@ -1497,7 +1523,7 @@ export default function ProfilePage() {
                 cursor: "pointer",
               }}
             >
-              Ver todas
+              {t("profile.viewAll")}
             </button>
           </div>
           <div
@@ -1564,7 +1590,7 @@ export default function ProfilePage() {
               : [
                   {
                     id: "fallback",
-                    name: paradaNome ?? "Parada",
+                    name: paradaNome ?? t("profile.defaultParadaName"),
                     isPrimary: true,
                     sortOrder: 0,
                     logo: null,
@@ -1632,7 +1658,7 @@ export default function ProfilePage() {
                 whiteSpace: "nowrap",
               }}
             >
-              Reviews
+              {t("profile.tabReviews")}
             </button>
           </div>
         )}
@@ -1662,7 +1688,7 @@ export default function ProfilePage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {paradaNome ?? "Parada"} ★
+              {paradaNome ?? t("profile.defaultParadaName")} ★
             </button>
           </div>
         )}
@@ -1687,18 +1713,26 @@ export default function ProfilePage() {
             >
               {(
                 [
-                  ["charts", "Publicações", "Publ."],
-                  ["numberOnes", "#1s", "#1s"],
-                  ["artists", "Artistas", "Artistas"],
-                  ["songs", "Músicas", "Músicas"],
+                  [
+                    "charts",
+                    t("profile.tabPosts"),
+                    t("profile.tabPostsShort"),
+                  ],
+                  [
+                    "numberOnes",
+                    t("profile.tabNumberOnes"),
+                    t("profile.tabNumberOnes"),
+                  ],
+                  ["artists", t("profile.tabArtists"), t("profile.tabArtists")],
+                  ["songs", t("profile.tabSongs"), t("profile.tabSongs")],
                 ] as [ParadaTab, string, string][]
-              ).map(([t, label, mobileLabel]) => (
+              ).map(([tabKey, label, mobileLabel]) => (
                 <button
-                  key={t}
+                  key={tabKey}
                   type="button"
-                  disabled={!hasCharts && t !== "charts"}
+                  disabled={!hasCharts && tabKey !== "charts"}
                   onClick={() => {
-                    setParadaTab(t);
+                    setParadaTab(tabKey);
                     setChartPage(1);
                     setStatsPage(1);
                   }}
@@ -1708,14 +1742,18 @@ export default function ProfilePage() {
                     background: "none",
                     border: "none",
                     fontSize: isMobile ? 13 : 14,
-                    fontWeight: paradaTab === t ? 600 : 500,
+                    fontWeight: paradaTab === tabKey ? 600 : 500,
                     color:
-                      paradaTab === t ? "var(--text)" : "var(--text-muted)",
-                    borderBottom: `2px solid ${paradaTab === t ? "#FA243C" : "transparent"}`,
+                      paradaTab === tabKey
+                        ? "var(--text)"
+                        : "var(--text-muted)",
+                    borderBottom: `2px solid ${paradaTab === tabKey ? "#FA243C" : "transparent"}`,
                     marginBottom: -1,
                     cursor:
-                      !hasCharts && t !== "charts" ? "not-allowed" : "pointer",
-                    opacity: !hasCharts && t !== "charts" ? 0.45 : 1,
+                      !hasCharts && tabKey !== "charts"
+                        ? "not-allowed"
+                        : "pointer",
+                    opacity: !hasCharts && tabKey !== "charts" ? 0.45 : 1,
                     whiteSpace: "nowrap",
                     flexShrink: 0,
                   }}
@@ -1774,7 +1812,9 @@ export default function ProfilePage() {
                               : "none",
                         }}
                       >
-                        {scope === "overall" ? "Overall" : "Anual"}
+                        {scope === "overall"
+                          ? t("profile.statsOverall")
+                          : t("profile.statsYearly")}
                       </button>
                     ))}
                   </div>
@@ -1811,7 +1851,7 @@ export default function ProfilePage() {
                         marginBottom: 20,
                       }}
                     >
-                      Nenhuma parada publicada ainda.
+                      {t("profile.noCharts")}
                     </p>
                     {isOwn ? (
                       <Link
@@ -1823,7 +1863,7 @@ export default function ProfilePage() {
                           fontSize: 15,
                         }}
                       >
-                        Publicar a primeira parada →
+                        {t("profile.publishFirstChart")}
                       </Link>
                     ) : null}
                   </div>
@@ -1877,7 +1917,7 @@ export default function ProfilePage() {
                                 textTransform: "uppercase",
                               }}
                             >
-                              Filtrar por ano
+                              {t("profile.filterByYear")}
                             </div>
                             <YearChips
                               years={publicationYears}
@@ -1886,6 +1926,7 @@ export default function ProfilePage() {
                                 setChartsYearFilter(y);
                                 setChartPage(1);
                               }}
+                              allLabel={t("profile.allYears")}
                             />
                           </div>
                         )}
@@ -1897,7 +1938,7 @@ export default function ProfilePage() {
                               fontSize: 13,
                             }}
                           >
-                            Carregando página {chartPage}…
+                            {t("profile.loadingPage", { page: chartPage })}
                           </div>
                         )}
                         {chartsYearFilter != null && (
@@ -1908,9 +1949,15 @@ export default function ProfilePage() {
                               color: "var(--text-muted)",
                             }}
                           >
-                            {effectiveTotal} publicação
-                            {effectiveTotal === 1 ? "" : "ões"} em{" "}
-                            {chartsYearFilter}
+                            {effectiveTotal === 1
+                              ? t("profile.publicationSingularInYear", {
+                                  count: effectiveTotal,
+                                  year: chartsYearFilter,
+                                })
+                              : t("profile.publicationPluralInYear", {
+                                  count: effectiveTotal,
+                                  year: chartsYearFilter,
+                                })}
                           </div>
                         )}
                         <div
@@ -1962,7 +2009,7 @@ export default function ProfilePage() {
                       fontSize: 14,
                     }}
                   >
-                    Carregando histórico de #1…
+                    {t("profile.loadingNumberOnesHistory")}
                   </div>
                 )}
                 <NumberOnesTab
@@ -1994,7 +2041,7 @@ export default function ProfilePage() {
                       fontSize: 14,
                     }}
                   >
-                    Carregando estatísticas completas…
+                    {t("profile.loadingFullStats")}
                   </div>
                 )}
                 <ArtistStatsTable
@@ -2024,7 +2071,7 @@ export default function ProfilePage() {
                       fontSize: 14,
                     }}
                   >
-                    Carregando estatísticas completas…
+                    {t("profile.loadingFullStats")}
                   </div>
                 )}
                 <SongStatsTable
@@ -2169,6 +2216,7 @@ function PaginationBar({
   onChange: (p: number) => void;
   loading?: boolean;
 }) {
+  const { t } = useTranslations();
   if (totalPages <= 1) return null;
   const items = buildPageItems(page, totalPages);
   const buttonStyle = {
@@ -2200,7 +2248,7 @@ function PaginationBar({
           opacity: page === 1 || loading ? 0.4 : 1,
         }}
       >
-        « Primeiro
+        {t("profile.paginationFirst")}
       </button>
       <button
         type="button"
@@ -2274,7 +2322,7 @@ function PaginationBar({
           opacity: page === totalPages || loading ? 0.4 : 1,
         }}
       >
-        Última »
+        {t("profile.paginationLast")}
       </button>
     </div>
   );
@@ -2312,12 +2360,22 @@ function ArtistStatsTable({
   tenureLabel?: string;
   isMobile?: boolean;
 }) {
+  const { t } = useTranslations();
   const cols = isMobile
     ? "36px 48px minmax(0,1fr) 72px"
     : "60px 64px minmax(0,1fr) 80px 70px 60px 80px 110px";
   const headers = isMobile
-    ? ["Pos", "", "Artista", "Pts"]
-    : ["Pos", "", "Artista", tenureLabel, "Pico", "#1s", "Músicas", "Pontos"];
+    ? [t("profile.colPos"), "", t("profile.colArtist"), t("profile.colPtsShort")]
+    : [
+        t("profile.colPos"),
+        "",
+        t("profile.colArtist"),
+        tenureLabel,
+        t("profile.colPeak"),
+        t("profile.colNumberOnes"),
+        t("profile.tabSongs"),
+        t("profile.colPoints"),
+      ];
   const imgSize = isMobile ? 36 : 44;
   return (
     <div
@@ -2482,6 +2540,7 @@ function NumberOnesTab({
   periodSuffix: string;
   isMobile?: boolean;
 }) {
+  const { t } = useTranslations();
   if (totalSongs === 0) {
     return (
       <div
@@ -2500,7 +2559,7 @@ function NumberOnesTab({
           style={{ marginBottom: 12 }}
         />
         <p style={{ fontSize: 15, color: "var(--text-muted)", margin: 0 }}>
-          Nenhuma música chegou ao #1 nesta parada ainda.
+          {t("profile.noNumberOnesYet")}
         </p>
       </div>
     );
@@ -2510,8 +2569,14 @@ function NumberOnesTab({
     ? "44px minmax(0,1fr) 56px"
     : "64px minmax(0,1fr) 88px 140px 120px";
   const headers = isMobile
-    ? ["", "Música", "#1s"]
-    : ["", "Música", "#1s", "Último #1", "Primeiro #1"];
+    ? ["", t("profile.colSong"), t("profile.colNumberOnes")]
+    : [
+        "",
+        t("profile.colSong"),
+        t("profile.colNumberOnes"),
+        t("profile.colLastNumberOne"),
+        t("profile.colFirstNumberOne"),
+      ];
   const coverSize = isMobile ? 44 : 56;
 
   return (
@@ -2522,11 +2587,14 @@ function NumberOnesTab({
         <span style={{ fontWeight: 700, color: "var(--text)" }}>
           {totalSongs}
         </span>{" "}
-        faixa{totalSongs === 1 ? "" : "s"} ·{" "}
+        {totalSongs === 1
+          ? t("profile.trackSingularInNumberOne")
+          : t("profile.trackPluralInNumberOne")}{" "}
+        ·{" "}
         <span style={{ fontWeight: 700, color: "var(--text)" }}>
           {totalPeriods}
         </span>{" "}
-        {periodSuffix} em #1
+        {periodSuffix} {t("profile.atNumberOneSuffix")}
       </div>
       <div
         style={{
@@ -2711,12 +2779,21 @@ function SongStatsTable({
   tenureLabel?: string;
   isMobile?: boolean;
 }) {
+  const { t } = useTranslations();
   const cols = isMobile
     ? "36px 44px minmax(0,1fr) 72px"
     : "60px 64px minmax(0,1fr) 80px 70px 60px 110px";
   const headers = isMobile
-    ? ["Pos", "", "Música", "Pts"]
-    : ["Pos", "", "Música", tenureLabel, "Pico", "#1s", "Pontos"];
+    ? [t("profile.colPos"), "", t("profile.colSong"), t("profile.colPtsShort")]
+    : [
+        t("profile.colPos"),
+        "",
+        t("profile.colSong"),
+        tenureLabel,
+        t("profile.colPeak"),
+        t("profile.colNumberOnes"),
+        t("profile.colPoints"),
+      ];
   const coverSize = isMobile ? 36 : 48;
   return (
     <div

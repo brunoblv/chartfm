@@ -8,21 +8,26 @@ import {
   InstitutionalSection,
   InstitutionalTitle,
 } from "@/components/institutional/InstitutionalPrimitives";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 const DONATE_URL = "https://mepagaumcafe.com.br/p/chartfm/";
 
-export const metadata: Metadata = {
-  title: "Apoie o ChartFM | ChartFM",
-  description:
-    "Ajude a manter o ChartFM no ar. Apoie o projeto com uma contribuição via Me Pague um Café.",
-  alternates: { canonical: "/apoie" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("apoie.metaTitle"),
+    description: t("apoie.metaDescription"),
+    alternates: { canonical: "/apoie" },
+  };
+}
 
-export default function ApoiePage() {
+export default async function ApoiePage() {
+  const { t } = await getServerTranslations();
+
   return (
     <InstitutionalLayout>
-      <InstitutionalTitle subtitle="O ChartFM é mantido de forma independente. Se a plataforma faz parte da sua rotina musical, considere apoiar o projeto.">
-        Apoie o ChartFM
+      <InstitutionalTitle subtitle={t("apoie.subtitle")}>
+        {t("apoie.title")}
       </InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
@@ -60,9 +65,7 @@ export default function ApoiePage() {
             </svg>
           </div>
           <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--text-subtle)", margin: 0, maxWidth: 480 }}>
-            Manter o ChartFM no ar envolve custos de servidor, APIs de música e tempo dedicado a
-            construir novas funcionalidades. Qualquer contribuição, do tamanho que for, ajuda
-            bastante.
+            {t("apoie.cardBody")}
           </p>
           <a
             href={DONATE_URL}
@@ -82,37 +85,33 @@ export default function ApoiePage() {
               letterSpacing: "-0.01em",
             }}
           >
-            Me pague um café ☕
+            {t("apoie.ctaText")}
           </a>
           <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            Você será redirecionado para mepagaumcafe.com.br
+            {t("apoie.redirectHint")}
           </span>
         </div>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="Para onde vai o apoio">
+        <InstitutionalSection title={t("apoie.whereGoesTitle")}>
           <InstitutionalList
             items={[
-              "Custos de servidor e infraestrutura da plataforma",
-              "APIs de música usadas para buscar faixas, álbuns e artistas",
-              "Tempo dedicado à manutenção e a novas funcionalidades",
+              t("apoie.whereGoesItem1"),
+              t("apoie.whereGoesItem2"),
+              t("apoie.whereGoesItem3"),
             ]}
           />
         </InstitutionalSection>
 
         <InstitutionalDivider />
 
-        <InstitutionalSection title="Outras formas de ajudar">
-          <InstitutionalParagraph>
-            Nem todo apoio precisa ser financeiro. Usar o ChartFM com frequência, criar suas
-            paradas semanais e indicar a plataforma para outras pessoas que gostam de música
-            também faz muita diferença.
-          </InstitutionalParagraph>
+        <InstitutionalSection title={t("apoie.otherWaysTitle")}>
+          <InstitutionalParagraph>{t("apoie.otherWaysBody")}</InstitutionalParagraph>
         </InstitutionalSection>
 
         <InstitutionalCallout>
-          Obrigado por fazer parte do ChartFM. 💛
+          {t("apoie.thanksCallout")}
         </InstitutionalCallout>
       </div>
     </InstitutionalLayout>

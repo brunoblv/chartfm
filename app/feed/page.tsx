@@ -9,6 +9,7 @@ import { MixedFeedList } from "@/components/home/MixedFeedList";
 import { GlobalTeaser, TrendingArtists } from "@/components/home/HomeSidebar";
 import { formatRelativeTime } from "@/lib/i18n/format";
 import { getServerLocale } from "@/lib/i18n/server";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import { mergeHomeFeed } from "@/lib/home-mixed-feed";
 import { getEditorialPicksSorted } from "@/lib/editorial-picks";
@@ -20,10 +21,10 @@ import type { UserWithCharts, GlobalChartEntry } from "@/lib/types";
 import type { ReviewItem, TimelineItem } from "@/components/home/TimelineTabs";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
   return {
-    title: "Feed | ChartFM",
-    description:
-      "Veja as paradas, reviews e artigos publicados pela comunidade do ChartFM — sem precisar de conta.",
+    title: t("feed.metaTitle"),
+    description: t("feed.metaDescription"),
     alternates: { canonical: "/feed" },
   };
 }
@@ -329,6 +330,7 @@ async function getTrendingArtistsData(limit = 4) {
 
 export default async function PublicFeedPage() {
   const locale = await getServerLocale();
+  const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const authed = Boolean(session?.user?.id);
 
@@ -371,16 +373,16 @@ export default async function PublicFeedPage() {
         >
           <div style={{ flex: 1, minWidth: 220 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>
-              Este é o feed público do ChartFM
+              {t("feed.publicBannerTitle")}
             </div>
             <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 4 }}>
-              Qualquer pessoa pode ler as paradas da comunidade sem entrar. Para curtir, comentar, seguir ou publicar,{" "}
+              {t("feed.publicBannerPrefix")}{" "}
               <Link href="/signup" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-                crie uma conta
+                {t("feed.createAccount")}
               </Link>{" "}
-              ou{" "}
+              {t("feed.or")}{" "}
               <Link href="/login" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-                entre
+                {t("feed.signIn")}
               </Link>
               .
             </div>
@@ -398,7 +400,7 @@ export default async function PublicFeedPage() {
               textDecoration: "none",
             }}
           >
-            Entrar para curtir e publicar
+            {t("feed.ctaBanner")}
           </Link>
         </div>
       )}
@@ -420,9 +422,9 @@ export default async function PublicFeedPage() {
             textAlign: "center",
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>Crie sua conta</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{t("feed.sidebarCreateAccount")}</div>
           <div style={{ fontSize: 12.5, color: "var(--text-subtle)", lineHeight: 1.5, marginBottom: 14 }}>
-            Siga curadores, curta paradas e publique a sua própria.
+            {t("feed.sidebarCreateAccountBody")}
           </div>
           <Link
             href="/signup"
@@ -437,7 +439,7 @@ export default async function PublicFeedPage() {
               textDecoration: "none",
             }}
           >
-            Criar conta grátis
+            {t("feed.sidebarCreateAccountCta")}
           </Link>
         </div>
       )}

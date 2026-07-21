@@ -9,27 +9,32 @@ import {
   InstitutionalTitle,
 } from "@/components/institutional/InstitutionalPrimitives";
 import { FAQ_ITEMS } from "@/lib/content/helpContent";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export const metadata: Metadata = {
-  title: "Perguntas frequentes | ChartFM",
-  description:
-    "Respostas para as dúvidas mais comuns sobre o ChartFM: paradas, pontuação do Global 100, Copa, privacidade, comunidades e suporte.",
-  alternates: { canonical: "/faq" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getServerTranslations();
+  return {
+    title: t("faq.metaTitle"),
+    description: t("faq.metaDescription"),
+    alternates: { canonical: "/faq" },
+  };
+}
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const { t } = await getServerTranslations();
+
   return (
     <InstitutionalLayout>
-      <InstitutionalTitle subtitle="Respostas para as dúvidas mais comuns sobre o ChartFM.">
-        Perguntas frequentes
+      <InstitutionalTitle subtitle={t("faq.subtitle")}>
+        {t("faq.title")}
       </InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
         {FAQ_ITEMS.map((item, index) => (
-          <div key={item.question} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+          <div key={item.questionKey} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             {index > 0 && <InstitutionalDivider />}
-            <InstitutionalSection title={item.question}>
-              <InstitutionalParagraph>{item.answer}</InstitutionalParagraph>
+            <InstitutionalSection title={t(item.questionKey)}>
+              <InstitutionalParagraph>{t(item.answerKey)}</InstitutionalParagraph>
             </InstitutionalSection>
           </div>
         ))}
@@ -37,9 +42,10 @@ export default function FaqPage() {
 
       <div style={{ marginTop: 32 }}>
         <InstitutionalMutedCallout>
-          Não encontrou o que procurava? Veja os{" "}
-          <InstitutionalInlineLink href="/guides">Guias</InstitutionalInlineLink> ou fale com a gente pela página{" "}
-          <InstitutionalInlineLink href="/contact">Contato</InstitutionalInlineLink>.
+          {t("faq.footerPrefix")}{" "}
+          <InstitutionalInlineLink href="/guides">{t("faq.footerGuidesLink")}</InstitutionalInlineLink>{" "}
+          {t("faq.footerMiddle")}{" "}
+          <InstitutionalInlineLink href="/contact">{t("faq.footerContactLink")}</InstitutionalInlineLink>.
         </InstitutionalMutedCallout>
       </div>
     </InstitutionalLayout>

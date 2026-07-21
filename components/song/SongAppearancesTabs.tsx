@@ -4,7 +4,10 @@ import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { Star, Upload, Trash2, ThumbsUp, Check } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { useTranslations } from "@/hooks/useTranslations";
 import type { SongParadaAppearanceGroup, SongParadaUserStats, SongAppearanceRow } from "@/lib/song-parada-appearances";
+
+type TFn = (key: string, params?: Record<string, string | number>) => string;
 
 async function compressImage(file: File, maxBytes = 700 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
@@ -80,20 +83,21 @@ type Props = {
   initialClips: VideoClip[];
 };
 
-function userStatsCards(stats: SongParadaUserStats): { label: string; value: string | number }[] {
+function userStatsCards(stats: SongParadaUserStats, t: TFn): { label: string; value: string | number }[] {
   return [
-    { label: "Semanas na parada", value: stats.appearances },
-    { label: "Melhor posição", value: stats.bestPosition === 9999 ? "-" : `#${stats.bestPosition}` },
-    { label: "Seus pontos", value: stats.points },
-    { label: "#1s seus", value: stats.number1s },
+    { label: t("song.appearancesWeeks"), value: stats.appearances },
+    { label: t("song.appearancesBestPosition"), value: stats.bestPosition === 9999 ? "-" : `#${stats.bestPosition}` },
+    { label: t("song.appearancesYourPoints"), value: stats.points },
+    { label: t("song.appearancesYourNumberOnes"), value: stats.number1s },
   ];
 }
 
-function paradaTabLabel(section: SongParadaAppearanceGroup): string {
-  return section.isPrimary ? "Parada principal" : section.paradaName || "Parada secundária";
+function paradaTabLabel(section: SongParadaAppearanceGroup, t: TFn): string {
+  return section.isPrimary ? t("song.appearancesPrimaryChart") : section.paradaName || t("song.appearancesSecondaryChart");
 }
 
 function AppearancesTable({ rows }: { rows: SongAppearanceRow[] }) {
+  const { t } = useTranslations();
   return (
     <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
       <div
@@ -105,7 +109,7 @@ function AppearancesTable({ rows }: { rows: SongAppearanceRow[] }) {
           borderBottom: "1px solid var(--divider)",
         }}
       >
-        {(["Pos", "Semana", "Semana do ano", "Ano", ""] as const).map((h, i) => (
+        {[t("song.appearancesColPos"), t("song.appearancesColWeek"), t("song.appearancesColWeekOfYear"), t("song.appearancesColYear"), ""].map((h, i) => (
           <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B" }}>
             {h}
           </div>
@@ -142,14 +146,14 @@ function AppearancesTable({ rows }: { rows: SongAppearanceRow[] }) {
               {row.dateRange}
             </div>
             <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
-              Sem. {row.weekOfYear}
+              {t("song.appearancesWeekOfYearShort", { week: row.weekOfYear })}
             </div>
             <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {row.year}
             </div>
             <div style={{ padding: "0 8px" }}>
               <Link href={`/chart/${row.chartId}`} style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
-                Ver parada →
+                {t("song.appearancesViewChart")}
               </Link>
             </div>
           </div>
@@ -160,6 +164,7 @@ function AppearancesTable({ rows }: { rows: SongAppearanceRow[] }) {
 }
 
 export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, globalStats, topUsers, initialVideoClipUrl, initialClips }: Props) {
+  const { t } = useTranslations();
   const isLoggedIn = !!currentUserId;
   const [activeTab, setActiveTab] = useState<"mine" | "global" | "video_clip">(isLoggedIn ? "mine" : "global");
   const [activeParadaId, setActiveParadaId] = useState<string | null>(myParadaSections[0]?.paradaId ?? null);
@@ -173,13 +178,13 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
   const [votingId, setVotingId] = useState<string | null>(null);
   const [choosingId, setChoosingId] = useState<string | null>(null);
 
-  const userCards = activeParadaSection ? userStatsCards(activeParadaSection.stats) : [];
+  const userCards = activeParadaSection ? userStatsCards(activeParadaSection.stats, t) : [];
 
   const globalCards: { label: string; value: string | number }[] = [
-    { label: "Pontos totais", value: globalStats.totalPoints },
-    { label: "Usuários únicos", value: globalStats.uniqueUsers },
-    { label: "Semanas no Top 100", value: globalStats.weeksTop100 },
-    { label: "#1s no Top 100", value: globalStats.number1s },
+    { label: t("song.appearancesTotalPoints"), value: globalStats.totalPoints },
+    { label: t("song.appearancesUniqueUsers"), value: globalStats.uniqueUsers },
+    { label: t("song.appearancesWeeksTop100"), value: globalStats.weeksTop100 },
+    { label: t("song.appearancesNumberOnesTop100"), value: globalStats.number1s },
   ];
 
   const cards = activeTab === "mine" && isLoggedIn ? userCards : globalCards;
@@ -200,7 +205,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
       });
       const data = (await res.json()) as { url?: string; id?: string; error?: string };
       if (!res.ok) {
-        setClipError(data.error ?? "Erro ao enviar a imagem.");
+        setClipError(data.error ?? t("song.appearancesUploadImageError"));
         return;
       }
       setVideoClipUrl(data.url ?? null);
@@ -222,7 +227,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
         });
       }
     } catch {
-      setClipError("Erro de conexão. Tente novamente.");
+      setClipError(t("song.appearancesConnErrorRetry"));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -239,7 +244,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
-        setClipError(data.error ?? "Erro ao remover.");
+        setClipError(data.error ?? t("song.appearancesRemoveError"));
         return;
       }
       setVideoClipUrl(null);
@@ -247,7 +252,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
         setClips((prev) => prev.filter((c) => c.id !== myClip.id));
       }
     } catch {
-      setClipError("Erro de conexão. Tente novamente.");
+      setClipError(t("song.appearancesConnErrorRetry"));
     } finally {
       setUploading(false);
     }
@@ -289,20 +294,20 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
   }, [isLoggedIn, songId, choosingId, clips]);
 
   const tabs: { id: "mine" | "global" | "video_clip"; label: string; onlyLoggedIn?: boolean }[] = [
-    { id: "mine", label: "Nas suas paradas", onlyLoggedIn: true },
-    { id: "global", label: "Global" },
-    { id: "video_clip", label: "Vídeo Clipe" },
+    { id: "mine", label: t("song.appearancesTabMine"), onlyLoggedIn: true },
+    { id: "global", label: t("song.appearancesTabGlobal") },
+    { id: "video_clip", label: t("chart.variantVideoClip") },
   ];
 
   return (
     <div style={{ marginTop: 30 }}>
       <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-        {tabs.filter((t) => !t.onlyLoggedIn || isLoggedIn).map((t) => {
-          const isActive = activeTab === t.id;
+        {tabs.filter((tabItem) => !tabItem.onlyLoggedIn || isLoggedIn).map((tabItem) => {
+          const isActive = activeTab === tabItem.id;
           return (
             <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
+              key={tabItem.id}
+              onClick={() => setActiveTab(tabItem.id)}
               style={{
                 background: "none",
                 border: "none",
@@ -315,7 +320,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                 marginBottom: -1,
               }}
             >
-              {t.label}
+              {tabItem.label}
             </button>
           );
         })}
@@ -335,7 +340,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
       {activeTab === "global" && (
         <>
           <div style={{ marginTop: 14, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: 16 }}>
-            <div style={{ fontSize: 12, color: "#86868B", marginBottom: 6 }}>Pico no Global Top 100</div>
+            <div style={{ fontSize: 12, color: "#86868B", marginBottom: 6 }}>{t("song.appearancesPeakGlobal")}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 28, fontWeight: 800 }}>
               {globalStats.peak === 1 && <Star size={18} color="#FA243C" fill="#FA243C" />}
               {globalStats.peak === 9999 ? "-" : `#${globalStats.peak}`}
@@ -343,7 +348,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
           </div>
           {topUsers.length > 0 && (
             <div style={{ marginTop: 20 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 14 }}>Top 5 usuários da música</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 14 }}>{t("song.appearancesTopUsersHeading")}</h2>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
                 {topUsers.map((row) => (
                   <Link key={row.user.id} href={`/profile/${row.user.handle}`} style={{ textDecoration: "none" }}>
@@ -359,7 +364,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                         {row.user.name}
                       </div>
                       <div style={{ fontSize: 12, color: "#86868B" }}>@{row.user.handle}</div>
-                      <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: "#FA243C" }}>{row.points} pts</div>
+                      <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: "#FA243C" }}>{t("song.appearancesPts", { points: row.points })}</div>
                     </div>
                   </Link>
                 ))}
@@ -373,9 +378,9 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
         <div style={{ marginTop: 14 }}>
           {!isLoggedIn ? (
             <div style={{ padding: 16, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>
-              <span style={{ color: "var(--text)", fontWeight: 600 }}>Suas paradas com esta música</span>
+              <span style={{ color: "var(--text)", fontWeight: 600 }}>{t("song.appearancesYourChartsHeading")}</span>
               {" - "}
-              entre na sua conta para ver posição, datas e ano em cada semana em que você publicou esta faixa.
+              {t("song.appearancesLoginToSeeDetails")}
             </div>
           ) : myParadaSections.length > 0 ? (
             <>
@@ -401,7 +406,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {paradaTabLabel(section)}
+                        {paradaTabLabel(section, t)}
                         {section.isPrimary ? " ★" : ""}
                       </button>
                     );
@@ -412,14 +417,14 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                 <AppearancesTable rows={activeParadaSection.appearances} />
               ) : (
                 <div style={{ padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
-                  Esta música ainda não aparece na {activeParadaSection?.isPrimary ? "parada principal" : "parada secundária"}
-                  {activeParadaSection?.paradaName ? ` (${activeParadaSection.paradaName})` : ""}. Quando você votar com ela, aparecerá aqui a posição, a data e o ano de cada semana.
+                  {t("song.appearancesNotInChartPrefix")}{activeParadaSection?.isPrimary ? t("song.appearancesPrimaryChartLower") : t("song.appearancesSecondaryChartLower")}
+                  {activeParadaSection?.paradaName ? ` (${activeParadaSection.paradaName})` : ""}{t("song.appearancesNotInChartSuffix")}
                 </div>
               )}
             </>
           ) : (
             <div style={{ padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
-              Esta música ainda não aparece em nenhuma das suas paradas publicadas. Quando você votar com ela, aparecerá aqui a posição, a data e o ano de cada semana.
+              {t("song.appearancesNoChartsAtAll")}
             </div>
           )}
         </div>
@@ -449,7 +454,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                 }}
               >
                 <Upload size={15} />
-                {uploading ? "Enviando…" : clips.some((c) => c.isMyUpload) ? "Trocar minha captura" : "Enviar minha captura"}
+                {uploading ? t("song.appearancesUploadingClip") : clips.some((c) => c.isMyUpload) ? t("song.appearancesChangeMyCapture") : t("song.appearancesUploadMyCapture")}
               </button>
               {clips.some((c) => c.isMyUpload) && !uploading && (
                 <button
@@ -462,7 +467,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                   }}
                 >
                   <Trash2 size={15} />
-                  Remover minha captura
+                  {t("song.appearancesRemoveMyCapture")}
                 </button>
               )}
               {clipError && (
@@ -474,15 +479,15 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
           {/* Gallery */}
           {clips.length === 0 ? (
             <div style={{ padding: 20, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
-              Nenhuma captura enviada ainda.{" "}
+              {t("song.appearancesNoCapturesYet")}{" "}
               {isLoggedIn
-                ? "Seja o primeiro a adicionar uma imagem para esta música!"
-                : "Entre na sua conta para enviar uma captura de vídeo clipe."}
+                ? t("song.appearancesBeFirstToAdd")
+                : t("song.appearancesLoginToUploadCapture")}
             </div>
           ) : (
             <>
               <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.5 }}>
-                Vote na captura que melhor representa o vídeo clipe desta música. A mais votada será usada como padrão para quem ainda não escolheu a sua.
+                {t("song.appearancesVoteHint")}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
                 {clips.map((clip, idx) => {
@@ -504,17 +509,17 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                       <div style={{ position: "absolute", top: 10, left: 10, display: "flex", gap: 6, zIndex: 2 }}>
                         {isDefault && (
                           <span style={{ background: "#FA243C", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, letterSpacing: "0.03em" }}>
-                            Padrão
+                            {t("song.appearancesDefaultBadge")}
                           </span>
                         )}
                         {clip.isMyUpload && (
                           <span style={{ background: "rgba(0,0,0,0.55)", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6 }}>
-                            Minha
+                            {t("song.appearancesMyBadge")}
                           </span>
                         )}
                         {clip.isMyChoice && (
                           <span style={{ background: "#34C759", color: "white", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6 }}>
-                            Em uso
+                            {t("song.appearancesInUseBadge")}
                           </span>
                         )}
                       </div>
@@ -524,7 +529,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={clip.imageUrl}
-                          alt="Captura do clipe"
+                          alt={t("song.appearancesCaptureAlt")}
                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                         />
                       </div>
@@ -540,7 +545,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                             <button
                               onClick={() => handleChoose(clip.id)}
                               disabled={!!isChoosing}
-                              title="Usar esta captura nas minhas paradas"
+                              title={t("song.appearancesUseThisTooltip")}
                               style={{
                                 display: "inline-flex", alignItems: "center", gap: 5,
                                 fontSize: 12, fontWeight: 700,
@@ -550,13 +555,13 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                                 opacity: isChoosing ? 0.6 : 1,
                               }}
                             >
-                              Usar esta
+                              {t("song.appearancesUseThis")}
                             </button>
                           )}
                           {isLoggedIn && clip.isMyChoice && (
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: "#34C759" }}>
                               <Check size={13} />
-                              Em uso
+                              {t("song.appearancesInUseBadge")}
                             </span>
                           )}
 
@@ -564,7 +569,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                           <button
                             onClick={() => handleVote(clip.id)}
                             disabled={!isLoggedIn || isVoting}
-                            title={isLoggedIn ? (clip.hasVoted ? "Remover voto" : "Votar nesta captura") : "Entre para votar"}
+                            title={isLoggedIn ? (clip.hasVoted ? t("song.appearancesRemoveVoteTooltip") : t("song.appearancesVoteTooltip")) : t("song.appearancesLoginToVoteTooltip")}
                             style={{
                               display: "inline-flex", alignItems: "center", gap: 5,
                               background: clip.hasVoted ? "#FA243C" : "transparent",

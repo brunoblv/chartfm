@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
+
+type TFn = ReturnType<typeof useTranslations>["t"];
 
 type PeakPotential =
   | "1" | "top5" | "top10" | "top20" | "top30" | "top40"
@@ -75,31 +78,41 @@ interface RetroResponse {
   entries: RetroEntry[];
 }
 
-const MONTHS = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
+function getMonths(t: TFn): string[] {
+  return [
+    t("retro.monthJanuary"), t("retro.monthFebruary"), t("retro.monthMarch"), t("retro.monthApril"),
+    t("retro.monthMay"), t("retro.monthJune"), t("retro.monthJuly"), t("retro.monthAugust"),
+    t("retro.monthSeptember"), t("retro.monthOctober"), t("retro.monthNovember"), t("retro.monthDecember"),
+  ];
+}
 
-const PEAK_LABEL: Record<PeakPotential, string> = {
-  "1": "#1",
-  top5: "Top 5",
-  top10: "Top 10",
-  top20: "Top 20",
-  top30: "Top 30",
-  top40: "Top 40",
-  top50: "Top 50",
-  top60: "Top 60",
-  top70: "Top 70",
-  top80: "Top 80",
-  top90: "Top 90",
-  top100: "Top 100",
-  out: "Fora",
-};
+function monthYear(t: TFn, months: string[], month: number, year: number): string {
+  return t("retro.monthYear", { month: months[month - 1], year });
+}
+
+function getPeakLabel(t: TFn): Record<PeakPotential, string> {
+  return {
+    "1": t("retro.peakOne"),
+    top5: t("retro.peakTop5"),
+    top10: t("retro.peakTop10"),
+    top20: t("retro.peakTop20"),
+    top30: t("retro.peakTop30"),
+    top40: t("retro.peakTop40"),
+    top50: t("retro.peakTop50"),
+    top60: t("retro.peakTop60"),
+    top70: t("retro.peakTop70"),
+    top80: t("retro.peakTop80"),
+    top90: t("retro.peakTop90"),
+    top100: t("retro.peakTop100"),
+    out: t("retro.peakOut"),
+  };
+}
 const PEAK_ORDER: PeakPotential[] = [
   "1", "top5", "top10", "top20", "top30", "top40",
   "top50", "top60", "top70", "top80", "top90", "top100", "out",
 ];
 
+// Diamond/Platinum/Gold/Silver/Bronze: termos de certificação usados sem tradução em ambos os idiomas.
 const HIT_BADGE: Record<HitLevel, { label: string; fg: string; bg: string }> = {
   diamond: { label: "Diamond", fg: "#06B6D4", bg: "rgba(6, 182, 212, 0.13)" },
   platinum: { label: "Platinum", fg: "#8B5CF6", bg: "rgba(139, 92, 246, 0.13)" },
@@ -117,28 +130,36 @@ const PRIORITY_BADGE: Record<Priority, { fg: string; bg: string }> = {
   D: { fg: "var(--text-muted)", bg: "var(--fill-subtle)" },
 };
 
-const CONFIDENCE_LABEL: Record<Confidence, string> = { alta: "Alta", media: "Média", baixa: "Baixa" };
+function getConfidenceLabel(t: TFn): Record<Confidence, string> {
+  return { alta: t("retro.confidenceHigh"), media: t("retro.confidenceMedium"), baixa: t("retro.confidenceLow") };
+}
 
-const TARGET_LABEL: Record<RetroTarget, string> = {
-  hot100: "Hot 100 de Singles",
-  clipes: "Top 20 de Clipes",
-};
+function getTargetLabel(t: TFn): Record<RetroTarget, string> {
+  return {
+    hot100: t("retro.targetHot100"),
+    clipes: t("retro.targetClipes"),
+  };
+}
 
-const SOURCE_LABEL: Record<ReleaseRefSource, string> = {
-  single: "single",
-  album: "álbum",
-  clipe: "clipe",
-  top20: "Top 20",
-  billboard: "Billboard",
-};
+function getSourceLabel(t: TFn): Record<ReleaseRefSource, string> {
+  return {
+    single: "single",
+    album: t("retro.sourceAlbumLabel"),
+    clipe: t("retro.sourceClipeLabel"),
+    top20: "Top 20",
+    billboard: "Billboard",
+  };
+}
 
-const WEIGHT_ROWS: { key: keyof ScoreBreakdown; label: string; max: number; color: string }[] = [
-  { key: "period", label: "Plays do período", max: 25, color: "#10B981" },
-  { key: "importance", label: "Importância", max: 30, color: "#0EA5E9" },
-  { key: "top20", label: "Histórico Top 20", max: 30, color: "#8B5CF6" },
-  { key: "releaseRecency", label: "Recência do lançamento", max: 10, color: "#F59E0B" },
-  { key: "adjust", label: "Ajustes manuais", max: 5, color: "#F43F5E" },
-];
+function getWeightRows(t: TFn): { key: keyof ScoreBreakdown; label: string; max: number; color: string }[] {
+  return [
+    { key: "period", label: t("retro.weightPeriod"), max: 25, color: "#10B981" },
+    { key: "importance", label: t("retro.weightImportance"), max: 30, color: "#0EA5E9" },
+    { key: "top20", label: t("retro.weightTop20"), max: 30, color: "#8B5CF6" },
+    { key: "releaseRecency", label: t("retro.weightReleaseRecency"), max: 10, color: "#F59E0B" },
+    { key: "adjust", label: t("retro.weightAdjust"), max: 5, color: "#F43F5E" },
+  ];
+}
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_HISTORY_YEAR = 1990;
@@ -264,6 +285,7 @@ function ScoreRing({ value, size = 40 }: { value: number; size?: number }) {
 }
 
 function ImportanceMeter({ value, manual }: { value: number; manual: boolean }) {
+  const { t } = useTranslations();
   const pct = Math.max(0, Math.min(100, value));
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -272,7 +294,7 @@ function ImportanceMeter({ value, manual }: { value: number; manual: boolean }) 
         <div style={{ width: `${pct}%`, height: "100%", borderRadius: 99, background: `hsl(${scoreHue(pct)} 65% 45%)` }} />
       </div>
       {manual && (
-        <span title="Ajustada manualmente" style={{ fontSize: 11, color: "var(--accent)" }}>✎</span>
+        <span title={t("retro.manuallyAdjustedTooltip")} style={{ fontSize: 11, color: "var(--accent)" }}>✎</span>
       )}
     </div>
   );
@@ -306,14 +328,14 @@ function StatTile({ value, label }: { value: number; label: string }) {
   );
 }
 
-function reasonsFor(e: RetroEntry): string[] {
+function reasonsFor(e: RetroEntry, t: TFn): string[] {
   const r: string[] = [];
-  if (e.importance >= 80) r.push(`Importância muito alta (${Math.round(e.importance)}/100)`);
-  if (e.periodPlaycount && e.periodPlaycount > 0) r.push(`${e.periodPlaycount} plays no período`);
-  else if (e.overallPlaycount > 0) r.push(`${e.overallPlaycount.toLocaleString("pt-BR")} plays no total`);
-  if (e.numberOnes > 0) r.push(`Já teve ${e.numberOnes}× #1 na sua Top 20`);
-  if (e.top20BestPeak != null) r.push(`Pico #${e.top20BestPeak} na sua Top 20`);
-  if (e.top20Weeks > 0) r.push(`${e.top20Weeks} semanas na Top 20`);
+  if (e.importance >= 80) r.push(t("retro.reasonHighImportance", { value: Math.round(e.importance) }));
+  if (e.periodPlaycount && e.periodPlaycount > 0) r.push(t("retro.reasonPeriodPlays", { count: e.periodPlaycount }));
+  else if (e.overallPlaycount > 0) r.push(t("retro.reasonTotalPlays", { count: e.overallPlaycount.toLocaleString("pt-BR") }));
+  if (e.numberOnes > 0) r.push(t("retro.reasonNumberOnes", { count: e.numberOnes }));
+  if (e.top20BestPeak != null) r.push(t("retro.reasonPeak", { peak: e.top20BestPeak }));
+  if (e.top20Weeks > 0) r.push(t("retro.reasonWeeks", { count: e.top20Weeks }));
   return r;
 }
 
@@ -340,13 +362,13 @@ function draftFrom(e: RetroEntry): Draft {
 }
 
 /** Datas candidatas a estreia (só as que existem), para o seletor de fonte. */
-function debutCandidates(e: RetroEntry): { source: ReleaseRefSource; date: string; label: string }[] {
+function debutCandidates(e: RetroEntry, t: TFn): { source: ReleaseRefSource; date: string; label: string }[] {
   const effectiveBb = e.billboardHot100DebutDate ?? e.songBillboardHot100DebutDate;
   const rows: { source: ReleaseRefSource; date: string | null; label: string }[] = [
     { source: "single", date: e.singleReleaseDate, label: "Single" },
     { source: "billboard", date: effectiveBb, label: "Billboard" },
-    { source: "album", date: e.albumReleaseDate, label: "Álbum" },
-    { source: "clipe", date: e.youtubeReleaseDate, label: "Clipe" },
+    { source: "album", date: e.albumReleaseDate, label: t("retro.debutLabelAlbum") },
+    { source: "clipe", date: e.youtubeReleaseDate, label: t("retro.debutLabelClipe") },
     { source: "top20", date: e.top20FirstEntryDate, label: "Top 20" },
   ];
   return rows
@@ -460,13 +482,15 @@ function WeeklyLivePreview({
   startYear: number;
   startMonth: number;
 }) {
+  const { t } = useTranslations();
+  const months = getMonths(t);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<LivePreviewResponse | null>(null);
   const [weekIndex, setWeekIndex] = useState<number | null>(null);
   const [search, setSearch] = useState("");
 
-  const startLabel = `${MONTHS[startMonth - 1]} de ${startYear}`;
+  const startLabel = monthYear(t, months, startMonth, startYear);
 
   const load = useCallback(async (wi?: number | null) => {
     setLoading(true);
@@ -512,20 +536,22 @@ function WeeklyLivePreview({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-        Hot 100 simulado de {MONTHS[month - 1]} de {year} — carry-over + estreias ·{" "}
+        {t("retro.liveHeaderInfo", { month: months[month - 1], year })}{" "}
         {data ? (
           <>
-            <strong style={{ color: "var(--text)" }}>{data.totalDebuts}</strong> estreias desde {startLabel} ·{" "}
-            <strong style={{ color: "var(--text)" }}>{data.debutsInMonth}</strong> neste mês
+            <strong style={{ color: "var(--text)" }}>{data.totalDebuts}</strong>{" "}
+            {t("retro.liveDebutsSinceSuffix", { startLabel })}{" "}
+            <strong style={{ color: "var(--text)" }}>{data.debutsInMonth}</strong>{" "}
+            {t("retro.liveDebutsThisMonthSuffix")}
           </>
         ) : (
-          "montando a curva…"
+          t("retro.liveBuildingCurve")
         )}
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Semana</span>
+          <span style={labelStyle}>{t("retro.weekLabel")}</span>
           <select
             value={weekIndex ?? ""}
             disabled={!data?.weeks.length || loading}
@@ -546,7 +572,7 @@ function WeeklyLivePreview({
         <input
           value={search}
           onChange={(ev) => setSearch(ev.target.value)}
-          placeholder="Buscar no chart…"
+          placeholder={t("retro.searchChartPlaceholder")}
           className="retro-input"
           style={{ ...inputStyle, flex: "1 1 200px", maxWidth: 280, alignSelf: "flex-end" }}
         />
@@ -562,25 +588,25 @@ function WeeklyLivePreview({
             opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? "Simulando…" : "↻ Atualizar simulação"}
+          {loading ? t("retro.simulating") : t("retro.refreshSimulation")}
         </button>
       </div>
 
       {error && (
         <div style={{ ...card, borderColor: "rgba(225, 29, 72, 0.4)", background: "rgba(225, 29, 72, 0.08)", padding: "12px 16px", fontSize: 14, color: "var(--down-fg)" }}>
-          Não foi possível simular o Hot 100 ({error}).
+          {t("retro.simulateError", { error })}
         </div>
       )}
 
       {loading && !data && (
         <div style={{ ...card, padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-          Simulando semanas com carry-over… isso pode levar alguns segundos.
+          {t("retro.simulatingWeeks")}
         </div>
       )}
 
       {data && !data.chart && !loading && (
         <div style={{ ...card, padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-          Nenhuma semana simulada neste mês — ainda não há estreias elegíveis desde {startLabel}.
+          {t("retro.noWeekSimulated", { startLabel })}
         </div>
       )}
 
@@ -596,13 +622,13 @@ function WeeklyLivePreview({
                 <tr>
                   <th style={{ ...thStyle, width: 44 }}>#</th>
                   <th style={{ ...thStyle, width: 48 }}>LW</th>
-                  <th style={thStyle}>Música</th>
+                  <th style={thStyle}>{t("retro.colSong")}</th>
                   <th style={{ ...thStyle, textAlign: "center" }}>St</th>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Sem.</th>
-                  <th style={{ ...thStyle, textAlign: "center" }}>Pico</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>{t("retro.colWeeksAbbr")}</th>
+                  <th style={{ ...thStyle, textAlign: "center" }}>{t("retro.colPeak")}</th>
                   <th style={{ ...thStyle, textAlign: "right" }}>Power</th>
                   <th style={{ ...thStyle, textAlign: "right" }}>Score</th>
-                  <th style={thStyle}>Estreia</th>
+                  <th style={thStyle}>{t("retro.colDebut")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -610,7 +636,7 @@ function WeeklyLivePreview({
                   const st = STATUS_LABEL[e.status];
                   const debutMonth =
                     e.debutDate != null
-                      ? `${MONTHS[Number(e.debutDate.slice(5, 7)) - 1]?.slice(0, 3) ?? ""}/${e.debutDate.slice(0, 4)}`
+                      ? `${months[Number(e.debutDate.slice(5, 7)) - 1]?.slice(0, 3) ?? ""}/${e.debutDate.slice(0, 4)}`
                       : null;
                   return (
                     <tr key={e.songId} className="retro-row" style={{ cursor: "default" }}>
@@ -649,7 +675,7 @@ function WeeklyLivePreview({
                 {entries.length === 0 && (
                   <tr>
                     <td colSpan={9} style={{ ...tdStyle, padding: 32, textAlign: "center", color: "var(--text-muted)" }}>
-                      Nenhuma música encontrada.
+                      {t("retro.noSongFound")}
                     </td>
                   </tr>
                 )}
@@ -680,6 +706,9 @@ function HistoryGenerationPanel({
   onStartYearChange: (year: number) => void;
   onStartMonthChange: (month: number) => void;
 }) {
+  const { t } = useTranslations();
+  const months = getMonths(t);
+  const targetLabel = getTargetLabel(t);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [publishResult, setPublishResult] = useState<PublishResponse | null>(null);
   const [loading, setLoading] = useState<"preview" | "publish" | null>(null);
@@ -688,8 +717,8 @@ function HistoryGenerationPanel({
   const [paradas, setParadas] = useState<ParadaOption[]>([]);
   const [paradaId, setParadaId] = useState(""); // vazio = usa a parada padrão do target
 
-  const throughLabel = `${MONTHS[throughMonth - 1]} de ${throughYear}`;
-  const startLabel = `${MONTHS[startMonth - 1]} de ${startYear}`;
+  const throughLabel = monthYear(t, months, throughMonth, throughYear);
+  const startLabel = monthYear(t, months, startMonth, startYear);
 
   useEffect(() => {
     fetch("/api/user/paradas")
@@ -747,32 +776,31 @@ function HistoryGenerationPanel({
   return (
     <div style={{ ...card, padding: 16, display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700 }}>Publicar até este mês</div>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>{t("retro.publishTitle")}</div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-          Fluxo mês a mês: cura as estreias de {throughLabel}, depois simula e publica desde{" "}
-          <strong style={{ color: "var(--text)" }}>{startLabel}</strong> até o fim de {throughLabel}{" "}
-          (padrão = 1 ano antes, para o primeiro Hot 100 já nascer cheio). Semanas existentes não são
-          sobrescritas.
+          {t("retro.publishDescPrefix", { throughLabel })}{" "}
+          <strong style={{ color: "var(--text)" }}>{startLabel}</strong>{" "}
+          {t("retro.publishDescSuffix", { throughLabel })}
         </div>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Publicar em</span>
+          <span style={labelStyle}>{t("retro.publishInLabel")}</span>
           <select value={paradaId} onChange={(ev) => setParadaId(ev.target.value)} style={inputStyle}>
-            <option value="">Padrão ({TARGET_LABEL[target]})</option>
+            <option value="">{t("retro.defaultOption", { target: targetLabel[target] })}</option>
             {paradas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Histórico desde</span>
+          <span style={labelStyle}>{t("retro.historySinceLabel")}</span>
           <div style={{ display: "flex", gap: 8 }}>
             <select
               value={startMonth}
               onChange={(ev) => onStartMonthChange(Number(ev.target.value))}
               style={inputStyle}
             >
-              {MONTHS.map((m, i) => {
+              {months.map((m, i) => {
                 const mNum = i + 1;
                 const disabled = startYear === throughYear && mNum > throughMonth;
                 return (
@@ -792,7 +820,7 @@ function HistoryGenerationPanel({
           </div>
         </label>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Até</span>
+          <span style={labelStyle}>{t("retro.untilLabel")}</span>
           <div style={{ ...inputStyle, fontWeight: 600, background: "var(--fill-subtle)" }}>
             {throughLabel}
           </div>
@@ -802,7 +830,7 @@ function HistoryGenerationPanel({
           disabled={loading !== null}
           style={{ ...inputStyle, padding: "10px 16px", fontWeight: 600, cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}
         >
-          {loading === "preview" ? "Simulando…" : "Simular até este mês"}
+          {loading === "preview" ? t("retro.simulating") : t("retro.simulateUntilMonth")}
         </button>
         {preview && preview.weeksToCreate > 0 && (
           <button
@@ -814,43 +842,50 @@ function HistoryGenerationPanel({
               cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1,
             }}
           >
-            {loading === "publish" ? "Publicando…" : `Publicar até ${MONTHS[throughMonth - 1]}/${throughYear}`}
+            {loading === "publish" ? t("retro.publishing") : t("retro.publishUntil", { month: months[throughMonth - 1], year: throughYear })}
           </button>
         )}
       </div>
 
       {error && (
-        <div style={{ fontSize: 13, color: "var(--down-fg)" }}>Erro: {error}</div>
+        <div style={{ fontSize: 13, color: "var(--down-fg)" }}>{t("retro.errorPrefix", { error })}</div>
       )}
 
       {preview && (
         <div style={{ fontSize: 13, color: "var(--text-subtle)", display: "flex", flexDirection: "column", gap: 4 }}>
           <div>
-            <strong>{preview.weeksToCreate}</strong> semanas novas de {startLabel} até {throughLabel}
+            <strong>{preview.weeksToCreate}</strong> {t("retro.newWeeksSummarySuffix", { startLabel, throughLabel })}
             {(preview.weeksAlreadyExist ?? 0) > 0 && (
-              <> · {preview.weeksAlreadyExist} já existem (não sobrescreve)</>
+              <> {t("retro.alreadyExistSuffix", { count: preview.weeksAlreadyExist ?? 0 })}</>
             )}
-            {" "}· <strong>{preview.totalDebuts}</strong> estreias · {preview.monthsScanned} meses varridos
+            {" "}· <strong>{preview.totalDebuts}</strong>{" "}
+            {t("retro.debutsSummarySuffix", { months: preview.monthsScanned })}
           </div>
           {preview.firstWeek && (
             <div>
-              1ª semana nova: {preview.firstWeek.weekLabel} ({preview.firstWeek.dateRange}) — top 5:{" "}
-              {preview.firstWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", ")}
+              {t("retro.firstWeekSummary", {
+                weekLabel: preview.firstWeek.weekLabel,
+                dateRange: preview.firstWeek.dateRange,
+                list: preview.firstWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", "),
+              })}
             </div>
           )}
           {preview.lastWeek && preview.lastWeek.weekIndex !== preview.firstWeek?.weekIndex && (
             <div>
-              Última semana deste lote: {preview.lastWeek.weekLabel} ({preview.lastWeek.dateRange}) — top 5:{" "}
-              {preview.lastWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", ")}
+              {t("retro.lastWeekSummary", {
+                weekLabel: preview.lastWeek.weekLabel,
+                dateRange: preview.lastWeek.dateRange,
+                list: preview.lastWeek.top5.map((e) => `#${e.position} ${e.title}`).join(", "),
+              })}
             </div>
           )}
           {preview.weeksToCreate === 0 && (
             <div>
               {(preview.weeksAlreadyExist ?? 0) > 0
-                ? `Todas as ${preview.weeksAlreadyExist} semanas de ${startLabel} até ${throughLabel} já estão publicadas. Avance o período acima e continue.`
+                ? t("retro.allWeeksPublished", { count: preview.weeksAlreadyExist ?? 0, startLabel, throughLabel })
                 : preview.monthsScanned === 0
-                  ? `Nenhum mês varrido até ${throughLabel} — confira “Histórico desde” e o mês/ano acima.`
-                  : `Simulação sem estreias elegíveis até ${throughLabel} (${preview.monthsScanned} meses varridos). Cure as estreias do mês e tente de novo.`}
+                  ? t("retro.noMonthsScanned", { throughLabel })
+                  : t("retro.noEligibleDebuts", { throughLabel, months: preview.monthsScanned })}
             </div>
           )}
         </div>
@@ -858,14 +893,14 @@ function HistoryGenerationPanel({
 
       {publishResult && (
         <div style={{ fontSize: 13, color: "var(--text-subtle)" }}>
-          <strong>{publishResult.created}</strong> semanas publicadas · {publishResult.skippedExisting} já existiam ·{" "}
+          <strong>{publishResult.created}</strong> {t("retro.publishedSummarySuffix", { skipped: publishResult.skippedExisting })}{" "}
           {publishResult.remaining > 0 ? (
             <span style={{ color: "var(--accent)", fontWeight: 600 }}>
-              {publishResult.remaining} restantes neste mês — clique em Publicar de novo para continuar.
+              {t("retro.remainingThisMonth", { count: publishResult.remaining })}
             </span>
           ) : (
             <span>
-              {throughLabel} pronto. Avance o período (mês/ano acima), cure as estreias e publique o próximo mês.
+              {t("retro.monthReady", { month: throughLabel })}
             </span>
           )}
         </div>
@@ -877,6 +912,13 @@ function HistoryGenerationPanel({
 // ── página ────────────────────────────────────────────────────────────────
 
 export function RetroClient() {
+  const { t } = useTranslations();
+  const months = getMonths(t);
+  const peakLabel = getPeakLabel(t);
+  const confidenceLabel = getConfidenceLabel(t);
+  const targetLabel = getTargetLabel(t);
+  const sourceLabel = getSourceLabel(t);
+  const weightRows = getWeightRows(t);
   const [year, setYear] = useState(2005);
   const [month, setMonth] = useState(5);
   const [mode, setMode] = useState<RetroMode>("retrospectivo");
@@ -1038,10 +1080,10 @@ export function RetroClient() {
       {/* Controles */}
       <div style={{ ...card, display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 16, padding: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Período da parada</span>
+          <span style={labelStyle}>{t("retro.periodLabel")}</span>
           <div style={{ display: "flex", gap: 8 }}>
             <select value={month} onChange={(ev) => setMonth(Number(ev.target.value))} style={inputStyle}>
-              {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              {months.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
             </select>
             <select value={year} onChange={(ev) => setYear(Number(ev.target.value))} style={inputStyle}>
               {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -1050,18 +1092,18 @@ export function RetroClient() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Parada</span>
+          <span style={labelStyle}>{t("retro.targetLabel")}</span>
           <select value={target} onChange={(ev) => setTarget(ev.target.value as RetroTarget)} style={inputStyle}>
-            <option value="hot100">{TARGET_LABEL.hot100}</option>
-            <option value="clipes">{TARGET_LABEL.clipes}</option>
+            <option value="hot100">{targetLabel.hot100}</option>
+            <option value="clipes">{targetLabel.clipes}</option>
           </select>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Modo</span>
+          <span style={labelStyle}>{t("retro.modeLabel")}</span>
           <select value={mode} onChange={(ev) => setMode(ev.target.value as RetroMode)} style={inputStyle}>
-            <option value="retrospectivo">Retrospectivo</option>
-            <option value="historico">Histórico</option>
+            <option value="retrospectivo">{t("retro.modeRetrospectivo")}</option>
+            <option value="historico">{t("retro.modeHistorico")}</option>
           </select>
         </div>
 
@@ -1081,24 +1123,24 @@ export function RetroClient() {
             opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? "Calculando…" : "↻ Recalcular"}
+          {loading ? t("retro.calculating") : t("retro.recalculate")}
         </button>
       </div>
 
       {error === "no_lastfm_user" && (
         <div style={{ ...card, borderColor: "rgba(217, 119, 6, 0.4)", background: "rgba(217, 119, 6, 0.08)", padding: "12px 16px", fontSize: 14, color: "#B45309" }}>
-          Nenhum usuário do Last.fm configurado na sua conta.
+          {t("retro.noLastfmUser")}
         </div>
       )}
       {error && error !== "no_lastfm_user" && (
         <div style={{ ...card, borderColor: "rgba(225, 29, 72, 0.4)", background: "rgba(225, 29, 72, 0.08)", padding: "12px 16px", fontSize: 14, color: "var(--down-fg)" }}>
-          Não foi possível carregar a parada ({error}).
+          {t("retro.loadError", { error })}
         </div>
       )}
 
       {loading && !data && (
         <div style={{ ...card, padding: 40, textAlign: "center", color: "var(--text-muted)", fontSize: 14 }}>
-          Montando sua parada retrospectiva… isso pode levar alguns segundos.
+          {t("retro.loadingChart")}
         </div>
       )}
 
@@ -1107,8 +1149,8 @@ export function RetroClient() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {(
               [
-                { id: "debuts" as const, label: "Estreias do mês" },
-                { id: "live" as const, label: "Hot 100 vivo" },
+                { id: "debuts" as const, label: t("retro.tabDebuts") },
+                { id: "live" as const, label: t("retro.tabLive") },
               ] as const
             ).map((tab) => {
               const active = view === tab.id;
@@ -1146,21 +1188,25 @@ export function RetroClient() {
           {view === "debuts" && (
           <>
           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            Lançamentos de {MONTHS[data.period.month - 1]} de {data.period.year} — candidatas a estreia na{" "}
-            {TARGET_LABEL[data.period.target]} ·{" "}
-            {data.usesRealPeriodData ? "plays reais do período" : "antes de Out/2010 → estimado"} ·{" "}
-            {data.stats.matched} faixas da biblioteca casadas ({data.stats.unmatched} sem correspondência)
+            {t("retro.debutsInfo", {
+              month: months[data.period.month - 1],
+              year: data.period.year,
+              target: targetLabel[data.period.target],
+              playsInfo: data.usesRealPeriodData ? t("retro.playsRealPeriod") : t("retro.playsEstimated"),
+              matched: data.stats.matched,
+              unmatched: data.stats.unmatched,
+            })}
           </div>
 
           {/* KPIs */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
-            <StatTile value={data.stats.eligible} label="Candidatas a estreia" />
-            <StatTile value={data.stats.catalogOnly} label="Só no catálogo (sem plays)" />
-            <StatTile value={data.stats.withPeriodPlays} label="Com plays no período" />
-            <StatTile value={data.stats.everInTop20} label="Já entraram na Top 20" />
-            <StatTile value={data.stats.everNumberOne} label="Tiveram #1" />
+            <StatTile value={data.stats.eligible} label={t("retro.statEligible")} />
+            <StatTile value={data.stats.catalogOnly} label={t("retro.statCatalogOnly")} />
+            <StatTile value={data.stats.withPeriodPlays} label={t("retro.statWithPeriodPlays")} />
+            <StatTile value={data.stats.everInTop20} label={t("retro.statEverInTop20")} />
+            <StatTile value={data.stats.everNumberOne} label={t("retro.statEverNumberOne")} />
             <StatTile value={data.stats.diamonds} label="Diamonds" />
-            <StatTile value={data.stats.excludedOut} label="Marcadas como Fora" />
+            <StatTile value={data.stats.excludedOut} label={t("retro.statExcludedOut")} />
           </div>
 
           {/* Busca + ações em lote */}
@@ -1168,38 +1214,38 @@ export function RetroClient() {
             <input
               value={search}
               onChange={(ev) => { setSearch(ev.target.value); setPage(1); }}
-              placeholder="Buscar música ou artista…"
+              placeholder={t("retro.searchPlaceholder")}
               className="retro-input"
               style={{ ...inputStyle, flex: "1 1 220px", maxWidth: 340 }}
             />
             <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>
               {filtered.length === data.entries.length
-                ? `${data.entries.length} posições`
-                : `${filtered.length} de ${data.entries.length} posições`}
+                ? t("retro.positionsCountAll", { count: data.entries.length })
+                : t("retro.positionsCountFiltered", { filtered: filtered.length, total: data.entries.length })}
             </span>
 
             {checked.size > 0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-                <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>{checked.size} selecionadas</span>
+                <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>{t("retro.selectedCount", { count: checked.size })}</span>
                 <button
                   onClick={() => void bulkSetOut(true)}
                   disabled={bulkSaving}
                   style={{ ...inputStyle, padding: "6px 12px", fontWeight: 600, cursor: bulkSaving ? "default" : "pointer", opacity: bulkSaving ? 0.6 : 1 }}
                 >
-                  Marcar como Fora
+                  {t("retro.markAsOut")}
                 </button>
                 <button
                   onClick={() => void bulkSetOut(false)}
                   disabled={bulkSaving}
                   style={{ ...inputStyle, padding: "6px 12px", cursor: bulkSaving ? "default" : "pointer", opacity: bulkSaving ? 0.6 : 1 }}
                 >
-                  Desfazer exclusão
+                  {t("retro.undoExclusion")}
                 </button>
                 <button
                   onClick={() => setChecked(new Set())}
                   style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}
                 >
-                  Limpar seleção
+                  {t("retro.clearSelection")}
                 </button>
               </div>
             )}
@@ -1218,21 +1264,21 @@ export function RetroClient() {
                         onChange={togglePageAll}
                         onClick={(ev) => ev.stopPropagation()}
                         style={{ accentColor: "var(--accent)" }}
-                        aria-label="Selecionar todas desta página"
+                        aria-label={t("retro.selectAllOnPage")}
                       />
                     </th>
                     <th style={{ ...thStyle, width: 40 }}>#</th>
-                    <th style={thStyle}>Música</th>
-                    <th style={thStyle}>Estreia</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>Mês</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>Total</th>
+                    <th style={thStyle}>{t("retro.colSong")}</th>
+                    <th style={thStyle}>{t("retro.colDebut")}</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>{t("retro.colMonth")}</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>{t("retro.colTotal")}</th>
                     <th style={thStyle}>Single</th>
-                    <th style={thStyle}>Clipe</th>
-                    <th style={thStyle}>Álbum</th>
-                    <th style={{ ...thStyle, textAlign: "center" }} title="Pico na Under My Skin Video Countdown (Top 20)">Pico</th>
-                    <th style={{ ...thStyle, textAlign: "center" }} title="Semanas na Under My Skin Video Countdown (Top 20)">Sem.</th>
-                    <th style={{ ...thStyle, textAlign: "center" }} title="#1s na Under My Skin Video Countdown (Top 20)">#1s</th>
-                    <th style={thStyle}>Importância</th>
+                    <th style={thStyle}>{t("retro.colClipe")}</th>
+                    <th style={thStyle}>{t("retro.colAlbum")}</th>
+                    <th style={{ ...thStyle, textAlign: "center" }} title={t("retro.peakTooltip")}>{t("retro.colPeak")}</th>
+                    <th style={{ ...thStyle, textAlign: "center" }} title={t("retro.weeksTooltip")}>{t("retro.colWeeksAbbr")}</th>
+                    <th style={{ ...thStyle, textAlign: "center" }} title={t("retro.numberOnesTooltip")}>#1s</th>
+                    <th style={thStyle}>{t("retro.colImportance")}</th>
                     <th style={thStyle}>Peak</th>
                     <th style={thStyle}>Hit Level</th>
                     <th style={{ ...thStyle, textAlign: "center" }}>Prio.</th>
@@ -1258,11 +1304,11 @@ export function RetroClient() {
                           checked={checked.has(e.songId)}
                           onChange={() => toggleChecked(e.songId)}
                           style={{ accentColor: "var(--accent)" }}
-                          aria-label={`Selecionar ${e.title}`}
+                          aria-label={t("retro.selectSong", { title: e.title })}
                         />
                       </td>
                       <td style={{ ...tdStyle, color: "var(--text-muted)", fontWeight: 600, ...num }}>
-                        {e.position ?? <span title="Marcada como Fora">—</span>}
+                        {e.position ?? <span title={t("retro.markedAsOut")}>—</span>}
                       </td>
                       <td style={{ ...tdStyle, minWidth: 220 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1279,9 +1325,9 @@ export function RetroClient() {
                         <span style={{ fontWeight: 600, color: "var(--text)" }}>{fmtDate(e.releaseRef?.slice(0, 10) ?? null)}</span>
                         {e.releaseRefSource && (
                           <span style={{ ...badgeStyle("var(--text-subtle)", "var(--fill-subtle)"), marginLeft: 6, fontWeight: 600 }}>
-                            {SOURCE_LABEL[e.releaseRefSource]}
+                            {sourceLabel[e.releaseRefSource]}
                             {e.debutSourcePreferred && (
-                              <span title="Fonte travada manualmente" style={{ marginLeft: 3, color: "var(--accent)" }}>✎</span>
+                              <span title={t("retro.sourceLockedTooltip")} style={{ marginLeft: 3, color: "var(--accent)" }}>✎</span>
                             )}
                           </span>
                         )}
@@ -1307,11 +1353,11 @@ export function RetroClient() {
                       <td style={tdStyle}><ImportanceMeter value={e.importance} manual={e.importanceIsManual} /></td>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>
                         {isOut ? (
-                          <span style={badgeStyle("var(--down-fg)", "var(--down-bg)")}>Fora</span>
+                          <span style={badgeStyle("var(--down-fg)", "var(--down-bg)")}>{t("retro.peakOut")}</span>
                         ) : (
                           <>
-                            {PEAK_LABEL[e.peakPotential]}
-                            {e.peakPotentialIsManual && <span title="Definido manualmente" style={{ marginLeft: 4, fontSize: 11, color: "var(--accent)" }}>✎</span>}
+                            {peakLabel[e.peakPotential]}
+                            {e.peakPotentialIsManual && <span title={t("retro.manuallySetTooltip")} style={{ marginLeft: 4, fontSize: 11, color: "var(--accent)" }}>✎</span>}
                           </>
                         )}
                       </td>
@@ -1328,7 +1374,7 @@ export function RetroClient() {
                   {pageRows.length === 0 && (
                     <tr>
                       <td colSpan={17} style={{ ...tdStyle, padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
-                        {search ? "Nenhuma música encontrada para a busca." : "Nenhum lançamento seu neste mês (pela regra de estreia: Top 20 mais antiga → Billboard → single → álbum → clipe)."}
+                        {search ? t("retro.noResultsSearch") : t("retro.noResultsMonth")}
                       </td>
                     </tr>
                   )}
@@ -1340,7 +1386,7 @@ export function RetroClient() {
             {filtered.length > PAGE_SIZE && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 16px", borderTop: "1px solid var(--divider)" }}>
                 <span style={{ fontSize: 12, color: "var(--text-muted)", ...num }}>
-                  Mostrando {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} de {filtered.length}
+                  {t("retro.showingRange", { from: (safePage - 1) * PAGE_SIZE + 1, to: Math.min(safePage * PAGE_SIZE, filtered.length), total: filtered.length })}
                 </span>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
@@ -1348,14 +1394,14 @@ export function RetroClient() {
                     disabled={safePage <= 1}
                     style={{ ...inputStyle, padding: "6px 12px", cursor: safePage <= 1 ? "default" : "pointer", opacity: safePage <= 1 ? 0.4 : 1 }}
                   >
-                    ← Anterior
+                    {t("retro.prevPage")}
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={safePage >= totalPages}
                     style={{ ...inputStyle, padding: "6px 12px", cursor: safePage >= totalPages ? "default" : "pointer", opacity: safePage >= totalPages ? 0.4 : 1 }}
                   >
-                    Próxima →
+                    {t("retro.nextPage")}
                   </button>
                 </div>
               </div>
@@ -1395,7 +1441,7 @@ export function RetroClient() {
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
               <Cover url={selected.coverUrl} title={selected.title} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>#{selected.position} · Detalhes da música</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("retro.songDetails", { position: selected.position ?? "—" })}</div>
                 <div style={{ marginTop: 2, fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>{selected.title}</div>
                 <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
                   {selected.artist}{selected.album ? ` · ${selected.album}` : ""}
@@ -1404,7 +1450,7 @@ export function RetroClient() {
               <button
                 onClick={() => setSelectedId(null)}
                 style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 16, cursor: "pointer", padding: 4 }}
-                aria-label="Fechar"
+                aria-label={t("retro.close")}
               >
                 ✕
               </button>
@@ -1413,25 +1459,25 @@ export function RetroClient() {
             <div style={{ ...card, display: "flex", alignItems: "center", gap: 14, padding: 14 }}>
               <ScoreRing value={selected.scoreFinal} size={56} />
               <div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Score Final</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("retro.scoreFinalLabel")}</div>
                 <div style={{ fontSize: 20, fontWeight: 700, ...num }}>
                   {selected.scoreFinal.toFixed(1)} <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>/ 100</span>
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                  Pico provável {PEAK_LABEL[selected.peakPotential]} · Confiança {CONFIDENCE_LABEL[selected.confidence]}
+                  {t("retro.peakConfidence", { peak: peakLabel[selected.peakPotential], confidence: confidenceLabel[selected.confidence] })}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                  Estreia {fmtDate(selected.releaseRef?.slice(0, 10) ?? null)}
-                  {selected.releaseRefSource ? ` (via ${SOURCE_LABEL[selected.releaseRefSource]})` : ""}
+                  {t("retro.debutDateLabel", { date: fmtDate(selected.releaseRef?.slice(0, 10) ?? null) })}
+                  {selected.releaseRefSource ? t("retro.debutViaSource", { source: sourceLabel[selected.releaseRefSource] }) : ""}
                 </div>
               </div>
             </div>
 
             {/* Por que está aqui */}
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Por que essa música está aqui?</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t("retro.whyHereTitle")}</div>
               <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
-                {reasonsFor(selected).map((r) => (
+                {reasonsFor(selected, t).map((r) => (
                   <li key={r} style={{ display: "flex", gap: 8, fontSize: 13, color: "var(--text-subtle)" }}>
                     <span style={{ color: "var(--up-fg)" }}>✔</span>{r}
                   </li>
@@ -1441,9 +1487,9 @@ export function RetroClient() {
 
             {/* Pesos do cálculo */}
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Pesos do cálculo</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{t("retro.weightsTitle")}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {WEIGHT_ROWS.map((w) => {
+                {weightRows.map((w) => {
                   const val = selected.breakdown[w.key];
                   return (
                     <div key={w.key}>
@@ -1465,7 +1511,7 @@ export function RetroClient() {
               {/* Importância */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Importância</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{t("retro.importanceLabel")}</span>
                   <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
                     <input
                       type="checkbox"
@@ -1473,7 +1519,7 @@ export function RetroClient() {
                       onChange={(ev) => setDraft({ ...draft, impManual: ev.target.checked })}
                       style={{ accentColor: "var(--accent)" }}
                     />
-                    Manual
+                    {t("retro.manualLabel")}
                   </label>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1488,7 +1534,7 @@ export function RetroClient() {
                   </span>
                 </div>
                 {!draft.impManual && (
-                  <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>Usando valor calculado automaticamente.</div>
+                  <div style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>{t("retro.autoCalculatedHint")}</div>
                 )}
               </div>
 
@@ -1500,28 +1546,28 @@ export function RetroClient() {
                   onChange={(ev) => setDraft({ ...draft, peak: ev.target.value as Draft["peak"] })}
                   style={{ ...inputStyle, width: "100%" }}
                 >
-                  <option value="auto">Automático ({PEAK_LABEL[selected.peakPotential]})</option>
-                  {PEAK_ORDER.map((p) => <option key={p} value={p}>{PEAK_LABEL[p]}</option>)}
+                  <option value="auto">{t("retro.automaticPeak", { peak: peakLabel[selected.peakPotential] })}</option>
+                  {PEAK_ORDER.map((p) => <option key={p} value={p}>{peakLabel[p]}</option>)}
                 </select>
               </div>
 
               {/* Qual data de estreia está certa */}
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Data de estreia</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t("retro.debutDateTitle")}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8, fontSize: 12, color: "var(--text-subtle)" }}>
-                  {debutCandidates(selected).map((c) => (
+                  {debutCandidates(selected, t).map((c) => (
                     <div key={c.source} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                       <span>
                         {c.label}
                         {selected.releaseRefSource === c.source ? (
-                          <span style={{ marginLeft: 6, ...badgeStyle("var(--accent)", "var(--fill-subtle)"), fontWeight: 600 }}>usada</span>
+                          <span style={{ marginLeft: 6, ...badgeStyle("var(--accent)", "var(--fill-subtle)"), fontWeight: 600 }}>{t("retro.sourceUsedBadge")}</span>
                         ) : null}
                       </span>
                       <span style={num}>{fmtDate(c.date)}</span>
                     </div>
                   ))}
-                  {debutCandidates(selected).length === 0 && (
-                    <span style={{ color: "var(--text-muted)" }}>Nenhuma data candidata.</span>
+                  {debutCandidates(selected, t).length === 0 && (
+                    <span style={{ color: "var(--text-muted)" }}>{t("retro.noDebutCandidate")}</span>
                   )}
                 </div>
                 <select
@@ -1530,28 +1576,28 @@ export function RetroClient() {
                   style={{ ...inputStyle, width: "100%" }}
                 >
                   <option value="auto">
-                    Automático
+                    {t("retro.automaticOption")}
                     {selected.releaseRefSource && !selected.debutSourcePreferred
-                      ? ` (${SOURCE_LABEL[selected.releaseRefSource]})`
+                      ? ` (${sourceLabel[selected.releaseRefSource]})`
                       : ""}
                   </option>
-                  {debutCandidates(selected).map((c) => (
+                  {debutCandidates(selected, t).map((c) => (
                     <option key={c.source} value={c.source}>
                       {c.label} ({fmtDate(c.date)})
                     </option>
                   ))}
                 </select>
                 <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)" }}>
-                  Automático: Top 20 se for a mais antiga; senão Billboard (Hot 100); senão single → álbum → clipe.
+                  {t("retro.automaticSourceHint")}
                 </div>
               </div>
 
               {/* Override Billboard Hot 100 */}
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Estreia na Billboard Hot 100</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t("retro.billboardDebutTitle")}</div>
                 {selected.songBillboardHot100DebutDate && !draft.billboardDebut && (
                   <div style={{ marginBottom: 4, fontSize: 11, color: "var(--text-muted)" }}>
-                    Importada: {fmtDate(selected.songBillboardHot100DebutDate)}
+                    {t("retro.importedDate", { date: fmtDate(selected.songBillboardHot100DebutDate) })}
                   </div>
                 )}
                 <input
@@ -1562,14 +1608,14 @@ export function RetroClient() {
                   style={{ ...inputStyle, width: "100%" }}
                 />
                 <div style={{ marginTop: 4, fontSize: 11, color: "var(--text-muted)" }}>
-                  Override manual (Hot 100 de Singles). No automático, a Billboard tem prioridade sobre o single.
+                  {t("retro.billboardOverrideHint")}
                 </div>
               </div>
 
               {/* Ajuste manual */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Ajuste manual</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{t("retro.manualAdjustLabel")}</span>
                   <span style={{ fontSize: 13, color: "var(--text-muted)", ...num }}>
                     {draft.adjust > 0 ? `+${draft.adjust}` : draft.adjust}
                   </span>
@@ -1584,12 +1630,12 @@ export function RetroClient() {
 
               {/* Nota */}
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Observação pessoal</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{t("retro.noteLabel")}</div>
                 <textarea
                   value={draft.note}
                   onChange={(ev) => setDraft({ ...draft, note: ev.target.value })}
                   rows={3}
-                  placeholder="Essa música marcou minha adolescência…"
+                  placeholder={t("retro.notePlaceholder")}
                   className="retro-input"
                   style={{ ...inputStyle, width: "100%", resize: "none", fontFamily: "inherit" }}
                 />
@@ -1604,7 +1650,7 @@ export function RetroClient() {
                   cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1,
                 }}
               >
-                {saving ? "Salvando…" : "Salvar e recalcular"}
+                {saving ? t("retro.saving") : t("retro.saveAndRecalculate")}
               </button>
             </div>
           </aside>

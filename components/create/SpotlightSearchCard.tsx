@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Cover } from "@/components/ui/Cover";
 import { useSpotifySearch } from "@/hooks/useSpotifySearch";
+import { useTranslations } from "@/hooks/useTranslations";
 import { COVER_PALETTES } from "@/lib/data";
 import type { Cover as CoverModel, Song } from "@/lib/types";
 import type { SpotlightCategory } from "@/lib/weekly-spotlight-poll";
@@ -36,6 +37,7 @@ type Props = {
 };
 
 export function SpotlightSearchCard({ label, accentColor, category, song, onSelect, onClear }: Props) {
+  const { t } = useTranslations();
   const [dbQuery, setDbQuery] = useState("");
   const [dbSongs, setDbSongs] = useState<Song[]>([]);
   const [dbLoading, setDbLoading] = useState(false);
@@ -133,7 +135,7 @@ export function SpotlightSearchCard({ label, accentColor, category, song, onSele
     <div style={{ padding: 12, borderRadius: 12, border: "1px solid var(--divider)", background: "var(--fill-subtle)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: accentColor }}>{label}</div>
-        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>opcional</span>
+        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("create.spotlightOptional")}</span>
       </div>
 
       {song ? (
@@ -151,7 +153,7 @@ export function SpotlightSearchCard({ label, accentColor, category, song, onSele
             <button
               type="button"
               onClick={onClear}
-              aria-label={`Remover ${label.toLowerCase()}`}
+              aria-label={t("create.spotlightRemoveAria", { label: label.toLowerCase() })}
               style={{
                 width: 28,
                 height: 28,
@@ -171,8 +173,7 @@ export function SpotlightSearchCard({ label, accentColor, category, song, onSele
           </div>
           {wonBefore && (
             <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8, lineHeight: 1.5 }}>
-              Essa música já venceu {label.toLowerCase()} da Votação da Semana antes — ela pode ser indicada,
-              mas não vai entrar na enquete de novo.
+              {t("create.spotlightWonBeforePrefix")}{label.toLowerCase()}{t("create.spotlightWonBeforeSuffix")}
             </div>
           )}
         </div>
@@ -189,12 +190,12 @@ export function SpotlightSearchCard({ label, accentColor, category, song, onSele
                 marginBottom: 6,
               }}
             >
-              Catálogo
+              {t("create.spotlightCatalogLabel")}
             </div>
             <input
               value={dbQuery}
               onChange={(e) => setDbQuery(e.target.value)}
-              placeholder="Pesquisar no catálogo local"
+              placeholder={t("create.searchLocal")}
               style={{
                 width: "100%",
                 border: "1px solid var(--divider-strong)",
@@ -209,9 +210,9 @@ export function SpotlightSearchCard({ label, accentColor, category, song, onSele
             />
             {dbQuery.trim().length >= 2 && (
               <div style={{ marginTop: 6 }}>
-                {dbLoading && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Buscando…</div>}
+                {dbLoading && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("create.spotlightSearching")}</div>}
                 {!dbLoading && dbSongs.length === 0 && (
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhuma música no catálogo.</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("create.noCatalogSongs")}</div>
                 )}
                 {!dbLoading && dbSongs.map((s) => renderRow(s, `db-${s.id ?? s.title}-${s.artist}`))}
               </div>
@@ -229,12 +230,12 @@ export function SpotlightSearchCard({ label, accentColor, category, song, onSele
                 marginBottom: 6,
               }}
             >
-              Spotify
+              {t("create.searchSpotify")}
             </div>
             <input
               value={spotifyQuery}
               onChange={(e) => setSpotifyQuery(e.target.value)}
-              placeholder="Pesquisar no Spotify"
+              placeholder={t("chart.edit.spotifySearchPlaceholder")}
               style={{
                 width: "100%",
                 border: "1px solid var(--divider-strong)",
@@ -249,9 +250,9 @@ export function SpotlightSearchCard({ label, accentColor, category, song, onSele
             />
             {spotifyQuery.trim().length >= 1 && (
               <div style={{ marginTop: 6 }}>
-                {spotifyLoading && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Buscando…</div>}
+                {spotifyLoading && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("create.spotlightSearching")}</div>}
                 {!spotifyLoading && spotifyTracks.length === 0 && (
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Nenhum resultado no Spotify.</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("chart.edit.noSpotifyResults")}</div>
                 )}
                 {!spotifyLoading && spotifyTracks.map((s, i) => renderRow(s, `sp-${s.spotifyId ?? i}`))}
               </div>

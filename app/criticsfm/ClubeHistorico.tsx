@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { ClubeHistoryRound } from "@/lib/clube-album";
 import { scoreColor } from "@/lib/album-score";
+import { useTranslations } from "@/hooks/useTranslations";
 
 function albumHue(title: string): number {
   return Math.abs(title.split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
@@ -45,6 +46,7 @@ export function ClubeHistorico({
   rounds: ClubeHistoryRound[];
   stats: { totalRounds: number; totalAlbums: number; totalParticipants: number };
 }) {
+  const { t } = useTranslations();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
 
@@ -65,10 +67,10 @@ export function ClubeHistorico({
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          CriticsFM
+          {t("criticsfm.title")}
         </Link>
         <span>/</span>
-        <span style={{ color: "var(--text)", fontWeight: 600 }}>Histórico</span>
+        <span style={{ color: "var(--text)", fontWeight: 600 }}>{t("criticsfm.historicoTitle")}</span>
       </div>
 
       <header
@@ -83,9 +85,9 @@ export function ClubeHistorico({
       >
         <div>
           <h1 style={{ fontSize: isMobile ? 32 : 40, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.05, color: "var(--text)" }}>
-            Histórico
+            {t("criticsfm.historicoTitle")}
           </h1>
-          <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 6 }}>Todas as rodadas do Clube do Álbum</p>
+          <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 6 }}>{t("criticsfm.allRounds")}</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 12, padding: "10px 14px" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round">
@@ -94,7 +96,7 @@ export function ClubeHistorico({
           </svg>
           <input
             type="text"
-            placeholder="Buscar por tema ou álbum…"
+            placeholder={t("criticsfm.searchRound")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ border: "none", outline: "none", background: "transparent", fontSize: 14, color: "var(--text)", fontFamily: "inherit", width: isMobile ? "100%" : 240 }}
@@ -104,9 +106,9 @@ export function ClubeHistorico({
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12, marginBottom: 40 }}>
         {[
-          { label: "Rodadas realizadas", value: stats.totalRounds, sub: "desde o início" },
-          { label: "Álbuns ouvidos", value: stats.totalAlbums, sub: "escolhidos pela comunidade" },
-          { label: "Participantes", value: stats.totalParticipants, sub: "membros únicos" },
+          { label: t("criticsfm.roundsCompleted"), value: stats.totalRounds, sub: t("criticsfm.sinceStart") },
+          { label: t("criticsfm.albumsHeard"), value: stats.totalAlbums, sub: t("criticsfm.communityPicks") },
+          { label: t("criticsfm.participantsLabel"), value: stats.totalParticipants, sub: t("criticsfm.uniqueMembers") },
         ].map((stat) => (
           <div key={stat.label} style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 16, padding: "20px 22px" }}>
             <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--text)", lineHeight: 1 }}>{stat.value}</div>
@@ -119,10 +121,10 @@ export function ClubeHistorico({
       {filtered.length === 0 ? (
         <div style={{ background: "var(--surface)", border: "1px solid var(--divider)", borderRadius: 18, padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-            {rounds.length === 0 ? "Nenhuma rodada concluída ainda" : "Nenhuma rodada encontrada"}
+            {rounds.length === 0 ? t("criticsfm.noRoundsYet") : t("criticsfm.noRoundsFound")}
           </div>
           <div style={{ fontSize: 13, color: "var(--text-disabled)" }}>
-            {rounds.length === 0 ? "As rodadas finalizadas aparecerão aqui." : "Tente um termo diferente"}
+            {rounds.length === 0 ? t("criticsfm.finishedRoundsWillAppear") : t("criticsfm.tryDifferentTerm")}
           </div>
         </div>
       ) : (
@@ -144,7 +146,7 @@ export function ClubeHistorico({
             >
               <div style={{ flexShrink: 0, textAlign: "center", width: isMobile ? undefined : 52 }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>{round.rodada}</div>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-disabled)", marginTop: 2 }}>rodada</div>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-disabled)", marginTop: 2 }}>{t("criticsfm.roundLabelSmall")}</div>
               </div>
 
               {!isMobile && <div style={{ width: 1, alignSelf: "stretch", background: "var(--divider)", flexShrink: 0 }} />}
@@ -153,7 +155,7 @@ export function ClubeHistorico({
                 {idx === 0 && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "var(--accent-tint)", color: "var(--accent)", borderRadius: 100, padding: "2px 8px", fontSize: 10, fontWeight: 700, letterSpacing: "0.03em", textTransform: "uppercase", marginBottom: 6 }}>
                     <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)", display: "inline-block" }} />
-                    Mais recente
+                    {t("criticsfm.mostRecent")}
                   </span>
                 )}
                 <div style={{ fontSize: 16, fontWeight: 800, color: "var(--text)", lineHeight: 1.2, marginBottom: 4 }}>{round.theme}</div>
@@ -190,7 +192,7 @@ export function ClubeHistorico({
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
                 <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{round.participants}</span>
-                <span style={{ fontSize: 10, color: "var(--text-disabled)" }}>membros</span>
+                <span style={{ fontSize: 10, color: "var(--text-disabled)" }}>{t("criticsfm.membersLabel")}</span>
               </div>
             </div>
           ))}

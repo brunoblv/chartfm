@@ -16,6 +16,7 @@ import { YouTubeEmbed } from "@/components/ui/YouTubeEmbed";
 import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
 import type { Cover as CoverType } from "@/lib/types";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export type CommunityWeeklyPollOpen = {
   weekLabel: string;
@@ -98,15 +99,15 @@ export type CommunityTopSongSerializable = {
 
 export type CommunityActiveMemberSerializable = DbUser;
 
-function formatSince(iso: string) {
+function formatSince(iso: string, t: (key: string, params?: Record<string, string | number>) => string) {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `há ${min}min`;
+  if (min < 1) return t("communities.timeAgoNow");
+  if (min < 60) return t("communities.timeAgoMinutes", { count: min });
   const h = Math.floor(min / 60);
-  if (h < 24) return `há ${h}h`;
+  if (h < 24) return t("communities.timeAgoHours", { count: h });
   const d = Math.floor(h / 24);
-  return `há ${d}d`;
+  return t("communities.timeAgoDays", { count: d });
 }
 
 export function CommunityPageClient({
@@ -129,6 +130,7 @@ export function CommunityPageClient({
   weeklyPollOpen: CommunityWeeklyPollOpen | null;
 }) {
   const router = useRouter();
+  const { t } = useTranslations();
   const { data: session } = useSession();
   const isMobile = useIsMobile(960);
   const community = {
@@ -167,11 +169,11 @@ export function CommunityPageClient({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setPostError("Arquivo inválido. Envie uma imagem.");
+      setPostError(t("communities.postImageInvalid"));
       return;
     }
     if (file.size > 1 * 1024 * 1024) {
-      setPostError("Imagem muito grande (máx. 1 MB).");
+      setPostError(t("communities.postImageTooLarge"));
       return;
     }
     try {
@@ -180,7 +182,7 @@ export function CommunityPageClient({
       setPostError(null);
       setPostMode("image");
     } catch {
-      setPostError("Não foi possível ler a imagem.");
+      setPostError(t("communities.postImageReadError"));
     }
   }
 
@@ -192,15 +194,15 @@ export function CommunityPageClient({
     }
     const text = postText.trim();
     if (!text) {
-      setPostError("Digite algo para publicar.");
+      setPostError(t("communities.postTextRequired"));
       return;
     }
     if (postMode === "image" && !postImageDataUrl) {
-      setPostError("Selecione uma imagem para publicar nesse modo.");
+      setPostError(t("communities.postImageRequired"));
       return;
     }
     if (postMode === "youtube" && !youtubeUrl.trim()) {
-      setPostError("Cole o link do YouTube.");
+      setPostError(t("communities.postYoutubeRequired"));
       return;
     }
     setPosting(true);
@@ -217,7 +219,7 @@ export function CommunityPageClient({
       });
       const data = (await res.json()) as CommunityPostSerializable & { error?: string };
       if (!res.ok) {
-        setPostError(data.error ?? "Não foi possível criar o post.");
+        setPostError(data.error ?? t("communities.postCreateError"));
         return;
       }
       setTimelinePosts((prev) => [data, ...prev]);
@@ -226,7 +228,7 @@ export function CommunityPageClient({
       setPostImageDataUrl(null);
       setPostMode("text");
     } catch {
-      setPostError("Erro de rede ao criar post.");
+      setPostError(t("communities.postNetworkError"));
     } finally {
       setPosting(false);
     }
@@ -249,7 +251,7 @@ export function CommunityPageClient({
       });
       const data = (await res.json()) as CommunityReplySerializable & { error?: string };
       if (!res.ok) {
-        setReplyErrors((prev) => ({ ...prev, [postId]: data.error ?? "Não foi possível comentar." }));
+        setReplyErrors((prev) => ({ ...prev, [postId]: data.error ?? t("communities.replyError") }));
         return;
       }
       setTimelinePosts((prev) =>
@@ -266,7 +268,7 @@ export function CommunityPageClient({
       setReplyDrafts((prev) => ({ ...prev, [postId]: "" }));
       setReplyTarget((prev) => ({ ...prev, [postId]: null }));
     } catch {
-      setReplyErrors((prev) => ({ ...prev, [postId]: "Erro de rede ao comentar." }));
+      setReplyErrors((prev) => ({ ...prev, [postId]: t("communities.replyNetworkError") }));
     } finally {
       setReplyingFor(null);
     }
@@ -330,7 +332,7 @@ export function CommunityPageClient({
       setShareCopied(true);
       window.setTimeout(() => setShareCopied(false), 2000);
     } catch {
-      window.prompt("Copie o link da comunidade:", url);
+      window.prompt(t("communities.copyLinkPrompt"), url);
     }
   }
 
@@ -395,17 +397,17 @@ export function CommunityPageClient({
             >
               {joining ? "..." : isMember ? (
                 <>
-                  <Check size={14} /> Participando
+                  <Check size={14} /> {t("communities.joinedLabel")}
                 </>
               ) : (
-                "Participar"
+                t("communities.join")
               )}
             </button>
             <button
               type="button"
               onClick={() => void handleShareCopy()}
-              title={shareCopied ? "Link copiado!" : "Copiar link da comunidade"}
-              aria-label={shareCopied ? "Link copiado" : "Copiar link da comunidade"}
+              title={shareCopied ? t("communities.linkCopiedTitle") : t("communities.copyLinkTitle")}
+              aria-label={shareCopied ? t("communities.linkCopiedAria") : t("communities.copyLinkTitle")}
               style={{
                 background: shareCopied ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.15)",
                 color: "white",
@@ -422,7 +424,7 @@ export function CommunityPageClient({
               }}
             >
               <Share size={16} />
-              {shareCopied ? "Copiado!" : null}
+              {shareCopied ? t("communities.copiedLabel") : null}
             </button>
           </>
         }
@@ -445,10 +447,7 @@ export function CommunityPageClient({
               {contextText}
             </p>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--text-muted)" }}>
-              Comunidades são grupos dentro do ChartFM em que os membros montam paradas em
-              conjunto, normalmente em torno de um gênero, artista ou país. O ranking da
-              comunidade soma os pontos que cada música recebe nas paradas publicadas pelos
-              membros, considerando apenas os votos de quem participa do grupo.
+              {t("communities.aboutParagraph")}
             </p>
           </div>
         </div>
@@ -472,11 +471,11 @@ export function CommunityPageClient({
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>{community.paradaName}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                  {contributorCount} membros contribuíram · Semana {dateRange}
+                  {t("communities.contributorsWeek", { count: contributorCount, range: dateRange })}
                 </div>
               </div>
               <Link href={`/community/${community.slug}/parada`} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-                Ver tudo →
+                {t("communities.viewAllArrow")}
               </Link>
             </div>
             {top5.map((entry) => (
@@ -505,9 +504,9 @@ export function CommunityPageClient({
         {activeMembers.length > 0 && (
           <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: "15px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>Membros ativos</div>
+              <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>{t("communities.activeMembersTitle")}</div>
               <Link href={`/community/${community.slug}/members`} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-                Ver todos →
+                {t("communities.viewAllMembersArrow")}
               </Link>
             </div>
             <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
@@ -529,7 +528,7 @@ export function CommunityPageClient({
           <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
             <Avatar
               user={{
-                name: session?.user?.name ?? "Você",
+                name: session?.user?.name ?? t("communities.youDefaultName"),
                 avatar: "#FA243C",
               }}
               imageUrl={session?.user?.image ?? null}
@@ -553,7 +552,7 @@ export function CommunityPageClient({
                       color: postMode === mode ? "var(--accent)" : "var(--text-subtle)",
                     }}
                   >
-                    {mode === "text" ? "Texto" : mode === "image" ? "Imagem" : "YouTube"}
+                    {mode === "text" ? t("communities.modeText") : mode === "image" ? t("communities.modeImage") : t("communities.modeYoutube")}
                   </button>
                 ))}
               </div>
@@ -561,7 +560,7 @@ export function CommunityPageClient({
               <textarea
                 value={postText}
                 onChange={(e) => setPostText(e.target.value)}
-                placeholder="O que você quer compartilhar?"
+                placeholder={t("communities.postPlaceholder")}
                 rows={3}
                 style={{
                   width: "100%",
@@ -582,7 +581,7 @@ export function CommunityPageClient({
                 <input
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
-                  placeholder="Cole o link do YouTube"
+                  placeholder={t("communities.youtubeLinkPlaceholder")}
                   style={{
                     width: "100%",
                     border: "1px solid var(--divider)",
@@ -614,7 +613,7 @@ export function CommunityPageClient({
                     }}
                   >
                     <ImagePlus size={14} />
-                    Escolher imagem
+                    {t("communities.createChooseImage")}
                     <input type="file" accept="image/*" onChange={onSelectImage} style={{ display: "none" }} />
                   </label>
                   {postImageDataUrl && (
@@ -644,7 +643,7 @@ export function CommunityPageClient({
                     opacity: posting ? 0.75 : 1,
                   }}
                 >
-                  {posting ? "Postando..." : "Postar"}
+                  {posting ? t("communities.postSubmitting") : t("communities.postSubmit")}
                 </button>
               </div>
             </div>
@@ -652,12 +651,12 @@ export function CommunityPageClient({
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>Posts recentes</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{t("communities.recentPostsTitle")}</h3>
         </div>
 
         {timelinePosts.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 14, background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)" }}>
-            Nenhum post nesta comunidade ainda.
+            {t("communities.noPostsYet")}
           </div>
         ) : (
           <div style={{ display: "grid", gap: 14 }}>
@@ -669,7 +668,7 @@ export function CommunityPageClient({
                     <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{post.user.name}</span>
                       <span style={{ fontSize: 12, color: "var(--text-muted)" }}>@{post.user.handle}</span>
-                      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>· {formatSince(post.createdAt)}</span>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>· {formatSince(post.createdAt, t)}</span>
                     </div>
                     <div style={{ fontSize: 14, lineHeight: 1.6, marginTop: 6, whiteSpace: "pre-wrap", color: "var(--text)" }}>{post.text}</div>
 
@@ -726,11 +725,11 @@ export function CommunityPageClient({
                           <Avatar user={{ name: reply.user.name, avatar: reply.user.avatarColor }} imageUrl={reply.user.image} size={30} />
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                              <strong style={{ color: "var(--text)" }}>{reply.user.name}</strong> @{reply.user.handle} · {formatSince(reply.createdAt)}
+                              <strong style={{ color: "var(--text)" }}>{reply.user.name}</strong> @{reply.user.handle} · {formatSince(reply.createdAt, t)}
                             </div>
                             {reply.replyToUser && (
                               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                                respondendo a @{reply.replyToUser.handle}
+                                {t("communities.replyingToHandle", { handle: reply.replyToUser.handle })}
                               </div>
                             )}
                             <div style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text)" }}>{reply.text}</div>
@@ -766,7 +765,7 @@ export function CommunityPageClient({
                                   fontWeight: 600,
                                 }}
                               >
-                                Responder
+                                {t("communities.replyCta")}
                               </button>
                             </div>
                           </div>
@@ -775,13 +774,13 @@ export function CommunityPageClient({
 
                       {replyTarget[post.id] && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-muted)" }}>
-                          Respondendo a <strong style={{ color: "var(--text)" }}>@{replyTarget[post.id]?.user.handle}</strong>
+                          {t("communities.replyingToPrefix")} <strong style={{ color: "var(--text)" }}>@{replyTarget[post.id]?.user.handle}</strong>
                           <button
                             type="button"
                             onClick={() => setReplyTarget((prev) => ({ ...prev, [post.id]: null }))}
                             style={{ border: "none", background: "none", color: "var(--accent)", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: 0 }}
                           >
-                            cancelar
+                            {t("communities.cancelReply")}
                           </button>
                         </div>
                       )}
@@ -793,7 +792,11 @@ export function CommunityPageClient({
                             setReplyDrafts((prev) => ({ ...prev, [post.id]: e.target.value }));
                             if (replyErrors[post.id]) setReplyErrors((prev) => ({ ...prev, [post.id]: null }));
                           }}
-                          placeholder={replyTarget[post.id] ? `Responder @${replyTarget[post.id]?.user.handle}...` : "Responder este post..."}
+                          placeholder={
+                            replyTarget[post.id]
+                              ? t("communities.replyToHandlePlaceholder", { handle: replyTarget[post.id]?.user.handle ?? "" })
+                              : t("communities.replyGenericPlaceholder")
+                          }
                           style={{
                             flex: 1,
                             border: "1px solid var(--divider)",
@@ -821,7 +824,7 @@ export function CommunityPageClient({
                             opacity: replyingFor === post.id ? 0.75 : 1,
                           }}
                         >
-                          Responder
+                          {t("communities.replyCta")}
                         </button>
                       </div>
                       {replyErrors[post.id] && (
@@ -839,12 +842,13 @@ export function CommunityPageClient({
         {!isMobile && (
           <div style={{ width: 296, flexShrink: 0, display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: "20px 16px" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Enquetes</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>{t("communities.pollsTitle")}</div>
               {weeklyPollOpen ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                    A votação da comunidade está aberta — {weeklyPollOpen.weekLabel}
-                    {weeklyPollOpen.dateRange ? ` (${weeklyPollOpen.dateRange})` : ""}. Só membros podem votar.
+                    {t("communities.pollOpenText", {
+                      week: `${weeklyPollOpen.weekLabel}${weeklyPollOpen.dateRange ? ` (${weeklyPollOpen.dateRange})` : ""}`,
+                    })}
                   </div>
                   <Link
                     href={`/community/${encodeURIComponent(dbCommunity.slug)}/votacao`}
@@ -859,12 +863,12 @@ export function CommunityPageClient({
                       textDecoration: "none",
                     }}
                   >
-                    {dbCommunity.isMember ? "Votar na enquete da semana" : "Ver enquete da semana"}
+                    {dbCommunity.isMember ? t("communities.pollVoteCta") : t("communities.pollViewCta")}
                   </Link>
                 </div>
               ) : (
                 <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  Não há enquete da comunidade aberta no momento.
+                  {t("communities.pollClosedText")}
                 </div>
               )}
             </div>

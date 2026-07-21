@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export function InstitutionalTitle({
   children,
@@ -10,6 +13,7 @@ export function InstitutionalTitle({
   updatedAt?: string;
   subtitle?: string;
 }) {
+  const { t } = useTranslations();
   return (
     <>
       <h1
@@ -31,12 +35,12 @@ export function InstitutionalTitle({
       )}
       {updatedAt && !subtitle && (
         <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 32, marginTop: 0 }}>
-          Última atualização: {updatedAt}
+          {t("legal.lastUpdated", { date: updatedAt })}
         </p>
       )}
       {updatedAt && subtitle && (
         <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 32px 0" }}>
-          Última atualização: {updatedAt}
+          {t("legal.lastUpdated", { date: updatedAt })}
         </p>
       )}
     </>

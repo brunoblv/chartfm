@@ -1,6 +1,8 @@
 import { SCORE_BANDS, formatScoreRange } from "@/lib/album-score";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 
-export function ScoreScaleCard() {
+export async function ScoreScaleCard() {
+  const { t } = await getServerTranslations();
   return (
     <section style={{ marginBottom: 48 }}>
       <div
@@ -22,7 +24,7 @@ export function ScoreScaleCard() {
               margin: 0,
             }}
           >
-            Escala de notas
+            {t("criticsfm.scoreScaleTitle")}
           </h2>
           <p
             style={{
@@ -32,7 +34,7 @@ export function ScoreScaleCard() {
               letterSpacing: "-0.01em",
             }}
           >
-            Como interpretamos a nota média de cada álbum no CriticsFM
+            {t("criticsfm.scoreScaleSubtitle")}
           </p>
         </div>
 
@@ -51,8 +53,8 @@ export function ScoreScaleCard() {
               color: "var(--text-muted)",
             }}
           >
-            <span>Faixa</span>
-            <span>Texto</span>
+            <span>{t("criticsfm.scoreScaleRangeHeader")}</span>
+            <span>{t("criticsfm.scoreScaleTextHeader")}</span>
           </div>
 
           {SCORE_BANDS.map((band) => (
