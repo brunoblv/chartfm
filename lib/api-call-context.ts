@@ -55,7 +55,7 @@ function contextFromSource(opts: {
 }
 
 /** Valores chegam percent-encoded do middleware (headers só aceitam Latin-1). */
-function decodeHeaderValue(value: string | null): string | null {
+export function decodeHeaderValue(value: string | null): string | null {
   if (value == null) return null;
   try {
     return decodeURIComponent(value);
