@@ -27,6 +27,7 @@ import {
 } from "@/lib/chart-spotlight";
 import { splitArtistCredits } from "@/lib/song-artist";
 import { resolveArtistCreditForSave } from "@/lib/resolve-publish-songs";
+import { logSystemError } from "@/lib/system-error-log";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -540,6 +541,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(response, { status: 201 });
   } catch (err) {
     console.error("[POST /api/charts]", err);
+    void logSystemError({ scope: "POST /api/charts", error: err });
 
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2002") {

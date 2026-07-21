@@ -1,9 +1,12 @@
 // Hook global do Next.js — roda para toda rota Node.js quando uma exceção não
 // tratada estoura no handler. Usado para marcar em ApiRequestLog (app/admin/logs)
 // que aquela chamada quebrou de verdade (500/crash), complementando o registro
-// de "toda chamada aconteceu" feito no middleware (ver middleware.ts).
+// de "toda chamada aconteceu" feito no middleware (ver middleware.ts), e também
+// para gravar em SystemErrorLog (aba "Logs de sistema" em /admin/logs).
 // Não captura respostas de erro retornadas manualmente (ex: NextResponse.json({}, {status:404}))
-// — só exceções que o Next relança.
+// nem exceções pegas em try/catch dentro da própria rota — só exceções que o
+// Next relança. Rotas que já fazem seu próprio try/catch chamam logSystemError()
+// diretamente (ver lib/system-error-log.ts).
 
 type RequestErrorContext = {
   routePath?: string;
@@ -39,6 +42,9 @@ export async function onRequestError(
   context: RequestErrorContext,
 ) {
   if (context.routeType !== "route") return; // só Route Handlers (app/api/**)
+
+  const { logSystemError } = await import("@/lib/system-error-log");
+  await logSystemError({ scope: context.routePath ?? "unknown", error, path: context.routePath ?? null });
 
   const logId = extractLogId(request);
   if (!logId) return;

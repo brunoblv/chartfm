@@ -6,6 +6,7 @@ import { toApiCadence } from "@/lib/chart-cadence";
 import { ensureUserParadas } from "@/lib/paradas";
 import { filterParadasForViewer } from "@/lib/mytrl-access";
 import { maxParadasForUser } from "@/lib/mytrl-access";
+import { logSystemError } from "@/lib/system-error-log";
 
 export const runtime = "nodejs";
 
@@ -81,6 +82,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     });
   } catch (err) {
     console.error("[GET /api/profile/[handle]/paradas]", err);
+    void logSystemError({ scope: "GET /api/profile/[handle]/paradas", error: err });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

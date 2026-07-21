@@ -31,6 +31,15 @@ type LogRow = {
   userHandle: string | null;
 };
 
+type SystemErrorRow = {
+  id: string;
+  createdAt: string;
+  scope: string;
+  message: string;
+  stack: string | null;
+  path: string | null;
+};
+
 type AuditRow = {
   id: string;
   createdAt: string;
@@ -585,6 +594,29 @@ function sourceBadgeStyle(source: string) {
   };
 }
 
+type LogsTab = "audit" | "system-errors" | "api-calls" | "spotify";
+
+const TABS: { id: LogsTab; label: string }[] = [
+  { id: "audit", label: "Auditoria do site" },
+  { id: "system-errors", label: "Logs de sistema" },
+  { id: "api-calls", label: "Chamadas internas" },
+  { id: "spotify", label: "Spotify" },
+];
+
+function tabButtonStyle(active: boolean) {
+  return {
+    border: "1px solid var(--divider-strong)",
+    background: active ? "var(--accent, #2563eb)" : "var(--fill-subtle)",
+    color: active ? "white" : "var(--text)",
+    borderRadius: 8,
+    padding: "8px 14px",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+  };
+}
+
 export function LogsAdminClient({
   auditLogs,
   auditPage,
@@ -597,6 +629,11 @@ export function LogsAdminClient({
   query,
   source,
   status,
+  errorLogs,
+  errorPage,
+  errorTotalPages,
+  errorTotal,
+  errorQuery,
 }: {
   auditLogs: AuditRow[];
   auditPage: number;
@@ -609,9 +646,17 @@ export function LogsAdminClient({
   query: string;
   source: SourceFilter;
   status: StatusFilter;
+  errorLogs: SystemErrorRow[];
+  errorPage: number;
+  errorTotalPages: number;
+  errorTotal: number;
+  errorQuery: string;
 }) {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState(query);
+  const [errorSearchInput, setErrorSearchInput] = useState(errorQuery);
+  const [tab, setTab] = useState<LogsTab>(errorTotal > 0 ? "system-errors" : "audit");
+  const [expandedErrorId, setExpandedErrorId] = useState<string | null>(null);
 
   function pushParams(next: {
     q?: string;
@@ -619,6 +664,8 @@ export function LogsAdminClient({
     status?: string;
     page?: number;
     auditPage?: number;
+    errorPage?: number;
+    errorQ?: string;
   }) {
     const params = new URLSearchParams();
     const q = next.q ?? query;
@@ -626,11 +673,15 @@ export function LogsAdminClient({
     const st = next.status ?? status;
     const pg = next.page ?? 1;
     const ap = next.auditPage ?? auditPage;
+    const eq = next.errorQ ?? errorQuery;
+    const ep = next.errorPage ?? 1;
     if (q) params.set("q", q);
     if (src !== "all") params.set("source", src);
     if (st !== "all") params.set("status", st);
     if (pg > 1) params.set("page", String(pg));
     if (ap > 1) params.set("auditPage", String(ap));
+    if (eq) params.set("errorQ", eq);
+    if (ep > 1) params.set("errorPage", String(ep));
     router.push(`/admin/logs${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
@@ -639,8 +690,155 @@ export function LogsAdminClient({
     pushParams({ q: searchInput.trim(), page: 1, auditPage: 1 });
   }
 
+  function onErrorSearchSubmit(e: FormEvent) {
+    e.preventDefault();
+    pushParams({ errorQ: errorSearchInput.trim(), errorPage: 1 });
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            style={tabButtonStyle(tab === t.id)}
+          >
+            {t.label}
+            {t.id === "system-errors" && errorTotal > 0 ? ` (${errorTotal})` : ""}
+          </button>
+        ))}
+      </div>
+
+      {tab === "system-errors" && (
+        <AdminPanel maxWidth={1200}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Logs de sistema</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
+            Erros reais de servidor (banco indisponível, exceções não tratadas etc.), com mensagem e
+            stack trace completos — para diagnosticar incidentes sem precisar entrar por SSH no log do
+            PM2. Fica guardado por 14 dias.
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+            <form onSubmit={onErrorSearchSubmit} style={{ flex: 1, minWidth: 220 }}>
+              <input
+                value={errorSearchInput}
+                onChange={(e) => setErrorSearchInput(e.target.value)}
+                placeholder="Buscar por rota, mensagem de erro ou caminho"
+                style={adminInputStyle}
+              />
+            </form>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{errorTotal} registros</div>
+          </div>
+
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={adminThStyle}>Horário (Brasília)</th>
+                <th style={adminThStyle}>Rota / origem</th>
+                <th style={adminThStyle}>Erro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {errorLogs.length === 0 && (
+                <tr>
+                  <td style={adminTdStyle} colSpan={3}>
+                    Nenhum erro registrado — bom sinal.
+                  </td>
+                </tr>
+              )}
+              {errorLogs.map((e) => {
+                const expanded = expandedErrorId === e.id;
+                return (
+                  <tr key={e.id}>
+                    <td style={{ ...adminTdStyle, whiteSpace: "nowrap" }}>{formatBrasilia(e.createdAt)}</td>
+                    <td style={adminTdStyle}>
+                      <div style={{ fontWeight: 600 }}>{e.scope}</div>
+                      {e.path && (
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{e.path}</div>
+                      )}
+                    </td>
+                    <td style={adminTdStyle}>
+                      <div style={{ color: "#dc2626", fontWeight: 600 }}>{e.message}</div>
+                      {e.stack && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedErrorId(expanded ? null : e.id)}
+                            style={{
+                              marginTop: 4,
+                              border: "none",
+                              background: "none",
+                              color: "var(--accent, #2563eb)",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
+                          >
+                            {expanded ? "Esconder stack trace" : "Ver stack trace"}
+                          </button>
+                          {expanded && (
+                            <pre
+                              style={{
+                                marginTop: 6,
+                                padding: 10,
+                                borderRadius: 8,
+                                background: "var(--fill-subtle)",
+                                border: "1px solid var(--divider)",
+                                fontSize: 11,
+                                lineHeight: 1.5,
+                                overflowX: "auto",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {e.stack}
+                            </pre>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {errorTotalPages > 1 && (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 12 }}>
+              {errorPage > 1 && (
+                <Link
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    pushParams({ errorPage: errorPage - 1 });
+                  }}
+                >
+                  ← Anterior
+                </Link>
+              )}
+              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                Página {errorPage} de {errorTotalPages}
+              </span>
+              {errorPage < errorTotalPages && (
+                <Link
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    pushParams({ errorPage: errorPage + 1 });
+                  }}
+                >
+                  Próxima →
+                </Link>
+              )}
+            </div>
+          )}
+        </AdminPanel>
+      )}
+
+      {tab === "audit" && (
       <AdminPanel maxWidth={1200}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Auditoria do site</div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
@@ -737,7 +935,10 @@ export function LogsAdminClient({
           </div>
         )}
       </AdminPanel>
+      )}
 
+      {tab === "spotify" && (
+      <>
       <AdminPanel maxWidth={1200}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Status do Spotify</div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
@@ -753,7 +954,10 @@ export function LogsAdminClient({
       </AdminPanel>
 
       <SpotifyUsagePanel />
+      </>
+      )}
 
+      {tab === "api-calls" && (
       <AdminPanel maxWidth={1200}>
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Chamadas internas do ChartFM</div>
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.45 }}>
@@ -851,8 +1055,9 @@ export function LogsAdminClient({
           </tbody>
         </table>
       </AdminPanel>
+      )}
 
-      {totalPages > 1 && (
+      {tab === "api-calls" && totalPages > 1 && (
         <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center" }}>
           {page > 1 && (
             <Link href="#" onClick={(e) => { e.preventDefault(); pushParams({ page: page - 1 }); }}>

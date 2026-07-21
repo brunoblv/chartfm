@@ -424,7 +424,16 @@ export default function CreatePage() {
           body: publishBody,
         });
 
-      let res = await postChart();
+      // A publicação pode levar bastante tempo no servidor (enriquecimento via Spotify);
+      // se a conexão cair no meio do caminho, o fetch lança em vez de retornar uma resposta.
+      // Reenviamos uma única vez — a checagem de unicidade no servidor devolve 409+id
+      // se a primeira tentativa já tiver salvo a parada, então o reenvio é seguro.
+      let res: Response;
+      try {
+        res = await postChart();
+      } catch {
+        res = await postChart();
+      }
       let data = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
 
       // Gateway pode retornar 504 mesmo com a parada já gravada — confirma com 409 + id.
@@ -455,7 +464,7 @@ export default function CreatePage() {
       }
       router.push(`/chart/${data.id}`);
     } catch {
-      setPublishError("Erro de conexão. Tente novamente.");
+      setPublishError("Erro de conexão. Verifique no seu perfil se a parada foi criada antes de tentar de novo.");
     } finally {
       setPublishing(false);
     }

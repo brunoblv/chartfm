@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 50;
 const AUDIT_PAGE_SIZE = 40;
+const SYSTEM_ERROR_PAGE_SIZE = 40;
 
 export type SourceFilter = "all" | "user" | "system" | "anonymous";
 export type StatusFilter = "all" | "ok" | "error";
@@ -16,7 +17,15 @@ export type StatusFilter = "all" | "ok" | "error";
 export default async function AdminLogsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string; source?: string; status?: string; auditPage?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    source?: string;
+    status?: string;
+    auditPage?: string;
+    errorPage?: string;
+    errorQ?: string;
+  }>;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return <Shell title="Admin" subtitle="Acesso"><div>Faça login para acessar.</div></Shell>;
@@ -33,6 +42,10 @@ export default async function AdminLogsPage({
   const auditPageRaw = parseInt(sp.auditPage ?? "1", 10);
   const auditPage = Number.isFinite(auditPageRaw) && auditPageRaw > 0 ? auditPageRaw : 1;
   const auditSkip = (auditPage - 1) * AUDIT_PAGE_SIZE;
+  const errorQuery = (sp.errorQ ?? "").trim();
+  const errorPageRaw = parseInt(sp.errorPage ?? "1", 10);
+  const errorPage = Number.isFinite(errorPageRaw) && errorPageRaw > 0 ? errorPageRaw : 1;
+  const errorSkip = (errorPage - 1) * SYSTEM_ERROR_PAGE_SIZE;
 
   const where = {
     ...(query ? { path: { contains: query, mode: "insensitive" as const } } : {}),
@@ -51,7 +64,17 @@ export default async function AdminLogsPage({
       }
     : {};
 
-  const [total, logs, auditTotal, auditLogs] = await Promise.all([
+  const errorWhere = errorQuery
+    ? {
+        OR: [
+          { scope: { contains: errorQuery, mode: "insensitive" as const } },
+          { message: { contains: errorQuery, mode: "insensitive" as const } },
+          { path: { contains: errorQuery, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [total, logs, auditTotal, auditLogs, errorTotal, errorLogs] = await Promise.all([
     prisma.apiRequestLog.count({ where }),
     prisma.apiRequestLog.findMany({
       where,
@@ -66,10 +89,18 @@ export default async function AdminLogsPage({
       skip: auditSkip,
       take: AUDIT_PAGE_SIZE,
     }),
+    prisma.systemErrorLog.count({ where: errorWhere }),
+    prisma.systemErrorLog.findMany({
+      where: errorWhere,
+      orderBy: { createdAt: "desc" },
+      skip: errorSkip,
+      take: SYSTEM_ERROR_PAGE_SIZE,
+    }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const auditTotalPages = Math.max(1, Math.ceil(auditTotal / AUDIT_PAGE_SIZE));
+  const errorTotalPages = Math.max(1, Math.ceil(errorTotal / SYSTEM_ERROR_PAGE_SIZE));
 
   const rows = logs.map((l) => ({
     id: l.id,
@@ -97,6 +128,15 @@ export default async function AdminLogsPage({
     entityId: a.entityId,
   }));
 
+  const errorRows = errorLogs.map((e) => ({
+    id: e.id,
+    createdAt: e.createdAt.toISOString(),
+    scope: e.scope,
+    message: e.message,
+    stack: e.stack,
+    path: e.path,
+  }));
+
   return (
     <Shell title="Logs de API" subtitle="Auditoria do site: quem fez o quê e quanto consumiu">
       <LogsAdminClient
@@ -111,6 +151,11 @@ export default async function AdminLogsPage({
         query={query}
         source={source}
         status={status}
+        errorLogs={errorRows}
+        errorPage={errorPage}
+        errorTotalPages={errorTotalPages}
+        errorTotal={errorTotal}
+        errorQuery={errorQuery}
       />
     </Shell>
   );

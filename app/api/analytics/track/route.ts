@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
+import { logSystemError } from "@/lib/system-error-log";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     console.error("[analytics/track]", err);
+    void logSystemError({ scope: "POST /api/analytics/track", error: err });
     return new NextResponse(null, { status: 204 });
   }
 }

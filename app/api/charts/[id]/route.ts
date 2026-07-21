@@ -10,6 +10,7 @@ import { hydrateChartEntryCoverUrls, hydrateDropoutCoverUrls, loadCoverUrlsForSo
 import { mapPrismaSpotlightSong, SPOTLIGHT_SONG_INCLUDE } from "@/lib/chart-spotlight";
 import { recomputePersistedChartEntryStatsForParada } from "@/lib/chart-entry-stats";
 import type { PersonalDropoutEntry } from "@/lib/types";
+import { logSystemError } from "@/lib/system-error-log";
 import { pointsForChartPosition, scoringTierFromPrimary } from "@/lib/parada-points";
 import {
   finalizeSongsForChartPublish,
@@ -379,6 +380,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   );
   } catch (err) {
     console.error("[GET /api/charts/[id]]", err);
+    void logSystemError({ scope: "GET /api/charts/[id]", error: err });
     return NextResponse.json({ error: "internal_error" }, { status: 500, headers: NO_CACHE_HEADERS });
   }
 }

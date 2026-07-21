@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { logSystemError } from "@/lib/system-error-log";
 
 export const runtime = "nodejs";
 
@@ -75,6 +76,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
     });
   } catch (err) {
     console.error("[GET /api/profile/[handle]/reviews]", err);
+    void logSystemError({ scope: "GET /api/profile/[handle]/reviews", error: err });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

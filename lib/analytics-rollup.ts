@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { purgeOldApiRequestLogs } from "@/lib/api-request-log";
 import { purgeOldSiteAuditLogs } from "@/lib/site-audit-log";
+import { purgeOldSystemErrorLogs } from "@/lib/system-error-log";
 
 // Dias em horário de Brasília (UTC-3 fixo, sem horário de verão desde 2019)
 const BRT_OFFSET_MS = 3 * 60 * 60 * 1000;
@@ -115,6 +116,7 @@ export async function runAnalyticsRollup(now = new Date(), days = 1) {
   const purged = await prisma.analyticsEvent.deleteMany({ where: { createdAt: { lt: cutoff } } });
   const purgedApiLogs = await purgeOldApiRequestLogs();
   const purgedAuditLogs = await purgeOldSiteAuditLogs();
+  const purgedSystemErrorLogs = await purgeOldSystemErrorLogs();
 
-  return { days: results, purgedEvents: purged.count, purgedApiLogs, purgedAuditLogs };
+  return { days: results, purgedEvents: purged.count, purgedApiLogs, purgedAuditLogs, purgedSystemErrorLogs };
 }

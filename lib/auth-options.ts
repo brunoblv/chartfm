@@ -6,6 +6,7 @@ import { ensureGoogleUser } from "@/lib/google-user";
 import { recordSignupEvent } from "@/lib/analytics-signup";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { logSystemError } from "@/lib/system-error-log";
 
 export function getAuthOptions(): NextAuthOptions {
   const googleConfigured = isGoogleAuthConfigured();
@@ -116,6 +117,7 @@ export function getAuthOptions(): NextAuthOptions {
             }
           } catch (e) {
             console.error("[auth] jwt refresh", e);
+            void logSystemError({ scope: "auth.jwt-refresh", error: e });
           }
         }
         return token;
