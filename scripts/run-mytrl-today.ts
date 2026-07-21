@@ -28,6 +28,7 @@ import { parseMyTrlReferenceDate } from "../lib/mytrl-chart-engine";
 import { runDailyMyTrlJob } from "../lib/mytrl-daily-parada";
 import { getMyTrlOwnerUser } from "../lib/spotify-user";
 import { MYTRL_OWNER_HANDLE } from "../lib/mytrl-access";
+import { runWithSpotifyBackfillPool } from "../lib/spotify-user-charts-pool";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const DATE_ARG = process.argv.find((a) => a.startsWith("--date="));
@@ -64,7 +65,10 @@ async function main() {
     return;
   }
 
-  const result = await runDailyMyTrlJob(ref, { playlistId: owner.spotifyNewHitsPlaylistId });
+  // Pool "backfill" (app BACKUP3) — mesma isolação do cron, mesmo rodando manualmente.
+  const result = await runWithSpotifyBackfillPool(() =>
+    runDailyMyTrlJob(ref, { playlistId: owner.spotifyNewHitsPlaylistId }),
+  );
 
   if (!result.ok) {
     console.error(`FALHOU — ${result.error} (stage: ${result.stage ?? "?"})`);

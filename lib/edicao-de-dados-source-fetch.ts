@@ -9,6 +9,9 @@ import {
 } from "@/lib/spotify-server";
 import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
 import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
+import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
+import { diffAlbumMetadataFromSpotify } from "@/lib/apply-spotify-metadata-to-album";
+import { diffArtistMetadataFromSpotify } from "@/lib/apply-spotify-metadata-to-artist";
 import {
   findRecordingMbidBySpotifyTrackId,
   getCoverArtArchiveUrl,
@@ -327,6 +330,7 @@ export async function fetchForSong(
   const outcome = await (async (): Promise<FetchResult | { error: string }> => {
     if (source === "spotify") {
       if (!spotifyConfigured()) return { error: "spotify_nao_configurado" };
+      if (!tryConsumeSpotifyBudget("backfill")) return { error: "spotify_orcamento_esgotado" };
       return runWithSpotifyBackfillPool(async () => {
         let spotifyId = song.spotifyId;
         if (!spotifyId) {
@@ -625,32 +629,12 @@ export async function fetchForAlbum(
   const outcome = await (async (): Promise<FetchResult | { error: string }> => {
     if (source === "spotify") {
       if (!spotifyConfigured()) return { error: "spotify_nao_configurado" };
+      if (!tryConsumeSpotifyBudget("backfill")) return { error: "spotify_orcamento_esgotado" };
       return runWithSpotifyBackfillPool(async () => {
         const meta = await getSpotifyAlbumMetadataById(album.spotifyId, "MX", { maxAttempts: 1 });
         if (!meta) return nothing;
         const found: string[] = [`álbum no Spotify`];
-        const applied: string[] = [];
-        const data: Record<string, unknown> = {};
-        if (!album.coverUrl?.trim() && meta.coverUrl) {
-          data.coverUrl = meta.coverUrl;
-          applied.push("capa");
-        }
-        if (!album.releaseDate && meta.releaseDate) {
-          data.releaseDate = meta.releaseDate;
-          applied.push(`data (${fmtDate(meta.releaseDate)})`);
-        }
-        if (!album.albumType && meta.albumType) {
-          data.albumType = meta.albumType;
-          applied.push("tipo");
-        }
-        if (album.totalTracks == null && meta.totalTracks != null) {
-          data.totalTracks = meta.totalTracks;
-          applied.push("faixas");
-        }
-        if (!album.spotifyUrl && meta.spotifyUrl) {
-          data.spotifyUrl = meta.spotifyUrl;
-          applied.push("link");
-        }
+        const { data, changed: applied } = diffAlbumMetadataFromSpotify(album, meta);
         if (meta.releaseDate) found.push(`data: ${fmtDate(meta.releaseDate)}`);
         if (Object.keys(data).length > 0) await prisma.album.update({ where: { id: album.id }, data });
         return { found, applied };
@@ -789,24 +773,12 @@ export async function fetchForArtist(
   const outcome = await (async (): Promise<FetchResult | { error: string }> => {
     if (source === "spotify") {
       if (!spotifyConfigured()) return { error: "spotify_nao_configurado" };
+      if (!tryConsumeSpotifyBudget("backfill")) return { error: "spotify_orcamento_esgotado" };
       return runWithSpotifyBackfillPool(async () => {
         const profile = await getSpotifyArtistById(artist.spotifyId, { maxAttempts: 1 });
         if (!profile) return nothing;
         const found: string[] = [`perfil "${profile.name}" no Spotify`];
-        const applied: string[] = [];
-        const data: Record<string, unknown> = {};
-        if (!artist.imageUrl?.trim() && profile.imageUrl) {
-          data.imageUrl = profile.imageUrl;
-          applied.push("imagem");
-        }
-        if (artist.genres.length === 0 && profile.genres.length > 0) {
-          data.genres = profile.genres;
-          applied.push("gêneros");
-        }
-        if (!artist.spotifyUrl && profile.spotifyUrl) {
-          data.spotifyUrl = profile.spotifyUrl;
-          applied.push("link");
-        }
+        const { data, changed: applied } = diffArtistMetadataFromSpotify(artist, profile);
         if (profile.genres.length) found.push(`gêneros: ${profile.genres.slice(0, 5).join(", ")}`);
         if (Object.keys(data).length > 0) await prisma.artist.update({ where: { id: artist.id }, data });
         return { found, applied };

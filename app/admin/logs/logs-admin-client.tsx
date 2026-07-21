@@ -189,6 +189,14 @@ type UsageSummary = {
     durationMs: number | null;
   }[];
   budgets?: { category: string; used: number; limit: number }[];
+  deezer?: {
+    totalCalls: number;
+    totalErrors: number;
+    total429: number;
+    avgDurationMs: number | null;
+    byEndpoint: { endpoint: string; total: number; errors: number }[];
+    recentErrors: { ts: number; endpoint: string; status: number | null; error: string | null }[];
+  };
 };
 
 function triggerBadgeStyle(trigger: string) {
@@ -394,6 +402,39 @@ function SpotifyUsagePanel() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {data.deezer && data.deezer.totalCalls > 0 && (
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Consumo do Deezer (fonte de backfill)</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>
+                {data.deezer.totalCalls} consultas · {data.deezer.totalErrors} com erro
+                {data.deezer.total429 > 0 ? ` (${data.deezer.total429} pediram espera)` : ""}
+                {data.deezer.avgDurationMs != null ? ` · média ${formatDuration(data.deezer.avgDurationMs)}` : ""}
+              </div>
+              {data.deezer.recentErrors.length > 0 && (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={adminThStyle}>Quando</th>
+                      <th style={adminThStyle}>Endpoint</th>
+                      <th style={adminThStyle}>Status</th>
+                      <th style={adminThStyle}>Erro</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.deezer.recentErrors.slice(0, 10).map((e, i) => (
+                      <tr key={i}>
+                        <td style={adminTdStyle}>{new Date(e.ts).toLocaleTimeString("pt-BR")}</td>
+                        <td style={adminTdStyle}>{e.endpoint}</td>
+                        <td style={adminTdStyle}>{e.status ?? "sem resposta"}</td>
+                        <td style={adminTdStyle}>{e.error ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 

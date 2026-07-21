@@ -8,16 +8,9 @@ import {
   enrichSongsWithSpotifyMetadataByIds,
   findSongsMissingCovers,
 } from "@/lib/resolve-publish-songs";
-import {
-  backup3SpotifyConfigured,
-  isSpotifyTrackId,
-  markPrimaryLimited,
-  probeSpotifyApi,
-  probeSpotifyBackupApi,
-  probeSpotifyBackup3Api,
-  spotifyConfigured,
-} from "@/lib/spotify-server";
+import { ensureSpotifyBackfillReady, isSpotifyTrackId, spotifyConfigured } from "@/lib/spotify-server";
 import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
+import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -68,40 +61,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Preferência: BACKUP3 (pool backfill). Sem BACKUP3, principal → backup.
-  if (backup3SpotifyConfigured()) {
-    const probe3 = await probeSpotifyBackup3Api();
-    if (!probe3.ok) {
-      return NextResponse.json(
-        {
-          ok: false,
-          configured: true,
-          message: probe3.error ?? "BACKUP3 indisponível",
-          status: probe3.status,
-          retryAfterMs: probe3.retryAfterMs,
-          app: "backup3",
-        },
-        { status: 400 },
-      );
-    }
-  } else {
-    const probe = await probeSpotifyApi();
-    if (!probe.ok) {
-      const backupProbe = await probeSpotifyBackupApi();
-      if (!backupProbe.ok) {
-        return NextResponse.json(
-          {
-            ok: false,
-            configured: true,
-            message: `${probe.error}; backup: ${backupProbe.error}`,
-            status: probe.status,
-            retryAfterMs: probe.retryAfterMs,
-          },
-          { status: 400 },
-        );
-      }
-      markPrimaryLimited(probe.retryAfterMs ?? undefined);
-    }
+  const ready = await ensureSpotifyBackfillReady();
+  if (!ready.ok) {
+    return NextResponse.json(
+      { ok: false, configured: true, message: ready.message, status: ready.status, retryAfterMs: ready.retryAfterMs, app: ready.app },
+      { status: 400 },
+    );
   }
 
   const body = (await req.json().catch(() => ({}))) as {
@@ -128,6 +93,14 @@ export async function POST(req: NextRequest) {
       viaSearch: 0,
       remaining: 0,
       failedItems: [],
+    });
+  }
+
+  if (!tryConsumeSpotifyBudget("backfill", batch.length)) {
+    return NextResponse.json({
+      ok: false,
+      configured: true,
+      message: "Orçamento diário do Spotify (categoria backfill) esgotado — tenta de novo amanhã.",
     });
   }
 

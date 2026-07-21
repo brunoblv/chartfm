@@ -139,8 +139,8 @@ Não são CLIs — rodam pela app ou HTTP. Auth de cron: header/query com `CRON_
 
 | Fluxo | O que faz | Onde / como |
 |-------|-----------|-------------|
-| `GET /api/cron/nightly-catalog-backfill` | Datas, gêneros, bios, metadados (Wiki/MB/LFM/Spotify) | Cron — **desativado** no crontab (2026-07-15) |
-| `GET /api/cron/backfill-covers` | Capas Spotify pendentes | Cron — **desativado** |
+| `GET /api/cron/nightly-catalog-backfill` | Datas, gêneros, bios, metadados (Wiki/MB/LFM/Spotify) | Cron ativo (1h) — religado 2026-07-21, etapas Spotify travadas pelo orçamento `backfill` |
+| `GET /api/cron/backfill-covers` | Capas Spotify pendentes | Cron ativo (6h) — religado 2026-07-21, teto de 60 músicas/madrugada + orçamento `backfill` |
 | `GET /api/cron/release-radar-import` | Sync top 200 artistas Global → release radar | Cron ativo (terça) |
 | `GET /api/cron/release-radar` | Varredura de lançamentos | Cron ativo |
 | Admin capas | Capas em lote | `/admin/albums/no-cover` |

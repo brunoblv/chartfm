@@ -50,6 +50,7 @@ import { generateMyTrlSnapshot } from "../lib/mytrl-generate";
 import { parseMyTrlWeeklyReferenceDate, publishMyTrlWeeklyChart } from "../lib/mytrl-weekly-chart";
 import { recomputeAllMyTrlSnapshots } from "../lib/mytrl-recompute";
 import { getMyTrlOwnerUser, parseSpotifyPlaylistId } from "../lib/spotify-user";
+import { runWithSpotifyBackfillPool } from "../lib/spotify-user-charts-pool";
 
 const MONTH_MAP: Record<string, number> = {
   jan: 0,
@@ -347,7 +348,10 @@ async function main() {
   }
 }
 
-main()
+// Pool "backfill" (app BACKUP3) — mesma isolação do cron diário, mesmo rodando manualmente
+// (esse script gera um mês inteiro de snapshots, então é exatamente o perfil de tarefa de
+// fundo em lote que o pool existe para isolar).
+runWithSpotifyBackfillPool(main)
   .catch((err) => {
     console.error("[erro]", err);
     process.exitCode = 1;

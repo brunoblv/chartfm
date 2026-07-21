@@ -132,7 +132,8 @@
       "PowerShell(Get-Process -Id 14636)",
       "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object LocalPort,State,OwningProcess\")",
       "Bash(powershell -Command \"Get-Process -Id 12300 | Select-Object Id,ProcessName,Path,StartTime; Get-CimInstance Win32_Process -Filter 'ProcessId=12300' | Select-Object CommandLine\")",
-      "Bash(powershell -Command \"Stop-Process -Id 12300 -Force\")"
+      "Bash(powershell -Command \"Stop-Process -Id 12300 -Force\")",
+      "Bash(echo \"EXIT_CODE=$?\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",

@@ -4,12 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
-import { getWikipediaSongInfo } from "@/lib/wikipedia";
-import {
-  findRecordingMbidBySpotifyTrackId,
-  getMusicBrainzReleaseDates,
-  searchRecordingMbid,
-} from "@/lib/musicbrainz";
+import { resolveSongReleaseDates } from "@/lib/song-release-dates-backfill";
 import { buildSongPath } from "@/lib/music-routes";
 import { minhasParadasWhere, semDatasBackfillWhere, withReleaseDatesNotFoundCleared } from "@/app/admin/dados/lib";
 
@@ -28,10 +23,6 @@ function fmtDate(d: Date): string {
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
-function sameDay(a: Date | null, b: Date): boolean {
-  return a != null && a.getTime() === b.getTime();
-}
-
 type SongRow = {
   id: string;
   title: string;
@@ -42,59 +33,26 @@ type SongRow = {
   musicVideoReleaseDate: Date | null;
 };
 
+const sourceLabel: Record<"wikipedia" | "musicbrainz", string> = { wikipedia: "wiki", musicbrainz: "MB" };
+
 async function processSong(song: SongRow): Promise<{ updated: boolean; summary: string }> {
+  const { changes, sources, changedAnything } = await resolveSongReleaseDates(song);
+
+  if (!changedAnything) {
+    await prisma.song.update({ where: { id: song.id }, data: { releaseDatesNotFoundAt: new Date() } });
+    return { updated: false, summary: "nada encontrado" };
+  }
+
   const parts: string[] = [];
-  const data: Record<string, unknown> = {};
-  let single = song.singleReleaseDate;
-  let mv = song.musicVideoReleaseDate;
-
-  // 1) Wikipedia — quando divergente, vale a da Wikipedia
-  const wiki = await getWikipediaSongInfo(song.title, song.artist).catch(() => null);
-  if (wiki?.singleReleaseDate && !sameDay(single, wiki.singleReleaseDate)) {
-    data.singleReleaseDate = wiki.singleReleaseDate;
-    parts.push(`single ${fmtDate(wiki.singleReleaseDate)} (wiki)`);
-    single = wiki.singleReleaseDate;
+  if (changes.singleReleaseDate) {
+    parts.push(`single ${fmtDate(changes.singleReleaseDate)} (${sourceLabel[sources.singleReleaseDate!]})`);
   }
-  if (wiki?.musicVideoReleaseDate && !sameDay(mv, wiki.musicVideoReleaseDate)) {
-    data.musicVideoReleaseDate = wiki.musicVideoReleaseDate;
-    parts.push(`clipe ${fmtDate(wiki.musicVideoReleaseDate)} (wiki)`);
-    mv = wiki.musicVideoReleaseDate;
+  if (changes.musicVideoReleaseDate) {
+    parts.push(`clipe ${fmtDate(changes.musicVideoReleaseDate)} (${sourceLabel[sources.musicVideoReleaseDate!]})`);
   }
 
-  // 2) MusicBrainz — só para o que ainda estiver faltando
-  if (!single || !mv) {
-    let mbid = song.recordingMbid?.trim() || null;
-    if (!mbid && song.spotifyId) {
-      mbid = await findRecordingMbidBySpotifyTrackId(song.spotifyId).catch(() => null);
-    }
-    if (!mbid) mbid = await searchRecordingMbid(song.title, song.artist).catch(() => null);
-
-    if (mbid) {
-      if (!song.recordingMbid?.trim()) data.recordingMbid = mbid;
-      const dates = await getMusicBrainzReleaseDates(mbid, {
-        title: song.title,
-        artist: song.artist,
-      }).catch(() => ({ singleReleaseDate: null, musicVideoReleaseDate: null }));
-      if (!single && dates.singleReleaseDate) {
-        data.singleReleaseDate = dates.singleReleaseDate;
-        parts.push(`single ${fmtDate(dates.singleReleaseDate)} (MB)`);
-      }
-      if (!mv && dates.musicVideoReleaseDate) {
-        data.musicVideoReleaseDate = dates.musicVideoReleaseDate;
-        parts.push(`clipe ${fmtDate(dates.musicVideoReleaseDate)} (MB)`);
-      }
-    }
-  }
-
-  if (Object.keys(data).length > 0) {
-    await prisma.song.update({ where: { id: song.id }, data: withReleaseDatesNotFoundCleared(data) });
-    return { updated: true, summary: parts.join(" · ") };
-  }
-  await prisma.song.update({
-    where: { id: song.id },
-    data: { releaseDatesNotFoundAt: new Date() },
-  });
-  return { updated: false, summary: "nada encontrado" };
+  await prisma.song.update({ where: { id: song.id }, data: withReleaseDatesNotFoundCleared(changes) });
+  return { updated: true, summary: parts.join(" · ") };
 }
 
 export async function POST(req: NextRequest) {

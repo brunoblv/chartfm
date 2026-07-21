@@ -163,7 +163,9 @@ export async function POST(req: NextRequest) {
       try {
         const result = await runSource(kind, item.id, src, force);
         if ("error" in result) {
-          if (result.error !== "spotify_nao_configurado") hadError = true;
+          if (result.error !== "spotify_nao_configurado" && result.error !== "spotify_orcamento_esgotado") {
+            hadError = true;
+          }
           continue;
         }
         if (result.applied.length > 0) appliedForItem.push(...result.applied);

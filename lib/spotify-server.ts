@@ -618,6 +618,50 @@ export async function waitForSpotifyApi(opts?: { maxWaitMs?: number }): Promise<
   }
 }
 
+export type SpotifyBackfillReadyResult =
+  | { ok: true; app: "backup3" | "primary" | "backup" }
+  | { ok: false; message: string; status?: number; retryAfterMs?: number | null; app?: "backup3" | "primary" };
+
+/**
+ * Probe único antes de rodar um lote de backfill: prefere o BACKUP3 dedicado
+ * (pool "backfill"); sem ele configurado, cai no principal → backup (marcando
+ * o principal como limitado se precisar do backup). Antes esse mesmo
+ * encadeamento estava copiado em 2 rotas (cron/backfill-covers e
+ * admin/songs/backfill-covers) com formatos de retorno levemente diferentes.
+ */
+export async function ensureSpotifyBackfillReady(): Promise<SpotifyBackfillReadyResult> {
+  if (backup3SpotifyConfigured()) {
+    const probe3 = await probeSpotifyBackup3Api();
+    if (!probe3.ok) {
+      return {
+        ok: false,
+        message: probe3.error ?? "BACKUP3 indisponível",
+        status: probe3.status,
+        retryAfterMs: probe3.retryAfterMs,
+        app: "backup3",
+      };
+    }
+    return { ok: true, app: "backup3" };
+  }
+
+  const probe = await probeSpotifyApi();
+  if (!probe.ok) {
+    const backupProbe = await probeSpotifyBackupApi();
+    if (!backupProbe.ok) {
+      return {
+        ok: false,
+        message: `${probe.error}; backup: ${backupProbe.error}`,
+        status: probe.status,
+        retryAfterMs: probe.retryAfterMs,
+        app: "primary",
+      };
+    }
+    markPrimaryLimited(probe.retryAfterMs ?? undefined);
+    return { ok: true, app: "backup" };
+  }
+  return { ok: true, app: "primary" };
+}
+
 export function pickAlbumImageUrl(images: SpotifyImage[] | undefined): string | null {
   if (!images?.length) return null;
   const sorted = [...images].sort((a, b) => (b.height ?? 0) - (a.height ?? 0));

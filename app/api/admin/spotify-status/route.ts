@@ -11,6 +11,7 @@ import {
 } from "@/lib/spotify-server";
 import { getSpotifyUsageSummary } from "@/lib/spotify-usage-log";
 import { getSpotifyBudgetStatus } from "@/lib/spotify-budget";
+import { getDeezerUsageSummary } from "@/lib/deezer-usage-log";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,12 @@ export async function GET(req: NextRequest) {
 
   if (target === "usage") {
     const hours = Math.min(48, Math.max(1, Number(req.nextUrl.searchParams.get("hours")) || 24));
-    return NextResponse.json({ target, ...getSpotifyUsageSummary(hours), budgets: getSpotifyBudgetStatus() });
+    return NextResponse.json({
+      target,
+      ...getSpotifyUsageSummary(hours),
+      budgets: getSpotifyBudgetStatus(),
+      deezer: getDeezerUsageSummary(hours),
+    });
   }
 
   if (target !== "primary" && target !== "backup" && target !== "backup2" && target !== "backup3") {

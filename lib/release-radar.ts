@@ -9,6 +9,7 @@ import {
 } from "@/lib/spotify-server";
 import { isTelegramConfigured, sendTelegramMessage, sendTelegramPhoto } from "@/lib/telegram";
 import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
+import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
 
 /**
  * Radar de Lançamentos — monitora artistas no Spotify e avisa no Telegram
@@ -116,8 +117,16 @@ export type ReleaseRadarRunResult = {
   errors: string[];
 };
 
-/** Varre todos os artistas ativos e anuncia lançamentos ainda não registrados. */
+/**
+ * Varre todos os artistas ativos e anuncia lançamentos ainda não registrados.
+ * Roda inteiro no pool "backfill" (app BACKUP3) — é um job de fundo em lote,
+ * isolado do app principal/backup usado por buscas/ações de usuário reais.
+ */
 export async function runReleaseRadar(): Promise<ReleaseRadarRunResult> {
+  return runWithSpotifyBackfillPool(() => runReleaseRadarInner());
+}
+
+async function runReleaseRadarInner(): Promise<ReleaseRadarRunResult> {
   const errors: string[] = [];
   if (!spotifyConfigured()) {
     return { ok: false, watches: 0, checked: 0, announced: 0, errors: ["Spotify não configurado"] };
@@ -217,6 +226,10 @@ export type AddWatchResult =
  * lançamentos já dentro da janela para não anunciar retroativamente.
  */
 export async function addReleaseWatch(spotifyId: string): Promise<AddWatchResult> {
+  return runWithSpotifyBackfillPool(() => addReleaseWatchInner(spotifyId));
+}
+
+async function addReleaseWatchInner(spotifyId: string): Promise<AddWatchResult> {
   const id = spotifyId.trim();
   if (!id) return { ok: false, error: "spotifyId vazio" };
 
@@ -289,6 +302,10 @@ export type ImportGlobalResult =
  * removidos por aqui. Novos entram com baseline, sem aviso retroativo.
  */
 export async function importGlobalTopArtists(): Promise<ImportGlobalResult> {
+  return runWithSpotifyBackfillPool(() => importGlobalTopArtistsInner());
+}
+
+async function importGlobalTopArtistsInner(): Promise<ImportGlobalResult> {
   const top = await computeLatestWeeklyTopArtists(GLOBAL_IMPORT_LIMIT);
   if (!top) return { ok: false, error: "Nenhum snapshot do Global encontrado" };
 

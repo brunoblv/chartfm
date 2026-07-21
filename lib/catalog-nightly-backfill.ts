@@ -1,15 +1,14 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getWikipediaSongInfo, getWikipediaArtistBio } from "@/lib/wikipedia";
-import {
-  findRecordingMbidBySpotifyTrackId,
-  getMusicBrainzReleaseDates,
-  searchRecordingMbid,
-  searchMusicBrainzArtistTags,
-} from "@/lib/musicbrainz";
+import { getWikipediaArtistBio } from "@/lib/wikipedia";
+import { searchMusicBrainzArtistTags } from "@/lib/musicbrainz";
+import { resolveSongReleaseDates } from "@/lib/song-release-dates-backfill";
 import { fetchAndSaveSongGenres, songEnrichmentPendingWhere, songGenresBackfillOrderBy } from "@/lib/resolve-song-genres";
 import { getSpotifyArtistById, getSpotifyAlbumMetadataById, spotifyConfigured, probeSpotifyApi } from "@/lib/spotify-server";
 import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
+import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
+import { diffArtistMetadataFromSpotify } from "@/lib/apply-spotify-metadata-to-artist";
+import { diffAlbumMetadataFromSpotify } from "@/lib/apply-spotify-metadata-to-album";
 
 /**
  * Backfill noturno único (cron 1h) que passa por músicas, álbuns e artistas
@@ -63,10 +62,6 @@ const semDatasBackfillWhere: Prisma.SongWhereInput = {
   AND: [{ OR: [{ singleReleaseDate: null }, { musicVideoReleaseDate: null }] }, { releaseDatesNotFoundAt: null }],
 };
 
-function sameDay(a: Date | null, b: Date): boolean {
-  return a != null && a.getTime() === b.getTime();
-}
-
 async function backfillOneSongDates(song: {
   id: string;
   title: string;
@@ -76,38 +71,10 @@ async function backfillOneSongDates(song: {
   singleReleaseDate: Date | null;
   musicVideoReleaseDate: Date | null;
 }): Promise<boolean> {
-  const data: Record<string, unknown> = {};
-  let single = song.singleReleaseDate;
-  let mv = song.musicVideoReleaseDate;
+  const { changes, changedAnything } = await resolveSongReleaseDates(song);
 
-  const wiki = await getWikipediaSongInfo(song.title, song.artist).catch(() => null);
-  if (wiki?.singleReleaseDate && !sameDay(single, wiki.singleReleaseDate)) {
-    data.singleReleaseDate = wiki.singleReleaseDate;
-    single = wiki.singleReleaseDate;
-  }
-  if (wiki?.musicVideoReleaseDate && !sameDay(mv, wiki.musicVideoReleaseDate)) {
-    data.musicVideoReleaseDate = wiki.musicVideoReleaseDate;
-    mv = wiki.musicVideoReleaseDate;
-  }
-
-  if (!single || !mv) {
-    let mbid = song.recordingMbid?.trim() || null;
-    if (!mbid && song.spotifyId) mbid = await findRecordingMbidBySpotifyTrackId(song.spotifyId).catch(() => null);
-    if (!mbid) mbid = await searchRecordingMbid(song.title, song.artist).catch(() => null);
-
-    if (mbid) {
-      if (!song.recordingMbid?.trim()) data.recordingMbid = mbid;
-      const dates = await getMusicBrainzReleaseDates(mbid, { title: song.title, artist: song.artist }).catch(() => ({
-        singleReleaseDate: null,
-        musicVideoReleaseDate: null,
-      }));
-      if (!single && dates.singleReleaseDate) data.singleReleaseDate = dates.singleReleaseDate;
-      if (!mv && dates.musicVideoReleaseDate) data.musicVideoReleaseDate = dates.musicVideoReleaseDate;
-    }
-  }
-
-  if (Object.keys(data).length > 0) {
-    await prisma.song.update({ where: { id: song.id }, data: { ...data, releaseDatesNotFoundAt: null } });
+  if (changedAnything) {
+    await prisma.song.update({ where: { id: song.id }, data: { ...changes, releaseDatesNotFoundAt: null } });
     return true;
   }
   await prisma.song.update({ where: { id: song.id }, data: { releaseDatesNotFoundAt: new Date() } });
@@ -237,27 +204,19 @@ const artistMetadataMissingWhere: Prisma.ArtistWhereInput = {
   AND: [{ OR: [{ imageUrl: null }, { spotifyUrl: null }, { genres: { isEmpty: true } }] }, { metadataNotFoundAt: null }],
 };
 
-async function backfillOneArtistMetadata(artist: { id: number; name: string; spotifyId: string; genres: string[] }): Promise<boolean> {
+async function backfillOneArtistMetadata(artist: {
+  id: number;
+  name: string;
+  spotifyId: string;
+  imageUrl: string | null;
+  spotifyUrl: string | null;
+  genres: string[];
+}): Promise<boolean> {
   const profile = await getSpotifyArtistById(artist.spotifyId, { maxAttempts: 1 });
-  let foundAnything = false;
-  const data: Record<string, unknown> = {};
+  const data: Record<string, unknown> = profile ? diffArtistMetadataFromSpotify(artist, profile).data : {};
+  let foundAnything = Object.keys(data).length > 0;
 
-  if (profile) {
-    if (profile.imageUrl) {
-      data.imageUrl = profile.imageUrl;
-      foundAnything = true;
-    }
-    if (profile.spotifyUrl) {
-      data.spotifyUrl = profile.spotifyUrl;
-      foundAnything = true;
-    }
-    if (profile.genres.length > 0) {
-      data.genres = profile.genres;
-      foundAnything = true;
-    }
-  }
-
-  if (!data.genres && artist.genres.length === 0) {
+  if (!("genres" in data) && artist.genres.length === 0) {
     const mb = await searchMusicBrainzArtistTags(artist.name).catch(() => null);
     if (mb?.tags.length) {
       data.genres = mb.tags;
@@ -286,7 +245,7 @@ async function runArtistMetadataBackfill(): Promise<NightlyBackfillStepResult> {
     while (Date.now() < deadline) {
       const artists = await prisma.artist.findMany({
         where: artistMetadataMissingWhere,
-        select: { id: true, name: true, spotifyId: true, genres: true },
+        select: { id: true, name: true, spotifyId: true, imageUrl: true, spotifyUrl: true, genres: true },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: CHUNK_SIZE,
       });
@@ -294,6 +253,11 @@ async function runArtistMetadataBackfill(): Promise<NightlyBackfillStepResult> {
 
       for (const artist of artists) {
         if (Date.now() >= deadline) break;
+        // Orçamento diário estourado: para a etapa sem marcar os artistas restantes como
+        // "não encontrado" — eles continuam na fila e são tentados de novo amanhã.
+        if (!tryConsumeSpotifyBudget("backfill")) {
+          return { step: "artist_metadata", processed, updated, notFound, skipped: "orçamento diário do Spotify esgotado" };
+        }
         processed += 1;
         try {
           const ok = await backfillOneArtistMetadata(artist);
@@ -325,22 +289,22 @@ const albumMetadataMissingWhere: Prisma.AlbumWhereInput = {
   ],
 };
 
-async function backfillOneAlbumMetadata(album: { id: number; spotifyId: string }): Promise<boolean> {
+async function backfillOneAlbumMetadata(album: {
+  id: number;
+  spotifyId: string;
+  coverUrl: string | null;
+  releaseDate: Date | null;
+  albumType: string | null;
+  totalTracks: number | null;
+  spotifyUrl: string | null;
+}): Promise<boolean> {
   const meta = await getSpotifyAlbumMetadataById(album.spotifyId, "MX", { maxAttempts: 1 });
   if (!meta) return false;
 
-  await prisma.album.update({
-    where: { id: album.id },
-    data: {
-      title: meta.title ?? undefined,
-      coverUrl: meta.coverUrl,
-      albumType: meta.albumType ?? undefined,
-      releaseDate: meta.releaseDate ?? undefined,
-      spotifyUrl: meta.spotifyUrl,
-      totalTracks: meta.totalTracks,
-      metadataNotFoundAt: null,
-    },
-  });
+  const { data } = diffAlbumMetadataFromSpotify(album, meta);
+  if (Object.keys(data).length === 0) return false;
+
+  await prisma.album.update({ where: { id: album.id }, data: { ...data, metadataNotFoundAt: null } });
   return true;
 }
 
@@ -359,7 +323,15 @@ async function runAlbumMetadataBackfill(): Promise<NightlyBackfillStepResult> {
     while (Date.now() < deadline) {
       const albums = await prisma.album.findMany({
         where: albumMetadataMissingWhere,
-        select: { id: true, spotifyId: true },
+        select: {
+          id: true,
+          spotifyId: true,
+          coverUrl: true,
+          releaseDate: true,
+          albumType: true,
+          totalTracks: true,
+          spotifyUrl: true,
+        },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: CHUNK_SIZE,
       });
@@ -367,6 +339,11 @@ async function runAlbumMetadataBackfill(): Promise<NightlyBackfillStepResult> {
 
       for (const album of albums) {
         if (Date.now() >= deadline) break;
+        // Orçamento diário estourado: para a etapa sem marcar os álbuns restantes como
+        // "não encontrado" — eles continuam na fila e são tentados de novo amanhã.
+        if (!tryConsumeSpotifyBudget("backfill")) {
+          return { step: "album_metadata", processed, updated, notFound, skipped: "orçamento diário do Spotify esgotado" };
+        }
         processed += 1;
         try {
           const ok = await backfillOneAlbumMetadata(album);

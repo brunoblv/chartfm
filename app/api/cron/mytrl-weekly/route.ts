@@ -2,24 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { authorizeMyTrlCron } from "@/lib/mytrl-access";
 import { publishMyTrlWeeklyChart } from "@/lib/mytrl-weekly-chart";
 import { probeSpotifyApi } from "@/lib/spotify-server";
+import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
+import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 // GET /api/cron/mytrl-weekly — sexta 8:15 BRT, após a diária de sexta
+// Roda no pool "backfill" (app BACKUP3) — job de fundo, isolado do app
+// principal/backup usado por buscas/ações de usuário reais.
 export async function GET(req: NextRequest) {
   if (!authorizeMyTrlCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
+  if (!tryConsumeSpotifyBudget("mytrl", 20)) {
+    return NextResponse.json({ ok: true, skipped: true, error: "Orçamento diário do Spotify (categoria mytrl) esgotado" });
+  }
+
   try {
     // Sob rate limit, não insiste — a próxima sexta tenta de novo.
-    const probe = await probeSpotifyApi();
+    const probe = await runWithSpotifyBackfillPool(() => probeSpotifyApi());
     if (!probe.ok) {
       return NextResponse.json({ ok: false, skipped: true, error: probe.error });
     }
 
-    const result = await publishMyTrlWeeklyChart(new Date());
+    const result = await runWithSpotifyBackfillPool(() => publishMyTrlWeeklyChart(new Date()));
     if (!result.ok && result.skipped) {
       return NextResponse.json({ ok: true, skipped: true, reason: result.error });
     }

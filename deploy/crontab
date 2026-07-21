@@ -72,10 +72,11 @@ TZ=America/Sao_Paulo
 # Radar de Lançamentos — terça 12h: sincroniza a lista com o top 200 do Global da semana
 0 12 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/release-radar-import >> /root/chartfm/logs/cron.log 2>&1
 
-# Backfill de capas — DESATIVADO 2026-07-15 para poupar cota do Spotify (era 1x/dia).
-# Reativar descomentando quando necessário; capas pendentes podem ser resolvidas pelo
-# botão de backfill no admin.
-#0 6 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
+# Backfill de capas — religado em 2026-07-21: teto reduzido de 100 → 60 músicas/madrugada
+# e agora soma ao orçamento diário "backfill" (150/dia, lib/spotify-budget.ts), compartilhado
+# com nightly-catalog-backfill e o backfill manual do admin — se estourar, este cron
+# simplesmente não roda e as pendências ficam para o dia seguinte (ver /admin/logs).
+0 6 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/backfill-covers >> /root/chartfm/logs/cron.log 2>&1
 
 # Paradas "de estilo" (Parada.autoDecay) — reconcilia movimento semanal de posição, metade sobe/metade desce (de hora em hora, minuto :45)
 45 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/genre-parada-decay >> /root/chartfm/logs/cron.log 2>&1
@@ -101,6 +102,7 @@ TZ=America/Sao_Paulo
 # de ~30 perfis com 3s entre cada (cada perfil no máx. 1x/semana — sem risco de bloqueio)
 55 * * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-verify >> /root/chartfm/logs/cron.log 2>&1
 
-# Backfill noturno de catálogo — DESATIVADO 2026-07-15 para poupar cota do Spotify.
-# Reativar descomentando; pendências podem ser resolvidas manualmente em /admin/dados.
-#0 1 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/nightly-catalog-backfill >> /root/chartfm/logs/cron.log 2>&1
+# Backfill noturno de catálogo — religado em 2026-07-21: as etapas de artista/álbum
+# (as únicas que chamam Spotify) agora consomem o mesmo orçamento diário "backfill"
+# (150/dia) do cron de capas acima — para sozinho quando o orçamento acaba, sem estourar cota.
+0 1 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/nightly-catalog-backfill >> /root/chartfm/logs/cron.log 2>&1

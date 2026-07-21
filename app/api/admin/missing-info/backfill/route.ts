@@ -12,7 +12,10 @@ import {
   spotifyConfigured,
 } from "@/lib/spotify-server";
 import { runWithSpotifyBackfillPool } from "@/lib/spotify-user-charts-pool";
+import { tryConsumeSpotifyBudget } from "@/lib/spotify-budget";
 import { findSpotifyTrackForSong } from "@/lib/spotify-track-match";
+import { diffArtistMetadataFromSpotify } from "@/lib/apply-spotify-metadata-to-artist";
+import { diffAlbumMetadataFromSpotify } from "@/lib/apply-spotify-metadata-to-album";
 import { buildSongPath } from "@/lib/music-routes";
 
 export const runtime = "nodejs";
@@ -134,38 +137,34 @@ async function makeManualItem(item: QueueItem, reason: string) {
   return manualItem;
 }
 
-async function updateArtist(artist: { spotifyId: string }) {
+async function updateArtist(artist: { spotifyId: string; imageUrl: string | null; spotifyUrl: string | null; genres: string[] }) {
   const profile = await getSpotifyArtistById(artist.spotifyId);
   if (!profile) return { updated: false, reason: "spotify_artist_not_found" };
 
-  await prisma.artist.update({
-    where: { spotifyId: artist.spotifyId },
-    data: {
-      name: profile.name,
-      genres: profile.genres,
-      spotifyUrl: profile.spotifyUrl,
-      imageUrl: profile.imageUrl,
-    },
-  });
+  // Preenche só o que estiver vazio — nunca substitui um campo já preenchido
+  // (mesmo padrão de lib/edicao-de-dados-source-fetch.ts e do cron noturno).
+  const { data } = diffArtistMetadataFromSpotify(artist, profile);
+  if (Object.keys(data).length === 0) return { updated: false, reason: "nada_para_atualizar" };
+
+  await prisma.artist.update({ where: { spotifyId: artist.spotifyId }, data });
   return { updated: true, reason: "updated" };
 }
 
-async function updateAlbum(album: { spotifyId: string }) {
+async function updateAlbum(album: {
+  spotifyId: string;
+  coverUrl: string | null;
+  releaseDate: Date | null;
+  albumType: string | null;
+  totalTracks: number | null;
+  spotifyUrl: string | null;
+}) {
   const meta = await getSpotifyAlbumMetadataById(album.spotifyId);
   if (!meta) return { updated: false, reason: "spotify_album_not_found" };
 
-  await prisma.album.update({
-    where: { spotifyId: album.spotifyId },
-    data: {
-      title: meta.title ?? undefined,
-      coverUrl: meta.coverUrl,
-      albumType: meta.albumType ?? undefined,
-      releaseDate: meta.releaseDate ?? undefined,
-      spotifyUrl: meta.spotifyUrl,
-      totalTracks: meta.totalTracks,
-    },
-  });
+  const { data } = diffAlbumMetadataFromSpotify(album, meta);
+  if (Object.keys(data).length === 0) return { updated: false, reason: "nada_para_atualizar" };
 
+  await prisma.album.update({ where: { spotifyId: album.spotifyId }, data });
   return { updated: true, reason: "updated" };
 }
 
@@ -206,13 +205,23 @@ export async function POST(req: NextRequest) {
     }),
     prisma.artist.findMany({
       where: { AND: [artistMissingWhere, excludedArtistSpotifyIds.size ? { spotifyId: { notIn: [...excludedArtistSpotifyIds] } } : {}] },
-      select: { id: true, name: true, spotifyId: true },
+      select: { id: true, name: true, spotifyId: true, imageUrl: true, spotifyUrl: true, genres: true },
       orderBy: { name: "asc" },
       take: limit,
     }),
     prisma.album.findMany({
       where: { AND: [albumMissingWhere, excludedAlbumSpotifyIds.size ? { spotifyId: { notIn: [...excludedAlbumSpotifyIds] } } : {}] },
-      select: { id: true, title: true, spotifyId: true, artist: { select: { id: true, name: true } } },
+      select: {
+        id: true,
+        title: true,
+        spotifyId: true,
+        coverUrl: true,
+        releaseDate: true,
+        albumType: true,
+        totalTracks: true,
+        spotifyUrl: true,
+        artist: { select: { id: true, name: true } },
+      },
       orderBy: { title: "asc" },
       take: limit,
     }),
@@ -239,6 +248,11 @@ export async function POST(req: NextRequest) {
 
     for (const [index, item] of queue.entries()) {
       if (index > 0) await sleep(SPOTIFY_ITEM_DELAY_MS);
+
+      if (!tryConsumeSpotifyBudget("backfill")) {
+        errors.push("orçamento diário do Spotify (categoria backfill) esgotado — reste fica para amanhã");
+        break;
+      }
 
       try {
         const result =
@@ -286,5 +300,21 @@ export async function POST(req: NextRequest) {
 
 type QueueItem =
   | { type: "song"; ref: { id: string; title: string; artist: string; spotifyId: string | null } }
-  | { type: "artist"; ref: { id: number; name: string; spotifyId: string } }
-  | { type: "album"; ref: { id: number; title: string; spotifyId: string; artist: { id: number; name: string } } };
+  | {
+      type: "artist";
+      ref: { id: number; name: string; spotifyId: string; imageUrl: string | null; spotifyUrl: string | null; genres: string[] };
+    }
+  | {
+      type: "album";
+      ref: {
+        id: number;
+        title: string;
+        spotifyId: string;
+        coverUrl: string | null;
+        releaseDate: Date | null;
+        albumType: string | null;
+        totalTracks: number | null;
+        spotifyUrl: string | null;
+        artist: { id: number; name: string };
+      };
+    };

@@ -8,11 +8,22 @@
  */
 
 import "@/lib/force-ipv4-fetch";
+import { recordDeezerCall } from "@/lib/deezer-usage-log";
 
 const API_BASE = "https://api.deezer.com";
 const MIN_INTERVAL_MS = 150;
+// Deezer é fonte secundária (o catálogo já tem MusicBrainz/Wikipedia/Bugs como
+// alternativa) — não vale insistir muito num 429/5xx, só o suficiente para
+// engolir uma instabilidade momentânea.
+const MAX_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 400;
+const RETRY_MAX_DELAY_MS = 5_000;
 
 let lastFetchAt = 0;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function throttle() {
   const wait = lastFetchAt + MIN_INTERVAL_MS - Date.now();
@@ -20,17 +31,64 @@ async function throttle() {
   lastFetchAt = Date.now();
 }
 
+function parseRetryAfterMs(value: string | null): number | null {
+  if (!value) return null;
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds * 1000) : null;
+}
+
 async function deezerFetch<T>(path: string): Promise<T | null> {
-  await throttle();
-  const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`Deezer HTTP ${res.status}`);
-  const data = (await res.json()) as T & { error?: { message?: string; code?: number } };
-  if (data && typeof data === "object" && "error" in data && data.error) {
-    // code 800 = "no data" (ex.: ISRC sem faixa correspondente) — tratado como não encontrado.
-    if (data.error.code === 800) return null;
-    throw new Error(`Deezer API: ${data.error.message ?? "erro desconhecido"}`);
+  let lastError: string | null = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    await throttle();
+    const startedAt = Date.now();
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}${path}`, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      recordDeezerCall({ path, status: null, ok: false, retries: attempt - 1, durationMs: Date.now() - startedAt, error: lastError });
+      if (attempt >= MAX_ATTEMPTS) throw new Error(`Deezer: falha de rede — ${lastError}`);
+      await sleep(Math.min(RETRY_MAX_DELAY_MS, RETRY_BASE_DELAY_MS * attempt));
+      continue;
+    }
+
+    // 429/5xx: instabilidade momentânea, vale tentar de novo. 400/404: recurso
+    // inexistente/requisição inválida — não é erro transitório, não insiste.
+    if (!res.ok) {
+      const retryable = res.status === 429 || res.status >= 500;
+      lastError = `HTTP ${res.status}`;
+      recordDeezerCall({ path, status: res.status, ok: false, retries: attempt - 1, durationMs: Date.now() - startedAt, error: lastError });
+      if (retryable && attempt < MAX_ATTEMPTS) {
+        const retryAfterMs = res.status === 429 ? parseRetryAfterMs(res.headers.get("retry-after")) : null;
+        await sleep(retryAfterMs ?? Math.min(RETRY_MAX_DELAY_MS, RETRY_BASE_DELAY_MS * attempt));
+        continue;
+      }
+      throw new Error(`Deezer HTTP ${res.status}`);
+    }
+
+    const data = (await res.json()) as T & { error?: { message?: string; code?: number } };
+    if (data && typeof data === "object" && "error" in data && data.error) {
+      // code 800 = "no data" (ex.: ISRC sem faixa correspondente) — tratado como não encontrado.
+      if (data.error.code === 800) {
+        recordDeezerCall({ path, status: res.status, ok: true, retries: attempt - 1, durationMs: Date.now() - startedAt });
+        return null;
+      }
+      recordDeezerCall({
+        path,
+        status: res.status,
+        ok: false,
+        retries: attempt - 1,
+        durationMs: Date.now() - startedAt,
+        error: data.error.message ?? "erro desconhecido",
+      });
+      throw new Error(`Deezer API: ${data.error.message ?? "erro desconhecido"}`);
+    }
+
+    recordDeezerCall({ path, status: res.status, ok: true, retries: attempt - 1, durationMs: Date.now() - startedAt });
+    return data;
   }
-  return data;
+  throw new Error(`Deezer: falha após ${MAX_ATTEMPTS} tentativas — ${lastError ?? "erro desconhecido"}`);
 }
 
 function normalize(s: string): string {
