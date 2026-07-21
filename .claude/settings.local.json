@@ -133,12 +133,33 @@
       "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object LocalPort,State,OwningProcess\")",
       "Bash(powershell -Command \"Get-Process -Id 12300 | Select-Object Id,ProcessName,Path,StartTime; Get-CimInstance Win32_Process -Filter 'ProcessId=12300' | Select-Object CommandLine\")",
       "Bash(powershell -Command \"Stop-Process -Id 12300 -Force\")",
-      "Bash(echo \"EXIT_CODE=$?\")"
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(sed -i 's/createdAt: { gte: since } }/postedAt: { gte: since } }/; s/orderBy: { createdAt: \"desc\" },\\\\n      take: 30/&/' scripts/_tmp_diag_profile.ts)",
+      "Bash(sed -i '0,/postedAt/!b' scripts/_tmp_diag_profile.ts)",
+      "Bash(sed -i 's/where: { createdAt: { gte: since } },\\\\\\(.*\\\\\\)/where: { postedAt: { gte: since } },/' scripts/_tmp_diag_profile.ts)",
+      "Bash(sed -n '/=== Nomes duplicados/,$p' \"C:\\\\Users\\\\blvbr\\\\.claude\\\\projects\\\\c--ChartFM\\\\b2cf7931-0947-4203-b193-8a1c867b8759\\\\tool-results\\\\bkxui3jxx.txt\")",
+      "Bash(git -C /c/ChartFM log --oneline -15)",
+      "Bash(git -C /c/ChartFM log --oneline --since=\"14 days ago\" -- lib/auth-options.ts lib/google-user.ts middleware.ts app/api/profile lib/map-db-profile.ts lib/paradas.ts lib/mytrl-access.ts app/profile)",
+      "Bash(git -C /c/ChartFM show 30084ea --stat)",
+      "Bash(git -C /c/ChartFM log --format=\"%ci\" -1 30084ea)",
+      "Bash(git -C /c/ChartFM show 5b6f7ee --stat)",
+      "Bash(git -C /c/ChartFM log --format=\"%ci\" -1 5b6f7ee)",
+      "Bash(git -C /c/ChartFM show 5b6f7ee -- app/page.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/api/auth/session --max-time 3)",
+      "Bash(curl -s http://localhost:3000/api/auth/session -H 'Cookie: next-auth.session-token=__CMDSUB_OUTPUT__' --max-time 30)",
+      "Bash(grep -v \"^\\\\s*$\")",
+      "Bash(curl -s 'http://localhost:3000/api/profile/hyune?mode=summary&page=1&perPage=8' -H 'Cookie: next-auth.session-token=__TRACKED_VAR__' --max-time 60 -o /tmp/prof_auth2.json -w '%{http_code} %{size_download}b\\\\n')",
+      "Bash(curl -s http://localhost:3000/api/auth/session -H 'Cookie: next-auth.session-token=__TRACKED_VAR__' --max-time 30)",
+      "Bash(python -c ' *)",
+      "Bash(cygpath -w /tmp/prof_anon.json)",
+      "Bash(rm -f scripts/_tmp_diag_hyune.ts scripts/_tmp_diag_hyune2.ts scripts/_tmp_diag_hyune3.ts scripts/_tmp_diag_hyune4.ts scripts/_tmp_diag_lastlog.ts scripts/_tmp_diag_logs2.ts scripts/_tmp_diag_logs3.ts scripts/_tmp_make_token.ts /tmp/hyune_token.txt && npx tsc --noEmit 2>&1 | tail -5)"
     ],
     "additionalDirectories": [
       "c:\\Users\\blvbr\\.claude\\projects\\c--Users-blvbr-Downloads-Charts-chartify\\memory",
       "C:\\Users\\blvbr\\Downloads",
-      "c:\\Users\\blvbr\\Downloads\\Charts\\chartify\\app\\api\\admin\\lancamentos"
+      "c:\\Users\\blvbr\\Downloads\\Charts\\chartify\\app\\api\\admin\\lancamentos",
+      "C:\\Users\\blvbr\\.claude\\projects\\c--ChartFM\\b2cf7931-0947-4203-b193-8a1c867b8759\\tool-results",
+      "\\tmp"
     ]
   }
 }

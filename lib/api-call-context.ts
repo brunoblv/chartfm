@@ -54,6 +54,16 @@ function contextFromSource(opts: {
   };
 }
 
+/** Valores chegam percent-encoded do middleware (headers só aceitam Latin-1). */
+function decodeHeaderValue(value: string | null): string | null {
+  if (value == null) return null;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 async function resolveFromHeaders(): Promise<ApiCallContext | null> {
   try {
     const h = await headers();
@@ -61,8 +71,8 @@ async function resolveFromHeaders(): Promise<ApiCallContext | null> {
     if (!source) return null;
     return contextFromSource({
       source,
-      userName: h.get("x-api-user-name"),
-      userHandle: h.get("x-api-user-handle"),
+      userName: decodeHeaderValue(h.get("x-api-user-name")),
+      userHandle: decodeHeaderValue(h.get("x-api-user-handle")),
       path: h.get("x-api-path"),
     });
   } catch {

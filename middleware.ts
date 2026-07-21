@@ -197,8 +197,11 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     headersWithLogId.set("x-api-source", meta.source);
     headersWithLogId.set("x-api-trigger", meta.trigger);
     headersWithLogId.set("x-api-path", pathname);
-    if (meta.userName) headersWithLogId.set("x-api-user-name", meta.userName);
-    if (meta.userHandle) headersWithLogId.set("x-api-user-handle", meta.userHandle);
+    // Headers HTTP só aceitam Latin-1 (ByteString) — nomes com Unicode fora dessa
+    // faixa (ex.: "𝔐") estouram TypeError e derrubam TODA request do usuário logado,
+    // por isso os valores vão percent-encoded (decodificados em lib/api-call-context.ts).
+    if (meta.userName) headersWithLogId.set("x-api-user-name", encodeURIComponent(meta.userName));
+    if (meta.userHandle) headersWithLogId.set("x-api-user-handle", encodeURIComponent(meta.userHandle));
     return ensureLocaleCookie(request, headersWithLogId);
   }
 
