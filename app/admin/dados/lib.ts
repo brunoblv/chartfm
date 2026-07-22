@@ -274,6 +274,7 @@ export const SONG_AUDIT_SELECT = {
   billboardGenreChartName: true,
   releaseDatesNotFoundAt: true,
   sourcesNotFound: true,
+  genres: true,
   albumRef: {
     select: {
       id: true,
@@ -697,6 +698,59 @@ export async function fetchArtistPendencias(opts: {
     take: DADOS_PAGE_SIZE,
   });
   return { total, totalPages, page: clamped, rows };
+}
+
+// ---------------------------------------------------------------------------
+// Busca por tag (gênero) — mostra tudo (músicas e artistas) marcado com ela
+// ---------------------------------------------------------------------------
+
+export type TagMatch = { tag: string; songCount: number; artistCount: number };
+
+/** Tags (de música ou artista) cujo texto contém o termo buscado — para o usuário achar a grafia exata. */
+export async function findGenreTags(q: string): Promise<TagMatch[]> {
+  const term = q.trim();
+  if (!term) return [];
+  const rows = await prisma.$queryRaw<{ tag: string; song_count: bigint; artist_count: bigint }[]>(Prisma.sql`
+    WITH tags AS (
+      SELECT unnest(genres) AS tag, id AS song_id, NULL::int AS artist_id FROM "Song"
+      UNION ALL
+      SELECT unnest(genres) AS tag, NULL, id AS artist_id FROM "artists"
+    )
+    SELECT tag, COUNT(song_id) AS song_count, COUNT(artist_id) AS artist_count
+    FROM tags
+    WHERE tag ILIKE ${`%${term}%`}
+    GROUP BY tag
+    ORDER BY (COUNT(song_id) + COUNT(artist_id)) DESC, tag ASC
+    LIMIT 40
+  `);
+  return rows.map((r) => ({ tag: r.tag, songCount: Number(r.song_count), artistCount: Number(r.artist_count) }));
+}
+
+export type TagSongRow = { id: string; title: string; artist: string; genres: string[] };
+export type TagArtistRow = { id: number; name: string; genres: string[]; imageUrl: string | null };
+
+/** Músicas com essa tag exata (comparação case-insensitive). */
+export async function fetchSongsByTag(tag: string, limit = 200): Promise<TagSongRow[]> {
+  const term = tag.trim();
+  if (!term) return [];
+  return prisma.$queryRaw<TagSongRow[]>(Prisma.sql`
+    SELECT id, title, artist, genres FROM "Song" s
+    WHERE EXISTS (SELECT 1 FROM unnest(s.genres) g WHERE lower(g) = lower(${term}))
+    ORDER BY artist ASC, title ASC
+    LIMIT ${limit}
+  `);
+}
+
+/** Artistas com essa tag exata (comparação case-insensitive). */
+export async function fetchArtistsByTag(tag: string, limit = 200): Promise<TagArtistRow[]> {
+  const term = tag.trim();
+  if (!term) return [];
+  return prisma.$queryRaw<TagArtistRow[]>(Prisma.sql`
+    SELECT id, name, genres, image_url AS "imageUrl" FROM "artists" a
+    WHERE EXISTS (SELECT 1 FROM unnest(a.genres) g WHERE lower(g) = lower(${term}))
+    ORDER BY name ASC
+    LIMIT ${limit}
+  `);
 }
 
 // ---------------------------------------------------------------------------

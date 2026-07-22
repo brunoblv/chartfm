@@ -488,3 +488,153 @@ export function InlineTags({
     </span>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Badges de tag editáveis: cada tag vira um badge com "×" para excluir; um
+// botão "+ tag" abre um input pequeno para adicionar uma nova.
+// ---------------------------------------------------------------------------
+
+const tagButtonStyle: CSSProperties = {
+  border: "none",
+  background: "none",
+  padding: 0,
+  marginLeft: 5,
+  fontSize: 12,
+  lineHeight: 1,
+  color: "inherit",
+  opacity: 0.6,
+  cursor: "pointer",
+};
+
+const addTagButtonStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "2px 8px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  lineHeight: 1.6,
+  border: "1px dashed var(--divider-strong)",
+  background: "transparent",
+  color: "var(--text-muted)",
+  cursor: "pointer",
+};
+
+const addTagInputStyle: CSSProperties = {
+  padding: "2px 7px",
+  borderRadius: 999,
+  border: "1px solid var(--divider-strong)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontSize: 11,
+  width: 120,
+};
+
+export function EditableTagBadges({
+  kind,
+  id,
+  field,
+  tags,
+  badgeStyle,
+  addPlaceholder = "nova tag",
+}: {
+  kind: Kind;
+  id: string | number;
+  field: string;
+  tags: string[];
+  /** Estilo do badge por tag (ex.: destacar tags que mapeiam para uma categoria de parada). */
+  badgeStyle?: (tag: string) => CSSProperties;
+  addPlaceholder?: string;
+}) {
+  const [current, setCurrent] = useState(tags);
+  const [adding, setAdding] = useState(false);
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
+
+  useEffect(() => {
+    setCurrent(tags);
+    setStatus("idle");
+  }, [tags]);
+
+  async function save(next: string[]) {
+    const prev = current;
+    setCurrent(next);
+    setStatus("saving");
+    try {
+      await patchInline(kind, id, field, next);
+      setStatus("idle");
+    } catch {
+      setCurrent(prev);
+      setStatus("error");
+    }
+  }
+
+  function removeTag(tag: string) {
+    save(current.filter((t) => t !== tag));
+  }
+
+  function commitAdd() {
+    const t = text.trim();
+    setText("");
+    setAdding(false);
+    if (!t) return;
+    if (current.some((x) => x.toLowerCase() === t.toLowerCase())) return;
+    save([...current, t]);
+  }
+
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
+      {current.map((tag) => (
+        <span
+          key={tag}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "2px 6px 2px 8px",
+            borderRadius: 999,
+            fontSize: 11,
+            fontWeight: 700,
+            lineHeight: 1.6,
+            background: "var(--fill-inset)",
+            color: "var(--text-muted)",
+            border: "1px solid var(--divider)",
+            ...(badgeStyle ? badgeStyle(tag) : null),
+          }}
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => removeTag(tag)}
+            title={`Remover "${tag}"`}
+            style={tagButtonStyle}
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      {adding ? (
+        <input
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={commitAdd}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") {
+              setText("");
+              e.currentTarget.blur();
+            }
+          }}
+          placeholder={addPlaceholder}
+          style={addTagInputStyle}
+        />
+      ) : (
+        <button type="button" onClick={() => setAdding(true)} style={addTagButtonStyle}>
+          + tag
+        </button>
+      )}
+      {status === "saving" && <span style={{ ...statusStyle, color: "var(--text-muted)" }}>salvando…</span>}
+      {status === "error" && <span style={{ ...statusStyle, color: "#C41E3A" }}>erro ao salvar</span>}
+    </div>
+  );
+}

@@ -13,10 +13,11 @@ import {
 import type { AlbumAuditRow, ArtistAuditRow, DadosSort, DadosSortBy, SongAuditRow } from "./lib";
 import { dadosSortQuery, nextDadosSort } from "./lib";
 import { SourceFetchButtons } from "./SourceFetchButtons";
-import { InlineDate, ReadonlyDate } from "./InlineEdit";
+import { InlineDate, ReadonlyDate, EditableTagBadges } from "./InlineEdit";
 import { AlbumPicker } from "./AlbumPicker";
 import { YouTubeClipFetchButton } from "./YouTubeClipFetchButton";
 import { ArtistRefreshImageButton } from "../artists/ArtistRefreshImageButton";
+import { chartGenreSlugsForTags, getChartGenreBySlug } from "@/lib/genre-taxonomy";
 
 // ---------------------------------------------------------------------------
 // Navegação da seção
@@ -31,10 +32,11 @@ export type DadosTab =
   | "artistas"
   | "albuns-pendencias"
   | "artistas-pendencias"
+  | "tags"
   | "flags";
 
 /** Nav de 1ª classe: visão única por entidade (busca + filtros + badges de pendência). */
-type DadosGroup = "geral" | "musicas" | "albuns" | "artistas" | "flags";
+type DadosGroup = "geral" | "musicas" | "albuns" | "artistas" | "tags" | "flags";
 
 const GROUP_OF: Record<DadosTab, DadosGroup> = {
   geral: "geral",
@@ -45,6 +47,7 @@ const GROUP_OF: Record<DadosTab, DadosGroup> = {
   "albuns-pendencias": "albuns",
   artistas: "artistas",
   "artistas-pendencias": "artistas",
+  tags: "tags",
   flags: "flags",
 };
 
@@ -53,6 +56,7 @@ const GROUPS: { key: DadosGroup; label: string; href: string }[] = [
   { key: "musicas", label: "Músicas", href: "/admin/dados/catalogo" },
   { key: "albuns", label: "Álbuns", href: "/admin/dados/albuns-pendencias" },
   { key: "artistas", label: "Artistas", href: "/admin/dados/artistas-pendencias" },
+  { key: "tags", label: "Tags", href: "/admin/dados/tags" },
   { key: "flags", label: "Sinalizações", href: "/admin/dados/flags" },
 ];
 
@@ -508,6 +512,19 @@ export function PendBadges({
   );
 }
 
+/** Destaca (em vermelho) tags que mapeiam para uma categoria de parada, igual à busca livre antiga. */
+function chartTagBadgeStyle(tag: string): CSSProperties {
+  const cats = chartGenreSlugsForTags([tag])
+    .map((slug) => getChartGenreBySlug(slug)?.name)
+    .filter((n): n is string => Boolean(n));
+  if (cats.length === 0) return {};
+  return {
+    background: "rgba(250,36,60,0.1)",
+    color: "#C41E3A",
+    border: "1px solid rgba(250,36,60,0.25)",
+  };
+}
+
 function songMissing(s: SongAuditRow): string[] {
   const missing: string[] = [];
   const semAlbum = !s.albumSpotifyId || !s.albumRef;
@@ -538,6 +555,8 @@ const fixedTableStyle: CSSProperties = {
   tableLayout: "fixed",
   borderCollapse: "collapse",
 };
+
+const wideFixedTableStyle: CSSProperties = { ...fixedTableStyle, minWidth: 1100 };
 
 const compactTh: CSSProperties = {
   ...adminCompactThStyle,
@@ -594,11 +613,12 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
   return (
     <AdminPanel maxWidth={1320}>
       <div style={{ overflowX: "auto" }}>
-        <table style={fixedTableStyle}>
+        <table style={wideFixedTableStyle}>
           <colgroup>
             <col style={{ width: 220 }} />
             <col style={{ width: 160 }} />
             <col style={{ width: 180 }} />
+            <col style={{ width: 190 }} />
             <col style={{ width: 100 }} />
             <col style={{ width: 100 }} />
             <col style={{ width: 120 }} />
@@ -609,6 +629,7 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
               <th style={compactTh}>Música</th>
               <th style={compactTh}>Pendências</th>
               <th style={compactTh}>Álbum</th>
+              <th style={compactTh}>Gêneros</th>
               <th style={compactTh}>Single</th>
               <th style={compactTh}>Clipe</th>
               <th style={compactTh}>Billboard</th>
@@ -661,6 +682,9 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                       album={s.albumRef ? { title: s.albumRef.title, spotifyId: s.albumSpotifyId ?? "" } : null}
                       albumText={s.album}
                     />
+                  </td>
+                  <td style={{ ...compactTd, maxWidth: 190 }}>
+                    <EditableTagBadges kind="music" id={s.id} field="genres" tags={s.genres} badgeStyle={chartTagBadgeStyle} />
                   </td>
                   <td style={compactTd}>
                     <InlineDate kind="music" id={s.id} field="singleReleaseDate" value={s.singleReleaseDate} />
@@ -858,28 +882,7 @@ export function ArtistAuditTable({ rows, emptyLabel }: { rows: ArtistAuditRow[];
                     <PendBadges missing={missing} esgotada={esgotada} />
                   </td>
                   <td style={{ ...compactTd, maxWidth: 200 }}>
-                    {r.genres.length > 0 ? (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                        {r.genres.map((g) => (
-                          <span
-                            key={g}
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              color: "var(--text-muted)",
-                              background: "var(--fill-subtle)",
-                              padding: "3px 9px",
-                              borderRadius: 99,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {g}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: 12, color: "var(--text-disabled)" }}>—</span>
-                    )}
+                    <EditableTagBadges kind="artists" id={r.id} field="genres" tags={r.genres} badgeStyle={chartTagBadgeStyle} />
                   </td>
                   <td
                     style={{
