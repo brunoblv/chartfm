@@ -530,22 +530,32 @@ const addTagInputStyle: CSSProperties = {
   width: 120,
 };
 
+const highlightedBadgeStyle: CSSProperties = {
+  background: "rgba(250,36,60,0.1)",
+  color: "#C41E3A",
+  border: "1px solid rgba(250,36,60,0.25)",
+};
+
 export function EditableTagBadges({
   kind,
   id,
   field,
   tags,
-  badgeStyle,
+  highlightedTags,
   addPlaceholder = "nova tag",
 }: {
   kind: Kind;
   id: string | number;
   field: string;
   tags: string[];
-  /** Estilo do badge por tag (ex.: destacar tags que mapeiam para uma categoria de parada). */
-  badgeStyle?: (tag: string) => CSSProperties;
+  /**
+   * Tags a destacar (ex.: as que mapeiam para uma categoria de parada) — precisa ser dado
+   * serializável (não uma função), pois este componente cruza a fronteira server/client.
+   */
+  highlightedTags?: string[];
   addPlaceholder?: string;
 }) {
+  const highlightSet = new Set((highlightedTags ?? []).map((t) => t.toLowerCase()));
   const [current, setCurrent] = useState(tags);
   const [adding, setAdding] = useState(false);
   const [text, setText] = useState("");
@@ -598,7 +608,7 @@ export function EditableTagBadges({
             background: "var(--fill-inset)",
             color: "var(--text-muted)",
             border: "1px solid var(--divider)",
-            ...(badgeStyle ? badgeStyle(tag) : null),
+            ...(highlightSet.has(tag.toLowerCase()) ? highlightedBadgeStyle : null),
           }}
         >
           {tag}

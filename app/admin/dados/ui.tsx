@@ -17,7 +17,7 @@ import { InlineDate, ReadonlyDate, EditableTagBadges } from "./InlineEdit";
 import { AlbumPicker } from "./AlbumPicker";
 import { YouTubeClipFetchButton } from "./YouTubeClipFetchButton";
 import { ArtistRefreshImageButton } from "../artists/ArtistRefreshImageButton";
-import { chartGenreSlugsForTags, getChartGenreBySlug } from "@/lib/genre-taxonomy";
+import { chartGenreSlugsForTags } from "@/lib/genre-taxonomy";
 
 // ---------------------------------------------------------------------------
 // Navegação da seção
@@ -512,17 +512,9 @@ export function PendBadges({
   );
 }
 
-/** Destaca (em vermelho) tags que mapeiam para uma categoria de parada, igual à busca livre antiga. */
-function chartTagBadgeStyle(tag: string): CSSProperties {
-  const cats = chartGenreSlugsForTags([tag])
-    .map((slug) => getChartGenreBySlug(slug)?.name)
-    .filter((n): n is string => Boolean(n));
-  if (cats.length === 0) return {};
-  return {
-    background: "rgba(250,36,60,0.1)",
-    color: "#C41E3A",
-    border: "1px solid rgba(250,36,60,0.25)",
-  };
+/** Tags que mapeiam para uma categoria de parada — destacadas em vermelho, igual à busca livre antiga. */
+function chartMatchedTags(tags: string[]): string[] {
+  return tags.filter((tag) => chartGenreSlugsForTags([tag]).length > 0);
 }
 
 function songMissing(s: SongAuditRow): string[] {
@@ -684,7 +676,13 @@ export function SongAuditTable({ rows, emptyLabel }: { rows: SongAuditRow[]; emp
                     />
                   </td>
                   <td style={{ ...compactTd, maxWidth: 190 }}>
-                    <EditableTagBadges kind="music" id={s.id} field="genres" tags={s.genres} badgeStyle={chartTagBadgeStyle} />
+                    <EditableTagBadges
+                      kind="music"
+                      id={s.id}
+                      field="genres"
+                      tags={s.genres}
+                      highlightedTags={chartMatchedTags(s.genres)}
+                    />
                   </td>
                   <td style={compactTd}>
                     <InlineDate kind="music" id={s.id} field="singleReleaseDate" value={s.singleReleaseDate} />
@@ -882,7 +880,13 @@ export function ArtistAuditTable({ rows, emptyLabel }: { rows: ArtistAuditRow[];
                     <PendBadges missing={missing} esgotada={esgotada} />
                   </td>
                   <td style={{ ...compactTd, maxWidth: 200 }}>
-                    <EditableTagBadges kind="artists" id={r.id} field="genres" tags={r.genres} badgeStyle={chartTagBadgeStyle} />
+                    <EditableTagBadges
+                      kind="artists"
+                      id={r.id}
+                      field="genres"
+                      tags={r.genres}
+                      highlightedTags={chartMatchedTags(r.genres)}
+                    />
                   </td>
                   <td
                     style={{
