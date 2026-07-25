@@ -43,6 +43,7 @@ interface ChartCardProps {
 }
 
 function LockedActionBar({ likeCount, comments, feedStyle }: { likeCount: number; comments: number; feedStyle?: boolean }) {
+  const { t } = useTranslations();
   const lockBtnStyle = {
     display: "flex" as const,
     alignItems: "center" as const,
@@ -68,13 +69,17 @@ function LockedActionBar({ likeCount, comments, feedStyle }: { likeCount: number
         marginTop: feedStyle ? 18 : 0,
       }}
     >
-      <Link href="/login" title="Entre para curtir" style={lockBtnStyle}>
+      <Link href="/login" title={t("chart.loginToLikeTooltip")} style={lockBtnStyle}>
         <Lock size={14} />
-        {likeCount > 0 ? `${likeCount} curtida${likeCount === 1 ? "" : "s"}` : "Curtir"}
+        {likeCount > 0
+          ? t(likeCount === 1 ? "chart.likeSingular" : "chart.likePlural", { count: likeCount })
+          : t("chart.like")}
       </Link>
-      <Link href="/login" title="Entre para comentar" style={lockBtnStyle}>
+      <Link href="/login" title={t("chart.loginToCommentTooltip")} style={lockBtnStyle}>
         <Lock size={14} />
-        {comments > 0 ? `${comments} comentário${comments === 1 ? "" : "s"}` : "Comentar"}
+        {comments > 0
+          ? t(comments === 1 ? "chart.commentSingular" : "chart.commentPlural", { count: comments })
+          : t("chart.comment")}
       </Link>
     </div>
   );
@@ -211,7 +216,7 @@ export function ChartCard({
 }: ChartCardProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { data: session } = useSession();
   const authed = Boolean(session?.user?.id);
   const isFeed = variant === "feed";
@@ -219,7 +224,7 @@ export function ChartCard({
   const preview = chart.entries.slice(0, topN);
   const totalTracks = chart.entryCount ?? chart.entries.length;
   const remaining = totalTracks - preview.length;
-  const formattedPeriod = formatChartPeriod(chart);
+  const formattedPeriod = formatChartPeriod(chart, locale);
   const chartName = chart.paradaNome || user.paradaNome || `Top ${totalTracks}`;
   const community = chart.community ?? null;
   const posterHref = community ? `/community/${community.slug}` : `/profile/${user.handle}`;
@@ -407,7 +412,7 @@ export function ChartCard({
                 {chartName}
               </div>
               <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                {formattedPeriod} · {totalTracks} faixas
+                {formattedPeriod} · {t("chart.tracksCount", { count: totalTracks })}
               </div>
             </div>
             <span

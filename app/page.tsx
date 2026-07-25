@@ -404,7 +404,7 @@ export default async function HomePage() {
         console.error("[home] getSystemFeedPosts", err);
         return [] as Awaited<ReturnType<typeof getSystemFeedPosts>>;
       }),
-      getCopaLiveFeedFixtures(session.user.id).catch((err) => {
+      getCopaLiveFeedFixtures(session.user.id, locale).catch((err) => {
         console.error("[home] getCopaLiveFeedFixtures", err);
         return null;
       }),

@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   DEFAULT_LOCALE,
   LOCALE_COOKIE,
@@ -43,11 +44,15 @@ export function LocaleProvider({
   const [locale, setLocaleState] = useState<Locale>(
     isLocale(initialLocale) ? initialLocale : DEFAULT_LOCALE,
   );
+  const router = useRouter();
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
     persistLocale(next);
-  }, []);
+    // Textos vindos de server components (postedAgo, weekLabel, etc.) ficam
+    // "presos" no idioma antigo até um refresh do RSC payload.
+    router.refresh();
+  }, [router]);
 
   useEffect(() => {
     document.documentElement.lang = locale;

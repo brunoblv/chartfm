@@ -46,6 +46,7 @@ export const messagesEn = {
     adminRadarLancamentos: "Release Radar",
     adminCrownnoteExport: "Export Crownnote",
     adminLowerThirdsYoutube: "YouTube Lower Thirds",
+    adminVideoparada: "Parade Videos",
     adminEditorial: "Editorial",
     adminSupport: "Support tickets",
     ctaTitle: "Create your weekly chart",

@@ -747,7 +747,7 @@ export default function ChartDetailPage() {
                     {tituloDetalheParada}
                   </div>
                   <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                    {formatChartPeriod(chart)}
+                    {formatChartPeriod(chart, locale)}
                   </div>
                 </div>
               </div>
@@ -1029,7 +1029,7 @@ export default function ChartDetailPage() {
                     marginBottom: 12,
                   }}
                 >
-                  {formatChartPeriod(chart)}
+                  {formatChartPeriod(chart, locale)}
                 </div>
                 <div
                   style={{

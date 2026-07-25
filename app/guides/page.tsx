@@ -18,22 +18,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const CARD_KEYS = [
-  "cardCriarParada",
-  "cardTemporadas",
-  "cardSeguir",
-  "cardFeed",
-  "cardPontuacao",
-  "cardPrivacidade",
-  "cardComunidades",
-  "cardDescobrir",
-  "cardAvaliar",
-  "cardImportar",
-  "cardCopa",
-  "cardFormula",
-  "cardGlossario",
-] as const;
-
 export default async function GuidesPage() {
   const { t } = await getServerTranslations();
 
@@ -42,18 +26,15 @@ export default async function GuidesPage() {
       <InstitutionalTitle subtitle={t("guides.indexSubtitle")}>{t("guides.indexTitle")}</InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {GUIDES.map((guide, index) => {
-          const key = CARD_KEYS[index];
-          return (
-            <InstitutionalIconCard
-              key={guide.title}
-              icon={guide.icon}
-              title={t(`guides.${key}Title`)}
-              description={t(`guides.${key}Body`)}
-              href={guide.href}
-            />
-          );
-        })}
+        {GUIDES.map((guide) => (
+          <InstitutionalIconCard
+            key={guide.key}
+            icon={guide.icon}
+            title={t(`guides.${guide.key}Title`)}
+            description={t(`guides.${guide.key}Body`)}
+            href={guide.href}
+          />
+        ))}
       </div>
 
       <div style={{ marginTop: 32 }}>

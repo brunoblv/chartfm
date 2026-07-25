@@ -46,6 +46,7 @@ export const messagesPtBR = {
     adminRadarLancamentos: "Radar de Lançamentos",
     adminCrownnoteExport: "Exportar Crownnote",
     adminLowerThirdsYoutube: "Lower Thirds YouTube",
+    adminVideoparada: "Vídeos das Paradas",
     adminEditorial: "Editorial",
     adminSupport: "Tickets de suporte",
     ctaTitle: "Crie sua parada semanal",

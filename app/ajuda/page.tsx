@@ -75,7 +75,7 @@ export default async function AjudaPage() {
   ].map((category) => ({ ...category, guides: category.hrefs.map((href) => guideByHref(href!)) }));
 
   const SEARCH_ITEMS = [
-    ...GUIDE_CATEGORIES.flatMap((c) => c.guides.map((g) => ({ label: g.title, href: g.href as string, type: "Guia" as const }))),
+    ...GUIDE_CATEGORIES.flatMap((c) => c.guides.map((g) => ({ label: t(`guides.${g.key}Title`), href: g.href as string, type: "Guia" as const }))),
     ...FAQ_ITEMS.map((item) => ({ label: t(item.questionKey), href: "/faq", type: "FAQ" as const })),
   ];
 
@@ -195,7 +195,7 @@ export default async function AjudaPage() {
                     textDecoration: "none",
                   }}
                 >
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text)" }}>{guide.title}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text)" }}>{t(`guides.${guide.key}Title`)}</span>
                   <span style={{ color: "var(--text-muted)" }}>→</span>
                 </Link>
               ))}

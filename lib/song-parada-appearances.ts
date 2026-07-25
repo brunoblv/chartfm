@@ -44,8 +44,11 @@ type ChartEntryForAppearances = {
   };
 };
 
-function chartDateRangeOnly(chart: { weekLabel: string; dateRange: string }): string {
-  const full = formatChartPeriod(chart);
+function chartDateRangeOnly(
+  chart: { weekLabel: string; dateRange: string },
+  locale: "pt-BR" | "en",
+): string {
+  const full = formatChartPeriod(chart, locale);
   const marker = " - ";
   const cut = full.lastIndexOf(marker);
   return cut >= 0 ? full.slice(0, cut) : full;
@@ -70,6 +73,7 @@ function buildStats(entries: ChartEntryForAppearances[]): SongParadaUserStats {
 export function buildSongParadaAppearanceGroups(
   entries: ChartEntryForAppearances[],
   userParadas: { id: string; name: string; isPrimary: boolean; sortOrder: number }[] = [],
+  locale: "pt-BR" | "en" = "pt-BR",
 ): SongParadaAppearanceGroup[] {
   const byParada = new Map<string, ChartEntryForAppearances[]>();
   for (const entry of entries) {
@@ -110,7 +114,7 @@ export function buildSongParadaAppearanceGroups(
         .map((e) => ({
           chartId: e.chart.id,
           position: e.position,
-          dateRange: chartDateRangeOnly({ weekLabel: e.chart.weekLabel, dateRange: e.chart.dateRange }),
+          dateRange: chartDateRangeOnly({ weekLabel: e.chart.weekLabel, dateRange: e.chart.dateRange }, locale),
           weekOfYear: e.chart.weekIndex % 100,
           year: Math.floor(e.chart.weekIndex / 100),
         }));

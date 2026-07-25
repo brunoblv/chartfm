@@ -24,7 +24,7 @@ import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons"
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const me = session?.user?.id
     ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } })
@@ -287,6 +287,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
       },
     })),
     userParadas,
+    locale,
   );
 
   const myVideoClip = currentUserId

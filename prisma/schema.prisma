@@ -236,6 +236,7 @@ model Song {
   chartEntriesBySpotify      ChartEntry[]              @relation("ChartEntrySongSpotify")
   videoClips                 SongVideoClip[]
   videoClipChoices           UserSongVideoClipChoice[]
+  paradeVideoClipConfigs     ParadeVideoClipConfig[]
   pushSubmissions            PushSubmission[]
   recommendations            SongRecommendation[]
   weeklySpotlightOptions     WeeklySpotlightOption[]
@@ -886,6 +887,32 @@ model UserSongVideoClipChoice {
 
   @@id([userId, songId])
   @@map("user_song_video_clip_choices")
+}
+
+/// Config manual de clipe para geração de vídeo de parada oficial (Remotion).
+/// chartKind: "global" | "airplay" | "genre:<slug>" (ex.: genre:brasil).
+model ParadeVideoClipConfig {
+  id             String   @id @default(cuid())
+  chartKind      String   @map("chart_kind")
+  weekIndex      Int      @map("week_index")
+  songId         String   @map("song_id")
+  position       Int
+  videoUrl       String?  @map("video_url")
+  platform       String? // youtube | vimeo | dailymotion | other
+  startSeconds   Float?   @map("start_seconds")
+  endSeconds     Float?   @map("end_seconds")
+  useAutoChorus  Boolean  @default(true) @map("use_auto_chorus")
+  forceDebut     Boolean  @default(false) @map("force_debut")
+  skipAutoVideo  Boolean  @default(false) @map("skip_auto_video")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  song           Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([chartKind, weekIndex, songId], map: "parade_video_clip_configs_chart_week_song_key")
+  @@index([chartKind, weekIndex], map: "idx_parade_video_clip_configs_chart_week")
+  @@index([songId], map: "idx_parade_video_clip_configs_song_id")
+  @@map("parade_video_clip_configs")
 }
 
 enum AlbumClubPhase {

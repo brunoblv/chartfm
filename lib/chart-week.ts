@@ -327,15 +327,23 @@ export function frozenPrimaryParadaChartWhere(weekIndex: number, slot?: GlobalPu
   };
 }
 
-export function formatChartPeriod(chart: Pick<Chart, "weekLabel" | "dateRange">): string {
+export function formatChartPeriod(
+  chart: Pick<Chart, "weekLabel" | "dateRange">,
+  locale: "pt-BR" | "en" = "pt-BR",
+): string {
   const weekLabel = normalizeWeekLabel(chart.weekLabel);
   const dateRange = normalizeDateRange(chart.dateRange);
   const year = parseWeekYear(weekLabel);
   const weekNumber = parseWeekNumber(weekLabel);
   const parsed = parseDateRangeToDates(dateRange, year);
-  const weekText = weekNumber ? `Semana ${weekNumber}, ${year}` : weekLabel.replace("-", ",");
+  const weekText = weekNumber
+    ? locale === "en"
+      ? `Week ${weekNumber}, ${year}`
+      : `Semana ${weekNumber}, ${year}`
+    : weekLabel.replace("-", ",");
   if (parsed) {
-    return `${formatDatePtBr(parsed.start)} a ${formatDatePtBr(parsed.end)} - ${weekText}`;
+    const connector = locale === "en" ? "to" : "a";
+    return `${formatDatePtBr(parsed.start)} ${connector} ${formatDatePtBr(parsed.end)} - ${weekText}`;
   }
   return `${dateRange} - ${weekText}`;
 }

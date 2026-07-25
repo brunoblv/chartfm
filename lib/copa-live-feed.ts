@@ -1,18 +1,36 @@
 import { prisma } from "@/lib/prisma";
 import { getVoteCounts, pickSingleCover, resolveSongCoverUrls } from "@/lib/copa";
+import type { Locale } from "@/lib/i18n/config";
 
-const PHASE_LABELS: Record<string, string> = {
-  R32: "1/16 de Final",
-  R16: "Oitavas de Final",
-  QF: "Quartas de Final",
-  SF: "Semifinal",
-  THIRD_PLACE: "Disputa pelo 3º Lugar",
-  FINAL: "Final",
+const PHASE_LABELS: Record<Locale, Record<string, string>> = {
+  "pt-BR": {
+    R32: "1/16 de Final",
+    R16: "Oitavas de Final",
+    QF: "Quartas de Final",
+    SF: "Semifinal",
+    THIRD_PLACE: "Disputa pelo 3º Lugar",
+    FINAL: "Final",
+  },
+  en: {
+    R32: "Round of 32",
+    R16: "Round of 16",
+    QF: "Quarterfinal",
+    SF: "Semifinal",
+    THIRD_PLACE: "3rd Place Match",
+    FINAL: "Final",
+  },
 };
 
-function phaseLabel(f: { phase: string; groupLetter: string | null; round: number | null }): string {
-  if (f.phase === "GROUP") return `Grupo ${f.groupLetter} · Rodada ${f.round} de 3`;
-  return PHASE_LABELS[f.phase] ?? f.phase;
+function phaseLabel(
+  f: { phase: string; groupLetter: string | null; round: number | null },
+  locale: Locale,
+): string {
+  if (f.phase === "GROUP") {
+    return locale === "en"
+      ? `Group ${f.groupLetter} · Round ${f.round} of 3`
+      : `Grupo ${f.groupLetter} · Rodada ${f.round} de 3`;
+  }
+  return PHASE_LABELS[locale][f.phase] ?? f.phase;
 }
 
 export type CopaLiveFeedFixture = {
@@ -47,7 +65,10 @@ export type CopaLiveFeedData = {
   fixtures: CopaLiveFeedFixture[];
 };
 
-export async function getCopaLiveFeedFixtures(userId: string | null): Promise<CopaLiveFeedData | null> {
+export async function getCopaLiveFeedFixtures(
+  userId: string | null,
+  locale: Locale = "pt-BR",
+): Promise<CopaLiveFeedData | null> {
   const copa = await prisma.copaEdition.findFirst({
     where: { status: { not: "FINISHED" } },
     orderBy: { createdAt: "desc" },
@@ -85,7 +106,7 @@ export async function getCopaLiveFeedFixtures(userId: string | null): Promise<Co
       const sB = f.artistB.singles.find((s) => s.slotIndex === f.singleBIdx);
       return {
         id: f.id,
-        phaseLabel: phaseLabel(f),
+        phaseLabel: phaseLabel(f, locale),
         singleAName: sA?.songName ?? "",
         singleBName: sB?.songName ?? "",
         singleACover: pickSingleCover(sA?.songId, coverMap),
