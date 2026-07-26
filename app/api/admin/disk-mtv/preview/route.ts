@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { getDiskMtvClipPreview } from "@/lib/disk-mtv-clip-preview";
+import { isVideoparadaModuleEnabled } from "@/lib/videoparada-dev-only";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ async function ensurePrivileged() {
 
 /** Preview da parada Disk MTV sem filtro de clipe (pré-refill). */
 export async function GET(req: NextRequest) {
+  if (!isVideoparadaModuleEnabled()) return NextResponse.json({ error: "disabled" }, { status: 404 });
   const guard = await ensurePrivileged();
   if (!guard.ok) {
     return NextResponse.json(

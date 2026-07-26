@@ -570,14 +570,18 @@ function SidebarContent({
                 <Tv size={14} />
                 <span>{t("nav.adminLowerThirdsYoutube")}</span>
               </Link>
-              <Link href="/admin/disk-mtv" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/disk-mtv")}>
-                <Youtube size={14} />
-                <span>Disk MTV</span>
-              </Link>
-              <Link href="/admin/videoparada" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/videoparada")}>
-                <Clapperboard size={14} />
-                <span>{t("nav.adminVideoparada")}</span>
-              </Link>
+              {process.env.NODE_ENV !== "production" && (
+                <>
+                  <Link href="/admin/disk-mtv" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/disk-mtv")}>
+                    <Youtube size={14} />
+                    <span>Disk MTV</span>
+                  </Link>
+                  <Link href="/admin/videoparada" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/videoparada")}>
+                    <Clapperboard size={14} />
+                    <span>{t("nav.adminVideoparada")}</span>
+                  </Link>
+                </>
+              )}
               <Link href="/admin/crownnote-export" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/crownnote-export")}>
                 <Download size={14} />
                 <span>{t("nav.adminCrownnoteExport")}</span>

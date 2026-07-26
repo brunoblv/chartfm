@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { Shell } from "@/components/layout/Shell";
+import { isVideoparadaModuleEnabled } from "@/lib/videoparada-dev-only";
 import { DiskMtvAdminClient } from "./DiskMtvAdminClient";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,13 @@ export default async function AdminDiskMtvPage() {
     return (
       <Shell title="Admin" subtitle="Disk MTV">
         <div>Acesso negado.</div>
+      </Shell>
+    );
+  }
+  if (!isVideoparadaModuleEnabled()) {
+    return (
+      <Shell title="Admin" subtitle="Disk MTV">
+        <div>Este módulo fica disponível apenas em ambiente de desenvolvimento (desligado em produção por consumo de memória na VPS).</div>
       </Shell>
     );
   }

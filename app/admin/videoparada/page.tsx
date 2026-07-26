@@ -1,5 +1,6 @@
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { Shell } from "@/components/layout/Shell";
+import { isVideoparadaModuleEnabled } from "@/lib/videoparada-dev-only";
 import {
   listVideoparadaCharts,
   listVideoparadaWeeks,
@@ -15,6 +16,13 @@ export default async function VideoparadaAdminPage() {
     return (
       <Shell title="Admin" subtitle="Acesso">
         <div>Acesso negado. Apenas ADMIN e DEV.</div>
+      </Shell>
+    );
+  }
+  if (!isVideoparadaModuleEnabled()) {
+    return (
+      <Shell title="Vídeos das Paradas" subtitle="Indisponível">
+        <div>Este módulo fica disponível apenas em ambiente de desenvolvimento (desligado em produção por consumo de memória na VPS).</div>
       </Shell>
     );
   }

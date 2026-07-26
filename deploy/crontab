@@ -103,11 +103,14 @@ TZ=America/Sao_Paulo
 # de ~30 perfis com 3s entre cada (cada perfil no máx. 1x/semana — sem risco de bloqueio)
 55 * * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-verify >> /root/chartfm/logs/cron.log 2>&1
 
+# Videoparada Disk MTV — DESLIGADO em produção (2026-07-26): yt-dlp + ffmpeg + Remotion
+# competiam por memória com o build/deploy na VPS de 1.9 GB (causou build travado em
+# "Generating static pages"). Módulo mantido só para uso local/dev — ver lib/videoparada-dev-only.ts.
 # Domingos 19h — Videoparada Disk MTV (Remotion + upload YouTube @chartFM).
 # Roda na VPS (não via HTTP): yt-dlp + ffmpeg + Remotion são pesados demais para cron-hit.
 # Requer OAuth YouTube do @bruno já conectado. Log: logs/videoparada-disk-mtv.log
 # Limit: VIDEOPARADA_DISK_MTV_LIMIT no .env (padrão 20). Título: "Disk MTV Top 20 - Semana x, 2026"
-0 19 * * 0 /root/chartfm/scripts/videoparada-disk-mtv-weekly.sh
+# 0 19 * * 0 /root/chartfm/scripts/videoparada-disk-mtv-weekly.sh
 
 # Backfill noturno de catálogo — religado em 2026-07-21: as etapas de artista/álbum
 # (as únicas que chamam Spotify) agora consomem o mesmo orçamento diário "backfill"

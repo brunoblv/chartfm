@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
+import { isVideoparadaModuleEnabled } from "@/lib/videoparada-dev-only";
 import {
   getVideoparadaAdminPayload,
   isValidVideoparadaChartKind,
@@ -15,6 +16,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  if (!isVideoparadaModuleEnabled()) return NextResponse.json({ error: "disabled" }, { status: 404 });
   const auth = await requirePrivilegedSession();
   if (!auth) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
@@ -65,6 +67,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!isVideoparadaModuleEnabled()) return NextResponse.json({ error: "disabled" }, { status: 404 });
   const auth = await requirePrivilegedSession();
   if (!auth) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
