@@ -98,8 +98,8 @@ export default function FollowersPage() {
               width: 36,
               height: 36,
               borderRadius: "50%",
-              background: "rgba(0,0,0,0.06)",
-              color: "#1D1D1F",
+              background: "var(--fill-subtle)",
+              color: "var(--text)",
               flexShrink: 0,
             }}
           >
@@ -112,12 +112,12 @@ export default function FollowersPage() {
                 fontSize: 22,
                 fontWeight: 700,
                 letterSpacing: "-0.03em",
-                color: "#1D1D1F",
+                color: "var(--text)",
               }}
             >
               @{handle}
             </h1>
-            <p style={{ margin: 0, fontSize: 13, color: "#86868B" }}>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)" }}>
               {loading ? "-" : total.toLocaleString(locale)} {title.toLowerCase()}
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function FollowersPage() {
         <div
           style={{
             display: "flex",
-            borderBottom: "1px solid rgba(0,0,0,0.08)",
+            borderBottom: "1px solid var(--divider)",
             marginBottom: 20,
           }}
         >
@@ -145,9 +145,9 @@ export default function FollowersPage() {
                   padding: "10px 20px",
                   fontSize: 14,
                   fontWeight: active ? 700 : 500,
-                  color: active ? "#1D1D1F" : "#86868B",
+                  color: active ? "var(--text)" : "var(--text-muted)",
                   textDecoration: "none",
-                  borderBottom: active ? "2px solid #FA243C" : "2px solid transparent",
+                  borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
                   marginBottom: -1,
                   transition: "color 150ms",
                 }}
@@ -170,7 +170,7 @@ export default function FollowersPage() {
             style={{
               textAlign: "center",
               padding: "60px 20px",
-              color: "#86868B",
+              color: "var(--text-muted)",
               fontSize: 15,
             }}
           >
@@ -196,13 +196,13 @@ export default function FollowersPage() {
               onClick={() => fetchPage(page + 1, false)}
               disabled={loadingMore}
               style={{
-                background: "rgba(0,0,0,0.06)",
+                background: "var(--fill-subtle)",
                 border: "none",
                 borderRadius: 100,
                 padding: "10px 28px",
                 fontSize: 14,
                 fontWeight: 600,
-                color: "#1D1D1F",
+                color: "var(--text)",
                 cursor: loadingMore ? "default" : "pointer",
                 opacity: loadingMore ? 0.6 : 1,
               }}
@@ -231,7 +231,7 @@ function UserRow({
         alignItems: "center",
         gap: 12,
         padding: "10px 0",
-        borderBottom: "1px solid rgba(0,0,0,0.05)",
+        borderBottom: "1px solid var(--divider-soft)",
       }}
     >
       <Link href={`/profile/${user.handle}`} style={{ flexShrink: 0 }}>
@@ -259,7 +259,7 @@ function UserRow({
               style={{
                 fontWeight: 700,
                 fontSize: 15,
-                color: "#1D1D1F",
+                color: "var(--text)",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -271,7 +271,7 @@ function UserRow({
               <BadgeCheck size={14} color="#FA243C" fill="#FA243C" strokeWidth={0} />
             )}
           </div>
-          <div style={{ fontSize: 13, color: "#86868B", marginTop: 1 }}>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 1 }}>
             @{user.handle}
             {user.followers > 0 && (
               <span style={{ marginLeft: 8 }}>
@@ -283,7 +283,7 @@ function UserRow({
             <div
               style={{
                 fontSize: 13,
-                color: "#48484A",
+                color: "var(--text-subtle)",
                 marginTop: 3,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -323,7 +323,7 @@ function SkeletonRow() {
           width: 44,
           height: 44,
           borderRadius: "50%",
-          background: "rgba(0,0,0,0.06)",
+          background: "var(--fill-subtle)",
           flexShrink: 0,
         }}
       />
@@ -333,7 +333,7 @@ function SkeletonRow() {
             width: "40%",
             height: 14,
             borderRadius: 6,
-            background: "rgba(0,0,0,0.06)",
+            background: "var(--fill-subtle)",
             marginBottom: 6,
           }}
         />
@@ -342,7 +342,7 @@ function SkeletonRow() {
             width: "25%",
             height: 12,
             borderRadius: 6,
-            background: "rgba(0,0,0,0.04)",
+            background: "var(--fill-inset)",
           }}
         />
       </div>
