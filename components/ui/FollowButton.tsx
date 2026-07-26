@@ -2,21 +2,30 @@
 
 import { useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 interface FollowButtonProps {
   targetId: string;
   initialFollowing?: boolean;
-  /** "primary" = vermelho, "outline" = borda preta, "dark" = fundo preto */
+  /** "primary" = vermelho, "outline" = borda, "dark" = fundo invertido */
   variant?: "primary" | "outline" | "dark";
   size?: "sm" | "md";
   label?: string;
 }
 
 const STYLES = {
-  primary: { background: "#FA243C", color: "white", border: "none" },
-  outline: { background: "none", color: "#1D1D1F", border: "1px solid rgba(0,0,0,0.12)" },
-  dark: { background: "#1D1D1F", color: "white", border: "none" },
-  following: { background: "rgba(0,0,0,0.06)", color: "#1D1D1F", border: "none" },
+  primary: { background: "var(--accent)", color: "#fff", border: "none" },
+  outline: {
+    background: "transparent",
+    color: "var(--text)",
+    border: "1px solid var(--divider-strong)",
+  },
+  dark: { background: "var(--text)", color: "var(--bg)", border: "none" },
+  following: {
+    background: "var(--fill-subtle)",
+    color: "var(--text)",
+    border: "1px solid var(--divider)",
+  },
 } as const;
 
 const SIZES = {
@@ -29,9 +38,10 @@ export function FollowButton({
   initialFollowing = false,
   variant = "outline",
   size = "sm",
-  label = "Seguir",
+  label,
 }: FollowButtonProps) {
   const { data: session } = useSession();
+  const { t } = useTranslations();
   const [following, setFollowing] = useState(initialFollowing);
   const [isPending, startTransition] = useTransition();
 
@@ -62,6 +72,7 @@ export function FollowButton({
 
   const baseStyle = following ? STYLES.following : STYLES[variant];
   const sizeStyle = SIZES[size];
+  const followLabel = label ?? t("communities.followCta");
 
   return (
     <button
@@ -79,7 +90,7 @@ export function FollowButton({
         whiteSpace: "nowrap",
       }}
     >
-      {following ? "Seguindo" : label}
+      {following ? t("notifications.following") : followLabel}
     </button>
   );
 }

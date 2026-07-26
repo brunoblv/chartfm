@@ -20,6 +20,8 @@ import {
 import { isParadaVisibleToViewer } from "@/lib/mytrl-access";
 import { lookupNumberOnes } from "@/lib/song-stats-key";
 import { buildChartContext } from "@/lib/entity-context-text";
+import { formatWeekLabel } from "@/lib/i18n/format";
+import { getServerLocale } from "@/lib/i18n/server";
 import { runWithSpotifyUserChartsPool } from "@/lib/spotify-user-charts-pool";
 import { runCountingSpotifyCalls } from "@/lib/api-call-context";
 import {
@@ -339,15 +341,19 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
   const topSongOnesCount = topEntry ? lookupNumberOnes(personalNumberOnes, topEntry.song) : 0;
   const topSongStreak = topSongOnesCount > 0 ? topSongOnesCount : null;
 
-  const contextText = buildChartContext({
-    userName: mapped.user.name,
-    weekLabel: mapped.chart.weekLabel,
-    entryCount: mapped.chart.entries.length,
-    newEntryCount,
-    topSongTitle,
-    topSongStreak,
-    chartNumber,
-  });
+  const locale = await getServerLocale();
+  const contextText = buildChartContext(
+    {
+      userName: mapped.user.name,
+      weekLabel: formatWeekLabel(locale, mapped.chart.weekLabel),
+      entryCount: mapped.chart.entries.length,
+      newEntryCount,
+      topSongTitle,
+      topSongStreak,
+      chartNumber,
+    },
+    locale,
+  );
 
   const paradaCadence = await prisma.parada.findUnique({
     where: { id: row.paradaId },

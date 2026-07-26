@@ -91,7 +91,7 @@ const RELEASES_EN: Release[] = [
     label: "June 23, 2026",
     entries: [
       {
-        title: "Copa ChartFM",
+        title: "ChartFM Cup",
         tag: "novo",
         description:
           "An artist knockout tournament driven by community votes. Each artist fields 8 songs; in the group stage and bracket, you vote on song-vs-song matchups. Follow live at /copa/ao-vivo, see groups, bracket, and full rules.",

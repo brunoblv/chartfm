@@ -18,7 +18,7 @@ export default async function CriticsFMAlbumPage({
 }: {
   params: Promise<{ albumId: string }>;
 }) {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
   const { albumId: rawId } = await params;
   const albumId = parseInt(rawId, 10);
   if (isNaN(albumId)) notFound();
@@ -216,7 +216,7 @@ export default async function CriticsFMAlbumPage({
                 <div>
                   {reviewCount > 0 && (
                     <div style={{ fontSize: 15, fontWeight: 700, color: scoreColor(avgScore) }}>
-                      {scoreLabel(avgScore)}
+                      {scoreLabel(avgScore, locale)}
                     </div>
                   )}
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>

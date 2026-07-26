@@ -341,7 +341,7 @@ function ScoreBadge({ score, size = "sm" }: { score: number; size?: "sm" | "md" 
 }
 
 function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAlbumPath: BuildAlbumPath }) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const genres = getGenres(album);
 
   return (
@@ -400,7 +400,7 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
               <div
                 style={{ fontSize: 15, fontWeight: 700, color: scoreColor(album.score), letterSpacing: "-0.01em" }}
               >
-                {scoreLabel(album.score)}
+                {scoreLabel(album.score, locale)}
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 {t("albums.ratingsCount", { count: album.ratingCount })}

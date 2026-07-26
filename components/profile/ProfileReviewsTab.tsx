@@ -41,7 +41,7 @@ function timeAgo(iso: string, t: TFn) {
 }
 
 export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [reviews, setReviews] = useState<ProfileReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -201,7 +201,7 @@ export function ProfileReviewsTab({ handle, isOwn, userName, isMobile }: Props) 
               </div>
 
               <div style={{ padding: "0 20px 12px", fontSize: 12, fontWeight: 600, color: scoreColor(review.rating) }}>
-                {scoreLabel(review.rating)}
+                {scoreLabel(review.rating, locale)}
               </div>
 
               {truncated ? (

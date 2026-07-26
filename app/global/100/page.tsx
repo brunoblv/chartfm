@@ -12,6 +12,7 @@ import { BookOpen, BarChart2, Users, TrendingUp, Music, ChevronLeft } from "luci
 import { GlobalHero } from "@/components/global/GlobalHero";
 import { GlobalChartPlaybackActions } from "@/components/global/GlobalChartPlaybackActions";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { formatWeekLabel } from "@/lib/i18n/format";
 import { buildWeeklyEditorial } from "@/lib/editorial-generator";
 import { getWeeklySpotlightWinners, WEEKLY_POLL_PATH } from "@/lib/weekly-spotlight-poll";
 import { GlobalSpotlightWinnerCard } from "@/components/global/GlobalSpotlightWinnerCard";
@@ -100,7 +101,7 @@ type GlobalPageProps = {
 };
 
 export default async function Global100Page({ searchParams }: GlobalPageProps) {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
   const params = searchParams
     ? ("then" in searchParams ? await searchParams : searchParams)
     : {};
@@ -275,14 +276,14 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
         <section style={{ marginBottom: 44 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", margin: 0 }}>
-              Escolhidas pela comunidade
+              {t("global.spotlightSectionTitle")}
             </h2>
             <Link href={WEEKLY_POLL_PATH} style={{ fontSize: 13, fontWeight: 600, color: "#FA243C", textDecoration: "none" }}>
-              Ver a Votação da Semana →
+              {t("global.spotlightPollLink")}
             </Link>
           </div>
           <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 18, lineHeight: 1.6 }}>
-            Vencedoras da enquete semanal: a comunidade votou entre as músicas indicadas como Destaque e Flashback nas paradas pessoais.
+            {t("global.spotlightSectionDesc")}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
             {spotlightWinners.map((winner) => (
@@ -294,11 +295,14 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
 
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
-          Rankings da semana {weekNow}
+          {t("global.weekRankingsTitle", { week: formatWeekLabel(locale, weekNow) })}
         </h2>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          {buildWeeklyEditorial(globalSongs, weekRangeNow, uniqueParadas) ??
-            `Rankings consolidados com base em ${uniqueParadas} paradas pessoais publicadas na semana ${weekRangeNow}.`}
+          {buildWeeklyEditorial(globalSongs, formatWeekLabel(locale, weekNow), uniqueParadas, locale) ??
+            t("global.weekRankingsFallback", {
+              count: uniqueParadas,
+              week: formatWeekLabel(locale, weekNow),
+            })}
         </p>
         <Ad placement="global100" format="rectangle" style={{ margin: "0 0 28px 0" }} />
 

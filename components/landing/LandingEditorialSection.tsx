@@ -37,7 +37,13 @@ export async function LandingEditorialSection({ globalChart, weekLabel, weekInde
   const { t, locale } = await getServerTranslations();
   const formattedWeek = formatWeekLabel(locale, weekLabel);
   const top10 = globalChart.slice(0, 10);
-  const editorialBody = await getWeeklyEditorialBody(weekIndex, formattedWeek, globalChart, publishersThisWeek);
+  const editorialBody = await getWeeklyEditorialBody(
+    weekIndex,
+    formattedWeek,
+    globalChart,
+    publishersThisWeek,
+    locale,
+  );
 
   return (
     <section

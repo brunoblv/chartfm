@@ -271,6 +271,12 @@ export const pagesEn = {
     subgenresLabel: "Included subgenres: ",
     genrePointsRule: "Only songs tagged with this genre enter the ranking. Points come from the community's personal charts.",
     weekRankingsTitle: "Rankings for {week}",
+    weekRankingsFallback:
+      "Rankings consolidated from {count} personal charts published in {week}.",
+    spotlightSectionTitle: "Picked by the community",
+    spotlightPollLink: "View the Weekly Poll →",
+    spotlightSectionDesc:
+      "Weekly poll winners: the community voted among songs nominated as Highlight and Flashback on personal charts.",
     top50FilterDesc: "Top 50 filtered by track tags (MusicBrainz / Last.fm). Weeks: {range}.",
     noGenreSongsWeekPrefix: "No songs in this genre in this week's charts. Run the tag backfill at",
     noGenreSongsWeekSuffix: "to improve coverage.",
@@ -892,8 +898,8 @@ export const pagesEn = {
     filterAcclaimed: "Universal acclaim 90+",
     filterRecommended: "Highly recommended 70+",
     filterMixed: "Mixed reception 50+",
-    filterUnfavorable: "Unfavorable 30+",
-    filterRejected: "Generally unfavorable",
+    filterUnfavorable: "Generally unfavorable 30+",
+    filterRejected: "Overwhelming dislike",
     reviewsBreadcrumb: "Reviews",
     pageIntroReviews: "Brings together the ChartFM community's ratings in one place.",
     addAlbumShort: "Add",
@@ -909,6 +915,11 @@ export const pagesEn = {
     scoreScaleSubtitle: "How we interpret each album's average score on CriticsFM",
     scoreScaleRangeHeader: "Range",
     scoreScaleTextHeader: "Label",
+    bandAcclaimed: "Universal acclaim",
+    bandRecommended: "Highly recommended",
+    bandMixed: "Mixed reception",
+    bandUnfavorable: "Generally unfavorable",
+    bandRejected: "Overwhelming dislike",
     minReviewsShort: "min. 2 reviews",
     bannerTitle: "This week's releases: {week}",
     bannerSubtitleSingular: "{count} album to listen to · Click to view",
@@ -2900,13 +2911,13 @@ export const pagesEn = {
     navGroups: "Groups",
     navBracket: "Bracket",
     navRules: "Rules",
-    navTitle: "Copa ChartFM",
+    navTitle: "ChartFM Cup",
     navSubtitle: "Music Tournament",
     navMetaDescription: "ChartFM community music tournament - groups, live matches and bracket",
 
     // Shared
-    noActiveCopa: "No active Copa right now.",
-    noActiveCopaTitle: "No active Copa",
+    noActiveCopa: "No active Cup right now.",
+    noActiveCopaTitle: "No active Cup",
     noActiveCopaSubtitle: "Wait for the next edition to begin.",
     liveBadge: "Live",
     tapToVote: "Tap to vote →",
@@ -2973,7 +2984,7 @@ export const pagesEn = {
 
     // Bracket
     bracketTitle: "Bracket",
-    bracketSubtitle: "Copa ChartFM knockout stage",
+    bracketSubtitle: "ChartFM Cup knockout stage",
     bracketTbd: "TBD",
     bracketPendingGroupStage: "Waiting for the group stage to finish.",
     bracketPendingR16: "The round of 16 will be set automatically once the round of 32 ends.",
@@ -3061,7 +3072,7 @@ export const pagesEn = {
     squadFreeBadge: "Available",
 
     // Rules
-    rulesMetaTitle: "Rules · Copa ChartFM",
+    rulesMetaTitle: "Rules · ChartFM Cup",
     rulesEyebrow: "Official Rules",
     rulesTitle: "Artist Cup - 64 Artists",
     rulesSubtitle: "How the ChartFM community's music tournament works, from the group draw to the final.",

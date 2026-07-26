@@ -30,7 +30,7 @@ function albumColor(name: string): [string, string] {
 }
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
   const session = await getServerSession(authOptions);
   const me = session?.user?.id
     ? await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } })
@@ -139,14 +139,17 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     const bestSong = rankedSongs.length > 0
       ? rankedSongs.reduce((best, s) => (s.peak < best.peak ? s : best))
       : null;
-    const albumContextText = buildAlbumContext({
-      album: canonicalAlbum,
-      artist: canonicalArtist,
-      releaseYear: releaseDate ? releaseDate.getFullYear().toString() : null,
-      trackCount: songs.length,
-      rankedTrackCount: rankedSongs.length,
-      bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
-    });
+    const albumContextText = buildAlbumContext(
+      {
+        album: canonicalAlbum,
+        artist: canonicalArtist,
+        releaseYear: releaseDate ? releaseDate.getFullYear().toString() : null,
+        trackCount: songs.length,
+        rankedTrackCount: rankedSongs.length,
+        bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
+      },
+      locale,
+    );
 
     const statsSection = (
       <>
@@ -545,14 +548,17 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   const bestSong = rankedSongs.length > 0
     ? rankedSongs.reduce((best, s) => (s.peak < best.peak ? s : best))
     : null;
-  const albumContextText = buildAlbumContext({
-    album: canonicalAlbum,
-    artist: canonicalArtist,
-    releaseYear: releaseDate ? releaseDate.getFullYear().toString() : null,
-    trackCount: songs.length,
-    rankedTrackCount: rankedSongs.length,
-    bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
-  });
+  const albumContextText = buildAlbumContext(
+    {
+      album: canonicalAlbum,
+      artist: canonicalArtist,
+      releaseYear: releaseDate ? releaseDate.getFullYear().toString() : null,
+      trackCount: songs.length,
+      rankedTrackCount: rankedSongs.length,
+      bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
+    },
+    locale,
+  );
 
   // — Stats section (for "Estatísticas" tab) —
   const statsSection = (

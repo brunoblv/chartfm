@@ -300,8 +300,8 @@ function SidebarContent({
     { href: "/discover", label: t("nav.discover"), icon: Search },
     { href: "/global", label: t("nav.global"), icon: Globe },
     { href: "/communities", label: t("nav.communities"), icon: Users },
-    { href: "/push", label: "Push", icon: Zap },
-    { href: "/copa", label: "Copa ChartFM", icon: Flame },
+    { href: "/push", label: t("nav.push"), icon: Zap },
+    { href: "/copa", label: t("nav.copa"), icon: Flame },
     { href: "/criticsfm", label: t("nav.criticsfm"), icon: Award },
     { href: profileHref, label: t("nav.profile"), icon: User, requiresAuth: true },
     { href: "/ajuda", label: t("nav.helpCenter"), icon: LifeBuoy },
@@ -540,11 +540,11 @@ function SidebarContent({
               </Link>
               <Link href="/admin/copa" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/copa")}>
                 <Flame size={14} />
-                <span>Copa ChartFM</span>
+                <span>{t("nav.adminCopa")}</span>
               </Link>
               <Link href="/admin/push" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/push")}>
                 <Zap size={14} />
-                <span>Push</span>
+                <span>{t("nav.adminPush")}</span>
               </Link>
               <Link href="/admin/lancamentos" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/lancamentos")}>
                 <Sparkles size={14} />

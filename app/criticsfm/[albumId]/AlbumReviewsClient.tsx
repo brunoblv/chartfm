@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { Instagram, Pencil, Trash2, Heart } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
-import { scoreColor, scoreBg, scoreLabel, buildScoreDistribution, SCORE_BANDS } from "@/lib/album-score";
+import { SCORE_BANDS, SCORE_BAND_LABEL_KEYS, scoreColor, scoreBg, scoreLabel, buildScoreDistribution } from "@/lib/album-score";
 import { downloadReview, downloadAlbumScore, type ExportFormat } from "@/lib/review-story-export";
 import { useTranslations } from "@/hooks/useTranslations";
 
@@ -251,7 +251,7 @@ export function AlbumReviewsClient({
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: scoreColor(avgScore), letterSpacing: "-0.01em" }}>
-                    {scoreLabel(avgScore)}
+                    {scoreLabel(avgScore, locale)}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
                     {t(
@@ -315,7 +315,7 @@ export function AlbumReviewsClient({
               {SCORE_BANDS.map((band) => {
                 const count = reviews.filter((r) => r.rating >= band.min && r.rating <= band.max).length;
                 return (
-                  <div key={band.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
+                  <div key={band.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}>
                     <div
                       style={{
                         width: 8,
@@ -326,7 +326,7 @@ export function AlbumReviewsClient({
                       }}
                     />
                     <div style={{ flex: 1, fontSize: 11, color: "var(--text)" }}>
-                      {band.label} ({band.min}–{band.max})
+                      {t(SCORE_BAND_LABEL_KEYS[band.id])} ({band.min}–{band.max})
                     </div>
                     <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--text)" }}>
                       {count}
@@ -391,7 +391,7 @@ function MyReviewCard({
   onEdit: () => void;
   onDeleted: (id: string) => void;
 }) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -474,7 +474,7 @@ function MyReviewCard({
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>@{review.user.handle}</span>
           </div>
           <div style={{ fontSize: 12, fontWeight: 600, color: scoreColor(review.rating) }}>
-            {scoreLabel(review.rating)}
+            {scoreLabel(review.rating, locale)}
           </div>
         </div>
       </div>
@@ -912,7 +912,7 @@ function InlineReviewForm({
   onCancel?: () => void;
   onSubmitted: (r: Review) => void;
 }) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { data: session } = useSession();
   const [rating, setRating] = useState(initialRating ?? 70);
   const [body, setBody] = useState(initialBody ?? "");
@@ -1047,7 +1047,7 @@ function InlineReviewForm({
             </div>
           </div>
           <div style={{ fontSize: 11, fontWeight: 600, color: scoreColor(rating), marginTop: 4 }}>
-            {scoreLabel(rating)}
+            {scoreLabel(rating, locale)}
           </div>
         </div>
       </div>

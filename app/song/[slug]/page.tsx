@@ -18,6 +18,7 @@ import { songEntityKey } from "@/lib/entity-page-snapshot/keys";
 import { getLatestEntityPageSnapshot } from "@/lib/entity-page-snapshot/store";
 import type { SongPageSnapshotPayload } from "@/lib/entity-page-snapshot/types";
 import { buildSongContext } from "@/lib/entity-context-text";
+import { formatWeekLabel } from "@/lib/i18n/format";
 import { SongFlagButton } from "@/components/song/SongFlagButton";
 import { SongMergeButton } from "@/components/song/SongMergeButton";
 import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
@@ -250,7 +251,10 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     const withWeek = primaryEntries.filter((e) => typeof e.chart.weekIndex === "number");
     if (withWeek.length > 0) {
       const earliest = withWeek.reduce((min, e) => (e.chart.weekIndex < min.chart.weekIndex ? e : min));
-      firstAppearanceRange = earliest.chart.dateRange ?? null;
+      const weekLabel = earliest.chart.weekLabel?.trim();
+      firstAppearanceRange = weekLabel
+        ? formatWeekLabel(locale, weekLabel)
+        : earliest.chart.dateRange ?? null;
     }
   }
 
@@ -448,17 +452,20 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             {t("song.performanceHeading")}
           </h2>
           <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", marginBottom: publicEditorialNote ? 16 : 0 }}>
-            {buildSongContext({
-              title,
-              artist,
-              album,
-              chartEntries,
-              uniqueUsers: globalStats?.uniqueUsers ?? 0,
-              totalPoints: globalStats?.totalPoints ?? 0,
-              peak: globalStats?.peak ?? 0,
-              weeksTop100: globalStats?.weeksTop100 ?? 0,
-              firstAppearanceRange,
-            })}
+            {buildSongContext(
+              {
+                title,
+                artist,
+                album,
+                chartEntries,
+                uniqueUsers: globalStats?.uniqueUsers ?? 0,
+                totalPoints: globalStats?.totalPoints ?? 0,
+                peak: globalStats?.peak ?? 0,
+                weeksTop100: globalStats?.weeksTop100 ?? 0,
+                firstAppearanceRange,
+              },
+              locale,
+            )}
           </p>
           {publicEditorialNote && (
             <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)", margin: 0 }}>

@@ -213,7 +213,7 @@ export default async function ArtistPage({
   params: Promise<{ name: string }>;
   searchParams: Promise<{ tab?: string; page?: string }>;
 }) {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
   const [{ name }, sp] = await Promise.all([params, searchParams]);
   const tab: Tab = VALID_TABS.includes(sp.tab as Tab) ? (sp.tab as Tab) : "songs";
   const currentPage = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
@@ -694,15 +694,18 @@ export default async function ArtistPage({
     return top;
   }, null);
 
-  const artistContextText = buildArtistContext({
-    name: canonicalName,
-    songCount: songs.length,
-    listenersCount,
-    totalPoints: totalPointsCached,
-    bestSong,
-    thisWeekSongCount,
-    thisWeekTopSong,
-  });
+  const artistContextText = buildArtistContext(
+    {
+      name: canonicalName,
+      songCount: songs.length,
+      listenersCount,
+      totalPoints: totalPointsCached,
+      bestSong,
+      thisWeekSongCount,
+      thisWeekTopSong,
+    },
+    locale,
+  );
 
   // ── User-specific data ────────────────────────────────────────────────────
   const userEntries = currentUserId ? allEntries.filter((e) => e.chart.userId === currentUserId) : [];

@@ -1,17 +1,30 @@
+import type { Locale } from "@/lib/i18n/config";
+import { translate } from "@/lib/i18n/translate";
+
+export type ScoreBandId = "acclaimed" | "recommended" | "mixed" | "unfavorable" | "rejected";
+
 export type ScoreBand = {
+  id: ScoreBandId;
   min: number;
   max: number;
-  label: string;
   color: string;
   bg: string;
 };
 
+export const SCORE_BAND_LABEL_KEYS: Record<ScoreBandId, string> = {
+  acclaimed: "criticsfm.bandAcclaimed",
+  recommended: "criticsfm.bandRecommended",
+  mixed: "criticsfm.bandMixed",
+  unfavorable: "criticsfm.bandUnfavorable",
+  rejected: "criticsfm.bandRejected",
+};
+
 export const SCORE_BANDS: ScoreBand[] = [
-  { min: 90, max: 100, label: "Aclamação universal", color: "#1B873F", bg: "#E8F8EE" },
-  { min: 70, max: 89, label: "Muito recomendado", color: "#34C759", bg: "#EAF9EE" },
-  { min: 50, max: 69, label: "Recepção mista", color: "#E09F00", bg: "#FFF8E1" },
-  { min: 30, max: 49, label: "Geralmente desfavorável", color: "#FF9500", bg: "#FFF3E0" },
-  { min: 0, max: 29, label: "Repúdio generalizado", color: "#C5291C", bg: "#FDECEC" },
+  { id: "acclaimed", min: 90, max: 100, color: "#1B873F", bg: "#E8F8EE" },
+  { id: "recommended", min: 70, max: 89, color: "#34C759", bg: "#EAF9EE" },
+  { id: "mixed", min: 50, max: 69, color: "#E09F00", bg: "#FFF8E1" },
+  { id: "unfavorable", min: 30, max: 49, color: "#FF9500", bg: "#FFF3E0" },
+  { id: "rejected", min: 0, max: 29, color: "#C5291C", bg: "#FDECEC" },
 ];
 
 function getBand(score: number): ScoreBand {
@@ -26,8 +39,12 @@ export function scoreBg(score: number): string {
   return getBand(score).bg;
 }
 
-export function scoreLabel(score: number): string {
-  return getBand(score).label;
+export function scoreBandKey(score: number): string {
+  return SCORE_BAND_LABEL_KEYS[getBand(score).id];
+}
+
+export function scoreLabel(score: number, locale: Locale = "pt-BR"): string {
+  return translate(locale, scoreBandKey(score));
 }
 
 /** Cores mais vibrantes para badges em imagens geradas (story, gerador admin). */

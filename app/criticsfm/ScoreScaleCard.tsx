@@ -1,4 +1,4 @@
-import { SCORE_BANDS, formatScoreRange } from "@/lib/album-score";
+import { SCORE_BANDS, SCORE_BAND_LABEL_KEYS, formatScoreRange } from "@/lib/album-score";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 export async function ScoreScaleCard() {
@@ -59,7 +59,7 @@ export async function ScoreScaleCard() {
 
           {SCORE_BANDS.map((band) => (
             <div
-              key={band.label}
+              key={band.id}
               style={{
                 display: "grid",
                 gridTemplateColumns: "120px 1fr",
@@ -100,7 +100,7 @@ export async function ScoreScaleCard() {
                   letterSpacing: "-0.01em",
                 }}
               >
-                {band.label}
+                {t(SCORE_BAND_LABEL_KEYS[band.id])}
               </div>
             </div>
           ))}

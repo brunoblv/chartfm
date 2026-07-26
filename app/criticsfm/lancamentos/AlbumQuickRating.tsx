@@ -7,7 +7,7 @@ import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
 import { useTranslations } from "@/hooks/useTranslations";
 
 export function AlbumQuickRating({ albumId }: { albumId: number }) {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { data: session, status } = useSession();
   const [value, setValue] = useState("");
   const [saved, setSaved] = useState<number | null>(null);
@@ -146,7 +146,7 @@ export function AlbumQuickRating({ albumId }: { albumId: number }) {
       </div>
       {parsed != null && (
         <div style={{ fontSize: 11, fontWeight: 600, color: scoreColor(parsed), marginTop: 4 }}>
-          {scoreLabel(parsed)}
+          {scoreLabel(parsed, locale)}
         </div>
       )}
       {error && (

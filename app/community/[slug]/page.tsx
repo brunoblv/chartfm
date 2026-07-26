@@ -5,9 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { getCommunityBySlug, isCommunityAdmin, getCommunityMemberRole } from "@/lib/community-auth";
 import { computeCommunityChartData, parseCommunityPointsConfig } from "@/lib/community-chart";
 import { buildCommunityContext } from "@/lib/entity-context-text";
+import { formatWeekLabel } from "@/lib/i18n/format";
+import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { CommunityPageClient, type CommunityDbSerializable, type CommunityPostSerializable, type CommunityTopSongSerializable, type CommunityActiveMemberSerializable } from "./CommunityPageClient";
 
 export default async function CommunityPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { locale } = await getServerTranslations();
   const { slug } = await params;
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id ?? null;
@@ -124,15 +127,18 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
 
   // Tagline é uma "descrição curta" livre (frase sobre a comunidade), não necessariamente
   // um gênero/tema — evita usar como "theme" para não gerar frases estranhas com texto livre.
-  const contextText = buildCommunityContext({
-    name: row.name,
-    theme: null,
-    memberCount: row.members,
-    foundedLabel: row.founded || null,
-    chartCount: chart.overallChartCount,
-    topSong: top5[0] ? { title: top5[0].title, artist: top5[0].artist } : null,
-    weekLabel: chart.weekLabel,
-  });
+  const contextText = buildCommunityContext(
+    {
+      name: row.name,
+      theme: null,
+      memberCount: row.members,
+      foundedLabel: row.founded || null,
+      chartCount: chart.overallChartCount,
+      topSong: top5[0] ? { title: top5[0].title, artist: top5[0].artist } : null,
+      weekLabel: chart.weekLabel ? formatWeekLabel(locale, chart.weekLabel) : null,
+    },
+    locale,
+  );
 
   const seenMemberIds = new Set<string>();
   const activeMembers: CommunityActiveMemberSerializable[] = [];
