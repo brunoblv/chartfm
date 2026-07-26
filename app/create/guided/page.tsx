@@ -129,7 +129,7 @@ export default function GuidedCreatePage() {
   // Passo 2 — método
   const [method, setMethod] = useState<Method>(null);
   const [userLastfmUser, setUserLastfmUser] = useState<string | null>(null);
-  const [importingLastfm, setImportingLastfm] = useState(false);
+  const [importingLastfm, setImportingLastfm] = useState<"7days" | "30days" | false>(false);
   const [importingPrevious, setImportingPrevious] = useState(false);
   const [step2Error, setStep2Error] = useState<string | null>(null);
   const lastfmImportAbortRef = useRef<AbortController | null>(null);
@@ -279,11 +279,11 @@ export default function GuidedCreatePage() {
     setStep(2);
   };
 
-  const importFromLastfm = async () => {
+  const importFromLastfm = async (period: "7days" | "30days") => {
     lastfmImportAbortRef.current?.abort();
     const ac = new AbortController();
     lastfmImportAbortRef.current = ac;
-    setImportingLastfm(true);
+    setImportingLastfm(period);
     setStep2Error(null);
     try {
       const requestNonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -291,7 +291,7 @@ export default function GuidedCreatePage() {
       const res = await fetch(`/api/lastfm/import?ts=${Date.now()}&nonce=${encodeURIComponent(requestNonce)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store, no-cache, max-age=0", Pragma: "no-cache" },
-        body: JSON.stringify({ nonce: requestNonce, limit, weekDate: weekDate.trim(), filterNewHits: false, period: "30days" }),
+        body: JSON.stringify({ nonce: requestNonce, limit, weekDate: weekDate.trim(), filterNewHits: false, period }),
         signal: ac.signal,
         cache: "no-store",
       });
@@ -401,8 +401,8 @@ export default function GuidedCreatePage() {
             width: 28,
             height: 28,
             borderRadius: "50%",
-            background: added ? "#E8F8EE" : "#FA243C",
-            color: added ? "#1B873F" : "white",
+            background: added ? "var(--up-bg)" : "var(--accent)",
+            color: added ? "var(--up-fg)" : "#fff",
             border: "none",
             display: "flex",
             alignItems: "center",
@@ -612,7 +612,7 @@ export default function GuidedCreatePage() {
                   </div>
                 )}
 
-                {step1Error && <div style={{ color: "#B91C1C", fontSize: 13, marginTop: 12 }}>{step1Error}</div>}
+                {step1Error && <div style={{ color: "var(--down-fg)", fontSize: 13, marginTop: 12 }}>{step1Error}</div>}
 
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 32 }}>
                   <button
@@ -637,25 +637,45 @@ export default function GuidedCreatePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <button type="button" onClick={importFromLastfm} disabled={importingLastfm || !userLastfmUser} style={{ ...cardStyle(false), opacity: !userLastfmUser ? 0.6 : 1, cursor: !userLastfmUser ? "default" : "pointer" }}>
+              <div style={{ ...cardStyle(false), cursor: "default" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 10, background: "#D51007", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>▲</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 16, fontWeight: 800 }}>{importingLastfm ? t("create.importingLastfm") : t("createGuided.lastfmCardTitle")}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>{t("createGuided.lastfmCardTitle")}</div>
                     <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, marginTop: 4 }}>
                       {userLastfmUser
                         ? t("createGuided.lastfmCardDescConnected")
                         : (
                           <>
                             {t("createGuided.lastfmCardDescPrefix")}{" "}
-                            <a href="/settings" onClick={(e) => e.stopPropagation()} style={{ color: "#FA243C", fontWeight: 600 }}>{t("createGuided.settingsLink")}</a>{" "}
+                            <a href="/settings" style={{ color: "var(--accent)", fontWeight: 600 }}>{t("createGuided.settingsLink")}</a>{" "}
                             {t("createGuided.lastfmCardDescSuffix")}
                           </>
                         )}
                     </div>
+                    {userLastfmUser && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() => importFromLastfm("7days")}
+                          disabled={!!importingLastfm}
+                          style={{ border: "1px solid var(--accent)", background: importingLastfm === "7days" ? "var(--accent-tint)" : "transparent", color: "var(--accent)", borderRadius: 100, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: importingLastfm ? "not-allowed" : "pointer", opacity: importingLastfm && importingLastfm !== "7days" ? 0.5 : 1 }}
+                        >
+                          {importingLastfm === "7days" ? t("create.importingLastfm") : t("create.period7Days")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => importFromLastfm("30days")}
+                          disabled={!!importingLastfm}
+                          style={{ border: "1px solid var(--accent)", background: importingLastfm === "30days" ? "var(--accent-tint)" : "transparent", color: "var(--accent)", borderRadius: 100, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: importingLastfm ? "not-allowed" : "pointer", opacity: importingLastfm && importingLastfm !== "30days" ? 0.5 : 1 }}
+                        >
+                          {importingLastfm === "30days" ? t("create.importingLastfm") : t("create.period30Days")}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </button>
+              </div>
 
               <button type="button" onClick={startManual} style={cardStyle(false)}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -682,7 +702,7 @@ export default function GuidedCreatePage() {
               </button>
             </div>
 
-            {step2Error && <div style={{ color: "#B91C1C", fontSize: 13, marginTop: 16 }}>{step2Error}</div>}
+            {step2Error && <div style={{ color: "var(--down-fg)", fontSize: 13, marginTop: 16 }}>{step2Error}</div>}
 
             <div style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, background: "var(--fill-subtle)", borderRadius: 12, padding: "14px 20px" }}>
               {t("createGuided.step2FooterNote")}
@@ -716,10 +736,10 @@ export default function GuidedCreatePage() {
                   return (
                     <div key={`${song.title}-${song.artist}-${i}`}>
                       {userChartSize !== null && i === userChartSize && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 16px", background: "rgba(250,36,60,0.04)" }}>
-                          <div style={{ flex: 1, height: 1, background: "rgba(250,36,60,0.25)" }} />
-                          <span style={{ fontSize: 11, fontWeight: 700, color: "#FA243C", whiteSpace: "nowrap" }}>{t("create.cutoffLabel", { position: userChartSize })}</span>
-                          <div style={{ flex: 1, height: 1, background: "rgba(250,36,60,0.25)" }} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 16px", background: "var(--accent-tint)" }}>
+                          <div style={{ flex: 1, height: 1, background: "var(--accent)", opacity: 0.25 }} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", whiteSpace: "nowrap" }}>{t("create.cutoffLabel", { position: userChartSize })}</span>
+                          <div style={{ flex: 1, height: 1, background: "var(--accent)", opacity: 0.25 }} />
                         </div>
                       )}
                       {!isMobile ? (
@@ -884,7 +904,7 @@ export default function GuidedCreatePage() {
               </div>
             </div>
 
-            {publishError && <div style={{ color: "#B91C1C", fontSize: 13, marginBottom: 16 }}>{publishError}</div>}
+            {publishError && <div style={{ color: "var(--down-fg)", fontSize: 13, marginBottom: 16 }}>{publishError}</div>}
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button

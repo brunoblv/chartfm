@@ -31,3 +31,5 @@ Não existe CI nem pre-commit hook configurado. **Antes de considerar uma mudan�
 - Testes ficam junto do código em `lib/**/*.test.ts` (vitest, `environment: "node"`).
 - Comentários no código em português, curtos, só quando explicam um "porquê" não óbvio (constraint escondida, workaround, invariante) — não descrevem o que o código faz.
 - `lib/mytrl-access.ts` centraliza regras de acesso especiais por handle (ex.: `@bruno` como dono do MyTRL, paradas owner-only, features Spotify liberadas só para alguns handles). Ao adicionar lógica de permissão, checar se já existe uma função lá em vez de duplicar.
+- **Toda página deve ter versão em português e em inglês** (i18n). Ao criar ou alterar uma página, garantir que os textos existam nos dois idiomas.
+- **Sempre conferir o layout em modo dark** antes de considerar uma mudança de UI pronta — o modo dark frequentemente fica com contraste ruim/difícil de ler e passa despercebido em testes só no modo light.
