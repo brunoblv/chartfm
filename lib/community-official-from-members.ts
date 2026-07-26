@@ -24,6 +24,10 @@ import {
   parseCommunityPointsConfig,
 } from "@/lib/community-chart";
 import {
+  communityRequiresMusicVideo,
+  songRequiresMusicVideoWhere,
+} from "@/lib/community-song-rules";
+import {
   aggregateGlobalSongs,
   type WeeklyChartEntryRow,
 } from "@/lib/weekly-chart-aggregate";
@@ -53,6 +57,7 @@ const entrySelect = {
 async function loadMemberChartEntries(
   memberIds: string[],
   weekIndex: number,
+  options: { requireMusicVideo?: boolean } = {},
 ): Promise<WeeklyChartEntryRow[]> {
   if (!memberIds.length) return [];
   return prisma.chartEntry.findMany({
@@ -63,6 +68,7 @@ async function loadMemberChartEntries(
         ...publishedPrimaryParadaChartWhere,
       },
       position: { lte: 100 },
+      ...(options.requireMusicVideo ? { song: songRequiresMusicVideoWhere } : {}),
     },
     select: entrySelect,
   });
@@ -95,6 +101,8 @@ async function ensureCommunityOfficialParada(communityId: string) {
     },
   });
 
+  const desiredChartSize = community.maxSongs ?? 20;
+
   if (!parada) {
     const sortOrder = await prisma.parada.count({ where: { userId: community.ownerId } });
     parada = await prisma.parada.create({
@@ -104,16 +112,21 @@ async function ensureCommunityOfficialParada(communityId: string) {
         isPrimary: false,
         isCommunityOfficial: true,
         sortOrder,
-        chartSize: community.maxSongs ?? 20,
+        chartSize: desiredChartSize,
         cadence: "WEEKLY",
         genres: ["Pop"],
       },
     });
-  } else if (!parada.isCommunityOfficial) {
-    parada = await prisma.parada.update({
-      where: { id: parada.id },
-      data: { isCommunityOfficial: true },
-    });
+  } else {
+    const patch: { isCommunityOfficial?: boolean; chartSize?: number } = {};
+    if (!parada.isCommunityOfficial) patch.isCommunityOfficial = true;
+    if (parada.chartSize !== desiredChartSize) patch.chartSize = desiredChartSize;
+    if (Object.keys(patch).length) {
+      parada = await prisma.parada.update({
+        where: { id: parada.id },
+        data: patch,
+      });
+    }
   }
 
   return { community, parada, config: parseCommunityPointsConfig(community) };
@@ -168,7 +181,8 @@ export async function publishCommunityOfficialWeekFromMembers(
     select: { userId: true },
   });
   const userIds = members.map((m) => m.userId);
-  const raw = await loadMemberChartEntries(userIds, weekIndex);
+  const requireMusicVideo = communityRequiresMusicVideo(community.slug);
+  const raw = await loadMemberChartEntries(userIds, weekIndex, { requireMusicVideo });
   const weeklyEntries = applyCommunityPointRules(raw, config);
   const contributorCount = new Set(raw.map((e) => e.chartId)).size;
 
@@ -184,7 +198,7 @@ export async function publishCommunityOfficialWeekFromMembers(
   }
 
   const prevWeek = prevChartWeekIndex(weekIndex);
-  const prevRaw = await loadMemberChartEntries(userIds, prevWeek);
+  const prevRaw = await loadMemberChartEntries(userIds, prevWeek, { requireMusicVideo });
   const prevWeeklyEntries = applyCommunityPointRules(prevRaw, config);
 
   const limit = config.maxSongs;

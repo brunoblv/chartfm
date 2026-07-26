@@ -145,17 +145,17 @@ export default function CreateCommunityPage() {
     <Shell title="" subtitle="">
       <div style={{ maxWidth: 1000 }}>
         <div style={{ marginBottom: 32 }}>
-          <Link href="/communities" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#86868B", fontSize: 14, textDecoration: "none", marginBottom: 12 }}>
+          <Link href="/communities" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: 14, textDecoration: "none", marginBottom: 12 }}>
             <ChevronLeft size={16} />
             {t("communities.createBack")}
           </Link>
           <h1 style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.04em", margin: 0, lineHeight: 1.05 }}>{t("communities.createTitle")}</h1>
-          <p style={{ fontSize: 15, color: "#86868B", marginTop: 8, marginBottom: 0 }}>{t("communities.createSubtitle")}</p>
+          <p style={{ fontSize: 15, color: "var(--text-muted)", marginTop: 8, marginBottom: 0 }}>{t("communities.createSubtitle")}</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
           {/* Form */}
-          <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", padding: 28, display: "flex", flexDirection: "column", gap: 22 }}>
+          <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 28, display: "flex", flexDirection: "column", gap: 22 }}>
             {/* Name */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>{t("communities.createNameLabel")}</label>
@@ -163,7 +163,7 @@ export default function CreateCommunityPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t("communities.createNamePlaceholder")}
-                style={{ width: "100%", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none" }}
+                style={{ width: "100%", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none", background: "var(--bg)", color: "var(--text)" }}
               />
             </div>
 
@@ -171,21 +171,21 @@ export default function CreateCommunityPage() {
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>
                 {t("communities.createTaglineLabel")}
-                <span style={{ fontSize: 12, color: "#86868B", fontWeight: 400, marginLeft: 6 }}>{t("communities.createTaglineMax")}</span>
+                <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 400, marginLeft: 6 }}>{t("communities.createTaglineMax")}</span>
               </label>
               <input
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value.slice(0, 80))}
                 placeholder={t("communities.createTaglinePlaceholder")}
-                style={{ width: "100%", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none" }}
+                style={{ width: "100%", border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 14px", fontSize: 14, outline: "none", background: "var(--bg)", color: "var(--text)" }}
               />
-              <div style={{ fontSize: 11, color: "#86868B", textAlign: "right", marginTop: 4 }}>{tagline.length}/80</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "right", marginTop: 4 }}>{tagline.length}/80</div>
             </div>
 
             {/* Logo (square photo) */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: "block" }}>{t("communities.createLogoLabel")}</label>
-              <p style={{ fontSize: 12, color: "#86868B", margin: "0 0 10px 0", lineHeight: 1.5 }}>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 10px 0", lineHeight: 1.5 }}>
                 {t("communities.createLogoHint")}
               </p>
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={onLogoFileChange} style={{ display: "none" }} />
@@ -195,10 +195,10 @@ export default function CreateCommunityPage() {
                     width: 96,
                     height: 96,
                     borderRadius: 16,
-                    border: "2px dashed rgba(0,0,0,0.12)",
+                    border: "2px dashed var(--divider-strong)",
                     overflow: "hidden",
                     flexShrink: 0,
-                    background: "rgba(0,0,0,0.03)",
+                    background: "var(--fill-inset)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -208,7 +208,7 @@ export default function CreateCommunityPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logoPreview} alt={t("communities.createLogoPreviewAlt")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <ImagePlus size={28} color="#86868B" strokeWidth={1.5} />
+                    <ImagePlus size={28} color="currentColor" strokeWidth={1.5} />
                   )}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -217,8 +217,8 @@ export default function CreateCommunityPage() {
                     onClick={() => fileInputRef.current?.click()}
                     style={{
                       alignSelf: "flex-start",
-                      background: "#1D1D1F",
-                      color: "white",
+                      background: "var(--btn-dark-bg)",
+                      color: "var(--btn-dark-fg)",
                       border: "none",
                       padding: "10px 16px",
                       borderRadius: 10,
@@ -239,8 +239,8 @@ export default function CreateCommunityPage() {
                         alignItems: "center",
                         gap: 6,
                         background: "transparent",
-                        color: "#86868B",
-                        border: "1px solid rgba(0,0,0,0.12)",
+                        color: "var(--text-muted)",
+                        border: "1px solid var(--divider-strong)",
                         padding: "8px 12px",
                         borderRadius: 10,
                         fontSize: 12,
@@ -260,7 +260,7 @@ export default function CreateCommunityPage() {
             {/* Icon fallback when no logo */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: "block" }}>{t("communities.createIconLabel")}</label>
-              <p style={{ fontSize: 12, color: "#86868B", margin: "0 0 10px 0" }}>{t("communities.createIconHint")}</p>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 10px 0" }}>{t("communities.createIconHint")}</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {ICONS.map((ic) => (
                   <button
@@ -272,7 +272,7 @@ export default function CreateCommunityPage() {
                       height: 44,
                       borderRadius: 10,
                       border: "none",
-                      background: icon === ic ? "#1D1D1F" : "rgba(0,0,0,0.05)",
+                      background: icon === ic ? "var(--btn-dark-bg)" : "var(--fill-subtle)",
                       fontSize: 22,
                       cursor: "pointer",
                       display: "flex",
@@ -302,7 +302,7 @@ export default function CreateCommunityPage() {
                       border: "none",
                       background: `linear-gradient(135deg, ${p[0]}, ${p[1]})`,
                       cursor: "pointer",
-                      outline: JSON.stringify(palette) === JSON.stringify(p) ? "3px solid #1D1D1F" : "none",
+                      outline: JSON.stringify(palette) === JSON.stringify(p) ? "3px solid var(--btn-dark-bg)" : "none",
                       outlineOffset: 2,
                     }}
                   />
@@ -325,12 +325,12 @@ export default function CreateCommunityPage() {
                       borderRadius: 12,
                       cursor: "pointer",
                       textAlign: "left",
-                      border: `2px solid ${privacy === p ? "#FA243C" : "rgba(0,0,0,0.1)"}`,
+                      border: `2px solid ${privacy === p ? "var(--accent)" : "var(--divider-strong)"}`,
                       background: privacy === p ? "rgba(250,36,60,0.04)" : "white",
                     }}
                   >
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{p === "public" ? t("communities.createPublicOption") : t("communities.createPrivateOption")}</div>
-                    <div style={{ fontSize: 12, color: "#86868B", marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                       {p === "public" ? t("communities.createPublicDesc") : t("communities.createPrivateDesc")}
                     </div>
                   </button>
@@ -367,7 +367,7 @@ export default function CreateCommunityPage() {
 
           {/* Preview */}
           <div style={{ position: "sticky", top: 100, display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ background: "white", borderRadius: 18, border: "1px solid rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", overflow: "hidden" }}>
               <div
                 style={{
                   height: 120,
@@ -414,13 +414,13 @@ export default function CreateCommunityPage() {
               </div>
               <div style={{ padding: "16px 18px 18px" }}>
                 <div style={{ fontSize: 18, fontWeight: 700 }}>{name || t("communities.createPreviewNamePlaceholder")}</div>
-                <div style={{ fontSize: 13, color: "#86868B", marginTop: 4, marginBottom: 14 }}>{tagline || t("communities.createPreviewTaglinePlaceholder")}</div>
+                <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4, marginBottom: 14 }}>{tagline || t("communities.createPreviewTaglinePlaceholder")}</div>
                 <button
                   type="button"
                   style={{
                     width: "100%",
-                    background: "#1D1D1F",
-                    color: "white",
+                    background: "var(--btn-dark-bg)",
+                    color: "var(--btn-dark-fg)",
                     border: "none",
                     padding: "10px",
                     borderRadius: 10,
@@ -443,7 +443,7 @@ export default function CreateCommunityPage() {
               }}
             >
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("communities.createHowChartWorksTitle")}</div>
-              <ul style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.7, paddingLeft: 16, margin: 0 }}>
+              <ul style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.7, paddingLeft: 16, margin: 0 }}>
                 <li>{t("communities.createHowChartWorksItem1")}</li>
                 <li>{t("communities.createHowChartWorksItem2")}</li>
                 <li>{t("communities.createHowChartWorksItem3")}</li>

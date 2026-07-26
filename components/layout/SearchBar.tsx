@@ -303,7 +303,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                           textDecoration: "none",
                           color: "inherit",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#F5F5F7")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--fill-subtle)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <Cover
@@ -321,7 +321,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                             style={{
                               fontSize: 14,
                               fontWeight: 600,
-                              color: "#1D1D1F",
+                              color: "var(--text)",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -379,7 +379,7 @@ export function SearchBar({ onClose, autoFocus }: SearchBarProps) {
                           style={{
                             fontSize: 14,
                             fontWeight: 600,
-                            color: "#1D1D1F",
+                            color: "var(--text)",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",

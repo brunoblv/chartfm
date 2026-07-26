@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Settings } from "lucide-react";
+import { formatCommunityFoundedDate } from "@/lib/i18n/format";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export type CommunityHeaderData = {
   slug: string;
@@ -13,20 +17,14 @@ export type CommunityHeaderData = {
   members: number;
   posts: number;
   founded: string;
+  /** ISO — preferido para formatar a data no locale atual */
+  createdAt?: string | null;
   adminName: string;
   paradaName: string;
   isAdmin?: boolean;
 };
 
 type NavTab = "parada" | "airplay" | "albums" | "posts" | "members";
-
-const NAV: { key: NavTab; label: string; href: (slug: string) => string }[] = [
-  { key: "parada", label: "Parada", href: (s) => `/community/${s}/parada` },
-  { key: "airplay", label: "Airplay", href: (s) => `/community/${s}/airplay` },
-  { key: "albums", label: "Álbuns", href: (s) => `/community/${s}/albums` },
-  { key: "posts", label: "Home", href: (s) => `/community/${s}` },
-  { key: "members", label: "Membros", href: (s) => `/community/${s}/members` },
-];
 
 const H_PAD = "clamp(16px, 4vw, 40px)";
 
@@ -39,7 +37,18 @@ export function CommunityHeader({
   activeTab: NavTab;
   actions?: ReactNode;
 }) {
+  const { t, locale } = useTranslations();
   const hasCoverImage = Boolean(community.coverImageUrl?.trim());
+  const numberLocale = locale === "en" ? "en-US" : "pt-BR";
+  const foundedLabel = formatCommunityFoundedDate(locale, community.createdAt, community.founded);
+
+  const nav: { key: NavTab; label: string; href: (slug: string) => string }[] = [
+    { key: "parada", label: community.paradaName, href: (s) => `/community/${s}/parada` },
+    { key: "airplay", label: t("communities.airplayTitle"), href: (s) => `/community/${s}/airplay` },
+    { key: "albums", label: t("communities.tabAlbums"), href: (s) => `/community/${s}/albums` },
+    { key: "posts", label: t("communities.tabHome"), href: (s) => `/community/${s}` },
+    { key: "members", label: t("communities.tabMembers"), href: (s) => `/community/${s}/members` },
+  ];
 
   return (
     <>
@@ -155,15 +164,11 @@ export function CommunityHeader({
                   marginBottom: 14,
                 }}
               >
+                <span>{t("communities.members", { count: community.members.toLocaleString(numberLocale) })}</span>
+                <span>{t("communities.postsCount", { count: community.posts.toLocaleString(numberLocale) })}</span>
+                <span>{t("communities.foundedOn", { date: foundedLabel })}</span>
                 <span>
-                  <strong>{community.members.toLocaleString("pt-BR")}</strong> membros
-                </span>
-                <span>
-                  <strong>{community.posts}</strong> posts
-                </span>
-                <span>Fundada em {community.founded}</span>
-                <span>
-                  Moderado por <strong>{community.adminName}</strong>
+                  {t("communities.moderatedBy")} <strong>{community.adminName}</strong>
                 </span>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -187,7 +192,7 @@ export function CommunityHeader({
                     }}
                   >
                     <Settings size={14} />
-                    Configurações
+                    {t("communities.settingsCta")}
                   </Link>
                 )}
               </div>
@@ -208,7 +213,7 @@ export function CommunityHeader({
         }}
       >
         <div style={{ display: "flex", overflowX: "auto" }}>
-          {NAV.map(({ key, label, href }) => (
+          {nav.map(({ key, label, href }) => (
             <Link
               key={key}
               href={href(community.slug)}
@@ -223,7 +228,7 @@ export function CommunityHeader({
                 whiteSpace: "nowrap",
               }}
             >
-              {key === "parada" ? community.paradaName : label}
+              {label}
             </Link>
           ))}
         </div>

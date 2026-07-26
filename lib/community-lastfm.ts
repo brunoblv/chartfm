@@ -81,7 +81,15 @@ export async function getOrCreateCommunityLastfmSnapshot(
       communityId_mode_weekIndex: { communityId, mode, weekIndex },
     },
   });
-  if (existing) return { ...asPayload(existing), created: false };
+  if (existing) {
+    const payload = asPayload(existing);
+    // Snapshot pode ter sido criado com outro limite (default 50); respeita o atual.
+    return {
+      ...payload,
+      entries: payload.entries.slice(0, Math.min(Math.max(chartLimit, 1), 100)),
+      created: false,
+    };
+  }
 
   const computed = await computeCommunityLastfmRanking(communityId, mode, chartLimit, referenceDate);
 

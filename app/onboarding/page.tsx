@@ -88,7 +88,7 @@ function StepDone() {
 
 function Spinner() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#86868B" strokeWidth="2.5" strokeLinecap="round">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
       <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
       <path d="M12 2a10 10 0 0 1 10 10" style={{ animation: "spin 0.7s linear infinite" }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); transform-origin: 12px 12px; } }`}</style>
@@ -211,7 +211,7 @@ export default function OnboardingPage() {
 
   const handleStatusColor = handleStatus === "available" ? "#06D6A0"
     : handleStatus === "taken" || handleStatus === "invalid" ? "#FA243C"
-    : "#86868B";
+    : "var(--text-muted)";
 
   const handleStatusText =
     handleStatus === "available" ? t("onboarding.handleAvailable")
@@ -232,25 +232,25 @@ export default function OnboardingPage() {
   const stepBg = (s: number) => {
     const st = stepState(s);
     if (st === "done" || st === "active") return "#FA243C";
-    return "rgba(0,0,0,0.08)";
+    return "var(--fill-subtle)";
   };
 
   const stepColor = (s: number) => {
     const st = stepState(s);
-    return st === "done" || st === "active" ? "white" : "#86868B";
+    return st === "done" || st === "active" ? "#fff" : "var(--text-muted)";
   };
 
   const connectorBg = (afterStep: number) => {
-    if (step === 1) return afterStep < 1 ? "#FA243C" : "rgba(0,0,0,0.08)";
-    if (step === 2) return afterStep < 2 ? "#FA243C" : "rgba(0,0,0,0.08)";
-    return "rgba(0,0,0,0.08)";
+    if (step === 1) return afterStep < 1 ? "var(--accent)" : "var(--fill-subtle)";
+    if (step === 2) return afterStep < 2 ? "var(--accent)" : "var(--fill-subtle)";
+    return "var(--fill-subtle)";
   };
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", background: "#FBFBFD", display: "flex", flexDirection: "column", fontFamily: "inherit", overflow: "auto" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column", fontFamily: "inherit", overflow: "auto" }}>
 
       {/* Top bar */}
-      <div style={{ padding: isMobile ? "16px 20px" : "24px 48px", display: "flex", alignItems: "center", gap: 18, borderBottom: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
+      <div style={{ padding: isMobile ? "16px 20px" : "24px 48px", display: "flex", alignItems: "center", gap: 18, borderBottom: "1px solid var(--divider)", background: "var(--surface)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FA243C", display: "grid", placeItems: "center" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" stroke="white" strokeWidth="2.4" fill="none" strokeLinecap="round">
@@ -279,7 +279,7 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div style={{ fontSize: 13, color: "#86868B" }}>{t("onboarding.stepOf", { step })}</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("onboarding.stepOf", { step })}</div>
       </div>
 
       {/* ── STEP 1: Handle picker ── */}
@@ -299,12 +299,12 @@ export default function OnboardingPage() {
                 </Fragment>
               ))}
             </h1>
-            <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
+            <p style={{ fontSize: 16, color: "var(--text-subtle)", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
               {t("onboarding.step1Subhead")}
             </p>
 
             {/* Google account card */}
-            <div style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", padding: 14, display: "flex", alignItems: "center", gap: 12, maxWidth: 380 }}>
+            <div style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--divider)", padding: 14, display: "flex", alignItems: "center", gap: 12, maxWidth: 380 }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center", color: "white", fontWeight: 700, fontSize: 18, flexShrink: 0 }}>
                 {session?.user?.image
                   ? <img src={session.user.image} alt={firstName} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} />
@@ -312,7 +312,7 @@ export default function OnboardingPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em" }}>{session?.user?.name ?? firstName}</div>
-                <div style={{ fontSize: 12, color: "#86868B", display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5 }}>
                   <GoogleLogo size={11} /> {email}
                 </div>
               </div>
@@ -322,7 +322,7 @@ export default function OnboardingPage() {
 
           {/* Right: handle input */}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
               {t("onboarding.yourHandle")}
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 18 }}>
@@ -333,7 +333,7 @@ export default function OnboardingPage() {
             <div style={{ position: "relative", marginBottom: 8 }}>
               <div style={{
                 position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
-                fontSize: 17, fontWeight: 700, color: "#86868B", userSelect: "none",
+                fontSize: 17, fontWeight: 700, color: "var(--text-muted)", userSelect: "none",
               }}>@</div>
               <input
                 value={handle}
@@ -351,11 +351,11 @@ export default function OnboardingPage() {
                   border: `2px solid ${
                     handleStatus === "available" ? "#06D6A0"
                     : handleStatus === "taken" || handleStatus === "invalid" ? "#FA243C"
-                    : "rgba(0,0,0,0.12)"
+                    : "var(--divider-strong)"
                   }`,
                   outline: "none",
                   fontFamily: "inherit",
-                  background: "white",
+                  background: "var(--surface)",
                   boxSizing: "border-box",
                   transition: "border-color 150ms",
                 }}
@@ -379,7 +379,7 @@ export default function OnboardingPage() {
             {/* Suggestions */}
             {suggestions.length > 0 && (
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>
                   {t("onboarding.suggestions")}
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -389,9 +389,9 @@ export default function OnboardingPage() {
                       onClick={() => setHandle(s)}
                       style={{
                         padding: "8px 16px",
-                        background: handle === s ? "#1D1D1F" : "white",
-                        color: handle === s ? "white" : "#1D1D1F",
-                        border: "1px solid rgba(0,0,0,0.1)",
+                        background: handle === s ? "var(--btn-dark-bg)" : "var(--surface)",
+                        color: handle === s ? "var(--btn-dark-fg)" : "var(--text)",
+                        border: "1px solid var(--divider-strong)",
                         borderRadius: 100,
                         fontSize: 13,
                         fontWeight: 600,
@@ -407,7 +407,7 @@ export default function OnboardingPage() {
             )}
 
             <div style={{ marginTop: 28, padding: 18, background: "linear-gradient(135deg, #FFF4F5, white)", borderRadius: 14, border: "1px solid rgba(250,36,60,0.15)" }}>
-              <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.5 }}>
                 {t("onboarding.handleHint")}
               </div>
             </div>
@@ -457,12 +457,12 @@ export default function OnboardingPage() {
                 </Fragment>
               ))}
             </h1>
-            <p style={{ fontSize: 16, color: "#6B6B70", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
+            <p style={{ fontSize: 16, color: "var(--text-subtle)", lineHeight: 1.55, marginBottom: 24, maxWidth: 440 }}>
               {t("onboarding.step2Subhead")}
             </p>
 
             {/* Google account card */}
-            <div style={{ background: "white", borderRadius: 14, border: "1px solid rgba(0,0,0,0.08)", padding: 14, display: "flex", alignItems: "center", gap: 12, maxWidth: 380 }}>
+            <div style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--divider)", padding: 14, display: "flex", alignItems: "center", gap: 12, maxWidth: 380 }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #FA243C, #FF5858)", display: "grid", placeItems: "center", color: "white", fontWeight: 700, fontSize: 18, flexShrink: 0 }}>
                 {session?.user?.image
                   ? <img src={session.user.image} alt={firstName} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} />
@@ -470,13 +470,13 @@ export default function OnboardingPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em" }}>{session?.user?.name ?? firstName}</div>
-                <div style={{ fontSize: 12, color: "#86868B", display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5 }}>
                   <GoogleLogo size={11} /> {email}
                 </div>
               </div>
               <button
                 onClick={() => router.push("/login")}
-                style={{ background: "none", border: "1px solid rgba(0,0,0,0.1)", padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                style={{ background: "none", border: "1px solid var(--divider-strong)", padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
               >
                 {t("onboarding.swap")}
               </button>
@@ -486,7 +486,7 @@ export default function OnboardingPage() {
 
           {/* Right: genre picker */}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#86868B", marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4 }}>
               {t("onboarding.yourGenres", { count: selected.length })}
             </div>
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 18 }}>
@@ -502,9 +502,9 @@ export default function OnboardingPage() {
                     onClick={() => toggleGenre(g)}
                     style={{
                       padding: "10px 18px",
-                      background: active ? "#1D1D1F" : "white",
-                      color: active ? "white" : "#1D1D1F",
-                      border: active ? "1px solid #1D1D1F" : "1px solid rgba(0,0,0,0.1)",
+                      background: active ? "var(--btn-dark-bg)" : "var(--surface)",
+                      color: active ? "var(--btn-dark-fg)" : "var(--text)",
+                      border: active ? "1px solid var(--btn-dark-bg)" : "1px solid var(--divider-strong)",
                       borderRadius: 100,
                       fontSize: 14,
                       fontWeight: 600,
@@ -524,11 +524,11 @@ export default function OnboardingPage() {
             </div>
 
             <div style={{ marginTop: 32, padding: 18, background: "linear-gradient(135deg, #FFF4F5, white)", borderRadius: 14, border: "1px solid rgba(250,36,60,0.15)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, color: "#1D1D1F", marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
                 <span style={{ color: "#FA243C" }}><FlameIcon /></span>
                 {t("onboarding.nextStep")}
               </div>
-              <div style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.5 }}>
                 {t("onboarding.nextStepBody")}
               </div>
             </div>

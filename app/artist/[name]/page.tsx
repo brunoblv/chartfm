@@ -109,7 +109,7 @@ function PaginationBar({
         gap: 12,
       }}
     >
-      <span style={{ fontSize: 13, color: "#86868B" }}>
+      <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
         {t("artist.paginationRange", {
           start: (safePage - 1) * pageSize + 1,
           end: Math.min(safePage * pageSize, totalItems),
@@ -131,7 +131,7 @@ function PaginationBar({
         )}
         {buildPageNumbers(safePage, totalPages).map((p, idx) =>
           p === "..." ? (
-            <span key={`e-${idx}`} style={{ padding: "6px 4px", fontSize: 13, color: "#86868B" }}>…</span>
+            <span key={`e-${idx}`} style={{ padding: "6px 4px", fontSize: 13, color: "var(--text-muted)" }}>…</span>
           ) : (
             <Link
               key={p}
@@ -284,7 +284,7 @@ export default async function ArtistPage({
   if (entryOrFilters.length === 0) {
     return (
       <Shell title={t("artist.notFoundLabel")} subtitle={t("artist.notFoundPage")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>{t("artist.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
             {t("artist.backDiscover")}
@@ -353,7 +353,7 @@ export default async function ArtistPage({
   if (allEntries.length === 0 && !hasArtistIdentity) {
     return (
       <Shell title={t("artist.notFoundLabel")} subtitle={t("artist.notFoundPage")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>{t("artist.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
             {t("artist.backDiscover")}
@@ -965,7 +965,7 @@ export default async function ArtistPage({
             {activeStats.map((s) => (
               <div key={s.label} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20 }}>
                 <div style={{ width: 44, height: 44, borderRadius: "50%", background: s.color + "18", display: "grid", placeItems: "center", marginBottom: 12, fontSize: 22 }}>{s.icon}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{s.label}</div>
                 <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
               </div>
             ))}
@@ -1000,7 +1000,7 @@ export default async function ArtistPage({
         {(tab === "songs" || tab === "user-songs") && (
           <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", marginBottom: 40 }}>
             {tab === "user-songs" && !currentUserId ? (
-              <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
+              <div style={{ padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
                 <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--text)" }}>{t("artist.loginToSeeSongs")}</div>
                 <div style={{ fontSize: 14, marginBottom: 20 }}>{t("artist.loginToSeeSongsDesc")}</div>
@@ -1009,13 +1009,13 @@ export default async function ArtistPage({
                 </Link>
               </div>
             ) : tab === "user-songs" && userSongs.length === 0 ? (
-              <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
+              <div style={{ padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("artist.noSongsInCharts")}</div>
                 <div style={{ fontSize: 14 }}>{t("artist.noSongsAddedYet")}</div>
               </div>
             ) : tab === "songs" && songs.length === 0 ? (
-              <div style={{ padding: 48, textAlign: "center", color: "#86868B" }}>
+              <div style={{ padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", marginBottom: 8 }}>{t("artist.noSongsRegistered")}</div>
                 <div style={{ fontSize: 14 }}>{t("artist.noSongsInDb")}</div>
@@ -1026,20 +1026,20 @@ export default async function ArtistPage({
                   <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>
                     {tab === "user-songs" ? t("artist.inYourCharts") : t("artist.songsTab")}
                   </h2>
-                  <span style={{ fontSize: 13, color: "#86868B" }}>{t("artist.totalCount", { count: activeSongs.length })}</span>
+                  <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("artist.totalCount", { count: activeSongs.length })}</span>
                 </div>
                 <div style={{ padding: "0 8px" }}>
                   {/* Header */}
                   {tab === "songs" ? (
                     <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 100px 100px 100px 100px", padding: "8px 16px", gap: 0 }}>
                       {["#", "", t("artist.colTrack"), t("artist.colPoints"), t("artist.colWeeks"), t("artist.colPeak"), t("artist.colNumberOnes")].map((h, i) => (
-                        <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
+                        <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "8px 6px" }}>{h}</div>
                       ))}
                     </div>
                   ) : (
                     <div style={{ display: "grid", gridTemplateColumns: "40px 56px minmax(0,1fr) 110px 100px 80px 110px", padding: "8px 16px", gap: 0 }}>
                       {["#", "", t("artist.colTrack"), t("artist.colYourPoints"), t("artist.colWeeks"), t("artist.colNumberOnes"), t("artist.colBestPos")].map((h, i) => (
-                        <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", padding: "8px 6px" }}>{h}</div>
+                        <div key={i} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "8px 6px" }}>{h}</div>
                       ))}
                     </div>
                   )}
@@ -1062,22 +1062,22 @@ export default async function ArtistPage({
                               )}
                             </div>
                             {s.isFeat ? (
-                              <div style={{ fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {s.dbArtist}
                               </div>
                             ) : s.album.trim() ? (
-                              <Link href={buildAlbumPath(s.album.trim(), canonicalName, { artistId: artistRef?.id, albumId: s.albumRefId })} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                              <Link href={buildAlbumPath(s.album.trim(), canonicalName, { artistId: artistRef?.id, albumId: s.albumRefId })} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
                                 {s.album}
                               </Link>
                             ) : null}
                           </div>
                           <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.points}</div>
-                          <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
+                          <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.weeks}</div>
                           <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                             {s.peak === 1 && <Star size={12} color="#FA243C" fill="#FA243C" />}
                             {s.peak > 0 ? `#${s.peak}` : "-"}
                           </div>
-                          <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
+                          <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.number1s}</div>
                         </div>
                       ))
                     : (paginatedSongs as UserSongRow[]).map((s, i) => (
@@ -1091,13 +1091,13 @@ export default async function ArtistPage({
                               {s.title}
                             </Link>
                             {s.album.trim() ? (
-                              <Link href={buildAlbumPath(s.album.trim(), canonicalName, { artistId: artistRef?.id, albumId: s.albumRefId })} style={{ display: "block", fontSize: 12, color: "#86868B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
+                              <Link href={buildAlbumPath(s.album.trim(), canonicalName, { artistId: artistRef?.id, albumId: s.albumRefId })} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: "none" }}>
                                 {s.album}
                               </Link>
                             ) : null}
                           </div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.userPoints}</div>
-                          <div style={{ fontSize: 14, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.appearances}</div>
+                          <div style={{ fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 6px" }}>{s.appearances}</div>
                           <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums", padding: "0 6px", display: "flex", alignItems: "center", gap: 4 }}>
                             {s.number1s > 0 && <Star size={12} color="#FA243C" fill="#FA243C" />}
                             {s.number1s}
@@ -1156,7 +1156,7 @@ export default async function ArtistPage({
                   <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em" }}>
                     {tab === "user-albums" ? t("artist.yourFavoriteAlbums") : t("artist.albumsTab")}
                   </h2>
-                  <span style={{ fontSize: 13, color: "#86868B" }}>
+                  <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
                     {t("artist.albumCount", { count: activeAlbums.length })}
                   </span>
                 </div>
@@ -1166,7 +1166,7 @@ export default async function ArtistPage({
                       <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 16 }}>
                         <Cover cover={album.cover} song={{ title: album.name, artist: canonicalName, album: album.name }} size={128} rounded={10} />
                         <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.name}</div>
-                        <div style={{ fontSize: 12, color: "#86868B" }}>{album.songs} {album.songs === 1 ? t("artist.trackSingular") : t("artist.trackPlural")}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{album.songs} {album.songs === 1 ? t("artist.trackSingular") : t("artist.trackPlural")}</div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: palette[0], marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{album.points} {t("artist.ptsAbbr")}</div>
                       </div>
                     </Link>
@@ -1198,8 +1198,8 @@ export default async function ArtistPage({
                   <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 20, textAlign: "center" }}>
                     <Avatar user={user} imageUrl={user.image} size={56} />
                     <div style={{ marginTop: 12, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{user.name}</div>
-                    <div style={{ fontSize: 12, color: "#86868B", marginBottom: 8 }}>@{user.handle}</div>
-                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B", marginBottom: 4 }}>{t("artist.pointsInArtist")}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>@{user.handle}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 4 }}>{t("artist.pointsInArtist")}</div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: palette[0], fontVariantNumeric: "tabular-nums" }}>{points}</div>
                   </div>
                 </Link>

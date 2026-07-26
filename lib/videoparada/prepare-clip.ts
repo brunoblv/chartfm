@@ -133,8 +133,13 @@ export async function prepareParadeClip(
     windowStrategy = w.strategy;
   } else if (input.detectChorus !== false) {
     const chorus = await detectChorusWindow(downloaded.filePath, { clipSeconds });
-    startSec = Math.min(chorus.startSec, Math.max(0, probe.durationSec - 1));
-    endSec = Math.min(probe.durationSec, Math.max(startSec + 1, chorus.endSec));
+    startSec = Math.min(chorus.startSec, Math.max(0, probe.durationSec - clipSeconds));
+    // Duração exata do formato (6s Shorts / 11s YouTube)
+    endSec = Math.min(probe.durationSec, startSec + clipSeconds);
+    if (endSec - startSec < clipSeconds - 0.05 && probe.durationSec >= clipSeconds) {
+      startSec = Math.max(0, probe.durationSec - clipSeconds);
+      endSec = probe.durationSec;
+    }
     windowStrategy = chorus.strategy;
   } else {
     const w = resolveClipWindow(probe.durationSec, { clipSeconds });

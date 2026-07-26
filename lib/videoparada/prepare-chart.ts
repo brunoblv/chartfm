@@ -1,7 +1,11 @@
 ﻿import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { getVideoparadaAdminPayload, resolveDefaultVideoparadaWeek } from "@/lib/videoparada";
-import { extractYoutubeId, searchOfficialYoutubeId } from "@/lib/videoparada/download-clip";
+import {
+  extractYoutubeId,
+  searchOfficialYoutubeId,
+  type YoutubeSearchMode,
+} from "@/lib/videoparada/download-clip";
 import {
   prepareParadeClip,
   type ParadeVideoFormat,
@@ -34,28 +38,59 @@ export type PreparedVideoparadaSong = {
   error?: string;
 };
 
+function searchModeForChart(chartKind: string): YoutubeSearchMode {
+  // Global / airplay / genre: lyric, visualizer e MV ok. Community (Disk MTV): só oficial.
+  return chartKind.startsWith("community:") ? "official" : "flexible";
+}
+
 export async function resolveYoutubeIdForSong(
   songId: string,
   title: string,
   artist: string,
   configVideoUrl: string | null | undefined,
   suggestedYoutubeId: string | null | undefined,
+  opts: {
+    mode?: YoutubeSearchMode;
+    excludeIds?: ReadonlySet<string>;
+    /** No Global, busca no YouTube tem prioridade (evita SongVideoClip errado). */
+    preferSearch?: boolean;
+  } = {},
 ): Promise<string | null> {
+  const mode = opts.mode ?? "official";
+  const exclude = opts.excludeIds ?? new Set<string>();
+
   if (configVideoUrl) {
     const fromUrl = extractYoutubeId(configVideoUrl);
-    if (fromUrl) return fromUrl;
+    if (fromUrl && !exclude.has(fromUrl)) return fromUrl;
   }
-  if (suggestedYoutubeId) return suggestedYoutubeId;
+
+  if (opts.preferSearch) {
+    const hit = await searchOfficialYoutubeId(title, artist, { mode, excludeIds: exclude });
+    if (hit?.youtubeId) return hit.youtubeId;
+  }
+
+  if (suggestedYoutubeId && !exclude.has(suggestedYoutubeId)) {
+    return suggestedYoutubeId;
+  }
 
   const clip = await prisma.songVideoClip.findFirst({
-    where: { songId, clipType: "OFFICIAL", youtubeId: { not: null } },
+    where: {
+      songId,
+      clipType: "OFFICIAL",
+      youtubeId: { not: null },
+      ...(exclude.size ? { NOT: { youtubeId: { in: [...exclude] } } } : {}),
+    },
     orderBy: { votes: "desc" },
     select: { youtubeId: true },
   });
-  if (clip?.youtubeId) return clip.youtubeId;
+  if (clip?.youtubeId && !exclude.has(clip.youtubeId)) return clip.youtubeId;
 
-  const hit = await searchOfficialYoutubeId(title, artist);
-  return hit?.youtubeId ?? null;
+  if (!opts.preferSearch) {
+    const hit = await searchOfficialYoutubeId(title, artist, { mode, excludeIds: exclude });
+    return hit?.youtubeId ?? null;
+  }
+
+  return null;
 }
 
 export async function prepareVideoparadaFromChart(opts: {
@@ -78,6 +113,8 @@ export async function prepareVideoparadaFromChart(opts: {
   const clipSeconds =
     opts.clipSeconds ??
     (format === "landscape" ? VIDEOPARADA_YOUTUBE_SECONDS : VIDEOPARADA_SHORTS_SECONDS);
+  const mode = searchModeForChart(chartKind);
+  const preferSearch = mode === "flexible";
 
   let weekIndex = opts.weekIndex ?? null;
   if (weekIndex == null) {
@@ -91,6 +128,7 @@ export async function prepareVideoparadaFromChart(opts: {
   const top = payload.entries.slice(0, limit);
   const publicDir = path.join(process.cwd(), "public", "videoparada", "clips", format);
   const songs: PreparedVideoparadaSong[] = [];
+  const usedYoutubeIds = new Set<string>();
 
   for (const e of top) {
     const skip = e.config.skipAutoVideo;
@@ -102,6 +140,7 @@ export async function prepareVideoparadaFromChart(opts: {
         e.artist,
         e.config.videoUrl,
         e.suggestedYoutubeId,
+        { mode, preferSearch, excludeIds: usedYoutubeIds },
       );
     }
 
@@ -131,6 +170,8 @@ export async function prepareVideoparadaFromChart(opts: {
       });
       continue;
     }
+
+    usedYoutubeIds.add(youtubeId);
 
     try {
       const publicRelPath = `videoparada/clips/${format}/${e.position}-${youtubeId}.mp4`;

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Voltar à parada</a>
+    </div>
+  </div>
+
+  <div style="max-width:1000px;margin:0 auto;padding:36px 40px 96px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Minha Parada · Semana 28</div>
+        <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;margin-top:6px">Ranking em clipes</div>
+      </div>
+      <div style="display:flex;background:var(--fill-subtle);border-radius:8px;padding:3px;gap:2px">
+        <div onClick="{{ selectTable }}" style="{{ tableTabStyle }}">Tabela</div>
+        <div onClick="{{ selectStacked }}" style="{{ stackedTabStyle }}">Empilhado</div>
+      </div>
+    </div>
+
+    <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top:28px;display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ entries }}" as="e" hint-placeholder-count="10">
+          <div style="display:grid;grid-template-columns:60px 130px minmax(0,1fr) 90px 70px;align-items:center;gap:0 16px;padding:14px 0;border-bottom:1px solid var(--divider)">
+            <div style="text-align:center">
+              <div style="font-size:{{ e.posFontSize }}px;font-weight:700;letter-spacing:-0.04em;color:var(--text);font-variant-numeric:tabular-nums;line-height:1">{{ e.n }}</div>
+              <div style="margin-top:4px;display:flex;justify-content:center">
+                <x-import component-from-global-scope="ChartFM.MovementBadge" status="{{ e.status }}" delta="{{ e.delta }}" compact="{{ true }}" hint-size="40px,16px"></x-import>
+              </div>
+            </div>
+            <x-import component-from-global-scope="ChartFM.VideoClipCover" palette-a="{{ e.paletteA }}" palette-b="{{ e.paletteB }}" seed="{{ e.seed }}" width="{{ 130 }}" hint-size="130px,73px"></x-import>
+            <div style="min-width:0">
+              <div style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</div>
+              <div style="font-size:12.5px;color:var(--text-muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.artist }}</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:15px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums">{{ e.prevPos }}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Semana ant.</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:15px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums">{{ e.weeks }}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Sem.</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStacked }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+        <sc-for list="{{ entries }}" as="e" hint-placeholder-count="10">
+          <div>
+            <div style="position:relative">
+              <x-import component-from-global-scope="ChartFM.VideoClipCover" palette-a="{{ e.paletteA }}" palette-b="{{ e.paletteB }}" seed="{{ e.seed }}" hint-size="100%,auto" style="width:100%;aspect-ratio:16/9;border-radius:12px"></x-import>
+              <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);color:#fff;font-size:13px;font-weight:800;padding:3px 9px;border-radius:100px;font-variant-numeric:tabular-nums">{{ e.n }}</div>
+              <div style="position:absolute;top:8px;right:8px">
+                <x-import component-from-global-scope="ChartFM.MovementBadge" status="{{ e.status }}" delta="{{ e.delta }}" compact="{{ true }}" hint-size="40px,16px"></x-import>
+              </div>
+            </div>
+            <div style="font-size:14px;font-weight:700;margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</div>
+            <div style="font-size:12.5px;color:var(--text-muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.artist }}</div>
+            <div style="display:flex;gap:14px;margin-top:8px">
+              <div style="font-size:12px;color:var(--text-muted)">Semana ant. <span style="color:var(--text);font-weight:600">{{ e.prevPos }}</span></div>
+              <div style="font-size:12px;color:var(--text-muted)">Sem. <span style="color:var(--text);font-weight:600">{{ e.weeks }}</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { layout: 'table' };
+  tabStyle(active) {
+    return { padding: '8px 16px', borderRadius: 6, fontSize: 12.5, fontWeight: active ? 700 : 600, cursor: 'pointer', background: active ? 'var(--surface)' : 'transparent', color: active ? 'var(--text)' : 'var(--text-muted)' };
+  }
+  palettes = [
+    ['#FA243C','#FFE66D'], ['#7C5CFF','#3ECF8E'], ['#20C4B0','#FFB020'],
+    ['#3E8BFF','#FF6FB0'], ['#FF5858','#4FD1FF'], ['#9B6BFF','#FFD166'],
+    ['#57D9A3','#FA243C'], ['#FFB020','#7C5CFF'], ['#4FD1FF','#FF5858'],
+    ['#FFD166','#20C4B0']
+  ];
+  renderVals() {
+    const raw = [
+      { title: 'Halflight', artist: 'Coral Hour', status: 'same', prevPos: 1, weeks: 8, seed: 6 },
+      { title: 'Amber Static', artist: 'Coral Hour', status: 'up', delta: 2, prevPos: 4, weeks: 6, seed: 5 },
+      { title: 'Glasswing', artist: 'Nova Vega', status: 'down', delta: 1, prevPos: 2, weeks: 11, seed: 1 },
+      { title: 'Low Tide', artist: 'Coral Hour', status: 'up', delta: 4, prevPos: 8, weeks: 5, seed: 2 },
+      { title: 'Static Bloom', artist: 'Kite Season', status: 'new', prevPos: '—', weeks: 1, seed: 3 },
+      { title: 'Nightlong', artist: 'Coral Hour', status: 'return', prevPos: '—', weeks: 3, seed: 9 },
+      { title: 'Coastal', artist: 'Nova Vega', status: 'new', prevPos: '—', weeks: 1, seed: 0 },
+      { title: 'Bloomtide', artist: 'Kite Season', status: 'up', delta: 1, prevPos: 9, weeks: 4, seed: 8 },
+    ];
+    const entries = raw.map((r, i) => {
+      const p = this.palettes[r.seed % this.palettes.length];
+      return { n: i + 1, title: r.title, artist: r.artist, prevPos: r.prevPos, weeks: r.weeks, status: r.status, delta: r.delta, seed: r.seed, paletteA: p[0], paletteB: p[1], posFontSize: i < 3 ? 22 : 20 };
+    });
+    return {
+      entries,
+      isTable: this.state.layout === 'table',
+      isStacked: this.state.layout === 'stacked',
+      tableTabStyle: this.tabStyle(this.state.layout === 'table'),
+      stackedTabStyle: this.tabStyle(this.state.layout === 'stacked'),
+      selectTable: () => this.setState({ layout: 'table' }),
+      selectStacked: () => this.setState({ layout: 'stacked' }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

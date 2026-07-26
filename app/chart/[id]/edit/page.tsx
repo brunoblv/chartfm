@@ -495,7 +495,7 @@ export default function EditChartPage() {
             padding: "10px 14px",
             fontSize: 14,
             outline: "none",
-            color: "#1D1D1F",
+            color: "var(--text)",
             marginBottom: 10,
             boxSizing: "border-box",
           }}

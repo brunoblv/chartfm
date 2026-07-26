@@ -61,23 +61,23 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
     <>
       <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldName")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldName")}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldSpotifyId")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldSpotifyId")}</span>
           <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldRomanization")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldRomanization")}</span>
           <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldCoverUrl")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldCoverUrl")}</span>
           <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldBio")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldBio")}</span>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
@@ -96,7 +96,7 @@ export function ArtistEditClient({ initialArtist }: { initialArtist: ArtistEditI
         </div>
       </div>
 
-      <hr style={{ border: "none", borderTop: "1px solid rgba(0,0,0,0.08)", margin: "32px 0" }} />
+      <hr style={{ border: "none", borderTop: "1px solid var(--divider)", margin: "32px 0" }} />
       <ArtistCreateSection />
     </>
   );
@@ -154,14 +154,14 @@ function ArtistCreateSection() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         style={{
-          border: "1px solid rgba(0,0,0,0.12)",
-          background: "white",
+          border: "1px solid var(--divider-strong)",
+          background: "var(--surface)",
           borderRadius: 10,
           padding: "9px 14px",
           fontWeight: 700,
           fontSize: 14,
           cursor: "pointer",
-          color: "#1D1D1F",
+          color: "var(--text)",
         }}
       >
         {open ? t("artist.hideLabel") : t("artist.createNewArtist")}
@@ -170,19 +170,19 @@ function ArtistCreateSection() {
       {open && (
         <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldNameRequired")}</span>
+            <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldNameRequired")}</span>
             <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder={t("artist.artistNamePlaceholder")} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldSpotifyIdRequired")}</span>
+            <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldSpotifyIdRequired")}</span>
             <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} placeholder={t("artist.spotifyIdPlaceholder")} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldRomanization")}</span>
+            <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldRomanization")}</span>
             <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} placeholder={t("artist.romanizationPlaceholder")} />
           </label>
           <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("artist.fieldCoverUrl")}</span>
+            <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("artist.fieldCoverUrl")}</span>
             <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} style={inputStyle} placeholder={t("artist.coverUrlOptionalPlaceholder")} />
           </label>
 
@@ -200,17 +200,18 @@ function ArtistCreateSection() {
 }
 
 const inputStyle: CSSProperties = {
-  border: "1px solid rgba(0,0,0,0.14)",
+  border: "1px solid var(--divider-strong)",
   borderRadius: 10,
   padding: "10px 12px",
   fontSize: 14,
   outline: "none",
-  background: "#fff",
+  background: "var(--surface)",
+  color: "var(--text)",
 };
 
 const buttonStyle = (enabled: boolean): CSSProperties => ({
   border: "none",
-  background: "#FA243C",
+  background: "var(--accent)",
   color: "#fff",
   borderRadius: 10,
   padding: "10px 14px",

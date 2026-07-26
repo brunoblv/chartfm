@@ -1310,8 +1310,8 @@ export default function ProfilePage() {
                 <Link
                   href={
                     activeParadaId
-                      ? `/create?paradaId=${activeParadaId}`
-                      : "/create"
+                      ? `/create/start?paradaId=${activeParadaId}`
+                      : "/create/start"
                   }
                   style={{
                     background: "#FA243C",
@@ -1327,7 +1327,7 @@ export default function ProfilePage() {
                     alignItems: "center",
                   }}
                 >
-                  {t("profile.newChart")}
+                  {t("profile.updateChart")}
                 </Link>
                 <Link
                   href="/settings"
@@ -1855,7 +1855,7 @@ export default function ProfilePage() {
                     </p>
                     {isOwn ? (
                       <Link
-                        href="/create"
+                        href="/create/start"
                         style={{
                           color: "#FA243C",
                           fontWeight: 700,

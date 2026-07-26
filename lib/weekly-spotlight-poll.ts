@@ -48,8 +48,8 @@ const NOMINATOR_SELECT = {
 
 /**
  * Semana alvo da enquete: a semana ISO que termina no domingo mais recente (em BRT).
- * No cron de domingo 23:59 BRT é a própria semana que está acabando; numa reexecução
- * manual na segunda/terça continua apontando para a mesma semana encerrada.
+ * No cron de abertura (padrão: segunda 0h) é a semana que acabou de fechar; numa
+ * reexecução manual até o fechamento (padrão: quarta 7h) continua a mesma semana.
  */
 export function getWeeklyPollTargetWeek(now: Date = new Date()) {
   const brt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
@@ -191,7 +191,7 @@ export async function openWeeklySpotlightPoll(now: Date = new Date()): Promise<O
   await createPollWithOptions(week, null, grouped);
 
   const notified = await broadcastAdminAnnouncement({
-    text: `A votação da semana está aberta! Escolha a Melhor da Semana e o Flashback da Semana (${week.weekLabel}). Você pode votar em quantas quiser, as vencedoras aparecem na Parada Global de terça.`,
+    text: `A votação da semana está aberta! Escolha a Melhor da Semana e o Flashback da Semana (${week.weekLabel}). Você pode votar em quantas quiser; as vencedoras aparecem na Parada Global.`,
     targetUrl: WEEKLY_POLL_PATH,
     notifyType: "weekly_poll_open",
     feedKind: "weekly_poll_open",

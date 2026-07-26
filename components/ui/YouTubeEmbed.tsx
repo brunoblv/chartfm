@@ -17,7 +17,7 @@ export function YouTubeEmbed({ videoId, title, maxWidth = 480 }: YouTubeEmbedPro
         maxWidth,
         borderRadius: 12,
         overflow: "hidden",
-        border: "1px solid rgba(0,0,0,0.08)",
+        border: "1px solid var(--divider)",
         background: "#000",
       }}
     >
@@ -44,7 +44,7 @@ export function YouTubeEmbed({ videoId, title, maxWidth = 480 }: YouTubeEmbedPro
         />
       </div>
       {title ? (
-        <div style={{ padding: "10px 12px", background: "#fff", color: "#1D1D1F", fontSize: 13, fontWeight: 600 }}>
+        <div style={{ padding: "10px 12px", background: "var(--surface)", color: "var(--text)", fontSize: 13, fontWeight: 600 }}>
           {title}
         </div>
       ) : null}

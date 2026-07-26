@@ -86,6 +86,21 @@ export function prevPeriodIndex(periodIndex: number, cadence: ParadaCadence): nu
   return cadence === "DAILY" ? prevChartDayIndex(periodIndex) : prevChartWeekIndex(periodIndex);
 }
 
+/**
+ * Índice da parada usada para calcular movimento (up/down/estreia/retorno).
+ * Semanal: exige a semana imediatamente anterior (buraco = retorno).
+ * Diário: última parada publicada antes desta — pula fim de semana / dias sem chart
+ * (senão toda segunda vira "retorno" ao comparar com domingo inexistente).
+ */
+export function movementComparePeriodIndex(
+  cadence: ParadaCadence,
+  currentPeriodIndex: number,
+  lastPublishedBefore: number | null | undefined,
+): number | null {
+  if (cadence === "DAILY") return lastPublishedBefore ?? null;
+  return prevPeriodIndex(currentPeriodIndex, "WEEKLY");
+}
+
 export function computeStreakForCadence(periodIndexes: number[], cadence: ParadaCadence): number {
   if (periodIndexes.length === 0) return 0;
   const sortedUnique = [...new Set(periodIndexes)].sort((a, b) => b - a);

@@ -6,8 +6,8 @@ export const VERTICAL = {
   width: 1080,
   height: 1920,
   introFrames: 75,
-  /** 3s no teste vertical (clipes Shorts = 6s). */
-  positionFrames: 90,
+  /** 6s por posição (= clipe Shorts). */
+  positionFrames: 6 * FPS,
   outroFrames: 75,
   /** ~0,8s — barras + número da próxima posição. */
   transitionFrames: 24,
@@ -17,8 +17,8 @@ export const LANDSCAPE = {
   width: 1920,
   height: 1080,
   introFrames: 75,
-  /** ~5s por posição no landscape (clipes YouTube = 11s). */
-  positionFrames: 150,
+  /** 11s por posição (= clipe YouTube). */
+  positionFrames: 11 * FPS,
   outroFrames: 75,
   /** ~0,9s. */
   transitionFrames: 27,

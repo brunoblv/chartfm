@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:960px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Início</a>
+    </div>
+  </div>
+
+  <div style="background:var(--gradient-hero);padding:72px 40px;text-align:center">
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;opacity:.85">Sobre o ChartFM</div>
+    <div style="font-size:40px;font-weight:800;letter-spacing:-0.03em;color:#fff;margin-top:12px;max-width:640px;margin-left:auto;margin-right:auto">O ranking de música é feito por quem ouve, não por algoritmo.</div>
+    <div style="font-size:16px;color:#fff;opacity:.9;margin-top:14px;max-width:560px;margin-left:auto;margin-right:auto">ChartFM é onde suas paradas pessoais viram cultura coletiva — cada ouvinte constrói seu próprio ranking, e juntos formamos o pulso real da música.</div>
+  </div>
+
+  <div style="max-width:960px;margin:0 auto;padding:56px 40px 96px">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px">
+      <sc-for list="{{ cards }}" as="c" hint-placeholder-count="6">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:24px">
+          <div style="font-size:17px;font-weight:700">{{ c.title }}</div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.6;margin-top:10px">{{ c.body }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <section style="margin-top:48px">
+      <div style="font-size:20px;font-weight:700;margin-bottom:20px">Linha do tempo do projeto</div>
+      <div style="display:flex;flex-direction:column;gap:0">
+        <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="5">
+          <div style="display:flex;gap:16px">
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
+              <div style="{{ t.lineStyle }}"></div>
+            </div>
+            <div style="padding-bottom:28px">
+              <div style="font-size:12px;font-weight:700;color:var(--accent)">{{ t.year }}</div>
+              <div style="font-size:14.5px;font-weight:700;margin-top:2px">{{ t.title }}</div>
+              <div style="font-size:13px;color:var(--text-muted);margin-top:4px">{{ t.desc }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:20px">
+      <div style="font-size:20px;font-weight:700;margin-bottom:16px">Equipe</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
+        <sc-for list="{{ team }}" as="m" hint-placeholder-count="4">
+          <div style="text-align:center">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ m.cover }}" size="{{ 76 }}" rounded="{{ 100 }}" hint-size="76px,76px"></x-import>
+            <div style="font-size:13.5px;font-weight:700;margin-top:10px">{{ m.name }}</div>
+            <div style="font-size:12px;color:var(--text-muted)">{{ m.role }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:48px">
+      <div style="font-size:20px;font-weight:700;margin-bottom:16px">Roadmap</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ roadmap }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--divider);border-radius:12px;padding:14px 16px">
+            <div style="{{ r.badgeStyle }}">{{ r.status }}</div>
+            <div style="font-size:13.5px;font-weight:600">{{ r.title }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:48px">
+      <div style="font-size:20px;font-weight:700;margin-bottom:16px">Perguntas frequentes</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ faq }}" as="f" hint-placeholder-count="4">
+          <div style="padding:16px 0;border-bottom:1px solid var(--divider-soft)">
+            <div style="font-size:14.5px;font-weight:700">{{ f.q }}</div>
+            <div style="font-size:13.5px;color:var(--text-muted);margin-top:6px;line-height:1.6">{{ f.a }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const cards = [
+      { title: 'Quem somos', body: 'Um time de ouvintes obcecados por rankear, comparar e discutir música — construindo o lugar que sempre quisemos que existisse.' },
+      { title: 'Nossa missão', body: 'Dar a cada ouvinte uma parada própria, e transformar a soma dessas paradas em charts coletivas de verdade.' },
+      { title: 'Como funcionam as Charts', body: 'Você monta sua parada pessoal (manual ou via Last.fm); o ChartFM agrega milhares delas em rankings semanais e históricos.' },
+      { title: 'Parceiros', body: 'Trabalhamos com selos, blogs musicais e comunidades independentes para trazer descoberta musical de verdade.' },
+    ];
+
+    const timeline = [
+      { year: '2023', title: 'Primeira versão', desc: 'ChartFM nasce como planilha compartilhada entre amigos.' },
+      { year: '2024', title: 'Beta fechado', desc: 'Primeiras 500 paradas pessoais publicadas.' },
+      { year: '2025', title: 'Lançamento público', desc: 'Integração com Last.fm e Charts coletivas semanais.' },
+      { year: '2026', title: 'Comunidades e Copa', desc: 'Comunidades temáticas e a primeira Copa ChartFM.' },
+    ].map((t, i, arr) => ({ ...t, lineStyle: i < arr.length - 1 ? { width: 2, flex: 1, background: 'var(--divider)', minHeight: 30 } : {} }));
+
+    const team = [
+      { name: 'Ana Ferraz', role: 'Fundadora & Produto', seed: 1 }, { name: 'Diego Salles', role: 'Engenharia', seed: 2 },
+      { name: 'Iris Coutinho', role: 'Design', seed: 3 }, { name: 'Rafa Prado', role: 'Comunidade', seed: 4 },
+    ].map(m => ({ ...m, cover: this.cover(m.seed) }));
+
+    const roadmap = [
+      { title: 'App mobile nativo', status: 'Em desenvolvimento', color: '#FFB020' },
+      { title: 'Charts colaborativas em tempo real', status: 'Planejado', color: '#3E8BFF' },
+      { title: 'API pública para desenvolvedores', status: 'Planejado', color: '#3E8BFF' },
+      { title: 'Integração com Spotify', status: 'Lançado', color: '#20C4B0' },
+    ].map(r => ({ ...r, badgeStyle: { fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100, background: r.color + '22', color: r.color, whiteSpace: 'nowrap' } }));
+
+    const faq = [
+      { q: 'Preciso de conta no Last.fm para usar o ChartFM?', a: 'Não. Você pode montar sua parada manualmente ou conectar sua conta do Last.fm para importar automaticamente.' },
+      { q: 'Como as Charts coletivas são calculadas?', a: 'Agregamos os pontos de todas as paradas pessoais publicadas dentro de um período, com pesos por posição.' },
+      { q: 'O ChartFM é gratuito?', a: 'Sim. Há um plano de apoio opcional com recursos extras — veja a página Apoie o ChartFM.' },
+      { q: 'Posso apagar meus dados?', a: 'Sim, a qualquer momento nas Configurações ou pela página de Privacidade.' },
+    ];
+
+    return { cards, timeline, team, roadmap, faq };
+  }
+}
+
+</script>
+</body>
+</html>

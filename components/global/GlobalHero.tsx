@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslations } from "@/hooks/useTranslations";
+import { formatDateRangeForLocale } from "@/lib/chart-week";
+import { formatWeekLabel } from "@/lib/i18n/format";
 
 interface GlobalHeroProps {
   weekNow: string;
@@ -31,11 +33,13 @@ export function GlobalHero({
   uniqueParadas,
 }: GlobalHeroProps) {
   const isMobile = useIsMobile();
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const rule = pointsRule ?? t("global.pointsRule");
   const primaryStat =
     statPrimaryLabel ??
     (uniqueParadas != null ? t("global.chartsCount", { count: uniqueParadas }) : t("global.songsCount", { count: songsCount }));
+  const weekLabel = formatWeekLabel(locale, weekNow);
+  const rangeLabel = formatDateRangeForLocale(weekRangeNow, locale, weekNow);
 
   return (
     <div style={{
@@ -76,7 +80,7 @@ export function GlobalHero({
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
-          {weekNow}
+          {weekLabel}
         </div>
         <div style={{ fontSize: isMobile ? 40 : 64, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
           {title}
@@ -89,7 +93,7 @@ export function GlobalHero({
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
           <span>{t("global.songsCount", { count: songsCount })}</span>
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
-          <span>{weekRangeNow}</span>
+          <span>{rangeLabel}</span>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {olderWeek ? (

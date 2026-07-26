@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="background:linear-gradient(160deg, #3B2B8C, #12102A);padding:48px 40px 24px">
+    <a href="#" style="display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,0.7);font-size:14px;font-weight:500;margin-bottom:24px">← Voltar ao perfil</a>
+    <div style="display:flex;gap:32px;align-items:flex-start">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;width:200px;height:200px;border-radius:18px;overflow:hidden;flex-shrink:0;box-shadow:0 16px 40px rgba(0,0,0,0.35)">
+        <sc-for list="{{ mosaic }}" as="m" hint-placeholder-count="4">
+          <x-import component-from-global-scope="ChartFM.Cover" cover="{{ m }}" size="{{ 98 }}" rounded="{{ 0 }}" hint-size="98px,98px"></x-import>
+        </sc-for>
+      </div>
+      <div style="flex:1;min-width:280px;color:#fff">
+        <div style="font-size:56px;font-weight:800;letter-spacing:-0.04em;line-height:1.1;margin-bottom:8px">Minha Parada · Semana 28</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.65);margin-bottom:16px">7 – 13 de julho de 2026 · 30 músicas</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+          <x-import component-from-global-scope="ChartFM.Cover" cover="{{ owner.avatar }}" size="{{ 28 }}" rounded="{{ 14 }}" hint-size="28px,28px"></x-import>
+          <div style="font-size:14px;font-weight:600">Bruno Villas</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5)">@brunov</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);color:#fff;border:none;padding:10px 16px;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer">♥ Curtir</button>
+          <button style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);color:#fff;border:none;padding:10px 16px;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer">↻ Repostar</button>
+          <button style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);color:#fff;border:none;padding:10px 16px;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer">⧉ Copiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px 96px">
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--divider);margin-bottom:24px;margin-top:24px">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+        <div onClick="{{ t.select }}" style="{{ t.style }}">{{ t.label }}</div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ isChart }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:flex-start">
+        <div>
+          <sc-for list="{{ chart }}" as="row" hint-placeholder-count="10">
+            <div style="display:grid;grid-template-columns:72px 81px minmax(0,1fr) 90px 70px;align-items:center;gap:0 14px;padding:12px 0;border-bottom:1px solid var(--divider)">
+              <div style="text-align:center">
+                <div style="font-size:{{ row.posFontSize }}px;font-weight:700;letter-spacing:-0.04em;color:var(--text);font-variant-numeric:tabular-nums;line-height:1">{{ row.n }}</div>
+                <div style="margin-top:4px;display:flex;justify-content:center">
+                  <x-import component-from-global-scope="ChartFM.MovementBadge" status="{{ row.status }}" delta="{{ row.delta }}" compact="{{ true }}" hint-size="40px,16px"></x-import>
+                </div>
+              </div>
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ row.cover }}" size="{{ 65 }}" hint-size="65px,65px"></x-import>
+              <div style="min-width:0">
+                <div style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.title }}</div>
+                <div style="font-size:12.5px;color:var(--text-muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.artist }}</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:15px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums">{{ row.prevPos }}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Semana ant.</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:15px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums">{{ row.weeks }}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Sem.</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <aside style="display:flex;flex-direction:column;gap:16px;position:sticky;top:24px">
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px">Comentários</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <sc-for list="{{ comments }}" as="c" hint-placeholder-count="3">
+                <div style="display:flex;gap:10px">
+                  <x-import component-from-global-scope="ChartFM.Cover" cover="{{ c.avatar }}" size="{{ 30 }}" rounded="{{ 15 }}" hint-size="30px,30px"></x-import>
+                  <div style="min-width:0;flex:1">
+                    <div style="font-size:12.5px"><span style="font-weight:700">{{ c.author }}</span> {{ c.text }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px">{{ c.time }} · ♥ {{ c.likes }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px">Afinidade com outras paradas</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <sc-for list="{{ overlaps }}" as="o" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <x-import component-from-global-scope="ChartFM.Cover" cover="{{ o.avatar }}" size="{{ 34 }}" rounded="{{ 17 }}" hint-size="34px,34px"></x-import>
+                  <div style="min-width:0;flex:1">
+                    <div style="font-size:12.5px;font-weight:600">{{ o.name }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ o.common }} músicas em comum</div>
+                  </div>
+                  <div style="font-size:13px;font-weight:800;color:var(--accent)">{{ o.percent }}%</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSaidas }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:640px">
+        <div style="font-size:13.5px;color:var(--text-muted);margin-bottom:20px;line-height:1.5">Músicas que estavam na parada da semana passada e saíram desta edição.</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ dropouts }}" as="d" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--divider)">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ d.cover }}" size="{{ 56 }}" hint-size="56px,56px" style="filter:grayscale(0.5);opacity:0.75"></x-import>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ d.title }}</div>
+                <div style="font-size:12.5px;color:var(--text-muted);margin-top:1px">{{ d.artist }}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:700;color:var(--text-muted)">Última pos. {{ d.lastPos }}</div>
+                <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">{{ d.tenure }} na parada</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isOverlap }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:640px">
+        <div style="font-size:13.5px;color:var(--text-muted);margin-bottom:20px;line-height:1.5">Pessoas com paradas parecidas com a sua nesta semana.</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ overlapFull }}" as="o" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--divider)">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ o.avatar }}" size="{{ 44 }}" rounded="{{ 22 }}" hint-size="44px,44px"></x-import>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700">{{ o.name }}</div>
+                <div style="font-size:12.5px;color:var(--text-muted);margin-top:1px">{{ o.common }} de 30 músicas em comum</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:18px;font-weight:800;color:var(--accent)">{{ o.percent }}%</div>
+                <div style="font-size:11px;color:var(--text-muted)">afinidade</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab: 'chart' };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const tabKeys = [
+      { key: 'chart', label: 'Parada' }, { key: 'saidas', label: 'Saídas (2)' }, { key: 'overlap', label: 'Em comum' },
+    ];
+    const tabs = tabKeys.map(t => {
+      const active = this.state.tab === t.key;
+      return {
+        label: t.label, select: () => this.setState({ tab: t.key }),
+        style: {
+          padding: '12px 20px', fontSize: 15, fontWeight: active ? 600 : 500, cursor: 'pointer',
+          color: active ? 'var(--text)' : 'var(--text-muted)', borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1
+        }
+      };
+    });
+
+    const raw = [
+      { title: 'Halflight', artist: 'Coral Hour', status: 'same', prevPos: 1, weeks: 8, seed: 6 },
+      { title: 'Amber Static', artist: 'Coral Hour', status: 'up', delta: 2, prevPos: 4, weeks: 6, seed: 5 },
+      { title: 'Glasswing', artist: 'Nova Vega', status: 'down', delta: 1, prevPos: 2, weeks: 11, seed: 1 },
+      { title: 'Low Tide', artist: 'Coral Hour', status: 'up', delta: 4, prevPos: 8, weeks: 5, seed: 2 },
+      { title: 'Static Bloom', artist: 'Kite Season', status: 'new', prevPos: '—', weeks: 1, seed: 3 },
+      { title: 'Nightlong', artist: 'Coral Hour', status: 'return', prevPos: '—', weeks: 3, seed: 9 },
+      { title: 'Coastal', artist: 'Nova Vega', status: 'new', prevPos: '—', weeks: 1, seed: 0 },
+      { title: 'Bloomtide', artist: 'Kite Season', status: 'up', delta: 1, prevPos: 9, weeks: 4, seed: 8 },
+    ];
+    const chart = raw.map((r, i) => ({ n: i + 1, title: r.title, artist: r.artist, prevPos: r.prevPos, weeks: r.weeks, status: r.status, delta: r.delta, cover: this.cover(r.seed), posFontSize: i < 3 ? 22 : 20 }));
+
+    const mosaic = [6, 5, 1, 2].map(s => this.cover(s));
+
+    const comments = [
+      { author: 'Sofia Reyes', text: 'essa parada tá impecável, Halflight merecia mesmo', time: '2h', likes: 14, seed: 5 },
+      { author: 'Marco Villani', text: 'onde entrou Static Bloom? track incrível', time: '5h', likes: 6, seed: 3 },
+      { author: 'Kenji Osei', text: 'tá bem parecida com a minha essa semana', time: '1d', likes: 3, seed: 8 },
+    ].map(c => ({ ...c, avatar: this.cover(c.seed) }));
+
+    const overlaps = [
+      { name: 'Priya Nandan', common: 18, percent: 60, seed: 7 },
+      { name: 'Théo Lambert', common: 14, percent: 47, seed: 4 },
+      { name: 'Alice Monteiro', common: 11, percent: 37, seed: 0 },
+    ].map(o => ({ ...o, avatar: this.cover(o.seed) }));
+
+    const dropouts = [
+      { title: 'Fade Into You (Cover)', artist: 'Nova Vega', lastPos: 7, tenure: '9 semanas', seed: 7 },
+      { title: 'First Light', artist: 'Marisol Vane', lastPos: 10, tenure: '2 semanas', seed: 8 },
+    ].map(d => ({ ...d, cover: this.cover(d.seed) }));
+
+    const overlapFull = [
+      { name: 'Priya Nandan', common: 18, percent: 60, seed: 7 },
+      { name: 'Théo Lambert', common: 14, percent: 47, seed: 4 },
+      { name: 'Alice Monteiro', common: 11, percent: 37, seed: 0 },
+      { name: 'Kenji Osei', common: 9, percent: 30, seed: 8 },
+    ].map(o => ({ ...o, avatar: this.cover(o.seed) }));
+
+    return {
+      owner: { avatar: this.cover(5) }, tabs, chart, mosaic, comments, overlaps, dropouts, overlapFull,
+      isChart: this.state.tab === 'chart', isSaidas: this.state.tab === 'saidas', isOverlap: this.state.tab === 'overlap',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

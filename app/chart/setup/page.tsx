@@ -65,11 +65,11 @@ export default function ParadaSetupPage() {
   };
 
   return (
-    <div style={{ width: "100%", minHeight: "100svh", background: "#FBFBFD", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
+    <div style={{ width: "100%", minHeight: "100svh", background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column", fontFamily: "inherit" }}>
 
-      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", background: "white" }}>
+      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", borderBottom: "1px solid var(--divider)", background: "var(--surface)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FA243C", display: "grid", placeItems: "center" }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--accent)", display: "grid", placeItems: "center" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" stroke="white" strokeWidth="2.4" fill="none" strokeLinecap="round">
               <line x1="6" y1="20" x2="6" y2="14" />
               <line x1="12" y1="20" x2="12" y2="8" />
@@ -82,7 +82,7 @@ export default function ParadaSetupPage() {
 
       <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 0 32px" }}>
         <div style={{ width: "100%", maxWidth: 480, padding: "0 20px" }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#FA243C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
             {isSecondSlot ? t("chart.setupSecond") : t("chart.setupFirst")}
           </div>
           <h1 style={{ fontSize: "clamp(28px, 8vw, 42px)", fontWeight: 800, letterSpacing: "-0.04em", margin: "0 0 12px 0", lineHeight: 1.05 }}>
@@ -92,7 +92,7 @@ export default function ParadaSetupPage() {
               <>{t("chart.setup.firstHeadingLine1")}<br />{t("chart.setup.firstHeadingLine2")}</>
             )}
           </h1>
-          <p style={{ fontSize: 15, color: "#6B6B70", lineHeight: 1.55, marginBottom: 28, maxWidth: 400 }}>
+          <p style={{ fontSize: 15, color: "var(--text-subtle)", lineHeight: 1.55, marginBottom: 28, maxWidth: 400 }}>
             {isSecondSlot ? t("chart.setup.secondDesc") : t("chart.setup.firstDesc")}
           </p>
 
@@ -106,13 +106,13 @@ export default function ParadaSetupPage() {
               width: "100%",
               padding: "14px 16px",
               borderRadius: 12,
-              border: error ? "1.5px solid #FA243C" : "1.5px solid rgba(0,0,0,0.12)",
+              border: error ? "1.5px solid var(--accent)" : "1.5px solid var(--divider-strong)",
               fontSize: 16,
               fontFamily: "inherit",
               outline: "none",
               marginBottom: 8,
-              background: "white",
-              color: "#1D1D1F",
+              background: "var(--surface)",
+              color: "var(--text)",
               boxSizing: "border-box",
             }}
           />
@@ -125,7 +125,7 @@ export default function ParadaSetupPage() {
           <div style={{ display: "flex", gap: 10 }}>
             <button
               onClick={() => router.back()}
-              style={{ padding: "12px 24px", background: "white", color: "#1D1D1F", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+              style={{ padding: "12px 24px", background: "var(--surface)", color: "var(--text)", border: "1px solid var(--divider-strong)", borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: "pointer" }}
             >
               Voltar
             </button>
@@ -134,8 +134,8 @@ export default function ParadaSetupPage() {
               disabled={nome.trim().length < 2 || saving}
               style={{
                 padding: "12px 28px",
-                background: "#FA243C",
-                color: "white",
+                background: "var(--accent)",
+                color: "#fff",
                 border: "none",
                 borderRadius: 100,
                 fontSize: 14,
@@ -144,7 +144,7 @@ export default function ParadaSetupPage() {
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                boxShadow: "0 2px 12px rgba(250,36,60,0.25)",
+                boxShadow: "var(--shadow-hero)",
                 opacity: nome.trim().length < 2 || saving ? 0.5 : 1,
               }}
             >

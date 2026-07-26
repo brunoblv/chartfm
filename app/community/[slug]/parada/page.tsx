@@ -14,6 +14,7 @@ import {
 import { getCommunityBySlug } from "@/lib/community-auth";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
+import { communityRequiresMusicVideo } from "@/lib/community-song-rules";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 
 async function resolveArtistImages(artists: { name: string; spotifyId: string | null }[]) {
@@ -83,7 +84,9 @@ export default async function CommunityParadaPage({ params, searchParams }: Comm
       : null;
 
   const basePath = `/community/${slug}/parada`;
-  const pointsRule = t("communities.paradaPointsRule");
+  const pointsRule = communityRequiresMusicVideo(row.slug)
+    ? t("communities.paradaPointsRuleMusicVideo")
+    : t("communities.paradaPointsRule");
   const statPrimaryLabel = t("communities.paradaStatWeeksInHistory", { count: chart.overallChartCount });
 
   const imageMap = await resolveArtistImages(

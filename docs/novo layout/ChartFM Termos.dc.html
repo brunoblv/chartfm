@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1080px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Início</a>
+    </div>
+  </div>
+
+  <div style="max-width:1080px;margin:0 auto;padding:56px 40px 96px;display:grid;grid-template-columns:220px 1fr;gap:48px">
+    <nav style="position:sticky;top:70px;align-self:start;display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin-bottom:14px">Termos de Uso</div>
+      <sc-for list="{{ sections }}" as="s" hint-placeholder-count="7">
+        <a href="{{ s.href }}" style="font-size:13.5px;font-weight:600;color:var(--text-muted);padding:7px 10px;border-radius:8px">{{ s.label }}</a>
+      </sc-for>
+    </nav>
+
+    <div style="display:flex;flex-direction:column;gap:36px">
+      <div style="font-size:13px;color:var(--text-muted)">Última atualização: 12 de julho de 2026</div>
+      <sc-for list="{{ sections }}" as="s" hint-placeholder-count="7">
+        <section id="{{ s.id }}">
+          <div style="font-size:19px;font-weight:700;margin-bottom:10px">{{ s.label }}</div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.75">{{ s.body }}</div>
+        </section>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const raw = [
+      { label: 'Direitos e deveres', body: 'Ao usar o ChartFM, você concorda em respeitar outros usuários e manter suas informações de conta atualizadas e verdadeiras.' },
+      { label: 'Conteúdo permitido', body: 'Reviews, comentários e paradas devem ser de sua autoria ou devidamente atribuídos. Conteúdo ofensivo, discurso de ódio ou spam não são permitidos.' },
+      { label: 'Direitos autorais', body: 'Capas, letras e trechos de áudio pertencem a seus respectivos detentores. O ChartFM não hospeda arquivos de música.' },
+      { label: 'Moderação', body: 'Conteúdo denunciado é revisado pela equipe. Reincidências podem levar à remoção de conteúdo ou suspensão de conta.' },
+      { label: 'Sanções', body: 'Violações destes termos podem resultar em advertência, suspensão temporária ou banimento permanente, dependendo da gravidade.' },
+      { label: 'APIs', body: 'O uso da API pública do ChartFM está sujeito a limites de requisição e a uma licença de uso não comercial, salvo acordo em contrário.' },
+      { label: 'Atualizações', body: 'Podemos atualizar estes termos periodicamente. Mudanças relevantes serão comunicadas por e-mail e na página O que há de novo.' },
+    ];
+    const sections = raw.map(s => ({ ...s, id: s.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-'), href: '#' }));
+    return { sections };
+  }
+}
+
+</script>
+</body>
+</html>

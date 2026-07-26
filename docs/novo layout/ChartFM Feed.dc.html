@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1160px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:700;color:var(--text)">Feed</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:0 40px">
+    <div style="padding:36px 0 20px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Feed</div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Tudo que sua rede está ouvindo</div>
+    </div>
+  </div>
+
+  <div style="max-width:1160px;margin:0 auto;padding:0 40px 96px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:40px;align-items:flex-start">
+    <main style="display:flex;flex-direction:column;gap:20px;min-width:0">
+
+      <div style="display:flex;gap:8px;overflow-x:auto">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="6">
+          <button onclick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <sc-for list="{{ items }}" as="it" hint-placeholder-count="6">
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="{{ it.avatarStyle }}"></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13.5px"><span style="font-weight:700">{{ it.author }}</span> <span style="color:var(--text-muted);font-weight:500">{{ it.verb }}</span></div>
+                <div style="font-size:11.5px;color:var(--text-muted)">{{ it.time }}</div>
+              </div>
+              <div style="{{ it.typeBadgeStyle }}">{{ it.typeLabel }}</div>
+            </div>
+
+            <sc-if value="{{ it.hasText }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:14.5px;color:var(--text-subtle);line-height:1.55;margin-top:12px">{{ it.text }}</div>
+            </sc-if>
+
+            <sc-if value="{{ it.hasAttachment }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;background:var(--fill-subtle);border-radius:12px">
+                <div style="{{ it.attachmentStyle }}"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700">{{ it.attachmentTitle }}</div>
+                  <div style="font-size:11.5px;color:var(--text-muted)">{{ it.attachmentSubtitle }}</div>
+                </div>
+                <sc-if value="{{ it.hasRating }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:16px;font-weight:800;color:var(--accent)">{{ it.rating }}</div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <div style="display:flex;align-items:center;gap:20px;margin-top:14px;padding-top:14px;border-top:1px solid var(--divider);font-size:12.5px;color:var(--text-muted)">
+              <div>♥ {{ it.likes }}</div>
+              <div>💬 {{ it.comments }}</div>
+              <div>↗ Compartilhar</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </main>
+
+    <aside style="display:flex;flex-direction:column;gap:16px">
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Sugestões para seguir</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="{{ s.avatarStyle }}"></div>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.name }}</div>
+                <div style="font-size:11px;color:var(--text-muted)">{{ s.subtitle }}</div>
+              </div>
+              <button style="background:var(--fill-subtle);color:var(--text);border:none;padding:6px 12px;border-radius:100px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap">Seguir</button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Em alta agora</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ trending }}" as="t" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="{{ t.coverStyle }}"></div>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.title }}</div>
+                <div style="font-size:11px;color:var(--text-muted)">{{ t.stat }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { filter: 'todos' };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+  cover(seed, size, radius) { return { width: size, height: size, borderRadius: radius ?? 10, background: this.grad(seed), flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,.3)' }; }
+  circle(seed, size) { return { width: size, height: size, borderRadius: '50%', background: this.grad(seed), flexShrink: 0 }; }
+  filterStyle(active) {
+    return { border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', padding: '8px 16px', borderRadius: 100, fontSize: 13, fontWeight: 700,
+      background: active ? 'var(--accent)' : 'var(--fill-subtle)', color: active ? '#fff' : 'var(--text-muted)' };
+  }
+  typeBadge(color) { return { fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 100, background: color + '22', color, whiteSpace: 'nowrap', flexShrink: 0 }; }
+
+  renderVals() {
+    const typeColors = { review: '#FFB020', chart: '#3E8BFF', like: '#FA243C', community: '#20C4B0', push: '#7C5CFF' };
+    const typeLabels = { review: 'Review', chart: 'Chart', like: 'Curtida', community: 'Community', push: 'Push' };
+
+    const allItems = [
+      { type: 'review', author: 'Marco Villani', verb: 'avaliou Halflight', time: 'há 12min', seed: 3, text: 'Coral Hour prova mais uma vez porque é a melhor banda de dream pop em atividade.', hasAttachment: true, attachmentTitle: 'Halflight', attachmentSubtitle: 'Coral Hour · 2026', hasRating: true, rating: '4.8', likes: 24, comments: 6 },
+      { type: 'chart', author: 'Théo Lambert', verb: 'atualizou a Chart', time: 'há 40min', seed: 4, text: null, hasAttachment: true, attachmentTitle: 'Indie que ninguém te contou', attachmentSubtitle: '128 votos · atualizada agora', hasRating: false, likes: 18, comments: 3 },
+      { type: 'push', author: 'Sofia Reyes', verb: 'venceu a Rodada 47 do Push', time: 'há 1h', seed: 5, text: 'Amber Static, de Coral Hour, foi a descoberta mais votada da semana!', hasAttachment: false, likes: 56, comments: 11 },
+      { type: 'community', author: 'Kenji Osei', verb: 'entrou na community Vinyl Collectors', time: 'há 2h', seed: 8, text: null, hasAttachment: false, likes: 9, comments: 1 },
+      { type: 'like', author: 'Priya Nandan', verb: 'curtiu o álbum', time: 'há 3h', seed: 7, text: null, hasAttachment: true, attachmentTitle: 'Glasswing', attachmentSubtitle: 'Nova Vega · 2026', hasRating: false, likes: 4, comments: 0 },
+      { type: 'review', author: 'Alice Monteiro', verb: 'avaliou Nightlong', time: 'há 5h', seed: 0, text: 'Álbum subestimado, merece muito mais atenção da crítica.', hasAttachment: true, attachmentTitle: 'Nightlong', attachmentSubtitle: 'Coral Hour · 2018', hasRating: true, rating: '4.2', likes: 31, comments: 8 },
+    ];
+
+    const filtered = this.state.filter === 'todos' ? allItems : allItems.filter(i => i.type === this.state.filter);
+    const items = filtered.map(it => ({
+      ...it, avatarStyle: this.circle(it.seed, 36), typeBadgeStyle: this.typeBadge(typeColors[it.type]), typeLabel: typeLabels[it.type],
+      hasText: !!it.text, attachmentStyle: it.hasAttachment ? this.cover(it.seed, 44, 10) : {},
+    }));
+
+    const filterDefs = [
+      { key: 'todos', label: 'Todos' }, { key: 'review', label: 'Reviews' }, { key: 'chart', label: 'Charts' },
+      { key: 'push', label: 'Push' }, { key: 'community', label: 'Communities' }, { key: 'like', label: 'Curtidas' },
+    ];
+    const filters = filterDefs.map(f => ({ label: f.label, style: this.filterStyle(this.state.filter === f.key), onClick: () => this.setState({ filter: f.key }) }));
+
+    const suggestions = [
+      { name: 'Wren Autumn', subtitle: 'Artista · Dream Pop', seed: 1 }, { name: 'Rafa Prado', subtitle: '3 amigos em comum', seed: 2 },
+      { name: 'Salt Lung', subtitle: 'Artista · Indie Rock', seed: 6 }, { name: 'Ana Ferraz', subtitle: '5 amigos em comum', seed: 9 },
+    ].map(s => ({ ...s, avatarStyle: this.circle(s.seed, 34) }));
+
+    const trending = [
+      { title: 'Halflight', stat: 'Coral Hour · 842 reviews', seed: 6 }, { title: 'Amber Static', stat: 'venceu o Push', seed: 5 },
+      { title: 'Dream Pop Diaries', stat: '12.4k membros', seed: 2 }, { title: 'Indie que ninguém te contou', stat: '128 votos', seed: 4 },
+    ].map(t => ({ ...t, coverStyle: this.cover(t.seed, 40, 10) }));
+
+    return { filters, items, suggestions, trending };
+  }
+}
+
+</script>
+</body>
+</html>

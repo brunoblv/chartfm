@@ -4,6 +4,12 @@ import { loadGlobalGenreSnapshot } from "@/lib/global-genre-snapshot";
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import { getRankingWeekReference } from "@/lib/chart-week";
 import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
+import { getCommunityBySlug } from "@/lib/community-auth";
+import {
+  computeCommunityChartData,
+  getCommunityAvailableWeeks,
+  parseCommunityPointsConfig,
+} from "@/lib/community-chart";
 import {
   VIDEOPARADA_PLATFORMS,
   VIDEOPARADA_SHORTS_SECONDS,
@@ -26,6 +32,15 @@ export {
   type VideoparadaWeekOption,
 } from "@/lib/videoparada-shared";
 
+/** Comunidades com videoparada automática (admin + cron). */
+export const VIDEOPARADA_COMMUNITY_CHARTS: VideoparadaChartOption[] = [
+  {
+    kind: "community:disk-mtv",
+    label: "Disk MTV",
+    shortLabel: "Disk MTV",
+  },
+];
+
 export function listVideoparadaCharts(): VideoparadaChartOption[] {
   return [
     { kind: "global", label: "Top 100 Global", shortLabel: "Global" },
@@ -35,6 +50,7 @@ export function listVideoparadaCharts(): VideoparadaChartOption[] {
       label: c.name,
       shortLabel: c.shortName,
     })),
+    ...VIDEOPARADA_COMMUNITY_CHARTS,
   ];
 }
 
@@ -43,10 +59,20 @@ export function parseGenreSlug(chartKind: string): string | null {
   return chartKind.slice("genre:".length) || null;
 }
 
+export function parseCommunitySlug(chartKind: string): string | null {
+  if (!chartKind.startsWith("community:")) return null;
+  return chartKind.slice("community:".length) || null;
+}
+
 export function isValidVideoparadaChartKind(chartKind: string): boolean {
   if (chartKind === "global" || chartKind === "airplay") return true;
-  const slug = parseGenreSlug(chartKind);
-  return Boolean(slug && GLOBAL_GENRE_CHARTS.some((c) => c.slug === slug));
+  const genreSlug = parseGenreSlug(chartKind);
+  if (genreSlug && GLOBAL_GENRE_CHARTS.some((c) => c.slug === genreSlug)) return true;
+  const communitySlug = parseCommunitySlug(chartKind);
+  if (communitySlug && VIDEOPARADA_COMMUNITY_CHARTS.some((c) => c.kind === chartKind)) {
+    return true;
+  }
+  return false;
 }
 
 export function normalizePlatform(value: unknown): VideoparadaPlatform | null {
@@ -128,6 +154,17 @@ export async function listVideoparadaWeeks(chartKind: string): Promise<Videopara
     });
     return rows;
   }
+  const communitySlug = parseCommunitySlug(chartKind);
+  if (communitySlug) {
+    const community = await getCommunityBySlug(communitySlug);
+    if (!community) return [];
+    const weeks = await getCommunityAvailableWeeks(community.id);
+    return weeks.map((w) => ({
+      weekIndex: w.weekIndex,
+      weekLabel: w.weekLabel,
+      dateRange: w.dateRange,
+    }));
+  }
   const slug = parseGenreSlug(chartKind);
   if (!slug) return [];
   const rows = await prisma.globalGenreSnapshot.findMany({
@@ -152,6 +189,7 @@ async function loadChartEntries(
 ): Promise<{
   weekLabel: string;
   dateRange: string;
+  chartLabel?: string;
   entries: ReturnType<typeof asSongEntries>;
 } | null> {
   if (chartKind === "global") {
@@ -170,6 +208,19 @@ async function loadChartEntries(
       weekLabel: row.weekLabel,
       dateRange: row.dateRange,
       entries: asSongEntries(row.entries as unknown as GlobalSnapshotPayload["weeklySongs"]),
+    };
+  }
+  const communitySlug = parseCommunitySlug(chartKind);
+  if (communitySlug) {
+    const community = await getCommunityBySlug(communitySlug);
+    if (!community) return null;
+    const config = parseCommunityPointsConfig(community);
+    const chart = await computeCommunityChartData(community.id, config, { weekIndex });
+    return {
+      weekLabel: chart.weekLabel,
+      dateRange: chart.dateRange,
+      chartLabel: community.paradaName?.trim() || community.name,
+      entries: asSongEntries(chart.weeklySongs),
     };
   }
   const slug = parseGenreSlug(chartKind);
@@ -194,16 +245,22 @@ export async function getVideoparadaAdminPayload(chartKind: string, weekIndex: n
   }
 
   const songIds = chart.entries.map((e) => e.songId);
-  const [configs, clips] = await Promise.all([
-    prisma.paradeVideoClipConfig.findMany({
+  const clipsPromise = prisma.songVideoClip.findMany({
+    where: { songId: { in: songIds }, clipType: "OFFICIAL", youtubeId: { not: null } },
+    select: { songId: true, youtubeId: true, votes: true },
+    orderBy: { votes: "desc" },
+  });
+  // Tabela pode ainda não existir em alguns ambientes (migration pendente).
+  const configsPromise = prisma.paradeVideoClipConfig
+    .findMany({
       where: { chartKind, weekIndex, songId: { in: songIds } },
-    }),
-    prisma.songVideoClip.findMany({
-      where: { songId: { in: songIds }, clipType: "OFFICIAL", youtubeId: { not: null } },
-      select: { songId: true, youtubeId: true, votes: true },
-      orderBy: { votes: "desc" },
-    }),
-  ]);
+    })
+    .catch((err: { code?: string }) => {
+      if (err?.code === "P2021") return [];
+      throw err;
+    });
+
+  const [configs, clips] = await Promise.all([configsPromise, clipsPromise]);
 
   const configBySong = new Map(configs.map((c) => [c.songId, c]));
   const youtubeBySong = new Map<string, string>();
@@ -235,7 +292,7 @@ export async function getVideoparadaAdminPayload(chartKind: string, weekIndex: n
 
   return {
     chartKind,
-    chartLabel: chartMeta?.label ?? chartKind,
+    chartLabel: chart.chartLabel ?? chartMeta?.label ?? chartKind,
     weekIndex,
     weekLabel: chart.weekLabel,
     dateRange: chart.dateRange,

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:700;color:var(--text)">Editorial</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Push</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Critics FM</a>
+      </nav>
+      <div style="position:relative;width:220px">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-muted)">⌕</span>
+        <input placeholder="Buscar no Editorial" style="width:100%;box-sizing:border-box;background:var(--fill-subtle);border:none;border-radius:100px;padding:8px 12px 8px 30px;font-size:12.5px;color:var(--text);outline:none" />
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px">
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;padding:32px 0;align-items:stretch">
+      <a href="#" style="position:relative;border-radius:24px;overflow:hidden;min-height:420px;display:flex;align-items:flex-end;background:linear-gradient(180deg, rgba(10,10,14,0) 30%, rgba(10,10,14,0.9)), linear-gradient(135deg,#3B2B8C,#12102A)">
+        <div style="padding:32px;color:#fff">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#FFD166">Matéria da semana</div>
+          <div style="font-size:34px;font-weight:800;letter-spacing:-0.02em;margin-top:10px;line-height:1.15;max-width:520px">Como "Halflight" redefiniu o dream pop em 2026</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.75);margin-top:10px;max-width:480px;line-height:1.5">O terceiro álbum do Coral Hour já é tratado pela crítica como o disco que vai definir o gênero pelos próximos anos.</div>
+          <div style="font-size:12.5px;color:rgba(255,255,255,0.6);margin-top:16px">Por Equipe ChartFM · 8 min de leitura</div>
+        </div>
+      </a>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Em alta no Editorial</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ trending }}" as="t" hint-placeholder-count="4">
+              <a href="#" style="display:flex;gap:10px;color:var(--text)">
+                <div style="font-size:18px;font-weight:800;color:var(--text-muted);width:20px;flex-shrink:0">{{ t.n }}</div>
+                <div style="font-size:13px;font-weight:600;line-height:1.35">{{ t.title }}</div>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px">Newsletter</div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">Receba o melhor do Editorial toda sexta-feira.</div>
+          <div style="display:flex;gap:8px">
+            <input placeholder="seu@email.com" style="flex:1;min-width:0;background:var(--fill-subtle);border:none;border-radius:100px;padding:9px 14px;font-size:12.5px;color:var(--text);outline:none" />
+            <button style="background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:100px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0">Assinar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;padding-bottom:24px">
+      <sc-for list="{{ categories }}" as="c" hint-placeholder-count="7">
+        <div style="{{ c.style }}">{{ c.label }}</div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding-bottom:44px">
+      <sc-for list="{{ articles }}" as="a" hint-placeholder-count="6">
+        <a href="#" style="color:var(--text)">
+          <div style="border-radius:16px;aspect-ratio:16/10;background:{{ a.gradient }};margin-bottom:12px"></div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:6px">{{ a.category }}</div>
+          <div style="font-size:16px;font-weight:700;line-height:1.3;margin-bottom:6px">{{ a.title }}</div>
+          <div style="font-size:12px;color:var(--text-muted)">{{ a.meta }}</div>
+        </a>
+      </sc-for>
+    </div>
+
+    <div style="padding-bottom:60px">
+      <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Retrospectivas</div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+        <sc-for list="{{ retro }}" as="r" hint-placeholder-count="4">
+          <a href="#" style="color:var(--text)">
+            <div style="border-radius:14px;aspect-ratio:1;background:{{ r.gradient }};margin-bottom:10px;display:flex;align-items:flex-end;padding:14px;box-sizing:border-box">
+              <div style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-0.02em">{{ r.title }}</div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99']
+  ];
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+
+  renderVals() {
+    const categories = [
+      { label: 'Tudo', active: true }, { label: 'Notícias' }, { label: 'Reviews' }, { label: 'Entrevistas' },
+      { label: 'Especiais' }, { label: 'Guias' }, { label: 'Opinião' },
+    ].map(c => ({ label: c.label, style: {
+      padding: '9px 16px', borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+      background: c.active ? 'var(--accent)' : 'var(--fill-subtle)', color: c.active ? '#fff' : 'var(--text)'
+    }}));
+
+    const trending = [
+      { n: 1, title: 'Por que a Copa ChartFM virou o maior evento social do app' },
+      { n: 2, title: 'Entrevista: Coral Hour fala sobre o processo de Halflight' },
+      { n: 3, title: '10 álbuns essenciais do shoegaze que você precisa ouvir' },
+      { n: 4, title: 'Guia: como montar sua primeira Chart sem medo' },
+    ];
+
+    const articles = [
+      { category: 'Review', title: 'Halflight, de Coral Hour: a obra-prima do dream pop em 2026', meta: 'Sofia Reyes · 6 min', seed: 6 },
+      { category: 'Entrevista', title: 'Nova Vega: "Glasswing nasceu de um luto coletivo"', meta: 'Equipe ChartFM · 9 min', seed: 1 },
+      { category: 'Especial', title: 'A ascensão da cena indie brasileira em 2026', meta: 'Marco Villani · 7 min', seed: 3 },
+      { category: 'Guia', title: 'Por onde começar a ouvir Kite Season', meta: 'Equipe ChartFM · 4 min', seed: 2 },
+      { category: 'Notícia', title: 'Copa ChartFM anuncia edição especial de verão', meta: 'Equipe ChartFM · 3 min', seed: 5 },
+      { category: 'Opinião', title: 'As Charts pessoais são o novo diário musical', meta: 'Kenji Osei · 5 min', seed: 8 },
+    ].map(a => ({ ...a, gradient: this.grad(a.seed) }));
+
+    const retro = [
+      { title: 'O melhor de 2025', seed: 4 }, { title: 'Década de 2010 revisitada', seed: 7 },
+      { title: 'Discos que definiram o verão', seed: 0 }, { title: '5 anos de ChartFM', seed: 6 },
+    ].map(r => ({ ...r, gradient: this.grad(r.seed) }));
+
+    return { categories, trending, articles, retro };
+  }
+}
+
+</script>
+</body>
+</html>

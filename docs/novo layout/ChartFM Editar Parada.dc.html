@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:900px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:14px">
+        <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Cancelar</a>
+        <div style="font-size:15px;font-weight:700">Editando: Minha Parada · Semana 28</div>
+      </div>
+      <button style="background:var(--accent);color:#fff;border:none;padding:10px 20px;border-radius:100px;font-size:13.5px;font-weight:700;cursor:pointer">Salvar alterações</button>
+    </div>
+  </div>
+
+  <div style="max-width:900px;margin:0 auto;padding:28px 40px 96px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-size:13.5px;color:var(--text-muted)">Arraste ⠿ para reordenar, ou use as posições numéricas.</div>
+      <div style="display:flex;background:var(--fill-subtle);borderRadius:8px;padding:3px;gap:2px;border-radius:8px">
+        <div style="padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:700;background:var(--surface);color:var(--text)">Reordenar</div>
+        <div style="padding:7px 14px;border-radius:6px;font-size:12.5px;font-weight:600;color:var(--text-muted)">Trocar posições</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ entries }}" as="e" hint-placeholder-count="10">
+        <div style="{{ e.rowStyle }}">
+          <div style="width:32px;text-align:center;font-size:16px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ e.n }}</div>
+          <div style="color:var(--text-muted);cursor:grab;font-size:16px;width:20px;text-align:center">⠿</div>
+          <x-import component-from-global-scope="ChartFM.Cover" cover="{{ e.cover }}" size="{{ 56 }}" hint-size="56px,56px"></x-import>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</div>
+            <div style="font-size:12.5px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.artist }}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button style="width:30px;height:30px;border-radius:8px;border:1px solid var(--divider-strong);background:transparent;color:var(--text);cursor:pointer;font-size:13px">▲</button>
+            <button style="width:30px;height:30px;border-radius:8px;border:1px solid var(--divider-strong);background:transparent;color:var(--text);cursor:pointer;font-size:13px">▼</button>
+          </div>
+          <button style="width:30px;height:30px;border-radius:8px;border:none;background:rgba(250,36,60,0.1);color:var(--accent);cursor:pointer;font-size:14px;flex-shrink:0">✕</button>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:20px">
+      <div style="position:relative">
+        <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text-muted)">⌕</span>
+        <input placeholder="Adicionar música à parada" style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--divider);border-radius:100px;padding:13px 16px 13px 42px;font-size:14px;color:var(--text);outline:none" />
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const raw = [
+      { title: 'Halflight', artist: 'Coral Hour', seed: 6 },
+      { title: 'Amber Static', artist: 'Coral Hour', seed: 5 },
+      { title: 'Glasswing', artist: 'Nova Vega', seed: 1 },
+      { title: 'Low Tide', artist: 'Coral Hour', seed: 2 },
+      { title: 'Static Bloom', artist: 'Kite Season', seed: 3 },
+      { title: 'Nightlong', artist: 'Coral Hour', seed: 9 },
+      { title: 'Coastal', artist: 'Nova Vega', seed: 0 },
+      { title: 'Bloomtide', artist: 'Kite Season', seed: 8 },
+      { title: 'Static & Salt', artist: 'Halflight Parade', seed: 4 },
+      { title: 'First Light', artist: 'Marisol Vane', seed: 7 },
+    ];
+    const entries = raw.map((e, i) => ({
+      n: i + 1, title: e.title, artist: e.artist, cover: this.cover(e.seed),
+      rowStyle: { display: 'flex', alignItems: 'center', gap: 14, padding: '10px 8px', borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--divider)', marginBottom: 6 }
+    }));
+    return { entries };
+  }
+}
+
+</script>
+</body>
+</html>

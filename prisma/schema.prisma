@@ -1572,8 +1572,8 @@ model SupportTicketMessage {
   @@map("support_ticket_messages")
 }
 
-/// Enquete semanal (Melhor da Semana + Flashback da Semana). Abre domingo 23:59 BRT
-/// com as indicações das paradas da semana; fecha na terça junto com o snapshot global.
+/// Enquete semanal (Melhor da Semana + Flashback da Semana). Abertura/fechamento
+/// configuráveis em /admin/parada-global (padrão: segunda 0h → quarta 7h BRT).
 /// `communityId` null = Parada Global; preenchido = enquete só dos membros daquela comunidade.
 model WeeklySpotlightPoll {
   id          String                  @id @default(cuid())
@@ -1694,6 +1694,7 @@ enum SocialEventType {
   COPA_ROUND_RESULT
   COPA_FINAL_RESULT
   WEEKLY_POLL_OPEN
+  WEEKLY_POLL_CLOSE
 }
 
 enum SocialPostPriority {

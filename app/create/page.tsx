@@ -941,7 +941,7 @@ export default function CreatePage() {
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t("create.rulesTitle")}</div>
-        <ul style={{ fontSize: 13, color: "#6B6B70", lineHeight: 1.7, paddingLeft: 16 }}>
+        <ul style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.7, paddingLeft: 16 }}>
           <li>{t("create.rule1")}</li>
           <li>{t("create.rule2")}</li>
           <li>{t("create.rule3")}</li>
@@ -1394,7 +1394,7 @@ export default function CreatePage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "white",
+              background: "var(--surface)",
               borderRadius: isMobile ? "20px 20px 0 0" : 20,
               padding: isMobile ? "28px 20px 32px" : "32px 28px",
               width: "100%",
@@ -1434,7 +1434,7 @@ export default function CreatePage() {
             </div>
 
             {/* Conta Last.fm */}
-            <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ background: "var(--fill-inset)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
               {userLastfmUser ? (
                 <>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: "#FA243C", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1466,7 +1466,7 @@ export default function CreatePage() {
 
             {/* Quantidade de músicas */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
                 {t("create.howManySongs")}
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1505,8 +1505,8 @@ export default function CreatePage() {
 
             {/* Info sobre tamanho da parada */}
             <div style={{
-              background: userChartSize ? "rgba(250,36,60,0.04)" : "rgba(0,0,0,0.03)",
-              border: userChartSize ? "1px solid rgba(250,36,60,0.15)" : "1px solid rgba(0,0,0,0.06)",
+              background: userChartSize ? "rgba(250,36,60,0.04)" : "var(--fill-inset)",
+              border: userChartSize ? "1px solid rgba(250,36,60,0.15)" : "1px solid var(--divider)",
               borderRadius: 12,
               padding: "12px 14px",
               display: "flex",
@@ -1517,7 +1517,7 @@ export default function CreatePage() {
               <div>
                 {userChartSize ? (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
                       {t("create.chartHasPositions", { count: userChartSize })}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
@@ -1526,7 +1526,7 @@ export default function CreatePage() {
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
                       {t("create.chartSizeNotDefined")}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
@@ -1546,12 +1546,12 @@ export default function CreatePage() {
                 style={{
                   padding: "10px 18px",
                   borderRadius: 100,
-                  border: "1px solid rgba(0,0,0,0.12)",
-                  background: "white",
+                  border: "1px solid var(--divider-strong)",
+                  background: "var(--surface)",
                   fontSize: 14,
                   fontWeight: 600,
                   cursor: "pointer",
-                  color: "#1D1D1F",
+                  color: "var(--text)",
                 }}
               >
                 {t("create.cancel")}
@@ -1600,7 +1600,7 @@ export default function CreatePage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "white",
+              background: "var(--surface)",
               borderRadius: isMobile ? "20px 20px 0 0" : 20,
               padding: isMobile ? "28px 20px 32px" : "32px 28px",
               width: "100%",
@@ -1629,7 +1629,7 @@ export default function CreatePage() {
               </p>
             </div>
 
-            <div style={{ background: "rgba(0,0,0,0.03)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ background: "var(--fill-inset)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
               {spotifyUserConnected ? (
                 <>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1DB954", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1676,7 +1676,7 @@ export default function CreatePage() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
                 {t("create.howManySongs")}
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1722,7 +1722,7 @@ export default function CreatePage() {
               }}>
                 <span style={{ fontSize: 16, flexShrink: 0 }}>✂️</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1D1D1F" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
                     {t("create.chartHasPositions", { count: userChartSize })}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>
@@ -1738,12 +1738,12 @@ export default function CreatePage() {
                 style={{
                   padding: "10px 18px",
                   borderRadius: 100,
-                  border: "1px solid rgba(0,0,0,0.12)",
-                  background: "white",
+                  border: "1px solid var(--divider-strong)",
+                  background: "var(--surface)",
                   fontSize: 14,
                   fontWeight: 600,
                   cursor: "pointer",
-                  color: "#1D1D1F",
+                  color: "var(--text)",
                 }}
               >
                 {t("create.cancel")}

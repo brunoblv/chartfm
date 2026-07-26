@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:700;color:var(--text)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Editorial</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px">
+    <div style="padding:44px 0 24px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Explorar</div>
+      <div style="font-size:38px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Milhares de paradas para descobrir</div>
+      <div style="font-size:15px;color:var(--text-muted);margin-top:8px;max-width:560px;line-height:1.5">Encontre paradas públicas por gênero, humor, época ou popularidade.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;padding-bottom:24px;flex-wrap:wrap">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="6">
+        <div style="{{ f.style }}">{{ f.label }}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px 96px;display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start">
+
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+      <sc-for list="{{ charts }}" as="c" hint-placeholder-count="8">
+        <a href="#" style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;color:var(--text)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:100%;aspect-ratio:2/1;border-radius:10px;overflow:hidden">
+            <sc-for list="{{ c.mosaic }}" as="m" hint-placeholder-count="4">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ m }}" rounded="{{ 0 }}" hint-size="100%,100%" style="width:100%;height:100%"></x-import>
+            </sc-for>
+          </div>
+          <div>
+            <div style="font-size:14.5px;font-weight:700">{{ c.title }}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ c.owner }} · {{ c.tag }}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:var(--text-muted)">
+            <div>♥ {{ c.likes }}</div>
+            <div>↻ {{ c.reposts }}</div>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+
+    <aside style="display:flex;flex-direction:column;gap:16px;position:sticky;top:100px">
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Humor</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ moods }}" as="m" hint-placeholder-count="6">
+            <div style="background:var(--fill-subtle);font-size:12px;font-weight:600;padding:7px 14px;border-radius:100px">{{ m }}</div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Mais populares esta semana</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ popular }}" as="p" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ p.cover }}" size="{{ 36 }}" rounded="{{ 10 }}" hint-size="36px,36px"></x-import>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.title }}</div>
+                <div style="font-size:11px;color:var(--text-muted)">{{ p.owner }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'], ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const filters = [
+      { label: 'Todas', active: true }, { label: 'Dream Pop' }, { label: 'Indie Rock' }, { label: 'MPB' },
+      { label: 'Mais curtidas' }, { label: 'Recentes' },
+    ].map(f => ({ label: f.label, style: {
+      padding: '9px 16px', borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+      background: f.active ? 'var(--accent)' : 'var(--fill-subtle)', color: f.active ? '#fff' : 'var(--text)'
+    }}));
+
+    const chartsRaw = [
+      { title: 'Melhores de Julho', owner: '@brunov', tag: 'Mensal', likes: '2.1k', reposts: 84, seeds: [6,1,3,2] },
+      { title: 'Dream Pop Essentials', owner: '@sofiareyes', tag: 'Gênero', likes: '1.8k', reposts: 62, seeds: [6,9,4,5] },
+      { title: 'Trilha de verão 2026', owner: '@marcov', tag: 'Humor', likes: '1.4k', reposts: 41, seeds: [0,7,8,2] },
+      { title: 'Indie BR — o essencial', owner: '@kenjiosei', tag: 'Regional', likes: '3.4k', reposts: 120, seeds: [3,4,8,5] },
+      { title: 'Para estudar focado', owner: '@priyan', tag: 'Humor', likes: '980', reposts: 30, seeds: [1,9,2,7] },
+      { title: 'Vinis raros dos anos 90', owner: '@aliceM', tag: 'Época', likes: '760', reposts: 22, seeds: [8,0,6,3] },
+      { title: 'Novidades da semana', owner: '@theolambert', tag: 'Recente', likes: '540', reposts: 18, seeds: [2,5,9,1] },
+      { title: 'Shoegaze Revival', owner: '@nightfall', tag: 'Gênero', likes: '1.1k', reposts: 47, seeds: [4,6,7,0] },
+    ];
+    const charts = chartsRaw.map(c => ({ ...c, mosaic: c.seeds.map(s => this.cover(s)) }));
+
+    const moods = ['Energético', 'Melancólico', 'Foco', 'Festa', 'Relax', 'Nostálgico'];
+
+    const popular = [
+      { title: 'Melhores de Julho', owner: '@brunov', seed: 6 },
+      { title: 'Indie BR — o essencial', owner: '@kenjiosei', seed: 3 },
+      { title: 'Dream Pop Essentials', owner: '@sofiareyes', seed: 9 },
+      { title: 'Trilha de verão 2026', owner: '@marcov', seed: 0 },
+    ].map(p => ({ ...p, cover: this.cover(p.seed) }));
+
+    return { filters, charts, moods, popular };
+  }
+}
+
+</script>
+</body>
+</html>

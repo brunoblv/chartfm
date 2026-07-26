@@ -1,5 +1,8 @@
 /**
  * Data de publicação do videoclipe oficial no YouTube (YOUTUBE_API_KEY).
+ * Busca candidatos via search.list; a data de postagem vem de videos.list
+ * (snippet.publishedAt), que é a fonte confiável — search.list não garante
+ * a data real de upload.
  * Ignora lyric videos e preferências não-clipe; entre candidatos válidos, a mais antiga.
  */
 
@@ -21,13 +24,23 @@ type SearchItem = {
   };
 };
 
+type VideoListItem = {
+  id?: string;
+  snippet?: {
+    title?: string;
+    description?: string;
+    channelTitle?: string;
+    publishedAt?: string;
+  };
+};
+
 export type YouTubeMusicVideoDate = {
   date: Date | null;
   videoId: string | null;
   title: string | null;
 };
 
-function parseYoutubePublishedAt(raw: string | undefined): Date | null {
+export function parseYoutubePublishedAt(raw: string | undefined): Date | null {
   if (!raw?.trim()) return null;
   const d = new Date(raw);
   return Number.isNaN(d.getTime()) ? null : d;
@@ -127,6 +140,56 @@ async function searchCandidates(
   return json.items ?? [];
 }
 
+/** Data de postagem oficial via videos.list (até 50 ids por chamada). */
+async function fetchVideosPublishedAt(
+  apiKey: string,
+  videoIds: string[],
+): Promise<Map<string, { publishedAt: Date; title: string; channelTitle: string; description: string }>> {
+  const out = new Map<
+    string,
+    { publishedAt: Date; title: string; channelTitle: string; description: string }
+  >();
+  const unique = [...new Set(videoIds.filter(Boolean))];
+  for (let i = 0; i < unique.length; i += 50) {
+    const chunk = unique.slice(i, i + 50);
+    const url = new URL(`${API_BASE}/videos`);
+    url.searchParams.set("part", "snippet");
+    url.searchParams.set("id", chunk.join(","));
+    url.searchParams.set("key", apiKey);
+
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) continue;
+    const json = (await res.json()) as { items?: VideoListItem[] };
+    for (const item of json.items ?? []) {
+      const id = item.id?.trim();
+      const publishedAt = parseYoutubePublishedAt(item.snippet?.publishedAt);
+      if (!id || !publishedAt) continue;
+      out.set(id, {
+        publishedAt,
+        title: item.snippet?.title?.trim() ?? "",
+        channelTitle: item.snippet?.channelTitle?.trim() ?? "",
+        description: item.snippet?.description ?? "",
+      });
+    }
+  }
+  return out;
+}
+
+/** Data de postagem de um vídeo conhecido (videos.list). */
+export async function getYouTubeVideoPublishedAt(
+  videoId: string,
+): Promise<{ date: Date | null; title: string | null }> {
+  const empty = { date: null, title: null };
+  const apiKey = process.env.YOUTUBE_API_KEY?.trim();
+  const id = videoId.trim();
+  if (!apiKey || !id) return empty;
+
+  const map = await fetchVideosPublishedAt(apiKey, [id]);
+  const hit = map.get(id);
+  if (!hit) return empty;
+  return { date: hit.publishedAt, title: hit.title || null };
+}
+
 /** Videoclipe oficial mais antigo no YouTube (exclui lyric video e reuploads posteriores). */
 export async function getYouTubeMusicVideoReleaseDate(
   title: string,
@@ -145,6 +208,55 @@ export async function getYouTubeMusicVideoReleaseDate(
     `${artistName} ${songTitle} video`,
   ];
 
+  type Scored = {
+    videoId: string;
+    title: string;
+    channelTitle: string;
+    description: string;
+    score: number;
+    trusted: boolean;
+  };
+  const byId = new Map<string, Scored>();
+
+  for (const q of queries) {
+    const items = await searchCandidates(apiKey, q);
+    for (const item of items) {
+      const videoId = item.id?.videoId;
+      const snippet = item.snippet;
+      if (!videoId || !snippet) continue;
+
+      const vTitle = snippet.title?.trim() ?? "";
+      const channelTitle = snippet.channelTitle?.trim() ?? "";
+      const description = snippet.description ?? "";
+      const score = scoreMusicVideoCandidate(
+        vTitle,
+        description,
+        channelTitle,
+        artistName,
+        songTitle,
+      );
+      if (score < 1) continue;
+
+      const trusted = isTrustedCandidate(vTitle, channelTitle, artistName);
+      const existing = byId.get(videoId);
+      if (!existing || score > existing.score) {
+        byId.set(videoId, {
+          videoId,
+          title: vTitle,
+          channelTitle,
+          description,
+          score,
+          trusted,
+        });
+      }
+    }
+  }
+
+  if (!byId.size) return empty;
+
+  // Data real de postagem: videos.list (não confiar em search.list).
+  const details = await fetchVideosPublishedAt(apiKey, [...byId.keys()]);
+
   type Pick = {
     videoId: string;
     title: string;
@@ -152,38 +264,30 @@ export async function getYouTubeMusicVideoReleaseDate(
     score: number;
     trusted: boolean;
   };
-  const byId = new Map<string, Pick>();
-
-  for (const q of queries) {
-    const items = await searchCandidates(apiKey, q);
-    for (const item of items) {
-      const videoId = item.id?.videoId;
-      const snippet = item.snippet;
-      if (!videoId || !snippet?.publishedAt) continue;
-
-      const vTitle = snippet.title?.trim() ?? "";
-      const channelTitle = snippet.channelTitle?.trim() ?? "";
-      const score = scoreMusicVideoCandidate(
-        vTitle,
-        snippet.description ?? "",
-        channelTitle,
-        artistName,
-        songTitle,
-      );
-      if (score < 1) continue;
-
-      const publishedAt = parseYoutubePublishedAt(snippet.publishedAt);
-      if (!publishedAt) continue;
-
-      const trusted = isTrustedCandidate(vTitle, channelTitle, artistName);
-      const existing = byId.get(videoId);
-      if (!existing || score > existing.score) {
-        byId.set(videoId, { videoId, title: vTitle, publishedAt, score, trusted });
-      }
-    }
+  const candidates: Pick[] = [];
+  for (const scored of byId.values()) {
+    const detail = details.get(scored.videoId);
+    if (!detail) continue;
+    // Preferir título/canal do videos.list (mais atualizado).
+    const vTitle = detail.title || scored.title;
+    const channelTitle = detail.channelTitle || scored.channelTitle;
+    const score = scoreMusicVideoCandidate(
+      vTitle,
+      detail.description || scored.description,
+      channelTitle,
+      artistName,
+      songTitle,
+    );
+    if (score < 1) continue;
+    candidates.push({
+      videoId: scored.videoId,
+      title: vTitle,
+      publishedAt: detail.publishedAt,
+      score,
+      trusted: isTrustedCandidate(vTitle, channelTitle, artistName),
+    });
   }
 
-  const candidates = [...byId.values()];
   if (!candidates.length) return empty;
 
   const trusted = candidates.filter((c) => c.trusted);

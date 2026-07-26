@@ -24,9 +24,9 @@ TZ=America/Sao_Paulo
 # push-advance): só congela quando o horário configurado em /admin/parada-global já passou.
 0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/publish-weekly-globals >> /root/chartfm/logs/cron.log 2>&1
 
-# Terça 6h — fecha a Votação da Semana (Melhor da Semana + Flashback); horário fixo,
-# independente do horário de publicação da Parada Global escolhido em /admin/parada-global
-0 6 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-close >> /root/chartfm/logs/cron.log 2>&1
+# Votação da Semana (Melhor da Semana + Flashback) — reconcilia de hora em hora;
+# só fecha quando o horário configurado em /admin/parada-global já passou (padrão: qua 7h).
+10 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-close >> /root/chartfm/logs/cron.log 2>&1
 
 # Terça 5h20 — publica o panorama editorial semanal do Global 100 (conteúdo real, sem IA)
 20 5 * * 2 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-editorial-post >> /root/chartfm/logs/cron.log 2>&1
@@ -60,8 +60,9 @@ TZ=America/Sao_Paulo
 # 0h20 — consolida analytics do dia anterior (visitas, sessões, tempo no site) e purga eventos >90d
 20 0 * * * /root/chartfm/scripts/cron-hit.sh /api/cron/analytics-rollup >> /root/chartfm/logs/cron.log 2>&1
 
-# Segunda 6:00 — abre a Votação da Semana (Melhor da Semana + Flashback) e notifica todos
-0 6 * * 1 /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
+# Votação da Semana — reconcilia de hora em hora; só abre quando o horário configurado
+# em /admin/parada-global já passou (padrão: segunda 0h). Minuto :20 para não colidir.
+20 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/weekly-poll-open >> /root/chartfm/logs/cron.log 2>&1
 
 # Radar de Lançamentos — só às sextas (dia mundial de lançamento), de hora em hora, em
 # lotes de ~15 artistas por execução (RELEASE_RADAR_BATCH_PER_RUN), 2s entre artistas e
@@ -101,6 +102,12 @@ TZ=America/Sao_Paulo
 # TikTok Growth Bot — domingo, de hora em hora: verifica contas 404 no TikTok em lotes
 # de ~30 perfis com 3s entre cada (cada perfil no máx. 1x/semana — sem risco de bloqueio)
 55 * * * 0 /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-verify >> /root/chartfm/logs/cron.log 2>&1
+
+# Domingos 19h — Videoparada Disk MTV (Remotion + upload YouTube @chartFM).
+# Roda na VPS (não via HTTP): yt-dlp + ffmpeg + Remotion são pesados demais para cron-hit.
+# Requer OAuth YouTube do @bruno já conectado. Log: logs/videoparada-disk-mtv.log
+# Limit: VIDEOPARADA_DISK_MTV_LIMIT no .env (padrão 20). Título: "Disk MTV Top 20 - Semana x, 2026"
+0 19 * * 0 /root/chartfm/scripts/videoparada-disk-mtv-weekly.sh
 
 # Backfill noturno de catálogo — religado em 2026-07-21: as etapas de artista/álbum
 # (as únicas que chamam Spotify) agora consomem o mesmo orçamento diário "backfill"

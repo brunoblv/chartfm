@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+    input::placeholder{color:var(--text-muted)}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="ChartFM Jogos.dc.html" style="font-size:14px;font-weight:700;color:var(--text)">Jogos</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid var(--divider);background:var(--surface)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px 0;display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#FF7070);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-weight:800;font-size:14px">⚡</div>
+      <div>
+        <div style="font-size:15px;font-weight:800;letter-spacing:-0.02em;line-height:1">Push</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">O jogo semanal de indicar músicas</div>
+      </div>
+    </div>
+    <div style="max-width:1200px;margin:0 auto;padding:0 40px;display:flex;gap:2px;margin-top:10px;overflow-x:auto">
+      <a href="ChartFM Push Sobre.dc.html" style="padding:9px 14px;border-radius:8px 8px 0 0;font-size:13px;font-weight:700;white-space:nowrap;color:var(--text-muted);border-bottom:2px solid transparent">Sobre</a>
+      <a href="#" style="padding:9px 14px;border-radius:8px 8px 0 0;font-size:13px;font-weight:700;white-space:nowrap;color:var(--text);border-bottom:2px solid var(--accent)">Início</a>
+      <a href="ChartFM Push Ranking.dc.html" style="padding:9px 14px;border-radius:8px 8px 0 0;font-size:13px;font-weight:700;white-space:nowrap;color:var(--text-muted);border-bottom:2px solid transparent">Ranking</a>
+      <a href="ChartFM Push Historico.dc.html" style="padding:9px 14px;border-radius:8px 8px 0 0;font-size:13px;font-weight:700;white-space:nowrap;color:var(--text-muted);border-bottom:2px solid transparent">Histórico</a>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:28px 40px 60px">
+
+    <div style="display:flex;gap:6px;margin-bottom:20px">
+      <sc-for list="{{ phaseToggle }}" as="pt" hint-placeholder-count="3">
+        <button onclick="{{ pt.onClick }}" style="{{ pt.style }}">{{ pt.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px 22px;margin-bottom:24px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:26px;font-weight:900;letter-spacing:-0.03em">{{ round.title }}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+          <span style="{{ round.phaseBadgeStyle }}">{{ round.phaseLabel }}</span>
+          <span style="font-size:10px;color:var(--text-muted)">{{ round.timeLeft }}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center">
+        <sc-for list="{{ stageBar }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
+            <div style="{{ st.dotStyle }}"></div>
+            <div style="{{ st.labelStyle }}">{{ st.label }}</div>
+          </div>
+          <sc-if value="{{ st.hasLine }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ st.lineStyle }}"></div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:28px;align-items:flex-start">
+      <div style="min-width:0">
+
+        <sc-if value="{{ isSubmission }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">Sua indicação</div>
+              <div style="background:var(--surface);border:1.5px solid color-mix(in srgb, var(--accent) 28%, transparent);border-radius:14px;padding:13px;display:flex;align-items:center;gap:11px">
+                <div style="{{ mySubmission.coverStyle }}"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mySubmission.title }}</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{ mySubmission.artist }}</div>
+                  <div style="font-size:10px;color:#1DB954;font-weight:600;margin-top:4px">✓ Lançado em {{ mySubmission.releaseDate }}</div>
+                </div>
+                <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px">Trocar</button>
+              </div>
+            </div>
+            <div style="padding:9px 13px;border-radius:11px;background:color-mix(in srgb, var(--accent) 6%, transparent);border:1px solid color-mix(in srgb, var(--accent) 18%, transparent);font-size:12px;color:var(--text-muted);line-height:1.5">
+              <span style="color:var(--accent);font-weight:700">Regras: </span>indique uma música de um artista pouco conhecido — o objetivo é descobrir gente nova junto com a community.
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase">Participantes</span>
+                <span style="font-size:11px;color:var(--text-muted)">{{ round.submissionCount }} indicações</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px">
+                <sc-for list="{{ participants }}" as="p" hint-placeholder-count="6">
+                  <div style="display:flex;align-items:center;gap:4px;padding:4px 9px 4px 5px;border-radius:100px;background:color-mix(in srgb, var(--accent) 10%, transparent);border:1px solid color-mix(in srgb, var(--accent) 22%, transparent)">
+                    <div style="width:15px;height:15px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:8px">✓</div>
+                    <span style="font-size:11px;font-weight:600">{{ p.name }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isListening }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">Ouça e rankeie da 1ª à última</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ rankableSongs }}" as="rs" hint-placeholder-count="6">
+                <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--divider);border-radius:12px;padding:10px 12px">
+                  <div style="{{ rs.badgeStyle }}">{{ rs.pos }}</div>
+                  <div style="{{ rs.coverStyle }}"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ rs.title }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ rs.artist }}</div>
+                  </div>
+                  <div style="display:flex;gap:4px">
+                    <button onclick="{{ rs.moveUp }}" style="width:26px;height:26px;border-radius:8px;border:none;background:var(--fill-subtle);color:var(--text);cursor:pointer">↑</button>
+                    <button onclick="{{ rs.moveDown }}" style="width:26px;height:26px;border-radius:8px;border:none;background:var(--fill-subtle);color:var(--text);cursor:pointer">↓</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <button style="margin-top:16px;width:100%;padding:14px;border-radius:14px;border:none;background:var(--accent);color:#fff;font-size:14.5px;font-weight:700;cursor:pointer">Salvar ranking</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="padding-bottom:14px;border-bottom:1px solid var(--divider);margin-bottom:18px">
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px">Resultado da rodada {{ round.number }}</div>
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+                <div style="{{ mySubmission.coverStyle }}"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mySubmission.title }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ mySubmission.artist }}</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0">
+                  <div style="font-size:10px;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px">Posição</div>
+                  <div style="font-size:30px;font-weight:900;letter-spacing:-0.03em;color:var(--accent)">#{{ myResultRank }}</div>
+                  <div style="font-size:13px;font-weight:700">{{ myResultPts }} pts</div>
+                </div>
+              </div>
+              <div style="display:flex;background:var(--fill-subtle);border-radius:10px;padding:3px">
+                <sc-for list="{{ resultTabs }}" as="rt" hint-placeholder-count="3">
+                  <button onclick="{{ rt.onClick }}" style="{{ rt.style }}">{{ rt.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+
+            <sc-if value="{{ showRoundResults }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <sc-for list="{{ roundResults }}" as="r" hint-placeholder-count="6">
+                  <div style="{{ r.rowStyle }}">
+                    <div style="{{ r.badgeStyle }}">{{ r.rank }}</div>
+                    <div style="{{ r.coverStyle }}"></div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.title }}</div>
+                      <div style="font-size:10px;color:var(--text-muted)">@{{ r.handle }}</div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0">
+                      <div style="font-size:16px;font-weight:800;letter-spacing:-0.02em">{{ r.points }}</div>
+                      <div style="font-size:9px;font-weight:600;color:var(--text-muted);letter-spacing:.04em">PTS</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ showSeasonResults }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <sc-for list="{{ seasonRanking }}" as="r" hint-placeholder-count="6">
+                  <div style="display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--divider)">
+                    <div style="{{ r.badgeStyle }}">{{ r.rank }}</div>
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:700">{{ r.name }}</div>
+                      <div style="font-size:10px;color:var(--text-muted)">@{{ r.handle }}</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-size:16px;font-weight:800">{{ r.points }}</div>
+                      <div style="font-size:9px;font-weight:600;color:var(--text-muted)">PTS</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+
+      <aside style="display:flex;flex-direction:column;gap:14px;position:sticky;top:170px">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px">Participantes</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ participants }}" as="p" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ p.avatarStyle }}"></div>
+                <div style="flex:1;font-size:13px;font-weight:600;color:{{ p.nameColor }}">{{ p.name }}</div>
+                <div style="width:18px;height:18px;border-radius:9px;background:#1DB954;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:9px">✓</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px">Rodada {{ round.number }}</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ roundInfo }}" as="ri" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;font-size:13px">
+                <span style="color:var(--text-muted)">{{ ri.label }}</span>
+                <span style="font-weight:600;color:{{ ri.color }}">{{ ri.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:12px">Regras</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ rules }}" as="rule" hint-placeholder-count="6">
+              <div style="display:flex;gap:8px;align-items:flex-start">
+                <div style="width:16px;height:16px;border-radius:8px;background:color-mix(in srgb, var(--accent) 12%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;margin-top:1px">{{ rule.n }}</div>
+                <div style="font-size:12px;color:var(--text-subtle);line-height:1.5">{{ rule.text }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <a href="ChartFM Push Historico.dc.html" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--divider)">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Histórico</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:1px">Ver todas as rodadas</div>
+          </div>
+          <span style="color:var(--text-muted)">→</span>
+        </a>
+      </aside>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { phase: 'RESULT', resultTab: 'round' };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  PODIUM = ['#FFD700', '#C0C0C0', '#CD7F32'];
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+  cover(seed, size, radius) { return { width: size, height: size, borderRadius: radius ?? 10, background: this.grad(seed), flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,.3)' }; }
+  circle(seed, size) { return { width: size, height: size, borderRadius: '50%', background: this.grad(seed), flexShrink: 0 }; }
+  phaseToggleStyle(active) {
+    return { border: 'none', cursor: 'pointer', padding: '7px 14px', borderRadius: 100, fontSize: 12, fontWeight: 700,
+      background: active ? 'var(--accent)' : 'var(--fill-subtle)', color: active ? '#fff' : 'var(--text-muted)' };
+  }
+  resultTabStyle(active) {
+    return { flex: 1, padding: '7px 4px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+      background: active ? 'var(--surface)' : 'transparent', color: active ? 'var(--text)' : 'var(--text-muted)' };
+  }
+  rankBadge(pos) {
+    const podium = pos <= 3;
+    return { width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 11, fontWeight: 800, flexShrink: 0,
+      background: podium ? this.PODIUM[pos - 1] : 'var(--fill-subtle)', color: podium ? '#fff' : 'var(--text-muted)' };
+  }
+
+  renderVals() {
+    const phase = this.state.phase;
+    const isSubmission = phase === 'SUBMISSION';
+    const isListening = phase === 'LISTENING';
+    const isResult = phase === 'RESULT';
+
+    const phaseToggle = [
+      { key: 'SUBMISSION', label: 'Submissão' }, { key: 'LISTENING', label: 'Ouvir e Rankear' }, { key: 'RESULT', label: 'Resultado' },
+    ].map(p => ({ label: p.label, style: this.phaseToggleStyle(phase === p.key), onClick: () => this.setState({ phase: p.key }) }));
+
+    const phaseColors = { SUBMISSION: 'var(--accent)', LISTENING: '#6366f1', RESULT: '#10b981' };
+    const phaseLabels = { SUBMISSION: 'Submissão', LISTENING: 'Ouvir e rankear', RESULT: 'Resultado' };
+    const color = phaseColors[phase];
+    const round = {
+      title: 'Rodada 47 · Temporada 3', number: 47, submissionCount: 18,
+      phaseLabel: phaseLabels[phase],
+      phaseBadgeStyle: { padding: '3px 10px', borderRadius: 100, background: color + '18', color, border: `1px solid ${color}33`, fontSize: 10, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase' },
+      timeLeft: isSubmission ? 'faltam 1 dia e 4h' : isListening ? 'faltam 6h' : 'encerrada',
+    };
+
+    const stageNames = ['Submissão', 'Revelação', 'Ouvir e rankear', 'Resultado'];
+    const activeIdx = { SUBMISSION: 0, LISTENING: 2, RESULT: 3 }[phase];
+    const stageBar = stageNames.map((label, i) => ({
+      label, hasLine: i < stageNames.length - 1,
+      dotStyle: { width: 7, height: 7, borderRadius: 4, background: i <= activeIdx ? 'var(--accent)' : 'var(--text-disabled)' },
+      labelStyle: { fontSize: 8, fontWeight: 600, whiteSpace: 'nowrap', color: i <= activeIdx ? 'var(--accent)' : 'var(--text-muted)' },
+      lineStyle: { flex: 1, height: 1, background: i < activeIdx ? 'var(--accent)' : 'var(--text-disabled)', marginBottom: 11, minWidth: 20 },
+    }));
+
+    const mySubmission = { title: 'Amber Static', artist: 'Coral Hour', releaseDate: 'Mar 2026', coverStyle: this.cover(5, 46, 10) };
+
+    const participantNames = ['Você', 'Théo Lambert', 'Sofia Reyes', 'Kenji Osei', 'Priya Nandan', 'Marco Villani', 'Alice Monteiro', 'Rafa Prado'];
+    const participants = participantNames.map((name, i) => ({
+      name, avatarStyle: this.circle(i, 30), nameColor: i === 0 ? 'var(--accent)' : 'var(--text)',
+    }));
+
+    const rankableSongsData = [
+      { title: 'Amber Static', artist: 'Coral Hour', seed: 5 }, { title: 'Wren Autumn', artist: 'Salt Lung', seed: 1 },
+      { title: 'Faraway Static', artist: 'Marble Season', seed: 4 }, { title: 'Cold Harbor', artist: 'Halflight Parade', seed: 8 },
+      { title: 'Low Static', artist: 'Bexley Drift', seed: 2 }, { title: 'Night Glass', artist: 'Kite String Collective', seed: 6 },
+    ];
+    const rankableSongs = rankableSongsData.map((s, i) => ({
+      ...s, pos: i + 1, badgeStyle: this.rankBadge(i + 1), coverStyle: this.cover(s.seed, 40, 8),
+      moveUp: () => {}, moveDown: () => {},
+    }));
+
+    const roundResultsData = [
+      { rank: 1, title: 'Amber Static', handle: 'alicemtr', points: 128 }, { rank: 2, title: 'Wren Autumn', handle: 'theolamb', points: 96 },
+      { rank: 3, title: 'Faraway Static', handle: 'sofireyes', points: 74 }, { rank: 4, title: 'Cold Harbor', handle: 'kenjiosei', points: 51 },
+      { rank: 5, title: 'Low Static', handle: 'priyanandan', points: 38 }, { rank: 6, title: 'Night Glass', handle: 'marcovillani', points: 22 },
+    ];
+    const roundResults = roundResultsData.map((r, i) => ({
+      ...r, badgeStyle: this.rankBadge(r.rank), coverStyle: this.cover([5,1,4,8,2,6][i], 36, 8),
+      rowStyle: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 12,
+        background: r.rank === 1 ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'var(--surface)',
+        border: `1px solid ${r.rank === 1 ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'var(--divider)'}` },
+    }));
+
+    const myResultRank = 1;
+    const myResultPts = 128;
+
+    const resultTabs = [
+      { key: 'round', label: 'Rodada' }, { key: 'season', label: 'Temporada' }, { key: 'geral', label: 'Geral' },
+    ].map(t => ({ label: t.label, style: this.resultTabStyle(this.state.resultTab === t.key), onClick: () => this.setState({ resultTab: t.key }) }));
+
+    const seasonRankingData = [
+      { name: 'Alice Monteiro', handle: 'alicemtr', points: 842 }, { name: 'Théo Lambert', handle: 'theolamb', points: 780 },
+      { name: 'Sofia Reyes', handle: 'sofireyes', points: 664 }, { name: 'Kenji Osei', handle: 'kenjiosei', points: 511 },
+      { name: 'Priya Nandan', handle: 'priyanandan', points: 402 },
+    ];
+    const seasonRanking = seasonRankingData.map((r, i) => ({ ...r, rank: i + 1, badgeStyle: this.rankBadge(i + 1) }));
+
+    const roundInfo = [
+      { label: 'Temporada', value: '3' }, { label: 'Músicas', value: String(round.submissionCount) },
+      { label: 'Fase atual', value: round.phaseLabel, color: 'var(--accent)' },
+      { label: 'Tempo restante', value: round.timeLeft, color: 'var(--text)' },
+    ].map(ri => ({ ...ri, color: ri.color || 'var(--text)' }));
+
+    const rules = [
+      { n: 1, text: 'Indique 1 música de um artista com poucos ouvintes.' },
+      { n: 2, text: 'As indicações ficam ocultas até o fim da submissão.' },
+      { n: 3, text: 'Ouça a playlist da semana e rankeie da 1ª à última.' },
+      { n: 4, text: 'Pontuação: 20pts em 1º lugar, decrescendo até 1pt.' },
+      { n: 5, text: 'Não votar gera penalidade de pontos.' },
+      { n: 6, text: 'No fim, os nomes de quem indicou cada música são revelados.' },
+    ];
+
+    return {
+      phaseToggle, round, stageBar, isSubmission, isListening, isResult,
+      mySubmission, participants, rankableSongs,
+      roundResults, myResultRank, myResultPts, resultTabs,
+      showRoundResults: this.state.resultTab === 'round', showSeasonResults: this.state.resultTab === 'season' || this.state.resultTab === 'geral',
+      seasonRanking, roundInfo, rules,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

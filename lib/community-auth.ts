@@ -23,6 +23,7 @@ export async function getCommunityBySlug(slug: string) {
       members: true,
       posts: true,
       founded: true,
+      createdAt: true,
       ownerId: true,
       maxSongs: true,
       paradaName: true,

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="26" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Conversas</a>
+      </nav>
+      <div style="display:inline-flex;gap:4px;background:var(--fill-subtle);padding:4px;border-radius:10px">
+        <button onClick="{{ setOwn }}" style="{{ viewBtnStyleOwn }}">Meu perfil</button>
+        <button onClick="{{ setVisitor }}" style="{{ viewBtnStyleVisitor }}">Visitante</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:relative;height:260px;overflow:hidden">
+    <div style="{{ bannerStyle }}"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,14,0) 40%,var(--bg) 100%)"></div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px 96px">
+
+    <div style="display:flex;align-items:flex-end;gap:24px;margin-top:-72px;position:relative;z-index:1">
+      <div style="width:140px;height:140px;border-radius:28px;background:linear-gradient(135deg,#7C5CFF,#3B2B8C);border:4px solid var(--bg);flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
+      <div style="flex:1;min-width:0;padding-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:nowrap">
+          <div style="font-size:28px;font-weight:800;letter-spacing:-0.02em;white-space:nowrap">Alice Monteiro</div>
+          <div style="background:var(--accent-tint);color:var(--accent);font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0">Nível 24</div>
+        </div>
+        <div style="font-size:14px;color:var(--text-muted);margin-top:4px">@alicemtr · São Paulo, Brasil</div>
+        <div style="font-size:14px;color:var(--text-subtle);margin-top:10px;max-width:520px;line-height:1.5">Curadora obsessiva de dream pop e shoegaze. Sempre em busca do disco que ninguém mais ouviu ainda.</div>
+      </div>
+      <div style="display:flex;gap:10px;padding-bottom:8px">
+        <sc-if value="{{ isVisitor }}" hint-placeholder-val="{{ false }}">
+          <button style="background:var(--accent);color:#fff;border:none;padding:12px 22px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Seguir</button>
+          <button style="background:var(--fill-subtle);color:var(--text);border:none;padding:12px 22px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Mensagem</button>
+        </sc-if>
+        <sc-if value="{{ isOwn }}" hint-placeholder-val="{{ true }}">
+          <button style="background:var(--fill-subtle);color:var(--text);border:none;padding:12px 22px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Editar perfil</button>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <sc-for list="{{ topBadges }}" as="b" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--divider);padding:6px 12px;border-radius:100px">
+          <div style="{{ b.dotStyle }}"></div>
+          <div style="font-size:12px;font-weight:600">{{ b.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ isVisitor }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:32px;background:var(--gradient-hero);border-radius:20px;padding:28px 32px;display:flex;align-items:center;gap:32px;color:#fff">
+        <div>
+          <div style="font-size:40px;font-weight:800;letter-spacing:-0.02em">92%</div>
+          <div style="font-size:13px;opacity:.85;margin-top:2px">Compatível com você</div>
+        </div>
+        <div style="width:1px;height:44px;background:rgba(255,255,255,.25)"></div>
+        <div style="display:flex;gap:36px;flex:1">
+          <div><div style="font-size:20px;font-weight:800">18</div><div style="font-size:12px;opacity:.85">artistas em comum</div></div>
+          <div><div style="font-size:20px;font-weight:800">7</div><div style="font-size:12px;opacity:.85">Communities iguais</div></div>
+          <div><div style="font-size:20px;font-weight:800">12</div><div style="font-size:12px;opacity:.85">Reviews curtidas por ambos</div></div>
+          <div><div style="font-size:20px;font-weight:800">Dream Pop</div><div style="font-size:12px;opacity:.85">gênero mais compartilhado</div></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="8">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px 18px;text-align:center">
+          <div style="font-size:22px;font-weight:800;letter-spacing:-0.01em">{{ s.value }}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ s.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-top:40px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Resumo musical</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+            <sc-for list="{{ topArtists }}" as="a" hint-placeholder-count="5">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="{{ a.coverStyle }}"></div>
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+            <sc-for list="{{ topGenres }}" as="g" hint-placeholder-count="5">
+              <div style="background:var(--fill-subtle);color:var(--text-subtle);font-size:12px;font-weight:600;padding:6px 12px;border-radius:100px">{{ g }}</div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Personalidade musical</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <sc-for list="{{ personality }}" as="p" hint-placeholder-count="6">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:14px 16px">
+                <div style="font-size:13px;font-weight:700">{{ p.label }}</div>
+                <div style="display:flex;gap:3px;margin-top:8px">
+                  <sc-for list="{{ p.dots }}" as="d" hint-placeholder-count="5">
+                    <div style="{{ d.style }}"></div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Timeline musical</div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ timeline }}" as="t" hint-placeholder-count="5">
+              <div style="display:flex;gap:16px">
+                <div style="display:flex;flex-direction:column;align-items:center;width:14px;flex-shrink:0">
+                  <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
+                  <div style="{{ t.lineStyle }}"></div>
+                </div>
+                <div style="padding-bottom:22px">
+                  <div style="font-size:13px;font-weight:700">{{ t.title }}</div>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ t.date }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Evolução das Charts</div>
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:20px">
+            <div style="font-size:13.5px;font-weight:700;margin-bottom:14px">Indie que ninguém te contou — últimas 8 semanas</div>
+            <div style="display:flex;align-items:flex-end;gap:8px;height:70px">
+              <sc-for list="{{ chartEvolution }}" as="w" hint-placeholder-count="8">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                  <div style="{{ w.barStyle }}"></div>
+                  <div style="font-size:10px;color:var(--text-muted)">{{ w.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Reviews</div>
+            <a href="#" style="font-size:13px;font-weight:600">Ver todas →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;overflow:hidden">
+                <div style="{{ r.coverBgStyle }}">
+                  <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:800;padding:3px 8px;border-radius:8px">{{ r.rating }}</div>
+                </div>
+                <div style="padding:14px">
+                  <div style="font-size:13.5px;font-weight:700;line-height:1.25">{{ r.album }}</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">{{ r.likes }} curtidas · {{ r.comments }} comentários</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Charts</div>
+            <a href="#" style="font-size:13px;font-weight:600">Ver todas →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+            <sc-for list="{{ charts }}" as="c" hint-placeholder-count="2">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px">
+                <div style="font-size:15px;font-weight:800;letter-spacing:-0.01em;margin-bottom:12px">{{ c.title }}</div>
+                <div style="display:flex;gap:6px;margin-bottom:12px">
+                  <sc-for list="{{ c.preview }}" as="pv" hint-placeholder-count="5">
+                    <div style="{{ pv.coverStyle }}"></div>
+                  </sc-for>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted)">{{ c.votes }} votos · {{ c.comments }} comentários</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Clubes do Álbum</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ albumClubs }}" as="ac" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center">
+                <div style="{{ ac.coverStyle }}"></div>
+                <div style="min-width:0">
+                  <div style="font-size:13.5px;font-weight:700">{{ ac.album }}</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">{{ ac.status }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Pushes recentes</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ pushes }}" as="p" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--divider-soft)">
+                <div style="{{ p.coverStyle }}"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;color:var(--text-subtle)">Push de <span style="font-weight:700">{{ p.title }}</span> para {{ p.audience }}</div>
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);white-space:nowrap">{{ p.time }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Descobertas desta semana</div>
+          <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:4px">
+            <sc-for list="{{ discoveries }}" as="d" hint-placeholder-count="5">
+              <div style="flex:0 0 160px;display:flex;flex-direction:column;gap:8px">
+                <div style="{{ d.coverStyle }}"></div>
+                <div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent)">{{ d.type }}</div>
+                <div style="font-size:13px;font-weight:600;line-height:1.25">{{ d.title }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Atividade recente</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ activity }}" as="ac" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--divider-soft)">
+                <div style="{{ ac.iconStyle }}"></div>
+                <div style="font-size:13px;color:var(--text-subtle);flex:1">{{ ac.text }}</div>
+                <div style="font-size:11px;color:var(--text-muted);white-space:nowrap">{{ ac.time }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+      </div>
+
+      <aside style="display:flex;flex-direction:column;gap:16px">
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:30px">🔥</div>
+          <div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em">{{ streak }} semanas</div>
+            <div style="font-size:11.5px;color:var(--text-muted)">sequência de participação</div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Hall da Fama</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ hallOfFame }}" as="h" hint-placeholder-count="4">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;font-weight:700">{{ h.label }}</div>
+                <div style="font-size:13px;font-weight:600;margin-top:2px">{{ h.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Favoritos fixados</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ pinned }}" as="pn" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ pn.coverStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pn.title }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ pn.type }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Social</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center;margin-bottom:14px">
+            <div><div style="font-size:18px;font-weight:800">2.4k</div><div style="font-size:11px;color:var(--text-muted)">seguidores</div></div>
+            <div><div style="font-size:18px;font-weight:800">312</div><div style="font-size:11px;color:var(--text-muted)">seguindo</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ compatibleUsers }}" as="cu" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ cu.avatarStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ cu.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ cu.compat }}% compatível</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Coleções</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ collections }}" as="col" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ col.coverStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600">{{ col.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ col.count }} itens</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'own' };
+
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+  cover(seed, size, radius) { return { width: size, height: size, borderRadius: radius ?? 10, background: this.grad(seed), flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,.3)' }; }
+  circle(seed, size) { return { width: size, height: size, borderRadius: '50%', background: this.grad(seed), flexShrink: 0 }; }
+  toggleBtnStyle(active) {
+    return { padding: '7px 14px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+      background: active ? 'var(--surface)' : 'transparent', color: active ? 'var(--text)' : 'var(--text-muted)',
+      boxShadow: active ? '0 1px 3px rgba(0,0,0,0.25)' : 'none' };
+  }
+
+  renderVals() {
+    const view = this.state.view;
+
+    const topArtists = ['Nova Vega','The Amber Room','Coral Hour','Marlowe Dune','Kite String Collective']
+      .map((name, i) => ({ name, coverStyle: this.cover([1,9,6,3,4][i], '100%', 12) }));
+
+    const topGenres = ['Dream Pop','Shoegaze', 'Indie Rock', 'Synthwave', 'Bedroom Pop'];
+
+    const personality = [
+      { label: 'Explorador', fill: 5 }, { label: 'Curador', fill: 4 }, { label: 'Nostálgico', fill: 3 },
+      { label: 'Mainstream', fill: 2 }, { label: 'Experimental', fill: 5 }, { label: 'Social', fill: 4 },
+    ].map(p => ({ ...p, dots: Array.from({length:5}, (_,i) => ({ style: { width: 8, height: 8, borderRadius: '50%', background: i < p.fill ? 'var(--accent)' : 'var(--fill-subtle)' } })) }));
+
+    const timeline = [
+      { title: 'Primeira Chart publicada', date: 'mar 2023' },
+      { title: 'Primeira Review escrita', date: 'mai 2023' },
+      { title: 'Entrou na Community Dream Pop Diaries', date: 'ago 2023' },
+      { title: 'Curadora da Semana', date: 'fev 2024' },
+      { title: '1000º artista ouvido', date: 'jun 2026' },
+    ].map((t,i,arr) => ({ ...t, lineStyle: i < arr.length-1 ? { width: 2, flex: 1, background: 'var(--divider)', marginTop: 4 } : {} }));
+
+    const chartEvolution = [22,18,15,9,6,4,2,1].map((pos, i) => ({
+      label: `S${i+1}`, pos,
+      barStyle: { width: '100%', height: `${8 + (24-pos)*2.5}px`, borderRadius: 3, background: pos <= 3 ? 'var(--accent)' : 'var(--fill-subtle)' },
+    }));
+
+    const reviews = [
+      { album: 'Glasswing', rating: '4.5', likes: 482, comments: 61, seed: 1 },
+      { album: 'Halflight', rating: '5.0', likes: 897, comments: 143, seed: 6 },
+      { album: 'Marigold Hour', rating: '4.0', likes: 210, comments: 34, seed: 9 },
+    ].map(r => ({ ...r, coverBgStyle: { position: 'relative', height: 130, background: this.grad(r.seed) } }));
+
+    const charts = [
+      { title: 'Indie que ninguém te contou', votes: 128, comments: 24, previewSeeds: [1,2,3,4,5] },
+      { title: 'Dream Pop Essencial', votes: 342, comments: 58, previewSeeds: [6,7,8,9,0] },
+    ].map(c => ({ ...c, preview: c.previewSeeds.map(s => ({ coverStyle: this.cover(s, 36, 8) })) }));
+
+    const albumClubs = [
+      { album: 'Halflight', status: 'Lendo capítulo 3 · Coral Hour', seed: 6 },
+      { album: 'Nightlong', status: 'Concluído · 4.5★ média do clube', seed: 3 },
+      { album: 'Glasswing', status: 'Começa em 2 dias', seed: 1 },
+    ].map(ac => ({ ...ac, coverStyle: this.cover(ac.seed, 52, 10) }));
+
+    const pushes = [
+      { title: 'Amber Static', audience: 'seus seguidores', time: 'há 3h', seed: 5 },
+      { title: 'Halflight', audience: 'Dream Pop Diaries', time: 'ontem', seed: 6 },
+      { title: 'Chart: Indie que ninguém te contou', audience: 'seus seguidores', time: 'há 3 dias', seed: 4 },
+    ].map(p => ({ ...p, coverStyle: this.cover(p.seed, 36, 8) }));
+
+    const streak = 26;
+
+    const discoveries = [
+      { type: 'Artista', title: 'Bexley Drift', seed: 2 },
+      { type: 'Álbum', title: 'Night Static', seed: 4 },
+      { type: 'Gênero', title: 'Slowcore', seed: 8 },
+      { type: 'País', title: 'Música Islandesa', seed: 5 },
+      { type: 'Community', title: 'Vinyl Sunday', seed: 9 },
+    ].map(d => ({ ...d, coverStyle: this.cover(d.seed, 160, 12) }));
+
+    const activity = [
+      { text: 'Publicou uma Review de Glasswing', time: 'há 2h', seed: 1 },
+      { text: 'Atualizou a Chart "Indie que ninguém te contou"', time: 'há 5h', seed: 4 },
+      { text: 'Entrou na Community Vinyl Sunday', time: 'ontem', seed: 9 },
+      { text: 'Comentou na discussão sobre shoegaze', time: 'há 2 dias', seed: 3 },
+      { text: 'Recebeu o badge Curadora da Semana', time: 'há 3 dias', seed: 0 },
+      { text: 'Seguiu Théo Lambert', time: 'há 4 dias', seed: 4 },
+    ].map(a => ({ ...a, iconStyle: this.circle(a.seed, 30) }));
+
+    const hallOfFame = [
+      { label: 'Review mais lida', value: 'Halflight — 12.4k leituras' },
+      { label: 'Chart mais votada', value: 'Indie 2026 — 342 votos' },
+      { label: 'Maior streak', value: '186 dias seguidos' },
+      { label: 'Badge mais rara', value: 'Fundadora — 0.4% dos usuários' },
+    ];
+
+    const pinned = [
+      { title: 'Glasswing', type: 'Álbum', seed: 1 },
+      { title: 'Nova Vega', type: 'Artista', seed: 1 },
+      { title: 'Dream Pop Diaries', type: 'Community', seed: 2 },
+      { title: 'Indie 2026', type: 'Chart', seed: 5 },
+    ].map(p => ({ ...p, coverStyle: this.cover(p.seed, 40, 10) }));
+
+    const compatibleUsers = [
+      { name: 'Sofia Reyes', compat: 95, seed: 5 },
+      { name: 'Théo Lambert', compat: 88, seed: 4 },
+      { name: 'Kenji Osei', compat: 84, seed: 8 },
+    ].map(u => ({ ...u, avatarStyle: this.circle(u.seed, 34) }));
+
+    const collections = [
+      { name: 'Coleção Britpop', count: 42, seed: 3 },
+      { name: 'Vencedores do Grammy', count: 118, seed: 9 },
+      { name: 'Coleção Eurovision', count: 67, seed: 6 },
+    ].map(c => ({ ...c, coverStyle: this.cover(c.seed, 40, 10) }));
+
+    const stats = [
+      { label: 'Artistas', value: '1.2k' }, { label: 'Álbuns', value: '3.4k' }, { label: 'Músicas', value: '18k' }, { label: 'Reviews', value: '86' },
+      { label: 'Charts', value: '24' }, { label: 'Seguidores', value: '2.4k' }, { label: 'Comentários', value: '512' }, { label: 'Communities', value: '9' },
+    ];
+
+    const topBadges = [
+      { label: 'Fundadora', seed: 0 }, { label: 'Curadora da Semana', seed: 1 }, { label: 'Top Reviewer', seed: 2 }, { label: '1000+ artistas', seed: 3 },
+    ].map(b => ({ ...b, dotStyle: { width: 7, height: 7, borderRadius: '50%', background: this.grad(b.seed).match(/#[0-9A-F]{6}/i)[0] } }));
+
+    return {
+      isOwn: view === 'own', isVisitor: view === 'visitor',
+      setOwn: () => this.setState({ view: 'own' }), setVisitor: () => this.setState({ view: 'visitor' }),
+      viewBtnStyleOwn: this.toggleBtnStyle(view === 'own'), viewBtnStyleVisitor: this.toggleBtnStyle(view === 'visitor'),
+      bannerStyle: { position: 'absolute', inset: 0, background: this.grad(2) },
+      topArtists, topGenres, personality, timeline, reviews, charts, discoveries, activity,
+      hallOfFame, pinned, compatibleUsers, collections, stats, topBadges,
+      chartEvolution, albumClubs, pushes, streak,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

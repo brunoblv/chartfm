@@ -19,7 +19,7 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
   if (!session?.user?.id) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("artist.signInRequired")}</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>{t("artist.signInRequired")}</div>
       </Shell>
     );
   }
@@ -28,7 +28,7 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
   if (!isPrivilegedRole(me?.role)) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("artist.devAdminOnly")}</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>{t("artist.devAdminOnly")}</div>
       </Shell>
     );
   }
@@ -47,7 +47,7 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
   if (!artist) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("artist.artistNotFound")}</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>{t("artist.artistNotFound")}</div>
       </Shell>
     );
   }
@@ -55,11 +55,11 @@ export default async function ArtistEditPage({ params }: { params: Promise<{ nam
   return (
     <Shell title="">
       <div style={{ margin: "32px 0", padding: "0 20px 48px" }}>
-        <Link href={`/artist/${name}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
+        <Link href={`/artist/${name}`} style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>
           {t("artist.backToArtist")}
         </Link>
         <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>{t("artist.editArtist")}</h1>
-        <p style={{ color: "#86868B", marginTop: 0 }}>{t("artist.editAvailableDevAdmin")}</p>
+        <p style={{ color: "var(--text-muted)", marginTop: 0 }}>{t("artist.editAvailableDevAdmin")}</p>
         <ArtistEditClient
           initialArtist={{
             id: artist.id,

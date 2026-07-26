@@ -151,7 +151,7 @@ function parseLegacyEndDate(dateRange: string): Date | null {
 
 function normalizeDateRange(dateRange: string): string {
   const trimmed = dateRange.trim();
-  if (/^\d{2}\/\d{2}\/\d{4}\s+a\s+\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) return trimmed;
+  if (/^\d{2}\/\d{2}\/\d{4}\s+(?:a|to)\s+\d{2}\/\d{2}\/\d{4}$/i.test(trimmed)) return trimmed;
   if (trimmed.startsWith("de ")) return trimmed;
   const legacyEnd = parseLegacyEndDate(dateRange);
   if (!legacyEnd) return trimmed;
@@ -182,7 +182,7 @@ function monthNameToNumber(rawMonth: string): number | null {
 export function parseDateRangeToDates(dateRange: string, fallbackYear: number): { start: Date; end: Date } | null {
   const trimmed = dateRange.trim();
   const numericMatch = trimmed.match(
-    /^(\d{2})\/(\d{2})\/(\d{4})\s+a\s+(\d{2})\/(\d{2})\/(\d{4})$/,
+    /^(\d{2})\/(\d{2})\/(\d{4})\s+(?:a|to)\s+(\d{2})\/(\d{2})\/(\d{4})$/i,
   );
   if (numericMatch) {
     const [, sD, sM, sY, eD, eM, eY] = numericMatch;
@@ -193,7 +193,9 @@ export function parseDateRangeToDates(dateRange: string, fallbackYear: number): 
     }
   }
 
-  const textMatch = trimmed.match(/^de\s+(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]{3,})\s+a\s+(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]{3,})$/i);
+  const textMatch = trimmed.match(
+    /^(?:de\s+)?(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]{3,})\s+(?:a|to)\s+(\d{1,2})\s+de\s+([A-Za-zÀ-ÿ]{3,})$/i,
+  );
   if (textMatch) {
     const [, sDay, sMonthRaw, eDay, eMonthRaw] = textMatch;
     const sMonth = monthNameToNumber(sMonthRaw);
@@ -327,25 +329,41 @@ export function frozenPrimaryParadaChartWhere(weekIndex: number, slot?: GlobalPu
   };
 }
 
+/** Exibe intervalo salvo no banco (`22/06/2026 a 28/06/2026`) no idioma da UI. */
+export function formatDateRangeForLocale(
+  dateRange: string,
+  locale: "pt-BR" | "en" = "pt-BR",
+  weekLabel = "",
+): string {
+  const normalized = normalizeDateRange(dateRange);
+  const year = weekLabel ? parseWeekYear(normalizeWeekLabel(weekLabel)) : new Date().getFullYear();
+  const parsed = parseDateRangeToDates(normalized, year);
+  const connector = locale === "en" ? "to" : "a";
+  if (parsed) {
+    return `${formatDatePtBr(parsed.start)} ${connector} ${formatDatePtBr(parsed.end)}`;
+  }
+  if (locale === "en") {
+    return normalized
+      .replace(/\s+a\s+/gi, " to ")
+      .replace(/^de\s+/i, "");
+  }
+  return normalized;
+}
+
 export function formatChartPeriod(
   chart: Pick<Chart, "weekLabel" | "dateRange">,
   locale: "pt-BR" | "en" = "pt-BR",
 ): string {
   const weekLabel = normalizeWeekLabel(chart.weekLabel);
-  const dateRange = normalizeDateRange(chart.dateRange);
   const year = parseWeekYear(weekLabel);
   const weekNumber = parseWeekNumber(weekLabel);
-  const parsed = parseDateRangeToDates(dateRange, year);
   const weekText = weekNumber
     ? locale === "en"
       ? `Week ${weekNumber}, ${year}`
       : `Semana ${weekNumber}, ${year}`
     : weekLabel.replace("-", ",");
-  if (parsed) {
-    const connector = locale === "en" ? "to" : "a";
-    return `${formatDatePtBr(parsed.start)} ${connector} ${formatDatePtBr(parsed.end)} - ${weekText}`;
-  }
-  return `${dateRange} - ${weekText}`;
+  const rangeText = formatDateRangeForLocale(chart.dateRange, locale, weekLabel);
+  return `${rangeText} - ${weekText}`;
 }
 
 /** Gradiente de header visível mesmo com cores de avatar claras. */

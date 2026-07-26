@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    ::-webkit-scrollbar{height:0;width:0}
+    input::placeholder{color:#8A8A8E}
+  </style>
+</helmet>
+
+<div style="width:100%;min-height:100vh;background:#FBFBFD;display:flex;flex-direction:column;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif">
+
+  <div style="padding:16px 20px;display:flex;align-items:center;border-bottom:1px solid rgba(0,0,0,0.06);background:#fff">
+    <div style="display:flex;align-items:center;gap:10px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;align-items:flex-start;justify-content:center;padding:56px 0 32px">
+    <div style="width:100%;max-width:480px;padding:0 20px;box-sizing:border-box">
+      <div style="font-size:12px;font-weight:600;color:#FA243C;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Primeira parada</div>
+      <h1 style="font-size:42px;font-weight:800;letter-spacing:-0.04em;margin:0 0 12px;line-height:1.05;color:#1D1D1F">Dê um nome<br>à sua parada</h1>
+      <p style="font-size:15px;color:#6B6B70;line-height:1.55;margin-bottom:28px;max-width:400px">Essa é a parada que você vai atualizar toda semana com as músicas que mais ouviu.</p>
+
+      <input value="Minha Parada" placeholder="Ex: Top da Semana" style="width:100%;box-sizing:border-box;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.12);font-size:16px;font-family:inherit;outline:none;margin-bottom:8px;background:#fff;color:#1D1D1F" />
+      <div style="height:24px"></div>
+
+      <div style="display:flex;gap:10px">
+        <button style="padding:12px 24px;background:#fff;color:#1D1D1F;border:1px solid rgba(0,0,0,0.1);border-radius:100px;font-size:14px;font-weight:600;cursor:pointer">Voltar</button>
+        <button style="padding:12px 28px;background:#FA243C;color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px rgba(250,36,60,0.25)">
+          Criar parada
+          <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

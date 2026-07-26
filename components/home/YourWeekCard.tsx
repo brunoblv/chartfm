@@ -88,8 +88,8 @@ export function YourWeekCard({
           hasSubmitted
             ? `/chart/${thisWeekChartId}`
             : primaryParadaId
-              ? `/create?paradaId=${encodeURIComponent(primaryParadaId)}`
-              : "/create"
+              ? `/create/start?paradaId=${encodeURIComponent(primaryParadaId)}`
+              : "/create/start"
         }
         style={{
           background: "white",

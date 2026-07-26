@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="26" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Conversas</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:44px 40px 96px">
+
+    <div style="display:grid;grid-template-columns:220px 1fr auto;gap:32px;align-items:center;padding-bottom:32px;border-bottom:1px solid var(--divider)">
+      <div style="width:220px;height:220px;border-radius:16px;background:linear-gradient(135deg,#3E8BFF,#1D4FA3);box-shadow:0 12px 32px rgba(0,0,0,.4)"></div>
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Single</div>
+        <div style="font-size:38px;font-weight:800;letter-spacing:-0.02em;margin-top:8px;line-height:1.1">Amber Hour</div>
+        <div style="font-size:16px;color:var(--text-muted);margin-top:6px">Nova Vega · do álbum Glasswing · 2026 · 3:05</div>
+        <div style="display:flex;gap:12px;margin-top:22px">
+          <button style="background:var(--accent);color:#fff;border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Ouvir</button>
+          <button style="background:var(--fill-subtle);color:var(--text);border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Adicionar à playlist</button>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:32px;font-weight:800;color:var(--accent)">4.4</div>
+        <div style="font-size:13px;color:var(--text-muted)">120 Reviews</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-top:36px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Evolução</div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ evolution }}" as="e" hint-placeholder-count="4">
+              <div style="display:flex;gap:16px">
+                <div style="display:flex;flex-direction:column;align-items:center;width:14px;flex-shrink:0">
+                  <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
+                  <div style="{{ e.lineStyle }}"></div>
+                </div>
+                <div style="padding-bottom:22px">
+                  <div style="font-size:13px;font-weight:700">{{ e.title }}</div>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ e.date }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px">Desempenho no ChartFM</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:16px;max-width:640px">Pontos acumulados por esta faixa nas paradas dos usuários, quantas semanas passou no Global 100 e sua melhor posição no ranking coletivo.</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+            <sc-for list="{{ chartStats }}" as="cs" hint-placeholder-count="4">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:16px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">{{ cs.label }}</div>
+                <div style="font-size:28px;font-weight:800;letter-spacing:-0.02em;color:{{ cs.color }}">{{ cs.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:32px minmax(0,1fr) 70px 60px 60px;padding:10px 16px;gap:0;border-bottom:1px solid var(--divider)">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)">#</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)">Parada</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);text-align:right">Pontos</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);text-align:right">Sem.</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);text-align:right">Pico</div>
+            </div>
+            <sc-for list="{{ chartAppearances }}" as="ca" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:32px minmax(0,1fr) 70px 60px 60px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--divider-soft)">
+                <div style="font-size:13px;font-weight:700;color:var(--text-muted)">{{ ca.n }}</div>
+                <div style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">{{ ca.title }}</div>
+                <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums">{{ ca.points }}</div>
+                <div style="font-size:13px;color:var(--text-muted);text-align:right;font-variant-numeric:tabular-nums">{{ ca.weeks }}</div>
+                <div style="font-size:13px;text-align:right;font-variant-numeric:tabular-nums"><span style="{{ ca.peakStyle }}">{{ ca.peakLabel }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Versões e remixes</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ versions }}" as="v" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:16px;display:flex;gap:12px;align-items:center">
+                <div style="{{ v.coverStyle }}"></div>
+                <div style="min-width:0">
+                  <div style="font-size:13px;font-weight:700">{{ v.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{ v.note }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Reviews em destaque</div>
+            <a href="#" style="font-size:13px;font-weight:600">Ver todas →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="{{ r.avatarStyle }}"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:700">{{ r.author }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ r.readTime }}</div>
+                  </div>
+                  <div style="font-size:16px;font-weight:800;color:var(--accent)">{{ r.rating }}</div>
+                </div>
+                <div style="font-size:12.5px;color:var(--text-subtle);line-height:1.4">{{ r.excerpt }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Charts com esta música</div>
+            <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+            <sc-for list="{{ charts }}" as="c" hint-placeholder-count="2">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                  <div style="{{ c.avatarStyle }}"></div>
+                  <div style="font-size:13px;font-weight:700">{{ c.author }}</div>
+                </div>
+                <div style="font-size:15px;font-weight:800;letter-spacing:-0.01em;margin-bottom:10px">{{ c.title }}</div>
+                <div style="font-size:12px;color:var(--text-muted)">posição #{{ c.position }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="border-top:1px solid var(--divider);padding-top:32px">
+          <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;margin-bottom:16px">Continue explorando</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+            <sc-for list="{{ related }}" as="rl" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="{{ rl.coverStyle }}"></div>
+                <div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent)">{{ rl.type }}</div>
+                <div style="font-size:13px;font-weight:600;line-height:1.25">{{ rl.title }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+      </div>
+
+      <aside style="display:flex;flex-direction:column;gap:16px">
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Videoclipe</div>
+          <div style="{{ videoCoverStyle }}"></div>
+          <div style="font-size:12.5px;font-weight:600;margin-top:10px">Amber Hour (Official Video)</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">2.1M visualizações</div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Presente em playlists</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ playlists }}" as="pl" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ pl.coverStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600">{{ pl.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ pl.curator }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Performances</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ performances }}" as="pf" hint-placeholder-count="2">
+              <div>
+                <div style="font-size:12.5px;font-weight:600">{{ pf.title }}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{ pf.venue }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+  cover(seed, size, radius) { return { width: size, height: size, borderRadius: radius ?? 10, background: this.grad(seed), flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,.3)' }; }
+  circle(seed, size) { return { width: size, height: size, borderRadius: '50%', background: this.grad(seed), flexShrink: 0 }; }
+
+  renderVals() {
+    const evolution = [
+      { title: 'Entrou no Top 100', date: '2 semanas após o lançamento' },
+      { title: 'Chegou ao Top 10', date: '5 semanas após o lançamento' },
+      { title: 'Recebeu 100 Reviews', date: '2 meses após o lançamento' },
+      { title: 'Entrou para o Hall da Fama', date: 'jun 2026' },
+    ].map((e,i,arr) => ({ ...e, lineStyle: i < arr.length-1 ? { width: 2, flex: 1, background: 'var(--divider)', marginTop: 4 } : {} }));
+
+    const chartStats = [
+      { label: 'Pontos totais', value: '1.240', color: 'var(--accent)' },
+      { label: 'Ouvintes únicos', value: '612', color: '#8338EC' },
+      { label: 'Semanas no Global 100', value: '31', color: '#3A86FF' },
+      { label: 'Pico', value: '#1', color: '#FFD700' },
+    ];
+
+    const chartAppearances = [
+      ['Indie que ninguém te contou', 210, 12, 3], ['Melhor de 2026', 340, 18, 1],
+      ['Dream Pop Essentials', 180, 9, 5], ['K-pop underground', 60, 4, 12],
+      ['Manhãs Lentas', 150, 8, 4], ['Global 100 — Semana 22', 300, 22, 1],
+    ].map(([title, points, weeks, peak], i) => ({
+      n: i + 1, title, points, weeks, peak,
+      peakLabel: peak > 0 ? `#${peak}` : '-',
+      peakStyle: { color: peak === 1 ? 'var(--accent)' : 'var(--text)', fontWeight: 700 },
+    }));
+
+    const versions = [
+      { name: 'Versão Acústica', note: 'Lançada em jul 2026', seed: 5 },
+      { name: 'Remix — Wren Hall', note: 'Lançado em ago 2026', seed: 2 },
+      { name: 'Live Session', note: 'Gravada em Lisboa', seed: 9 },
+    ].map(v => ({ ...v, coverStyle: this.cover(v.seed, 48, 10) }));
+
+    const reviews = [
+      { author: 'Alice Monteiro', rating: '4.5', readTime: '3 min', excerpt: 'A faixa que resume o disco inteiro em três minutos.', seed: 0 },
+      { author: 'Kenji Osei', rating: '4.0', readTime: '2 min', excerpt: 'Simples, eficaz, viciante.', seed: 8 },
+      { author: 'Sofia Reyes', rating: '4.8', readTime: '4 min', excerpt: 'A melhor faixa do ano, sem exagero.', seed: 5 },
+    ].map(r => ({ ...r, avatarStyle: this.circle(r.seed, 36) }));
+
+    const charts = [
+      { author: 'Théo Lambert', title: 'Indie que ninguém te contou', position: 3, seed: 4 },
+      { author: 'Priya Nandan', title: 'K-pop underground', position: 12, seed: 7 },
+    ].map(c => ({ ...c, avatarStyle: this.circle(c.seed, 30) }));
+
+    const related = [
+      { type: 'Álbum', title: 'Glasswing', seed: 1 }, { type: 'Artista', title: 'Nova Vega', seed: 1 },
+      { type: 'Playlist', title: 'Dream Pop Essentials', seed: 2 }, { type: 'Review', title: 'A reinvenção silenciosa do dream pop', seed: 6 },
+    ].map(r => ({ ...r, coverStyle: this.cover(r.seed, '100%', 12) }));
+
+    const playlists = [
+      { name: 'Dream Pop Essentials', curator: 'Priya Nandan', seed: 2 },
+      { name: 'Manhãs Lentas', curator: 'Kenji Osei', seed: 4 },
+      { name: 'Melhor de 2026', curator: 'ChartFM Editorial', seed: 1 },
+    ].map(p => ({ ...p, coverStyle: this.cover(p.seed, 40, 10) }));
+
+    const performances = [
+      { title: 'Ao vivo no Rock in Rio', venue: '2026' },
+      { title: 'Sessão acústica NPR Tiny Desk', venue: '2026' },
+    ];
+
+    return { evolution, versions, reviews, charts, related, playlists, performances, chartStats, chartAppearances, videoCoverStyle: { width: '100%', aspectRatio: '16/9', borderRadius: 12, background: this.grad(4) } };
+  }
+}
+
+</script>
+</body>
+</html>

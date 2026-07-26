@@ -13,6 +13,9 @@ const DEFAULT_SCHEDULE: Partial<Record<SocialEventType, EventSlot>> = {
   [SocialEventType.GLOBAL100_PUBLISHED]: { weekday: 2, time: "09:00" },
   [SocialEventType.AIRPLAY_PUBLISHED]: { weekday: 2, time: "09:00" },
   [SocialEventType.ALBUMS_CHART_PUBLISHED]: { weekday: 2, time: "09:00" },
+  // Votação da Semana — editável em /admin/parada-global (padrão: seg 0h → qua 7h)
+  [SocialEventType.WEEKLY_POLL_OPEN]: { weekday: 1, time: "00:00" },
+  [SocialEventType.WEEKLY_POLL_CLOSE]: { weekday: 3, time: "07:00" },
 };
 
 async function ensureDefaultEventSchedules() {

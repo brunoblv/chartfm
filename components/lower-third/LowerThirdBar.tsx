@@ -198,6 +198,7 @@ export function LowerThirdBar({
   format,
   chartLabel = "Top 5 Global",
   scale: scaleOverride,
+  showPosition = true,
 }: {
   entry: LowerThirdEntry;
   weekLabel: string;
@@ -206,6 +207,8 @@ export function LowerThirdBar({
   chartLabel?: string;
   /** Sobrescreve o scale derivado do formato (útil no Remotion em 1080p). */
   scale?: number;
+  /** No Remotion a posição fica só no canto; no admin export PNG mantém. */
+  showPosition?: boolean;
 }) {
   const portrait = format === "portrait";
   const scale = scaleOverride ?? (portrait ? 0.86 : 1);
@@ -283,19 +286,21 @@ export function LowerThirdBar({
             padding: `${bodyPadY}px ${bodyPadX}px ${16 * scale}px`,
           }}
         >
-          <span
-            style={{
-              fontSize: posSize,
-              fontWeight: 800,
-              color: "#fff",
-              minWidth: 44 * scale,
-              textAlign: "center",
-              fontVariantNumeric: "tabular-nums",
-              flexShrink: 0,
-            }}
-          >
-            {entry.position}
-          </span>
+          {showPosition ? (
+            <span
+              style={{
+                fontSize: posSize,
+                fontWeight: 800,
+                color: "#fff",
+                minWidth: 44 * scale,
+                textAlign: "center",
+                fontVariantNumeric: "tabular-nums",
+                flexShrink: 0,
+              }}
+            >
+              {entry.position}
+            </span>
+          ) : null}
 
           <LtCover
             title={entry.title}

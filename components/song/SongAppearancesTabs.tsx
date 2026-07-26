@@ -110,7 +110,7 @@ function AppearancesTable({ rows }: { rows: SongAppearanceRow[] }) {
         }}
       >
         {[t("song.appearancesColPos"), t("song.appearancesColWeek"), t("song.appearancesColWeekOfYear"), t("song.appearancesColYear"), ""].map((h, i) => (
-          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#86868B" }}>
+          <div key={i} style={{ padding: "10px 8px", fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)" }}>
             {h}
           </div>
         ))}
@@ -145,10 +145,10 @@ function AppearancesTable({ rows }: { rows: SongAppearanceRow[] }) {
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", padding: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {row.dateRange}
             </div>
-            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {t("song.appearancesWeekOfYearShort", { week: row.weekOfYear })}
             </div>
-            <div style={{ fontSize: 13, color: "#86868B", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", padding: "0 8px" }}>
               {row.year}
             </div>
             <div style={{ padding: "0 8px" }}>
@@ -301,7 +301,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
 
   return (
     <div style={{ marginTop: 30 }}>
-      <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+      <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "1px solid var(--divider)" }}>
         {tabs.filter((tabItem) => !tabItem.onlyLoggedIn || isLoggedIn).map((tabItem) => {
           const isActive = activeTab === tabItem.id;
           return (
@@ -315,7 +315,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                 padding: "10px 20px",
                 fontSize: 14,
                 fontWeight: isActive ? 700 : 500,
-                color: isActive ? "#FA243C" : "#86868B",
+                color: isActive ? "var(--accent)" : "var(--text-muted)",
                 borderBottom: `2px solid ${isActive ? "#FA243C" : "transparent"}`,
                 marginBottom: -1,
               }}
@@ -330,7 +330,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
           {cards.map((s) => (
             <div key={s.label} style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: 16 }}>
-              <div style={{ fontSize: 11, color: "#86868B", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.label}</div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" }}>{s.label}</div>
               <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{s.value}</div>
             </div>
           ))}
@@ -340,7 +340,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
       {activeTab === "global" && (
         <>
           <div style={{ marginTop: 14, background: "var(--surface)", borderRadius: 16, border: "1px solid var(--divider)", padding: 16 }}>
-            <div style={{ fontSize: 12, color: "#86868B", marginBottom: 6 }}>{t("song.appearancesPeakGlobal")}</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 6 }}>{t("song.appearancesPeakGlobal")}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 28, fontWeight: 800 }}>
               {globalStats.peak === 1 && <Star size={18} color="#FA243C" fill="#FA243C" />}
               {globalStats.peak === 9999 ? "-" : `#${globalStats.peak}`}
@@ -363,7 +363,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                       <div style={{ marginTop: 10, fontSize: 13, fontWeight: 700, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {row.user.name}
                       </div>
-                      <div style={{ fontSize: 12, color: "#86868B" }}>@{row.user.handle}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>@{row.user.handle}</div>
                       <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: "#FA243C" }}>{t("song.appearancesPts", { points: row.points })}</div>
                     </div>
                   </Link>
@@ -416,14 +416,14 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
               {activeParadaSection && activeParadaSection.appearances.length > 0 ? (
                 <AppearancesTable rows={activeParadaSection.appearances} />
               ) : (
-                <div style={{ padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
+                <div style={{ padding: 16, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>
                   {t("song.appearancesNotInChartPrefix")}{activeParadaSection?.isPrimary ? t("song.appearancesPrimaryChartLower") : t("song.appearancesSecondaryChartLower")}
                   {activeParadaSection?.paradaName ? ` (${activeParadaSection.paradaName})` : ""}{t("song.appearancesNotInChartSuffix")}
                 </div>
               )}
             </>
           ) : (
-            <div style={{ padding: 16, background: "rgba(0,0,0,0.04)", borderRadius: 12, fontSize: 14, color: "#86868B", lineHeight: 1.5 }}>
+            <div style={{ padding: 16, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)", lineHeight: 1.5 }}>
               {t("song.appearancesNoChartsAtAll")}
             </div>
           )}
@@ -461,7 +461,7 @@ export function SongAppearancesTabs({ currentUserId, songId, myParadaSections, g
                   onClick={handleDelete}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
-                    background: "transparent", color: "#86868B",
+                    background: "transparent", color: "var(--text-muted)",
                     border: "1px solid var(--divider)", padding: "10px 14px",
                     borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer",
                   }}

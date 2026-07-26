@@ -36,6 +36,7 @@ export function LowerThird({
       format={landscape ? "landscape" : "portrait"}
       chartLabel={chartName}
       scale={scale}
+      showPosition={false}
     />
   );
 }

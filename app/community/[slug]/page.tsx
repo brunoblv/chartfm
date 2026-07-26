@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCommunityBySlug, isCommunityAdmin, getCommunityMemberRole } from "@/lib/community-auth";
 import { computeCommunityChartData, parseCommunityPointsConfig } from "@/lib/community-chart";
 import { buildCommunityContext } from "@/lib/entity-context-text";
-import { formatWeekLabel } from "@/lib/i18n/format";
+import { formatWeekLabel, formatCommunityFoundedDate } from "@/lib/i18n/format";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { CommunityPageClient, type CommunityDbSerializable, type CommunityPostSerializable, type CommunityTopSongSerializable, type CommunityActiveMemberSerializable } from "./CommunityPageClient";
 
@@ -60,6 +60,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
     members: row.members,
     posts: row.posts,
     founded: row.founded,
+    createdAt: row.createdAt.toISOString(),
     ownerName: row.owner?.name ?? null,
     ownerHandle: row.owner?.handle ?? null,
     paradaName: row.paradaName,
@@ -132,7 +133,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       name: row.name,
       theme: null,
       memberCount: row.members,
-      foundedLabel: row.founded || null,
+      foundedLabel: formatCommunityFoundedDate(locale, row.createdAt.toISOString(), row.founded || ""),
       chartCount: chart.overallChartCount,
       topSong: top5[0] ? { title: top5[0].title, artist: top5[0].artist } : null,
       weekLabel: chart.weekLabel ? formatWeekLabel(locale, chart.weekLabel) : null,

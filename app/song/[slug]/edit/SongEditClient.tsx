@@ -157,16 +157,16 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
     <>
       <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldTitle")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("song.fieldTitle")}</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldSpotifyId")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("song.fieldSpotifyId")}</span>
           <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
         </label>
 
         <label style={{ display: "grid", gap: 6, position: "relative" }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldArtist")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("song.fieldArtist")}</span>
           <input
             value={artistQuery}
             onChange={(e) => {
@@ -205,7 +205,7 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
         </label>
 
         <label style={{ display: "grid", gap: 6, position: "relative" }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldAlbum")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("song.fieldAlbum")}</span>
           <input
             value={albumQuery}
             onChange={(e) => {
@@ -244,11 +244,11 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
         </label>
 
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldRomanization")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("song.fieldRomanization")}</span>
           <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
         </label>
         <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("song.fieldEditorialNote")}</span>
+          <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("song.fieldEditorialNote")}</span>
           <textarea
             value={editorialNote}
             onChange={(e) => setEditorialNote(e.target.value)}
@@ -259,9 +259,9 @@ export function SongEditClient({ initialSong, initialFeats }: { initialSong: Son
         </label>
       </div>
 
-      <hr style={{ border: "none", borderTop: "1px solid rgba(0,0,0,0.08)", margin: "32px 0" }} />
+      <hr style={{ border: "none", borderTop: "1px solid var(--divider)", margin: "32px 0" }} />
       <FeatsSection songId={initialSong.id} hasSongSpotifyId={initialSong.spotifyId.trim().length > 0} initialFeats={initialFeats} />
-      <hr style={{ border: "none", borderTop: "1px solid rgba(0,0,0,0.08)", margin: "32px 0" }} />
+      <hr style={{ border: "none", borderTop: "1px solid var(--divider)", margin: "32px 0" }} />
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button
@@ -376,12 +376,12 @@ function FeatsSection({
   return (
     <div>
       <h2 style={{ fontSize: 20, margin: "0 0 4px" }}>{t("song.featsHeading")}</h2>
-      <p style={{ color: "#86868B", marginTop: 0, marginBottom: 16, fontSize: 14 }}>
+      <p style={{ color: "var(--text-muted)", marginTop: 0, marginBottom: 16, fontSize: 14 }}>
         {t("song.featsDesc")}
       </p>
 
       {!hasSongSpotifyId ? (
-        <p style={{ fontSize: 13, color: "#86868B", background: "rgba(0,0,0,0.04)", borderRadius: 10, padding: "10px 14px" }}>
+        <p style={{ fontSize: 13, color: "var(--text-muted)", background: "var(--fill-inset)", borderRadius: 10, padding: "10px 14px" }}>
           {t("song.noSpotifyIdForFeats")}
         </p>
       ) : (
@@ -448,7 +448,7 @@ function FeatsSection({
 
           {featError && <p style={{ color: "#C5291C", fontSize: 13, marginTop: 8 }}>{featError}</p>}
           {feats.length === 0 && !featError && (
-            <p style={{ color: "#86868B", fontSize: 13, marginTop: 8 }}>{t("song.noFeatsRegistered")}</p>
+            <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 8 }}>{t("song.noFeatsRegistered")}</p>
           )}
         </>
       )}
@@ -457,12 +457,13 @@ function FeatsSection({
 }
 
 const inputStyle: CSSProperties = {
-  border: "1px solid rgba(0,0,0,0.14)",
+  border: "1px solid var(--divider-strong)",
   borderRadius: 10,
   padding: "10px 12px",
   fontSize: 14,
   outline: "none",
-  background: "#fff",
+  background: "var(--surface)",
+  color: "var(--text)",
 };
 
 const dropdownStyle: CSSProperties = {
@@ -472,8 +473,8 @@ const dropdownStyle: CSSProperties = {
   left: 0,
   right: 0,
   marginTop: 4,
-  background: "#fff",
-  border: "1px solid rgba(0,0,0,0.12)",
+  background: "var(--surface-elevated)",
+  border: "1px solid var(--divider-strong)",
   borderRadius: 10,
   overflow: "hidden",
   boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
@@ -485,8 +486,9 @@ const optionStyle: CSSProperties = {
   width: "100%",
   textAlign: "left",
   border: "none",
-  borderBottom: "1px solid rgba(0,0,0,0.06)",
-  background: "#fff",
+  borderBottom: "1px solid var(--divider)",
+  background: "var(--surface-elevated)",
+  color: "var(--text)",
   padding: "9px 10px",
   cursor: "pointer",
   fontSize: 13,

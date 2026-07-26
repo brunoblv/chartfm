@@ -1,0 +1,113 @@
+
+Diretrizes de UX/UI – Páginas Institucionais do ChartFM
+Estas páginas não devem ser tratadas apenas como links institucionais no rodapé. Elas fazem parte da experiência do produto, fortalecem a marca, melhoram o SEO e aumentam a confiança dos usuários.
+Editorial (Hub Editorial)
+Conceito
+O Editorial deve ser promovido de um simples link para um hub de conteúdo. Ele deve funcionar como a revista oficial do ChartFM, reunindo notícias, análises, reviews, entrevistas e especiais. O objetivo é fazer o usuário voltar diariamente, mesmo quando não pretende criar uma Chart.
+Layout
+Hero com a principal matéria da semana.Abaixo, grade de artigos em destaque.Depois, blocos temáticos (Notícias, Reviews, Guias, Entrevistas, Especiais, Retrospectivas, Opinião).Na lateral: Trending, artigos populares, lançamentos da semana e newsletter.
+Conteúdo
+Hero com manchete principal e imagem de destaque
+Categorias editoriais
+Reviews da equipe
+Entrevistas
+Especiais e listas
+Guias para novos ouvintes
+Notícias da indústria musical
+Matérias relacionadas a artistas, álbuns e Charts
+Busca exclusiva do editorial
+Newsletter e arquivo de edições
+Diretrizes
+Esta página deve ter destaque no menu principal como 'Editorial' ou 'Magazine', e não ficar escondida entre páginas institucionais.
+Sobre
+Conceito
+Apresentar a identidade do ChartFM, sua missão e a filosofia da plataforma.
+Layout
+Hero institucional seguido por blocos explicativos em cards.
+Conteúdo
+Quem somos
+Nossa missão
+Como funcionam as Charts
+Linha do tempo do projeto
+Equipe
+Parceiros
+Roadmap
+Perguntas frequentes
+Diretrizes
+Usar linguagem próxima e mostrar o propósito da comunidade.
+Contato
+Conceito
+Central única para suporte e comunicação.
+Layout
+Layout em duas colunas: formulário à esquerda e canais de contato à direita.
+Conteúdo
+Formulário
+Suporte
+Imprensa
+Parcerias
+Sugestões
+Reportar problemas
+Redes sociais
+Diretrizes
+Incluir tempo estimado de resposta e perguntas frequentes.
+Termos de Uso
+Conceito
+Explicar claramente as regras da plataforma.
+Layout
+Índice lateral com navegação por tópicos e conteúdo central.
+Conteúdo
+Direitos e deveres
+Conteúdo permitido
+Direitos autorais
+Moderação
+Sanções
+APIs
+Atualizações
+Diretrizes
+Texto organizado, pesquisável e fácil de consultar.
+O que há de novo
+Conceito
+Servir como changelog oficial do ChartFM.
+Layout
+Timeline vertical com versões e filtros.
+Conteúdo
+Versão
+Data
+Novidades
+Melhorias
+Correções
+Em desenvolvimento
+Diretrizes
+Permitir pesquisa e filtros por categoria.
+Privacidade
+Conceito
+Explicar de forma transparente como os dados são tratados.
+Layout
+Layout em seções com linguagem simples.
+Conteúdo
+Dados coletados
+Cookies
+Segurança
+Compartilhamento
+LGPD
+Excluir conta
+Contato
+Diretrizes
+Evitar linguagem excessivamente jurídica sempre que possível.
+Apoie o ChartFM
+Conceito
+Apresentar formas de financiar o projeto e mostrar o impacto do apoio.
+Layout
+Hero inspirador seguido por planos, metas e benefícios.
+Conteúdo
+Por que apoiar
+Planos
+Benefícios
+Recursos Premium
+Metas futuras
+Prestação de contas
+FAQ
+Diretrizes
+Mostrar claramente como cada contribuição ajuda a evoluir a plataforma.
+Arquitetura Recomendada
+O Editorial não deve permanecer junto às páginas institucionais.Menu principal sugerido:• Descobrir• Charts• Comunidades• Editorial• Push• Critics FMNo rodapé:• Sobre• Contato• Termos• Privacidade• O que há de novo• Apoie o ChartFMDessa forma, o Editorial torna-se um dos pilares do ChartFM, ao lado das Charts e da comunidade.

@@ -115,6 +115,15 @@ export function applyCommunityPointRules(
   return filtered;
 }
 
+/** Corta a parada oficial ao tamanho configurado (maxSongs). */
+export function limitOfficialEntriesByMaxSongs<T extends { position: number }>(
+  entries: T[],
+  maxSongs: number,
+): T[] {
+  const limit = Math.min(Math.max(maxSongs, 1), 100);
+  return entries.filter((e) => e.position <= limit);
+}
+
 async function communityHasOfficialWeek(
   communityId: string,
   weekIndex: number,
@@ -287,8 +296,16 @@ async function computeOfficialCommunityChartData(
     prisma.chart.count({ where: { communityId, isPublished: true } }),
   ]);
 
-  const weeklyEntries = applyCommunityPointRules(weeklyRaw, config);
-  const prevWeeklyEntries = applyCommunityPointRules(prevWeeklyRaw, config);
+  // maxSongs limita a parada oficial exibida; snapshots antigos podem ter
+  // mais entradas (default histórico 50) se a config mudou depois do freeze.
+  const weeklyEntries = limitOfficialEntriesByMaxSongs(
+    applyCommunityPointRules(weeklyRaw, config),
+    limit,
+  );
+  const prevWeeklyEntries = limitOfficialEntriesByMaxSongs(
+    applyCommunityPointRules(prevWeeklyRaw, config),
+    limit,
+  );
   const overallEntries = applyCommunityPointRules(overallRaw, config);
 
   const weeklySongs = mapOfficialEntriesToGlobalSongs(weeklyEntries as OfficialChartEntryRow[]);

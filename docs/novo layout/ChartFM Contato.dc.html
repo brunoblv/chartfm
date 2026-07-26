@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+    input, textarea{font-family:inherit}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1040px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Início</a>
+    </div>
+  </div>
+
+  <div style="max-width:1040px;margin:0 auto;padding:56px 40px 96px">
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em">Contato</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px">Central única para suporte, imprensa, parcerias e sugestões.</div>
+
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:40px;margin-top:40px;align-items:start">
+      <form onsubmit="{{ onSubmit }}" style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:10px">
+          <sc-for list="{{ categories }}" as="c" hint-placeholder-count="5">
+            <button type="button" onclick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <input placeholder="Seu nome" style="background:var(--fill-subtle);border:1px solid var(--divider);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;outline:none" />
+        <input placeholder="Seu e-mail" style="background:var(--fill-subtle);border:1px solid var(--divider);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;outline:none" />
+        <textarea placeholder="Sua mensagem" rows="6" style="background:var(--fill-subtle);border:1px solid var(--divider);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;resize:vertical"></textarea>
+        <button type="submit" style="align-self:flex-start;background:var(--accent);color:#fff;border:none;border-radius:100px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">{{ submitLabel }}</button>
+      </form>
+
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:20px">
+          <div style="font-size:12px;color:var(--text-muted)">Tempo estimado de resposta</div>
+          <div style="font-size:20px;font-weight:800;margin-top:4px">até 48 horas</div>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:10px">Canais</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ channels }}" as="ch" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;font-size:13.5px">
+                <span style="color:var(--text-muted)">{{ ch.label }}</span>
+                <a href="#">{{ ch.value }}</a>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:10px">Redes sociais</div>
+          <div style="display:flex;gap:10px">
+            <sc-for list="{{ socials }}" as="s" hint-placeholder-count="4">
+              <a href="#" style="background:var(--fill-subtle);border-radius:100px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text)">{{ s }}</a>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section style="margin-top:48px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px">Perguntas frequentes</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ faq }}" as="f" hint-placeholder-count="4">
+          <div style="padding:14px 0;border-bottom:1px solid var(--divider-soft)">
+            <div style="font-size:14px;font-weight:700">{{ f.q }}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:5px">{{ f.a }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { category: 'Suporte', sent: false };
+
+  catStyle(active) {
+    return { border: 'none', cursor: 'pointer', padding: '7px 14px', borderRadius: 100, fontSize: 12.5, fontWeight: 700,
+      background: active ? 'var(--accent)' : 'var(--fill-subtle)', color: active ? '#fff' : 'var(--text-muted)' };
+  }
+
+  renderVals() {
+    const categoryDefs = ['Suporte', 'Imprensa', 'Parcerias', 'Sugestões', 'Reportar problema'];
+    const categories = categoryDefs.map(label => ({
+      label, style: this.catStyle(this.state.category === label),
+      onClick: () => this.setState({ category: label }),
+    }));
+
+    const channels = [
+      { label: 'Suporte', value: 'suporte@chartfm.app' }, { label: 'Imprensa', value: 'imprensa@chartfm.app' },
+      { label: 'Parcerias', value: 'parcerias@chartfm.app' }, { label: 'Geral', value: 'oi@chartfm.app' },
+    ];
+
+    const socials = ['Instagram', 'X', 'Discord', 'YouTube'];
+
+    const faq = [
+      { q: 'Quanto tempo leva para responder?', a: 'Em até 48 horas úteis para a maioria das categorias.' },
+      { q: 'Posso sugerir uma funcionalidade?', a: 'Sim! Use a categoria Sugestões — lemos todas.' },
+      { q: 'Como reporto um bug?', a: 'Escolha Reportar problema e descreva os passos para reproduzir.' },
+    ];
+
+    const onSubmit = (e) => { e.preventDefault(); this.setState({ sent: true }); };
+    const submitLabel = this.state.sent ? 'Enviado ✓' : 'Enviar mensagem';
+
+    return { categories, channels, socials, faq, onSubmit, submitLabel };
+  }
+}
+
+</script>
+</body>
+</html>

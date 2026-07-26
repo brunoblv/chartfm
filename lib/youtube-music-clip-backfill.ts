@@ -5,7 +5,10 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { getYouTubeMusicVideoReleaseDate } from "@/lib/youtube-music-video-date";
+import {
+  getYouTubeMusicVideoReleaseDate,
+  getYouTubeVideoPublishedAt,
+} from "@/lib/youtube-music-video-date";
 
 /** Marcação em Song.sourcesNotFound: YouTube já consultado sem clipe válido — o backfill pula até correção manual. */
 export const YOUTUBE_CLIP_SOURCE = "youtube_clip";
@@ -23,15 +26,22 @@ async function createOrUpdateClip(
   songId: string,
   videoId: string,
   title: string,
-  publishedAt: Date,
+  publishedAt: Date | null,
   adminUserId: string,
 ): Promise<{ created: boolean; clipId: string }> {
   const existingClip = await prisma.songVideoClip.findFirst({
     where: { songId, youtubeId: videoId },
-    select: { id: true },
+    select: { id: true, publishedAt: true },
   });
 
   if (existingClip) {
+    // Preenche publishedAt do clipe se ainda estiver vazio.
+    if (!existingClip.publishedAt && publishedAt) {
+      await prisma.songVideoClip.update({
+        where: { id: existingClip.id },
+        data: { publishedAt },
+      });
+    }
     return { created: false, clipId: existingClip.id };
   }
 
@@ -40,7 +50,7 @@ async function createOrUpdateClip(
       songId,
       youtubeId: videoId,
       imageUrl: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-      publishedAt,
+      publishedAt: publishedAt ?? undefined,
       clipType: "OFFICIAL",
       uploadedBy: adminUserId,
     },
@@ -50,6 +60,76 @@ async function createOrUpdateClip(
   return { created: true, clipId: clip.id };
 }
 
+async function applyClipDatesToSong(songId: string, publishedAt: Date | null): Promise<void> {
+  if (!publishedAt) return;
+  const song = await prisma.song.findUnique({
+    where: { id: songId },
+    select: { musicVideoReleaseDate: true, youtubeReleaseDate: true },
+  });
+  if (!song || (song.musicVideoReleaseDate && song.youtubeReleaseDate)) return;
+
+  await prisma.song.update({
+    where: { id: songId },
+    data: {
+      ...(song.musicVideoReleaseDate ? {} : { musicVideoReleaseDate: publishedAt }),
+      ...(song.youtubeReleaseDate ? {} : { youtubeReleaseDate: publishedAt }),
+    },
+  });
+}
+
+/**
+ * Se a música já tem clipe com youtubeId mas falta data de postagem no Song/clip,
+ * consulta videos.list e preenche (nunca cria clipe novo).
+ */
+export async function fillYouTubeClipPublishedAt(
+  songId: string,
+  youtubeId: string,
+): Promise<YouTubeClipSearchResult> {
+  try {
+    const meta = await getYouTubeVideoPublishedAt(youtubeId);
+    if (!meta.date) {
+      return {
+        found: true,
+        videoId: youtubeId,
+        title: meta.title,
+        publishedAt: null,
+        needsManualReview: false,
+        error: "Não foi possível obter a data de postagem do YouTube",
+      };
+    }
+
+    const clip = await prisma.songVideoClip.findFirst({
+      where: { songId, youtubeId },
+      select: { id: true, publishedAt: true },
+    });
+    if (clip && !clip.publishedAt) {
+      await prisma.songVideoClip.update({
+        where: { id: clip.id },
+        data: { publishedAt: meta.date },
+      });
+    }
+
+    await applyClipDatesToSong(songId, meta.date);
+
+    return {
+      found: true,
+      videoId: youtubeId,
+      title: meta.title,
+      publishedAt: meta.date,
+      needsManualReview: false,
+    };
+  } catch (error) {
+    return {
+      found: true,
+      videoId: youtubeId,
+      title: null,
+      publishedAt: null,
+      needsManualReview: false,
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    };
+  }
+}
+
 export async function searchAndCreateYouTubeClip(
   songId: string,
   songTitle: string,
@@ -57,11 +137,9 @@ export async function searchAndCreateYouTubeClip(
   adminUserId: string,
 ): Promise<YouTubeClipSearchResult> {
   try {
-    // Buscar no YouTube usando a função existente
     const result = await getYouTubeMusicVideoReleaseDate(songTitle, artistName);
 
     if (!result.videoId) {
-      // Nenhum vídeo encontrado
       return {
         found: false,
         videoId: null,
@@ -71,33 +149,16 @@ export async function searchAndCreateYouTubeClip(
       };
     }
 
-    // Criar ou atualizar o clip no banco
-    const clip = await createOrUpdateClip(
+    await createOrUpdateClip(
       songId,
       result.videoId,
       result.title || "",
-      result.date || new Date(),
+      result.date,
       adminUserId,
     );
 
     await clearManualReviewFlag(songId);
-
-    // Preenche as datas de clipe da música se estiverem vazias (nunca sobrescreve).
-    if (result.date) {
-      const song = await prisma.song.findUnique({
-        where: { id: songId },
-        select: { musicVideoReleaseDate: true, youtubeReleaseDate: true },
-      });
-      if (song && (!song.musicVideoReleaseDate || !song.youtubeReleaseDate)) {
-        await prisma.song.update({
-          where: { id: songId },
-          data: {
-            ...(song.musicVideoReleaseDate ? {} : { musicVideoReleaseDate: result.date }),
-            ...(song.youtubeReleaseDate ? {} : { youtubeReleaseDate: result.date }),
-          },
-        });
-      }
-    }
+    await applyClipDatesToSong(songId, result.date);
 
     return {
       found: true,
@@ -168,7 +229,7 @@ export async function createManualReviewFlag(songId: string): Promise<void> {
   });
 }
 
-async function clearManualReviewFlag(songId: string): Promise<void> {
+export async function clearManualReviewFlag(songId: string): Promise<void> {
   const song = await prisma.song.findUnique({
     where: { id: songId },
     select: { sourcesNotFound: true },
@@ -179,4 +240,37 @@ async function clearManualReviewFlag(songId: string): Promise<void> {
     where: { id: songId },
     data: { sourcesNotFound: song.sourcesNotFound.filter((s) => s !== YOUTUBE_CLIP_SOURCE) },
   });
+}
+
+/** Cadastra/atualiza clipe OFFICIAL manualmente (ID ou URL do YouTube). */
+export async function assignManualYouTubeClip(
+  songId: string,
+  youtubeIdOrUrl: string,
+  adminUserId: string,
+): Promise<YouTubeClipSearchResult> {
+  const { extractYoutubeId } = await import("@/lib/videoparada/download-clip");
+  const videoId = extractYoutubeId(youtubeIdOrUrl);
+  if (!videoId) {
+    return {
+      found: false,
+      videoId: null,
+      title: null,
+      publishedAt: null,
+      needsManualReview: false,
+      error: "YouTube ID ou URL inválido",
+    };
+  }
+
+  const meta = await getYouTubeVideoPublishedAt(videoId);
+  await createOrUpdateClip(songId, videoId, meta.title || "", meta.date, adminUserId);
+  await clearManualReviewFlag(songId);
+  await applyClipDatesToSong(songId, meta.date);
+
+  return {
+    found: true,
+    videoId,
+    title: meta.title,
+    publishedAt: meta.date,
+    needsManualReview: false,
+  };
 }

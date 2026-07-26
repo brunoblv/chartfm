@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="26" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:700;color:var(--text)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Conversas</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:44px 0 28px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Communities</div>
+        <div style="font-size:38px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Onde a conversa acontece</div>
+        <div style="font-size:15px;color:var(--text-muted);margin-top:8px;max-width:520px;line-height:1.5">Junte-se a fãs de gêneros, artistas e cenas específicas para discutir os discos que importam.</div>
+      </div>
+      <button style="background:var(--accent);color:#fff;border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">+ Criar community</button>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:8px 40px 96px">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Suas communities</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ yourCommunities }}" as="c" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;overflow:hidden">
+                <div style="{{ c.bannerStyle }}"></div>
+                <div style="padding:14px">
+                  <div style="font-size:14px;font-weight:700;line-height:1.25">{{ c.name }}</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">{{ c.members }} membros · {{ c.newPosts }} novos posts</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px">
+                    <sc-for list="{{ c.features }}" as="ft" hint-placeholder-count="4">
+                      <div style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;background:var(--fill-subtle);color:var(--text-muted)">{{ ft }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Feed da comunidade</div>
+            <div style="display:flex;gap:16px">
+              <a href="#" style="font-size:13px;font-weight:700;color:var(--text)">Em alta</a>
+              <a href="#" style="font-size:13px;font-weight:500">Recentes</a>
+              <a href="#" style="font-size:13px;font-weight:500">Seguindo</a>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ feed }}" as="p" hint-placeholder-count="4">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="{{ p.avatarStyle }}"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:700">{{ p.author }} <span style="color:var(--text-muted);font-weight:500">em</span> {{ p.community }}</div>
+                    <div style="font-size:11.5px;color:var(--text-muted)">{{ p.time }}</div>
+                  </div>
+                </div>
+                <div style="font-size:14.5px;color:var(--text-subtle);line-height:1.55;margin-top:12px">{{ p.text }}</div>
+                <sc-if value="{{ p.hasAttachment }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;background:var(--fill-subtle);border-radius:12px">
+                    <div style="{{ p.attachmentStyle }}"></div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:13px;font-weight:700">{{ p.attachmentTitle }}</div>
+                      <div style="font-size:11.5px;color:var(--text-muted)">{{ p.attachmentSubtitle }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="display:flex;align-items:center;gap:20px;margin-top:14px;padding-top:14px;border-top:1px solid var(--divider);font-size:12.5px;color:var(--text-muted)">
+                  <div>♥ {{ p.likes }}</div>
+                  <div>💬 {{ p.comments }}</div>
+                  <div>↗ Compartilhar</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="border-top:1px solid var(--divider);padding-top:32px">
+          <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;margin-bottom:16px">Eventos das suas communities</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ communityEvents }}" as="ev" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:14px">
+                <div style="width:44px;text-align:center;flex-shrink:0">
+                  <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase">{{ ev.month }}</div>
+                  <div style="font-size:18px;font-weight:800">{{ ev.day }}</div>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13.5px;font-weight:700">{{ ev.title }}</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">{{ ev.community }} · {{ ev.attendees }} confirmados</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="border-top:1px solid var(--divider);padding-top:32px">
+          <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;margin-bottom:16px">Discussões em alta</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+            <sc-for list="{{ discussions }}" as="d" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:14px">
+                <div style="{{ d.iconStyle }}"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700;line-height:1.25">{{ d.title }}</div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">{{ d.community }} · {{ d.replies }} respostas</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+      </div>
+
+      <aside style="display:flex;flex-direction:column;gap:16px">
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Communities em alta</div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ trending }}" as="t" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ t.avatarStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600">{{ t.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ t.members }} membros</div>
+                </div>
+                <button style="background:var(--fill-subtle);color:var(--text);border:none;padding:6px 12px;border-radius:100px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap">Entrar</button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Explorar por gênero</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ genres }}" as="g" hint-placeholder-count="8">
+              <div style="background:var(--fill-subtle);font-size:12px;font-weight:600;padding:7px 14px;border-radius:100px">{{ g }}</div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Pessoas ativas agora</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ activeUsers }}" as="u" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="position:relative">
+                  <div style="{{ u.avatarStyle }}"></div>
+                  <div style="position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;background:var(--up-fg,#3ECF8E);border:2px solid var(--surface)"></div>
+                </div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600">{{ u.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ u.status }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+  cover(seed, size, radius) { return { width: size, height: size, borderRadius: radius ?? 10, background: this.grad(seed), flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,.3)' }; }
+  circle(seed, size) { return { width: size, height: size, borderRadius: '50%', background: this.grad(seed), flexShrink: 0 }; }
+
+  renderVals() {
+    const yourCommunities = [
+      { name: 'Dream Pop Diaries', members: '12.4k', newPosts: 34, seed: 2 },
+      { name: 'Indie Brasil 2026', members: '8.1k', newPosts: 19, seed: 5 },
+      { name: 'Vinyl Collectors', members: '22.7k', newPosts: 62, seed: 8 },
+    ].map(c => ({ ...c, bannerStyle: { height: 96, background: this.grad(c.seed) }, features: ['Charts', 'Reviews', 'Clube do Álbum', 'Ranking'] }));
+
+    const feed = [
+      { author: 'Marco Villani', community: 'Dream Pop Diaries', time: 'há 1h', text: 'Alguém mais acha que "Halflight" é o álbum mais coeso do Coral Hour até agora? A produção tá impecável.', likes: 87, comments: 23, seed: 3, hasAttachment: true, attachmentTitle: 'Halflight', attachmentSubtitle: 'Coral Hour · 2026 · nota 5.0' },
+      { author: 'Priya Nandan', community: 'Vinyl Collectors', time: 'há 3h', text: 'Chegou meu vinil de Glasswing hoje, a prensagem tá linda. Alguém sabe se vai ter reedição da Nightlong?', likes: 41, comments: 9, seed: 7, hasAttachment: false },
+      { author: 'Kenji Osei', community: 'Indie Brasil 2026', time: 'há 6h', text: 'Fizemos uma playlist colaborativa com o melhor do indie nacional desse semestre, bora contribuir.', likes: 65, comments: 17, seed: 8, hasAttachment: false },
+      { author: 'Théo Lambert', community: 'Dream Pop Diaries', time: 'há 9h', text: 'Discussão: qual faixa de Halflight vocês acham subestimada? Pra mim é "Low Tide", disparado.', likes: 29, comments: 34, seed: 4, hasAttachment: false },
+    ].map(p => ({ ...p, avatarStyle: this.circle(p.seed, 36), attachmentStyle: p.hasAttachment ? this.cover(p.seed, 44, 10) : {} }));
+
+    const discussions = [
+      { title: 'Melhor disco de dream pop da década?', community: 'Dream Pop Diaries', replies: 214, seed: 2 },
+      { title: 'Indicações de estreia pra quem tá começando na cena indie BR', community: 'Indie Brasil 2026', replies: 98, seed: 5 },
+      { title: 'Vale a pena importar prensagens europeias?', community: 'Vinyl Collectors', replies: 156, seed: 8 },
+      { title: 'Halflight vai ganhar Álbum do Ano nos ChartFM Awards?', community: 'Dream Pop Diaries', replies: 302, seed: 1 },
+    ].map(d => ({ ...d, iconStyle: this.cover(d.seed, 44, 12) }));
+
+    const trending = [
+      { name: 'Shoegaze Revival', members: '31.2k', seed: 6 },
+      { name: 'Bedroom Pop Corner', members: '9.4k', seed: 3 },
+      { name: 'Vinyl Collectors', members: '22.7k', seed: 8 },
+      { name: 'Latin Alternative', members: '17.9k', seed: 9 },
+      { name: 'Album Art Appreciation', members: '14.1k', seed: 0 },
+    ].map(t => ({ ...t, avatarStyle: this.cover(t.seed, 40, 10) }));
+
+    const genres = ['Dream Pop', 'Shoegaze', 'Indie Rock', 'Bedroom Pop', 'MPB', 'Trap', 'Jazz', 'Ambient'];
+
+    const communityEvents = [
+      { month: 'jul', day: '28', title: 'Ouça-junto: Halflight (álbum completo)', community: 'Dream Pop Diaries', attendees: 214 },
+      { month: 'ago', day: '02', title: 'Feira de trocas de vinil', community: 'Vinyl Collectors', attendees: 88 },
+      { month: 'ago', day: '09', title: 'Live de curadoria: indie nacional', community: 'Indie Brasil 2026', attendees: 132 },
+    ];
+
+    const activeUsers = [
+      { name: 'Sofia Reyes', status: 'ouvindo Halflight', seed: 5 },
+      { name: 'Alice Monteiro', status: 'escrevendo uma Review', seed: 0 },
+      { name: 'Kenji Osei', status: 'em Vinyl Collectors', seed: 8 },
+      { name: 'Priya Nandan', status: 'ativa agora', seed: 7 },
+    ].map(u => ({ ...u, avatarStyle: this.circle(u.seed, 34) }));
+
+    return { yourCommunities, feed, discussions, communityEvents, trending, genres, activeUsers };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -44,7 +44,7 @@ export default async function AjudaPage() {
       step: t("helpCenter.step3Label"),
       title: t("helpCenter.step3Title"),
       description: t("helpCenter.step3Desc"),
-      href: "/create",
+      href: "/create/start",
       highlight: false,
     },
   ];

@@ -1,0 +1,33 @@
+
+Diretrizes de UX – Criação de Charts e Integração com Last.fm
+Problema identificado
+Muitos usuários acreditam que precisam escolher entre criar uma Chart manualmente OU importar do Last.fm. Também existe a impressão de que uma Chart importada não pode ser alterada. A interface deve comunicar claramente que a importação é apenas um ponto de partida.
+Princípio de UX
+Importação não é publicação. Toda Chart importada do Last.fm deve poder ser editada livremente antes de ser publicada.
+1. Tela de escolha do método de criação
+Substituir a escolha simples por dois cards explicativos:
+• Começar com meu Last.fm (recomendado)
+Importe automaticamente suas músicas mais ouvidas. Depois você poderá alterar posições, remover músicas, adicionar novas faixas e editar tudo manualmente.
+• Criar Manualmente
+Monte sua Chart do zero para listas temáticas ou totalmente personalizadas.
+Mensagem obrigatória abaixo dos cards:“Independentemente da opção escolhida, você poderá editar completamente sua Chart antes de publicá-la.”
+2. Após a importação
+Exibir um banner de confirmação informando que a Chart foi criada usando o Last.fm e que agora ela pode ser personalizada livremente.
+O banner deve destacar que o usuário pode:
+Arrastar músicas para mudar a ordem
+Adicionar novas músicas
+Remover faixas
+Alterar posições
+Editar qualquer informação antes da publicação
+3. Durante a edição
+Exibir um aviso permanente no topo do editor:
+“Sua Chart foi importada do Last.fm e serve apenas como ponto de partida. Você pode modificar qualquer música antes de publicar.”
+4. Linguagem recomendada
+Evitar termos que transmitam a ideia de um processo definitivo, como 'Importar do Last.fm'. Preferir textos mais claros, como:
+Começar com meu Last.fm
+Gerar Chart usando meu Last.fm
+Usar meu Last.fm como ponto de partida
+5. Fluxo recomendado
+Passo 1 – Escolha como deseja começar (Last.fm ou Manual)Passo 2 – Escolha o período (quando utilizar Last.fm)Passo 3 – Personalize sua ChartPasso 4 – Publicar
+Objetivo
+O usuário deve entender desde o primeiro contato que importar do Last.fm economiza tempo, mas não limita sua liberdade. A importação acelera a criação da Chart; a personalização continua sendo parte natural do processo.

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
-import { getRankingWeekReference } from "@/lib/chart-week";
+import { getRankingWeekReference, formatDateRangeForLocale } from "@/lib/chart-week";
 import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { GlobalTabs } from "@/components/global/GlobalTabs";
 import { GlobalHero } from "@/components/global/GlobalHero";
@@ -20,6 +20,7 @@ import {
 import type { GlobalSnapshotPayload } from "@/lib/global-snapshot";
 import { ChevronLeft } from "lucide-react";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { formatWeekLabel } from "@/lib/i18n/format";
 
 type GlobalSongLike = GlobalSnapshotPayload["weeklySongs"][number];
 
@@ -87,7 +88,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function GlobalGenreChartPage({ params, searchParams }: PageProps) {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
   const { slug } = await params;
   if (!isGlobalGenreChartSlug(slug)) notFound();
   const chart = getGlobalGenreChart(slug)!;
@@ -200,10 +201,10 @@ export default async function GlobalGenreChartPage({ params, searchParams }: Pag
 
       <section style={{ marginBottom: 52 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 8 }}>
-          {t("global.weekRankingsTitle", { week: weekNow })}
+          {t("global.weekRankingsTitle", { week: formatWeekLabel(locale, weekNow) })}
         </h2>
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, lineHeight: 1.6 }}>
-          {t("global.top50FilterDesc", { range: weekRangeNow })}
+          {t("global.top50FilterDesc", { range: formatDateRangeForLocale(weekRangeNow, locale, weekNow) })}
         </p>
 
         {globalSongs.length === 0 ? (

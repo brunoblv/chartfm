@@ -1,5 +1,24 @@
 import type { Locale } from "./config";
 
+/** Data curta para “Fundada em …” / “Founded …”. */
+export function formatCommunityFoundedDate(
+  locale: Locale,
+  createdAtIso: string | null | undefined,
+  foundedFallback: string,
+): string {
+  if (createdAtIso) {
+    const d = new Date(createdAtIso);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString(locale === "en" ? "en-US" : "pt-BR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+  }
+  return foundedFallback;
+}
+
 /** "Semana 21 - 2026" → "Week 21, 2026" (en) or "Semana 21, 2026" (pt-BR). */
 export function formatWeekLabel(locale: Locale, weekLabel: string): string {
   const match = weekLabel.match(/Semana\s+(\d+)\s*[-–]\s*(\d{4})/i);

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Voltar à parada</a>
+    </div>
+  </div>
+
+  <div style="max-width:1000px;margin:0 auto;padding:36px 40px 96px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Minha Parada · Semana 28</div>
+        <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;margin-top:6px">{{ variantTitle }}</div>
+      </div>
+      <div style="display:flex;background:var(--fill-subtle);border-radius:8px;padding:3px;gap:2px">
+        <div onClick="{{ selectGrid }}" style="{{ gridTabStyle }}">Grade</div>
+        <div onClick="{{ selectPodium }}" style="{{ podiumTabStyle }}">Pódio</div>
+      </div>
+    </div>
+
+    <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top:28px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px">
+        <sc-for list="{{ entries }}" as="e" hint-placeholder-count="10">
+          <div>
+            <div style="position:relative;width:100%;aspect-ratio:1">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ e.cover }}" hint-size="100%,100%" style="width:100%;height:100%;position:absolute;inset:0"></x-import>
+              <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:13px;font-weight:800;padding:3px 9px;border-radius:100px;font-variant-numeric:tabular-nums">#{{ e.n }}</div>
+              <div style="position:absolute;top:8px;right:8px">
+                <x-import component-from-global-scope="ChartFM.MovementBadge" status="{{ e.status }}" delta="{{ e.delta }}" compact="{{ true }}" hint-size="40px,16px"></x-import>
+              </div>
+            </div>
+            <div style="font-size:13px;font-weight:700;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</div>
+            <div style="font-size:11.5px;color:var(--text-muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.artist }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPodium }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:44px;display:flex;align-items:flex-end;justify-content:center;gap:20px">
+        <sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;align-items:center;transform:{{ p.offset }}">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ p.cover }}" size="{{ p.coverSize }}" rounded="{{ 16 }}" hint-size="140px,140px"></x-import>
+            <div style="font-size:14px;font-weight:700;margin-top:12px;max-width:140px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.title }}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ p.artist }}</div>
+            <div style="{{ p.medalStyle }}">{{ p.n }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="margin-top:48px;display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ rest }}" as="e" hint-placeholder-count="7">
+          <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--divider)">
+            <div style="width:28px;text-align:center;font-size:14px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ e.n }}</div>
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ e.cover }}" size="{{ 44 }}" hint-size="44px,44px"></x-import>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.title }}</div>
+              <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.artist }}</div>
+            </div>
+            <x-import component-from-global-scope="ChartFM.MovementBadge" status="{{ e.status }}" delta="{{ e.delta }}" compact="{{ true }}" hint-size="40px,16px"></x-import>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { layout: 'grid' };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+  tabStyle(active) {
+    return { padding: '8px 16px', borderRadius: 6, fontSize: 12.5, fontWeight: active ? 700 : 600, cursor: 'pointer', background: active ? 'var(--surface)' : 'transparent', color: active ? 'var(--text)' : 'var(--text-muted)' };
+  }
+
+  renderVals() {
+    const raw = [
+      { title: 'Halflight', artist: 'Coral Hour', status: 'same', seed: 6 },
+      { title: 'Amber Static', artist: 'Coral Hour', status: 'up', delta: 2, seed: 5 },
+      { title: 'Glasswing', artist: 'Nova Vega', status: 'down', delta: 1, seed: 1 },
+      { title: 'Low Tide', artist: 'Coral Hour', status: 'up', delta: 4, seed: 2 },
+      { title: 'Static Bloom', artist: 'Kite Season', status: 'new', seed: 3 },
+      { title: 'Nightlong', artist: 'Coral Hour', status: 'return', seed: 9 },
+      { title: 'Coastal', artist: 'Nova Vega', status: 'new', seed: 0 },
+      { title: 'Bloomtide', artist: 'Kite Season', status: 'up', delta: 1, seed: 8 },
+      { title: 'Static & Salt', artist: 'Halflight Parade', status: 'same', seed: 4 },
+      { title: 'First Light', artist: 'Marisol Vane', status: 'down', delta: 2, seed: 7 },
+    ];
+    const entries = raw.map((r, i) => ({ n: i + 1, title: r.title, artist: r.artist, status: r.status, delta: r.delta, cover: this.cover(r.seed) }));
+
+    const medalColors = { 1: '#FFD166', 2: '#D9D9E0', 3: '#D9A066' };
+    const podiumOrder = [2, 1, 3];
+    const podium = podiumOrder.map(n => {
+      const e = entries[n - 1];
+      return {
+        n, title: e.title, artist: e.artist, cover: e.cover,
+        coverSize: n === 1 ? 140 : 110,
+        offset: n === 1 ? 'translateY(-16px)' : 'none',
+        medalStyle: {
+          marginTop: 10, width: 30, height: 30, borderRadius: '50%', background: medalColors[n],
+          color: '#1a1a2e', fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }
+      };
+    });
+    const rest = entries.slice(3);
+
+    return {
+      entries, podium, rest,
+      variantTitle: this.state.layout === 'grid' ? 'Ranking em grade' : 'Ranking em pódio',
+      isGrid: this.state.layout === 'grid',
+      isPodium: this.state.layout === 'podium',
+      gridTabStyle: this.tabStyle(this.state.layout === 'grid'),
+      podiumTabStyle: this.tabStyle(this.state.layout === 'podium'),
+      selectGrid: () => this.setState({ layout: 'grid' }),
+      selectPodium: () => this.setState({ layout: 'podium' }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

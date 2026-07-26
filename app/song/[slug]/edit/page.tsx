@@ -20,7 +20,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   if (!session?.user?.id) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p>{t("song.signInRequired")}</p>
         </div>
       </Shell>
@@ -31,7 +31,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   if (!isPrivilegedRole(me?.role)) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p>{t("song.devAdminOnly")}</p>
         </div>
       </Shell>
@@ -43,7 +43,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   if (!parsed) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p>{t("song.songNotFound")}</p>
         </div>
       </Shell>
@@ -54,7 +54,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   if (!songId) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p>{t("song.songNotFound")}</p>
         </div>
       </Shell>
@@ -82,7 +82,7 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   if (!song) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p>{t("song.songNotFound")}</p>
         </div>
       </Shell>
@@ -101,11 +101,11 @@ export default async function SongEditPage({ params }: { params: Promise<{ slug:
   return (
     <Shell title="">
       <div style={{ margin: "32px 0", padding: "0 20px 48px" }}>
-        <Link href={`/song/${slug}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
+        <Link href={`/song/${slug}`} style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>
           {t("song.backToSong")}
         </Link>
         <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>{t("song.editSong")}</h1>
-        <p style={{ color: "#86868B", marginTop: 0 }}>{t("song.editAvailableDevAdmin")}</p>
+        <p style={{ color: "var(--text-muted)", marginTop: 0 }}>{t("song.editAvailableDevAdmin")}</p>
         <SongEditClient
           initialSong={{
             id: song.id,

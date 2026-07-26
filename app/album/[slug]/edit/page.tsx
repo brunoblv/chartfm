@@ -19,7 +19,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   if (!session?.user?.id) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.signInRequired")}</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>{t("albums.signInRequired")}</div>
       </Shell>
     );
   }
@@ -28,7 +28,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   if (!isPrivilegedRole(me?.role)) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.devAdminOnly")}</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>{t("albums.devAdminOnly")}</div>
       </Shell>
     );
   }
@@ -38,7 +38,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   if (!parsed) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.albumNotFound")}</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>{t("albums.albumNotFound")}</div>
       </Shell>
     );
   }
@@ -75,7 +75,7 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   if (!album) {
     return (
       <Shell title="">
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>{t("albums.albumNotFound")}</div>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>{t("albums.albumNotFound")}</div>
       </Shell>
     );
   }
@@ -89,11 +89,11 @@ export default async function AlbumEditPage({ params }: { params: Promise<{ slug
   return (
     <Shell title="">
       <div style={{ margin: "32px 0", padding: "0 20px 48px" }}>
-        <Link href={`/album/${slug}`} style={{ color: "#86868B", textDecoration: "none", fontSize: 14 }}>
+        <Link href={`/album/${slug}`} style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>
           {t("albums.backToAlbum")}
         </Link>
         <h1 style={{ fontSize: 30, margin: "12px 0 4px" }}>{t("albums.editAlbum")}</h1>
-        <p style={{ color: "#86868B", marginTop: 0 }}>{t("albums.editAvailableDevAdmin")}</p>
+        <p style={{ color: "var(--text-muted)", marginTop: 0 }}>{t("albums.editAvailableDevAdmin")}</p>
         <AlbumEditClient
           initialAlbum={{
             id: album.id,

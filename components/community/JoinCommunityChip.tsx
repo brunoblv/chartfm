@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Check } from "lucide-react";
+import { useTranslations } from "@/hooks/useTranslations";
 
 export function JoinCommunityChip({ slug }: { slug: string }) {
   const { data: session } = useSession();
   const router = useRouter();
+  const { t } = useTranslations();
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
 
@@ -48,7 +50,7 @@ export function JoinCommunityChip({ slug }: { slug: string }) {
           background: "var(--fill-subtle)",
         }}
       >
-        <Check size={12} /> Você entrou
+        <Check size={12} /> {t("communities.joinedLabel")}
       </span>
     );
   }
@@ -65,7 +67,7 @@ export function JoinCommunityChip({ slug }: { slug: string }) {
         cursor: joining ? "wait" : "pointer",
       }}
     >
-      {joining ? "..." : "Entrar no grupo"}
+      {joining ? "..." : t("communities.join")}
     </button>
   );
 }

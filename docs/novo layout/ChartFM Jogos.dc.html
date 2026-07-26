@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1100px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:700;color:var(--text)">Jogos</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="max-width:1100px;margin:0 auto;padding:56px 40px 96px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Jogos</div>
+    <div style="font-size:36px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Jogue com a comunidade</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px;max-width:560px">Dois jeitos de competir e descobrir música junto com a comunidade ChartFM.</div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:24px;margin-top:40px">
+      <a href="ChartFM Push.dc.html" style="display:block;border-radius:20px;overflow:hidden;border:1px solid var(--divider);background:var(--surface)">
+        <div style="height:140px;background:linear-gradient(140deg,var(--accent) 0%,#FF7070 100%);display:flex;align-items:center;padding:0 28px">
+          <div style="font-size:44px;font-weight:900;letter-spacing:-0.05em;color:#fff">PUSH</div>
+        </div>
+        <div style="padding:22px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Jogo semanal</div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Indique uma música de um artista desconhecido, ouça a playlist da semana, rankeie e descubra quem venceu.</div>
+          <div style="display:flex;gap:16px;margin-top:16px;font-size:12.5px;color:var(--text-muted)">
+            <div><span style="font-weight:700;color:var(--text)">Rodada 47</span> em andamento</div>
+          </div>
+        </div>
+      </a>
+
+      <a href="ChartFM Copa Home.dc.html" style="display:block;border-radius:20px;overflow:hidden;border:1px solid var(--divider);background:var(--surface)">
+        <div style="height:140px;background:linear-gradient(140deg,#3E8BFF 0%,#7C5CFF 100%);display:flex;align-items:center;padding:0 28px">
+          <div style="font-size:44px;font-weight:900;letter-spacing:-0.05em;color:#fff">COPA</div>
+        </div>
+        <div style="padding:22px">
+          <div style="font-size:11px;font-weight:700;color:#3E8BFF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Torneio</div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Monte seu time de artistas e dispute o torneio comunitário em grupos e chaveamento eliminatório.</div>
+          <div style="display:flex;gap:16px;margin-top:16px;font-size:12.5px;color:var(--text-muted)">
+            <div><span style="font-weight:700;color:var(--text)">Fase de grupos</span> em andamento</div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

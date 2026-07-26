@@ -35,15 +35,28 @@ export async function GET(req: NextRequest) {
   const previousPeriod = buildPeriodFromDate(previousDate, parada.cadence);
   const legacyPreviousWeekOnly = previousPeriodIndex % 100;
 
-  let chart = await prisma.chart.findUnique({
-    where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex: previousPeriodIndex } },
-    include: {
-      entries: {
-        orderBy: { position: "asc" },
-        include: { song: true },
-      },
-    },
-  });
+  // Diário: última parada antes da data (ex. segunda → sexta), não o dia civil anterior.
+  let chart =
+    parada.cadence === "DAILY"
+      ? await prisma.chart.findFirst({
+          where: { paradaId: parada.id, weekIndex: { lt: currentPeriod.periodIndex } },
+          orderBy: { weekIndex: "desc" },
+          include: {
+            entries: {
+              orderBy: { position: "asc" },
+              include: { song: true },
+            },
+          },
+        })
+      : await prisma.chart.findUnique({
+          where: { paradaId_weekIndex: { paradaId: parada.id, weekIndex: previousPeriodIndex } },
+          include: {
+            entries: {
+              orderBy: { position: "asc" },
+              include: { song: true },
+            },
+          },
+        });
 
   if (!chart && parada.cadence === "WEEKLY") {
     chart = await prisma.chart.findFirst({

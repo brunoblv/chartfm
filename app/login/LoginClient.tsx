@@ -133,14 +133,14 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
       <h2 style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 8px 0", lineHeight: 1.1 }}>
         {t("login.formHeadline")}
       </h2>
-      <p style={{ fontSize: 14, color: "#86868B", margin: "0 0 32px 0", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 32px 0", lineHeight: 1.5 }}>
         {t("login.formSubhead")}
       </p>
 
       {verified && <AuthSuccess message={t("login.emailVerified")} />}
       {authError && <AuthError message={authError} />}
       {emailNotVerified && email.trim() && (
-        <p style={{ fontSize: 13, color: "#86868B", margin: "0 0 16px 0", lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 16px 0", lineHeight: 1.5 }}>
           <Link
             href={`/verify-email?email=${encodeURIComponent(email.trim())}`}
             style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}
@@ -163,8 +163,8 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
               justifyContent: "center",
               gap: 12,
               padding: "14px 18px",
-              background: "#1D1D1F",
-              color: "white",
+              background: "var(--btn-dark-bg)",
+              color: "var(--btn-dark-fg)",
               border: "none",
               borderRadius: 12,
               fontSize: 15,
@@ -182,7 +182,7 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
           </button>
 
           {!googleReady && (
-            <p style={{ marginTop: 12, fontSize: 12, color: "#86868B", lineHeight: 1.5, background: "rgba(250,36,60,0.05)", borderRadius: 10, padding: "12px 14px" }}>
+            <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, background: "rgba(250,36,60,0.05)", borderRadius: 10, padding: "12px 14px" }}>
               {t("login.googleNotConfigured")}
             </p>
           )}
@@ -192,7 +192,7 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
       )}
 
       <form onSubmit={handleEmailLogin}>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
           {t("login.email")}
         </label>
         <input
@@ -206,7 +206,7 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
           style={authInputStyle}
         />
 
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
           {t("login.password")}
         </label>
         <div style={{ position: "relative" }}>
@@ -248,7 +248,7 @@ export default function LoginClient({ googleConfigured }: { googleConfigured: bo
         </button>
       </form>
 
-      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "#86868B" }}>
+      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--text-muted)" }}>
         {t("login.noAccount")}{" "}
         <Link href="/signup" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
           {t("login.createAccount")}

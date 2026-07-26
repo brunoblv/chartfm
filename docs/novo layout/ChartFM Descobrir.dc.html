@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:700;color:var(--text)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Conversas</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px">
+    <div style="padding:44px 0 24px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Descobrir</div>
+      <div style="font-size:38px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Música nova, todo dia</div>
+      <div style="font-size:15px;color:var(--text-muted);margin-top:8px;max-width:560px;line-height:1.5">Curadoria da equipe e da comunidade, baseada no que você ouve e segue.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;padding-bottom:28px">
+      <sc-for list="{{ genreFilters }}" as="g" hint-placeholder-count="6">
+        <div style="{{ g.style }}">{{ g.label }}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:0 40px 96px;display:flex;flex-direction:column;gap:44px">
+
+    <section>
+      <div style="border-radius:24px;overflow:hidden;position:relative;background:linear-gradient(135deg,#3B2B8C,#FA243C 140%);padding:44px;display:flex;align-items:center;gap:32px">
+        <div style="flex:1;min-width:280px;color:#fff;position:relative;z-index:1">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.8">Destaque da semana</div>
+          <div style="font-size:32px;font-weight:800;letter-spacing:-0.02em;margin-top:10px;line-height:1.15">Halflight muda o jogo do dream pop em 2026</div>
+          <div style="font-size:14.5px;opacity:.8;margin-top:10px;line-height:1.5;max-width:440px">Coral Hour entrega o álbum mais coeso da carreira — e a comunidade já está apaixonada.</div>
+          <button style="margin-top:20px;background:#fff;color:#1a1a2e;border:none;padding:12px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Explorar álbum</button>
+        </div>
+        <x-import component-from-global-scope="ChartFM.Cover" cover="{{ featured.cover }}" size="{{ 180 }}" rounded="{{ 18 }}" hint-size="180px,180px"></x-import>
+      </div>
+    </section>
+
+    <section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Álbuns em alta esta semana</div>
+        <a href="#" style="font-size:13px;font-weight:600">Ver todos →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px">
+        <sc-for list="{{ trendingAlbums }}" as="a" hint-placeholder-count="5">
+          <div>
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ a.cover }}" hint-size="100%,auto" style="width:100%;aspect-ratio:1;border-radius:12px"></x-import>
+            <div style="font-size:13.5px;font-weight:700;margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.title }}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:1px">{{ a.artist }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Artistas para descobrir</div>
+        <a href="#" style="font-size:13px;font-weight:600">Ver todos →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px">
+        <sc-for list="{{ newArtists }}" as="ar" hint-placeholder-count="6">
+          <div style="text-align:center">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ ar.avatar }}" size="{{ 84 }}" rounded="{{ 999 }}" hint-size="84px,84px" style="margin:0 auto"></x-import>
+            <div style="font-size:12.5px;font-weight:600;margin-top:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ar.name }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:1px">{{ ar.genre }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Reviews em destaque</div>
+        <a href="#" style="font-size:13px;font-weight:600">Ver todas →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+        <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="2">
+          <div style="display:flex;gap:14px;background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ r.cover }}" size="{{ 56 }}" hint-size="56px,56px"></x-import>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:700"><span>{{ r.author }}</span> <span style="font-weight:500;color:var(--text-muted)">sobre</span> {{ r.album }}</div>
+              <div style="font-size:13px;color:var(--text-subtle);margin-top:4px;line-height:1.45">{{ r.excerpt }}</div>
+            </div>
+            <div style="font-size:16px;font-weight:800;color:var(--accent);flex-shrink:0">{{ r.rating }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Communities recomendadas</div>
+        <a href="#" style="font-size:13px;font-weight:600">Ver todas →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+        <sc-for list="{{ communities }}" as="c" hint-placeholder-count="3">
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;overflow:hidden">
+            <div style="height:80px;background:{{ c.gradient }}"></div>
+            <div style="padding:14px">
+              <div style="font-size:14px;font-weight:700">{{ c.name }}</div>
+              <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">{{ c.members }} membros</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+
+  renderVals() {
+    const genreFilters = [
+      { label: 'Tudo', active: true }, { label: 'Dream Pop' }, { label: 'Indie Rock' },
+      { label: 'MPB' }, { label: 'Shoegaze' }, { label: 'Bedroom Pop' },
+    ].map(g => ({ label: g.label, style: {
+      padding: '9px 16px', borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+      background: g.active ? 'var(--accent)' : 'var(--fill-subtle)', color: g.active ? '#fff' : 'var(--text)'
+    }}));
+
+    const featured = { cover: this.cover(6) };
+
+    const trendingAlbums = [
+      { title: 'Halflight', artist: 'Coral Hour', seed: 6 },
+      { title: 'Glasswing', artist: 'Nova Vega', seed: 1 },
+      { title: 'Static Bloom', artist: 'Kite Season', seed: 3 },
+      { title: 'Amber Hours', artist: 'Halflight Parade', seed: 4 },
+      { title: 'Nightlong', artist: 'Coral Hour', seed: 9 },
+    ].map(a => ({ ...a, cover: this.cover(a.seed) }));
+
+    const newArtists = [
+      { name: 'Kite Season', genre: 'Bedroom Pop', seed: 3 },
+      { name: 'Marisol Vane', genre: 'MPB', seed: 8 },
+      { name: 'Glass Static', genre: 'Shoegaze', seed: 2 },
+      { name: 'Nightfall Radio', genre: 'Synth-pop', seed: 0 },
+      { name: 'Halflight Parade', genre: 'Indie Rock', seed: 4 },
+      { name: 'Amber Hours', genre: 'Dream Pop', seed: 9 },
+    ].map(a => ({ ...a, avatar: this.cover(a.seed) }));
+
+    const reviews = [
+      { author: 'Sofia Reyes', album: 'Halflight', excerpt: 'Se este não for o disco do ano, vai estar muito perto disso.', rating: '5.0', seed: 5 },
+      { author: 'Marco Villani', album: 'Glasswing', excerpt: 'Nova Vega entrega texturas que lembram os melhores momentos do shoegaze noventista.', rating: '4.5', seed: 3 },
+    ].map(r => ({ ...r, cover: this.cover(r.seed) }));
+
+    const communities = [
+      { name: 'Dream Pop Diaries', members: '12.4k', seed: 2 },
+      { name: 'Shoegaze Revival', members: '31.2k', seed: 6 },
+      { name: 'Indie Brasil 2026', members: '8.1k', seed: 5 },
+    ].map(c => ({ ...c, gradient: this.grad(c.seed) }));
+
+    return { genreFilters, featured, trendingAlbums, newArtists, reviews, communities };
+  }
+}
+
+</script>
+</body>
+</html>

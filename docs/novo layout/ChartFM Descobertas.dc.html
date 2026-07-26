@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1080px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Início</a>
+    </div>
+  </div>
+
+  <div style="max-width:1080px;margin:0 auto;padding:44px 40px 96px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Descobrir</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Descobertas</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px;max-width:620px">Recomendações baseadas no que a comunidade com gosto parecido ao seu está ouvindo, ranqueando e comentando.</div>
+
+    <section style="margin-top:36px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px">Artistas que você talvez não conheça</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+        <sc-for list="{{ unknownArtists }}" as="a" hint-placeholder-count="5">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ a.cover }}" size="{{ 96 }}" rounded="{{ 100 }}" hint-size="96px,96px"></x-import>
+            <div style="font-size:13px;font-weight:700">{{ a.name }}</div>
+            <div style="font-size:11.5px;color:var(--text-muted)">{{ a.reason }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:36px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px">Álbuns recomendados</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+        <sc-for list="{{ recommendedAlbums }}" as="al" hint-placeholder-count="4">
+          <div>
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ al.cover }}" size="{{ 200 }}" rounded="{{ 12 }}" hint-size="100%,200px"></x-import>
+            <div style="font-size:14px;font-weight:700;margin-top:10px">{{ al.title }}</div>
+            <div style="font-size:12.5px;color:var(--text-muted)">{{ al.artist }}</div>
+            <div style="font-size:11.5px;color:var(--accent);margin-top:4px;font-weight:600">{{ al.reason }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:36px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px">Charts parecidas com as suas</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ similarCharts }}" as="c" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:14px 16px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:700">{{ c.name }}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ c.curator }} · {{ c.followers }} seguidores</div>
+            </div>
+            <div style="font-size:12px;font-weight:700;color:var(--accent)">{{ c.matchPct }}% match</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:36px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:14px">Novidades para você</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ personalizedNews }}" as="n" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--divider-soft)">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ n.cover }}" size="{{ 48 }}" rounded="{{ 10 }}" hint-size="48px,48px"></x-import>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13.5px;line-height:1.5"><span style="font-weight:700">{{ n.title }}</span></div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ n.subtitle }}</div>
+            </div>
+            <div style="font-size:11.5px;color:var(--text-muted);white-space:nowrap">{{ n.time }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const unknownArtists = [
+      { name: 'Wren Autumn', reason: '92% match', seed: 1 }, { name: 'Salt Lung', reason: 'ouvido por quem você segue', seed: 2 },
+      { name: 'Faraway Static', reason: '88% match', seed: 3 }, { name: 'Marble Season', reason: 'em alta na sua rede', seed: 4 },
+      { name: 'Cold Harbor', reason: '85% match', seed: 5 },
+    ].map(a => ({ ...a, cover: this.cover(a.seed) }));
+
+    const recommendedAlbums = [
+      { title: 'Amber Season', artist: 'Wren Autumn', reason: 'Parecido com Coral Hour', seed: 2 },
+      { title: 'Low Static', artist: 'Salt Lung', reason: 'Alta nas suas comunidades', seed: 4 },
+      { title: 'Harbor Lights', artist: 'Cold Harbor', reason: 'Novo lançamento — seu gênero', seed: 6 },
+      { title: 'Marble Fields', artist: 'Marble Season', reason: 'Curado para você', seed: 1 },
+    ].map(a => ({ ...a, cover: this.cover(a.seed) }));
+
+    const similarCharts = [
+      { name: 'Dream Pop Essentials Vol. 2', curator: 'por @nina.dreams', followers: '4.2k', matchPct: 91 },
+      { name: 'Shoegaze depois da meia-noite', curator: 'por @loudsoft', followers: '2.8k', matchPct: 87 },
+      { name: 'Indie que ninguém te contou #2', curator: 'por @marina.diaz', followers: '1.9k', matchPct: 84 },
+      { name: 'MPB alternativa 2026', curator: 'por @curadoria_chartfm', followers: '6.1k', matchPct: 79 },
+    ];
+
+    const personalizedNews = [
+      { title: 'Coral Hour anunciou turnê', subtitle: 'Artista que você segue', time: '2h', seed: 6 },
+      { title: 'Novo álbum de Wren Autumn', subtitle: 'Baseado no seu gosto musical', time: '5h', seed: 2 },
+      { title: 'Nightlong entrou no Global 100', subtitle: 'Álbum na sua biblioteca', time: '1d', seed: 3 },
+      { title: 'Marina Diaz publicou uma nova parada', subtitle: 'Alta afinidade com você', time: '2d', seed: 5 },
+    ].map(n => ({ ...n, cover: this.cover(n.seed) }));
+
+    return { unknownArtists, recommendedAlbums, similarCharts, personalizedNews };
+  }
+}
+
+</script>
+</body>
+</html>

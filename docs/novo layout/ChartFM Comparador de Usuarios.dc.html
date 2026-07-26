@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:900px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Perfil</a>
+    </div>
+  </div>
+
+  <div style="max-width:900px;margin:0 auto;padding:44px 40px 96px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Perfil</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Comparador de usuários</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px">Veja o quanto sua afinidade musical combina com a de outra pessoa.</div>
+
+    <div style="display:flex;align-items:center;gap:20px;margin-top:32px">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px">
+        <x-import component-from-global-scope="ChartFM.Cover" cover="{{ userA.cover }}" size="{{ 72 }}" rounded="{{ 100 }}" hint-size="72px,72px"></x-import>
+        <div style="font-size:15px;font-weight:700">{{ userA.name }}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="font-size:38px;font-weight:800;color:var(--accent);letter-spacing:-0.02em">{{ compatPct }}%</div>
+        <div style="font-size:11.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Afinidade</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:10px">
+        <x-import component-from-global-scope="ChartFM.Cover" cover="{{ userB.cover }}" size="{{ 72 }}" rounded="{{ 100 }}" hint-size="72px,72px"></x-import>
+        <div style="font-size:15px;font-weight:700">{{ userB.name }}</div>
+      </div>
+    </div>
+
+    <div style="height:8px;background:var(--fill-inset);border-radius:100px;margin-top:24px;overflow:hidden">
+      <div style="height:100%;width:{{ compatPct }}%;background:linear-gradient(90deg, var(--accent), #7C5CFF);border-radius:100px"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px">
+      <sc-for list="{{ summaryStats }}" as="s" hint-placeholder-count="3">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:16px;text-align:center">
+          <div style="font-size:24px;font-weight:800;letter-spacing:-0.02em">{{ s.value }}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">{{ s.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <section style="margin-top:32px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:14px">Artistas em comum</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ commonArtists }}" as="a" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:12px">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ a.cover }}" size="{{ 36 }}" rounded="{{ 10 }}" hint-size="36px,36px"></x-import>
+            <div style="flex:1;font-size:13.5px;font-weight:600">{{ a.name }}</div>
+            <div style="font-size:12px;color:var(--text-muted)">{{ a.note }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px">
+      <section>
+        <div style="font-size:16px;font-weight:700;margin-bottom:14px">Álbuns em comum</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ commonAlbums }}" as="al" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ al.cover }}" size="{{ 32 }}" rounded="{{ 8 }}" hint-size="32px,32px"></x-import>
+              <div style="font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ al.name }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      <section>
+        <div style="font-size:16px;font-weight:700;margin-bottom:14px">Charts em comum</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ commonCharts }}" as="c" hint-placeholder-count="4">
+            <div style="font-size:13px;font-weight:600">{{ c.name }}</div>
+          </sc-for>
+        </div>
+      </section>
+    </div>
+
+    <section style="margin-top:32px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:14px">Gêneros compartilhados</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ sharedGenres }}" as="g" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;font-size:13.5px;font-weight:600">{{ g.name }}</div>
+            <div style="flex:1;display:flex;gap:2px;height:6px;border-radius:100px;overflow:hidden;background:var(--fill-inset)">
+              <div style="height:100%;width:{{ g.aPct }}%;background:var(--accent)"></div>
+              <div style="height:100%;width:{{ g.bPct }}%;background:#7C5CFF"></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text-muted)">
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></div>{{ userA.name }}</div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:#7C5CFF"></div>{{ userB.name }}</div>
+      </div>
+    </section>
+
+    <section style="margin-top:32px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:14px">Reviews em comum</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ commonReviews }}" as="r" hint-placeholder-count="3">
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:12px;padding:14px">
+            <div style="font-size:13.5px;font-weight:700">{{ r.album }}</div>
+            <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">{{ userA.name }}: {{ r.a }}★ · {{ userB.name }}: {{ r.b }}★</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const userA = { name: 'Você', cover: this.cover(2) };
+    const userB = { name: 'Marina Diaz', cover: this.cover(5) };
+    const compatPct = 82;
+
+    const summaryStats = [
+      { value: '24', label: 'artistas em comum' }, { value: '11', label: 'álbuns em comum' }, { value: '6', label: 'charts em comum' },
+    ];
+
+    const commonArtists = [
+      { name: 'Coral Hour', note: 'top 1 nos dois', seed: 6 }, { name: 'Nova Vega', note: 'top 3 e top 5', seed: 1 },
+      { name: 'Kite Season', note: 'top 8 e top 2', seed: 3 }, { name: 'Marisol Vane', note: 'top 5 e top 9', seed: 8 },
+      { name: 'Halflight Parade', note: 'top 10 nos dois', seed: 4 },
+    ].map(a => ({ ...a, cover: this.cover(a.seed) }));
+
+    const commonAlbums = [
+      { name: 'Glasswing', seed: 1 }, { name: 'Nightlong', seed: 3 }, { name: 'Low Tide', seed: 5 }, { name: 'Static Bloom EP', seed: 2 },
+    ].map(a => ({ ...a, cover: this.cover(a.seed) }));
+
+    const commonCharts = [
+      { name: 'Melhor de 2026' }, { name: 'Dream Pop Essentials' }, { name: 'Global 100 — Semana 22' }, { name: 'Indie que ninguém te contou' },
+    ];
+
+    const sharedGenres = [
+      { name: 'Dream Pop', aPct: 34, bPct: 30 }, { name: 'Indie Rock', aPct: 24, bPct: 20 },
+      { name: 'Shoegaze', aPct: 18, bPct: 22 }, { name: 'MPB', aPct: 14, bPct: 10 }, { name: 'Bedroom Pop', aPct: 10, bPct: 18 },
+    ];
+
+    const commonReviews = [
+      { album: 'Coral Hour', a: 5, b: 4 }, { album: 'Glasswing', a: 4, b: 4 }, { album: 'Nightlong', a: 3, b: 5 },
+    ];
+
+    return { userA, userB, compatPct, summaryStats, commonArtists, commonAlbums, commonCharts, sharedGenres, commonReviews };
+  }
+}
+
+</script>
+</body>
+</html>

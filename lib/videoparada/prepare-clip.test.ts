@@ -29,12 +29,13 @@ describe("extractYoutubeId", () => {
 
 describe("scoreSearchTitle", () => {
   const artist = "Madonna";
+  const songTitle = "Bring Your Love";
 
   it("rejeita reaction mesmo com Official Music Video no título", () => {
     expect(
       scoreSearchTitle(
         "Madonna & Sabrina Carpenter - Bring Your Love (Official Music Video) REACTION",
-        { artist, channel: "Steven In Stereo" },
+        { artist, songTitle, channel: "Steven In Stereo" },
       ),
     ).toBeNull();
   });
@@ -42,10 +43,11 @@ describe("scoreSearchTitle", () => {
   it("prefere Official Video do canal da artista a Music Video genérico", () => {
     const official = scoreSearchTitle(
       "Madonna & Sabrina Carpenter - Bring Your Love (Official Video)",
-      { artist, channel: "Madonna and Sabrina Carpenter" },
+      { artist, songTitle, channel: "Madonna and Sabrina Carpenter" },
     );
     const generic = scoreSearchTitle("Bring Your Love (Music Video)", {
       artist,
+      songTitle,
       channel: "Random Channel",
     });
     expect(official).not.toBeNull();
@@ -53,9 +55,39 @@ describe("scoreSearchTitle", () => {
     expect(official!).toBeGreaterThan(generic!);
   });
 
-  it("rejeita lyric / visualizer / audio", () => {
-    expect(scoreSearchTitle("Bring Your Love (Lyrics)", { artist })).toBeNull();
-    expect(scoreSearchTitle("Bring Your Love (Official Visualizer)", { artist })).toBeNull();
-    expect(scoreSearchTitle("Bring Your Love (Official Audio)", { artist })).toBeNull();
+  it("modo official rejeita lyric / visualizer / audio", () => {
+    expect(scoreSearchTitle("Bring Your Love (Lyrics)", { artist, songTitle })).toBeNull();
+    expect(
+      scoreSearchTitle("Bring Your Love (Official Visualizer)", { artist, songTitle }),
+    ).toBeNull();
+    expect(
+      scoreSearchTitle("Bring Your Love (Official Audio)", { artist, songTitle }),
+    ).toBeNull();
+  });
+
+  it("modo flexible aceita lyric e visualizer no Global", () => {
+    const lyric = scoreSearchTitle("Madonna - Bring Your Love (Lyrics)", {
+      artist,
+      songTitle,
+      mode: "flexible",
+    });
+    const viz = scoreSearchTitle("Madonna - Bring Your Love (Official Visualizer)", {
+      artist,
+      songTitle,
+      mode: "flexible",
+    });
+    expect(lyric).not.toBeNull();
+    expect(viz).not.toBeNull();
+    expect(viz!).toBeGreaterThan(lyric!);
+  });
+
+  it("rejeita vídeo sem overlap com o título da música", () => {
+    expect(
+      scoreSearchTitle("Totally Different Song (Official Video)", {
+        artist,
+        songTitle,
+        mode: "flexible",
+      }),
+    ).toBeNull();
   });
 });

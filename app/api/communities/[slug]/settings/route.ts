@@ -223,6 +223,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Nada para atualizar." }, { status: 400 });
   }
 
+  const scoringChanged =
+    data.maxSongs !== undefined ||
+    data.memberPositionLimit !== undefined ||
+    data.pointsMode !== undefined ||
+    data.customPoints !== undefined;
+
   try {
     const updated =
       Object.keys(data).length > 0
@@ -247,6 +253,25 @@ export async function PATCH(
             },
           })
         : null;
+
+    // Semana atual: recria com o tamanho/regras novos (histórico antigo só é
+    // truncado na leitura). Sem membros publicados, o publish não apaga o chart.
+    if (scoringChanged) {
+      try {
+        const { getRankingWeekReference } = await import("@/lib/chart-week");
+        const { getGlobalPublishSlot } = await import("@/lib/global-publish-schedule");
+        const { publishCommunityOfficialWeekFromMembers } = await import(
+          "@/lib/community-official-from-members"
+        );
+        const { weekIndex } = getRankingWeekReference(new Date(), await getGlobalPublishSlot());
+        await publishCommunityOfficialWeekFromMembers(community.id, weekIndex, {
+          force: true,
+          recomputeStats: true,
+        });
+      } catch (e) {
+        console.error("[community-settings] falha ao republicar semana atual", e);
+      }
+    }
 
     return NextResponse.json({ ok: true, ...(updated ?? {}) });
   } catch (e) {

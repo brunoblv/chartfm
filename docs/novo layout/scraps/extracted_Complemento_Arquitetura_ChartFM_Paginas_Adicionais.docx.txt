@@ -1,0 +1,144 @@
+
+Páginas Complementares Recomendadas para o ChartFM
+Este documento reúne páginas adicionais recomendadas para completar a arquitetura do ChartFM. Embora não sejam obrigatórias para um primeiro lançamento, elas enriquecem a experiência, aumentam a retenção dos usuários e fortalecem o posicionamento da plataforma.
+Configurações
+Conceito
+Centralizar todas as preferências da conta e personalização da experiência.
+Componentes
+Perfil
+Conta
+Senha
+Privacidade
+Tema
+Idioma
+Integrações (Last.fm e futuras)
+Notificações
+Exportação de dados
+Excluir conta
+Central de Notificações
+Conceito
+Página dedicada para acompanhar todas as atividades relevantes da plataforma.
+Componentes
+Social
+Charts
+Reviews
+Eventos
+Push
+Clube do Álbum
+Comunidades
+Filtros por categoria
+Central de Mensagens
+Conceito
+Área para conversas privadas entre usuários.
+Componentes
+Lista de conversas
+Mensagens
+Pesquisa
+Solicitações
+Bloqueados
+Central de Conquistas
+Conceito
+Exibir todas as badges, medalhas e progresso do usuário.
+Componentes
+Conquistas desbloqueadas
+Progresso
+Próximas metas
+Raridade
+Estatísticas
+Estatísticas do Usuário
+Conceito
+Dashboard pessoal com análises do perfil musical.
+Componentes
+Artistas favoritos
+Gêneros
+Décadas
+Idiomas
+Diversidade
+Linha do tempo
+Mapa musical
+Comparador de Usuários
+Conceito
+Comparar afinidade musical entre dois perfis.
+Componentes
+Compatibilidade
+Artistas em comum
+Álbuns
+Charts
+Reviews
+Gêneros
+Descobertas
+Conceito
+Recomendações avançadas baseadas no comportamento da comunidade.
+Componentes
+Artistas desconhecidos
+Álbuns recomendados
+Charts semelhantes
+Novidades personalizadas
+Biblioteca
+Conceito
+Reunir todo o conteúdo salvo pelo usuário.
+Componentes
+Favoritos
+Charts
+Reviews
+Artistas
+Álbuns
+Eventos
+Histórico
+Conceito
+Linha do tempo pessoal de todas as ações realizadas.
+Componentes
+Charts
+Reviews
+Curtidas
+Comentários
+Participações
+Explorar Charts
+Conceito
+Catálogo para descobrir Charts públicas.
+Componentes
+Filtros por tema
+Gênero
+País
+Humor
+Época
+Popularidade
+Hub Editorial Expandido
+Conceito
+Transformar o Editorial em um miniportal de conteúdo.
+Componentes
+Notícias
+Reviews
+Entrevistas
+Guias
+Especiais
+Retrospectivas
+Curadoria
+Conceito
+Área editorial destacando recomendações da equipe.
+Componentes
+Escolhas da semana
+Hidden Gems
+Álbuns essenciais
+Artistas para conhecer
+Insights
+Conceito
+Painel com análises globais da comunidade.
+Componentes
+Gráficos
+Tendências
+Top artistas
+Top gêneros
+Mapas
+Onboarding
+Conceito
+Fluxo guiado para novos usuários entenderem rapidamente o ChartFM.
+Componentes
+Apresentação da plataforma
+Criar primeira Chart
+Explicação do Last.fm
+Editar a Chart
+Seguir usuários
+Participar de comunidades
+Prioridade Recomendada
+Antes de expandir para novos módulos, recomenda-se consolidar os principais pilares do produto: Charts, Feed, Descoberta, Editorial, Comunidades, Critics FM, Push e Perfil. Entre as páginas complementares, o Onboarding merece prioridade por reduzir dúvidas na criação da primeira Chart e facilitar a compreensão da plataforma.

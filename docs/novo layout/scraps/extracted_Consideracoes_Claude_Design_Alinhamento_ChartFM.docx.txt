@@ -1,0 +1,37 @@
+
+Análise do Projeto Claude Design – Considerações para Alinhamento com o Novo ChartFM
+Este documento reúne as recomendações para aproximar as telas produzidas no Claude Design da visão definida para o novo ChartFM. De forma geral, o projeto segue corretamente o conceito de plataforma de descoberta musical, mas algumas áreas podem evoluir para reforçar a identidade do produto.
+Avaliação Geral
+• Aderência ao planejamento: 9/10.• O conceito de Discovery First foi compreendido.• A arquitetura baseada em hubs está alinhada.• O sistema visual está consistente.• O principal ponto de melhoria é dar ainda mais protagonismo às Charts, que são o diferencial da plataforma.
+Home
+Transformar a Home em um hub mais pessoal adicionando:• Sua Chart mudou• Resumo da semana• Novidades desde sua última visita• Charts dos amigos• Recomendações baseadas nas suas Charts.
+Descobrir
+A estrutura está alinhada. Manter foco em descoberta de artistas, álbuns, músicas, reviews e comunidades.
+Busca
+Adicionar filtros rápidos: Todos, Artistas, Álbuns, Músicas, Charts, Reviews, Usuários, Comunidades e Eventos.
+Hub do Artista
+Enriquecer com:• Charts onde aparece• Comunidade relacionada• Push ativo/histórico• Clube do Álbum• Artistas semelhantes• Timeline• Recordes• Estatísticas.
+Hub do Álbum
+Adicionar:• Clube do Álbum relacionado• Reviews da equipe• Histórico nas Charts• Recomendações de álbuns semelhantes.
+Hub da Música
+Adicionar:• Videoclipes• Performances• Histórico nas Charts• Playlists• Versões e covers• Músicas semelhantes.
+Hub de Reviews
+Dar aparência mais editorial, destacando reviews populares, críticas da equipe, listas e críticas recentes.
+Comunidades
+Transformar cada comunidade em um mini-ChartFM contendo:• Feed próprio• Charts• Reviews• Eventos• Clube do Álbum• Push• Ranking interno• Estatísticas.
+Perfil
+Adicionar evolução das Charts, badges, estatísticas pessoais, histórico de atividade, Clubes do Álbum, Pushes e sequência de participação.
+Página da Chart
+Dar maior protagonismo às Charts com:Hero, resumo editorial, ranking, movimentações, comentários, estatísticas, histórico, Charts semelhantes e compartilhamento.
+Conversas
+Manter foco em música e evitar que a experiência se torne um chat genérico.
+Notificações
+Adicionar notificações para favoritos, novas reviews, Pushes, Clube do Álbum e atividades relacionadas às Charts.
+Copa
+Estrutura muito boa. Continuar tratando como um produto próprio dentro da plataforma.
+Design System
+Base sólida e consistente para implementação.
+Funcionalidades e Hubs ainda recomendados
+• Feed• Hub das Paradas Globais• Página do Push• Critics FM / Clube do Álbum• Editorial• Timeline• Página de Evento• Hall da Fama• Hub de Gêneros• Hub de Países• Hub de Gravadoras• Estatísticas Globais• Tendências• Calendário de Lançamentos.
+Conclusão
+O próximo passo não é criar muitas novas funcionalidades, mas aprofundar cada hub existente. Cada página deve incentivar o usuário a permanecer explorando por vários minutos, oferecendo conteúdo editorial, estatísticas, comunidade, recomendações, Charts e navegação contextual.

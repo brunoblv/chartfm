@@ -100,13 +100,13 @@ export default function VerifyEmailClient() {
         {error && <AuthError message={error} />}
         {verified && <AuthSuccess message={t("verifyEmail.success")} />}
         {verifying && !error && !verified && (
-          <p style={{ fontSize: 14, color: "#86868B", margin: "16px 0 0 0", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "16px 0 0 0", lineHeight: 1.5 }}>
             {t("verifyEmail.verifying")}
           </p>
         )}
 
         {error && (
-          <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "#86868B" }}>
+          <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--text-muted)" }}>
             <Link href={`/verify-email${email ? `?email=${encodeURIComponent(email)}` : ""}`} style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
               {t("verifyEmail.requestNew")}
             </Link>
@@ -124,7 +124,7 @@ export default function VerifyEmailClient() {
       <h2 style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 8px 0", lineHeight: 1.1 }}>
         {t("verifyEmail.headline")}
       </h2>
-      <p style={{ fontSize: 14, color: "#86868B", margin: "0 0 32px 0", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 32px 0", lineHeight: 1.5 }}>
         {t("verifyEmail.subhead")}
       </p>
 
@@ -133,7 +133,7 @@ export default function VerifyEmailClient() {
       {resent && <AuthSuccess message={t("verifyEmail.resent")} />}
 
       <form onSubmit={handleResend}>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
           {t("login.email")}
         </label>
         <input
@@ -156,7 +156,7 @@ export default function VerifyEmailClient() {
         </button>
       </form>
 
-      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "#86868B" }}>
+      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--text-muted)" }}>
         <Link href="/login" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
           {t("verifyEmail.backToLogin")}
         </Link>

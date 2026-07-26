@@ -10,10 +10,10 @@ import { Avatar } from "@/components/ui/Avatar";
 import { calcularPontosPrimary } from "@/lib/parada-points";
 import {
   COMMUNITY_COVER_SIZE_LABEL,
-  communityCoverSizeHint,
   readImageFileAsDataUrl,
   validateCommunityCoverFile,
 } from "@/lib/community-cover";
+import { communityRequiresMusicVideo } from "@/lib/community-song-rules";
 import { useTranslations } from "@/hooks/useTranslations";
 
 const CHART_SIZE_OPTIONS = [10, 15, 20, 25, 30, 40, 50, 75, 100] as const;
@@ -148,11 +148,23 @@ export function CommunitySettingsClient({
     setCoverWarning(null);
     setError(null);
     const result = await validateCommunityCoverFile(file);
-    if (result.error) {
-      setError(result.error);
+    if (result.error === "not_image") {
+      setError(t("communities.settingsCoverNotImage"));
       return;
     }
-    if (result.warning) setCoverWarning(result.warning);
+    if (result.error === "too_large") {
+      setError(t("communities.settingsCoverTooLarge"));
+      return;
+    }
+    if (result.warning === "aspect") {
+      setCoverWarning(
+        t("communities.settingsCoverAspectWarning", {
+          size: COMMUNITY_COVER_SIZE_LABEL,
+          width: result.width,
+          height: result.height,
+        }),
+      );
+    }
     try {
       const dataUrl = await readImageFileAsDataUrl(file);
       setCoverImageUrl(dataUrl);
@@ -376,7 +388,7 @@ export function CommunitySettingsClient({
                 <div style={{ marginBottom: 18 }}>
                   <div style={fieldLabel}>{t("communities.settingsCoverLabel")}</div>
                   <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 10px 0", lineHeight: 1.55 }}>
-                    {communityCoverSizeHint()}
+                    {t("communities.settingsCoverHint", { size: COMMUNITY_COVER_SIZE_LABEL })}
                   </p>
                   <div
                     style={{
@@ -557,6 +569,17 @@ export function CommunitySettingsClient({
                   ))}
                 </div>
               </div>
+
+              {communityRequiresMusicVideo(community.slug) && (
+                <div style={cardStyle}>
+                  <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>
+                    {t("communities.settingsMusicVideoRuleTitle")}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.45 }}>
+                    {t("communities.settingsMusicVideoRuleDesc")}
+                  </div>
+                </div>
+              )}
 
               <div style={cardStyle}>
                 <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "var(--text)" }}>{t("communities.settingsPointsModeTitle")}</div>

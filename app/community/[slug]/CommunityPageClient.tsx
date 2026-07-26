@@ -17,6 +17,8 @@ import { buildArtistPath, buildSongPath } from "@/lib/music-routes";
 import { formatSongArtist } from "@/lib/song-artist";
 import type { Cover as CoverType } from "@/lib/types";
 import { useTranslations } from "@/hooks/useTranslations";
+import { formatDateRangeForLocale } from "@/lib/chart-week";
+import { formatWeekLabel } from "@/lib/i18n/format";
 
 export type CommunityWeeklyPollOpen = {
   weekLabel: string;
@@ -36,6 +38,7 @@ export type CommunityDbSerializable = {
   members: number;
   posts: number;
   founded: string;
+  createdAt: string;
   ownerName: string | null;
   ownerHandle: string | null;
   paradaName: string;
@@ -130,7 +133,7 @@ export function CommunityPageClient({
   weeklyPollOpen: CommunityWeeklyPollOpen | null;
 }) {
   const router = useRouter();
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { data: session } = useSession();
   const isMobile = useIsMobile(960);
   const community = {
@@ -138,6 +141,7 @@ export function CommunityPageClient({
     cover: [dbCommunity.coverA, dbCommunity.coverB] as [string, string],
     adminName: dbCommunity.ownerName ?? "-",
   };
+  const localizedDateRange = formatDateRangeForLocale(dateRange, locale);
   const [postMode, setPostMode] = useState<"text" | "image" | "youtube">("text");
   const [postText, setPostText] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -365,6 +369,7 @@ export function CommunityPageClient({
     members: memberCount,
     posts: community.posts,
     founded: community.founded,
+    createdAt: community.createdAt,
     adminName: community.adminName,
     paradaName: community.paradaName,
     isAdmin: community.isAdmin,
@@ -471,7 +476,7 @@ export function CommunityPageClient({
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text)" }}>{community.paradaName}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                  {t("communities.contributorsWeek", { count: contributorCount, range: dateRange })}
+                  {t("communities.contributorsWeek", { count: contributorCount, range: localizedDateRange })}
                 </div>
               </div>
               <Link href={`/community/${community.slug}/parada`} style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
@@ -847,7 +852,7 @@ export function CommunityPageClient({
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
                     {t("communities.pollOpenText", {
-                      week: `${weeklyPollOpen.weekLabel}${weeklyPollOpen.dateRange ? ` (${weeklyPollOpen.dateRange})` : ""}`,
+                      week: `${formatWeekLabel(locale, weeklyPollOpen.weekLabel)}${weeklyPollOpen.dateRange ? ` (${formatDateRangeForLocale(weeklyPollOpen.dateRange, locale, weeklyPollOpen.weekLabel)})` : ""}`,
                     })}
                   </div>
                   <Link

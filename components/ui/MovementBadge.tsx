@@ -30,7 +30,7 @@ export function MovementBadge({ status, delta, compact = false }: MovementBadgeP
   if (status === "new") {
     return (
       <span
-        style={{ ...base, background: "#000", color: "#fff" }}
+        style={{ ...base, background: "var(--new-bg)", color: "var(--new-fg)" }}
         aria-label={t("chart.movementNew")}
       >
         {t("chart.movementNewBadge")}
@@ -40,7 +40,7 @@ export function MovementBadge({ status, delta, compact = false }: MovementBadgeP
   if (status === "return") {
     return (
       <span
-        style={{ ...base, background: "#111827", color: "#FFFFFF" }}
+        style={{ ...base, background: "var(--new-bg)", color: "var(--new-fg)" }}
         aria-label={t("chart.movementReturn")}
       >
         {t("chart.movementReturnBadge")}
@@ -50,7 +50,7 @@ export function MovementBadge({ status, delta, compact = false }: MovementBadgeP
   if (status === "same") {
     return (
       <span
-        style={{ ...base, background: "#F2F2F7", color: "#6B6B70" }}
+        style={{ ...base, background: "var(--same-bg)", color: "var(--same-fg)" }}
         aria-label={t("chart.movementSteadyAria")}
       >
         ―
@@ -60,7 +60,7 @@ export function MovementBadge({ status, delta, compact = false }: MovementBadgeP
   if (status === "up") {
     return (
       <span
-        style={{ ...base, background: "#E8F8EE", color: "#1B873F" }}
+        style={{ ...base, background: "var(--up-bg)", color: "var(--up-fg)" }}
         aria-label={t("chart.movementUpAria", { delta: delta ?? 0 })}
       >
         <svg width={sz} height={sz} viewBox="0 0 10 10">
@@ -73,7 +73,7 @@ export function MovementBadge({ status, delta, compact = false }: MovementBadgeP
   if (status === "down") {
     return (
       <span
-        style={{ ...base, background: "#FDECEC", color: "#C5291C" }}
+        style={{ ...base, background: "var(--down-bg)", color: "var(--down-fg)" }}
         aria-label={t("chart.movementDownAria", {
           delta: Math.abs(delta ?? 0),
         })}

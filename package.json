@@ -37,7 +37,9 @@
     "videoparada:smart-crop:demo": "tsx scripts/videoparada-smart-crop.ts --demo",
     "videoparada:prepare": "tsx scripts/videoparada-prepare-global.ts",
     "videoparada:prepare:render": "tsx scripts/videoparada-prepare-global.ts --limit=3 --render",
-    "videoparada:prepare:landscape": "tsx scripts/videoparada-prepare-global.ts --format=landscape --limit=3 --render"
+    "videoparada:prepare:landscape": "tsx scripts/videoparada-prepare-global.ts --format=landscape --limit=3 --render",
+    "videoparada:disk-mtv": "tsx scripts/videoparada-disk-mtv-weekly.ts",
+    "videoparada:disk-mtv:dry": "tsx scripts/videoparada-disk-mtv-weekly.ts --dry-run"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.2",

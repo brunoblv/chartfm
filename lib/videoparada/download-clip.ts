@@ -10,9 +10,14 @@ export const PARADE_VIDEOS_DIR = path.join(process.cwd(), "uploads", "parade-vid
 export const PARADE_RAW_DIR = path.join(PARADE_VIDEOS_DIR, "raw");
 export const PARADE_VERTICAL_DIR = path.join(PARADE_VIDEOS_DIR, "vertical");
 
-/** Títulos / canais a evitar (spec videoparada.md). */
-const REJECT_TITLE_RE =
-  /\b(official\s*audio|audio\s*only|lyrics?|lyric\s*video|visuali[sz]er|topic|auto[- ]?generated|fan\s*made|cover\s*audio|reaction|reacts?\b|review|nightcore|sped\s*up|slowed)\b/i;
+/** Sempre rejeitar (mesmo no Global flexível). */
+const REJECT_ALWAYS_RE =
+  /\b(official\s*audio|audio\s*only|topic|auto[- ]?generated|fan\s*made|cover\s*audio|reaction|reacts?\b|review|nightcore|sped\s*up|slowed)\b/i;
+
+/** Só rejeitar no modo oficial (Disk MTV / community). */
+const REJECT_OFFICIAL_ONLY_RE = /\b(lyrics?|lyric\s*video|visuali[sz]er)\b/i;
+
+export type YoutubeSearchMode = "official" | "flexible";
 
 export type DownloadClipResult = {
   youtubeId: string;
@@ -77,25 +82,36 @@ async function exists(filePath: string): Promise<boolean> {
   }
 }
 
-/** Tokens do artista para matching frouxo no título/canal. */
-function artistTokens(artist: string): string[] {
-  return artist
+/** Tokens do artista/título para matching frouxo. */
+export function textTokens(value: string): string[] {
+  return value
     .toLowerCase()
     .replace(/[&,+]/g, " ")
     .split(/\s+/)
     .map((t) => t.replace(/[^\p{L}\p{N}]/gu, ""))
-    .filter((t) => t.length >= 3 && !["the", "and", "feat", "featuring", "with"].includes(t));
+    .filter((t) => t.length >= 3 && !["the", "and", "feat", "featuring", "with", "from"].includes(t));
+}
+
+function artistTokens(artist: string): string[] {
+  return textTokens(artist);
 }
 
 /**
  * Pontua resultado de busca YouTube.
- * Retorna null se o título for rejeitado (áudio, lyric, reaction, etc.).
+ * Retorna null se o título for rejeitado.
  */
 export function scoreSearchTitle(
   title: string,
-  opts: { artist?: string; channel?: string | null } = {},
+  opts: {
+    artist?: string;
+    channel?: string | null;
+    songTitle?: string;
+    mode?: YoutubeSearchMode;
+  } = {},
 ): number | null {
-  if (REJECT_TITLE_RE.test(title)) return null;
+  const mode = opts.mode ?? "official";
+  if (REJECT_ALWAYS_RE.test(title)) return null;
+  if (mode === "official" && REJECT_OFFICIAL_ONLY_RE.test(title)) return null;
 
   let score = 1;
   if (/official\s*music\s*video/i.test(title)) score += 50;
@@ -104,20 +120,29 @@ export function scoreSearchTitle(
   else if (/official\s*performance/i.test(title)) score += 25;
   else if (/music\s*video/i.test(title)) score += 20;
   else if (/official\s*live/i.test(title)) score += 15;
+  else if (mode === "flexible" && /visuali[sz]er/i.test(title)) score += 18;
+  else if (mode === "flexible" && /\b(lyrics?|lyric\s*video)\b/i.test(title)) score += 14;
 
-  const tokens = opts.artist ? artistTokens(opts.artist) : [];
+  const songTokens = opts.songTitle ? textTokens(opts.songTitle) : [];
+  const artistToks = opts.artist ? artistTokens(opts.artist) : [];
   const hay = `${title} ${opts.channel ?? ""}`.toLowerCase();
-  if (tokens.length) {
-    const matched = tokens.filter((t) => hay.includes(t)).length;
-    score += matched * 8;
-    // Penaliza se nenhum token do artista aparece (provável cover/react/terceiro)
-    if (matched === 0) score -= 30;
+
+  if (songTokens.length) {
+    const matched = songTokens.filter((t) => hay.includes(t)).length;
+    score += matched * 12;
+    // Sem overlap com o título da música → quase certamente vídeo errado
+    if (matched === 0) return null;
   }
 
-  // Canal do próprio artista / VEVO
-  if (opts.channel && tokens.length) {
+  if (artistToks.length) {
+    const matched = artistToks.filter((t) => hay.includes(t)).length;
+    score += matched * 8;
+    if (matched === 0) score -= 20;
+  }
+
+  if (opts.channel && artistToks.length) {
     const ch = opts.channel.toLowerCase();
-    if (tokens.some((t) => ch.includes(t))) score += 25;
+    if (artistToks.some((t) => ch.includes(t))) score += 25;
     if (/\bvevo\b/i.test(opts.channel)) score += 20;
   }
 
@@ -125,16 +150,27 @@ export function scoreSearchTitle(
 }
 
 /**
- * Busca clipe oficial no YouTube via yt-dlp (ordem de preferência do spec).
+ * Busca clipe no YouTube via yt-dlp.
+ * - official: só MV oficial (Disk MTV)
+ * - flexible: Global — aceita lyric / visualizer / music video
  */
 export async function searchOfficialYoutubeId(
   title: string,
   artist: string,
-  opts: { ytDlpPath?: string; maxResults?: number } = {},
+  opts: {
+    ytDlpPath?: string;
+    maxResults?: number;
+    mode?: YoutubeSearchMode;
+    excludeIds?: ReadonlySet<string>;
+  } = {},
 ): Promise<YoutubeSearchHit | null> {
   const bin = opts.ytDlpPath ?? ytDlpBin();
-  const maxResults = opts.maxResults ?? 8;
-  const query = `ytsearch${maxResults}:${artist} ${title} official music video`;
+  const maxResults = opts.maxResults ?? 10;
+  const mode = opts.mode ?? "official";
+  const query =
+    mode === "flexible"
+      ? `ytsearch${maxResults}:${artist} ${title}`
+      : `ytsearch${maxResults}:${artist} ${title} official music video`;
 
   const { stdout } = await execFileAsync(
     bin,
@@ -155,7 +191,8 @@ export async function searchOfficialYoutubeId(
     const t = (tRaw ?? "").trim();
     const channel = (channelRaw ?? "").trim() || null;
     if (!id || !/^[\w-]{11}$/.test(id) || !t) continue;
-    const score = scoreSearchTitle(t, { artist, channel });
+    if (opts.excludeIds?.has(id)) continue;
+    const score = scoreSearchTitle(t, { artist, channel, songTitle: title, mode });
     if (score == null) continue;
     hits.push({ youtubeId: id, title: t, channel, score });
   }
@@ -210,8 +247,8 @@ export async function downloadYoutubeClip(
     }
 
     const title = stdout.trim().split(/\r?\n/).filter(Boolean).pop() ?? null;
-    if (title && REJECT_TITLE_RE.test(title)) {
-      console.warn(`[videoparada] aviso: título suspeito para clipe oficial: ${title}`);
+    if (title && REJECT_ALWAYS_RE.test(title)) {
+      console.warn(`[videoparada] aviso: título suspeito para clipe: ${title}`);
     }
 
     return { youtubeId, filePath, cached: false, title };

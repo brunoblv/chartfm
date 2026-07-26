@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:820px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Início</a>
+    </div>
+  </div>
+
+  <div style="max-width:820px;margin:0 auto;padding:56px 40px 96px">
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em">Privacidade</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px">Explicamos aqui, sem juridiquês, como tratamos seus dados no ChartFM.</div>
+
+    <div style="display:flex;flex-direction:column;gap:36px;margin-top:36px">
+      <sc-for list="{{ sections }}" as="s" hint-placeholder-count="6">
+        <section>
+          <div style="font-size:18px;font-weight:700;margin-bottom:8px">{{ s.title }}</div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.75">{{ s.body }}</div>
+        </section>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:40px;background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-size:15.5px;font-weight:700">Excluir minha conta</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Remove permanentemente seus dados, paradas e histórico.</div>
+      </div>
+      <button style="background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:100px;padding:10px 18px;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap">Excluir conta</button>
+    </div>
+
+    <div style="margin-top:24px;font-size:13.5px;color:var(--text-muted)">Dúvidas sobre privacidade? Fale com a gente em <a href="#">privacidade@chartfm.app</a>.</div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const sections = [
+      { title: 'Dados coletados', body: 'Coletamos seu e-mail, nome de usuário, paradas publicadas, e — se você conectar sua conta do Last.fm — seu histórico de escuta público.' },
+      { title: 'Cookies', body: 'Usamos cookies essenciais para manter sua sessão logada e cookies analíticos opcionais para entender o uso da plataforma.' },
+      { title: 'Segurança', body: 'Senhas são armazenadas com hash e nunca em texto puro. Dados sensíveis trafegam sempre por conexão criptografada.' },
+      { title: 'Compartilhamento', body: 'Não vendemos seus dados. Compartilhamos apenas o mínimo necessário com provedores essenciais (hospedagem, e-mail transacional).' },
+      { title: 'LGPD', body: 'Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados a qualquer momento, conforme a Lei Geral de Proteção de Dados.' },
+      { title: 'Excluir conta', body: 'A exclusão remove seu perfil, paradas e histórico de forma permanente e pode levar até 30 dias para completar em nossos backups.' },
+    ];
+    return { sections };
+  }
+}
+
+</script>
+</body>
+</html>

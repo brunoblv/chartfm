@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { adminInputStyle, adminPanelStyle } from "@/components/admin/admin-styles";
 import { getGlobalSnapshotDeadline, getRankingWeekReference, type GlobalPublishSlot } from "@/lib/chart-week";
-import type { GlobalAdminAction } from "@/lib/admin-global-ops";
+import type { GlobalAdminAction, GlobalDateKind, GlobalSnapshotDateInfo } from "@/lib/admin-global-ops";
 
 const WEEKDAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const MANUAL_PUBLISH_UNLOCK_DELAY_MS = 5 * 60 * 1000;
@@ -21,6 +21,12 @@ type WeekStatus = {
     curators: boolean;
     genreCount: number;
   };
+  dates: {
+    global100: GlobalSnapshotDateInfo;
+    airplay: GlobalSnapshotDateInfo;
+    albums: GlobalSnapshotDateInfo;
+    genres: GlobalSnapshotDateInfo;
+  };
   playlists: {
     youtubeGlobal100: string | null;
     youtubeAirplay: string | null;
@@ -28,6 +34,44 @@ type WeekStatus = {
   editorial: { slug: string; publishedAt: string } | null;
   socialPosts: Array<{ eventType: string; status: string; id: string }>;
 };
+
+const DATE_FIELDS: Array<{
+  kind: GlobalDateKind;
+  label: string;
+  hint: string;
+}> = [
+  {
+    kind: "global100",
+    label: "Global 100",
+    hint: "Rótulo e intervalo exibidos em /global/100.",
+  },
+  {
+    kind: "airplay",
+    label: "Global Airplay",
+    hint: "Atualiza weekLabel, dateRange e scoringWindow (janela Last.fm no hero).",
+  },
+  {
+    kind: "albums",
+    label: "Global Álbuns",
+    hint: "Atualiza weekLabel, dateRange e scoringWindow (janela Last.fm no hero).",
+  },
+  {
+    kind: "genres",
+    label: "Gêneros",
+    hint: "Aplica a mesma data a todos os snapshots de gênero da semana.",
+  },
+];
+
+function emptyDates(): WeekStatus["dates"] {
+  const empty: GlobalSnapshotDateInfo = {
+    exists: false,
+    weekLabel: null,
+    dateRange: null,
+    scoringWindow: null,
+    weekDate: null,
+  };
+  return { global100: empty, airplay: empty, albums: empty, genres: empty };
+}
 
 function formatBrt(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", {
@@ -135,6 +179,8 @@ const ACTION_GROUPS: Array<{ title: string; items: ActionDef[] }> = [
 
 export default function ParadaGlobalClient({
   initialSlot,
+  initialPollOpenSlot,
+  initialPollCloseSlot,
   weekLabel,
   deadlineIso,
   publishAtIso,
@@ -144,6 +190,8 @@ export default function ParadaGlobalClient({
   initialStatus,
 }: {
   initialSlot: GlobalPublishSlot;
+  initialPollOpenSlot: GlobalPublishSlot;
+  initialPollCloseSlot: GlobalPublishSlot;
   weekLabel: string;
   deadlineIso: string;
   publishAtIso: string;
@@ -153,8 +201,12 @@ export default function ParadaGlobalClient({
   initialStatus: WeekStatus;
 }) {
   const [slot, setSlot] = useState(initialSlot);
+  const [pollOpenSlot, setPollOpenSlot] = useState(initialPollOpenSlot);
+  const [pollCloseSlot, setPollCloseSlot] = useState(initialPollCloseSlot);
   const [saving, setSaving] = useState(false);
+  const [savingPoll, setSavingPoll] = useState<"open" | "close" | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [pollSavedAt, setPollSavedAt] = useState<number | null>(null);
   const [published, setPublished] = useState(alreadyPublished);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -163,11 +215,34 @@ export default function ParadaGlobalClient({
 
   const [weekIndex, setWeekIndex] = useState(initialWeekIndex);
   const [weeks, setWeeks] = useState(initialWeeks);
-  const [status, setStatus] = useState(initialStatus);
+  const [status, setStatus] = useState(() => ({
+    ...initialStatus,
+    dates: initialStatus.dates ?? emptyDates(),
+  }));
+  const [dateDrafts, setDateDrafts] = useState<Record<GlobalDateKind, string>>(() => ({
+    global100: initialStatus.dates?.global100.weekDate ?? "",
+    airplay: initialStatus.dates?.airplay.weekDate ?? "",
+    albums: initialStatus.dates?.albums.weekDate ?? "",
+    genres: initialStatus.dates?.genres.weekDate ?? "",
+  }));
+  const [savingDateKind, setSavingDateKind] = useState<GlobalDateKind | null>(null);
+  const [dateMsg, setDateMsg] = useState<string | null>(null);
+  const [dateErr, setDateErr] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<GlobalAdminAction | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionErr, setActionErr] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<unknown>(null);
+
+  const applyStatus = useCallback((next: WeekStatus) => {
+    const withDates = { ...next, dates: next.dates ?? emptyDates() };
+    setStatus(withDates);
+    setDateDrafts({
+      global100: withDates.dates.global100.weekDate ?? "",
+      airplay: withDates.dates.airplay.weekDate ?? "",
+      albums: withDates.dates.albums.weekDate ?? "",
+      genres: withDates.dates.genres.weekDate ?? "",
+    });
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 15_000);
@@ -195,8 +270,8 @@ export default function ParadaGlobalClient({
       status?: WeekStatus;
     };
     if (data.weeks) setWeeks(data.weeks);
-    if (data.status) setStatus(data.status);
-  }, []);
+    if (data.status) applyStatus(data.status);
+  }, [applyStatus]);
 
   async function save(patch: Partial<GlobalPublishSlot>) {
     const next = { ...slot, ...patch };
@@ -211,6 +286,28 @@ export default function ParadaGlobalClient({
       if (res.ok) setSavedAt(Date.now());
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function savePollSlot(
+    which: "open" | "close",
+    patch: Partial<GlobalPublishSlot>,
+  ) {
+    const current = which === "open" ? pollOpenSlot : pollCloseSlot;
+    const next = { ...current, ...patch };
+    if (which === "open") setPollOpenSlot(next);
+    else setPollCloseSlot(next);
+    setSavingPoll(which);
+    try {
+      const eventType = which === "open" ? "WEEKLY_POLL_OPEN" : "WEEKLY_POLL_CLOSE";
+      const res = await fetch("/api/admin/social/config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "event-schedule", eventType, ...next }),
+      });
+      if (res.ok) setPollSavedAt(Date.now());
+    } finally {
+      setSavingPoll(null);
     }
   }
 
@@ -265,7 +362,7 @@ export default function ParadaGlobalClient({
         setActionErr(data.error ?? "Falha ao executar ação.");
         return;
       }
-      if (data.status) setStatus(data.status);
+      if (data.status) applyStatus(data.status);
       setLastResult(data.result);
       setActionMsg(`Concluído: ${def?.label ?? action}.`);
       if (data.status?.snapshots.global100) setPublished(true);
@@ -281,11 +378,53 @@ export default function ParadaGlobalClient({
     setWeekIndex(next);
     setActionErr(null);
     setActionMsg(null);
+    setDateErr(null);
+    setDateMsg(null);
     setLastResult(null);
     try {
       await refreshStatus(next);
     } catch {
       setActionErr("Não foi possível carregar o status da semana.");
+    }
+  }
+
+  async function saveDate(kind: GlobalDateKind) {
+    const weekDate = dateDrafts[kind]?.trim() ?? "";
+    if (!weekDate) {
+      setDateErr("Escolha uma data antes de salvar.");
+      return;
+    }
+    setSavingDateKind(kind);
+    setDateErr(null);
+    setDateMsg(null);
+    try {
+      const res = await fetch("/api/admin/parada-global/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "set-dates", dateKind: kind, weekDate, weekIndex }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        status?: WeekStatus;
+        result?: { weekLabel?: string; dateRange?: string; updatedCount?: number };
+      };
+      if (!res.ok || !data.ok) {
+        setDateErr(data.error ?? "Não foi possível salvar a data.");
+        return;
+      }
+      if (data.status) applyStatus(data.status);
+      const label = DATE_FIELDS.find((f) => f.kind === kind)?.label ?? kind;
+      const range = data.result?.dateRange ? ` → ${data.result.dateRange}` : "";
+      const count =
+        kind === "genres" && data.result?.updatedCount
+          ? ` (${data.result.updatedCount} gêneros)`
+          : "";
+      setDateMsg(`Data de ${label} salva${count}${range}.`);
+    } catch {
+      setDateErr("Erro de conexão ao salvar a data.");
+    } finally {
+      setSavingDateKind(null);
     }
   }
 
@@ -318,6 +457,62 @@ export default function ParadaGlobalClient({
           />
           {saving && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Salvando…</span>}
           {!saving && savedAt && <span style={{ fontSize: 12, color: "#5BD16A" }}>Salvo</span>}
+        </div>
+      </section>
+
+      <section style={{ ...adminPanelStyle, padding: 20 }}>
+        <div style={{ fontWeight: 700, marginBottom: 4 }}>Votação da Semana</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
+          Horários (América/São_Paulo) em que a enquete Melhor da Semana + Flashback abre e fecha.
+          Os crons reconciliam de hora em hora e só executam depois do horário salvo.
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Abertura</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <select
+                value={pollOpenSlot.weekday}
+                onChange={(e) => savePollSlot("open", { weekday: Number(e.target.value) })}
+                style={{ ...adminInputStyle, width: 160 }}
+              >
+                {WEEKDAY_LABELS.map((label, idx) => (
+                  <option key={idx} value={idx}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="time"
+                value={pollOpenSlot.time}
+                onChange={(e) => savePollSlot("open", { time: e.target.value })}
+                style={{ ...adminInputStyle, width: 120 }}
+              />
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Fechamento</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <select
+                value={pollCloseSlot.weekday}
+                onChange={(e) => savePollSlot("close", { weekday: Number(e.target.value) })}
+                style={{ ...adminInputStyle, width: 160 }}
+              >
+                {WEEKDAY_LABELS.map((label, idx) => (
+                  <option key={idx} value={idx}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="time"
+                value={pollCloseSlot.time}
+                onChange={(e) => savePollSlot("close", { time: e.target.value })}
+                style={{ ...adminInputStyle, width: 120 }}
+              />
+            </div>
+          </div>
+          {savingPoll && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>Salvando…</span>}
+          {!savingPoll && pollSavedAt && <span style={{ fontSize: 12, color: "#5BD16A" }}>Salvo</span>}
         </div>
       </section>
 
@@ -415,6 +610,71 @@ export default function ParadaGlobalClient({
           <span style={badge(status.socialPosts.length > 0)}>
             Posts sociais ({status.socialPosts.length})
           </span>
+        </div>
+
+        <div
+          style={{
+            marginBottom: 20,
+            padding: 14,
+            borderRadius: 12,
+            border: "1px solid var(--divider)",
+            background: "var(--bg)",
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Datas exibidas</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 14 }}>
+            Ajusta o rótulo e o intervalo de cada global desta semana sem recalcular o ranking. Um
+            recalcular sobrescreve esses valores. Airplay e Álbuns também atualizam a janela
+            Last.fm do hero.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {DATE_FIELDS.map((field) => {
+              const info = status.dates[field.kind];
+              const disabled =
+                !info.exists || savingDateKind != null || busyAction != null;
+              const dirty = (dateDrafts[field.kind] || "") !== (info.weekDate || "");
+              return (
+                <div
+                  key={field.kind}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(110px, 140px) minmax(140px, 1fr) auto",
+                    gap: 10,
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{field.label}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                      {info.exists
+                        ? info.scoringWindow || info.dateRange || info.weekLabel || "—"
+                        : "Sem snapshot"}
+                    </div>
+                  </div>
+                  <input
+                    type="date"
+                    value={dateDrafts[field.kind] || ""}
+                    onChange={(e) =>
+                      setDateDrafts((prev) => ({ ...prev, [field.kind]: e.target.value }))
+                    }
+                    disabled={disabled}
+                    style={{ ...adminInputStyle, width: "100%" }}
+                    title={field.hint}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => saveDate(field.kind)}
+                    disabled={disabled || !dirty || !dateDrafts[field.kind]}
+                    style={buttonStyle(disabled || !dirty || !dateDrafts[field.kind], "secondary")}
+                  >
+                    {savingDateKind === field.kind ? "Salvando…" : "Salvar"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {dateMsg && <div style={{ fontSize: 13, color: "#5BD16A", marginTop: 10 }}>{dateMsg}</div>}
+          {dateErr && <div style={{ fontSize: 13, color: "#e06666", marginTop: 10 }}>{dateErr}</div>}
         </div>
 
         {ACTION_GROUPS.map((group) => (

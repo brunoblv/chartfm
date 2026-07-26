@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text);display:flex;flex-direction:column;align-items:center">
+
+  <div style="width:100%;max-width:640px;padding:40px 40px 0;box-sizing:border-box">
+    <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 24 }}" hint-size="110px,24px"></x-import>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:32px">
+      <sc-for list="{{ progress }}" as="p" hint-placeholder-count="3">
+        <div style="{{ p.style }}"></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:640px;padding:32px 40px 96px;box-sizing:border-box">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Passo 2 de 3</div>
+    <div style="font-size:32px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Quais gêneros você mais ouve?</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px;line-height:1.5">Escolha ao menos 3 — vamos usar isso para montar suas recomendações.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:28px">
+      <sc-for list="{{ genres }}" as="g" hint-placeholder-count="12">
+        <div style="{{ g.style }}">{{ g.label }}</div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:40px">
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:14px">Artistas em alta que combinam com seu gosto</div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+        <sc-for list="{{ artists }}" as="a" hint-placeholder-count="8">
+          <div style="text-align:center">
+            <div style="position:relative;width:72px;height:72px;margin:0 auto 8px">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ a.avatar }}" size="{{ 72 }}" rounded="{{ 999 }}" hint-size="72px,72px"></x-import>
+              <sc-if value="{{ a.selected }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;inset:0;width:72px;height:72px;border:3px solid var(--accent);border-radius:999px;box-sizing:border-box"></div>
+              </sc-if>
+            </div>
+            <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.name }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:44px">
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">Pular por enquanto</a>
+      <button style="background:var(--accent);color:#fff;border:none;padding:14px 32px;border-radius:100px;font-size:15px;font-weight:700;cursor:pointer">Continuar</button>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const progress = [true, true, false].map(done => ({ style: { flex: 1, height: 4, borderRadius: 100, background: done ? 'var(--accent)' : 'var(--fill-subtle)' } }));
+
+    const genreList = [
+      { label: 'Dream Pop', on: true }, { label: 'Shoegaze', on: true }, { label: 'Indie Rock', on: true },
+      { label: 'Bedroom Pop' }, { label: 'MPB' }, { label: 'Trap' }, { label: 'Jazz' }, { label: 'Ambient' },
+      { label: 'Rock Alternativo' }, { label: 'Synth-pop' }, { label: 'Lo-fi' }, { label: 'Soul' },
+    ];
+    const genres = genreList.map(g => ({ label: g.label, style: {
+      padding: '11px 18px', borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+      background: g.on ? 'var(--accent)' : 'var(--fill-subtle)', color: g.on ? '#fff' : 'var(--text)'
+    }}));
+
+    const artistList = [
+      { name: 'Coral Hour', seed: 6, selected: true }, { name: 'Nova Vega', seed: 1, selected: true },
+      { name: 'Kite Season', seed: 3 }, { name: 'Halflight Parade', seed: 4 },
+      { name: 'Marisol Vane', seed: 8 }, { name: 'Glass Static', seed: 2 },
+      { name: 'Amber Hours', seed: 9 }, { name: 'Nightfall Radio', seed: 0 },
+    ];
+    const artists = artistList.map(a => ({ ...a, avatar: this.cover(a.seed) }));
+
+    return { progress, genres, artists };
+  }
+}
+
+</script>
+</body>
+</html>

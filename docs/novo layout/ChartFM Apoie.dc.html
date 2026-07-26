@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1040px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Início</a>
+    </div>
+  </div>
+
+  <div style="background:var(--gradient-hero);padding:72px 40px;text-align:center">
+    <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;opacity:.85">Apoie o ChartFM</div>
+    <div style="font-size:38px;font-weight:800;letter-spacing:-0.03em;color:#fff;margin-top:12px;max-width:600px;margin-left:auto;margin-right:auto">Ajude a manter as Charts independentes e feitas por quem ouve.</div>
+    <div style="font-size:16px;color:#fff;opacity:.9;margin-top:14px;max-width:540px;margin-left:auto;margin-right:auto">O ChartFM é financiado pela comunidade. Seu apoio mantém o produto sem anúncios invasivos e sem depender de grandes selos.</div>
+  </div>
+
+  <div style="max-width:1040px;margin:0 auto;padding:56px 40px 96px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+      <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+        <div style="{{ p.cardStyle }}">
+          <sc-if value="{{ p.highlight }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:-12px;left:20px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px">Mais popular</div>
+          </sc-if>
+          <div style="font-size:15px;font-weight:700">{{ p.name }}</div>
+          <div style="font-size:30px;font-weight:800;margin-top:8px;letter-spacing:-0.02em">{{ p.price }}<span style="font-size:13px;font-weight:600;color:var(--text-muted)">/mês</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+            <sc-for list="{{ p.perks }}" as="perk" hint-placeholder-count="3">
+              <div style="font-size:13px;color:var(--text-muted)">✓ {{ perk }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <section style="margin-top:48px">
+      <div style="font-size:20px;font-weight:700;margin-bottom:16px">Metas futuras</div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <sc-for list="{{ goals }}" as="g" hint-placeholder-count="3">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:600;margin-bottom:6px">
+              <span>{{ g.title }}</span>
+              <span style="color:var(--text-muted)">{{ g.progress }}%</span>
+            </div>
+            <div style="height:8px;background:var(--fill-inset);border-radius:100px;overflow:hidden">
+              <div style="height:100%;width:{{ g.progress }}%;background:var(--accent);border-radius:100px"></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:48px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:14px">Prestação de contas</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ accounting }}" as="a" hint-placeholder-count="4">
+            <div style="display:flex;justify-content:space-between;font-size:13.5px">
+              <span style="color:var(--text-muted)">{{ a.label }}</span>
+              <span style="font-weight:700">{{ a.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:14px">FAQ</div>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ faq }}" as="f" hint-placeholder-count="3">
+            <div style="padding:10px 0;border-bottom:1px solid var(--divider-soft)">
+              <div style="font-size:13.5px;font-weight:700">{{ f.q }}</div>
+              <div style="font-size:12.5px;color:var(--text-muted);margin-top:4px">{{ f.a }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const cardStyle = (highlight) => ({
+      position: 'relative', background: 'var(--surface)', border: `1px solid ${highlight ? 'var(--accent)' : 'var(--divider)'}`,
+      borderRadius: 16, padding: 22,
+    });
+
+    const plans = [
+      { name: 'Ouvinte', price: 'R$0', highlight: false, perks: ['Paradas ilimitadas', 'Participação em Charts coletivas', 'Comunidades públicas'] },
+      { name: 'Apoiador', price: 'R$14', highlight: true, perks: ['Tudo do Ouvinte', 'Selo de apoiador no perfil', 'Estatísticas avançadas', 'Sem anúncios'] },
+      { name: 'Curador', price: 'R$29', highlight: false, perks: ['Tudo do Apoiador', 'Criar comunidades privadas', 'Acesso antecipado a recursos'] },
+    ].map(p => ({ ...p, cardStyle: cardStyle(p.highlight) }));
+
+    const goals = [
+      { title: 'Servidores sem anúncios até 2027', progress: 68 },
+      { title: 'App mobile nativo', progress: 41 },
+      { title: 'Fundo para artistas independentes', progress: 22 },
+    ];
+
+    const accounting = [
+      { label: 'Apoiadores ativos', value: '4.812' }, { label: 'Receita mensal', value: 'R$ 61.2k' },
+      { label: 'Custo de infraestrutura', value: 'R$ 22.4k' }, { label: 'Reinvestido em produto', value: '71%' },
+    ];
+
+    const faq = [
+      { q: 'Posso cancelar quando quiser?', a: 'Sim, sem multa, direto nas Configurações.' },
+      { q: 'O apoio muda como minhas paradas contam pontos?', a: 'Não. Apoiar não altera o ranking — é só sobre manter o produto de pé.' },
+      { q: 'Empresas podem patrocinar?', a: 'Sim, veja a página de Contato → Parcerias.' },
+    ];
+
+    return { plans, goals, accounting, faq };
+  }
+}
+
+</script>
+</body>
+</html>

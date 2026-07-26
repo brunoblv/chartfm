@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Copa</a>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid var(--divider);background:var(--surface)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:8px;background:#FFD426;display:grid;place-items:center;font-size:14px;flex-shrink:0">🏆</div>
+        <div><div style="font-size:15px;font-weight:800;letter-spacing:-0.02em;line-height:1">Copa ChartFM</div></div>
+      </div>
+      <div style="display:flex;gap:2px;margin-top:10px;overflow-x:auto">
+        <sc-for list="{{ subnav }}" as="n" hint-placeholder-count="6">
+          <div style="{{ n.style }}">{{ n.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:640px;margin:0 auto;padding:24px 24px 96px">
+    <h1 style="font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:0">Meu Time</h1>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:4px;margin-bottom:20px">Gerencie os artistas e as músicas escaladas para cada fase.</div>
+
+    <div style="padding:12px 14px;background:var(--up-bg,#123024);border-radius:12px;margin-bottom:16px;font-size:12px;line-height:1.5;color:var(--text-muted)">
+      <strong style="color:var(--up-fg,#3ECF8E)">Janela de edição aberta.</strong> Você pode trocar 1 música por artista até o início da próxima rodada.
+    </div>
+
+    <sc-for list="{{ myArtists }}" as="art" hint-placeholder-count="2">
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;overflow:hidden;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+          <x-import component-from-global-scope="ChartFM.Cover" cover="{{ art.cover }}" size="{{ 44 }}" rounded="{{ 12 }}" hint-size="44px,44px"></x-import>
+          <div style="flex:1">
+            <div style="font-size:16px;font-weight:800;letter-spacing:-0.02em">{{ art.name }}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Grupo {{ art.groupLetter }} · {{ art.pts }} pts · {{ art.pj }} jogos</div>
+          </div>
+          <span style="{{ art.badgeStyle }}">{{ art.badgeLabel }}</span>
+        </div>
+
+        <sc-for list="{{ art.slots }}" as="s" hint-placeholder-count="8">
+          <div onClick="{{ s.onClick }}" style="{{ s.rowStyle }}">
+            <span style="width:20px;text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);flex-shrink:0">{{ s.n }}</span>
+            <div style="flex:1">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">{{ s.label }}</div>
+              <div style="{{ s.songStyle }}">{{ s.songName }}</div>
+            </div>
+            <span style="{{ s.statusStyle }}">{{ s.statusLabel }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--fill-inset);border:2px dashed var(--divider);border-radius:14px;cursor:pointer;color:var(--text-muted);font-size:14px;font-weight:700">
+      <span style="font-size:20px">+</span>
+      Adicionar artista (2/2 preenchidos)
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { editing: null };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+  slotLabels = ['Jogo 1 de grupo', 'Jogo 2 de grupo', 'Jogo 3 de grupo', 'Oitavas de final', 'Dezesseis-avos', 'Quartas de final', 'Semifinal', 'Final / 3º lugar'];
+
+  renderVals() {
+    const subnavList = [
+      { label: 'Início' }, { label: 'Ao vivo' }, { label: 'Meu Time', active: true },
+      { label: 'Grupos' }, { label: 'Chaveamento' }, { label: 'Regras' },
+    ];
+    const subnav = subnavList.map(n => ({ label: n.label, style: {
+      padding: '9px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer',
+      borderBottom: `2px solid ${n.active ? 'var(--accent)' : 'transparent'}`, color: n.active ? 'var(--text)' : 'var(--text-muted)'
+    }}));
+
+    const raw = [
+      { name: 'Coral Hour', seed: 6, groupLetter: 'A', pts: 9, pj: 3, qualified: true,
+        songs: ['Halflight', 'Amber Static', 'Low Tide', 'Nightlong', null, null, null, null] },
+      { name: 'Nova Vega', seed: 1, groupLetter: 'A', pts: 6, pj: 3, qualified: false,
+        songs: ['Glasswing', 'Coastal', null, null, null, null, null, null] },
+    ];
+
+    const myArtists = raw.map(art => ({
+      name: art.name, cover: this.cover(art.seed), groupLetter: art.groupLetter, pts: art.pts, pj: art.pj,
+      badgeLabel: art.qualified ? 'Classificado' : 'Em disputa',
+      badgeStyle: {
+        fontSize: 10, fontWeight: 700, padding: '4px 9px', borderRadius: 99, textTransform: 'uppercase', letterSpacing: '.05em',
+        background: art.qualified ? 'var(--up-bg,#123024)' : 'var(--fill-inset)', color: art.qualified ? 'var(--up-fg,#3ECF8E)' : 'var(--text-muted)'
+      },
+      slots: art.songs.map((song, i) => {
+        const editable = i < 5;
+        const isEmpty = !song;
+        return {
+          n: i + 1, label: this.slotLabels[i], songName: isEmpty ? (editable ? 'Escolher música…' : '—') : song,
+          onClick: () => {},
+          rowStyle: { display: 'flex', alignItems: 'center', gap: 9, padding: '10px 16px', borderTop: '1px solid var(--divider)', cursor: editable ? 'pointer' : 'default' },
+          songStyle: { fontSize: 13, fontWeight: 600, color: isEmpty ? 'var(--text-muted)' : 'var(--text)' },
+          statusLabel: editable ? 'Editável' : (song ? 'Definido' : 'Fechado'),
+          statusStyle: {
+            fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, textTransform: 'uppercase', letterSpacing: '.05em', flexShrink: 0,
+            background: editable ? 'var(--up-bg,#123024)' : 'var(--fill-inset)', color: editable ? 'var(--up-fg,#3ECF8E)' : 'var(--text-muted)'
+          }
+        };
+      })
+    }));
+
+    return { subnav, myArtists };
+  }
+}
+
+</script>
+</body>
+</html>

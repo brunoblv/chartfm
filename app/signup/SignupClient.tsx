@@ -92,7 +92,7 @@ export default function SignupClient({ googleConfigured }: { googleConfigured: b
       <h2 style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 8px 0", lineHeight: 1.1 }}>
         {t("signup.headline")}
       </h2>
-      <p style={{ fontSize: 14, color: "#86868B", margin: "0 0 32px 0", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 32px 0", lineHeight: 1.5 }}>
         {t("signup.subhead")}
       </p>
 
@@ -110,7 +110,7 @@ export default function SignupClient({ googleConfigured }: { googleConfigured: b
       )}
 
       <form onSubmit={handleSubmit}>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
           {t("signup.name")}
         </label>
         <input
@@ -123,7 +123,7 @@ export default function SignupClient({ googleConfigured }: { googleConfigured: b
           style={authInputStyle}
         />
 
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
           {t("login.email")}
         </label>
         <input
@@ -137,7 +137,7 @@ export default function SignupClient({ googleConfigured }: { googleConfigured: b
           style={authInputStyle}
         />
 
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
           {t("login.password")}
         </label>
         <input
@@ -152,7 +152,7 @@ export default function SignupClient({ googleConfigured }: { googleConfigured: b
           style={authInputStyle}
         />
 
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
           {t("signup.confirmPassword")}
         </label>
         <input
@@ -167,14 +167,14 @@ export default function SignupClient({ googleConfigured }: { googleConfigured: b
           style={authInputStyle}
         />
 
-        <p style={{ fontSize: 11, color: "#86868B", margin: "0 0 4px 0" }}>{t("signup.passwordHint")}</p>
+        <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "0 0 4px 0" }}>{t("signup.passwordHint")}</p>
 
         <button type="submit" disabled={!canSubmit} style={authPrimaryButtonStyle(!canSubmit)}>
           {loading ? t("signup.creating") : t("signup.submit")}
         </button>
       </form>
 
-      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "#86868B" }}>
+      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--text-muted)" }}>
         {t("signup.hasAccount")}{" "}
         <Link href="/login" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
           {t("nav.signIn")}

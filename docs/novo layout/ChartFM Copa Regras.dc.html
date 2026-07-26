@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+    table{border-collapse:collapse}
+    ul,ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Copa</a>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid var(--divider);background:var(--surface)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:8px;background:#FFD426;display:grid;place-items:center;font-size:14px;flex-shrink:0">🏆</div>
+        <div><div style="font-size:15px;font-weight:800;letter-spacing:-0.02em;line-height:1">Copa ChartFM</div></div>
+      </div>
+      <div style="display:flex;gap:2px;margin-top:10px;overflow-x:auto">
+        <sc-for list="{{ subnav }}" as="n" hint-placeholder-count="6">
+          <div style="{{ n.style }}">{{ n.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:20px 24px 40px;max-width:720px;margin:0 auto">
+    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Como funciona</p>
+    <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:0 0 6px">Regras da Copa ChartFM</h1>
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 28px">O mundial da música dos usuários — monte seu time, dispute a fase de grupos e chegue à final.</p>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">1. Inscrição</h2>
+      <ul style="font-size:14px;line-height:1.6">
+        <li>Cada usuário pode inscrever até 2 artistas na edição atual da Copa.</li>
+        <li>As inscrições ficam abertas até o fechamento dos grupos, definido pelo calendário da edição.</li>
+        <li>Um artista só pode representar um único participante por edição.</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">2. Escalação de singles</h2>
+      <p style="font-size:14px;line-height:1.6;margin-bottom:10px">Ao inscrever um artista, você define uma lista de <strong>8 músicas</strong> em ordem de prioridade — elas serão usadas, uma por vez, conforme o artista avança na competição.</p>
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:16px 18px">
+        <p style="font-weight:700;margin-bottom:8px;font-size:14px">Exemplo — Paramore</p>
+        <ol style="font-size:14px;line-height:1.6">
+          <li>Misery Business</li><li>That's What You Get</li><li>Decode</li><li>Ignorance</li>
+          <li>Hard Times</li><li>Ain't It Fun</li><li>Rose-Colored Boy</li><li>Still Into You</li>
+        </ol>
+      </div>
+    </section>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">3. Fase de grupos</h2>
+      <ul style="font-size:14px;line-height:1.6">
+        <li>Os artistas são divididos em grupos de 4, cada um enfrentando os outros três uma vez.</li>
+        <li>Cada confronto é decidido por votação da comunidade entre os singles escalados.</li>
+        <li>Pontuação por jogo: <strong>vitória = 3 pts</strong>, <strong>empate = 1 pt</strong>, <strong>derrota = 0 pt</strong>.</li>
+        <li>Os 2 primeiros colocados de cada grupo avançam para as oitavas de final.</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">4. Ordem dos singles</h2>
+      <p style="font-size:14px;line-height:1.6;margin-bottom:10px">Cada fase consome o próximo single da lista do artista, na ordem em que foi escalado:</p>
+      <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--divider)">
+        <table style="width:100%;font-size:13px">
+          <thead><tr>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);background:var(--fill-inset)">Confronto</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);background:var(--fill-inset)">Single usado</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ singleOrderRows }}" as="r" hint-placeholder-count="8">
+              <tr style="border-top:1px solid var(--divider)">
+                <td style="padding:8px 12px;color:var(--text);font-weight:700">{{ r.match }}</td>
+                <td style="padding:8px 12px;color:var(--text-muted)">{{ r.song }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">5. Placar em "gols"</h2>
+      <p style="font-size:14px;line-height:1.6;margin-bottom:10px">Cada bloco de votos vira um "gol" para o lado mais votado, dando ritmo de jogo ao vivo ao confronto.</p>
+      <ul style="font-size:14px;line-height:1.6">
+        <li><strong>Fase de grupos:</strong> a cada 50 votos computados, o lado na frente marca um gol.</li>
+        <li><strong>Mata-mata:</strong> a cada 100 votos computados, o lado na frente marca um gol.</li>
+      </ul>
+      <div style="margin-top:10px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:16px 18px">
+        <p style="font-weight:700;margin-bottom:6px;font-size:14px">Exemplo</p>
+        <p style="color:var(--text-muted);font-size:14px">Paramore: "Decode" × Avril Lavigne: "Complicated"</p>
+      </div>
+    </section>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">6. Mata-mata</h2>
+      <ul style="font-size:14px;line-height:1.6">
+        <li><strong>Oitavas de final</strong> — 16 artistas classificados dos grupos disputam eliminatórias diretas.</li>
+        <li><strong>Dezesseis-avos</strong> — os 8 vencedores das oitavas avançam.</li>
+        <li><strong>Quartas de final</strong> — os 4 vencedores avançam.</li>
+        <li><strong>Semifinais</strong> — os 2 vencedores vão à final.</li>
+        <li><strong>Final</strong> — decide o campeão da edição.</li>
+        <li><strong>Disputa de 3º lugar</strong> — entre os perdedores das semifinais.</li>
+      </ul>
+    </section>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">7. Critérios de desempate</h2>
+      <p style="font-size:14px;line-height:1.6;margin-bottom:10px">Se um confronto do mata-mata terminar empatado em gols, a decisão segue esta ordem:</p>
+      <ol style="font-size:14px;line-height:1.6">
+        <li>Maior número total de votos recebidos.</li>
+        <li>Saldo de gols acumulado ao longo do confronto.</li>
+        <li>Sorteio, em caso de empate total.</li>
+      </ol>
+    </section>
+
+    <section style="margin-bottom:28px">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">8. Exemplo de campeão</h2>
+      <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--divider)">
+        <table style="width:100%;font-size:13px">
+          <thead><tr>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);background:var(--fill-inset)">Fase</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);background:var(--fill-inset)">Single</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ championRows }}" as="r" hint-placeholder-count="8">
+              <tr style="border-top:1px solid var(--divider)">
+                <td style="padding:8px 12px;color:var(--text);font-weight:700">{{ r.phase }}</td>
+                <td style="padding:8px 12px;color:var(--text-muted)">{{ r.song }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">9. Dicas de estratégia</h2>
+      <p style="font-size:14px;line-height:1.6;margin-bottom:10px">Como escalar bem seus 8 singles:</p>
+      <ul style="font-size:14px;line-height:1.6">
+        <li>Guarde seus hits mais fortes para as fases decisivas — eles enfrentam adversários mais difíceis.</li>
+        <li>Use faixas de entrada nos primeiros jogos, quando o artista ainda pode perder sem grandes riscos.</li>
+        <li>Considere o que a comunidade já vota bem nas suas paradas para prever o que vai engajar.</li>
+      </ul>
+      <p style="margin-top:10px;color:var(--text-muted);font-size:14px">Boa sorte — e que vença o melhor time!</p>
+    </section>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const subnavList = [
+      { label: 'Início' }, { label: 'Ao vivo' }, { label: 'Meu Time' },
+      { label: 'Grupos' }, { label: 'Chaveamento' }, { label: 'Regras', active: true },
+    ];
+    const subnav = subnavList.map(n => ({ label: n.label, style: {
+      padding: '9px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer',
+      borderBottom: `2px solid ${n.active ? 'var(--accent)' : 'transparent'}`, color: n.active ? 'var(--text)' : 'var(--text-muted)'
+    }}));
+
+    const singleOrderRows = [
+      { match: 'Grupos — jogo 1', song: 'Single 1' }, { match: 'Grupos — jogo 2', song: 'Single 2' },
+      { match: 'Grupos — jogo 3', song: 'Single 3' }, { match: 'Oitavas de final', song: 'Single 4' },
+      { match: 'Dezesseis-avos', song: 'Single 5' }, { match: 'Quartas de final', song: 'Single 6' },
+      { match: 'Semifinal', song: 'Single 7' }, { match: 'Final / 3º lugar', song: 'Single 8' },
+    ];
+    const championRows = [
+      { phase: 'Grupos — jogo 1', song: 'Single 1' }, { phase: 'Grupos — jogo 2', song: 'Single 2' },
+      { phase: 'Grupos — jogo 3', song: 'Single 3' }, { phase: 'Oitavas de final', song: 'Single 4' },
+      { phase: 'Dezesseis-avos', song: 'Single 5' }, { phase: 'Quartas de final', song: 'Single 6' },
+      { phase: 'Semifinal', song: 'Single 7' }, { phase: 'Final', song: 'Single 8' },
+    ];
+
+    return { subnav, singleOrderRows, championRows };
+  }
+}
+
+</script>
+</body>
+</html>

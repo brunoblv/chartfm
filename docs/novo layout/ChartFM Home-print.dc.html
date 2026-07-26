@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    * { animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important; }
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1400px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="26" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:700;color:var(--text)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Conversas</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:14px;height:36px;padding:0 14px;background:var(--fill-subtle);border-radius:10px;width:260px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span style="font-size:13px;color:var(--text-muted)">Buscar artistas, álbuns, pessoas...</span>
+      </div>
+      <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FF5858,#FA243C);flex-shrink:0"></div>
+    </div>
+  </div>
+
+  <div style="max-width:1400px;margin:0 auto;padding:36px 40px 96px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:40px;align-items:flex-start">
+    <main style="display:flex;flex-direction:column;gap:60px;min-width:0">
+
+      <section>
+        <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:14px">
+          <div style="display:inline-flex;gap:4px;background:var(--fill-subtle);padding:4px;border-radius:10px">
+            <button onClick="{{ setHeroA }}" style="{{ heroBtnStyleA }}">A · Manchete</button>
+            <button onClick="{{ setHeroB }}" style="{{ heroBtnStyleB }}">B · Social</button>
+            <button onClick="{{ setHeroC }}" style="{{ heroBtnStyleC }}">C · Álbum</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ isHeroA }}" hint-placeholder-val="{{ true }}">
+          <div style="position:relative;border-radius:24px;overflow:hidden;min-height:420px;display:flex;flex-direction:column;justify-content:flex-end;padding:48px;background:linear-gradient(180deg,rgba(10,10,14,0) 0%,rgba(10,10,14,.55) 55%,rgba(10,10,14,.92) 100%),linear-gradient(135deg,#3B2B8C,#FA243C 70%);box-shadow:var(--shadow-hero)">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.85);margin-bottom:14px">Manchete da semana</div>
+            <div style="font-size:44px;font-weight:800;letter-spacing:-0.03em;line-height:1.05;color:#fff;max-width:760px">Nova Vega volta ao Top 10 seis anos depois — e ninguém viu chegar.</div>
+            <div style="font-size:16px;color:rgba(255,255,255,.85);margin-top:16px;max-width:600px;line-height:1.5">"Glasswing" já soma 340 Reviews e virou a Community mais comentada da semana no ChartFM.</div>
+            <div style="display:flex;gap:12px;margin-top:28px">
+              <button style="background:#fff;color:#0a0a0e;border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Ouvir o álbum</button>
+              <button style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Ver 340 Reviews</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isHeroB }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:0;border-radius:24px;overflow:hidden;background:var(--surface);border:1px solid var(--divider);min-height:340px">
+            <div style="padding:48px;display:flex;flex-direction:column;justify-content:center">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+                <div style="{{ heroFriendAvatarStyle }}"></div>
+                <div style="font-size:13px;color:var(--text-muted)">Théo Lambert · há 2h</div>
+              </div>
+              <div style="font-size:34px;font-weight:800;letter-spacing:-0.02em;line-height:1.15">Seu amigo publicou uma Chart que combina 91% com você.</div>
+              <div style="font-size:15px;color:var(--text-muted);margin-top:14px;max-width:480px">"Indie que ninguém te contou" reúne 12 artistas que vocês dois já ouviram esse mês.</div>
+              <button style="margin-top:24px;background:var(--accent);color:#fff;border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer;width:fit-content">Ver a Chart de Théo</button>
+            </div>
+            <div style="background:var(--fill-subtle);padding:36px;display:flex;flex-direction:column;gap:14px;justify-content:center">
+              <sc-for list="{{ heroChartPreview }}" as="row" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="font-size:13px;font-weight:700;color:var(--text-muted);width:16px">{{ row.pos }}</div>
+                  <div style="{{ row.coverStyle }}"></div>
+                  <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ row.title }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isHeroC }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:40px;border-radius:24px;background:var(--surface);border:1px solid var(--divider);padding:40px;align-items:center">
+            <div style="{{ heroAlbumCoverStyle }}"></div>
+            <div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">Álbum da semana</div>
+              <div style="font-size:36px;font-weight:800;letter-spacing:-0.02em">Glasswing</div>
+              <div style="font-size:16px;color:var(--text-muted);margin-top:4px">Nova Vega · 2026</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:16px">
+                <div style="font-size:22px;font-weight:800;color:var(--accent)">4.5</div>
+                <div style="font-size:13px;color:var(--text-muted)">340 Reviews · trocando texturas por hooks óbvios, um retorno silenciosamente ambicioso</div>
+              </div>
+              <div style="display:flex;gap:12px;margin-top:26px">
+                <button style="background:var(--accent);color:#fff;border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Ouvir</button>
+                <button style="background:var(--fill-subtle);color:var(--text);border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Ver Reviews</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Hoje para você</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Uma mistura de Reviews, álbuns, pessoas e discussões — sem repetir formato</div>
+          </div>
+          <div style="display:inline-flex;gap:4px;background:var(--fill-subtle);padding:4px;border-radius:10px;flex-shrink:0">
+            <button onClick="{{ setHojeA }}" style="{{ hojeBtnStyleA }}">A · Mosaico</button>
+            <button onClick="{{ setHojeB }}" style="{{ hojeBtnStyleB }}">B · Destaque + trilha</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ isHojeA }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:110px;gap:16px">
+            <sc-for list="{{ discoveries }}" as="item" hint-placeholder-count="8">
+              <div style="{{ item.tileStyle }}">
+                <div style="{{ item.tileBgStyle }}"></div>
+                <div style="position:relative;z-index:1;display:flex;flex-direction:column;height:100%;justify-content:flex-end">
+                  <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.75)">{{ item.type }}</div>
+                  <div style="font-size:16px;font-weight:700;color:#fff;margin-top:2px;line-height:1.2">{{ item.title }}</div>
+                  <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:4px">{{ item.reason }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isHojeB }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:340px 1fr;gap:20px">
+            <div style="position:relative;border-radius:20px;overflow:hidden;min-height:420px">
+              <div style="{{ hojeFeaturedBgStyle }}"></div>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:28px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.75)">Review</div>
+                <div style="font-size:22px;font-weight:800;color:#fff;margin-top:4px;line-height:1.2">Halflight redefine o que esperamos do dream pop em 2026</div>
+                <div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:8px">Porque você seguiu Coral Hour</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;overflow-x:auto">
+              <sc-for list="{{ discoveries }}" as="item" hint-placeholder-count="7">
+                <div style="display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:14px 16px">
+                  <div style="{{ item.railCoverStyle }}"></div>
+                  <div style="min-width:0;flex:1">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)">{{ item.type }}</div>
+                    <div style="font-size:14px;font-weight:700;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ item.title }}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ item.reason }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Pessoas para conhecer</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">O ChartFM conecta pessoas — não só músicas</div>
+          </div>
+          <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+          <sc-for list="{{ people }}" as="p" hint-placeholder-count="6">
+            <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;gap:14px">
+                <div style="{{ p.avatarStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:15px;font-weight:700">{{ p.name }}</div>
+                  <div style="font-size:12px;color:var(--text-muted)">@{{ p.handle }} · {{ p.activity }}</div>
+                </div>
+                <div style="font-size:18px;font-weight:800;color:var(--accent)">{{ p.compat }}%</div>
+              </div>
+              <div style="height:6px;border-radius:999px;background:var(--fill-subtle)">
+                <div style="{{ p.compatBarStyle }}"></div>
+              </div>
+              <div style="font-size:13px;color:var(--text-muted)">{{ p.reason }}</div>
+              <button style="margin-top:2px;background:var(--accent);color:#fff;border:none;padding:10px 0;border-radius:100px;font-size:13px;font-weight:700;cursor:pointer">Seguir</button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Reviews em destaque</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Qualidade acima de volume — escritas que valem a leitura</div>
+          </div>
+          <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;overflow:hidden;display:flex;flex-direction:column">
+              <div style="{{ r.coverBgStyle }}">
+                <div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;letter-spacing:.03em;padding:4px 9px;border-radius:100px">{{ r.badge }}</div>
+                <div style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:800;padding:3px 9px;border-radius:8px">{{ r.rating }}</div>
+              </div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:8px;flex:1">
+                <div style="font-size:14px;font-weight:700;line-height:1.25">{{ r.album }}</div>
+                <div style="font-size:12px;color:var(--text-muted)">{{ r.artist }}</div>
+                <div style="font-size:12.5px;color:var(--text-subtle);line-height:1.4">{{ r.excerpt }}</div>
+                <div style="flex:1"></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:6px">
+                  <span>{{ r.author }} · {{ r.readTime }}</span>
+                  <span>♥ {{ r.likes }} · 💬 {{ r.comments }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Lançamentos</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Novidades, relançamentos e aniversários de discos</div>
+          </div>
+          <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+        </div>
+        <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:4px">
+          <sc-for list="{{ releases }}" as="rel" hint-placeholder-count="5">
+            <div style="flex:0 0 200px;display:flex;flex-direction:column;gap:8px">
+              <div style="{{ rel.coverStyle }}"></div>
+              <div style="font-size:13px;font-weight:700;margin-top:4px">{{ rel.title }}</div>
+              <div style="font-size:12px;color:var(--text-muted)">{{ rel.artist }} · {{ rel.date }}</div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">
+                <span style="color:var(--accent);font-weight:700">{{ rel.rating }}</span>
+                <span>· {{ rel.reviewCount }} Reviews</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Charts da semana</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">As pessoas vêm primeiro — a Chart vem depois</div>
+          </div>
+          <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+          <sc-for list="{{ charts }}" as="c" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:20px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                <div style="{{ c.avatarStyle }}"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700">{{ c.author }}</div>
+                  <div style="font-size:12px;color:var(--text-muted)">publicou uma Chart</div>
+                </div>
+                <x-import component-from-global-scope="ChartFM.MovementBadge" status="{{ c.status }}" delta="{{ c.delta }}" hint-size="60px,24px"></x-import>
+              </div>
+              <div style="font-size:16px;font-weight:800;letter-spacing:-0.01em;margin-bottom:12px">{{ c.title }}</div>
+              <div style="display:flex;gap:6px;margin-bottom:14px">
+                <sc-for list="{{ c.preview }}" as="pv" hint-placeholder-count="5">
+                  <div style="{{ pv.coverStyle }}"></div>
+                </sc-for>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted)">{{ c.votes }} votos · {{ c.comments }} comentários</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Communities</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Comunidades que estão vivas agora</div>
+          </div>
+          <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <sc-for list="{{ communities }}" as="cm" hint-placeholder-count="4">
+            <div style="border-radius:18px;overflow:hidden;position:relative;min-height:260px;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 16px 20px">
+              <div style="{{ cm.bgStyle }}"></div>
+              <div style="position:relative;z-index:1;color:#fff">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(255,255,255,.18);display:inline-block;padding:3px 8px;border-radius:100px;margin-bottom:8px">{{ cm.status }}</div>
+                <div style="font-size:15px;font-weight:800;line-height:1.3;word-break:break-word">{{ cm.name }}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,.75);margin-top:4px;line-height:1.4">{{ cm.theme }} · {{ cm.members }} membros</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Conversas</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Debates que estão crescendo agora</div>
+          </div>
+          <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ discussions }}" as="d" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:18px 20px">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:15px;font-weight:700">{{ d.title }}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">{{ d.author }} · última resposta {{ d.lastReply }}</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);white-space:nowrap">{{ d.replies }} respostas · {{ d.participants }} pessoas</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+          <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em">Feed</div>
+          <a href="#" style="font-size:13px;font-weight:600">Ver tudo →</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ feedItems }}" as="f" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--divider-soft)">
+              <div style="{{ f.avatarStyle }}"></div>
+              <div style="font-size:13px;color:var(--text-subtle);flex:1">{{ f.text }}</div>
+              <div style="font-size:11px;color:var(--text-muted);white-space:nowrap">{{ f.time }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="border-top:1px solid var(--divider);padding-top:36px">
+        <div style="font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:18px">Rodapé editorial</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <sc-for list="{{ editorial }}" as="e" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="{{ e.coverStyle }}"></div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent)">{{ e.category }}</div>
+              <div style="font-size:14px;font-weight:700;line-height:1.3">{{ e.title }}</div>
+              <div style="font-size:11px;color:var(--text-muted)">{{ e.author }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+    </main>
+
+    <aside style="position:sticky;top:96px;display:flex;flex-direction:column;gap:16px">
+
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Usuários online</div>
+        <div style="display:flex;align-items:center;gap:-8px">
+          <div style="display:flex">
+            <sc-for list="{{ onlineAvatars }}" as="o" hint-placeholder-count="5">
+              <div style="{{ o.style }}"></div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-left:10px">+123 online agora</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Trending Songs</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ trendingSongs }}" as="s" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px">
+              <x-import component-from-global-scope="ChartFM.PositionNumber" n="{{ s.pos }}" size="14" hint-size="16px,16px"></x-import>
+              <div style="{{ s.coverStyle }}"></div>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.title }}</div>
+                <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.artist }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <a href="#" style="display:inline-block;margin-top:12px;font-size:12px;font-weight:600">Ver chart completa</a>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Trending Artists</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ trendingArtists }}" as="a" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);width:14px">{{ a.pos }}</div>
+              <div style="{{ a.avatarStyle }}"></div>
+              <div style="min-width:0;flex:1">
+                <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.name }}</div>
+                <div style="font-size:11px;color:var(--text-muted)">{{ a.points }} pts</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Eventos</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ events }}" as="ev" hint-placeholder-count="2">
+            <div style="display:flex;gap:10px;align-items:center">
+              <div style="{{ ev.iconStyle }}"></div>
+              <div style="min-width:0">
+                <div style="font-size:12.5px;font-weight:600">{{ ev.title }}</div>
+                <div style="font-size:11px;color:var(--text-muted)">{{ ev.when }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">Aniversários</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ birthdays }}" as="b" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="{{ b.avatarStyle }}"></div>
+              <div style="font-size:12.5px;color:var(--text-subtle)">{{ b.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:var(--gradient-hero);border-radius:18px;padding:18px 20px;color:#fff">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85;margin-bottom:8px">Review do dia</div>
+        <div style="font-size:14px;font-weight:700;line-height:1.3">Halflight ainda vai ser o disco do ano</div>
+        <div style="font-size:11px;opacity:.8;margin-top:6px">por Sofia Reyes</div>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { heroVariant: 'a', hojeVariant: 'a' };
+
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+
+  grad(seed) {
+    const p = this.palettes[seed % this.palettes.length];
+    return `linear-gradient(135deg, ${p[0]}, ${p[1]})`;
+  }
+
+  toggleBtnStyle(active) {
+    return {
+      padding: '7px 14px', borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 700,
+      cursor: 'pointer', whiteSpace: 'nowrap',
+      background: active ? 'var(--surface)' : 'transparent',
+      color: active ? 'var(--text)' : 'var(--text-muted)',
+      boxShadow: active ? '0 1px 3px rgba(0,0,0,0.25)' : 'none',
+    };
+  }
+
+  circle(seed, size) {
+    return { width: size, height: size, borderRadius: '50%', background: this.grad(seed), flexShrink: 0 };
+  }
+
+  cover(seed, size, radius) {
+    return { width: size, height: size, borderRadius: radius ?? 10, background: this.grad(seed), flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,.3)' };
+  }
+
+  renderVals() {
+    const heroVariant = this.state.heroVariant;
+    const hojeVariant = this.state.hojeVariant;
+
+    const people = [
+      { name: 'Alice Monteiro', handle: 'alicemtr', compat: 93, activity: 'ativa há 2h', reason: 'Vocês ouviram 34 artistas em comum', seed: 0 },
+      { name: 'Théo Lambert', handle: 'theolambert', compat: 88, activity: 'ativo há 5h', reason: 'Vocês seguem 12 pessoas em comum', seed: 4 },
+      { name: 'Priya Nandan', handle: 'priyan', compat: 81, activity: 'ativa hoje', reason: 'Vocês participam da Community Dream Pop Diaries', seed: 7 },
+      { name: 'Marco Villani', handle: 'marcov', compat: 76, activity: 'ativo ontem', reason: 'Vocês curtiram a mesma Review de Glasswing', seed: 3 },
+      { name: 'Sofia Reyes', handle: 'sofiareyes', compat: 95, activity: 'ativa agora', reason: 'Vocês ouviram 41 artistas em comum', seed: 5 },
+      { name: 'Kenji Osei', handle: 'kenjiosei', compat: 84, activity: 'novo por aqui', reason: 'Já segue 6 amigos seus', seed: 8 },
+    ].map(p => ({
+      ...p,
+      avatarStyle: this.circle(p.seed, 52),
+      compatBarStyle: { width: p.compat + '%', height: 6, borderRadius: 999, background: 'var(--accent)' },
+    }));
+
+    const discoveryRaw = [
+      { type: 'Álbum', title: 'Glasswing — Nova Vega', reason: 'Porque você ouviu Coral Hour', seed: 1, col: 2, row: 2 },
+      { type: 'Review', title: 'A reinvenção silenciosa do dream pop', reason: 'Em alta entre pessoas como você', seed: 6, col: 1, row: 2 },
+      { type: 'Community', title: 'Dream Pop Diaries', reason: 'Cresceu 45% essa semana', seed: 2, col: 1, row: 1 },
+      { type: 'Música', title: 'Amber Static — Kite String Collective', reason: 'Porque você segue Théo', seed: 4, col: 1, row: 1 },
+      { type: 'Chart', title: 'Indie 2026 — Sofia Reyes', reason: 'Vocês têm gosto parecido', seed: 5, col: 1, row: 1 },
+      { type: 'Discussão', title: 'O revival do shoegaze é real?', reason: 'Crescendo rápido agora', seed: 8, col: 2, row: 1 },
+      { type: 'Álbum', title: 'Marigold Hour — The Amber Room', reason: 'Lançamento que combina com você', seed: 9, col: 1, row: 1 },
+      { type: 'Artista', title: 'Marlowe Dune', reason: 'Porque você ouviu artistas parecidos', seed: 3, col: 1, row: 1 },
+    ];
+    const discoveries = discoveryRaw.map(d => ({
+      ...d,
+      tileStyle: { gridColumn: `span ${d.col}`, gridRow: `span ${d.row}`, position: 'relative', borderRadius: 16, overflow: 'hidden', padding: 16 },
+      tileBgStyle: { position: 'absolute', inset: 0, background: this.grad(d.seed) },
+      railCoverStyle: this.cover(d.seed, 48, 10),
+    }));
+
+    const reviews = [
+      { album: 'Glasswing', artist: 'Nova Vega', rating: '4.5', badge: "Editor's Choice", author: 'Alice Monteiro', excerpt: 'Nova Vega troca os hooks óbvios por texturas — um retorno ambicioso e silencioso.', readTime: '6 min', likes: 482, comments: 61, seed: 1 },
+      { album: 'Marigold Hour', artist: 'The Amber Room', rating: '4.0', badge: 'Trending', author: 'Marco Villani', excerpt: 'Um disco que floresce lentamente, faixa após faixa, sem pressa de convencer.', readTime: '4 min', likes: 210, comments: 34, seed: 9 },
+      { album: 'Night Static', artist: 'Kite String Collective', rating: '3.5', badge: 'Nova', author: 'Priya Nandan', excerpt: 'Experimental demais para uns, exatamente certo para quem gosta de ruído com propósito.', readTime: '5 min', likes: 96, comments: 12, seed: 4 },
+      { album: 'Halflight', artist: 'Coral Hour', rating: '5.0', badge: 'Mais Curtida', author: 'Sofia Reyes', excerpt: 'Halflight ainda vai ser o disco do ano — e não é exagero.', readTime: '7 min', likes: 897, comments: 143, seed: 6 },
+    ].map(r => ({ ...r, coverBgStyle: { position: 'relative', height: 160, background: this.grad(r.seed) } }));
+
+    const releases = [
+      { title: 'Glasswing', artist: 'Nova Vega', date: '12 jun', rating: '4.5', reviewCount: 340, seed: 1 },
+      { title: 'Marigold Hour', artist: 'The Amber Room', date: '18 jun', rating: '4.0', reviewCount: 128, seed: 9 },
+      { title: 'Night Static', artist: 'Kite String Collective', date: '20 jun', rating: '3.5', reviewCount: 54, seed: 4 },
+      { title: 'Halflight', artist: 'Coral Hour', date: '25 jun', rating: '5.0', reviewCount: 897, seed: 6 },
+      { title: 'Low Tide EP', artist: 'Bexley Drift', date: '28 jun', rating: '4.2', reviewCount: 71, seed: 2 },
+    ].map(r => ({ ...r, coverStyle: this.cover(r.seed, 200, 14) }));
+
+    const charts = [
+      { author: 'Théo Lambert', title: 'Indie que ninguém te contou', votes: 128, comments: 24, status: 'up', delta: 3, seed: 4, previewSeeds: [1,2,3,4,5] },
+      { author: 'Sofia Reyes', title: 'Pop Punk pra chorar no trânsito', votes: 342, comments: 58, status: 'new', delta: 0, seed: 5, previewSeeds: [6,7,8,9,0] },
+      { author: 'Kenji Osei', title: 'Dream Pop Essencial', votes: 89, comments: 9, status: 'down', delta: 1, seed: 8, previewSeeds: [2,4,6,8,1] },
+      { author: 'Priya Nandan', title: 'K-pop underground', votes: 210, comments: 31, status: 'same', delta: 0, seed: 7, previewSeeds: [3,5,7,9,0] },
+    ].map(c => ({
+      ...c,
+      avatarStyle: this.circle(c.seed, 36),
+      preview: c.previewSeeds.map(s => ({ coverStyle: this.cover(s, 40, 8) })),
+    }));
+
+    const communities = [
+      { name: 'Dream Pop Diaries', theme: 'Shoegaze & Dream Pop', members: '12.4k', status: 'Em crescimento', seed: 2 },
+      { name: 'Vinyl Sunday', theme: 'Colecionadores', members: '8.2k', status: 'Muito ativa', seed: 9 },
+      { name: 'K-pop Underground', theme: 'K-pop indie', members: '5.4k', status: 'Nova', seed: 7 },
+      { name: 'Pop Punk Forever', theme: 'Pop punk & emo', members: '21k', status: 'Popular', seed: 5 },
+    ].map(c => ({ ...c, bgStyle: { position: 'absolute', inset: 0, borderRadius: 18, background: this.grad(c.seed) } }));
+
+    const discussions = [
+      { title: 'O revival do shoegaze é real ou só nostalgia?', author: 'Marco Villani', replies: 214, participants: 89, lastReply: 'há 12 min' },
+      { title: 'Qual foi o melhor álbum do primeiro semestre?', author: 'Alice Monteiro', replies: 340, participants: 156, lastReply: 'há 3 min' },
+      { title: 'K-pop indie merece mais espaço nos charts?', author: 'Kenji Osei', replies: 98, participants: 47, lastReply: 'há 40 min' },
+      { title: 'Vale a pena reviver o vinil em 2026?', author: 'Théo Lambert', replies: 156, participants: 62, lastReply: 'há 1h' },
+    ];
+
+    const feedItems = [
+      { text: 'Sofia Reyes curtiu a Review de Halflight', time: 'há 5 min', seed: 5 },
+      { text: 'Théo Lambert começou a seguir Kenji Osei', time: 'há 12 min', seed: 4 },
+      { text: 'Priya Nandan entrou na Community Dream Pop Diaries', time: 'há 18 min', seed: 7 },
+      { text: 'Marco Villani comentou na Chart "Indie que ninguém te contou"', time: 'há 25 min', seed: 3 },
+      { text: 'Alice Monteiro publicou uma nova Review', time: 'há 40 min', seed: 0 },
+    ].map(f => ({ ...f, avatarStyle: this.circle(f.seed, 30) }));
+
+    const editorial = [
+      { category: 'Artigo da semana', title: 'Como o dream pop conquistou 2026', author: 'Redação ChartFM', seed: 6 },
+      { category: 'Review escolhida', title: 'Halflight — Coral Hour', author: 'por Sofia Reyes', seed: 6 },
+      { category: 'Curadoria em destaque', title: 'Alice Monteiro', author: '340 seguidores', seed: 0 },
+      { category: 'Community recomendada', title: 'Dream Pop Diaries', author: '12.4k membros', seed: 2 },
+    ].map(e => ({ ...e, coverStyle: { height: 110, borderRadius: 12, background: this.grad(e.seed) } }));
+
+    const trendingSongs = [
+      { pos: 1, title: 'Amber Static', artist: 'Kite String Collective', seed: 4 },
+      { pos: 2, title: 'Low Tide', artist: 'Bexley Drift', seed: 2 },
+      { pos: 3, title: 'Glasswing', artist: 'Nova Vega', seed: 1 },
+      { pos: 4, title: 'Halflight', artist: 'Coral Hour', seed: 6 },
+    ].map(s => ({ ...s, coverStyle: this.cover(s.seed, 36, 8) }));
+
+    const trendingArtists = [
+      { pos: 1, name: 'Nova Vega', points: 4820, seed: 1 },
+      { pos: 2, name: 'The Amber Room', points: 3910, seed: 9 },
+      { pos: 3, name: 'Coral Hour', points: 3540, seed: 6 },
+      { pos: 4, name: 'Marlowe Dune', points: 2210, seed: 3 },
+    ].map(a => ({ ...a, avatarStyle: this.circle(a.seed, 34) }));
+
+    const onlineAvatars = [0,1,2,3,4].map(s => ({ style: { ...this.circle(s, 30), marginLeft: -8, border: '2px solid var(--surface)' } }));
+
+    const events = [
+      { title: 'Listening Party: Glasswing', when: 'hoje, 20h', seed: 1 },
+      { title: 'Album Club: Halflight', when: 'sáb, 16h', seed: 6 },
+    ].map(e => ({ ...e, iconStyle: { ...this.cover(e.seed, 38, 10) } }));
+
+    const birthdays = [
+      { text: 'Alice Monteiro · 3 anos no ChartFM hoje', seed: 0 },
+      { text: 'Kenji Osei · 1 ano no ChartFM hoje', seed: 8 },
+      { text: 'Marco Villani · 2 anos no ChartFM hoje', seed: 3 },
+    ].map(b => ({ ...b, avatarStyle: this.circle(b.seed, 28) }));
+
+    return {
+      heroVariant,
+      isHeroA: heroVariant === 'a', isHeroB: heroVariant === 'b', isHeroC: heroVariant === 'c',
+      setHeroA: () => this.setState({ heroVariant: 'a' }),
+      setHeroB: () => this.setState({ heroVariant: 'b' }),
+      setHeroC: () => this.setState({ heroVariant: 'c' }),
+      heroBtnStyleA: this.toggleBtnStyle(heroVariant === 'a'),
+      heroBtnStyleB: this.toggleBtnStyle(heroVariant === 'b'),
+      heroBtnStyleC: this.toggleBtnStyle(heroVariant === 'c'),
+      heroFriendAvatarStyle: this.circle(4, 32),
+      heroChartPreview: [1,2,3,4,5].map((s,i) => ({ pos: i+1, title: ['Amber Static','Low Tide','Glasswing','Halflight','Marigold Hour'][i], coverStyle: this.cover(s, 32, 8) })),
+      heroAlbumCoverStyle: this.cover(1, '100%', 16),
+
+      hojeVariant,
+      isHojeA: hojeVariant === 'a', isHojeB: hojeVariant === 'b',
+      setHojeA: () => this.setState({ hojeVariant: 'a' }),
+      setHojeB: () => this.setState({ hojeVariant: 'b' }),
+      hojeBtnStyleA: this.toggleBtnStyle(hojeVariant === 'a'),
+      hojeBtnStyleB: this.toggleBtnStyle(hojeVariant === 'b'),
+      hojeFeaturedBgStyle: { position: 'absolute', inset: 0, background: this.grad(6) },
+
+      people, discoveries, reviews, releases, charts, communities, discussions, feedItems, editorial,
+      trendingSongs, trendingArtists, onlineAvatars, events, birthdays,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

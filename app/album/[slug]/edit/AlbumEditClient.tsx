@@ -238,16 +238,16 @@ export function AlbumEditClient({
   return (
     <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
       <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldName")}</span>
+        <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("albums.fieldName")}</span>
         <input value={title} onChange={(e) => setTitle(e.target.value)} style={inputStyle} />
       </label>
       <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldSpotifyId")}</span>
+        <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("albums.fieldSpotifyId")}</span>
         <input value={spotifyId} onChange={(e) => setSpotifyId(e.target.value)} style={inputStyle} />
       </label>
 
       <label style={{ display: "grid", gap: 6, position: "relative" }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldArtist")}</span>
+        <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("albums.fieldArtist")}</span>
         <input
           value={artistQuery}
           onChange={(e) => {
@@ -285,11 +285,11 @@ export function AlbumEditClient({
         )}
       </label>
       <label style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldRomanization")}</span>
+        <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("albums.fieldRomanization")}</span>
         <input value={romanization} onChange={(e) => setRomanization(e.target.value)} style={inputStyle} />
       </label>
       <div style={{ display: "grid", gap: 6 }}>
-        <span style={{ fontSize: 13, color: "#6B6B70", fontWeight: 600 }}>{t("albums.fieldCover")}</span>
+        <span style={{ fontSize: 13, color: "var(--text-subtle)", fontWeight: 600 }}>{t("albums.fieldCover")}</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)} style={{ ...inputStyle, flex: 1 }} placeholder={t("albums.coverUrlPlaceholder")} />
           <label
@@ -299,8 +299,8 @@ export function AlbumEditClient({
               justifyContent: "center",
               padding: "10px 14px",
               borderRadius: 10,
-              background: uploadingCover ? "rgba(0,0,0,0.1)" : "#1D1D1F",
-              color: "#fff",
+              background: uploadingCover ? "var(--fill-subtle)" : "var(--btn-dark-bg)",
+              color: uploadingCover ? "var(--text-muted)" : "var(--btn-dark-fg)",
               fontWeight: 700,
               fontSize: 13,
               cursor: uploadingCover ? "not-allowed" : "pointer",
@@ -341,12 +341,12 @@ export function AlbumEditClient({
           gap: 12,
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#1D1D1F" }}>{t("albums.songsInCatalog")}</div>
-        <p style={{ margin: 0, fontSize: 13, color: "#6B6B70", lineHeight: 1.45 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{t("albums.songsInCatalog")}</div>
+        <p style={{ margin: 0, fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.45 }}>
           {t("albums.songsLinkedDesc", { count: songs.length })}
         </p>
         {songs.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#86868B" }}>{t("albums.noSongsYet")}</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("albums.noSongsYet")}</div>
         ) : (
           <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 6 }}>
             {songs.map((s) => (
@@ -362,12 +362,12 @@ export function AlbumEditClient({
                   fontSize: 13,
                 }}
               >
-                <span style={{ color: "#86868B", fontVariantNumeric: "tabular-nums", minWidth: 28 }}>
+                <span style={{ color: "var(--text-muted)", fontVariantNumeric: "tabular-nums", minWidth: 28 }}>
                   {s.trackNumber != null ? `${s.trackNumber}.` : "-"}
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontWeight: 600 }}>{s.title}</span>
-                  <span style={{ color: "#6B6B70" }}> - {s.artist}</span>
+                  <span style={{ color: "var(--text-subtle)" }}> - {s.artist}</span>
                 </span>
                 {s.spotifyId ? (
                   <a
@@ -403,12 +403,12 @@ export function AlbumEditClient({
                   alignItems: "center",
                   gap: 10,
                   padding: "8px 10px",
-                  border: "1px solid rgba(0,0,0,0.08)",
+                  border: "1px solid var(--divider)",
                   borderRadius: 10,
-                  background: "#fff",
+                  background: "var(--surface)",
                 }}
               >
-                <span style={{ flex: 1, minWidth: 0, fontSize: 13 }}>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: "var(--text)" }}>
                   <span style={{ fontWeight: 600 }}>{track.title}</span>
                 </span>
                 {track.inDatabase ? (
@@ -444,12 +444,13 @@ export function AlbumEditClient({
 }
 
 const inputStyle: CSSProperties = {
-  border: "1px solid rgba(0,0,0,0.14)",
+  border: "1px solid var(--divider-strong)",
   borderRadius: 10,
   padding: "10px 12px",
   fontSize: 14,
   outline: "none",
-  background: "#fff",
+  background: "var(--surface)",
+  color: "var(--text)",
 };
 
 const dropdownStyle: CSSProperties = {
@@ -459,8 +460,8 @@ const dropdownStyle: CSSProperties = {
   left: 0,
   right: 0,
   marginTop: 4,
-  background: "#fff",
-  border: "1px solid rgba(0,0,0,0.12)",
+  background: "var(--surface-elevated)",
+  border: "1px solid var(--divider-strong)",
   borderRadius: 10,
   overflow: "hidden",
   boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
@@ -472,8 +473,9 @@ const optionStyle: CSSProperties = {
   width: "100%",
   textAlign: "left",
   border: "none",
-  borderBottom: "1px solid rgba(0,0,0,0.06)",
-  background: "#fff",
+  borderBottom: "1px solid var(--divider)",
+  background: "var(--surface-elevated)",
+  color: "var(--text)",
   padding: "9px 10px",
   cursor: "pointer",
   fontSize: 13,
@@ -481,7 +483,7 @@ const optionStyle: CSSProperties = {
 
 const buttonStyle = (enabled: boolean): CSSProperties => ({
   border: "none",
-  background: "#FA243C",
+  background: "var(--accent)",
   color: "#fff",
   borderRadius: 10,
   padding: "10px 14px",
@@ -491,9 +493,9 @@ const buttonStyle = (enabled: boolean): CSSProperties => ({
 });
 
 const secondaryButtonStyle = (enabled: boolean): CSSProperties => ({
-  border: "1px solid rgba(0,0,0,0.14)",
-  background: "#fff",
-  color: "#1D1D1F",
+  border: "1px solid var(--divider-strong)",
+  background: "var(--surface)",
+  color: "var(--text)",
   borderRadius: 10,
   padding: "9px 14px",
   fontWeight: 600,

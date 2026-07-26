@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);border-bottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:900px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Perfil</a>
+    </div>
+  </div>
+
+  <div style="max-width:900px;margin:0 auto;padding:44px 40px 96px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Perfil</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Histórico</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px">Linha do tempo de tudo que você fez no ChartFM.</div>
+
+    <div style="display:flex;gap:8px;margin-top:28px;overflow-x:auto">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="6">
+        <button onclick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:32px;display:flex;flex-direction:column">
+      <sc-for list="{{ groupedEvents }}" as="g" hint-placeholder-count="8">
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin:24px 0 10px;position:sticky;top:66px;background:var(--bg);padding-top:4px">{{ g.dateLabel }}</div>
+          <sc-for list="{{ g.items }}" as="e" hint-placeholder-count="3">
+            <div style="display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--divider-soft)">
+              <div style="{{ e.iconWrapStyle }}">{{ e.icon }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;line-height:1.5"><span style="font-weight:700">{{ e.actor }}</span> {{ e.text }} <span style="font-weight:600">{{ e.target }}</span></div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ e.time }}</div>
+              </div>
+              <sc-if value="{{ e.cover }}" hint-placeholder-val="{{ false }}">
+                <x-import component-from-global-scope="ChartFM.Cover" cover="{{ e.cover }}" size="{{ 40 }}" rounded="{{ 8 }}" hint-size="40px,40px"></x-import>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  state = { filter: 'todos' };
+
+  filterStyle(active) {
+    return {
+      border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', padding: '8px 16px', borderRadius: 100,
+      fontSize: 13, fontWeight: 700,
+      background: active ? 'var(--accent)' : 'var(--fill-subtle)',
+      color: active ? '#fff' : 'var(--text-muted)',
+    };
+  }
+
+  renderVals() {
+    const iconMap = { chart: '📊', review: '📝', like: '♥', comment: '💬', join: '🎟' };
+    const iconBg = { chart: '#3E8BFF', review: '#FFB020', like: '#FA243C', comment: '#7C5CFF', join: '#20C4B0' };
+
+    const allEvents = [
+      { type: 'chart', actor: 'Você', text: 'publicou a parada', target: 'Melhor de 2026', time: '09:14', seed: 1, date: 'Hoje' },
+      { type: 'like', actor: 'Você', text: 'curtiu o álbum', target: 'Coral Hour', time: '08:50', seed: 2, date: 'Hoje' },
+      { type: 'comment', actor: 'Você', text: 'comentou na review de', target: 'Nightlong', time: 'Ontem, 21:02', date: 'Ontem' },
+      { type: 'review', actor: 'Você', text: 'publicou uma review de', target: 'Glasswing', time: 'Ontem, 19:40', seed: 3, date: 'Ontem' },
+      { type: 'join', actor: 'Você', text: 'entrou na comunidade', target: 'Dream Pop Br', time: 'Ontem, 12:15', date: 'Ontem' },
+      { type: 'chart', actor: 'Você', text: 'atualizou a parada', target: 'Indie que ninguém te contou', time: '18:20', seed: 4, date: '12 jul' },
+      { type: 'like', actor: 'Você', text: 'curtiu a faixa', target: 'Static Bloom', time: '15:03', seed: 5, date: '12 jul' },
+      { type: 'comment', actor: 'Você', text: 'respondeu no fórum de', target: 'Shoegaze Revival', time: '11:47', date: '10 jul' },
+      { type: 'review', actor: 'Você', text: 'avaliou o álbum', target: 'Low Tide', time: '20:11', seed: 6, date: '8 jul' },
+      { type: 'join', actor: 'Você', text: 'entrou na Copa', target: 'Copa Global 2026', time: '09:00', date: '3 jul' },
+    ];
+
+    const filtered = this.state.filter === 'todos' ? allEvents : allEvents.filter(e => e.type === this.state.filter);
+
+    const dates = [...new Set(filtered.map(e => e.date))];
+    const groupedEvents = dates.map(dateLabel => ({
+      dateLabel,
+      items: filtered.filter(e => e.date === dateLabel).map(e => ({
+        ...e,
+        icon: iconMap[e.type],
+        iconWrapStyle: { width: 34, height: 34, borderRadius: '50%', background: iconBg[e.type] + '22', color: iconBg[e.type], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 },
+        cover: e.seed ? this.cover(e.seed) : null,
+      })),
+    }));
+
+    const filterDefs = [
+      { key: 'todos', label: 'Todos' }, { key: 'chart', label: 'Charts' }, { key: 'review', label: 'Reviews' },
+      { key: 'like', label: 'Curtidas' }, { key: 'comment', label: 'Comentários' }, { key: 'join', label: 'Participações' },
+    ];
+    const filters = filterDefs.map(f => ({
+      label: f.label,
+      style: this.filterStyle(this.state.filter === f.key),
+      onClick: () => this.setState({ filter: f.key }),
+    }));
+
+    return { filters, groupedEvents };
+  }
+}
+
+</script>
+</body>
+</html>

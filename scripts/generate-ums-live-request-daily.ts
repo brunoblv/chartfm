@@ -13,7 +13,7 @@
 import { PrismaClient } from "@prisma/client";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import { buildPeriodFromDate, prevPeriodIndex } from "../lib/chart-cadence";
+import { buildPeriodFromDate } from "../lib/chart-cadence";
 import { getChartWeekRange } from "../lib/chart-week";
 import {
   createSeededRandom,
@@ -169,9 +169,10 @@ async function loadPreviousDayEntries(
   paradaId: string,
   dayIndex: number,
 ): Promise<Map<string, { position: number; peak: number; weeks: number }>> {
-  const prevIdx = prevPeriodIndex(dayIndex, "DAILY");
-  const chart = await prisma.chart.findUnique({
-    where: { paradaId_weekIndex: { paradaId, weekIndex: prevIdx } },
+  // Última parada publicada antes deste dia (pula fim de semana / gaps).
+  const chart = await prisma.chart.findFirst({
+    where: { paradaId, weekIndex: { lt: dayIndex } },
+    orderBy: { weekIndex: "desc" },
     include: { entries: true },
   });
   const map = new Map<string, { position: number; peak: number; weeks: number }>();

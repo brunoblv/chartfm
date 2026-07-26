@@ -36,7 +36,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   if (!parsed) {
     return (
       <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.notFoundSong")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
             {t("song.backDiscover")}
@@ -50,7 +50,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   if (!songId) {
     return (
       <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
             {t("song.backDiscover")}
@@ -133,7 +133,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   if (!songRow) {
     return (
       <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "#86868B" }}>
+        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
           <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.noDataFound")}</p>
           <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
             {t("song.backDiscover")}

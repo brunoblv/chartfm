@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Conversas</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="max-width:680px;margin:0 auto;padding:44px 40px 0">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+      <div style="font-size:32px;font-weight:800;letter-spacing:-0.03em">Notificações</div>
+      <a href="#" style="font-size:13px;font-weight:700">Marcar tudo como lido</a>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:24px;border-bottom:1px solid var(--divider)">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+        <div style="{{ t.style }}">{{ t.label }}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="max-width:680px;margin:0 auto;padding:8px 40px 96px">
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+      <div style="margin-top:24px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">{{ g.label }}</div>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ g.items }}" as="n" hint-placeholder-count="4">
+            <div style="{{ n.rowStyle }}">
+              <div style="position:relative;flex-shrink:0">
+                <x-import component-from-global-scope="ChartFM.Cover" cover="{{ n.avatar }}" size="{{ 44 }}" rounded="{{ 22 }}" hint-size="44px,44px"></x-import>
+                <div style="{{ n.iconBadgeStyle }}">{{ n.icon }}</div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;line-height:1.4;color:var(--text)"><span style="font-weight:700">{{ n.actor }}</span> {{ n.action }} <span style="font-weight:700">{{ n.target }}</span></div>
+                <div style="font-size:12.5px;color:var(--text-muted);margin-top:3px">{{ n.time }}</div>
+              </div>
+              <sc-if value="{{ n.hasThumb }}" hint-placeholder-val="{{ false }}">
+                <x-import component-from-global-scope="ChartFM.Cover" cover="{{ n.thumb }}" size="{{ 40 }}" hint-size="40px,40px"></x-import>
+              </sc-if>
+              <sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0"></div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const tabs = [
+      { label: 'Tudo', active: true }, { label: 'Curtidas' }, { label: 'Comentários' }, { label: 'Novos seguidores' },
+    ].map(t => ({ label: t.label, style: {
+      padding: '10px 4px', marginRight: 20, fontSize: 14, fontWeight: t.active ? 700 : 500, cursor: 'pointer',
+      color: t.active ? 'var(--text)' : 'var(--text-muted)', borderBottom: `2px solid ${t.active ? 'var(--accent)' : 'transparent'}`, marginBottom: -1
+    }}));
+
+    const mk = (list, section) => list.map(n => ({
+      ...n,
+      avatar: this.cover(n.seed),
+      thumb: n.thumbSeed !== undefined ? this.cover(n.thumbSeed) : undefined,
+      rowStyle: {
+        display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px',
+        background: n.unread ? 'var(--fill-subtle)' : 'transparent', borderRadius: 12
+      },
+      iconBadgeStyle: {
+        position: 'absolute', bottom: -2, right: -2, width: 20, height: 20, borderRadius: '50%',
+        background: n.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 11, border: '2px solid var(--bg)'
+      }
+    }));
+
+    const groups = [
+      { label: 'Hoje', items: mk([
+        { actor: 'Sofia Reyes', action: 'curtiu sua Review de', target: 'Halflight', time: 'há 12min', icon: '♥', iconBg: 'var(--accent)', seed: 5, unread: true, hasThumb: true, thumbSeed: 6 },
+        { actor: 'Marco Villani', action: 'comentou em', target: 'Nightlong (Halflight Sessions)', time: 'há 40min', icon: '💬', iconBg: '#3E8BFF', seed: 3, unread: true, hasThumb: true, thumbSeed: 9 },
+        { actor: 'Priya Nandan', action: 'começou a seguir você', target: '', time: 'há 1h', icon: '+', iconBg: '#57D9A3', seed: 7, unread: true, hasThumb: false },
+        { actor: 'Kenji Osei', action: 'repostou sua parada', target: 'Semana 27', time: 'há 2h', icon: '↗', iconBg: '#9B6BFF', seed: 8, unread: false, hasThumb: false },
+      ]) },
+      { label: 'Esta semana', items: mk([
+        { actor: 'Théo Lambert', action: 'mencionou você em', target: 'Dream Pop Diaries', time: 'há 2 dias', icon: '@', iconBg: '#FFB020', seed: 4, unread: false, hasThumb: false },
+        { actor: 'Alice Monteiro', action: 'curtiu sua Review de', target: 'Glasswing', time: 'há 3 dias', icon: '♥', iconBg: 'var(--accent)', seed: 0, unread: false, hasThumb: true, thumbSeed: 1 },
+      ]) },
+      { label: 'Mais cedo', items: mk([
+        { actor: 'Coral Hour', action: 'lançou um novo álbum:', target: 'Halflight', time: 'há 1 semana', icon: '♪', iconBg: '#20C4B0', seed: 6, unread: false, hasThumb: true, thumbSeed: 6 },
+        { actor: 'Vinyl Collectors', action: 'te adicionou à community', target: '', time: 'há 2 semanas', icon: '+', iconBg: '#57D9A3', seed: 8, unread: false, hasThumb: false },
+      ]) },
+    ];
+
+    return { tabs, groups };
+  }
+}
+
+</script>
+</body>
+</html>

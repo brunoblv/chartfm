@@ -7,9 +7,10 @@ export const COMMUNITY_COVER_SIZE_LABEL = `${COMMUNITY_COVER_WIDTH}×${COMMUNITY
 
 export const COMMUNITY_COVER_MAX_BYTES = 2 * 1024 * 1024;
 
-export function communityCoverSizeHint(): string {
-  return `Recomendado: ${COMMUNITY_COVER_SIZE_LABEL} (proporção 15:4). JPG ou PNG, até 2 MB.`;
-}
+export type CommunityCoverValidation =
+  | { error: "not_image" | "too_large"; warning?: undefined; width?: undefined; height?: undefined }
+  | { error?: undefined; warning: "aspect"; width: number; height: number }
+  | { error?: undefined; warning?: undefined; width?: undefined; height?: undefined };
 
 export async function readImageFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -20,14 +21,12 @@ export async function readImageFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
-export async function validateCommunityCoverFile(
-  file: File,
-): Promise<{ error?: string; warning?: string }> {
+export async function validateCommunityCoverFile(file: File): Promise<CommunityCoverValidation> {
   if (!file.type.startsWith("image/")) {
-    return { error: "Envie um arquivo de imagem (JPG ou PNG)." };
+    return { error: "not_image" };
   }
   if (file.size > COMMUNITY_COVER_MAX_BYTES) {
-    return { error: "Imagem muito grande (máx. 2 MB)." };
+    return { error: "too_large" };
   }
 
   const dataUrl = await readImageFileAsDataUrl(file);
@@ -38,9 +37,7 @@ export async function validateCommunityCoverFile(
   const target = COMMUNITY_COVER_ASPECT;
   const tolerance = 0.35;
   if (Math.abs(ratio - target) > tolerance) {
-    return {
-      warning: `Proporção ideal 15:4 (${COMMUNITY_COVER_SIZE_LABEL}). Sua imagem é ${dims.width}×${dims.height} px, será exibida com recorte automático.`,
-    };
+    return { warning: "aspect", width: dims.width, height: dims.height };
   }
   return {};
 }

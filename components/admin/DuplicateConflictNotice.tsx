@@ -23,7 +23,7 @@ export function DuplicateConflictNotice({
       <p style={{ margin: 0, fontSize: 14, color: "#7A4E00", lineHeight: 1.5, fontWeight: 600 }}>
         {message ?? defaultMessage}
       </p>
-      <p style={{ margin: "8px 0 0", fontSize: 14, color: "#1D1D1F", lineHeight: 1.45 }}>
+      <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--text)", lineHeight: 1.45 }}>
         <strong>{conflict.title}</strong>
         <span style={{ color: "#6B6B70" }}> — {conflict.artist}</span>
       </p>
@@ -79,9 +79,9 @@ const secondaryLinkStyle: CSSProperties = {
   alignItems: "center",
   padding: "8px 12px",
   borderRadius: 10,
-  border: "1px solid rgba(0,0,0,0.14)",
-  background: "#fff",
-  color: "#1D1D1F",
+  border: "1px solid var(--divider-strong)",
+  background: "var(--surface)",
+  color: "var(--text)",
   fontSize: 13,
   fontWeight: 600,
   textDecoration: "none",

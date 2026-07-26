@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Perfil</a>
+    </div>
+  </div>
+
+  <div style="max-width:840px;margin:0 auto;padding:44px 40px 96px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Perfil</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Suas conquistas</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px">{{ unlockedCount }} de {{ totalCount }} desbloqueadas</div>
+
+    <div style="height:6px;background:var(--fill-subtle);border-radius:100px;overflow:hidden;margin-top:16px">
+      <div style="{{ progressBarStyle }}"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:24px">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+        <div style="{{ t.style }}">{{ t.label }}</div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px">
+      <sc-for list="{{ achievements }}" as="a" hint-placeholder-count="9">
+        <div style="{{ a.cardStyle }}">
+          <div style="{{ a.iconStyle }}">{{ a.icon }}</div>
+          <div style="font-size:13.5px;font-weight:700;margin-top:12px">{{ a.title }}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.4">{{ a.desc }}</div>
+          <sc-if value="{{ a.unlocked }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:10.5px;font-weight:700;color:{{ a.rarityColor }};margin-top:10px;text-transform:uppercase;letter-spacing:.04em">{{ a.rarity }}</div>
+          </sc-if>
+          <sc-if value="{{ a.inProgress }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px">
+              <div style="height:4px;background:var(--fill-inset);border-radius:100px;overflow:hidden">
+                <div style="height:100%;width:{{ a.progressPct }}%;background:var(--text-muted);border-radius:100px"></div>
+              </div>
+              <div style="font-size:10.5px;color:var(--text-muted);margin-top:4px">{{ a.progressLabel }}</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { tab: 'todas' };
+  renderVals() {
+    const tabList = [
+      { key: 'todas', label: 'Todas' }, { key: 'charts', label: 'Charts' },
+      { key: 'social', label: 'Social' }, { key: 'reviews', label: 'Reviews' },
+    ];
+    const tabs = tabList.map(t => ({ label: t.label, style: {
+      padding: '9px 16px', borderRadius: 100, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+      background: this.state.tab === t.key ? 'var(--accent)' : 'var(--fill-subtle)', color: this.state.tab === t.key ? '#fff' : 'var(--text)'
+    }}));
+
+    const raw = [
+      { icon: '🔥', title: 'Sequência de Ferro', desc: '12 semanas seguidas publicando parada', unlocked: true, rarity: 'Raro', rarityColor: '#FFB020', cat: 'charts' },
+      { icon: '🏆', title: 'Campeão da Copa', desc: 'Venceu uma edição da Copa ChartFM', unlocked: true, rarity: 'Épico', rarityColor: '#9B6BFF', cat: 'social' },
+      { icon: '✍️', title: 'Crítico Nato', desc: 'Publicou 25 reviews', unlocked: true, rarity: 'Incomum', rarityColor: '#3ECF8E', cat: 'reviews' },
+      { icon: '📀', title: 'Colecionador', desc: 'Salvou 100 álbuns na biblioteca', unlocked: true, rarity: 'Comum', rarityColor: 'var(--text-muted)', cat: 'charts' },
+      { icon: '🌍', title: 'Explorador Global', desc: 'Ouviu artistas de 20 países diferentes', unlocked: false, inProgress: true, progressPct: 65, progressLabel: '13 de 20 países', cat: 'charts' },
+      { icon: '👥', title: 'Voz da Comunidade', desc: 'Fez parte de 5 communities ativas', unlocked: false, inProgress: true, progressPct: 40, progressLabel: '2 de 5 communities', cat: 'social' },
+      { icon: '⭐', title: 'Review Viral', desc: 'Uma review sua atingiu 500 curtidas', unlocked: false, inProgress: true, progressPct: 28, progressLabel: '140 de 500 curtidas', cat: 'reviews' },
+      { icon: '🎯', title: 'Primeira Chart', desc: 'Publicou sua primeira parada', unlocked: true, rarity: 'Comum', rarityColor: 'var(--text-muted)', cat: 'charts' },
+      { icon: '🥇', title: 'Ano Perfeito', desc: '52 semanas seguidas sem falhar', unlocked: false, inProgress: false, progressPct: 23, progressLabel: '12 de 52 semanas', cat: 'charts' },
+    ].map(a => ({
+      ...a,
+      cardStyle: {
+        background: 'var(--surface)', border: '1px solid var(--divider)', borderRadius: 16, padding: 18,
+        opacity: a.unlocked ? 1 : 0.7
+      },
+      iconStyle: {
+        width: 48, height: 48, borderRadius: 12, background: a.unlocked ? 'var(--fill-subtle)' : 'var(--fill-inset)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+        filter: a.unlocked ? 'none' : 'grayscale(1)'
+      }
+    }));
+
+    const unlockedCount = raw.filter(a => a.unlocked).length;
+    return {
+      tabs, achievements: raw, unlockedCount, totalCount: raw.length,
+      progressBarStyle: { height: '100%', width: (unlockedCount / raw.length * 100) + '%', background: 'var(--accent)', borderRadius: 100 }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

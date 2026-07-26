@@ -32,7 +32,8 @@ export function AuthShell({
         minHeight: "100vh",
         display: "grid",
         gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1fr",
-        background: "#FBFBFD",
+        background: "var(--bg)",
+        color: "var(--text)",
         fontFamily: "inherit",
         overflow: isMobile ? "auto" : "hidden",
         maxHeight: isMobile ? "none" : "100vh",
@@ -177,8 +178,8 @@ export function GoogleAuthButton({
         justifyContent: "center",
         gap: 12,
         padding: "14px 18px",
-        background: "#1D1D1F",
-        color: "white",
+        background: "var(--btn-dark-bg)",
+        color: "var(--btn-dark-fg)",
         border: "none",
         borderRadius: 12,
         fontSize: 15,
@@ -188,7 +189,7 @@ export function GoogleAuthButton({
         boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
       }}
     >
-      <span style={{ background: "white", padding: 4, borderRadius: 6, display: "grid", placeItems: "center" }}>
+      <span style={{ background: "#fff", padding: 4, borderRadius: 6, display: "grid", placeItems: "center" }}>
         <GoogleLogo size={16} />
       </span>
       {label}
@@ -198,10 +199,10 @@ export function GoogleAuthButton({
 
 export function AuthDivider({ label }: { label: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "28px 0 22px 0", color: "#86868B", fontSize: 12, fontWeight: 500 }}>
-      <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
+    <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "28px 0 22px 0", color: "var(--text-muted)", fontSize: 12, fontWeight: 500 }}>
+      <div style={{ flex: 1, height: 1, background: "var(--divider)" }} />
       {label}
-      <div style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
+      <div style={{ flex: 1, height: 1, background: "var(--divider)" }} />
     </div>
   );
 }
@@ -246,12 +247,13 @@ export const authInputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
   borderRadius: 10,
-  border: "1px solid rgba(0,0,0,0.1)",
+  border: "1px solid var(--divider-strong)",
   fontSize: 14,
   fontFamily: "inherit",
   outline: "none",
   marginBottom: 14,
-  background: "white",
+  background: "var(--surface)",
+  color: "var(--text)",
   boxSizing: "border-box",
 };
 
@@ -259,8 +261,8 @@ export const authPrimaryButtonStyle = (disabled: boolean): React.CSSProperties =
   width: "100%",
   marginTop: 20,
   padding: "14px 18px",
-  background: disabled ? "rgba(0,0,0,0.05)" : "#FA243C",
-  color: disabled ? "#86868B" : "white",
+  background: disabled ? "var(--fill-subtle)" : "var(--accent)",
+  color: disabled ? "var(--text-muted)" : "#fff",
   border: "none",
   borderRadius: 12,
   fontSize: 15,
@@ -272,7 +274,7 @@ export const authPrimaryButtonStyle = (disabled: boolean): React.CSSProperties =
 export function AuthTermsFooter() {
   const { t } = useTranslations();
   return (
-    <div style={{ marginTop: 32, fontSize: 11, color: "#86868B", textAlign: "center", lineHeight: 1.5 }}>
+    <div style={{ marginTop: 32, fontSize: 11, color: "var(--text-muted)", textAlign: "center", lineHeight: 1.5 }}>
       {t("login.termsPrefix")}{" "}
       <Link href="/terms-of-use" style={{ color: "inherit", textDecoration: "underline" }}>
         {t("login.terms")}

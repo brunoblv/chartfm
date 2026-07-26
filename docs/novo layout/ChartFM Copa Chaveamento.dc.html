@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Copa</a>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid var(--divider);background:var(--surface)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:8px;background:#FFD426;display:grid;place-items:center;font-size:14px;flex-shrink:0">🏆</div>
+        <div><div style="font-size:15px;font-weight:800;letter-spacing:-0.02em;line-height:1">Copa ChartFM</div></div>
+      </div>
+      <div style="display:flex;gap:2px;margin-top:10px;overflow-x:auto">
+        <sc-for list="{{ subnav }}" as="n" hint-placeholder-count="6">
+          <div style="{{ n.style }}">{{ n.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:640px;margin:0 auto;padding:24px 24px 96px">
+    <h1 style="font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:0">Chaveamento</h1>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Acompanhe o mata-mata rumo à grande final.</div>
+
+    <div style="display:flex;gap:6px;padding:14px 0 0;flex-wrap:wrap">
+      <sc-for list="{{ phaseTabs }}" as="p" hint-placeholder-count="6">
+        <button onClick="{{ p.select }}" style="{{ p.style }}">{{ p.label }}</button>
+      </sc-for>
+    </div>
+
+    <div style="padding:14px 0 0">
+      <sc-if value="{{ hasMatches }}" hint-placeholder-val="{{ true }}">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Em <span style="color:#FFD426;font-weight:700">dourado</span> os vencedores confirmados.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <sc-for list="{{ matches }}" as="m" hint-placeholder-count="4">
+            <div style="{{ m.cardStyle }}">
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;opacity:{{ m.opacityA }}">
+                <x-import component-from-global-scope="ChartFM.Cover" cover="{{ m.coverA }}" size="{{ 22 }}" rounded="{{ 6 }}" hint-size="22px,22px"></x-import>
+                <span style="{{ m.nameAStyle }}">{{ m.nameA }}</span>
+                <span style="{{ m.scoreAStyle }}">{{ m.scoreA }}</span>
+              </div>
+              <div style="height:1px;background:var(--divider)"></div>
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;opacity:{{ m.opacityB }}">
+                <x-import component-from-global-scope="ChartFM.Cover" cover="{{ m.coverB }}" size="{{ 22 }}" rounded="{{ 6 }}" hint-size="22px,22px"></x-import>
+                <span style="{{ m.nameBStyle }}">{{ m.nameB }}</span>
+                <span style="{{ m.scoreBStyle }}">{{ m.scoreB }}</span>
+              </div>
+              <sc-if value="{{ m.isLive }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:4px 12px;background:var(--accent-tint);font-size:10px;font-weight:700;color:var(--accent);text-align:center;letter-spacing:.05em;text-transform:uppercase">AO VIVO</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ !hasMatches }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:13px;color:var(--text-muted);background:var(--surface);border:1px solid var(--divider);border-radius:12px;padding:16px;margin-bottom:12px">⏳ {{ pendingMessage }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <sc-for list="{{ tbdSlots }}" as="s" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--divider);border-radius:10px;overflow:hidden;opacity:0.55">
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 12px">
+                <div style="width:22px;height:22px;border-radius:6px;background:var(--fill-inset);flex-shrink:0"></div>
+                <span style="flex:1;font-size:13px;color:var(--text-disabled,var(--text-muted))">A definir</span>
+                <span style="font-size:13px;color:var(--text-disabled,var(--text-muted));font-weight:700">-</span>
+              </div>
+              <div style="height:1px;background:var(--divider)"></div>
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 12px">
+                <div style="width:22px;height:22px;border-radius:6px;background:var(--fill-inset);flex-shrink:0"></div>
+                <span style="flex:1;font-size:13px;color:var(--text-disabled,var(--text-muted))">A definir</span>
+                <span style="font-size:13px;color:var(--text-disabled,var(--text-muted));font-weight:700">-</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { phase: 'R32' };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const phaseOrder = [
+      { key: 'R32', label: 'Oitavas' }, { key: 'R16', label: 'Dezesseis' }, { key: 'QF', label: 'Quartas' },
+      { key: 'SF', label: 'Semi' }, { key: 'FINAL', label: 'Final' }, { key: 'THIRD_PLACE', label: '3º Lugar' },
+    ];
+    const subnavList = [
+      { label: 'Início' }, { label: 'Ao vivo' }, { label: 'Meu Time' },
+      { label: 'Grupos' }, { label: 'Chaveamento', active: true }, { label: 'Regras' },
+    ];
+    const subnav = subnavList.map(n => ({ label: n.label, style: {
+      padding: '9px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer',
+      borderBottom: `2px solid ${n.active ? 'var(--accent)' : 'transparent'}`, color: n.active ? 'var(--text)' : 'var(--text-muted)'
+    }}));
+
+    const phaseTabs = phaseOrder.map(p => {
+      const active = this.state.phase === p.key;
+      return { label: p.label, select: () => this.setState({ phase: p.key }), style: {
+        padding: '8px 15px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+        background: active ? 'var(--accent)' : 'var(--fill-inset)', color: active ? '#fff' : 'var(--text-muted)'
+      }};
+    });
+
+    const dataByPhase = {
+      R32: [
+        { nameA: 'Coral Hour', seedA: 6, goalsA: 3, nameB: 'Nova Vega', seedB: 1, goalsB: 1, status: 'DONE' },
+        { nameA: 'Kite Season', seedA: 3, goalsA: 2, nameB: 'Halflight Parade', seedB: 4, goalsB: 2, status: 'DONE' },
+        { nameA: 'Marisol Vane', seedA: 8, goalsA: 1, nameB: 'Glass Static', seedB: 2, goalsB: 0, status: 'LIVE' },
+        { nameA: 'Amber Hours', seedA: 9, goalsA: 0, nameB: 'Nightfall Radio', seedB: 0, goalsB: 0, status: 'LIVE' },
+      ],
+      R16: [], QF: [], SF: [], FINAL: [], THIRD_PLACE: [],
+    };
+
+    const raw = dataByPhase[this.state.phase] ?? [];
+    const matches = raw.map(m => {
+      const winnerA = m.status === 'DONE' && m.goalsA > m.goalsB;
+      const winnerB = m.status === 'DONE' && m.goalsB > m.goalsA;
+      return {
+        coverA: this.cover(m.seedA), coverB: this.cover(m.seedB), nameA: m.nameA, nameB: m.nameB,
+        scoreA: m.status === 'DONE' ? m.goalsA : '-', scoreB: m.status === 'DONE' ? m.goalsB : '-',
+        opacityA: winnerB ? 0.45 : 1, opacityB: winnerA ? 0.45 : 1,
+        nameAStyle: { flex: 1, fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: winnerA ? '#FFD426' : (m.status === 'DONE' ? 'var(--text-muted)' : 'var(--text)') },
+        nameBStyle: { flex: 1, fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: winnerB ? '#FFD426' : (m.status === 'DONE' ? 'var(--text-muted)' : 'var(--text)') },
+        scoreAStyle: { fontSize: 13, fontWeight: 800, minWidth: 28, textAlign: 'right', color: winnerA ? 'var(--text)' : 'var(--text-muted)' },
+        scoreBStyle: { fontSize: 13, fontWeight: 800, minWidth: 28, textAlign: 'right', color: winnerB ? 'var(--text)' : 'var(--text-muted)' },
+        isLive: m.status === 'LIVE',
+        cardStyle: { background: m.status === 'LIVE' ? 'var(--accent-tint)' : 'var(--surface)', border: '1px solid var(--divider)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer' }
+      };
+    });
+
+    const pendingMessages = {
+      R16: 'Aguardando o fim da fase de grupos.',
+      QF: 'Aguardando o fim das oitavas de final.',
+      SF: 'Aguardando o fim das quartas de final.',
+      FINAL: 'Aguardando o fim das semifinais.',
+      THIRD_PLACE: 'Aguardando as semifinais para definir os disputantes do 3º lugar.',
+    };
+    const tbdCount = { R16: 8, QF: 4, SF: 2, FINAL: 1, THIRD_PLACE: 1 };
+    const tbdSlots = Array.from({ length: tbdCount[this.state.phase] ?? 2 });
+
+    return {
+      subnav, phaseTabs, hasMatches: matches.length > 0, matches,
+      pendingMessage: pendingMessages[this.state.phase] ?? '', tbdSlots,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

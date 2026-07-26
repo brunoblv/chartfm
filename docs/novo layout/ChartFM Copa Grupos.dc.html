@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+    @keyframes copaPulse{0%,100%{opacity:1}50%{opacity:.3}}
+    table{border-collapse:collapse}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Copa</a>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid var(--divider);background:var(--surface)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:8px;background:#FFD426;display:grid;place-items:center;font-size:14px;flex-shrink:0">🏆</div>
+        <div><div style="font-size:15px;font-weight:800;letter-spacing:-0.02em;line-height:1">Copa ChartFM</div></div>
+      </div>
+      <div style="display:flex;gap:2px;margin-top:10px;overflow-x:auto">
+        <sc-for list="{{ subnav }}" as="n" hint-placeholder-count="6">
+          <div style="{{ n.style }}">{{ n.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:760px;margin:0 auto;padding:20px 24px 96px">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;padding-bottom:10px">
+      <sc-for list="{{ groupTabs }}" as="g" hint-placeholder-count="8">
+        <button onClick="{{ g.select }}" style="{{ g.style }}">{{ g.letter }}</button>
+      </sc-for>
+    </div>
+
+    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:10px 0">Classificação — Grupo {{ activeGroup.letter }}</p>
+    <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;overflow:hidden;margin-bottom:12px">
+      <table style="width:100%;font-size:13px">
+        <thead>
+          <tr>
+            <th style="padding:8px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">#</th>
+            <th style="padding:8px 9px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">Artista</th>
+            <th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">J</th>
+            <th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">V</th>
+            <th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">E</th>
+            <th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">D</th>
+            <th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">SG</th>
+            <th style="padding:8px 6px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">PTS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ activeGroup.standings }}" as="row" hint-placeholder-count="4">
+            <tr style="{{ row.trStyle }}">
+              <td style="{{ row.rankStyle }}">{{ row.rank }}</td>
+              <td style="padding:9px 9px;text-align:left;font-weight:700">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <sc-if value="{{ row.cover }}" hint-placeholder-val="{{ false }}">
+                    <x-import component-from-global-scope="ChartFM.Cover" cover="{{ row.cover }}" size="{{ 22 }}" rounded="{{ 6 }}" hint-size="22px,22px"></x-import>
+                  </sc-if>
+                  <span style="{{ row.nameStyle }}">{{ row.name }}</span>
+                  <sc-if value="{{ row.isMe }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:9px;font-weight:700;background:rgba(255,212,38,.15);color:#FFD426;padding:2px 6px;border-radius:99px">VOCÊ</span>
+                  </sc-if>
+                </div>
+              </td>
+              <td style="padding:9px 6px;text-align:right;color:var(--text-muted)">{{ row.p }}</td>
+              <td style="padding:9px 6px;text-align:right;color:var(--text-muted)">{{ row.w }}</td>
+              <td style="padding:9px 6px;text-align:right;color:var(--text-muted)">{{ row.d }}</td>
+              <td style="padding:9px 6px;text-align:right;color:var(--text-muted)">{{ row.l }}</td>
+              <td style="{{ row.gdStyle }}">{{ row.gdLabel }}</td>
+              <td style="padding:9px 6px;text-align:right;font-size:14px;font-weight:800">{{ row.pts }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:20px">Os 2 primeiros de cada grupo avançam para as oitavas de final.</div>
+
+    <p style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">Jogos — Grupo {{ activeGroup.letter }}</p>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <sc-for list="{{ activeGroup.fixtures }}" as="f" hint-placeholder-count="3">
+        <div style="{{ f.rowStyle }}">
+          <sc-if value="{{ f.coverA }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ f.coverA }}" size="{{ 26 }}" rounded="{{ 8 }}" hint-size="26px,26px"></x-import>
+          </sc-if>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.nameA }}</div>
+            <sc-if value="{{ f.hasSingleA }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:10px;color:var(--text-muted)">"{{ f.singleA }}"</div>
+            </sc-if>
+          </div>
+          <span style="{{ f.scoreStyle }}">{{ f.scoreLabel }}</span>
+          <div style="flex:1;min-width:0;text-align:right">
+            <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.nameB }}</div>
+            <sc-if value="{{ f.hasSingleB }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:10px;color:var(--text-muted)">"{{ f.singleB }}"</div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ f.coverB }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ f.coverB }}" size="{{ 26 }}" rounded="{{ 8 }}" hint-size="26px,26px"></x-import>
+          </sc-if>
+          <div style="width:64px;flex-shrink:0;display:flex;justify-content:flex-end">
+            <span style="{{ f.badgeStyle }}">{{ f.badgeLabel }}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { group: 'A' };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const groupsData = {
+      A: {
+        hasLive: true,
+        standings: [
+          { name: 'Coral Hour', seed: 6, p: 3, w: 3, d: 0, l: 0, gf: 8, ga: 1, isMe: true },
+          { name: 'Nova Vega', seed: 1, p: 3, w: 2, d: 0, l: 1, gf: 5, ga: 3 },
+          { name: 'Static & Salt', seed: 4, p: 3, w: 1, d: 0, l: 2, gf: 3, ga: 5 },
+          { name: 'Nightfall Radio', seed: 0, p: 3, w: 0, d: 0, l: 3, gf: 1, ga: 8 },
+        ],
+        fixtures: [
+          { nameA: 'Coral Hour', seedA: 6, singleA: 'Halflight', nameB: 'Nova Vega', seedB: 1, singleB: 'Glasswing', goalsA: 3, goalsB: 1, status: 'DONE', round: 1 },
+          { nameA: 'Static & Salt', seedA: 4, singleA: '', nameB: 'Nightfall Radio', seedB: 0, singleB: '', goalsA: 2, goalsB: 0, status: 'LIVE', round: 2 },
+          { nameA: 'Coral Hour', seedA: 6, singleA: '', nameB: 'Static & Salt', seedB: 4, singleB: '', goalsA: 0, goalsB: 0, status: 'UPCOMING', round: 3 },
+        ]
+      },
+      B: {
+        hasLive: false,
+        standings: [
+          { name: 'Kite Season', seed: 3, p: 3, w: 2, d: 1, l: 0, gf: 6, ga: 2 },
+          { name: 'Marisol Vane', seed: 8, p: 3, w: 2, d: 0, l: 1, gf: 5, ga: 4 },
+          { name: 'Glass Static', seed: 2, p: 3, w: 1, d: 1, l: 1, gf: 3, ga: 3 },
+          { name: 'Halflight Parade', seed: 4, p: 3, w: 0, d: 0, l: 3, gf: 1, ga: 6 },
+        ],
+        fixtures: [
+          { nameA: 'Kite Season', seedA: 3, singleA: '', nameB: 'Marisol Vane', seedB: 8, singleB: '', goalsA: 1, goalsB: 1, status: 'DONE', round: 1 },
+          { nameA: 'Glass Static', seedA: 2, singleA: '', nameB: 'Halflight Parade', seedB: 4, singleB: '', goalsA: 2, goalsB: 0, status: 'DONE', round: 1 },
+        ]
+      },
+      C: {
+        hasLive: false,
+        standings: [
+          { name: 'Amber Hours', seed: 9, p: 3, w: 3, d: 0, l: 0, gf: 7, ga: 2 },
+          { name: 'Glasswing', seed: 1, p: 3, w: 2, d: 0, l: 1, gf: 5, ga: 4 },
+          { name: 'First Light', seed: 8, p: 3, w: 1, d: 0, l: 2, gf: 3, ga: 5 },
+          { name: 'Bloomtide', seed: 3, p: 3, w: 0, d: 0, l: 3, gf: 2, ga: 6 },
+        ],
+        fixtures: [
+          { nameA: 'Amber Hours', seedA: 9, singleA: '', nameB: 'Glasswing', seedB: 1, singleB: '', goalsA: 2, goalsB: 1, status: 'DONE', round: 1 },
+          { nameA: 'First Light', seedA: 8, singleA: '', nameB: 'Bloomtide', seedB: 3, singleB: '', goalsA: 1, goalsB: 1, status: 'DONE', round: 1 },
+        ]
+      },
+      D: {
+        hasLive: false,
+        standings: [
+          { name: 'Coastal', seed: 0, p: 3, w: 2, d: 1, l: 0, gf: 6, ga: 3 },
+          { name: 'Static Bloom', seed: 3, p: 3, w: 1, d: 1, l: 1, gf: 4, ga: 4 },
+          { name: 'Low Tide', seed: 2, p: 3, w: 1, d: 0, l: 2, gf: 3, ga: 5 },
+          { name: 'Fade Into You', seed: 7, p: 3, w: 0, d: 0, l: 3, gf: 2, ga: 6 },
+        ],
+        fixtures: [
+          { nameA: 'Coastal', seedA: 0, singleA: '', nameB: 'Static Bloom', seedB: 3, singleB: '', goalsA: 1, goalsB: 1, status: 'DONE', round: 1 },
+          { nameA: 'Low Tide', seedA: 2, singleA: '', nameB: 'Fade Into You', seedB: 7, singleB: '', goalsA: 2, goalsB: 0, status: 'DONE', round: 1 },
+        ]
+      },
+    };
+
+    const subnavList = [
+      { label: 'Início' }, { label: 'Ao vivo' }, { label: 'Meu Time' },
+      { label: 'Grupos', active: true }, { label: 'Chaveamento' }, { label: 'Regras' },
+    ];
+    const subnav = subnavList.map(n => ({ label: n.label, style: {
+      padding: '9px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer',
+      borderBottom: `2px solid ${n.active ? 'var(--accent)' : 'transparent'}`, color: n.active ? 'var(--text)' : 'var(--text-muted)'
+    }}));
+
+    const letters = Object.keys(groupsData);
+    const groupTabs = letters.map(letter => {
+      const isActive = this.state.group === letter;
+      const hasLive = groupsData[letter].hasLive;
+      return {
+        letter, select: () => this.setState({ group: letter }),
+        style: {
+          width: 36, height: 36, borderRadius: 8, cursor: 'pointer',
+          border: hasLive && !isActive ? '1.5px solid var(--divider)' : '1.5px solid transparent',
+          background: isActive ? 'var(--accent)' : (hasLive ? 'var(--accent-tint)' : 'var(--fill-inset)'),
+          color: isActive ? '#fff' : (hasLive ? 'var(--accent)' : 'var(--text-muted)'),
+          fontWeight: 800, fontSize: 13
+        }
+      };
+    });
+
+    const g = groupsData[this.state.group];
+    const sortedStandings = [...g.standings].map(s => ({ ...s, gd: s.gf - s.ga, pts: s.w * 3 + s.d }))
+      .sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+    const standings = sortedStandings.map((row, i) => ({
+      rank: i + 1, cover: this.cover(row.seed), name: row.name, isMe: !!row.isMe,
+      p: row.p, w: row.w, d: row.d, l: row.l, pts: row.pts,
+      gdLabel: (row.gd > 0 ? '+' : '') + row.gd,
+      gdStyle: { padding: '9px 6px', textAlign: 'right', color: row.gd > 0 ? 'var(--up-fg,#3ECF8E)' : (row.gd < 0 ? 'var(--down-fg,#FF6B6B)' : 'var(--text-muted)') },
+      rankStyle: { padding: '9px 14px', fontWeight: 800, textAlign: 'left', color: i < 2 ? 'var(--up-fg,#3ECF8E)' : 'var(--text-muted)' },
+      nameStyle: { color: i < 2 ? 'var(--text)' : 'var(--text-muted)' },
+      trStyle: { borderTop: i === 2 ? '2px solid var(--up-bg,#123024)' : '1px solid var(--divider)' }
+    }));
+
+    const fixtures = g.fixtures.map(f => ({
+      nameA: f.nameA, nameB: f.nameB, coverA: this.cover(f.seedA), coverB: this.cover(f.seedB),
+      singleA: f.singleA, singleB: f.singleB, hasSingleA: !!f.singleA, hasSingleB: !!f.singleB,
+      scoreLabel: f.status === 'UPCOMING' ? 'vs' : `${f.goalsA} - ${f.goalsB}`,
+      scoreStyle: { fontSize: 14, fontWeight: 800, minWidth: 52, textAlign: 'center', flexShrink: 0, color: f.status === 'UPCOMING' ? 'var(--text-muted)' : 'var(--text)' },
+      badgeLabel: f.status === 'LIVE' ? 'AO VIVO' : `R${f.round}`,
+      badgeStyle: {
+        fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, textTransform: 'uppercase', letterSpacing: '.05em',
+        background: f.status === 'LIVE' ? 'var(--accent-tint)' : 'transparent', color: f.status === 'LIVE' ? 'var(--accent)' : 'var(--text-muted)'
+      },
+      rowStyle: {
+        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10,
+        background: f.status === 'LIVE' ? 'var(--accent-tint)' : 'var(--surface)', border: '1px solid var(--divider)',
+        cursor: f.status !== 'UPCOMING' ? 'pointer' : 'default'
+      }
+    }));
+
+    return { subnav, groupTabs, activeGroup: { letter: this.state.group, standings, fixtures } };
+  }
+}
+
+</script>
+</body>
+</html>

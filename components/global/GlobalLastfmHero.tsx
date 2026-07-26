@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslations } from "@/hooks/useTranslations";
+import { formatDateRangeForLocale } from "@/lib/chart-week";
+import { formatWeekLabel } from "@/lib/i18n/format";
 
 interface GlobalLastfmHeroProps {
   title: string;
@@ -30,7 +32,9 @@ export function GlobalLastfmHero({
   gradient,
 }: GlobalLastfmHeroProps) {
   const isMobile = useIsMobile();
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
+  const weekLabel = formatWeekLabel(locale, weekNow);
+  const rangeLabel = formatDateRangeForLocale(weekRangeNow, locale, weekNow);
 
   return (
     <div
@@ -68,7 +72,7 @@ export function GlobalLastfmHero({
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
-          {weekNow}
+          {weekLabel}
         </div>
         <div style={{ fontSize: isMobile ? 34 : 56, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>
           {title}
@@ -81,7 +85,7 @@ export function GlobalLastfmHero({
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
           <span>{t("global.songsCount", { count: entriesCount })}</span>
           <span style={{ display: isMobile ? "none" : "inline" }}>·</span>
-          <span>{weekRangeNow}</span>
+          <span>{rangeLabel}</span>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {olderWeek ? (

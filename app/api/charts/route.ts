@@ -392,11 +392,21 @@ export async function POST(req: NextRequest) {
   ]);
 
   // Previous chart for delta calculations
-  const previousWeekIdx = prevPeriodIndex(weekIndex, parada.cadence);
-  const previousChart = await prisma.chart.findFirst({
-    where: { paradaId: parada.id, weekIndex: previousWeekIdx },
-    include: { entries: true },
-  });
+  // Diário: última publicada (pula fim de semana); semanal: período imediatamente anterior.
+  const previousChart =
+    parada.cadence === "DAILY"
+      ? await prisma.chart.findFirst({
+          where: { paradaId: parada.id, weekIndex: { lt: weekIndex } },
+          orderBy: { weekIndex: "desc" },
+          include: { entries: true },
+        })
+      : await prisma.chart.findFirst({
+          where: {
+            paradaId: parada.id,
+            weekIndex: prevPeriodIndex(weekIndex, parada.cadence),
+          },
+          include: { entries: true },
+        });
   const historicalRows = await prisma.chartEntry.findMany({
     where: {
       songId: { in: [...new Set(songs.map((s) => s.id))] },

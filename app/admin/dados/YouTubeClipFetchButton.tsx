@@ -55,6 +55,7 @@ export function YouTubeClipFetchButton({
         found?: boolean;
         videoId?: string;
         title?: string;
+        publishedAt?: string | null;
         message?: string;
         error?: string;
         needsManualReview?: boolean;
@@ -66,13 +67,19 @@ export function YouTubeClipFetchButton({
       }
 
       const youtubeLink = data.videoId ? `https://youtu.be/${data.videoId}` : undefined;
+      const publishedLabel =
+        typeof data.publishedAt === "string" && data.publishedAt
+          ? data.publishedAt.slice(0, 10)
+          : undefined;
       setState({
         status: "done",
         found: data.found ?? false,
         videoId: data.videoId,
         title: data.title,
         link: youtubeLink,
-        message: data.message ?? "",
+        message: publishedLabel
+          ? `${data.message ?? ""} · postado ${publishedLabel}`.trim()
+          : data.message ?? "",
       });
       if (data.found) router.refresh();
     } catch {
@@ -95,6 +102,12 @@ export function YouTubeClipFetchButton({
                 </a>
               </>
             )}
+            {state.message?.includes("postado") || state.message?.includes("Data de postagem") ? (
+              <>
+                <br />
+                <span style={{ color: "var(--text-muted)", fontSize: 10 }}>{state.message}</span>
+              </>
+            ) : null}
           </>
         ) : (
           <>

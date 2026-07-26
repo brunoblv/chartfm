@@ -188,7 +188,7 @@ export default function ParadasListPage() {
               {t("profile.noCharts")}
             </p>
             {isOwn && (
-              <Link href="/create" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
+              <Link href="/create/start" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>
                 {t("profile.createFirstChart")}
               </Link>
             )}

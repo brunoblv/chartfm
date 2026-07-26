@@ -218,7 +218,7 @@ export default function ParadaDetailPage() {
           </Link>
           {isOwn && (
             <Link
-              href={`/create?paradaId=${encodeURIComponent(paradaId)}`}
+              href={`/create/start?paradaId=${encodeURIComponent(paradaId)}`}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -238,7 +238,7 @@ export default function ParadaDetailPage() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-              {t("profile.newChart")}
+              {t("profile.updateChart")}
             </Link>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { formatChartPeriod } from "@/lib/chart-week";
+import { formatDateRangeForLocale } from "@/lib/chart-week";
 import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
 
 export type SongAppearanceRow = {
@@ -48,10 +48,7 @@ function chartDateRangeOnly(
   chart: { weekLabel: string; dateRange: string },
   locale: "pt-BR" | "en",
 ): string {
-  const full = formatChartPeriod(chart, locale);
-  const marker = " - ";
-  const cut = full.lastIndexOf(marker);
-  return cut >= 0 ? full.slice(0, cut) : full;
+  return formatDateRangeForLocale(chart.dateRange, locale, chart.weekLabel);
 }
 
 function entryPoints(entry: ChartEntryForAppearances): number {

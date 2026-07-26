@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+    @keyframes copaPulse{0%,100%{opacity:1}50%{opacity:.3}}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">← Copa</a>
+    </div>
+  </div>
+
+  <div style="border-bottom:1px solid var(--divider);background:var(--surface)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:8px;background:#FFD426;display:grid;place-items:center;font-size:14px;flex-shrink:0">🏆</div>
+        <div><div style="font-size:15px;font-weight:800;letter-spacing:-0.02em;line-height:1">Copa ChartFM</div></div>
+      </div>
+      <div style="display:flex;gap:2px;margin-top:10px;overflow-x:auto">
+        <sc-for list="{{ subnav }}" as="n" hint-placeholder-count="6">
+          <div style="{{ n.style }}">{{ n.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:560px;margin:0 auto;padding:24px 20px 96px">
+    <h1 style="font-size:22px;font-weight:900;letter-spacing:-0.03em;margin:0 8px 4px">Vote nos jogos ao vivo</h1>
+    <div style="font-size:13px;color:var(--text-muted);margin:0 8px 20px">Escolha o single que mais representa cada artista nesta rodada.</div>
+
+    <sc-if value="{{ hasCurrent }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin:0 8px 12px">
+          <div style="display:flex;gap:5px;flex:1;flex-wrap:wrap">
+            <sc-for list="{{ progress }}" as="p" hint-placeholder-count="3">
+              <span style="{{ p.style }}"></span>
+            </sc-for>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:var(--text-muted);flex-shrink:0">{{ progressLabel }}</span>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:20px;padding:20px 18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">{{ current.phase }}</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;background:var(--accent-tint);color:var(--accent);padding:3px 9px;border-radius:99;text-transform:uppercase;letter-spacing:.05em">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;animation:copaPulse 1.4s ease-in-out infinite"></span>
+              AO VIVO
+            </span>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ current.coverA }}" size="{{ 64 }}" rounded="{{ 17 }}" hint-size="64px,64px"></x-import>
+              <div style="font-size:15px;font-weight:800;text-align:center;line-height:1.2">{{ current.nameA }}</div>
+              <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.25">"{{ current.singleA }}"</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:44px;font-weight:900;letter-spacing:-0.05em;line-height:1">{{ current.goalsA }}</span>
+                <span style="font-size:20px;color:var(--text-muted)">-</span>
+                <span style="font-size:44px;font-weight:900;letter-spacing:-0.05em;line-height:1">{{ current.goalsB }}</span>
+              </div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-top:4px">{{ current.votesA }} x {{ current.votesB }} votos</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ current.coverB }}" size="{{ 64 }}" rounded="{{ 17 }}" hint-size="64px,64px"></x-import>
+              <div style="font-size:15px;font-weight:800;text-align:center;line-height:1.2">{{ current.nameB }}</div>
+              <div style="font-size:12px;color:var(--text-muted);text-align:center;line-height:1.25">"{{ current.singleB }}"</div>
+            </div>
+          </div>
+
+          <div style="height:5px;background:var(--fill-inset);border-radius:3px;overflow:hidden;margin-top:16px">
+            <div style="{{ current.barStyle }}"></div>
+          </div>
+
+          <sc-if value="{{ current.voted }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;font-size:14px;font-weight:700;color:var(--up-fg,#3ECF8E);padding:14px;background:var(--up-bg,#123024);border-radius:12px;margin-top:16px">Voto registrado em {{ current.votedName }}!</div>
+          </sc-if>
+          <sc-if value="{{ current.notVoted }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <button onClick="{{ current.voteA }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:14px;border:2px solid var(--divider);background:var(--fill-inset);color:var(--text);font-size:13px;font-weight:700;cursor:pointer">
+                <x-import component-from-global-scope="ChartFM.Cover" cover="{{ current.coverA }}" size="{{ 34 }}" rounded="{{ 9 }}" hint-size="34px,34px"></x-import>
+                Votar em {{ current.firstNameA }}
+              </button>
+              <button onClick="{{ current.voteB }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:14px;border:2px solid var(--divider);background:var(--fill-inset);color:var(--text);font-size:13px;font-weight:700;cursor:pointer">
+                <x-import component-from-global-scope="ChartFM.Cover" cover="{{ current.coverB }}" size="{{ 34 }}" rounded="{{ 9 }}" hint-size="34px,34px"></x-import>
+                Votar em {{ current.firstNameB }}
+              </button>
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ current.notVoted }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ advance }}" style="display:block;margin:12px auto 0;background:none;border:none;color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;padding:6px 12px">Pular este jogo</button>
+        </sc-if>
+        <sc-if value="{{ current.voted }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ advance }}" style="display:block;margin:16px auto 0;background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:100px;font-size:13px;font-weight:700;cursor:pointer">Próximo jogo →</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ !hasCurrent }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:18px 16px;background:var(--up-bg,#123024);border-radius:14px;margin-bottom:14px">
+        <div style="font-size:32px;margin-bottom:4px">🎉</div>
+        <div style="font-size:15px;font-weight:800;color:var(--up-fg,#3ECF8E)">Você votou em {{ votedCount }} jogos!</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Acompanhe o placar dos jogos abaixo.</div>
+      </div>
+    </sc-if>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+      <sc-for list="{{ results }}" as="g" hint-placeholder-count="3">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:14px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">{{ g.phase }}</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;background:var(--accent-tint);color:var(--accent);padding:3px 9px;border-radius:99;text-transform:uppercase;letter-spacing:.05em">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;animation:copaPulse 1.4s ease-in-out infinite"></span>
+              AO VIVO
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ g.coverA }}" size="{{ 48 }}" rounded="{{ 13 }}" hint-size="48px,48px"></x-import>
+              <div style="font-size:14px;font-weight:800;text-align:center;line-height:1.2">{{ g.nameA }}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:34px;font-weight:900;letter-spacing:-0.04em;line-height:1">{{ g.goalsA }}</span>
+                <span style="font-size:18px;color:var(--text-muted)">-</span>
+                <span style="font-size:34px;font-weight:900;letter-spacing:-0.04em;line-height:1">{{ g.goalsB }}</span>
+              </div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-top:4px">{{ g.votesA }} x {{ g.votesB }} votos</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+              <x-import component-from-global-scope="ChartFM.Cover" cover="{{ g.coverB }}" size="{{ 48 }}" rounded="{{ 13 }}" hint-size="48px,48px"></x-import>
+              <div style="font-size:14px;font-weight:800;text-align:center;line-height:1.2">{{ g.nameB }}</div>
+            </div>
+          </div>
+          <div style="height:5px;background:var(--fill-inset);border-radius:3px;overflow:hidden;margin-top:12px">
+            <div style="{{ g.barStyle }}"></div>
+          </div>
+          <div style="text-align:center;margin-top:10px;font-size:12px;font-weight:700;color:var(--accent)">Toque para votar</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { index: 0, votes: {} };
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const subnavList = [
+      { label: 'Início' }, { label: 'Ao vivo', active: true }, { label: 'Meu Time' },
+      { label: 'Grupos' }, { label: 'Chaveamento' }, { label: 'Regras' },
+    ];
+    const subnav = subnavList.map(n => ({ label: n.label, style: {
+      padding: '9px 14px', borderRadius: '8px 8px 0 0', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer',
+      borderBottom: `2px solid ${n.active ? 'var(--accent)' : 'transparent'}`, color: n.active ? 'var(--text)' : 'var(--text-muted)'
+    }}));
+
+    const raw = [
+      { phase: 'OITAVAS', nameA: 'Coral Hour', singleA: 'Halflight', seedA: 6, goalsA: 2, votesA: 412,
+        nameB: 'Nova Vega', singleB: 'Glasswing', seedB: 1, goalsB: 1, votesB: 298 },
+      { phase: 'OITAVAS', nameA: 'Kite Season', singleA: 'Static Bloom', seedA: 3, goalsA: 1, votesA: 180,
+        nameB: 'Halflight Parade', singleB: 'Static & Salt', seedB: 4, goalsB: 1, votesB: 175 },
+      { phase: 'OITAVAS', nameA: 'Marisol Vane', singleA: 'First Light', seedA: 8, goalsA: 0, votesA: 90,
+        nameB: 'Glass Static', singleB: 'Coastal', seedB: 2, goalsB: 2, votesB: 210 },
+    ];
+    const games = raw.map((g, i) => {
+      const total = g.votesA + g.votesB || 1;
+      const pctA = (g.votesA / total) * 100;
+      const vote = this.state.votes[i];
+      return {
+        idx: i, phase: g.phase, nameA: g.nameA, nameB: g.nameB, singleA: g.singleA, singleB: g.singleB,
+        firstNameA: g.nameA.split(' ')[0], firstNameB: g.nameB.split(' ')[0],
+        coverA: this.cover(g.seedA), coverB: this.cover(g.seedB), goalsA: g.goalsA, goalsB: g.goalsB, votesA: g.votesA, votesB: g.votesB,
+        barStyle: { height: '100%', width: pctA + '%', background: `linear-gradient(90deg, ${this.palettes[g.seedA % 10][0]}, ${this.palettes[g.seedB % 10][0]})`, borderRadius: 3 },
+        voted: !!vote, notVoted: !vote,
+        votedName: vote === 'A' ? g.nameA : g.nameB,
+        voteA: () => this.setState(s => ({ votes: { ...s.votes, [i]: 'A' } })),
+        voteB: () => this.setState(s => ({ votes: { ...s.votes, [i]: 'B' } })),
+      };
+    });
+
+    const queue = games.filter(g => !this.state.votes[g.idx]);
+    const current = queue[0] ?? null;
+    const votedCount = Object.keys(this.state.votes).length;
+
+    const progress = games.map((g, i) => ({ style: {
+      height: 4, flex: '1 1 12px', minWidth: 12, borderRadius: 2,
+      background: this.state.votes[g.idx] ? 'var(--up-fg,#3ECF8E)' : (current && current.idx === g.idx ? 'var(--accent)' : 'var(--fill-inset)')
+    }}));
+
+    return {
+      subnav, hasCurrent: !!current, current,
+      progress, progressLabel: current ? `${queue.indexOf(current) + 1} / ${queue.length}` : '',
+      advance: () => this.setState(s => ({})),
+      votedCount, results: games,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

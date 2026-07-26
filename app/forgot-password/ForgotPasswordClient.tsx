@@ -52,7 +52,7 @@ export default function ForgotPasswordClient() {
       <h2 style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.035em", margin: "0 0 8px 0", lineHeight: 1.1 }}>
         {t("forgotPassword.headline")}
       </h2>
-      <p style={{ fontSize: 14, color: "#86868B", margin: "0 0 32px 0", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", margin: "0 0 32px 0", lineHeight: 1.5 }}>
         {t("forgotPassword.subhead")}
       </p>
 
@@ -61,7 +61,7 @@ export default function ForgotPasswordClient() {
 
       {!sent && (
         <form onSubmit={handleSubmit}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#86868B", marginBottom: 6 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 6 }}>
             {t("login.email")}
           </label>
           <input
@@ -85,7 +85,7 @@ export default function ForgotPasswordClient() {
         </form>
       )}
 
-      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "#86868B" }}>
+      <div style={{ textAlign: "center", marginTop: 22, fontSize: 13, color: "var(--text-muted)" }}>
         <Link href="/login" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
           {t("forgotPassword.backToLogin")}
         </Link>

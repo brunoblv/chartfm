@@ -13,7 +13,7 @@ export function BottomNav() {
   const authed = status === "authenticated" && !!session?.user?.handle;
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profilePath = authed ? `/profile/${session!.user.handle}` : "/login";
-  const createPath = authed ? "/create" : "/login";
+  const createPath = authed ? "/create/start" : "/login";
   const profileActive =
     authed &&
     (pathname === profilePath || pathname.startsWith(profilePath + "/"));

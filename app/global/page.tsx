@@ -206,7 +206,7 @@ export default async function GlobalHubPage() {
             </div>
           </div>
           <Link
-            href="/create"
+            href="/create/start"
             style={{
               flexShrink: 0,
               padding: "11px 22px",

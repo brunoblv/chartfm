@@ -8,9 +8,12 @@ import { SocialEventType } from "@prisma/client";
 import {
   buildDateRangeFromDate,
   buildWeekLabelFromDate,
+  formatPickerDateFromDate,
   getGlobalSnapshotDeadline,
   getRankingWeekReference,
   getWeeklySnapshotReferenceDate,
+  lastfmWeekPickerValueFromChart,
+  parseChartWeekPickerDate,
 } from "@/lib/chart-week";
 import { getGlobalPublishSlot } from "@/lib/global-publish-schedule";
 import { GLOBAL_RANKING_FIRST_WEEK_INDEX } from "@/lib/global-ranking-config";
@@ -26,6 +29,19 @@ import { syncGlobal100YouTubePlaylist, syncGlobalAirplayYouTubePlaylist } from "
 import { onChartPublished } from "@/lib/social/events";
 import { sendGlobalWeeklyNotification } from "@/lib/global-weekly-notifications";
 import { publishWeeklyEditorialPostForWeek } from "@/lib/weekly-editorial-post";
+import { brtDateKey, buildMyTrlScoringWindow } from "@/lib/mytrl-chart-engine";
+
+export type GlobalDateKind = "global100" | "airplay" | "albums" | "genres";
+
+export const GLOBAL_DATE_KINDS: GlobalDateKind[] = ["global100", "airplay", "albums", "genres"];
+
+export type GlobalSnapshotDateInfo = {
+  exists: boolean;
+  weekLabel: string | null;
+  dateRange: string | null;
+  scoringWindow: string | null;
+  weekDate: string | null;
+};
 
 export type GlobalAdminAction =
   | "publish"
@@ -77,26 +93,68 @@ async function weekMeta(weekIndex: number) {
   };
 }
 
+function dateInfoFromSnapshot(
+  row: { weekLabel: string; dateRange: string; scoringWindow?: string } | null,
+  fallbackDate: Date,
+): GlobalSnapshotDateInfo {
+  if (!row) {
+    return {
+      exists: false,
+      weekLabel: null,
+      dateRange: null,
+      scoringWindow: null,
+      weekDate: formatPickerDateFromDate(fallbackDate),
+    };
+  }
+  return {
+    exists: true,
+    weekLabel: row.weekLabel,
+    dateRange: row.dateRange,
+    scoringWindow: row.scoringWindow ?? null,
+    weekDate:
+      lastfmWeekPickerValueFromChart({ weekLabel: row.weekLabel, dateRange: row.dateRange }) ??
+      formatPickerDateFromDate(fallbackDate),
+  };
+}
+
 export async function getGlobalWeekStatus(weekIndex: number) {
   const meta = await weekMeta(weekIndex);
-  const [global, airplay, albums, curators, genres, editorial, social] = await Promise.all([
+  const [global, airplay, albums, curators, genreCount, genreSample, editorial, social] = await Promise.all([
     prisma.globalSnapshot.findUnique({
       where: { weekIndex },
-      select: { weekLabel: true, frozenAt: true, youtubePlaylistId: true, createdAt: true },
+      select: { weekLabel: true, dateRange: true, frozenAt: true, youtubePlaylistId: true, createdAt: true },
     }),
     prisma.globalAirplaySnapshot.findUnique({
       where: { weekIndex },
-      select: { weekLabel: true, frozenAt: true, youtubePlaylistId: true, contributorCount: true },
+      select: {
+        weekLabel: true,
+        dateRange: true,
+        scoringWindow: true,
+        frozenAt: true,
+        youtubePlaylistId: true,
+        contributorCount: true,
+      },
     }),
     prisma.globalAlbumsSnapshot.findUnique({
       where: { weekIndex },
-      select: { weekLabel: true, frozenAt: true, contributorCount: true },
+      select: {
+        weekLabel: true,
+        dateRange: true,
+        scoringWindow: true,
+        frozenAt: true,
+        contributorCount: true,
+      },
     }),
     prisma.curatorsSnapshot.findUnique({
       where: { weekIndex },
       select: { weekLabel: true, frozenAt: true },
     }),
     prisma.globalGenreSnapshot.count({ where: { weekIndex } }),
+    prisma.globalGenreSnapshot.findFirst({
+      where: { weekIndex },
+      select: { weekLabel: true, dateRange: true },
+      orderBy: { genreSlug: "asc" },
+    }),
     prisma.editorialPost.findUnique({
       where: { slug: `panorama-global-100-semana-${weekIndex}` },
       select: { id: true, slug: true, publishedAt: true },
@@ -118,6 +176,8 @@ export async function getGlobalWeekStatus(weekIndex: number) {
     }),
   ]);
 
+  const fallbackDate = getWeeklySnapshotReferenceDate(weekIndex, meta.slot);
+
   return {
     ...meta,
     snapshots: {
@@ -125,7 +185,13 @@ export async function getGlobalWeekStatus(weekIndex: number) {
       airplay: Boolean(airplay),
       albums: Boolean(albums),
       curators: Boolean(curators),
-      genreCount: genres,
+      genreCount,
+    },
+    dates: {
+      global100: dateInfoFromSnapshot(global, fallbackDate),
+      airplay: dateInfoFromSnapshot(airplay, fallbackDate),
+      albums: dateInfoFromSnapshot(albums, fallbackDate),
+      genres: dateInfoFromSnapshot(genreSample, fallbackDate),
     },
     playlists: {
       youtubeGlobal100: global?.youtubePlaylistId ?? null,
@@ -140,6 +206,89 @@ export async function getGlobalWeekStatus(weekIndex: number) {
       albums: albums?.weekLabel ?? null,
     },
   };
+}
+
+/**
+ * Atualiza só os rótulos de data do snapshot (não recalcula ranking).
+ * `weekIndex` permanece a chave; weekLabel/dateRange/(scoringWindow) saem da data escolhida.
+ */
+export async function updateGlobalSnapshotDates(
+  weekIndex: number,
+  kind: GlobalDateKind,
+  weekDateInput: string,
+) {
+  if (!isValidWeekIndex(weekIndex)) {
+    throw new Error(`weekIndex inválido (mínimo ${GLOBAL_RANKING_FIRST_WEEK_INDEX}).`);
+  }
+  const date = parseChartWeekPickerDate(weekDateInput);
+  if (!date) {
+    throw new Error("Data inválida. Use AAAA-MM-DD.");
+  }
+
+  const weekLabel = buildWeekLabelFromDate(date);
+  const dateRange = buildDateRangeFromDate(date);
+  const scoringWindow = buildMyTrlScoringWindow(brtDateKey(date));
+
+  switch (kind) {
+    case "global100": {
+      const existing = await prisma.globalSnapshot.findUnique({
+        where: { weekIndex },
+        select: { weekIndex: true },
+      });
+      if (!existing) throw new Error("Snapshot do Global 100 ainda não existe nesta semana.");
+      const saved = await prisma.globalSnapshot.update({
+        where: { weekIndex },
+        data: { weekLabel, dateRange },
+        select: { weekLabel: true, dateRange: true },
+      });
+      return { kind, weekIndex, ...saved, scoringWindow: null as string | null, updatedCount: 1 };
+    }
+    case "airplay": {
+      const existing = await prisma.globalAirplaySnapshot.findUnique({
+        where: { weekIndex },
+        select: { weekIndex: true },
+      });
+      if (!existing) throw new Error("Snapshot do Airplay ainda não existe nesta semana.");
+      const saved = await prisma.globalAirplaySnapshot.update({
+        where: { weekIndex },
+        data: { weekLabel, dateRange, scoringWindow },
+        select: { weekLabel: true, dateRange: true, scoringWindow: true },
+      });
+      return { kind, weekIndex, ...saved, updatedCount: 1 };
+    }
+    case "albums": {
+      const existing = await prisma.globalAlbumsSnapshot.findUnique({
+        where: { weekIndex },
+        select: { weekIndex: true },
+      });
+      if (!existing) throw new Error("Snapshot de Álbuns ainda não existe nesta semana.");
+      const saved = await prisma.globalAlbumsSnapshot.update({
+        where: { weekIndex },
+        data: { weekLabel, dateRange, scoringWindow },
+        select: { weekLabel: true, dateRange: true, scoringWindow: true },
+      });
+      return { kind, weekIndex, ...saved, updatedCount: 1 };
+    }
+    case "genres": {
+      const result = await prisma.globalGenreSnapshot.updateMany({
+        where: { weekIndex },
+        data: { weekLabel, dateRange },
+      });
+      if (result.count === 0) {
+        throw new Error("Nenhum snapshot de gênero nesta semana.");
+      }
+      return {
+        kind,
+        weekIndex,
+        weekLabel,
+        dateRange,
+        scoringWindow: null as string | null,
+        updatedCount: result.count,
+      };
+    }
+    default:
+      throw new Error(`Tipo inválido: ${kind}`);
+  }
 }
 
 export async function listAdminGlobalWeekOptions(limit = 24): Promise<

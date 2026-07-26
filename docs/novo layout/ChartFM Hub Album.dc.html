@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="26" hint-size="120px,26px"></x-import>
+      <nav style="display:flex;gap:24px;flex:1">
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Home</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Descobrir</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Charts</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Communities</a>
+        <a href="#" style="font-size:14px;font-weight:500;color:var(--text-muted)">Conversas</a>
+      </nav>
+    </div>
+  </div>
+
+  <div style="position:relative;min-height:420px;overflow:hidden;display:flex;align-items:flex-end">
+    <div style="position:absolute;inset:0;background:var(--gradient-hero)"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,14,0) 30%,var(--bg) 100%)"></div>
+    <div style="position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 40px 44px;display:flex;gap:32px;align-items:flex-end;width:100%;box-sizing:border-box">
+      <div style="width:220px;height:220px;border-radius:20px;background:linear-gradient(135deg,#FF5858,#FA243C);flex-shrink:0;box-shadow:0 16px 40px rgba(0,0,0,.45)"></div>
+      <div style="flex:1;min-width:0;color:#fff">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85">Álbum · 2026</div>
+        <div style="font-size:46px;font-weight:800;letter-spacing:-0.03em;margin-top:8px;line-height:1.05">Glasswing</div>
+        <div style="font-size:18px;opacity:.85;margin-top:6px">Nova Vega</div>
+        <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+          <sc-for list="{{ tags }}" as="t" hint-placeholder-count="3">
+            <div style="background:rgba(255,255,255,.14);font-size:12px;font-weight:600;padding:5px 12px;border-radius:100px">{{ t }}</div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:22px">
+          <button style="background:#fff;color:#0a0a0e;border:none;padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Ouvir</button>
+          <button style="background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Adicionar à coleção</button>
+          <button style="background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3);padding:13px 24px;border-radius:100px;font-size:14px;font-weight:700;cursor:pointer">Favoritar</button>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;color:#fff">
+        <div style="font-size:40px;font-weight:800">4.5</div>
+        <div style="font-size:13px;opacity:.85">340 Reviews</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1200px;margin:0 auto;padding:32px 40px 96px">
+
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px">
+      <sc-for list="{{ summary }}" as="s" hint-placeholder-count="6">
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:15px;font-weight:800">{{ s.value }}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{ s.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-top:40px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:40px;min-width:0">
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px">Desempenho no ChartFM</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:16px;max-width:640px">A tabela abaixo mostra os pontos acumulados por cada faixa nas paradas dos usuários, quantas semanas ela passou no Global 100 e sua melhor posição no ranking coletivo.</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+            <sc-for list="{{ chartStats }}" as="cs" hint-placeholder-count="4">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:14px;padding:16px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">{{ cs.label }}</div>
+                <div style="font-size:28px;font-weight:800;letter-spacing:-0.02em;color:{{ cs.color }}">{{ cs.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:32px minmax(0,1fr) 70px 60px 60px 44px;padding:10px 16px;gap:0;border-bottom:1px solid var(--divider)">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)">#</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)">Faixa</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);text-align:right">Pontos</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);text-align:right">Sem.</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);text-align:right">Pico</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);text-align:right">#1s</div>
+            </div>
+            <sc-for list="{{ tracks }}" as="tr" hint-placeholder-count="9">
+              <div style="display:grid;grid-template-columns:32px minmax(0,1fr) 70px 60px 60px 44px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--divider-soft)">
+                <div style="font-size:13px;font-weight:700;color:var(--text-muted)">{{ tr.n }}</div>
+                <div style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">{{ tr.title }}</div>
+                <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums">{{ tr.points }}</div>
+                <div style="font-size:13px;color:var(--text-muted);text-align:right;font-variant-numeric:tabular-nums">{{ tr.weeks }}</div>
+                <div style="font-size:13px;text-align:right;font-variant-numeric:tabular-nums"><span style="{{ tr.peakStyle }}">{{ tr.peakLabel }}</span></div>
+                <div style="font-size:13px;color:var(--text-muted);text-align:right;font-variant-numeric:tabular-nums">{{ tr.numberOnes }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Top fãs</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+            <sc-for list="{{ topFans }}" as="f" hint-placeholder-count="4">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px;text-align:center">
+                <div style="{{ f.avatarStyle }};margin:0 auto"></div>
+                <div style="font-size:13.5px;font-weight:700;margin-top:10px">{{ f.name }}</div>
+                <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:8px">@{{ f.handle }}</div>
+                <div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)">Pontos no álbum</div>
+                <div style="font-size:20px;font-weight:800;color:var(--accent)">{{ f.points }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Distribuição das notas</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ ratingDist }}" as="rd" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="font-size:12px;color:var(--text-muted);width:36px">{{ rd.label }}</div>
+                <div style="flex:1;height:8px;border-radius:999px;background:var(--fill-subtle)">
+                  <div style="{{ rd.barStyle }}"></div>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);width:36px;text-align:right">{{ rd.pct }}%</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Reviews em destaque</div>
+            <a href="#" style="font-size:13px;font-weight:600">Ver todas →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="{{ r.avatarStyle }}"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:700">{{ r.author }}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">{{ r.readTime }}</div>
+                  </div>
+                  <div style="font-size:16px;font-weight:800;color:var(--accent)">{{ r.rating }}</div>
+                </div>
+                <div style="font-size:12.5px;color:var(--text-subtle);line-height:1.4">{{ r.excerpt }}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px">♥ {{ r.likes }} · 💬 {{ r.comments }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em">Charts com este álbum</div>
+            <a href="#" style="font-size:13px;font-weight:600">Ver mais →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+            <sc-for list="{{ charts }}" as="c" hint-placeholder-count="2">
+              <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:18px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                  <div style="{{ c.avatarStyle }}"></div>
+                  <div style="font-size:13px;font-weight:700">{{ c.author }}</div>
+                </div>
+                <div style="font-size:15px;font-weight:800;letter-spacing:-0.01em;margin-bottom:10px">{{ c.title }}</div>
+                <div style="font-size:12px;color:var(--text-muted)">{{ c.votes }} votos</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Comunidade</div>
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:20px;display:flex;align-items:center;gap:24px">
+            <div style="display:flex">
+              <sc-for list="{{ communityAvatars }}" as="cv" hint-placeholder-count="6">
+                <div style="{{ cv.style }}"></div>
+              </sc-for>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);flex:1">312 pessoas ouviram este álbum esta semana. 18 discussões ativas.</div>
+            <button style="background:var(--accent);color:#fff;border:none;padding:11px 20px;border-radius:100px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">Ver discussões</button>
+          </div>
+        </section>
+
+        <section>
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:16px">Contexto histórico</div>
+          <div style="background:var(--surface);border:1px solid var(--divider);border-radius:16px;padding:22px">
+            <div style="font-size:14px;color:var(--text-subtle);line-height:1.6">Lançado seis anos após o silêncio de Nova Vega, Glasswing marca o retorno da banda ao topo das Charts. Gravado em Lisboa, o álbum troca as texturas experimentais do trabalho anterior por hooks mais diretos — uma decisão que dividiu a crítica, mas conquistou uma nova geração de ouvintes.</div>
+          </div>
+        </section>
+
+        <section style="border-top:1px solid var(--divider);padding-top:32px">
+          <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;margin-bottom:16px">Continue explorando</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+            <sc-for list="{{ related }}" as="rl" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="{{ rl.coverStyle }}"></div>
+                <div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--accent)">{{ rl.type }}</div>
+                <div style="font-size:13px;font-weight:600;line-height:1.25">{{ rl.title }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+      </div>
+
+      <aside style="display:flex;flex-direction:column;gap:16px">
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Créditos</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ credits }}" as="cr" hint-placeholder-count="4">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;font-weight:700">{{ cr.role }}</div>
+                <div style="font-size:13px;font-weight:600;margin-top:2px">{{ cr.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Popularidade ao longo do tempo</div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:80px">
+            <sc-for list="{{ popularityBars }}" as="pb" hint-placeholder-count="12">
+              <div style="{{ pb.style }}"></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <div style="font-size:10px;color:var(--text-muted)">lançamento</div>
+            <div style="font-size:10px;color:var(--text-muted)">hoje</div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Curadores recomendam</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ curators }}" as="cu" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ cu.avatarStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600">{{ cu.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ cu.note }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--divider);border-radius:18px;padding:18px 20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px">Outras versões</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ versions }}" as="v" hint-placeholder-count="2">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="{{ v.coverStyle }}"></div>
+                <div style="min-width:0;flex:1">
+                  <div style="font-size:12.5px;font-weight:600">{{ v.name }}</div>
+                  <div style="font-size:11px;color:var(--text-muted)">{{ v.year }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  grad(seed) { const p = this.palettes[seed % this.palettes.length]; return `linear-gradient(135deg, ${p[0]}, ${p[1]})`; }
+  cover(seed, size, radius) { return { width: size, height: size, borderRadius: radius ?? 10, background: this.grad(seed), flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,.3)' }; }
+  circle(seed, size) { return { width: size, height: size, borderRadius: '50%', background: this.grad(seed), flexShrink: 0 }; }
+
+  renderVals() {
+    const tags = ['Dream Pop', 'Shoegaze', 'Indie'];
+
+    const summary = [
+      { label: 'Gênero', value: 'Dream Pop' }, { label: 'País', value: 'Portugal' }, { label: 'Gravadora', value: 'Faded Line' },
+      { label: 'Duração', value: '42 min' }, { label: 'Charts', value: '86' }, { label: 'Communities', value: '9' },
+    ];
+
+    const chartStats = [
+      { label: 'Pontos totais', value: '1.842', color: 'var(--accent)' },
+      { label: 'Ouvintes únicos', value: '926', color: '#8338EC' },
+      { label: 'Faixas ranqueadas', value: '9', color: '#3A86FF' },
+      { label: '#1s', value: '3', color: '#FFD700' },
+    ];
+
+    const tracks = [
+      ['Glasswing', 312, 22, 1], ['Static Bloom', 240, 14, 3], ['Amber Hour', 410, 31, 1],
+      ['Low Tide', 180, 9, 8], ['Marigold', 265, 18, 4], ['Coral Static', 120, 6, 15],
+      ['Kite Strings', 520, 44, 1], ['Halflight (Reprise)', 190, 11, 12], ['Glasswing (Outro)', 205, 15, 6],
+    ].map(([title, points, weeks, peak], i) => ({
+      n: i + 1, title, points, weeks, peak,
+      peakLabel: peak > 0 ? `#${peak}` : '-',
+      peakStyle: { color: peak === 1 ? 'var(--accent)' : 'var(--text)', fontWeight: 700 },
+      numberOnes: peak === 1 ? [3,1,2][i % 3] : 0,
+    }));
+
+    const topFans = [
+      { name: 'Priya Nandan', handle: 'priyan', points: 412, seed: 7 },
+      { name: 'Kenji Osei', handle: 'kenjiosei', points: 356, seed: 8 },
+      { name: 'Sofia Reyes', handle: 'sofiareyes', points: 298, seed: 5 },
+      { name: 'Théo Lambert', handle: 'theolambert', points: 240, seed: 4 },
+    ].map(f => ({ ...f, avatarStyle: this.circle(f.seed, 56) }));
+
+    const ratingDist = [
+      { label: '5★', pct: 42 }, { label: '4★', pct: 33 }, { label: '3★', pct: 15 }, { label: '2★', pct: 7 }, { label: '1★', pct: 3 },
+    ].map(rd => ({ ...rd, barStyle: { width: rd.pct + '%', height: 8, borderRadius: 999, background: 'var(--accent)' } }));
+
+    const reviews = [
+      { author: 'Alice Monteiro', rating: '4.5', readTime: '6 min', excerpt: 'Nova Vega troca os hooks óbvios por texturas — um retorno ambicioso e silencioso.', likes: 482, comments: 61, seed: 0 },
+      { author: 'Marco Villani', rating: '4.0', readTime: '4 min', excerpt: 'Um disco confiante, mesmo quando não arrisca o suficiente nas letras.', likes: 210, comments: 34, seed: 3 },
+      { author: 'Sofia Reyes', rating: '5.0', readTime: '7 min', excerpt: 'A melhor faixa-título do ano — e olha que a concorrência não é fraca.', likes: 897, comments: 143, seed: 5 },
+    ].map(r => ({ ...r, avatarStyle: this.circle(r.seed, 36) }));
+
+    const charts = [
+      { author: 'Théo Lambert', title: 'Indie que ninguém te contou', votes: 128, seed: 4 },
+      { author: 'Kenji Osei', title: 'Dream Pop Essencial', votes: 89, seed: 8 },
+    ].map(c => ({ ...c, avatarStyle: this.circle(c.seed, 30) }));
+
+    const communityAvatars = [0,1,2,3,4,5].map(s => ({ style: { ...this.circle(s, 32), marginLeft: -8, border: '2px solid var(--surface)' } }));
+
+    const related = [
+      { type: 'Artista', title: 'The Amber Room', seed: 9 },
+      { type: 'Álbum', title: 'Night Static', seed: 4 },
+      { type: 'Playlist', title: 'Dream Pop Essentials', seed: 2 },
+      { type: 'Community', title: 'Dream Pop Diaries', seed: 2 },
+    ].map(r => ({ ...r, coverStyle: this.cover(r.seed, '100%', 12) }));
+
+    const credits = [
+      { role: 'Produção', name: 'Iris Falk' }, { role: 'Mixagem', name: 'Dario Nunes' },
+      { role: 'Masterização', name: 'Wren Hall Studio' }, { role: 'Capa', name: 'Marlowe Dune' },
+    ];
+
+    const popularityBars = [30,42,55,48,60,72,65,80,90,75,88,95].map(h => ({
+      style: { width: 12, height: h + '%', borderRadius: 3, background: 'var(--accent)', opacity: 0.4 + (h/95)*0.6 }
+    }));
+
+    const curators = [
+      { name: 'Priya Nandan', note: '"Um dos melhores lançamentos do ano."', seed: 7 },
+      { name: 'Kenji Osei', note: 'Adicionou à playlist Dream Pop Essentials', seed: 8 },
+      { name: 'Sofia Reyes', note: 'Deu nota 5.0', seed: 5 },
+    ].map(c => ({ ...c, avatarStyle: this.circle(c.seed, 32) }));
+
+    const versions = [
+      { name: 'Edição Deluxe', year: '2026', seed: 1 },
+      { name: 'Vinil Colorido', year: '2026', seed: 6 },
+    ].map(v => ({ ...v, coverStyle: this.cover(v.seed, 40, 10) }));
+
+    return { tags, summary, chartStats, tracks, topFans, ratingDist, reviews, charts, communityAvatars, related, credits, popularityBars, curators, versions };
+  }
+}
+
+</script>
+</body>
+</html>

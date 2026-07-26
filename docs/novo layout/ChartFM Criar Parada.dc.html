@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+    input::placeholder{color:var(--text-muted)}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1200px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">Cancelar</a>
+    </div>
+  </div>
+
+  <div style="max-width:640px;margin:0 auto;padding:44px 40px 96px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Nova parada · passo 2 de 3</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Monte sua parada da semana</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px;line-height:1.5">Escolha até 30 músicas e organize por posição. Você poderá editar depois de publicar.</div>
+
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-top:20px;background:var(--up-bg,#123024);border-radius:12px;padding:14px 16px">
+      <div style="font-size:16px;flex-shrink:0">▲</div>
+      <div style="font-size:13px;line-height:1.5;color:var(--text-muted)">
+        <strong style="color:var(--up-fg,#3ECF8E)">Importado do Last.fm</strong> — isso é só um ponto de partida. Você pode arrastar músicas para mudar a ordem, adicionar novas faixas, remover e editar qualquer informação antes de publicar.
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:24px">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <div style="{{ s.circleStyle }}">{{ s.n }}</div>
+          <div style="{{ s.labelStyle }}">{{ s.label }}</div>
+          <sc-if value="{{ s.hasLine }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;height:1px;background:var(--divider)"></div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:32px">
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:8px">Nome da parada</div>
+      <input value="Minha Parada · Semana 28" style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--divider-strong);border-radius:12px;padding:14px 16px;font-size:15px;color:var(--text);outline:none;font-weight:600" />
+    </div>
+
+    <div style="margin-top:24px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-muted)">Buscar músicas</div>
+        <div style="font-size:12.5px;color:var(--text-muted)">{{ selectedCount }}/30 selecionadas</div>
+      </div>
+      <div style="position:relative">
+        <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--text-muted)">⌕</span>
+        <input placeholder="Buscar por título, artista ou álbum" style="width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--divider);border-radius:100px;padding:13px 16px 13px 42px;font-size:14px;color:var(--text);outline:none" />
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:10px">Sua parada ({{ selectedCount }})</div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ selectedSongs }}" as="s" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:12px">
+            <div style="width:22px;text-align:center;font-size:13px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums">{{ s.n }}</div>
+            <div style="color:var(--text-muted);cursor:grab;font-size:14px">⠿</div>
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ s.cover }}" size="{{ 44 }}" hint-size="44px,44px"></x-import>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.title }}</div>
+              <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.artist }}</div>
+            </div>
+            <button style="background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;padding:4px">✕</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="margin-top:32px">
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:10px">Sugestões baseadas no que você ouve</div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:12px">
+            <x-import component-from-global-scope="ChartFM.Cover" cover="{{ s.cover }}" size="{{ 44 }}" hint-size="44px,44px"></x-import>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.title }}</div>
+              <div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.artist }}</div>
+            </div>
+            <button style="background:var(--fill-subtle);color:var(--text);border:none;padding:7px 14px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">+ Adicionar</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:36px">
+      <button style="flex:1;background:var(--fill-subtle);color:var(--text);border:none;padding:15px 0;border-radius:100px;font-size:15px;font-weight:700;cursor:pointer">Salvar rascunho</button>
+      <button style="flex:2;background:var(--accent);color:#fff;border:none;padding:15px 0;border-radius:100px;font-size:15px;font-weight:700;cursor:pointer">Publicar parada</button>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palettes = [
+    ['#FF5858','#FA243C'], ['#7C5CFF','#3B2B8C'], ['#20C4B0','#0E6E64'],
+    ['#FFB020','#E0631A'], ['#3E8BFF','#1D4FA3'], ['#FF6FB0','#B23A72'],
+    ['#57D9A3','#1F8F6B'], ['#9B6BFF','#4B2E99'], ['#FFD166','#D98A1F'],
+    ['#4FD1FF','#1E7FB0']
+  ];
+  cover(seed) { return { palette: this.palettes[seed % this.palettes.length], seed }; }
+
+  renderVals() {
+    const steps = [
+      { n: 1, label: 'Detalhes', done: true, hasLine: true },
+      { n: 2, label: 'Músicas', active: true, hasLine: true },
+      { n: 3, label: 'Publicar', hasLine: false },
+    ].map(s => ({
+      n: s.n, label: s.label, hasLine: s.hasLine,
+      circleStyle: {
+        width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, fontWeight: 700, flexShrink: 0,
+        background: s.done ? 'var(--accent)' : (s.active ? 'var(--accent)' : 'var(--fill-subtle)'),
+        color: s.done || s.active ? '#fff' : 'var(--text-muted)'
+      },
+      labelStyle: { fontSize: 13, fontWeight: s.active ? 700 : 500, color: s.active ? 'var(--text)' : 'var(--text-muted)', whiteSpace: 'nowrap' }
+    }));
+
+    const rawSelected = [
+      { title: 'Halflight', artist: 'Coral Hour', seed: 6 },
+      { title: 'Glasswing', artist: 'Nova Vega', seed: 1 },
+      { title: 'Amber Static', artist: 'Coral Hour', seed: 5 },
+      { title: 'Static Bloom', artist: 'Kite Season', seed: 3 },
+      { title: 'Low Tide', artist: 'Coral Hour', seed: 2 },
+      { title: 'Coastal', artist: 'Nova Vega', seed: 0 },
+      { title: 'Bloomtide', artist: 'Kite Season', seed: 8 },
+      { title: 'Static & Salt', artist: 'Halflight Parade', seed: 4 },
+    ];
+    const selectedSongs = rawSelected.map((s, i) => ({ n: i + 1, title: s.title, artist: s.artist, cover: this.cover(s.seed) }));
+
+    const suggestions = [
+      { title: 'Nightlong', artist: 'Coral Hour', seed: 9 },
+      { title: 'Fade Into You (Cover)', artist: 'Nova Vega', seed: 7 },
+      { title: 'First Light', artist: 'Marisol Vane', seed: 8 },
+    ].map(s => ({ ...s, cover: this.cover(s.seed) }));
+
+    return { steps, selectedCount: selectedSongs.length, selectedSongs, suggestions };
+  }
+}
+
+</script>
+</body>
+</html>

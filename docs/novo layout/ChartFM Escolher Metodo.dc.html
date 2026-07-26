@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/styles.css">
+  <script src="_ds/chartfm-f0588750-09ca-4e88-9539-34a7f9b36dba/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    ::-webkit-scrollbar{height:0;width:0}
+  </style>
+</helmet>
+
+<div data-theme="dark" style="background:var(--bg);min-height:100vh;font-family:-apple-system,'SF Pro Display',Inter,system-ui,sans-serif;color:var(--text)">
+
+  <div style="position:sticky;top:0;z-index:20;background:var(--bg-topbar);borderBottom:1px solid var(--divider);backdrop-filter:blur(12px)">
+    <div style="max-width:1000px;margin:0 auto;padding:14px 40px;display:flex;align-items:center;gap:32px">
+      <x-import component-from-global-scope="ChartFM.ChartFMLogo" size="{{ 26 }}" hint-size="120px,26px"></x-import>
+      <div style="flex:1"></div>
+      <a href="#" style="font-size:14px;font-weight:600;color:var(--text-muted)">Cancelar</a>
+    </div>
+  </div>
+
+  <div style="max-width:720px;margin:0 auto;padding:52px 40px 96px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Nova parada · passo 1 de 3</div>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;margin-top:8px">Como você quer começar?</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-top:8px;line-height:1.5;max-width:520px">Escolha um ponto de partida — você poderá editar tudo livremente antes de publicar, seja qual for a opção.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px">
+      <div style="border:2px solid var(--accent);background:var(--accent-tint,rgba(250,36,60,.08));border-radius:20px;padding:26px;cursor:pointer;position:relative">
+        <div style="position:absolute;top:16px;right:16px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;letter-spacing:.03em;text-transform:uppercase">Recomendado</div>
+        <div style="width:44px;height:44px;border-radius:12px;background:#FA243C;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px">▲</div>
+        <div style="font-size:18px;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px">Começar com meu Last.fm</div>
+        <div style="font-size:13.5px;color:var(--text-muted);line-height:1.55">Importe automaticamente suas músicas mais ouvidas. Depois você poderá alterar posições, remover músicas, adicionar novas faixas e editar tudo manualmente.</div>
+      </div>
+
+      <div style="border:1px solid var(--divider);background:var(--surface);border-radius:20px;padding:26px;cursor:pointer">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--fill-subtle);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px">✎</div>
+        <div style="font-size:18px;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px">Criar manualmente</div>
+        <div style="font-size:13.5px;color:var(--text-muted);line-height:1.55">Monte sua parada do zero para listas temáticas ou totalmente personalizadas, música por música.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;text-align:center;font-size:13px;color:var(--text-muted);line-height:1.5;background:var(--fill-subtle);border-radius:12px;padding:14px 20px">
+      Independentemente da opção escolhida, você poderá editar completamente sua parada antes de publicá-la.
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:32px">
+      <button style="background:var(--accent);color:#fff;border:none;padding:14px 32px;border-radius:100px;font-size:15px;font-weight:700;cursor:pointer">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

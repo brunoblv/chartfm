@@ -270,7 +270,7 @@ function PostMedia({ post }: { post: (typeof POSTS)[0] }) {
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 32,
     }}>
-      <div style={{ fontSize: 28, fontWeight: 700, color: "#1D1D1F", lineHeight: 1.5, textAlign: "center" }}>
+      <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: 1.5, textAlign: "center" }}>
         {post.text}
       </div>
     </div>

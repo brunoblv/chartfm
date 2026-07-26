@@ -3,7 +3,13 @@ import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { buildPeriodFromDate, inferCadenceFromWeekIndex, prevPeriodIndex, toApiCadence } from "@/lib/chart-cadence";
+import {
+  buildPeriodFromDate,
+  inferCadenceFromWeekIndex,
+  movementComparePeriodIndex,
+  prevPeriodIndex,
+  toApiCadence,
+} from "@/lib/chart-cadence";
 import { lastfmWeekPickerValueFromChart, parseChartWeekPickerDate } from "@/lib/chart-week";
 import { mapPrismaChartDetail } from "@/lib/map-db-profile";
 import { hydrateChartEntryCoverUrls, hydrateDropoutCoverUrls, loadCoverUrlsForSongIds, resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
@@ -246,13 +252,24 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ id: st
     const hist = historyBySong.get(entry.songId);
     const weeks = hist?.weeks ?? 1;
     const peak = hist?.peak ?? entry.position;
-    const expectedPrevWeek = prevPeriodIndex(row.weekIndex, cadence);
-    const prevPos =
-      prevPositionsRaw.find((h) => h.songId === entry.songId && h.chart.weekIndex === expectedPrevWeek)?.position ?? null;
-    const delta = prevPos === null ? null : prevPos - entry.position;
-    const hasOlderAppearance = prevPositionsRaw.some(
-      (h) => h.songId === entry.songId && h.chart.weekIndex < expectedPrevWeek,
+    // Diário: compara com a última parada publicada (ex. segunda → sexta), não o dia civil anterior.
+    const expectedPrevWeek = movementComparePeriodIndex(
+      cadence,
+      row.weekIndex,
+      previousChartFull?.weekIndex,
     );
+    const prevPos =
+      expectedPrevWeek == null
+        ? null
+        : (prevPositionsRaw.find(
+            (h) => h.songId === entry.songId && h.chart.weekIndex === expectedPrevWeek,
+          )?.position ?? null);
+    const delta = prevPos === null ? null : prevPos - entry.position;
+    const hasOlderAppearance = prevPositionsRaw.some((h) => {
+      if (h.songId !== entry.songId) return false;
+      if (expectedPrevWeek == null) return h.chart.weekIndex < row.weekIndex;
+      return h.chart.weekIndex < expectedPrevWeek;
+    });
     let status: "new" | "return" | "up" | "down" | "same" = hasOlderAppearance ? "return" : "new";
     if (prevPos !== null) {
       if (delta === 0) status = "same";
@@ -525,10 +542,20 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
   const spotifyRefs = await sanitizeChartEntrySpotifyRefs(prisma, songs);
 
-  const previousChart = await prisma.chart.findFirst({
-    where: { paradaId: chart.paradaId, weekIndex: prevPeriodIndex(targetWeekIndex, cadence) },
-    include: { entries: true },
-  });
+  const previousChart =
+    cadence === "DAILY"
+      ? await prisma.chart.findFirst({
+          where: { paradaId: chart.paradaId, weekIndex: { lt: targetWeekIndex } },
+          orderBy: { weekIndex: "desc" },
+          include: { entries: true },
+        })
+      : await prisma.chart.findFirst({
+          where: {
+            paradaId: chart.paradaId,
+            weekIndex: prevPeriodIndex(targetWeekIndex, cadence),
+          },
+          include: { entries: true },
+        });
   const historicalRows = await prisma.chartEntry.findMany({
     where: {
       songId: { in: [...new Set(songs.map((s) => s.id))] },
