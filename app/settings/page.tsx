@@ -13,6 +13,7 @@ import { spotifyConnectErrorMessage } from "@/lib/spotify-connect-messages";
 import { youtubeConnectErrorMessage } from "@/lib/youtube-connect-messages";
 import { canUseSpotifyFeatures, isMyTrlOwner } from "@/lib/mytrl-access";
 import { normalizeAvatarFile } from "@/lib/normalize-avatar-file";
+import { normalizeSocialVisibility, type SocialVisibility } from "@/lib/social-visibility";
 
 async function compressImage(file: File, maxBytes = 900 * 1024): Promise<File> {
   if (file.size <= maxBytes) return file;
@@ -77,6 +78,9 @@ type ProfileData = {
   lastfmUser: string | null;
   twitterUser: string | null;
   instagramUser: string | null;
+  twitterVisibility: SocialVisibility;
+  instagramVisibility: SocialVisibility;
+  lastfmVisibility: SocialVisibility;
   chartSize: number | null;
   image: string | null;
   paradaLogo: string | null;
@@ -115,6 +119,9 @@ export default function SettingsPage() {
     lastfmUser: "",
     twitterUser: "",
     instagramUser: "",
+    twitterVisibility: "everyone",
+    instagramVisibility: "everyone",
+    lastfmVisibility: "everyone",
     chartSize: null,
     image: null,
     paradaLogo: null,
@@ -233,6 +240,9 @@ export default function SettingsPage() {
           lastfmUser: data.lastfmUser ?? "",
           twitterUser: data.twitterUser ?? "",
           instagramUser: data.instagramUser ?? "",
+          twitterVisibility: normalizeSocialVisibility(data.twitterVisibility),
+          instagramVisibility: normalizeSocialVisibility(data.instagramVisibility),
+          lastfmVisibility: normalizeSocialVisibility(data.lastfmVisibility),
           chartSize: data.chartSize ?? null,
           image: data.image ?? null,
           paradaLogo: data.paradaLogo ?? null,
@@ -281,6 +291,9 @@ export default function SettingsPage() {
           lastfmUser: form.lastfmUser,
           twitterUser: form.twitterUser,
           instagramUser: form.instagramUser,
+          twitterVisibility: form.twitterVisibility,
+          instagramVisibility: form.instagramVisibility,
+          lastfmVisibility: form.lastfmVisibility,
         }),
       });
       const data = await profileRes.json();
@@ -819,6 +832,9 @@ export default function SettingsPage() {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{t("settings.socialNetworks")}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", marginTop: -6 }}>
+                    {t("settings.socialVisibilityHint")}
+                  </span>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>X (Twitter)</span>
@@ -835,6 +851,18 @@ export default function SettingsPage() {
                         style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
                       />
                     </div>
+                    <select
+                      value={form.twitterVisibility}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, twitterVisibility: e.target.value as SocialVisibility }))
+                      }
+                      aria-label={t("settings.socialVisibilityLabel")}
+                      style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "8px 12px", fontSize: 13, background: "var(--fill-subtle)", color: "var(--text)" }}
+                    >
+                      <option value="everyone">{t("settings.socialVisibilityEveryone")}</option>
+                      <option value="following">{t("settings.socialVisibilityFollowing")}</option>
+                      <option value="nobody">{t("settings.socialVisibilityNobody")}</option>
+                    </select>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -852,6 +880,18 @@ export default function SettingsPage() {
                         style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px 10px 28px", fontSize: 14, width: "100%", boxSizing: "border-box", background: "var(--fill-subtle)", color: "var(--text)" }}
                       />
                     </div>
+                    <select
+                      value={form.instagramVisibility}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, instagramVisibility: e.target.value as SocialVisibility }))
+                      }
+                      aria-label={t("settings.socialVisibilityLabel")}
+                      style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "8px 12px", fontSize: 13, background: "var(--fill-subtle)", color: "var(--text)" }}
+                    >
+                      <option value="everyone">{t("settings.socialVisibilityEveryone")}</option>
+                      <option value="following">{t("settings.socialVisibilityFollowing")}</option>
+                      <option value="nobody">{t("settings.socialVisibilityNobody")}</option>
+                    </select>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -866,6 +906,18 @@ export default function SettingsPage() {
                       placeholder={t("settings.lastfmUsernamePlaceholder")}
                       style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "10px 12px", fontSize: 14, background: "var(--fill-subtle)", color: "var(--text)" }}
                     />
+                    <select
+                      value={form.lastfmVisibility}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, lastfmVisibility: e.target.value as SocialVisibility }))
+                      }
+                      aria-label={t("settings.socialVisibilityLabel")}
+                      style={{ border: "1px solid var(--divider-strong)", borderRadius: 10, padding: "8px 12px", fontSize: 13, background: "var(--fill-subtle)", color: "var(--text)" }}
+                    >
+                      <option value="everyone">{t("settings.socialVisibilityEveryone")}</option>
+                      <option value="following">{t("settings.socialVisibilityFollowing")}</option>
+                      <option value="nobody">{t("settings.socialVisibilityNobody")}</option>
+                    </select>
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                       {t("settings.lastfmHint")}
                     </span>

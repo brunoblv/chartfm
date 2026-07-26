@@ -2,6 +2,7 @@ import type { Chart, ChartEntry, PersonalDropoutEntry, User, UserWithCharts } fr
 import type { ChartSpotlightSong } from "@/lib/chart-spotlight";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { resolveChartEntryCoverUrl } from "@/lib/chart-entry-cover";
+import { filterSocialForViewer } from "@/lib/social-visibility";
 
 type PrismaProfileUser = {
   id: string;
@@ -21,6 +22,9 @@ type PrismaProfileUser = {
   lastfmUser?: string | null;
   twitterUser?: string | null;
   instagramUser?: string | null;
+  twitterVisibility?: string | null;
+  instagramVisibility?: string | null;
+  lastfmVisibility?: string | null;
   charts: Array<{
     id: string;
     weekIndex: number;
@@ -173,6 +177,10 @@ export type PublicProfilePayload = {
 export function buildPublicProfilePayload(
   db: PrismaProfileUser,
   isFollowing = false,
+  socialCtx: { isOwner: boolean; ownerFollowsViewer: boolean } = {
+    isOwner: false,
+    ownerFollowsViewer: false,
+  },
 ): PublicProfilePayload {
   return {
     user: mapPrismaUserToUserWithCharts(db),
@@ -181,9 +189,9 @@ export function buildPublicProfilePayload(
     paradaLogo: db.paradaLogo ?? null,
     genres: db.genres ?? [],
     isFollowing,
-    lastfmUser: db.lastfmUser ?? null,
-    twitterUser: db.twitterUser ?? null,
-    instagramUser: db.instagramUser ?? null,
+    lastfmUser: filterSocialForViewer(db.lastfmUser, db.lastfmVisibility, socialCtx),
+    twitterUser: filterSocialForViewer(db.twitterUser, db.twitterVisibility, socialCtx),
+    instagramUser: filterSocialForViewer(db.instagramUser, db.instagramVisibility, socialCtx),
   };
 }
 

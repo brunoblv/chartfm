@@ -3,11 +3,11 @@ import { buildDateRangeFromDate, buildWeekIndexFromDate, buildWeekLabelFromDate,
 import { pointsForChartPosition, scoringTierFromPrimary } from "./parada-points";
 import { paletteFor } from "./mytrl-weekly-chart";
 import { fetchGenreCandidates, resolveGenreSong, normalizeKey } from "./genre-parada-source";
+import { nextGenreParadaPublishAt } from "./genre-parada-schedule";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-// Só considera a parada "vencida" quando já passou ~6.5 dias — evita reprocessar
-// no mesmo dia por causa de pequenas variações no horário do cron.
-const DUE_THRESHOLD_MS = WEEK_MS - 12 * 60 * 60 * 1000;
+/** Todas as paradas autoDecay são Top 20. */
+export const AUTO_DECAY_CHART_SIZE = 20;
+
 const RECENT_WEEKS_LOOKBACK = 4;
 const MIN_MOVE = 1;
 const MAX_MOVE = 7;
@@ -23,11 +23,6 @@ type PrevEntry = {
   peak: number;
   weeks: number;
 };
-
-/** Próxima semana (mesmo dia da semana e horário) a partir da última publicação. */
-function nextAnchorFrom(publishedAt: Date): Date {
-  return new Date(publishedAt.getTime() + WEEK_MS);
-}
 
 async function advanceOneParada(parada: {
   id: string;
@@ -47,10 +42,12 @@ async function advanceOneParada(parada: {
   const latest = charts[0];
   if (!latest) return { paradaId: parada.id, skipped: "sem edição anterior" };
 
-  const age = Date.now() - latest.publishedAt.getTime();
-  if (age < DUE_THRESHOLD_MS) return { paradaId: parada.id, skipped: "ainda não venceu" };
+  // Cada parada tem dia/hora BRT estáveis e distintos (não todas às 08:00 do mesmo dia).
+  const nextAnchor = nextGenreParadaPublishAt(parada.id, latest.publishedAt);
+  if (Date.now() < nextAnchor.getTime()) {
+    return { paradaId: parada.id, skipped: "ainda não venceu", nextAt: nextAnchor.toISOString() };
+  }
 
-  const nextAnchor = nextAnchorFrom(latest.publishedAt);
   const nextWeekIndex = buildWeekIndexFromDate(nextAnchor);
   if (nextWeekIndex === latest.weekIndex) return { paradaId: parada.id, skipped: "mesma semana" };
 
@@ -60,7 +57,7 @@ async function advanceOneParada(parada: {
   });
   if (existingNext) return { paradaId: parada.id, skipped: "próxima edição já existe" };
 
-  const maxItems = parada.chartSize ?? latest.entries.length;
+  const maxItems = AUTO_DECAY_CHART_SIZE;
 
   const prevEntries: PrevEntry[] = latest.entries
     .map((e) => ({ position: e.position, songId: e.songId, songSpotifyId: e.songSpotifyId, peak: e.peak, weeks: e.weeks }))
@@ -90,7 +87,14 @@ async function advanceOneParada(parada: {
 
   let newEntrantSongs: Array<{ title: string; artist: string; song: { id: string; spotifyId: string | null } }> = [];
   if (slotsForNewEntrants > 0 && parada.sourceLastfmUsers.length > 0) {
-    const { candidates } = await fetchGenreCandidates(parada.sourceLastfmUsers, parada.genres, slotsForNewEntrants, excludeKeys);
+    // Oversample: resolveGenreSong rejeita faixas sem single/clipe/debut Billboard.
+    const candidateLimit = Math.max(slotsForNewEntrants * 4, 20);
+    const { candidates } = await fetchGenreCandidates(
+      parada.sourceLastfmUsers,
+      parada.genres,
+      candidateLimit,
+      excludeKeys,
+    );
     for (const c of candidates) {
       const resolved = await resolveGenreSong(c.track, c.artist);
       if (!resolved) continue;

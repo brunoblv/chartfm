@@ -10,7 +10,8 @@ import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useTheme, type Theme } from "@/components/ThemeProvider";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
-import { useTranslations } from "@/hooks/useTranslations";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n/config";
+import { useLocale, useTranslations } from "@/hooks/useTranslations";
 
 const THEME_CYCLE: Theme[] = ["light", "auto", "dark"];
 const THEME_ICON: Record<Theme, string> = { light: "☀", auto: "⬤", dark: "☾" };
@@ -25,6 +26,7 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
   const authed = status === "authenticated";
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { locale, setLocale } = useLocale();
   const { t } = useTranslations();
   const themeLabel: Record<Theme, string> = {
     light: t("theme.light"),
@@ -35,6 +37,11 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
   function cycleTheme() {
     const idx = THEME_CYCLE.indexOf(theme);
     setTheme(THEME_CYCLE[(idx + 1) % THEME_CYCLE.length]);
+  }
+
+  function cycleLocale() {
+    const idx = LOCALES.indexOf(locale);
+    setLocale(LOCALES[(idx + 1) % LOCALES.length] as Locale);
   }
 
   if (isMobile) {
@@ -83,6 +90,28 @@ export function TopBar({ isMobile = false, onMenuToggle }: TopBarProps) {
           </span>
 
           <div style={{ flex: 1 }} />
+
+          <button
+            type="button"
+            onClick={cycleLocale}
+            title={LOCALE_LABELS[locale].full}
+            aria-label={t("language.label")}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px 6px",
+              display: "flex",
+              alignItems: "center",
+              color: "var(--text)",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              lineHeight: 1,
+            }}
+          >
+            {LOCALE_LABELS[locale].short}
+          </button>
 
           <button
             type="button"

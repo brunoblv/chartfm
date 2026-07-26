@@ -48,6 +48,10 @@ model User {
   youtubeChannelHandle             String?                          @map("youtube_channel_handle")
   twitterUser                      String?
   instagramUser                    String?
+  /// everyone | following | nobody — quem pode ver o link no perfil
+  twitterVisibility                String                           @default("everyone") @map("twitter_visibility")
+  instagramVisibility              String                           @default("everyone") @map("instagram_visibility")
+  lastfmVisibility                 String                           @default("everyone") @map("lastfm_visibility")
   chartSize                        Int?                             @map("chart_size")
   paradaLogo                       String?                          @map("parada_logo")
   paradas                          Parada[]

@@ -74,6 +74,9 @@ function asSongEntries(
     cover?: { imageUrl?: string | null };
     status: string;
     delta: number | null;
+    peak?: number;
+    weeks?: number;
+    numberOnes?: number;
   }>,
 ): Array<{
   position: number;
@@ -83,6 +86,9 @@ function asSongEntries(
   coverUrl: string | null;
   status: VideoparadaEntryRow["status"];
   delta: number | null;
+  peak: number;
+  weeks: number;
+  numberOnes: number;
 }> {
   const out: ReturnType<typeof asSongEntries> = [];
   for (const e of weeklySongs) {
@@ -97,6 +103,9 @@ function asSongEntries(
       coverUrl: e.cover?.imageUrl ?? e.song.imageUrl ?? null,
       status: ["new", "return", "up", "down", "same"].includes(status) ? status : "same",
       delta: e.delta,
+      peak: typeof e.peak === "number" && e.peak > 0 ? e.peak : e.position,
+      weeks: typeof e.weeks === "number" && e.weeks > 0 ? e.weeks : 1,
+      numberOnes: typeof e.numberOnes === "number" && e.numberOnes > 0 ? e.numberOnes : 0,
     });
   }
   return out;

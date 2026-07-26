@@ -1,8 +1,9 @@
 /**
  * Cria 22 paradas "de estilo" para usuários específicos, montadas a partir do Last.fm
  * (top tracks dos últimos 30 dias de até 4 usuários Last.fm por parada, máx. 10 faixas
- * por usuário), filtradas pelas tags de gênero favoritas de cada parada. Publica a
- * primeira edição às 8h BRT no próximo dia da semana indicado na planilha.
+ * por usuário), filtradas pelas tags de gênero favoritas de cada parada. O horário da
+ * 1ª edição (e das seguintes via cron) é um slot estável seg–sex 08:00–22:45 BRT por
+ * parada — ver lib/genre-parada-schedule.ts.
  *
  * Usage:
  *   npx tsx scripts/create-genre-paradas.ts --dry-run
@@ -19,6 +20,7 @@ import { fetchLastfmTrackTags } from "../lib/lastfm-track-tags";
 import { paletteFor } from "../lib/mytrl-weekly-chart";
 import { pointsForChartPosition, scoringTierFromPrimary, MAX_PARADAS_PER_USER } from "../lib/parada-points";
 import { buildDateRangeFromDate, buildWeekIndexFromDate, buildWeekLabelFromDate, getChartWeekRange } from "../lib/chart-week";
+import { genreParadaPublishSlot } from "../lib/genre-parada-schedule";
 
 const envPath = join(process.cwd(), ".env");
 if (existsSync(envPath)) {
@@ -43,50 +45,41 @@ if (DRY_RUN) {
 
 const prisma = new PrismaClient();
 
-const WEEKDAY_MAP: Record<string, number> = {
-  SEGUNDA: 1,
-  TERCA: 2,
-  TERÇA: 2,
-  QUARTA: 3,
-  QUINTA: 4,
-  SEXTA: 5,
-  SABADO: 6,
-  SÁBADO: 6,
-  DOMINGO: 0,
-};
-
 type Row = {
   handle: string;
   genres: string[];
   paradaName: string;
   size: number;
   lastfmUsers: string[];
+  /** Legado da planilha — o horário real vem de genreParadaPublishSlot(paradaId). */
   weekday: string;
 };
 
+const TOP20 = 20;
+
 const ROWS: Row[] = [
-  { handle: "cesarmaziero", genres: ["pop", "rock", "kpop"], paradaName: "CESAR20", size: 20, lastfmUsers: ["romisk", "lucas_SS", "thunder__", "blvbruno"], weekday: "SEGUNDA" },
-  { handle: "demilovatique", genres: ["pop"], paradaName: "Lovatique's Parade", size: 30, lastfmUsers: ["thunder__", "lucas_SS"], weekday: "TERÇA" },
-  { handle: "dudabts", genres: ["kpop", "pop"], paradaName: "Serendipity Hot 50", size: 50, lastfmUsers: ["romisk", "ohmymog_", "gabrielhahn", "alephunk"], weekday: "QUARTA" },
-  { handle: "kendikamura", genres: ["rock"], paradaName: "Riot Act Top 30", size: 30, lastfmUsers: ["blvbruno", "gabrielhahn", "ohmymog_"], weekday: "QUINTA" },
-  { handle: "julianast", genres: ["rock", "pop"], paradaName: "The Hits", size: 20, lastfmUsers: ["boofrnds", "IM4ttthew", "lucas_SS", "gabrielhahn"], weekday: "SEXTA" },
-  { handle: "karlacomk", genres: ["pop", "eletronic", "rock"], paradaName: "Top 20", size: 20, lastfmUsers: ["thunder__", "lucas_SS"], weekday: "SEGUNDA" },
-  { handle: "theandre", genres: ["rock", "pop"], paradaName: "Top 20", size: 20, lastfmUsers: ["nothingbutcami", "blvbruno", "readingmyeyes", "Khalysto"], weekday: "TERÇA" },
-  { handle: "joaoHT", genres: ["pop", "kpop"], paradaName: "Hitlist", size: 20, lastfmUsers: ["okpaulinho", "romisk", "thunder__"], weekday: "QUARTA" },
-  { handle: "caiosoares", genres: ["R&B", "pop", "kpop"], paradaName: "As Melhores da Semana", size: 50, lastfmUsers: ["okpaulinho", "romisk", "soprani"], weekday: "QUINTA" },
-  { handle: "heavydirtysoul", genres: ["rock", "alternative", "pop"], paradaName: "heavydirtysoul 100+", size: 100, lastfmUsers: ["boofrnds", "blvbruno", "okpaulinho", "RohLeitao"], weekday: "SEXTA" },
-  { handle: "jessycv", genres: ["pop", "eletronic"], paradaName: "Top 40", size: 40, lastfmUsers: ["otifaR", "lucas_SS", "blvbruno", "soprani"], weekday: "SEGUNDA" },
-  { handle: "midnightrain", genres: ["pop"], paradaName: "Midnight Rain Playlist", size: 100, lastfmUsers: ["evrmr", "lucas_SS", "Leighlstr", "soprani"], weekday: "TERÇA" },
-  { handle: "mayaradias", genres: ["rock"], paradaName: "Neon Pulse", size: 50, lastfmUsers: ["blvbruno", "rafael-a7x", "ohmymog_", "Khalysto"], weekday: "QUARTA" },
-  { handle: "diegox", genres: ["pop", "rock", "alternative"], paradaName: "Midnight Frequency", size: 30, lastfmUsers: ["thunder__", "gustavocouk", "ohmymog_", "soprani"], weekday: "QUINTA" },
-  { handle: "guisouza", genres: ["kpop", "eletronic", "pop"], paradaName: "Global Heat", size: 20, lastfmUsers: ["lucas_SS", "h_aunted", "alephunk"], weekday: "SEXTA" },
-  { handle: "kamarcelino", genres: ["rock", "pop"], paradaName: "Pop Horizon", size: 100, lastfmUsers: ["gabrielhahn", "Rapha1907", "rafael-a7x", "leeooh_costa"], weekday: "SEGUNDA" },
-  { handle: "marinasemdiamonds", genres: ["pop", "alternative", "rock"], paradaName: "Electric Chart", size: 40, lastfmUsers: ["h_aunted", "blvbruno", "RohLeitao", "boofrnds"], weekday: "TERÇA" },
-  { handle: "lachica", genres: ["rock", "alternative", "pop"], paradaName: "Viral Waves", size: 20, lastfmUsers: ["h_aunted", "ohmymog_", "evrmr", "boofrnds"], weekday: "QUARTA" },
-  { handle: "xalmeida", genres: ["pop", "rock", "kpop"], paradaName: "Sound Rush", size: 50, lastfmUsers: ["flow_", "BriRy", "romisk", "boofrnds"], weekday: "QUINTA" },
-  { handle: "sandman", genres: ["pop", "kpop", "latin"], paradaName: "Hit Spectrum", size: 20, lastfmUsers: ["h_aunted", "alephunk", "Leighlstr", "blvbruno"], weekday: "SEXTA" },
-  { handle: "ingrididas7", genres: ["kpop", "pop"], paradaName: "Next Wave 50", size: 50, lastfmUsers: ["h_aunted", "ownconfusion", "daniel_azevedo", "soprani"], weekday: "SEGUNDA" },
-  { handle: "keku", genres: ["pop", "brazilian", "mpb"], paradaName: "Echo Charts", size: 20, lastfmUsers: ["mattvieira", "leonardo_alves", "daniel_azevedo", "gabrielhahn"], weekday: "TERÇA" },
+  { handle: "cesarmaziero", genres: ["pop", "rock", "kpop"], paradaName: "CESAR20", size: TOP20, lastfmUsers: ["romisk", "lucas_SS", "thunder__", "blvbruno"], weekday: "SEGUNDA" },
+  { handle: "demilovatique", genres: ["pop"], paradaName: "Lovatique's Parade", size: TOP20, lastfmUsers: ["thunder__", "lucas_SS"], weekday: "TERÇA" },
+  { handle: "dudabts", genres: ["kpop", "pop"], paradaName: "Serendipity Hot 50", size: TOP20, lastfmUsers: ["romisk", "ohmymog_", "gabrielhahn", "alephunk"], weekday: "QUARTA" },
+  { handle: "kendikamura", genres: ["rock"], paradaName: "Riot Act Top 30", size: TOP20, lastfmUsers: ["blvbruno", "gabrielhahn", "ohmymog_"], weekday: "QUINTA" },
+  { handle: "julianast", genres: ["rock", "pop"], paradaName: "The Hits", size: TOP20, lastfmUsers: ["boofrnds", "IM4ttthew", "lucas_SS", "gabrielhahn"], weekday: "SEXTA" },
+  { handle: "karlacomk", genres: ["pop", "eletronic", "rock"], paradaName: "Top 20", size: TOP20, lastfmUsers: ["thunder__", "lucas_SS"], weekday: "SEGUNDA" },
+  { handle: "theandre", genres: ["rock", "pop"], paradaName: "Top 20", size: TOP20, lastfmUsers: ["nothingbutcami", "blvbruno", "readingmyeyes", "Khalysto"], weekday: "TERÇA" },
+  { handle: "joaoHT", genres: ["pop", "kpop"], paradaName: "Hitlist", size: TOP20, lastfmUsers: ["okpaulinho", "romisk", "thunder__"], weekday: "QUARTA" },
+  { handle: "caiosoares", genres: ["R&B", "pop", "kpop"], paradaName: "As Melhores da Semana", size: TOP20, lastfmUsers: ["okpaulinho", "romisk", "soprani"], weekday: "QUINTA" },
+  { handle: "heavydirtysoul", genres: ["rock", "alternative", "pop"], paradaName: "heavydirtysoul 100+", size: TOP20, lastfmUsers: ["boofrnds", "blvbruno", "okpaulinho", "RohLeitao"], weekday: "SEXTA" },
+  { handle: "jessycv", genres: ["pop", "eletronic"], paradaName: "Top 40", size: TOP20, lastfmUsers: ["otifaR", "lucas_SS", "blvbruno", "soprani"], weekday: "SEGUNDA" },
+  { handle: "midnightrain", genres: ["pop"], paradaName: "Midnight Rain Playlist", size: TOP20, lastfmUsers: ["evrmr", "lucas_SS", "Leighlstr", "soprani"], weekday: "TERÇA" },
+  { handle: "mayaradias", genres: ["rock"], paradaName: "Neon Pulse", size: TOP20, lastfmUsers: ["blvbruno", "rafael-a7x", "ohmymog_", "Khalysto"], weekday: "QUARTA" },
+  { handle: "diegox", genres: ["pop", "rock", "alternative"], paradaName: "Midnight Frequency", size: TOP20, lastfmUsers: ["thunder__", "gustavocouk", "ohmymog_", "soprani"], weekday: "QUINTA" },
+  { handle: "guisouza", genres: ["kpop", "eletronic", "pop"], paradaName: "Global Heat", size: TOP20, lastfmUsers: ["lucas_SS", "h_aunted", "alephunk"], weekday: "SEXTA" },
+  { handle: "kamarcelino", genres: ["rock", "pop"], paradaName: "Pop Horizon", size: TOP20, lastfmUsers: ["gabrielhahn", "Rapha1907", "rafael-a7x", "leeooh_costa"], weekday: "SEGUNDA" },
+  { handle: "marinasemdiamonds", genres: ["pop", "alternative", "rock"], paradaName: "Electric Chart", size: TOP20, lastfmUsers: ["h_aunted", "blvbruno", "RohLeitao", "boofrnds"], weekday: "TERÇA" },
+  { handle: "lachica", genres: ["rock", "alternative", "pop"], paradaName: "Viral Waves", size: TOP20, lastfmUsers: ["h_aunted", "ohmymog_", "evrmr", "boofrnds"], weekday: "QUARTA" },
+  { handle: "xalmeida", genres: ["pop", "rock", "kpop"], paradaName: "Sound Rush", size: TOP20, lastfmUsers: ["flow_", "BriRy", "romisk", "boofrnds"], weekday: "QUINTA" },
+  { handle: "sandman", genres: ["pop", "kpop", "latin"], paradaName: "Hit Spectrum", size: TOP20, lastfmUsers: ["h_aunted", "alephunk", "Leighlstr", "blvbruno"], weekday: "SEXTA" },
+  { handle: "ingrididas7", genres: ["kpop", "pop"], paradaName: "Next Wave 50", size: TOP20, lastfmUsers: ["h_aunted", "ownconfusion", "daniel_azevedo", "soprani"], weekday: "SEGUNDA" },
+  { handle: "keku", genres: ["pop", "brazilian", "mpb"], paradaName: "Echo Charts", size: TOP20, lastfmUsers: ["mattvieira", "leonardo_alves", "daniel_azevedo", "gabrielhahn"], weekday: "TERÇA" },
 ];
 
 // Mapeia rótulos de gênero da planilha para substrings de tags do Last.fm (lowercase).
@@ -129,26 +122,6 @@ function normalizeKey(s: string): string {
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Data do dia da semana `targetDow` dentro da semana ISO corrente (segunda a
- * domingo de `base`) — não "o próximo X a partir de agora". Isso garante que
- * todas as paradas nasçam na mesma semana (a atual), mesmo que o dia já tenha
- * passado esta semana (nesse caso o publishedAt fica no passado, mas ainda
- * dentro da semana corrente).
- */
-function currentWeekWeekdayDate(base: Date, targetDow: number): Date {
-  const { start } = getChartWeekRange(base); // segunda da semana corrente
-  const mondayOffset = targetDow === 0 ? 6 : targetDow - 1; // 0=domingo -> 6 dias após a segunda
-  const d = new Date(start);
-  d.setDate(d.getDate() + mondayOffset);
-  return d;
-}
-
-/** 8h BRT = 11:00 UTC (BRT não tem horário de verão). */
-function publishAt8amBrt(localDate: Date): Date {
-  return new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 11, 0, 0, 0));
 }
 
 type Candidate = {
@@ -216,6 +189,13 @@ async function resolveSongFromDb(title: string, artist: string): Promise<Resolve
       title: { equals: title, mode: "insensitive" },
       artist: { contains: artist.split(",")[0]?.trim() ?? artist, mode: "insensitive" },
       createdAt: { gte: SIX_MONTHS_AGO },
+      OR: [
+        { singleReleaseDate: { not: null } },
+        { musicVideoReleaseDate: { not: null } },
+        { youtubeReleaseDate: { not: null } },
+        { billboardHot100DebutDate: { not: null } },
+        { billboardGenreChartDebutDate: { not: null } },
+      ],
     },
     select: { id: true, spotifyId: true },
   });
@@ -226,8 +206,8 @@ async function resolveSong(title: string, artist: string): Promise<ResolvedSong 
   const key = `${normalizeKey(title)}|||${normalizeKey(artist)}`;
   if (spotifyResolveCache.has(key)) return spotifyResolveCache.get(key)!;
 
-  // Só usa músicas já existentes no banco (criadas nos últimos 6 meses) — sem
-  // fallback para busca no Spotify, para evitar rate limit e acelerar a criação em lote.
+  // Só usa músicas já existentes no banco (criadas nos últimos 6 meses) com
+  // single, clipe ou debut Billboard — sem fallback Spotify.
   const resolved = await resolveSongFromDb(title, artist);
   spotifyResolveCache.set(key, resolved);
   return resolved;
@@ -292,7 +272,7 @@ async function processRow(row: Row, index: number, total: number) {
   for (const c of candidates) {
     const resolved = await resolveSong(c.track, c.artist);
     if (!resolved) {
-      console.log(`  [miss] não resolvida no Spotify: ${c.artist} - ${c.track}`);
+      console.log(`  [miss] sem single/clipe/Billboard ou não no DB: ${c.artist} - ${c.track}`);
       continue;
     }
     resolvedEntries.push({ position, song: resolved, title: c.track, artist: c.artist });
@@ -304,17 +284,17 @@ async function processRow(row: Row, index: number, total: number) {
     return;
   }
 
-  const targetDow = WEEKDAY_MAP[row.weekday.toUpperCase()];
-  const publishLocalDate = currentWeekWeekdayDate(new Date(), targetDow);
-  const publishedAt = publishAt8amBrt(publishLocalDate);
-  const weekIndex = buildWeekIndexFromDate(publishLocalDate);
-  const weekLabel = buildWeekLabelFromDate(publishLocalDate);
-  const dateRange = buildDateRangeFromDate(publishLocalDate);
-  const { start: weekStartDate } = getChartWeekRange(publishLocalDate);
-
-  console.log(`  [info] publica ${row.weekday} ${publishLocalDate.toLocaleDateString("pt-BR")} 08:00 BRT (weekIndex ${weekIndex})`);
-
   if (DRY_RUN) {
+    const previewAt = genreParadaPublishSlot(`dry-${row.handle}-${row.paradaName}`, new Date());
+    const brt = previewAt.toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    console.log(`  [info] slot previsto (dry): ${brt} BRT (weekIndex ${buildWeekIndexFromDate(previewAt)})`);
     for (const e of resolvedEntries.slice(0, 10)) {
       console.log(`    #${e.position} ${e.artist} - ${e.title}`);
     }
@@ -336,6 +316,21 @@ async function processRow(row: Row, index: number, total: number) {
       cadence: "WEEKLY",
     },
   });
+
+  const publishedAt = genreParadaPublishSlot(parada.id, new Date());
+  const weekIndex = buildWeekIndexFromDate(publishedAt);
+  const weekLabel = buildWeekLabelFromDate(publishedAt);
+  const dateRange = buildDateRangeFromDate(publishedAt);
+  const { start: weekStartDate } = getChartWeekRange(publishedAt);
+  const brt = publishedAt.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  console.log(`  [info] publica ${brt} BRT (weekIndex ${weekIndex})`);
 
   const entryPayload = resolvedEntries.map((e) => {
     const { palette, seed } = paletteFor(e.artist, e.title);

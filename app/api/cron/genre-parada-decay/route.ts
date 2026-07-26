@@ -6,11 +6,10 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
-// Paradas "de estilo" (Parada.autoDecay=true): a cada ~7 dias após a última
-// edição, a metade de cima da parada cai 1-7 posições aleatórias (saindo se
-// ultrapassar o tamanho da parada) e a metade de baixo sobe 1-7 posições; o(s)
-// slot(s) vago(s) no topo são preenchidos com novas faixas do Last.fm dos
-// usuários-fonte, filtradas pelo gênero da parada. Ver lib/genre-parada-decay.ts.
+// Paradas "de estilo" (Parada.autoDecay=true): quando o slot semanal de cada
+// parada vence (dia/hora BRT estáveis e distintos por id), a metade de cima
+// cai 1-7 posições e a de baixo sobe 1-7; slots vagos no topo vêm do Last.fm.
+// Ver lib/genre-parada-decay.ts e lib/genre-parada-schedule.ts.
 export async function GET(req: NextRequest) {
   if (!authorizedCron(req)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

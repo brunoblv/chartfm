@@ -118,15 +118,45 @@ export async function fetchGenreCandidates(
 
 export type ResolvedGenreSong = { id: string; spotifyId: string | null };
 
+/** Datas que qualificam uma faixa para entrar nas paradas autoDecay (single, clipe ou debut Billboard). */
+export type SongDebutDateFields = {
+  singleReleaseDate: Date | null;
+  musicVideoReleaseDate: Date | null;
+  youtubeReleaseDate: Date | null;
+  billboardHot100DebutDate: Date | null;
+  billboardGenreChartDebutDate: Date | null;
+};
+
+export const SONG_DEBUT_DATE_SELECT = {
+  singleReleaseDate: true,
+  musicVideoReleaseDate: true,
+  youtubeReleaseDate: true,
+  billboardHot100DebutDate: true,
+  billboardGenreChartDebutDate: true,
+} as const;
+
+export function songHasSingleClipOrBillboardDebut(song: SongDebutDateFields): boolean {
+  return Boolean(
+    song.singleReleaseDate ||
+      song.musicVideoReleaseDate ||
+      song.youtubeReleaseDate ||
+      song.billboardHot100DebutDate ||
+      song.billboardGenreChartDebutDate,
+  );
+}
+
 export async function resolveGenreSong(title: string, artist: string): Promise<ResolvedGenreSong | null> {
   const dbRow = await prisma.song.findFirst({
     where: {
       title: { equals: title, mode: "insensitive" },
       artist: { contains: artist.split(",")[0]?.trim() ?? artist, mode: "insensitive" },
     },
-    select: { id: true, spotifyId: true },
+    select: { id: true, spotifyId: true, ...SONG_DEBUT_DATE_SELECT },
   });
-  if (dbRow) return { id: dbRow.id, spotifyId: dbRow.spotifyId };
+  if (dbRow) {
+    if (!songHasSingleClipOrBillboardDebut(dbRow)) return null;
+    return { id: dbRow.id, spotifyId: dbRow.spotifyId };
+  }
 
   if (!spotifyConfigured()) return null;
 
@@ -142,5 +172,14 @@ export async function resolveGenreSong(title: string, artist: string): Promise<R
 
   const song = await upsertSongFromSpotify(best.spotifyId, { track: title, artist, album: best.album });
   await sleep(150);
+
+  // Upsert do Spotify não preenche single/clipe/Billboard — só entra se o registro
+  // já tiver (ou receber) alguma dessas datas no banco.
+  const withDates = await prisma.song.findUnique({
+    where: { id: song.id },
+    select: SONG_DEBUT_DATE_SELECT,
+  });
+  if (!withDates || !songHasSingleClipOrBillboardDebut(withDates)) return null;
+
   return { id: song.id, spotifyId: song.spotifyId };
 }

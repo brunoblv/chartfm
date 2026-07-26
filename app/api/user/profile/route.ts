@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { ensureUserParadas, getPrimaryParada, syncUserPrimaryParadaFields } from "@/lib/paradas";
 import { resolveWeightedLastfmUsername } from "@/lib/lastfm-import";
+import { parseSocialVisibility } from "@/lib/social-visibility";
 
 function normalizeHandle(raw: string): string {
   return raw
@@ -33,6 +34,9 @@ export async function GET() {
       lastfmUser: true,
       twitterUser: true,
       instagramUser: true,
+      twitterVisibility: true,
+      instagramVisibility: true,
+      lastfmVisibility: true,
       chartSize: true,
       spotifyRefreshToken: true,
       youtubeRefreshToken: true,
@@ -72,6 +76,9 @@ export async function PATCH(req: Request) {
     lastfmUser?: string | null;
     twitterUser?: string | null;
     instagramUser?: string | null;
+    twitterVisibility?: string;
+    instagramVisibility?: string;
+    lastfmVisibility?: string;
     chartSize?: number | null;
   };
 
@@ -97,6 +104,22 @@ export async function PATCH(req: Request) {
   if (typeof body.lastfmUser === "string") update.lastfmUser = body.lastfmUser.trim() || null;
   if (typeof body.twitterUser === "string") update.twitterUser = body.twitterUser.trim().replace(/^@/, "") || null;
   if (typeof body.instagramUser === "string") update.instagramUser = body.instagramUser.trim().replace(/^@/, "") || null;
+
+  const twitterVisibility = parseSocialVisibility(body.twitterVisibility);
+  if (body.twitterVisibility !== undefined) {
+    if (!twitterVisibility) return NextResponse.json({ error: "Visibilidade inválida" }, { status: 400 });
+    update.twitterVisibility = twitterVisibility;
+  }
+  const instagramVisibility = parseSocialVisibility(body.instagramVisibility);
+  if (body.instagramVisibility !== undefined) {
+    if (!instagramVisibility) return NextResponse.json({ error: "Visibilidade inválida" }, { status: 400 });
+    update.instagramVisibility = instagramVisibility;
+  }
+  const lastfmVisibility = parseSocialVisibility(body.lastfmVisibility);
+  if (body.lastfmVisibility !== undefined) {
+    if (!lastfmVisibility) return NextResponse.json({ error: "Visibilidade inválida" }, { status: 400 });
+    update.lastfmVisibility = lastfmVisibility;
+  }
 
   const paradaNome = typeof body.paradaNome === "string" ? body.paradaNome.trim() : null;
   if (typeof body.paradaNome === "string") update.paradaNome = paradaNome || null;

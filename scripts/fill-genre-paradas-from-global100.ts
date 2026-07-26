@@ -58,9 +58,26 @@ async function fillParada(paradaId: string, paradaName: string, handle: string, 
   const existingKeys = new Set(chart.entries.map((e) => keyOf(e.song.title, e.song.artist)));
   const existingSongIds = new Set(chart.entries.map((e) => e.songId));
 
+  const candidateIds = weeklySongs.map((g) => g.song.id).filter((id): id is string => Boolean(id));
+  const eligible = await prisma.song.findMany({
+    where: {
+      id: { in: candidateIds },
+      OR: [
+        { singleReleaseDate: { not: null } },
+        { musicVideoReleaseDate: { not: null } },
+        { youtubeReleaseDate: { not: null } },
+        { billboardHot100DebutDate: { not: null } },
+        { billboardGenreChartDebutDate: { not: null } },
+      ],
+    },
+    select: { id: true },
+  });
+  const eligibleIds = new Set(eligible.map((s) => s.id));
+
   const candidates: Array<{ songId: string; title: string; artist: string }> = [];
   for (const g of weeklySongs) {
     if (!g.song.id) continue;
+    if (!eligibleIds.has(g.song.id)) continue;
     if (existingSongIds.has(g.song.id)) continue;
     const key = keyOf(g.song.title, g.song.artist);
     if (existingKeys.has(key)) continue;

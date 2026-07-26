@@ -49,6 +49,9 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
         lastfmUser: true,
         twitterUser: true,
         instagramUser: true,
+        twitterVisibility: true,
+        instagramVisibility: true,
+        lastfmVisibility: true,
       },
     }),
   ]);
@@ -165,13 +168,22 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
   ))].sort((a, b) => b - a);
   const dbUser = { ...dbUserBase, charts };
 
+  const isOwner = Boolean(session?.user?.id && session.user.id === dbUserBase.id);
   let isFollowing = false;
-  if (session?.user?.id && session.user.id !== dbUserBase.id) {
-    const follow = await prisma.userFollow.findUnique({
-      where: { followerId_followingId: { followerId: session.user.id, followingId: dbUserBase.id } },
-      select: { id: true },
-    });
+  let ownerFollowsViewer = false;
+  if (session?.user?.id && !isOwner) {
+    const [follow, reverseFollow] = await Promise.all([
+      prisma.userFollow.findUnique({
+        where: { followerId_followingId: { followerId: session.user.id, followingId: dbUserBase.id } },
+        select: { id: true },
+      }),
+      prisma.userFollow.findUnique({
+        where: { followerId_followingId: { followerId: dbUserBase.id, followingId: session.user.id } },
+        select: { id: true },
+      }),
+    ]);
     isFollowing = Boolean(follow);
+    ownerFollowsViewer = Boolean(reverseFollow);
   }
 
   const artistNames = [...new Set(dbUser.charts.flatMap((c) => c.entries.map((e) => e.song.artist)))];
@@ -212,7 +224,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ handle
   const genres = activeParada?.genres ?? dbUserBase.genres ?? [];
 
   return NextResponse.json({
-    ...buildPublicProfilePayload(dbUser, isFollowing),
+    ...buildPublicProfilePayload(dbUser, isFollowing, { isOwner, ownerFollowsViewer }),
     paradaNome,
     genres,
     paradas: paradas.map((p) => ({

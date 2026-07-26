@@ -29,4 +29,4 @@ CREATE INDEX "idx_parade_video_clip_configs_song_id" ON "parade_video_clip_confi
 CREATE UNIQUE INDEX "parade_video_clip_configs_chart_week_song_key" ON "parade_video_clip_configs"("chart_kind", "week_index", "song_id");
 
 -- AddForeignKey
-ALTER TABLE "parade_video_clip_configs" ADD CONSTRAINT "parade_video_clip_configs_song_id_fkey" FOREIGN KEY ("song_id") REFERENCES "songs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "parade_video_clip_configs" ADD CONSTRAINT "parade_video_clip_configs_song_id_fkey" FOREIGN KEY ("song_id") REFERENCES "Song"("id") ON DELETE CASCADE ON UPDATE CASCADE;

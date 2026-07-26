@@ -30,12 +30,21 @@
     "test": "vitest run",
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "remotion:studio": "remotion studio remotion/index.ts",
+    "remotion:render:test": "remotion render remotion/index.ts VideoparadaTest out/videoparada-test.mp4",
+    "videoparada:smart-crop": "tsx scripts/videoparada-smart-crop.ts",
+    "videoparada:smart-crop:demo": "tsx scripts/videoparada-smart-crop.ts --demo",
+    "videoparada:prepare": "tsx scripts/videoparada-prepare-global.ts",
+    "videoparada:prepare:render": "tsx scripts/videoparada-prepare-global.ts --limit=3 --render",
+    "videoparada:prepare:landscape": "tsx scripts/videoparada-prepare-global.ts --format=landscape --limit=3 --render"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.2",
     "@next/third-parties": "^16.2.5",
     "@prisma/client": "^5.22.0",
+    "@remotion/cli": "4.0.409",
+    "@remotion/media-utils": "4.0.409",
     "bcryptjs": "^3.0.3",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
@@ -46,6 +55,9 @@
     "pg": "^8.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "remotion": "4.0.409",
+    "sharp": "^0.35.3",
+    "smartcrop-sharp": "^2.0.8",
     "undici": "^6.27.0"
   },
   "prisma": {
