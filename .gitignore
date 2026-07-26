@@ -37,6 +37,10 @@ next-env.d.ts
 # uploads (servidor local — não versionar)
 /uploads/
 
+# videoparada — clipes e renders gerados (prepare/remotion)
+/public/videoparada/clips/
+/public/videoparada/*.mp4
+
 # rascunhos / backups locais
 /fix layout/
 /push/

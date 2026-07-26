@@ -248,6 +248,18 @@ Cada componente deverá ser independente.
 - As animações devem ser suaves e consistentes em todo o vídeo.
 - O código deve ser organizado, modular e facilmente extensível.
 
+## Retenção na VPS
+
+Depois que o vídeo for **publicado com sucesso** no YouTube (ou rede social), os arquivos locais regeneráveis são apagados:
+
+- MP4 final em `out/`
+- props JSON do Remotion
+- clipes em `public/videoparada/clips/` usados naquele render
+
+O marcador `.uploaded.json` permanece para evitar reupload da mesma semana. Cache bruto em `uploads/parade-videos/` pode ficar para reuso entre jobs.
+
+Implementação: `lib/videoparada/cleanup-after-publish.ts` (chamado por `uploadVideoToChartFmYouTube` e `cleanupVideoparadaAfterSocialPublish`).
+
 
 
  

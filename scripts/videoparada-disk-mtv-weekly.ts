@@ -152,12 +152,18 @@ async function main() {
   });
 
   console.log(`Enviando ao YouTube: ${meta.title}`);
+  const publicClipPaths = result.songs
+    .map((s) => (s.publicRelPath ? path.join(process.cwd(), "public", s.publicRelPath) : null))
+    .filter((p): p is string => Boolean(p));
+
   const uploaded = await uploadVideoToChartFmYouTube({
     filePath: renderOut,
     title: meta.title,
     description: meta.description,
     tags: meta.tags,
     privacyStatus: privacy,
+    // MP4 + props + clipes em public/ — regeneráveis; marcador .uploaded.json fica.
+    extraLocalPathsToDelete: [propsPath, ...publicClipPaths],
   });
 
   await writeFile(
@@ -170,7 +176,9 @@ async function main() {
         url: uploaded.url,
         title: uploaded.title,
         uploadedAt: new Date().toISOString(),
+        // arquivo local já apagado após upload OK
         file: renderOut,
+        localDeleted: true,
       },
       null,
       2,

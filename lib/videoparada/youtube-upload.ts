@@ -1,6 +1,7 @@
 /**
  * Upload de vídeo ao canal ChartFM via YouTube Data API (resumable).
  * Requer OAuth do @bruno (mesmo fluxo de playlists Push).
+ * Após sucesso, apaga o MP4 local (e paths extras) na VPS por padrão.
  */
 import { createReadStream, statSync } from "node:fs";
 import {
@@ -8,6 +9,7 @@ import {
   getYouTubeAccessToken,
   youtubeOAuthConfigured,
 } from "@/lib/youtube-user";
+import { cleanupLocalFilesAfterSuccessfulPublish } from "@/lib/videoparada/cleanup-after-publish";
 
 const UPLOAD_API = "https://www.googleapis.com/upload/youtube/v3/videos";
 const CHUNK_SIZE = 8 * 1024 * 1024; // 8 MiB
@@ -23,6 +25,10 @@ export type YouTubeUploadInput = {
   privacyStatus?: YouTubeUploadPrivacy;
   /** ISO 8601 — agenda publicação (requer privacy private no insert). */
   publishAt?: string | null;
+  /** Default true — remove o MP4 da VPS depois do upload OK. */
+  deleteLocalOnSuccess?: boolean;
+  /** Props/clipes regeneráveis a apagar junto com o MP4. */
+  extraLocalPathsToDelete?: string[];
 };
 
 export type YouTubeUploadResult = {
@@ -168,11 +174,30 @@ export async function uploadVideoToChartFmYouTube(
   const uploaded = await uploadFileResumable(sessionUrl, accessToken, input.filePath, fileSize);
   if (!uploaded.id) throw new Error("YouTube upload: resposta sem video id");
 
-  return {
+  const result: YouTubeUploadResult = {
     videoId: uploaded.id,
     url: `https://www.youtube.com/watch?v=${uploaded.id}`,
     title: uploaded.snippet?.title ?? input.title,
   };
+
+  if (input.deleteLocalOnSuccess !== false) {
+    await cleanupLocalFilesAfterSuccessfulPublish([
+      input.filePath,
+      ...(input.extraLocalPathsToDelete ?? []),
+    ]);
+  }
+
+  return result;
+}
+
+/**
+ * Após publicação OK em rede social (Reels/TikTok/etc.): mesma regra da VPS.
+ * Chamar só quando o upload remoto tiver confirmado sucesso.
+ */
+export async function cleanupVideoparadaAfterSocialPublish(
+  localPaths: Array<string | null | undefined>,
+): Promise<void> {
+  await cleanupLocalFilesAfterSuccessfulPublish(localPaths);
 }
 
 export function defaultDiskMtvYouTubeMeta(opts: {
