@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
 import { buildAlbumPath } from "@/lib/music-routes";
-import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
+import { scoreColor, scoreBg, scoreSummaryLabel } from "@/lib/album-score";
 import { getSpotifyAlbumDetails } from "@/lib/spotify-server";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { AlbumReviewsClient } from "./AlbumReviewsClient";
@@ -216,17 +216,16 @@ export default async function CriticsFMAlbumPage({
                 <div>
                   {reviewCount > 0 && (
                     <div style={{ fontSize: 15, fontWeight: 700, color: scoreColor(avgScore) }}>
-                      {scoreLabel(avgScore, locale)}
+                      {scoreSummaryLabel(avgScore, reviewCount, locale)}
                     </div>
                   )}
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                    {reviewCount > 0
-                      ? t(
-                          reviewCount === 1 ? "criticsfm.reviewCountSingular" : "criticsfm.reviewCountPlural",
-                          { count: reviewCount },
-                        )
-                      : t("criticsfm.noReviewsShort")}
-                  </div>
+                  {reviewCount !== 1 && (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                      {reviewCount > 0
+                        ? t("criticsfm.reviewCountPlural", { count: reviewCount })
+                        : t("criticsfm.noReviewsShort")}
+                    </div>
+                  )}
                   <div
                     style={{
                       fontSize: 10,

@@ -928,6 +928,7 @@ export const pagesEn = {
     loadMore: "Load more - {shown} of {remaining} remaining",
     reviewCountSingular: "{count} review",
     reviewCountPlural: "{count} reviews",
+    singleReviewLabel: "{score}/100 · 1 review",
     scoreScaleTitle: "Score scale",
     scoreScaleSubtitle: "How we interpret each album's average score on CriticsFM",
     scoreScaleRangeHeader: "Range",

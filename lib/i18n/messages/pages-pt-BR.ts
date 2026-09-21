@@ -928,6 +928,7 @@ export const pagesPtBR = {
     loadMore: "Carregar mais - {shown} de {remaining} restantes",
     reviewCountSingular: "{count} review",
     reviewCountPlural: "{count} reviews",
+    singleReviewLabel: "{score}/100 · 1 avaliação",
     scoreScaleTitle: "Escala de notas",
     scoreScaleSubtitle: "Como interpretamos a nota média de cada álbum no CriticsFM",
     scoreScaleRangeHeader: "Faixa",

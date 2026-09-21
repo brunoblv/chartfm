@@ -47,6 +47,17 @@ export function scoreLabel(score: number, locale: Locale = "pt-BR"): string {
   return translate(locale, scoreBandKey(score));
 }
 
+/**
+ * Com 1 avaliação só, um rótulo qualitativo como "Aclamação universal" sugere consenso
+ * que não existe — troca por uma leitura neutra "nota/100 · 1 avaliação".
+ */
+export function scoreSummaryLabel(score: number, reviewCount: number, locale: Locale = "pt-BR"): string {
+  if (reviewCount === 1) {
+    return translate(locale, "criticsfm.singleReviewLabel", { score });
+  }
+  return scoreLabel(score, locale);
+}
+
 /** Cores mais vibrantes para badges em imagens geradas (story, gerador admin). */
 export function scoreBadgeColor(score: number): string {
   if (score >= 90) return "#2EB550";

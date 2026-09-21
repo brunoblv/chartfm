@@ -104,12 +104,10 @@ export async function computeAlbumPageSnapshot(
 
   const songsMap = new Map<string, AlbumSongSnapshot>();
   let totalPoints = 0;
-  let number1sAlbum = 0;
 
   for (const e of albumEntries) {
     const pts = e.points > 0 ? e.points : pointsForPosition(e.position);
     totalPoints += pts;
-    if (e.position === 1) number1sAlbum += 1;
 
     const key = songKey(e.song.title, e.song.artist);
     const manual = e.song.albumRef?.coverUrl?.trim() || null;
@@ -155,6 +153,10 @@ export async function computeAlbumPageSnapshot(
       };
     })
     .sort((a, b) => b.points - a.points);
+
+  // Número 1s do álbum precisa somar a mesma métrica (Global 100) exibida na tabela por faixa,
+  // não a contagem de posição 1 em paradas de usuários — caso contrário resumo e tabela divergem.
+  const number1sAlbum = songs.reduce((sum, s) => sum + s.number1s, 0);
 
   const fanMap = new Map<string, FanSnapshot>();
   for (const e of albumEntries) {

@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { Instagram, Pencil, Trash2, Heart } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Avatar } from "@/components/ui/Avatar";
-import { SCORE_BANDS, SCORE_BAND_LABEL_KEYS, scoreColor, scoreBg, scoreLabel, buildScoreDistribution } from "@/lib/album-score";
+import { SCORE_BANDS, SCORE_BAND_LABEL_KEYS, scoreColor, scoreBg, scoreLabel, scoreSummaryLabel, buildScoreDistribution } from "@/lib/album-score";
 import { downloadReview, downloadAlbumScore, type ExportFormat } from "@/lib/review-story-export";
 import { useTranslations } from "@/hooks/useTranslations";
 
@@ -251,14 +251,13 @@ export function AlbumReviewsClient({
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: scoreColor(avgScore), letterSpacing: "-0.01em" }}>
-                    {scoreLabel(avgScore, locale)}
+                    {scoreSummaryLabel(avgScore, reviewCount, locale)}
                   </div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
-                    {t(
-                      reviewCount === 1 ? "criticsfm.reviewCountSingular" : "criticsfm.reviewCountPlural",
-                      { count: reviewCount },
-                    )}
-                  </div>
+                  {reviewCount !== 1 && (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
+                      {t("criticsfm.reviewCountPlural", { count: reviewCount })}
+                    </div>
+                  )}
                 </div>
               </div>
 

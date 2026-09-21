@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { AlbumRow } from "./page";
-import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
+import { scoreColor, scoreBg, scoreSummaryLabel } from "@/lib/album-score";
 import { buildAlbumPath } from "@/lib/music-routes";
 import { useTranslations } from "@/hooks/useTranslations";
 
@@ -400,11 +400,13 @@ function FeaturedAlbumCard({ album, buildAlbumPath }: { album: AlbumRow; buildAl
               <div
                 style={{ fontSize: 15, fontWeight: 700, color: scoreColor(album.score), letterSpacing: "-0.01em" }}
               >
-                {scoreLabel(album.score, locale)}
+                {scoreSummaryLabel(album.score, album.reviewCount, locale)}
               </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {t("albums.ratingsCount", { count: album.ratingCount })}
-              </div>
+              {album.reviewCount !== 1 && (
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  {t("albums.ratingsCount", { count: album.ratingCount })}
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{t("albums.beFirstToRate")}</div>
