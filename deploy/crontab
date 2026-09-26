@@ -88,6 +88,11 @@ TZ=America/Sao_Paulo
 # Playwright/Chromium usado nas artes de social, substituído por @napi-rs/canvas)
 0 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-scheduler >> /root/chartfm/logs/cron.log 2>&1
 
+# Métricas das redes (Instagram Feed/Story + Facebook) — de hora em hora no minuto :50 (depois do
+# social-scheduler em :00). Posts recentes toda hora, 2–7 dias a cada 6h, até 60 dias 1x/dia;
+# também grava a foto diária das contas (seguidores/alcance). Painel em /admin/redes-sociais.
+50 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/social-metrics >> /root/chartfm/logs/cron.log 2>&1
+
 # TikTok Growth Bot — divulga perfis nos grupos a cada 30 min (minuto :10/:40 para não
 # colidir com os hourly jobs; a rota respeita o intervalo configurado em /admin/tiktok-bot)
 10,40 * * * * /root/chartfm/scripts/cron-hit.sh /api/cron/tiktok-bot-share >> /root/chartfm/logs/cron.log 2>&1

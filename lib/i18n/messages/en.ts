@@ -47,6 +47,7 @@ export const messagesEn = {
     adminClube: "Album Club",
     adminCopa: "ChartFM Cup",
     adminPush: "Push",
+    adminSocialAnalytics: "Social analytics",
     adminRadarLancamentos: "Release Radar",
     adminCrownnoteExport: "Export Crownnote",
     adminLowerThirdsYoutube: "YouTube Lower Thirds",

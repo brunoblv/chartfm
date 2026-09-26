@@ -47,6 +47,7 @@ export const messagesPtBR = {
     adminClube: "Clube do Álbum",
     adminCopa: "Copa ChartFM",
     adminPush: "Push",
+    adminSocialAnalytics: "Analytics das redes",
     adminRadarLancamentos: "Radar de Lançamentos",
     adminCrownnoteExport: "Exportar Crownnote",
     adminLowerThirdsYoutube: "Lower Thirds YouTube",

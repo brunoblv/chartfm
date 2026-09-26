@@ -1784,6 +1784,7 @@ model SocialPost {
 
   event        SocialEvent?            @relation(fields: [eventId], references: [id], onDelete: SetNull)
   publications SocialPostPublication[]
+  metrics      SocialPostMetric[]
 
   @@index([status], map: "idx_social_posts_status")
   @@index([entityType, entityId], map: "idx_social_posts_entity")
@@ -1845,21 +1846,52 @@ model SocialAutomationToggle {
   @@map("social_automation_toggles")
 }
 
-/// Métricas de desempenho por publicação/plataforma, coletadas quando a API permitir.
+/// Métricas de desempenho por publicação/plataforma (último snapshot), coletadas pelo
+/// cron social-metrics (lib/social/metrics/collector.ts). Exibidas em /admin/redes-sociais.
 model SocialPostMetric {
   id           String         @id @default(cuid())
   socialPostId String         @map("social_post_id")
   platform     SocialPlatform
+  externalId   String?        @map("external_id")
+  permalink    String?
   likes        Int?
   comments     Int?
   shares       Int?
+  saves        Int?
   reach        Int?
   impressions  Int?
+  views        Int?
   clicks       Int?
+  raw          Json?
+  /// Último erro da coleta (token/permissão/post apagado). Os números anteriores são mantidos.
+  error        String?        @db.Text
   fetchedAt    DateTime       @default(now()) @map("fetched_at")
 
-  @@index([socialPostId, platform], map: "idx_social_post_metrics_post_platform")
+  post SocialPost @relation(fields: [socialPostId], references: [id], onDelete: Cascade)
+
+  @@unique([socialPostId, platform], map: "idx_social_post_metrics_post_platform")
   @@map("social_post_metrics")
+}
+
+/// Foto diária da conta em cada rede (seguidores + insights das últimas 24h), um registro por dia (BRT).
+model SocialAccountSnapshot {
+  id              String                   @id @default(cuid())
+  platform        SocialCredentialPlatform
+  date            DateTime                 @db.Date
+  followers       Int?
+  follows         Int?
+  mediaCount      Int?                     @map("media_count")
+  reach           Int?
+  views           Int?
+  profileViews    Int?                     @map("profile_views")
+  accountsEngaged Int?                     @map("accounts_engaged")
+  interactions    Int?
+  raw             Json?
+  error           String?                  @db.Text
+  fetchedAt       DateTime                 @default(now()) @map("fetched_at")
+
+  @@unique([platform, date])
+  @@map("social_account_snapshots")
 }
 
 /// Credenciais criptografadas das integrações sociais da plataforma (tokens de publicação).
