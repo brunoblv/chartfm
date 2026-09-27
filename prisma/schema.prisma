@@ -1862,6 +1862,19 @@ model SocialPostMetric {
   @@map("social_post_metrics")
 }
 
+/// Histórico diário de seguidores do Instagram oficial (admin /admin/instagram).
+/// A API só devolve os últimos 30 dias de follower_count — guardamos para ter 90+ dias.
+model InstagramFollowerDay {
+  date           DateTime @id @db.Date
+  /// Saldo do dia (follows − unfollows) via insight follower_count; null enquanto o IG não fechou o dia.
+  netFollowers   Int?     @map("net_followers")
+  /// followers_count lido no momento da coleta (só existe nos dias em que o cron rodou).
+  followersCount Int?     @map("followers_count")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("instagram_follower_days")
+}
+
 /// Credenciais criptografadas das integrações sociais da plataforma (tokens de publicação).
 enum SocialCredentialPlatform {
   FACEBOOK
