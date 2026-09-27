@@ -53,6 +53,7 @@ export const messagesPtBR = {
     adminVideoparada: "Vídeos das Paradas",
     adminEditorial: "Editorial",
     adminSupport: "Tickets de suporte",
+    adminInstagram: "Instagram",
     ctaTitle: "Crie sua parada semanal",
     ctaBody:
       "Registre as músicas que você mais ouviu, acompanhe seu streak e descubra o gosto musical dos seus amigos.",

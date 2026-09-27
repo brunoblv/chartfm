@@ -2056,3 +2056,13 @@ model RetroEraOverride {
   @@index([userId])
   @@map("retro_era_overrides")
 }
+
+/// Saldo diário de seguidores do Instagram da plataforma (follows − unfollows).
+/// A API só devolve os últimos 30 dias; guardamos para montar o histórico de 90 dias no /admin/instagram.
+model InstagramDailyStat {
+  date         DateTime @id @db.Date
+  netFollowers Int      @map("net_followers")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("instagram_daily_stats")
+}

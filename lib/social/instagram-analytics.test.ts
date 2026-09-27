@@ -1,0 +1,154 @@
+import { describe, expect, it } from "vitest";
+import {
+  averageOnlineByHour,
+  captionFormat,
+  daypart,
+  followerVelocity,
+  hookStrength,
+  performanceBySlot,
+  postTotals,
+  rankBy,
+  reconstructFollowerTotals,
+  reelInsights,
+  reelTotals,
+  type IgMediaRow,
+} from "./instagram-analytics";
+
+function row(partial: Partial<IgMediaRow>): IgMediaRow {
+  return {
+    id: Math.random().toString(36).slice(2),
+    kind: "REEL",
+    caption: "",
+    permalink: null,
+    thumbnailUrl: null,
+    timestamp: "2026-09-01T15:00:00Z",
+    reach: 100,
+    views: 100,
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    saves: 0,
+    interactions: 10,
+    follows: null,
+    profileVisits: null,
+    avgWatchTimeMs: null,
+    totalWatchTimeMs: null,
+    skipRate: null,
+    ...partial,
+  };
+}
+
+describe("reconstructFollowerTotals", () => {
+  it("volta do total atual subtraindo os saldos posteriores", () => {
+    const totals = reconstructFollowerTotals(823, [
+      { date: "2026-09-03", value: 200 },
+      { date: "2026-09-01", value: 10 },
+      { date: "2026-09-02", value: -5 },
+    ]);
+    expect(totals).toEqual([
+      { date: "2026-09-01", value: 628 },
+      { date: "2026-09-02", value: 623 },
+      { date: "2026-09-03", value: 823 },
+    ]);
+  });
+});
+
+describe("followerVelocity", () => {
+  it("compara a última semana com a média semanal anterior", () => {
+    const daily = Array.from({ length: 14 }, (_, i) => ({ date: `2026-09-${String(i + 1).padStart(2, "0")}`, value: i < 7 ? 1 : 10 }));
+    const v = followerVelocity(1000, daily);
+    expect(v.thisWeekNet).toBe(70);
+    expect(v.thisWeekPct).toBeCloseTo(7);
+    expect(v.priorWeeksAvgPct).toBeCloseTo(0.7);
+    expect(v.trend).toBe("accelerating");
+  });
+
+  it("sem histórico suficiente não inventa tendência", () => {
+    const v = followerVelocity(1000, [{ date: "2026-09-01", value: 5 }]);
+    expect(v.priorWeeksAvgPct).toBeNull();
+    expect(v.trend).toBe("unknown");
+  });
+});
+
+describe("postTotals / reelTotals", () => {
+  it("conversão ignora posts sem a métrica follows (reels)", () => {
+    const totals = postTotals([row({ kind: "IMAGE", reach: 1000, follows: 2 }), row({ kind: "REEL", reach: 99999, follows: null })]);
+    expect(totals.totalFollows).toBe(2);
+    expect(totals.followerConversion).toBeCloseTo(0.002);
+    expect(totals.profileVisitRate).toBeNull();
+  });
+
+  it("converte ms em horas e calcula rewatch", () => {
+    const t = reelTotals([
+      row({ views: 300, reach: 200, totalWatchTimeMs: 3_600_000, avgWatchTimeMs: 5000, skipRate: 20 }),
+      row({ views: 100, reach: 200, totalWatchTimeMs: 1_800_000, avgWatchTimeMs: 3000, skipRate: 40 }),
+    ]);
+    expect(t.totalWatchHours).toBeCloseTo(1.5);
+    expect(t.topReelWatchHours).toBeCloseTo(1);
+    expect(t.rewatchRatio).toBeCloseTo(1);
+    expect(t.bestAvgWatchTimeMs).toBe(5000);
+    expect(t.avgSkipRate).toBe(30);
+  });
+});
+
+describe("rankBy", () => {
+  it("descarta métricas nulas e ordena", () => {
+    const a = row({ skipRate: 40 });
+    const b = row({ skipRate: 10 });
+    const c = row({ skipRate: null });
+    expect(rankBy([a, b, c], (r) => r.skipRate, 5, "asc").map((x) => x.row)).toEqual([b, a]);
+  });
+});
+
+describe("heurísticas", () => {
+  it("classifica formato da legenda", () => {
+    expect(captionFormat("Top 10 músicas da semana\n#chartfm")).toBe("list");
+    expect(captionFormat("5 songs you missed")).toBe("list");
+    expect(captionFormat("Qual é a sua favorita?")).toBe("question");
+    expect(captionFormat("Como montar sua parada")).toBe("tutorial");
+    expect(captionFormat("Parada global chegou")).toBe("other");
+  });
+
+  it("força do gancho por skip rate", () => {
+    expect(hookStrength(null)).toBeNull();
+    expect(hookStrength(19)).toBe("strong");
+    expect(hookStrength(40)).toBe("moderate");
+    expect(hookStrength(60)).toBe("weak");
+  });
+
+  it("período do dia no fuso de São Paulo", () => {
+    expect(daypart("2026-09-01T12:00:00Z")).toBe("morning"); // 9h BRT
+    expect(daypart("2026-09-01T23:00:00Z")).toBe("evening"); // 20h BRT
+    expect(daypart("2026-09-01T06:00:00Z")).toBe("night"); // 3h BRT
+  });
+
+  it("só aponta padrão com 2+ reels e diferença relevante", () => {
+    const rows = [
+      row({ caption: "Top 5 hits", views: 1000 }),
+      row({ caption: "Top 3 álbuns", views: 900 }),
+      row({ caption: "bastidores", views: 100 }),
+      row({ caption: "novidade", views: 120 }),
+    ];
+    const insights = reelInsights(rows);
+    const list = insights.find((i) => i.dimension === "format" && i.key === "list");
+    expect(list?.kind).toBe("win");
+    expect(list?.count).toBe(2);
+    // "other" é o resto não classificado, nunca vira insight
+    expect(insights.find((i) => i.dimension === "format" && i.key === "other")).toBeUndefined();
+  });
+});
+
+describe("timing", () => {
+  it("agrupa por dia da semana no fuso local", () => {
+    const slots = performanceBySlot([row({ timestamp: "2026-09-07T02:00:00Z", reach: 50 }), row({ timestamp: "2026-09-06T15:00:00Z", reach: 150 })], "weekday");
+    // 07/09 02:00Z = 06/09 23:00 BRT (domingo)
+    expect(slots).toEqual([{ key: 0, count: 2, avgReach: 100, avgEngagementRate: expect.closeTo(0.1333, 3) }]);
+  });
+
+  it("média de online por hora", () => {
+    const avg = averageOnlineByHour([{ "0": 10, "1": 20 }, { "0": 30 }]);
+    expect(avg[0]).toBe(20);
+    expect(avg[1]).toBe(20);
+    expect(avg[2]).toBe(0);
+  });
+});
