@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  audienceInsights,
   averageOnlineByHour,
+  compareAudiences,
+  reachByDaypart,
+  reachHeatmap,
   captionFormat,
   daypart,
   followerVelocity,
@@ -150,5 +154,53 @@ describe("timing", () => {
     expect(avg[0]).toBe(20);
     expect(avg[1]).toBe(20);
     expect(avg[2]).toBe(0);
+  });
+});
+
+describe("público", () => {
+  it("compara participações entre seguidores, alcançados e engajados", () => {
+    const rows = compareAudiences(
+      [{ key: "18-24", value: 30 }, { key: "25-34", value: 70 }],
+      [{ key: "18-24", value: 50 }, { key: "25-34", value: 50 }],
+      null,
+    );
+    expect(rows).toEqual([
+      { key: "25-34", followers: 0.7, reached: 0.5, engaged: null },
+      { key: "18-24", followers: 0.3, reached: 0.5, engaged: null },
+    ]);
+  });
+
+  it("gera insights só com diferenças relevantes", () => {
+    const age = compareAudiences(
+      [{ key: "18-24", value: 28 }, { key: "25-34", value: 37 }, { key: "45-54", value: 4 }, { key: "35-44", value: 31 }],
+      [{ key: "18-24", value: 33 }, { key: "25-34", value: 34 }, { key: "45-54", value: 9 }, { key: "35-44", value: 24 }],
+      [{ key: "18-24", value: 25 }, { key: "25-34", value: 42 }, { key: "45-54", value: 7 }, { key: "35-44", value: 26 }],
+    );
+    const city = compareAudiences(
+      [{ key: "São Paulo", value: 90 }, { key: "Recife", value: 78 }, { key: "Rio", value: 832 }],
+      [{ key: "São Paulo", value: 80 }, { key: "Recife", value: 70 }, { key: "Rio", value: 850 }],
+      [{ key: "São Paulo", value: 104 }, { key: "Recife", value: 88 }, { key: "Rio", value: 808 }],
+    );
+    const kinds = audienceInsights({ age, gender: [], city }).map((i) => [i.kind, i.key]);
+    expect(kinds).toContainEqual(["ageMostEngaged", "25-34"]);
+    expect(kinds).toContainEqual(["ageReachNoEngage", "18-24"]);
+    expect(kinds).toContainEqual(["ageNewReach", "45-54"]);
+    expect(kinds).toContainEqual(["cityStronghold", "Rio"]);
+    expect(kinds).toContainEqual(["cityAboveWeight", "São Paulo"]);
+  });
+});
+
+describe("mapa de alcance", () => {
+  it("posiciona posts por dia e hora local e tira a média", () => {
+    // 2026-09-02 (quarta) 15:00 BRT
+    const grid = reachHeatmap([row({ timestamp: "2026-09-02T18:00:00Z", reach: 100 }), row({ timestamp: "2026-09-02T18:30:00Z", reach: 300 })]);
+    expect(grid[3][15]).toBe(200);
+    expect(grid[3][14]).toBeNull();
+  });
+
+  it("alcance por período do dia inclui períodos vazios", () => {
+    const parts = reachByDaypart([row({ timestamp: "2026-09-02T12:00:00Z", reach: 80 })]);
+    expect(parts.find((p) => p.key === "morning")).toEqual({ key: "morning", count: 1, avgReach: 80 });
+    expect(parts.find((p) => p.key === "night")?.count).toBe(0);
   });
 });

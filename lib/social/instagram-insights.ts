@@ -17,6 +17,14 @@ export type IgRange = (typeof IG_RANGES)[number];
 export class InstagramApiError extends Error {}
 
 export type IgBreakdownItem = { key: string; value: number };
+export const IG_DEMOGRAPHICS = ["age", "gender", "city", "country"] as const;
+export type IgDemographic = (typeof IG_DEMOGRAPHICS)[number];
+export type IgAudience = "followers" | "reached" | "engaged";
+const AUDIENCE_METRIC: Record<IgAudience, string> = {
+  followers: "follower_demographics",
+  reached: "reached_audience_demographics",
+  engaged: "engaged_audience_demographics",
+};
 
 export type InstagramDashboard = {
   account: { username: string | null; name: string | null; profilePictureUrl: string | null; followers: number; mediaCount: number };
@@ -36,11 +44,14 @@ export type InstagramDashboard = {
     contactTaps: IgBreakdownItem[] | null;
   };
   media: IgMediaRow[];
-  audience: {
-    age: IgBreakdownItem[] | null;
-    gender: IgBreakdownItem[] | null;
-    city: IgBreakdownItem[] | null;
-    country: IgBreakdownItem[] | null;
+  /** followers = base, reached = quem viu o conteúdo, engaged = quem interagiu (todos no mês corrente). */
+  audience: Record<IgAudience, Record<IgDemographic, IgBreakdownItem[] | null>>;
+  reach: {
+    /** FOLLOWER / NON_FOLLOWER */
+    byFollowType: IgBreakdownItem[] | null;
+    /** POST, REEL, CAROUSEL_CONTAINER, STORY, AD… */
+    byProductType: IgBreakdownItem[] | null;
+    daily: DailyValue[] | null;
   };
   onlineFollowers: Record<string, number>[] | null;
   /** Erros parciais (métrica indisponível, conta pequena demais etc.) — o resto do painel continua. */
@@ -120,16 +131,27 @@ async function fetchTotalValue(
   return { total, breakdown: [...acc.entries()].map(([key, value]) => ({ key, value })).sort((a, b) => b.value - a.value) };
 }
 
-async function fetchDemographic(igUserId: string, token: string, breakdown: string): Promise<IgBreakdownItem[]> {
+async function fetchDemographic(igUserId: string, token: string, metric: string, breakdown: string): Promise<IgBreakdownItem[]> {
   const json = await igGet(
     `${igUserId}/insights`,
-    { metric: "follower_demographics", period: "lifetime", metric_type: "total_value", timeframe: "this_month", breakdown },
+    { metric, period: "lifetime", metric_type: "total_value", timeframe: "this_month", breakdown },
     token,
   );
   const results = json?.data?.[0]?.total_value?.breakdowns?.[0]?.results ?? [];
   return results
     .map((r: any) => ({ key: (r.dimension_values ?? []).join(" · "), value: Number(r.value) || 0 }))
     .sort((a: IgBreakdownItem, b: IgBreakdownItem) => b.value - a.value);
+}
+
+async function fetchDailySeries(igUserId: string, token: string, metric: string, since: Date, until: Date): Promise<DailyValue[]> {
+  const out: DailyValue[] = [];
+  for (const [s, u] of windows(since, until)) {
+    const json = await igGet(`${igUserId}/insights`, { metric, period: "day", since: unix(s), until: unix(u) }, token);
+    for (const v of json?.data?.[0]?.values ?? []) {
+      out.push({ date: isoDay(new Date(new Date(v.end_time).getTime() - DAY_MS)), value: Number(v.value) || 0 });
+    }
+  }
+  return out;
 }
 
 async function fetchOnlineFollowers(igUserId: string, token: string): Promise<Record<string, number>[]> {
@@ -278,23 +300,31 @@ async function buildDashboard(range: IgRange): Promise<InstagramDashboard> {
 
   const account = await igGet(igUserId, { fields: "username,name,profile_picture_url,followers_count,media_count" }, token);
 
-  const [dailyNetApi, followsUnfollows, reach, views, profileViews, accountsEngaged, totalInteractions, contactTaps, rawMedia, age, gender, city, country, online] =
+  const [dailyNetApi, followsUnfollows, reach, reachByProduct, dailyReach, views, profileViews, accountsEngaged, totalInteractions, contactTaps, rawMedia, online] =
     await Promise.all([
       soft("follower_count", warnings, () => fetchDailyFollowerNet(igUserId, token, followerSince, until)),
       soft("follows_and_unfollows", warnings, () => fetchTotalValue(igUserId, token, "follows_and_unfollows", since, until, "follow_type")),
-      soft("reach", warnings, () => fetchTotalValue(igUserId, token, "reach", since, until)),
+      soft("reach", warnings, () => fetchTotalValue(igUserId, token, "reach", since, until, "follow_type")),
+      soft("reach (media_product_type)", warnings, () => fetchTotalValue(igUserId, token, "reach", since, until, "media_product_type")),
+      soft("reach (daily)", warnings, () => fetchDailySeries(igUserId, token, "reach", since, until)),
       soft("views", warnings, () => fetchTotalValue(igUserId, token, "views", since, until)),
       soft("profile_views", warnings, () => fetchTotalValue(igUserId, token, "profile_views", since, until)),
       soft("accounts_engaged", warnings, () => fetchTotalValue(igUserId, token, "accounts_engaged", since, until)),
       soft("total_interactions", warnings, () => fetchTotalValue(igUserId, token, "total_interactions", since, until)),
       soft("profile_links_taps", warnings, () => fetchTotalValue(igUserId, token, "profile_links_taps", since, until, "contact_button_type")),
       soft("media", warnings, () => fetchMediaSince(igUserId, token, since)),
-      soft("follower_demographics (age)", warnings, () => fetchDemographic(igUserId, token, "age")),
-      soft("follower_demographics (gender)", warnings, () => fetchDemographic(igUserId, token, "gender")),
-      soft("follower_demographics (city)", warnings, () => fetchDemographic(igUserId, token, "city")),
-      soft("follower_demographics (country)", warnings, () => fetchDemographic(igUserId, token, "country")),
       soft("online_followers", warnings, () => fetchOnlineFollowers(igUserId, token)),
     ]);
+
+  const audienceEntries = await Promise.all(
+    (Object.keys(AUDIENCE_METRIC) as IgAudience[]).map(async (aud) => {
+      const dims = await Promise.all(
+        IG_DEMOGRAPHICS.map((dim) => soft(`${AUDIENCE_METRIC[aud]} (${dim})`, warnings, () => fetchDemographic(igUserId, token, AUDIENCE_METRIC[aud], dim))),
+      );
+      return [aud, Object.fromEntries(IG_DEMOGRAPHICS.map((dim, i) => [dim, dims[i]]))] as const;
+    }),
+  );
+  const audience = Object.fromEntries(audienceEntries) as InstagramDashboard["audience"];
 
   let dailyNet = dailyNetApi ?? [];
   const persisted = await soft("snapshot", warnings, async () => {
@@ -336,7 +366,12 @@ async function buildDashboard(range: IgRange): Promise<InstagramDashboard> {
       contactTaps: contactTaps?.breakdown ?? null,
     },
     media,
-    audience: { age, gender, city, country },
+    audience,
+    reach: {
+      byFollowType: reach?.breakdown.length ? reach.breakdown : null,
+      byProductType: reachByProduct?.breakdown.length ? reachByProduct.breakdown : null,
+      daily: dailyReach?.length ? dailyReach : null,
+    },
     onlineFollowers: online,
     warnings,
   };

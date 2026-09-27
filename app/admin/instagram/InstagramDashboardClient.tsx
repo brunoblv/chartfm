@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { Clapperboard, Image as ImageIcon, Images, Instagram, Loader2, RefreshCw, TriangleAlert, Video } from "lucide-react";
+import { Clapperboard, Image as ImageIcon, Images, Info, Instagram, Loader2, RefreshCw, TrendingUp, TriangleAlert, Video } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
-import type { InstagramDashboard, IgBreakdownItem, IgRange } from "@/lib/social/instagram-insights";
+import type { InstagramDashboard, IgDemographic, IgRange } from "@/lib/social/instagram-insights";
 import {
+  audienceInsights,
   averageOnlineByHour,
+  compareAudiences,
+  hourDaypart,
+  reachByDaypart,
+  reachHeatmap,
+  type AudienceCompareRow,
+  type AudienceInsight,
   bucketByTrait,
   captionFormat,
   daypart,
@@ -26,7 +33,7 @@ import {
 import { BarChart, ChartCard, HBarList, LineChart, StatTile } from "../analytics/charts";
 
 const RANGES: IgRange[] = [7, 14, 30, 90];
-const TABS = ["growth", "content", "reels", "insights", "posts", "audience", "timing"] as const;
+const TABS = ["growth", "content", "reels", "insights", "posts", "audience", "timing", "reach"] as const;
 type Tab = (typeof TABS)[number];
 type TFn = (key: string, params?: Record<string, string | number>) => string;
 
@@ -281,17 +288,6 @@ function Badge({ tone, children }: { tone: "up" | "down" | "same"; children: Rea
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 999, fontSize: 12, fontWeight: 700, background: `var(--${tone}-bg)`, color: `var(--${tone}-fg)` }}>
       {children}
     </span>
-  );
-}
-
-function BreakdownBars({ items, t, fmt, labelFor, limit = 8 }: { items: IgBreakdownItem[] | null; t: TFn; fmt: Fmt; labelFor?: (key: string) => string; limit?: number }) {
-  if (!items || items.length === 0) return <div style={emptyText}>{t("adminInstagram.audienceUnavailable")}</div>;
-  const total = items.reduce((acc, i) => acc + i.value, 0);
-  return (
-    <HBarList
-      items={items.slice(0, limit).map((i) => ({ label: labelFor ? labelFor(i.key) : i.key, value: i.value, sub: total > 0 ? fmt.pct(i.value / total, 0) : undefined }))}
-      formatValue={fmt.int}
-    />
   );
 }
 
@@ -607,6 +603,66 @@ function PostsTab({ data, t, fmt }: { data: InstagramDashboard; t: TFn; fmt: Fmt
   );
 }
 
+const AUD_KEYS = ["followers", "reached", "engaged"] as const;
+const AUD_COLOR: Record<(typeof AUD_KEYS)[number], string> = { followers: "var(--ch1)", reached: "var(--ch2)", engaged: "var(--ch3)" };
+
+function AudienceLegend({ t }: { t: TFn }) {
+  return (
+    <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 12 }}>
+      {AUD_KEYS.map((k) => (
+        <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-subtle)" }}>
+          <span style={{ width: 8, height: 8, borderRadius: 4, background: AUD_COLOR[k] }} />
+          {t(`adminInstagram.aud_${k}`)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Três barras finas por grupo (seguidores, alcançados, engajados) — mostra onde o alcance e o engajamento descolam da base. */
+function AudienceCompare({ rows, t, fmt, labelFor, limit = 8 }: { rows: AudienceCompareRow[]; t: TFn; fmt: Fmt; labelFor?: (key: string) => string; limit?: number }) {
+  if (rows.length === 0) return <div style={emptyText}>{t("adminInstagram.audienceUnavailable")}</div>;
+  const visible = rows.slice(0, limit);
+  const max = Math.max(...visible.flatMap((r) => AUD_KEYS.map((k) => r[k] ?? 0)), Number.EPSILON);
+  return (
+    <div>
+      <AudienceLegend t={t} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {visible.map((r) => (
+          <div key={r.key} style={{ display: "grid", gridTemplateColumns: "minmax(64px, 110px) 1fr 44px", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={labelFor ? labelFor(r.key) : r.key}>
+              {labelFor ? labelFor(r.key) : r.key}
+            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              {AUD_KEYS.map((k) => (
+                <div key={k} style={{ height: 5, borderRadius: 3, background: "var(--fill-subtle)", overflow: "hidden" }}>
+                  <div style={{ width: `${((r[k] ?? 0) / max) * 100}%`, height: "100%", borderRadius: 3, background: AUD_COLOR[k] }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", fontSize: 11, lineHeight: "13px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+              {AUD_KEYS.map((k, i) => (
+                <span key={k} style={{ color: i === 0 ? "var(--text)" : "var(--text-muted)", fontWeight: i === 0 ? 700 : 400 }}>{fmt.pct(r[k], 0)}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InsightRow({ tone, children }: { tone: "up" | "warn" | "info"; children: ReactNode }) {
+  const Icon = tone === "up" ? TrendingUp : tone === "warn" ? TriangleAlert : Info;
+  const bg = tone === "up" ? "var(--up-bg)" : tone === "warn" ? "var(--fill-subtle)" : "transparent";
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "11px 13px", borderRadius: 12, background: bg, border: tone === "info" ? "1px solid var(--divider-strong)" : "1px solid transparent" }}>
+      <Icon size={15} style={{ flexShrink: 0, marginTop: 2, color: tone === "up" ? "var(--up-fg)" : "var(--text-subtle)" }} />
+      <span style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.45 }}>{children}</span>
+    </div>
+  );
+}
+
 function AudienceTab({ data, t, fmt, locale }: { data: InstagramDashboard; t: TFn; fmt: Fmt; locale: string }) {
   const { audience } = data;
   const regionNames = useMemo(() => {
@@ -616,60 +672,237 @@ function AudienceTab({ data, t, fmt, locale }: { data: InstagramDashboard; t: TF
       return null;
     }
   }, [locale]);
+  const cmp = (dim: IgDemographic) => compareAudiences(audience.followers[dim], audience.reached[dim], audience.engaged[dim]);
+  const age = cmp("age").sort((a, b) => a.key.localeCompare(b.key));
+  const gender = cmp("gender");
+  const country = cmp("country");
+  const city = cmp("city");
+  const insights = audienceInsights({ age, gender, city });
   const genderLabel = (k: string) => (k === "F" ? t("adminInstagram.genderF") : k === "M" ? t("adminInstagram.genderM") : t("adminInstagram.genderU"));
-  const age = audience.age ? [...audience.age].sort((a, b) => a.key.localeCompare(b.key)) : null;
+  const cityLabel = (k: string) => k.split(",")[0];
+  const p = (v: number) => fmt.pct(v, 0);
+
+  const insightText = (i: AudienceInsight) => {
+    switch (i.kind) {
+      case "ageMostEngaged":
+        return t("adminInstagram.ai_ageMostEngaged", { key: i.key, followers: p(i.followers), engaged: p(i.engaged) });
+      case "ageReachNoEngage":
+        return t("adminInstagram.ai_ageReachNoEngage", { key: i.key, reached: p(i.reached), engaged: p(i.engaged) });
+      case "ageNewReach":
+        return t("adminInstagram.ai_ageNewReach", { key: i.key, reached: p(i.reached), followers: p(i.followers), engaged: p(i.engaged) });
+      case "genderSplit":
+        return t(i.engaged >= i.followers ? "adminInstagram.ai_genderOver" : "adminInstagram.ai_genderUnder", { key: genderLabel(i.key), followers: p(i.followers), engaged: p(i.engaged) });
+      case "cityStronghold":
+        return t("adminInstagram.ai_cityStronghold", { key: cityLabel(i.key), engaged: fmt.pct(i.engaged) });
+      case "cityAboveWeight":
+        return t("adminInstagram.ai_cityAboveWeight", { key: cityLabel(i.key), engaged: fmt.pct(i.engaged), followers: fmt.pct(i.followers) });
+    }
+  };
+  const toneOf = (i: AudienceInsight): "up" | "warn" | "info" =>
+    i.kind === "ageMostEngaged" || i.kind === "cityStronghold" ? "up" : i.kind === "ageReachNoEngage" ? "warn" : "info";
+
+  const genderBar = (k: (typeof AUD_KEYS)[number]) => {
+    const f = gender.find((g) => g.key === "F")?.[k];
+    const m = gender.find((g) => g.key === "M")?.[k];
+    if (f == null || m == null) return null;
+    const fm = f + m || 1;
+    return (
+      <div key={k} style={{ marginBottom: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
+          <span style={{ fontWeight: 600, color: "var(--text)" }}>{t(`adminInstagram.aud_${k}`)}</span>
+          <span style={{ color: "var(--text-subtle)", fontVariantNumeric: "tabular-nums" }}>
+            {t("adminInstagram.genderF")} <b style={{ color: "var(--text)" }}>{p(f)}</b> · {t("adminInstagram.genderM")} <b style={{ color: "var(--text)" }}>{p(m)}</b>
+          </span>
+        </div>
+        <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "var(--fill-subtle)" }}>
+          <div style={{ width: `${(f / fm) * 100}%`, background: "var(--ch1)" }} />
+          <div style={{ width: `${(m / fm) * 100}%`, background: "var(--ch2)" }} />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={stack}>
-      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("adminInstagram.audienceNote")}</div>
+      <ChartCard title={t("adminInstagram.audienceTells")} subtitle={t("adminInstagram.audienceTellsSub")}>
+        {insights.length ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {insights.map((i) => (
+              <InsightRow key={i.kind} tone={toneOf(i)}>{insightText(i)}</InsightRow>
+            ))}
+          </div>
+        ) : (
+          <div style={emptyText}>{t("adminInstagram.audienceNoInsights")}</div>
+        )}
+        <div style={noteText}>{t("adminInstagram.audienceNote")}</div>
+      </ChartCard>
       <div style={cardsGrid}>
-        <ChartCard title={t("adminInstagram.ageTitle")}>
-          {age && age.length ? <BarChart labels={age.map((a) => a.key)} values={age.map((a) => a.value)} formatValue={fmt.int} /> : <div style={emptyText}>{t("adminInstagram.audienceUnavailable")}</div>}
+        <ChartCard title={t("adminInstagram.ageTitle")} subtitle={t("adminInstagram.ageSub")}>
+          <AudienceCompare rows={age} t={t} fmt={fmt} limit={10} />
+          <div style={noteText}>{t("adminInstagram.audienceLegendNote")}</div>
         </ChartCard>
-        <ChartCard title={t("adminInstagram.genderTitle")}>
-          <BreakdownBars items={audience.gender} t={t} fmt={fmt} labelFor={genderLabel} />
+        <ChartCard title={t("adminInstagram.genderTitle")} subtitle={t("adminInstagram.genderSub")}>
+          {gender.length ? AUD_KEYS.map(genderBar) : <div style={emptyText}>{t("adminInstagram.audienceUnavailable")}</div>}
         </ChartCard>
-        <ChartCard title={t("adminInstagram.countryTitle")}>
-          <BreakdownBars items={audience.country} t={t} fmt={fmt} labelFor={(k) => regionNames?.of(k) ?? k} />
+        <ChartCard title={t("adminInstagram.countryTitle")} subtitle={t("adminInstagram.countrySub")}>
+          <AudienceCompare rows={country} t={t} fmt={fmt} labelFor={(k) => regionNames?.of(k) ?? k} />
         </ChartCard>
-        <ChartCard title={t("adminInstagram.cityTitle")}>
-          <BreakdownBars items={audience.city} t={t} fmt={fmt} />
+        <ChartCard title={t("adminInstagram.cityTitle")} subtitle={t("adminInstagram.citySub")}>
+          <AudienceCompare rows={city} t={t} fmt={fmt} labelFor={cityLabel} />
         </ChartCard>
       </div>
     </div>
   );
 }
 
+// Seg→Dom: a semana de trabalho primeiro, como no Instagram.
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
 function TimingTab({ data, t, fmt, locale }: { data: InstagramDashboard; t: TFn; fmt: Fmt; locale: string }) {
   const online = data.onlineFollowers?.length ? averageOnlineByHour(data.onlineFollowers) : null;
   const byWeekday = performanceBySlot(data.media, "weekday");
-  const byHour = performanceBySlot(data.media, "hour");
+  const parts = reachByDaypart(data.media);
+  const grid = reachHeatmap(data.media);
   const weekdayName = (i: number) => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(Date.UTC(2024, 0, 7 + i)));
-  const bestWeekday = [...byWeekday].sort((a, b) => b.avgReach - a.avgReach)[0];
-  const bestHour = [...byHour].sort((a, b) => b.avgReach - a.avgReach)[0];
-  const peakOnline = online ? online.indexOf(Math.max(...online)) : null;
+  const weekdayLong = (i: number) => new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2024, 0, 7 + i)));
   const h = (n: number) => `${String(n).padStart(2, "0")}h`;
+  const peakOnline = online ? online.indexOf(Math.max(...online)) : null;
+  const bestWeekday = [...byWeekday].sort((a, b) => b.avgReach - a.avgReach)[0];
+  const bestPart = [...parts].filter((x) => x.count > 0).sort((a, b) => b.avgReach - a.avgReach)[0];
+  const heatMax = Math.max(...grid.flat().map((v) => v ?? 0), 1);
+  const weekdayItems = WEEK_ORDER.map((wd) => ({ label: weekdayName(wd), value: byWeekday.find((s) => s.key === wd)?.avgReach ?? 0 }));
+
   return (
     <div style={stack}>
-      <div style={tilesGrid}>
-        <StatTile label={t("adminInstagram.bestWeekday")} value={bestWeekday ? weekdayName(bestWeekday.key) : "—"} hint={bestWeekday ? t("adminInstagram.avgReachValue", { value: fmt.int(bestWeekday.avgReach) }) : undefined} />
-        <StatTile label={t("adminInstagram.bestHour")} value={bestHour ? h(bestHour.key) : "—"} hint={bestHour ? t("adminInstagram.avgReachValue", { value: fmt.int(bestHour.avgReach) }) : undefined} />
-        <StatTile label={t("adminInstagram.peakOnline")} value={peakOnline == null ? "—" : h(peakOnline)} hint={t("adminInstagram.peakOnlineHint")} />
-      </div>
-      <div style={cardsGrid}>
-        <ChartCard title={t("adminInstagram.onlineFollowers")} subtitle={t("adminInstagram.onlineFollowersSub")}>
-          {online ? (
+      <ChartCard title={t("adminInstagram.onlineFollowers")} subtitle={t("adminInstagram.onlineFollowersSub")}>
+        {online && peakOnline != null ? (
+          <>
+            <InsightRow tone="info">{t("adminInstagram.onlinePeak", { part: t(`adminInstagram.part_${hourDaypart(peakOnline)}`), hour: h(peakOnline) })}</InsightRow>
+            <div style={{ height: 12 }} />
             <BarChart labels={online.map((_, i) => h(i))} values={online} formatValue={fmt.int} color="var(--ch2)" />
+            <div style={noteText}>{t("adminInstagram.onlineNote")}</div>
+          </>
+        ) : (
+          <div style={emptyText}>{t("adminInstagram.onlineUnavailable")}</div>
+        )}
+      </ChartCard>
+      <div style={cardsGrid}>
+        <ChartCard title={t("adminInstagram.reachByWeekday")} subtitle={t("adminInstagram.reachByWeekdaySub")}>
+          <HBarList items={weekdayItems} formatValue={(v) => (v > 0 ? fmt.compact(v) : "—")} />
+          {bestWeekday && <div style={noteText}>{t("adminInstagram.weekdayPeak", { day: weekdayLong(bestWeekday.key) })}</div>}
+        </ChartCard>
+        <ChartCard title={t("adminInstagram.reachByDaypart")} subtitle={t("adminInstagram.reachByDaypartSub")}>
+          <HBarList items={parts.map((x) => ({ label: t(`adminInstagram.partLabel_${x.key}`), value: x.avgReach, sub: x.count ? `${x.count}` : undefined }))} formatValue={(v) => (v > 0 ? fmt.compact(v) : "—")} />
+          {bestPart && <div style={noteText}>{t("adminInstagram.daypartPeak", { part: t(`adminInstagram.partLabel_${bestPart.key}`) })}</div>}
+        </ChartCard>
+      </div>
+      <ChartCard title={t("adminInstagram.reachMap")} subtitle={t("adminInstagram.reachMapSub")}>
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "40px repeat(24, minmax(12px, 1fr))", gap: 2, minWidth: 360 }}>
+            <span />
+            {Array.from({ length: 24 }, (_, i) => (
+              <span key={i} style={{ fontSize: 10, color: "var(--text-muted)", textAlign: "center" }}>{i % 4 === 0 ? h(i) : ""}</span>
+            ))}
+            {WEEK_ORDER.map((wd) => (
+              <Fragment key={wd}>
+                <span style={{ fontSize: 11, color: "var(--text-subtle)", alignSelf: "center" }}>{weekdayName(wd)}</span>
+                {grid[wd].map((v, hr) => (
+                  <div
+                    key={hr}
+                    title={v == null ? `${weekdayName(wd)} ${h(hr)} · —` : `${weekdayName(wd)} ${h(hr)} · ${fmt.int(v)}`}
+                    style={{ aspectRatio: "1 / 1.3", borderRadius: 3, background: "var(--fill-subtle)", position: "relative", overflow: "hidden" }}
+                  >
+                    {v != null && <div style={{ position: "absolute", inset: 0, background: "var(--ch1)", opacity: 0.2 + 0.8 * (v / heatMax) }} />}
+                  </div>
+                ))}
+              </Fragment>
+            ))}
+          </div>
+        </div>
+        <div style={noteText}>{t("adminInstagram.reachMapNote", { count: data.media.length })}</div>
+      </ChartCard>
+    </div>
+  );
+}
+
+function Donut({ parts, center, sub }: { parts: { value: number; color: string }[]; center: string; sub: string }) {
+  const total = parts.reduce((a, p) => a + p.value, 0) || 1;
+  const r = 70;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <div style={{ position: "relative", width: 190, height: 190, margin: "0 auto" }}>
+      <svg viewBox="0 0 190 190" width={190} height={190} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={95} cy={95} r={r} fill="none" stroke="var(--fill-subtle)" strokeWidth={28} />
+        {parts.map((p, i) => {
+          const len = (p.value / total) * c;
+          // 1.5px de respiro entre as fatias
+          const el = <circle key={i} cx={95} cy={95} r={r} fill="none" stroke={p.color} strokeWidth={28} strokeDasharray={`${Math.max(len - 1.5, 0)} ${c}`} strokeDashoffset={-offset} />;
+          offset += len;
+          return el;
+        })}
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.02em" }}>{center}</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{sub}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const PRODUCT_TYPE_KEY: Record<string, string> = { REEL: "reels", CAROUSEL_CONTAINER: "carousels", POST: "posts", STORY: "stories", AD: "ads" };
+
+function ReachTab({ data, t, fmt }: { data: InstagramDashboard; t: TFn; fmt: Fmt }) {
+  const { reach } = data;
+  const nonFollowers = reach.byFollowType?.find((b) => b.key === "NON_FOLLOWER")?.value ?? 0;
+  const followers = reach.byFollowType?.find((b) => b.key === "FOLLOWER")?.value ?? 0;
+  const total = nonFollowers + followers;
+  const nonShare = total > 0 ? nonFollowers / total : null;
+  return (
+    <div style={stack}>
+      <div style={cardsGrid}>
+        <ChartCard title={t("adminInstagram.followerVsNon")} subtitle={t("adminInstagram.followerVsNonSub")}>
+          {nonShare == null ? (
+            <div style={emptyText}>{t("adminInstagram.metricUnavailable")}</div>
           ) : (
-            <div style={emptyText}>{t("adminInstagram.onlineUnavailable")}</div>
+            <>
+              <Donut parts={[{ value: nonFollowers, color: "var(--ch1)" }, { value: followers, color: "var(--ch2)" }]} center={fmt.pct(nonShare, 0)} sub={t("adminInstagram.nonFollowers")} />
+              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { label: t("adminInstagram.nonFollowersLabel"), value: nonFollowers, color: "var(--ch1)" },
+                  { label: t("adminInstagram.followers"), value: followers, color: "var(--ch2)" },
+                ].map((row) => (
+                  <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "var(--text-subtle)" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 4, background: row.color }} />
+                      {row.label}
+                    </span>
+                    <span style={{ fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{fmt.int(row.value)}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={noteText}>{t(nonShare >= 0.5 ? "adminInstagram.discoveryHigh" : "adminInstagram.discoveryLow", { pct: fmt.pct(nonShare) })}</div>
+            </>
           )}
         </ChartCard>
-        <ChartCard title={t("adminInstagram.reachByWeekday")} subtitle={t("adminInstagram.reachBySlotSub")}>
-          <BarChart labels={byWeekday.map((s) => weekdayName(s.key))} values={byWeekday.map((s) => s.avgReach)} formatValue={fmt.int} />
-        </ChartCard>
-        <ChartCard title={t("adminInstagram.reachByHour")} subtitle={t("adminInstagram.reachBySlotSub")}>
-          <BarChart labels={Array.from({ length: 24 }, (_, i) => h(i))} values={Array.from({ length: 24 }, (_, i) => byHour.find((s) => s.key === i)?.avgReach ?? 0)} formatValue={fmt.int} />
+        <ChartCard title={t("adminInstagram.reachByType")} subtitle={t("adminInstagram.reachByTypeSub")}>
+          {reach.byProductType ? (
+            <HBarList items={reach.byProductType.map((b) => ({ label: PRODUCT_TYPE_KEY[b.key] ? t(`adminInstagram.type_${PRODUCT_TYPE_KEY[b.key]}`) : b.key, value: b.value }))} formatValue={fmt.compact} />
+          ) : (
+            <div style={emptyText}>{t("adminInstagram.metricUnavailable")}</div>
+          )}
+          <div style={noteText}>{t("adminInstagram.reachByTypeNote")}</div>
         </ChartCard>
       </div>
+      <ChartCard title={t("adminInstagram.dailyReach")} subtitle={t("adminInstagram.dailyReachSub")}>
+        {reach.daily ? (
+          <LineChart labels={reach.daily.map((d) => fmt.day(d.date))} series={[{ name: t("adminInstagram.reach"), color: "var(--ch1)", values: reach.daily.map((d) => d.value) }]} formatValue={fmt.compact} height={220} />
+        ) : (
+          <div style={emptyText}>{t("adminInstagram.metricUnavailable")}</div>
+        )}
+      </ChartCard>
     </div>
   );
 }
@@ -708,9 +941,9 @@ export function InstagramDashboardClient() {
   return (
     <div className="igx" style={{ maxWidth: 1100 }}>
       <style>{`
-        .igx{--ch1:#FA243C;--ch2:#007AFF;}
-        [data-theme="dark"] .igx{--ch1:#FF3B5C;--ch2:#0A84FF;}
-        @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .igx{--ch1:#FF3B5C;--ch2:#0A84FF;} }
+        .igx{--ch1:#FA243C;--ch2:#007AFF;--ch3:#8E8E93;}
+        [data-theme="dark"] .igx{--ch1:#FF3B5C;--ch2:#0A84FF;--ch3:#AEAEB2;}
+        @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .igx{--ch1:#FF3B5C;--ch2:#0A84FF;--ch3:#AEAEB2;} }
         @keyframes igxspin{to{transform:rotate(360deg)}}
       `}</style>
 
@@ -797,6 +1030,7 @@ export function InstagramDashboardClient() {
           {tab === "posts" && <PostsTab data={data} t={t} fmt={fmt} />}
           {tab === "audience" && <AudienceTab data={data} t={t} fmt={fmt} locale={locale} />}
           {tab === "timing" && <TimingTab data={data} t={t} fmt={fmt} locale={locale} />}
+          {tab === "reach" && <ReachTab data={data} t={t} fmt={fmt} />}
         </div>
       )}
     </div>
