@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   audienceInsights,
   averageOnlineByHour,
+  milestonePlan,
   compareAudiences,
   reachByDaypart,
   reachHeatmap,
@@ -202,5 +203,47 @@ describe("mapa de alcance", () => {
     const parts = reachByDaypart([row({ timestamp: "2026-09-02T12:00:00Z", reach: 80 })]);
     expect(parts.find((p) => p.key === "morning")).toEqual({ key: "morning", count: 1, avgReach: 80 });
     expect(parts.find((p) => p.key === "night")?.count).toBe(0);
+  });
+});
+
+describe("metas de seguidores", () => {
+  const days = (values: number[], start = "2026-10-01") =>
+    values.map((value, i) => ({ date: new Date(Date.parse(`${start}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10), value }));
+
+  it("primeira meta é 10 mil com marcos de mil em mil", () => {
+    const plan = milestonePlan(2_500, [], "2026-11-01");
+    expect(plan.goal).toBe(10_000);
+    expect(plan.milestones.map((m) => m.target)).toEqual([1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]);
+    expect(plan.milestones.filter((m) => m.reached).map((m) => m.target)).toEqual([1000, 2000]);
+    expect(plan.milestones.at(-1)?.isGoal).toBe(true);
+  });
+
+  it("ao passar de 10 mil a meta vira 20 mil, e assim por diante", () => {
+    expect(milestonePlan(10_000, [], "2026-11-01").goal).toBe(20_000);
+    expect(milestonePlan(10_000, [], "2026-11-01").milestones[0].target).toBe(11_000);
+    expect(milestonePlan(25_300, [], "2026-11-01").goal).toBe(30_000);
+  });
+
+  it("projeta datas pelo ritmo de 7 e 30 dias", () => {
+    const history = days([...new Array(23).fill(10), ...new Array(7).fill(50)]);
+    const plan = milestonePlan(2_900, history, "2026-11-01");
+    expect(plan.rates.week.perDay).toBe(50);
+    expect(plan.rates.month.perDay).toBeCloseTo(19.33, 1);
+    const m3k = plan.milestones.find((m) => m.target === 3_000)!;
+    expect(m3k.projections.week).toEqual({ days: 2, date: "2026-11-03" });
+    expect(m3k.projections.month?.days).toBe(6);
+  });
+
+  it("sem crescimento não inventa projeção", () => {
+    const plan = milestonePlan(2_900, days([0, -3, 1, -2]), "2026-11-01");
+    expect(plan.milestones.find((m) => m.target === 3_000)?.projections.week).toBeNull();
+  });
+
+  it("data em que o marco foi atingido vem do histórico", () => {
+    // totais reconstruídos: 1990, 2010, 2030
+    const plan = milestonePlan(2_030, days([5, 20, 20]), "2026-11-01");
+    expect(plan.milestones.find((m) => m.target === 2_000)?.reachedOn).toBe("2026-10-02");
+    // 1000 já estava batido antes do início do histórico
+    expect(plan.milestones.find((m) => m.target === 1_000)?.reachedOn).toBeNull();
   });
 });

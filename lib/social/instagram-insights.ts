@@ -10,6 +10,8 @@ const DAY_MS = 86_400_000;
 const CACHE_TTL_MS = 15 * 60_000;
 const MEDIA_INSIGHTS_CONCURRENCY = 6;
 const MAX_MEDIA = 150;
+/** Histórico de seguidores usado na aba de metas, independente do período selecionado. */
+const HISTORY_DAYS = 365;
 
 export const IG_RANGES = [7, 14, 30, 90] as const;
 export type IgRange = (typeof IG_RANGES)[number];
@@ -34,6 +36,8 @@ export type InstagramDashboard = {
   fetchedAt: string;
   growth: {
     dailyNet: DailyValue[];
+    /** Saldo diário de todo o histórico salvo (até 1 ano), para a aba de metas. */
+    followerHistory: DailyValue[];
     follows: number | null;
     unfollows: number | null;
     reach: number | null;
@@ -326,17 +330,21 @@ async function buildDashboard(range: IgRange): Promise<InstagramDashboard> {
   );
   const audience = Object.fromEntries(audienceEntries) as InstagramDashboard["audience"];
 
-  let dailyNet = dailyNetApi ?? [];
-  const persisted = await soft("snapshot", warnings, async () => {
-    if (dailyNet.length) await persistDailyNet(dailyNet);
-    return loadDailyNet(since, until);
+  const apiNet = dailyNetApi ?? [];
+  // O banco tem o histórico além dos 30 dias; o que veio agora da API tem prioridade.
+  const mergeWithApi = (stored: DailyValue[]) => {
+    const byDate = new Map(stored.map((d) => [d.date, d.value]));
+    for (const d of apiNet) byDate.set(d.date, d.value);
+    return [...byDate.entries()].map(([date, value]) => ({ date, value })).sort((a, b) => a.date.localeCompare(b.date));
+  };
+  const historySince = new Date(until.getTime() - HISTORY_DAYS * DAY_MS);
+  const stored = await soft("snapshot", warnings, async () => {
+    if (apiNet.length) await persistDailyNet(apiNet);
+    return loadDailyNet(historySince, until);
   });
-  if (persisted?.length) {
-    // O banco tem o histórico além dos 30 dias; o que veio agora da API tem prioridade.
-    const byDate = new Map(persisted.map((d) => [d.date, d.value]));
-    for (const d of dailyNet) byDate.set(d.date, d.value);
-    dailyNet = [...byDate.entries()].map(([date, value]) => ({ date, value })).sort((a, b) => a.date.localeCompare(b.date));
-  }
+  const followerHistory = mergeWithApi(stored ?? []);
+  const sinceDay = isoDay(since);
+  const dailyNet = followerHistory.filter((d) => d.date >= sinceDay);
 
   const media = rawMedia ? await mapLimit(rawMedia, MEDIA_INSIGHTS_CONCURRENCY, (m) => fetchMediaRow(m, token)) : [];
 
@@ -355,6 +363,7 @@ async function buildDashboard(range: IgRange): Promise<InstagramDashboard> {
     fetchedAt: new Date().toISOString(),
     growth: {
       dailyNet,
+      followerHistory,
       // follow_type: FOLLOWER = novos follows, NON_FOLLOWER = unfollows.
       follows: followsUnfollows ? (fuBreakdown.find((b) => b.key === "FOLLOWER")?.value ?? 0) : null,
       unfollows: followsUnfollows ? (fuBreakdown.find((b) => b.key === "NON_FOLLOWER")?.value ?? 0) : null,

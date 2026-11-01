@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { Clapperboard, Image as ImageIcon, Images, Info, Instagram, Loader2, RefreshCw, TrendingUp, TriangleAlert, Video } from "lucide-react";
+import { Clapperboard, Flag, Image as ImageIcon, Images, Info, Instagram, Loader2, RefreshCw, TrendingUp, TriangleAlert, Video } from "lucide-react";
 import { useTranslations } from "@/hooks/useTranslations";
 import type { InstagramDashboard, IgDemographic, IgRange } from "@/lib/social/instagram-insights";
 import {
@@ -10,6 +10,9 @@ import {
   averageOnlineByHour,
   compareAudiences,
   hourDaypart,
+  milestonePlan,
+  type FollowerRate,
+  type Projection,
   reachByDaypart,
   reachHeatmap,
   type AudienceCompareRow,
@@ -33,7 +36,7 @@ import {
 import { BarChart, ChartCard, HBarList, LineChart, StatTile } from "../analytics/charts";
 
 const RANGES: IgRange[] = [7, 14, 30, 90];
-const TABS = ["growth", "content", "reels", "insights", "posts", "audience", "timing", "reach"] as const;
+const TABS = ["growth", "milestones", "content", "reels", "insights", "posts", "audience", "timing", "reach"] as const;
 type Tab = (typeof TABS)[number];
 type TFn = (key: string, params?: Record<string, string | number>) => string;
 
@@ -907,6 +910,165 @@ function ReachTab({ data, t, fmt }: { data: InstagramDashboard; t: TFn; fmt: Fmt
   );
 }
 
+function MilestonesTab({ data, t, fmt, locale }: { data: InstagramDashboard; t: TFn; fmt: Fmt; locale: string }) {
+  const history = data.growth.followerHistory;
+  const today = data.fetchedAt.slice(0, 10);
+  const plan = milestonePlan(data.account.followers, history, today);
+  const totals = reconstructFollowerTotals(data.account.followers, history);
+  const netByDate = new Map(history.map((d) => [d.date, d.value]));
+  const rows = [...totals].reverse();
+  const [page, setPage] = useState(0);
+  const pageSize = 15;
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const current = Math.min(page, pages - 1);
+
+  const fullDate = (iso: string) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+  const shortDate = (iso: string) => new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+  const weekday = (iso: string) => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+  const perDay = (r: FollowerRate) => (r.perDay == null ? "—" : `${r.perDay >= 0 ? "+" : ""}${r.perDay.toLocaleString(locale, { maximumFractionDigits: 1 })}`);
+  const projection = (p: Projection) =>
+    p == null ? <span style={{ color: "var(--text-muted)" }}>{t("adminInstagram.noProjection")}</span> : (
+      <span>
+        <span style={{ fontWeight: 600 }}>{fullDate(p.date)}</span>
+        <span style={{ color: "var(--text-muted)", marginLeft: 6 }}>{t("adminInstagram.inDays", { count: fmt.int(p.days) })}</span>
+      </span>
+    );
+  const goalMilestone = plan.milestones[plan.milestones.length - 1];
+  const remaining = plan.goal - plan.current;
+  const blockProgress = (plan.current - plan.blockStart) / (plan.goal - plan.blockStart);
+
+  const th: CSSProperties = { fontSize: 11, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-muted)", padding: "8px 10px", textAlign: "left", whiteSpace: "nowrap" };
+  const td: CSSProperties = { fontSize: 13, color: "var(--text)", padding: "10px", borderTop: "1px solid var(--divider)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" };
+
+  return (
+    <div style={stack}>
+      <ChartCard title={t("adminInstagram.goalTitle", { goal: fmt.int(plan.goal) })} subtitle={t("adminInstagram.goalSub")}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)" }}>{fmt.int(plan.current)}</span>
+          <span style={{ fontSize: 15, color: "var(--text-muted)" }}>/ {fmt.int(plan.goal)}</span>
+          <span style={{ marginLeft: "auto", fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{fmt.pct(plan.progress, 1)}</span>
+        </div>
+        <div style={{ position: "relative", height: 12, borderRadius: 6, background: "var(--fill-subtle)", overflow: "hidden", marginTop: 10 }}>
+          <div style={{ width: `${Math.min(100, plan.progress * 100)}%`, height: "100%", borderRadius: 6, background: "var(--ch1)" }} />
+          {/* marcos de mil em mil dentro do bloco atual */}
+          {plan.milestones.slice(0, -1).map((m) => (
+            <div key={m.target} style={{ position: "absolute", top: 0, bottom: 0, left: `${(m.target / plan.goal) * 100}%`, width: 1, background: "var(--surface)", opacity: 0.7 }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--text-subtle)", marginTop: 10 }}>
+          {plan.blockStart > 0
+            ? t("adminInstagram.goalRemainingBlock", { remaining: fmt.int(remaining), block: fmt.pct(blockProgress, 0), previous: fmt.int(plan.blockStart) })
+            : t("adminInstagram.goalRemaining", { remaining: fmt.int(remaining) })}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 14 }}>
+          {(["week", "month"] as const).map((k) => (
+            <div key={k} style={{ background: "var(--fill-subtle)", borderRadius: 12, padding: "10px 12px" }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t(`adminInstagram.atPace_${k}`, { rate: perDay(plan.rates[k]) })}</div>
+              <div style={{ fontSize: 14, color: "var(--text)", marginTop: 4 }}>{projection(goalMilestone.projections[k])}</div>
+            </div>
+          ))}
+        </div>
+      </ChartCard>
+
+      <div style={tilesGrid}>
+        <StatTile label={t("adminInstagram.followers")} value={fmt.int(plan.current)} />
+        <StatTile label={t("adminInstagram.ratePerDay_week")} value={perDay(plan.rates.week)} hint={t("adminInstagram.rateDaysHint", { count: plan.rates.week.days })} />
+        <StatTile label={t("adminInstagram.ratePerDay_month")} value={perDay(plan.rates.month)} hint={t("adminInstagram.rateDaysHint", { count: plan.rates.month.days })} />
+        <StatTile label={t("adminInstagram.toGoal")} value={fmt.int(remaining)} hint={t("adminInstagram.toGoalHint", { goal: fmt.int(plan.goal) })} />
+      </div>
+
+      <ChartCard title={t("adminInstagram.milestonesTitle")} subtitle={t("adminInstagram.milestonesSub")}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {plan.milestones.map((m, i) => (
+            <div
+              key={m.target}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "84px 1fr",
+                gap: 12,
+                alignItems: "start",
+                padding: "10px 10px",
+                borderTop: i === 0 ? "none" : "1px solid var(--divider)",
+                borderRadius: m.isGoal ? 10 : 0,
+                background: m.isGoal ? "var(--accent-tint)" : undefined,
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", display: "inline-flex", alignItems: "center", gap: 5, paddingTop: 1 }}>
+                {m.isGoal && <Flag size={13} style={{ color: "var(--accent)" }} />}
+                {fmt.int(m.target)}
+              </span>
+              {m.reached ? (
+                <span>
+                  <Badge tone="up">✓ {m.reachedOn ? t("adminInstagram.reachedOn", { date: fullDate(m.reachedOn) }) : t("adminInstagram.reached")}</Badge>
+                </span>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 13, color: "var(--text)", minWidth: 0 }}>
+                  <span style={{ color: "var(--text-subtle)", fontWeight: 600 }}>{t("adminInstagram.missing", { count: fmt.int(m.target - plan.current) })}</span>
+                  {(["week", "month"] as const).map((k) => (
+                    <span key={k} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ color: "var(--text-muted)", minWidth: 44 }}>{t(`adminInstagram.paceShort_${k}`)}</span>
+                      {projection(m.projections[k])}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={noteText}>{t("adminInstagram.milestonesNote", { week: perDay(plan.rates.week), month: perDay(plan.rates.month) })}</div>
+      </ChartCard>
+
+      <ChartCard title={t("adminInstagram.followersByDay")} subtitle={t("adminInstagram.followersByDaySub")}>
+        {rows.length === 0 ? (
+          <div style={emptyText}>{t("adminInstagram.followerSeriesUnavailable")}</div>
+        ) : (
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={th}>{t("adminInstagram.colDate")}</th>
+                    <th style={{ ...th, textAlign: "right" }}>{t("adminInstagram.colFollowers")}</th>
+                    <th style={{ ...th, textAlign: "right" }}>{t("adminInstagram.colChange")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice(current * pageSize, (current + 1) * pageSize).map((r) => {
+                    const net = netByDate.get(r.date) ?? 0;
+                    return (
+                      <tr key={r.date}>
+                        <td style={td}>
+                          {shortDate(r.date)} <span style={{ color: "var(--text-muted)", marginLeft: 4 }}>{weekday(r.date)}</span>
+                        </td>
+                        <td style={{ ...td, textAlign: "right", fontWeight: 600 }}>{fmt.int(r.value)}</td>
+                        <td style={{ ...td, textAlign: "right", fontWeight: 600, color: net > 0 ? "var(--up-fg)" : net < 0 ? "var(--down-fg)" : "var(--text-muted)" }}>
+                          {net > 0 ? "+" : ""}
+                          {fmt.int(net)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {pages > 1 && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
+                <span>{t("adminInstagram.pageRange", { from: current * pageSize + 1, to: Math.min(rows.length, (current + 1) * pageSize), total: rows.length })}</span>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <button type="button" style={pagerBtn(current === 0)} disabled={current === 0} onClick={() => setPage(current - 1)}>← {t("adminInstagram.prev")}</button>
+                  <span>{current + 1} / {pages}</span>
+                  <button type="button" style={pagerBtn(current >= pages - 1)} disabled={current >= pages - 1} onClick={() => setPage(current + 1)}>{t("adminInstagram.next")} →</button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        <div style={noteText}>{t("adminInstagram.followersByDayNote")}</div>
+      </ChartCard>
+    </div>
+  );
+}
+
 // ── Raiz ─────────────────────────────────────────────────────────────────────
 
 export function InstagramDashboardClient() {
@@ -1024,6 +1186,7 @@ export function InstagramDashboardClient() {
       {data && (
         <div style={{ opacity: loading ? 0.55 : 1, transition: "opacity 0.15s" }}>
           {tab === "growth" && <GrowthTab data={data} t={t} fmt={fmt} />}
+          {tab === "milestones" && <MilestonesTab data={data} t={t} fmt={fmt} locale={locale} />}
           {tab === "content" && <ContentTab data={data} t={t} fmt={fmt} />}
           {tab === "reels" && <ReelsTab data={data} t={t} fmt={fmt} />}
           {tab === "insights" && <InsightsTab data={data} t={t} fmt={fmt} />}

@@ -391,3 +391,75 @@ export function hourDaypart(hour: number): Daypart {
   if (hour >= 18 && hour < 23) return "evening";
   return "night";
 }
+
+// ── Metas de seguidores ─────────────────────────────────────────────────────
+
+/** Meta principal a cada 10 mil (10k → 20k → 30k…), com marcos intermediários de mil em mil. */
+export const GOAL_SIZE = 10_000;
+export const MILESTONE_STEP = 1_000;
+
+export type FollowerRate = { perDay: number | null; days: number };
+
+/** Média de ganho líquido por dia nos últimos N dias com dado (dias ainda não consolidados não entram). */
+export function followerRate(dailyNet: DailyValue[], lastDays: number): FollowerRate {
+  const recent = [...dailyNet].sort((a, b) => a.date.localeCompare(b.date)).slice(-lastDays);
+  return { perDay: recent.length ? sum(recent.map((d) => d.value)) / recent.length : null, days: recent.length };
+}
+
+export type Projection = { days: number; date: string } | null;
+
+/** Dias até atingir `target` no ritmo dado; sem ritmo positivo não há projeção. */
+export function projectMilestone(current: number, target: number, perDay: number | null, today: string): Projection {
+  if (target <= current) return { days: 0, date: today };
+  if (perDay == null || perDay <= 0) return null;
+  const days = Math.ceil((target - current) / perDay);
+  const date = new Date(Date.parse(`${today}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  return { days, date };
+}
+
+export type Milestone = {
+  target: number;
+  isGoal: boolean;
+  reached: boolean;
+  /** Primeiro dia (no histórico disponível) em que o total passou do marco. */
+  reachedOn: string | null;
+  projections: { week: Projection; month: Projection };
+};
+
+export type MilestonePlan = {
+  current: number;
+  goal: number;
+  /** Início do bloco de 10 mil atual (0 para a primeira meta). */
+  blockStart: number;
+  progress: number;
+  rates: { week: FollowerRate; month: FollowerRate };
+  milestones: Milestone[];
+};
+
+function reachedDate(totals: DailyValue[], target: number): string | null {
+  const i = totals.findIndex((d) => d.value >= target);
+  // Já estava acima no primeiro dia do histórico: atingido antes, data desconhecida.
+  return i > 0 ? totals[i].date : null;
+}
+
+export function milestonePlan(current: number, dailyNet: DailyValue[], today: string): MilestonePlan {
+  const goal = (Math.floor(current / GOAL_SIZE) + 1) * GOAL_SIZE;
+  const blockStart = goal - GOAL_SIZE;
+  const totals = reconstructFollowerTotals(current, dailyNet);
+  const rates = { week: followerRate(dailyNet, 7), month: followerRate(dailyNet, 30) };
+  const milestones: Milestone[] = [];
+  for (let target = blockStart + MILESTONE_STEP; target <= goal; target += MILESTONE_STEP) {
+    const reached = current >= target;
+    milestones.push({
+      target,
+      isGoal: target === goal,
+      reached,
+      reachedOn: reached ? reachedDate(totals, target) : null,
+      projections: {
+        week: reached ? null : projectMilestone(current, target, rates.week.perDay, today),
+        month: reached ? null : projectMilestone(current, target, rates.month.perDay, today),
+      },
+    });
+  }
+  return { current, goal, blockStart, progress: current / goal, rates, milestones };
+}
