@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Shell } from "@/components/layout/Shell";
 import { authOptions } from "@/lib/auth-options";
 import { getActiveClubeRound } from "@/lib/clube-album";
-import { getCriticsFMAlbums } from "@/lib/criticsfm-data";
+import { getCriticsFMCatalog } from "@/lib/criticsfm-data";
+import { CRITICSFM_PAGE_SIZE, queryCriticsFMAlbums, topRatedCriticsFM } from "@/lib/criticsfm-query";
 import { getActiveWeeklyRelease } from "@/lib/weekly-releases";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { CriticsFMClient } from "./CriticsFMClient";
@@ -392,8 +393,8 @@ function ClubeSection({ round, t }: { round: ClubeRoundData | null; t: Translate
 export default async function CriticsFMPage() {
   const { t } = await getServerTranslations();
   const session = await getServerSession(authOptions);
-  const [albums, round, weeklyRelease] = await Promise.all([
-    getCriticsFMAlbums(),
+  const [catalog, round, weeklyRelease] = await Promise.all([
+    getCriticsFMCatalog(),
     getActiveClubeRound(session?.user?.id ?? null),
     getActiveWeeklyRelease(),
   ]);
@@ -419,7 +420,16 @@ export default async function CriticsFMPage() {
       <ScoreScaleCard />
 
       <section style={{ marginTop: 8 }}>
-        <CriticsFMClient albums={albums} />
+        <CriticsFMClient
+          initialPage={queryCriticsFMAlbums(catalog, {
+            filter: "all",
+            sort: "recent",
+            q: "",
+            offset: 0,
+            limit: CRITICSFM_PAGE_SIZE,
+          })}
+          topAlbums={topRatedCriticsFM(catalog)}
+        />
       </section>
     </Shell>
   );

@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
+import {
+  CRITICSFM_PAGE_SIZE,
+  type CriticsFMListItem,
+  type CriticsFMPage,
+  type CriticsFMScoreFilter,
+  type CriticsFMSort,
+} from "@/lib/criticsfm-query";
+import { releaseTypeLabel } from "@/lib/release-type";
 import { ScoreSquare } from "@/components/ui/ScoreSquare";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Ad } from "@/components/ui/Ad";
@@ -134,8 +141,7 @@ function SpotifySearchPanel({ onClose, initialQuery = "" }: { onClose: () => voi
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SORT_IDS = ["recent", "score", "reviews"] as const;
-type SortId = (typeof SORT_IDS)[number];
+type SortId = CriticsFMSort;
 
 function getSortOptions(t: TFn): { id: SortId; label: string; short: string }[] {
   return [
@@ -145,7 +151,7 @@ function getSortOptions(t: TFn): { id: SortId; label: string; short: string }[] 
   ];
 }
 
-type ScoreFilter = "all" | "acclaimed" | "recommended" | "mixed" | "unfavorable" | "rejected" | "unrated";
+type ScoreFilter = CriticsFMScoreFilter;
 
 function getScoreFilters(t: TFn): { id: ScoreFilter; label: string }[] {
   return [
@@ -159,18 +165,7 @@ function getScoreFilters(t: TFn): { id: ScoreFilter; label: string }[] {
   ];
 }
 
-const PAGE_SIZE = 16;
-
-function matchesScoreFilter(a: CriticsFMAlbum, f: ScoreFilter): boolean {
-  if (f === "all")         return true;
-  if (f === "unrated")     return a.reviewCount === 0;
-  if (f === "acclaimed")   return a.score >= 90 && a.reviewCount > 0;
-  if (f === "recommended") return a.score >= 70 && a.score < 90 && a.reviewCount > 0;
-  if (f === "mixed")       return a.score >= 50 && a.score < 70 && a.reviewCount > 0;
-  if (f === "unfavorable") return a.score >= 30 && a.score < 50 && a.reviewCount > 0;
-  if (f === "rejected")    return a.score < 30 && a.reviewCount > 0;
-  return true;
-}
+const PAGE_SIZE = CRITICSFM_PAGE_SIZE;
 
 // ─── AlbumCover ───────────────────────────────────────────────────────────────
 
@@ -188,8 +183,8 @@ function AlbumCover({ coverUrl, title, size = 56 }: { coverUrl: string | null; t
 
 // ─── CriticsFMGridCard ────────────────────────────────────────────────────────
 
-function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
-  const { t } = useTranslations();
+function CriticsFMGridCard({ album }: { album: CriticsFMListItem }) {
+  const { t, locale } = useTranslations();
   return (
     <Link
       href={`/criticsfm/${album.id}`}
@@ -224,7 +219,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
         {album.releaseDate && (
           <div style={{ fontSize: 11, color: "var(--text-disabled)", marginTop: 6 }}>
             {album.releaseDate.slice(0, 4)}
-            {album.albumType && <span> · {album.albumType === "ALBUM" ? "LP" : album.albumType}</span>}
+            {album.albumType && <span> · {releaseTypeLabel(album.albumType, locale)}</span>}
           </div>
         )}
       </div>
@@ -234,7 +229,7 @@ function CriticsFMGridCard({ album }: { album: CriticsFMAlbum }) {
 
 // ─── CriticsFMListRow — mobile compact list view ──────────────────────────────
 
-function CriticsFMListRow({ album }: { album: CriticsFMAlbum }) {
+function CriticsFMListRow({ album }: { album: CriticsFMListItem }) {
   const { t } = useTranslations();
   return (
     <Link
@@ -300,55 +295,98 @@ function GridIcon({ active }: { active: boolean }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: CriticsFMAlbum[]; showBreadcrumb?: boolean }) {
+export function CriticsFMClient({
+  initialPage,
+  topAlbums,
+  showBreadcrumb = false,
+}: {
+  initialPage: CriticsFMPage;
+  topAlbums: CriticsFMListItem[];
+  showBreadcrumb?: boolean;
+}) {
   const { t } = useTranslations();
   const isMobile = useIsMobile();
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>("all");
   const [sortBy, setSortBy] = useState<SortId>("recent");
   const [search, setSearch] = useState("");
-  const [showCount, setShowCount] = useState(PAGE_SIZE);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [items, setItems] = useState<CriticsFMListItem[]>(initialPage.items);
+  const [total, setTotal] = useState(initialPage.total);
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [spotifyPanelQuery, setSpotifyPanelQuery] = useState<string | null>(null);
   const autoOpenedForRef = useRef<string | null>(null);
+  const requestSeq = useRef(0);
+  const isInitialQuery = useRef(true);
 
-  // Reset showCount on filter/sort/search change
-  useEffect(() => { setShowCount(PAGE_SIZE); }, [scoreFilter, sortBy, search]);
-
-  const filtered = useMemo(() => {
-    let list = albums.filter((a) => {
-      if (!matchesScoreFilter(a, scoreFilter)) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (!a.title.toLowerCase().includes(q) && !a.artist.toLowerCase().includes(q)) return false;
-      }
-      return true;
-    });
-    if (sortBy === "score")   list = [...list].sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount);
-    else if (sortBy === "reviews") list = [...list].sort((a, b) => b.reviewCount - a.reviewCount);
-    else list = [...list].sort((a, b) => (b.releaseDate ?? "").localeCompare(a.releaseDate ?? ""));
-    return list;
-  }, [albums, scoreFilter, sortBy, search]);
-
-  // Auto-open Spotify panel when local search returns nothing
   useEffect(() => {
-    const term = search.trim();
-    if (term && filtered.length === 0 && autoOpenedForRef.current !== term) {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  async function fetchPage(offset: number): Promise<CriticsFMPage | null> {
+    const seq = ++requestSeq.current;
+    const params = new URLSearchParams({
+      filter: scoreFilter,
+      sort: sortBy,
+      q: debouncedSearch,
+      offset: String(offset),
+      limit: String(PAGE_SIZE),
+    });
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/criticsfm/albums?${params}`);
+      if (!res.ok) return null;
+      const page = (await res.json()) as CriticsFMPage;
+      // Descarta respostas atrasadas de filtros antigos.
+      return seq === requestSeq.current ? page : null;
+    } catch {
+      return null;
+    } finally {
+      if (seq === requestSeq.current) setLoading(false);
+    }
+  }
+
+  // Filtro/ordem/busca mudaram: recomeça da primeira página (a inicial veio do servidor).
+  useEffect(() => {
+    if (isInitialQuery.current) {
+      isInitialQuery.current = false;
+      return;
+    }
+    let cancelled = false;
+    fetchPage(0).then((page) => {
+      if (cancelled || !page) return;
+      setItems(page.items);
+      setTotal(page.total);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoreFilter, sortBy, debouncedSearch]);
+
+  async function loadMore() {
+    const page = await fetchPage(items.length);
+    if (!page) return;
+    setItems((prev) => [...prev, ...page.items]);
+    setTotal(page.total);
+  }
+
+  // Auto-open Spotify panel when the search returns nothing
+  useEffect(() => {
+    const term = debouncedSearch;
+    if (loading) return;
+    if (term && total === 0 && autoOpenedForRef.current !== term) {
       autoOpenedForRef.current = term;
       setSpotifyPanelQuery(term);
-    } else if (!term || filtered.length > 0) {
+    } else if (!term || total > 0) {
       autoOpenedForRef.current = null;
     }
-  }, [search, filtered.length]);
+  }, [debouncedSearch, total, loading]);
 
-  const hasMore   = showCount < filtered.length;
-  const paginated = filtered.slice(0, showCount);
+  const hasMore   = items.length < total;
+  const paginated = items;
   // A primeira tela visível precisa ser dominada por álbuns avaliados; listagem de fichas sem nota não monetiza.
-  const adsEligible = isReviewDirectoryMature(paginated.slice(0, 16));
+  const adsEligible = isReviewDirectoryMature(items.slice(0, PAGE_SIZE));
 
-  const topAlbums = useMemo(
-    () => albums.filter((a) => a.reviewCount >= 2).sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount).slice(0, 6),
-    [albums],
-  );
   const showTop = scoreFilter === "all" && !search;
 
   return (
@@ -539,8 +577,8 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
         {/* Count */}
         <span style={{ fontSize: 12, color: "var(--text-muted)", flex: 1, fontVariantNumeric: "tabular-nums" }}>
           {t(
-            filtered.length === 1 ? "criticsfm.albumCountSingular" : "criticsfm.albumCountPlural",
-            { count: filtered.length },
+            total === 1 ? "criticsfm.albumCountSingular" : "criticsfm.albumCountPlural",
+            { count: total },
           )}
         </span>
 
@@ -597,7 +635,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
       </div>
 
       {/* ── Album grid / list ────────────────────────────────────────────── */}
-      {filtered.length === 0 ? (
+      {total === 0 && !loading ? (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--divider)", padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🎵</div>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{t("criticsfm.noAlbumsFound")}</div>
@@ -648,7 +686,8 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
           {hasMore && (
             <div style={{ textAlign: "center", marginTop: 28, marginBottom: 8 }}>
               <button
-                onClick={() => setShowCount((c) => c + PAGE_SIZE)}
+                onClick={loadMore}
+                disabled={loading}
                 style={{
                   padding: "11px 28px",
                   borderRadius: 100,
@@ -663,8 +702,8 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
                 }}
               >
                 {t("criticsfm.loadMore", {
-                  shown: Math.min(PAGE_SIZE, filtered.length - showCount),
-                  remaining: filtered.length - showCount,
+                  shown: Math.min(PAGE_SIZE, total - items.length),
+                  remaining: total - items.length,
                 })}
               </button>
             </div>

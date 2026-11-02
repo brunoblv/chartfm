@@ -59,6 +59,22 @@ export async function getCriticsFMAlbums(): Promise<CriticsFMAlbum[]> {
   });
 }
 
+// Catálogo completo fica só na memória do servidor (TTL curto) — nunca no HTML.
+const CATALOG_TTL_MS = 60_000;
+let catalogCache: { at: number; data: Promise<CriticsFMAlbum[]> } | null = null;
+
+export function getCriticsFMCatalog(): Promise<CriticsFMAlbum[]> {
+  const now = Date.now();
+  if (!catalogCache || now - catalogCache.at > CATALOG_TTL_MS) {
+    const data = getCriticsFMAlbums();
+    catalogCache = { at: now, data };
+    data.catch(() => {
+      if (catalogCache?.data === data) catalogCache = null;
+    });
+  }
+  return catalogCache.data;
+}
+
 export function getTopRatedAlbums(albums: CriticsFMAlbum[], limit = 12): CriticsFMAlbum[] {
   return albums
     .filter((a) => a.reviewCount >= 2)
