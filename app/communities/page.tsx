@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { communityImageSrc } from "@/lib/community-image";
 import Link from "next/link";
 import { Search, Users, BarChart2, MessageCircle, Star } from "lucide-react";
 import { getServerSession } from "next-auth";
@@ -68,7 +69,7 @@ function toCommunityCard(
     name: community.name,
     tagline: community.tagline,
     icon: community.icon,
-    logoUrl: community.logoUrl,
+    logoUrl: communityImageSrc(community.slug, "logo", community.logoUrl),
     cover: [community.coverA, community.coverB],
     members: community.members,
     posts: community.posts,

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { communityImageSrc } from "@/lib/community-image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
@@ -101,7 +102,9 @@ function mapPublicChartRow(c: PublicChartRow, locale: Awaited<ReturnType<typeof 
       weekLabel: c.weekLabel,
       dateRange: c.dateRange,
       paradaNome: c.parada.name,
-      community: c.community,
+      community: c.community
+        ? { ...c.community, logoUrl: communityImageSrc(c.community.slug, "logo", c.community.logoUrl) }
+        : null,
       likes: c.likes,
       comments: c.comments,
       reposts: c.reposts,

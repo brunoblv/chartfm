@@ -45,8 +45,15 @@ function ensureLocaleCookie(request: NextRequest, extraHeaders?: Headers): NextR
 
 type ApiCallSource = "user" | "system" | "anonymous";
 
+// Imagens de comunidade são GETs públicos de alto volume — logar cada uma só polui a auditoria.
+const COMMUNITY_IMAGE_RE = /^\/api\/communities\/[^/]+\/(logo|cover)$/;
+
 function shouldLogApiCall(pathname: string): boolean {
-  return pathname.startsWith("/api") && pathname !== "/api/internal/log-request";
+  return (
+    pathname.startsWith("/api") &&
+    pathname !== "/api/internal/log-request" &&
+    !COMMUNITY_IMAGE_RE.test(pathname)
+  );
 }
 
 /**

@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import { communityImageSrc } from "@/lib/community-image";
 import { authOptions } from "@/lib/auth-options";
 import { getCommunityBySlug, isCommunityAdmin } from "@/lib/community-auth";
 import type { CommunityHeaderData } from "@/components/community/CommunityHeader";
@@ -23,9 +24,9 @@ export async function loadCommunityHeader(slug: string): Promise<{
       name: row.name,
       tagline: row.tagline,
       cover: [row.coverA, row.coverB],
-      coverImageUrl: row.coverImageUrl,
+      coverImageUrl: communityImageSrc(row.slug, "cover", row.coverImageUrl),
       icon: row.icon,
-      logoUrl: row.logoUrl,
+      logoUrl: communityImageSrc(row.slug, "logo", row.logoUrl),
       members: row.members,
       posts: row.posts,
       founded: row.founded,

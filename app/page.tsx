@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { communityImageSrc } from "@/lib/community-image";
 import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -251,7 +252,9 @@ function mapChartRow(
       weekLabel: c.weekLabel,
       dateRange: c.dateRange,
       paradaNome: c.parada.name,
-      community: c.community,
+      community: c.community
+        ? { ...c.community, logoUrl: communityImageSrc(c.community.slug, "logo", c.community.logoUrl) }
+        : null,
       likes: c.likes,
       comments: c.comments,
       reposts: c.reposts,

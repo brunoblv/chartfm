@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { communityImageSrc } from "@/lib/community-image";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
@@ -53,10 +54,10 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
     name: row.name,
     tagline: row.tagline,
     icon: row.icon,
-    logoUrl: row.logoUrl,
+    logoUrl: communityImageSrc(row.slug, "logo", row.logoUrl),
     coverA: row.coverA,
     coverB: row.coverB,
-    coverImageUrl: row.coverImageUrl,
+    coverImageUrl: communityImageSrc(row.slug, "cover", row.coverImageUrl),
     members: row.members,
     posts: row.posts,
     founded: row.founded,
