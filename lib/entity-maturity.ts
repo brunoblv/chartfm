@@ -115,6 +115,8 @@ export const getAlbumMaturity = cache(async (slug: string, locale: Locale): Prom
     (max, s) => Math.max(max, lookupSongGlobal100Stats(s, globalStats).weeks),
     0,
   );
+  // /album/... só renderiza com entradas em paradas (sem elas a página é 404).
+  if (uniqueUsers === 0) return null;
   const mature = isAlbumMature({ ratingsCount, textReviewsCount, uniqueUsers, weeksTop100 });
   const name = album.exhibitionName?.trim() || album.title;
   const typeLabel = releaseTypeLabel(album.albumType, locale);
@@ -250,8 +252,9 @@ export async function listMatureAlbumPaths(limit = SITEMAP_LIMIT): Promise<Sitem
       JOIN paradas p ON p.id = c.parada_id
       WHERE c.is_published AND p.is_primary
       GROUP BY al.id
-      HAVING COUNT(DISTINCT c."userId") >= ${t.minUniqueUsers}
-      LIMIT ${limit}`,
+      HAVING COUNT(DISTINCT c."userId") >= 1
+      ORDER BY users DESC
+      LIMIT ${limit * 4}`,
     prisma.$queryRaw<{ id: number; ratings: number; texts: number }[]>`
       SELECT r.album_id AS id, COUNT(*)::int AS ratings,
         COUNT(*) FILTER (WHERE r.body IS NOT NULL AND btrim(r.body) <> '')::int AS texts
@@ -281,7 +284,7 @@ export async function listMatureAlbumPaths(limit = SITEMAP_LIMIT): Promise<Sitem
   return albums
     .filter((a) => {
       const rv = reviewsById.get(a.id);
-      return isAlbumMature({
+      return (usersById.get(a.id) ?? 0) > 0 && isAlbumMature({
         ratingsCount: rv?.ratings ?? 0,
         textReviewsCount: rv?.texts ?? 0,
         uniqueUsers: usersById.get(a.id) ?? 0,

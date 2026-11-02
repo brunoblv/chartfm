@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { entityMetadata, getSongGlobalStats, getSongMaturity } from "@/lib/entity-maturity";
 import Link from "next/link";
@@ -43,30 +44,12 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const parsed = parseSongSlug(slug);
   if (!parsed) {
-    return (
-      <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.notFoundSong")}</p>
-          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            {t("song.backDiscover")}
-          </Link>
-        </div>
-      </Shell>
-    );
+    notFound();
   }
 
   const songId = await resolveSongIdFromParsed(parsed);
   if (!songId) {
-    return (
-      <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.noDataFound")}</p>
-          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            {t("song.backDiscover")}
-          </Link>
-        </div>
-      </Shell>
-    );
+    notFound();
   }
 
   const cachedSnapshot = await getLatestEntityPageSnapshot<SongPageSnapshotPayload>(
@@ -140,16 +123,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
     }));
 
   if (!songRow) {
-    return (
-      <Shell title={t("song.notFoundTitle")} subtitle={t("song.notFoundSubtitle")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("song.noDataFound")}</p>
-          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            {t("song.backDiscover")}
-          </Link>
-        </div>
-      </Shell>
-    );
+    notFound();
   }
 
   // Linhas [CLIP_REVIEW_NEEDED] são marcação interna de admin (backfill de clipes) — nunca exibir ao público.

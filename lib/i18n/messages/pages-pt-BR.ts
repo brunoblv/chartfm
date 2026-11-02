@@ -2029,6 +2029,26 @@ export const pagesPtBR = {
       "Dar às pessoas uma forma de registrar sua relação com a música ao longo do tempo. As paradas que você cria hoje viram um histórico de tudo que você ouviu, semana a semana.",
     calloutPrefix: "Tem dúvidas ou quer entrar em contato? Acesse a página",
     calloutLinkText: "Contato",
+    operatorTitle: "Quem mantém o ChartFM",
+    operatorBody:
+      "O ChartFM é um projeto independente, criado e mantido por Bruno (@bruno no ChartFM), responsável pela operação, pelo conteúdo editorial e pela moderação da plataforma. Dúvidas, pedidos de correção e denúncias podem ser enviados para contato@chartfm.com.br ou pela página de contato.",
+    methodologyTitle: "Metodologia das paradas",
+    methodologyBody1:
+      "Todos os rankings coletivos (Global 100, paradas de comunidade, rankings de artistas e álbuns) são calculados a partir das paradas pessoais publicadas pelos usuários. Cada posição vale pontos segundo uma tabela única, a mesma usada no cálculo e documentada no guia Como funciona a pontuação. Cada semana fecha na segunda-feira às 17:00 (horário de Brasília) e vira um snapshot permanente, que não muda depois.",
+    methodologyBody2:
+      "Notas de álbuns no CriticsFM são a média das avaliações da comunidade. Médias com poucas avaliações são sinalizadas como tal e não recebem rótulos de consenso, e o número de avaliações sempre aparece ao lado da nota.",
+    sourcesTitle: "Fontes dos dados musicais",
+    sourcesBody:
+      "Títulos, capas, datas de lançamento, gravadoras, tipo do lançamento e gêneros vêm de fontes públicas e APIs de terceiros: Spotify, Last.fm, MusicBrainz, Deezer e Wikipedia (biografias de artistas). Datas de estreia na Billboard vêm de conjuntos de dados públicos. Esses metadados servem só para identificar as músicas; o conteúdo próprio do ChartFM são os rankings, históricos, avaliações e textos da comunidade e da equipe editorial.",
+    curationTitle: "Curadoria e política editorial",
+    curationBody:
+      "Os editoriais e guias são escritos ou revisados pela equipe do ChartFM com base nos dados da plataforma. Destaques da home só são publicados quando a página de destino existe e tem conteúdo. Páginas de catálogo sem contribuição da comunidade (por exemplo, um álbum sem avaliações nem histórico nas paradas) ficam fora dos mecanismos de busca e não exibem anúncios até ganharem conteúdo próprio.",
+    moderationTitle: "Moderação de conteúdo dos usuários",
+    moderationBody:
+      "Reviews, comentários, posts de comunidade e paradas são de responsabilidade de quem os publica e precisam seguir os Termos de uso. Conteúdo ofensivo, spam, plágio ou que viole direitos de terceiros é removido, e contas reincidentes podem ser suspensas. Usuários podem sinalizar dados incorretos nas páginas de música; administradores revisam as sinalizações e as denúncias recebidas por e-mail.",
+    correctionsTitle: "Correções",
+    correctionsBody:
+      "Se você encontrar um dado errado (artista, álbum, data, capa) ou um erro em um editorial, escreva para contato@chartfm.com.br com o link da página. Correções de dados são aplicadas na entidade e passam a valer em todas as páginas; correções em textos editoriais são feitas no próprio texto.",
   },
   contact: {
     title: "Contato",

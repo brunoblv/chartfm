@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { entityMetadata, getSongGlobalStats, getArtistMaturity } from "@/lib/entity-maturity";
 import Link from "next/link";
@@ -289,16 +290,7 @@ export default async function ArtistPage({
   }
 
   if (entryOrFilters.length === 0) {
-    return (
-      <Shell title={t("artist.notFoundLabel")} subtitle={t("artist.notFoundPage")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("artist.noDataFound")}</p>
-          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            {t("artist.backDiscover")}
-          </Link>
-        </div>
-      </Shell>
-    );
+    notFound();
   }
 
   const canonicalDbName =
@@ -358,16 +350,7 @@ export default async function ArtistPage({
 
   const hasArtistIdentity = Boolean(artistRef ?? spotifyProfile);
   if (allEntries.length === 0 && !hasArtistIdentity) {
-    return (
-      <Shell title={t("artist.notFoundLabel")} subtitle={t("artist.notFoundPage")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("artist.noDataFound")}</p>
-          <Link href="/discover" style={{ color: "#FA243C", fontWeight: 600, textDecoration: "none" }}>
-            {t("artist.backDiscover")}
-          </Link>
-        </div>
-      </Shell>
-    );
+    notFound();
   }
 
   const songCatalogOr: Prisma.SongWhereInput[] = [];

@@ -2029,6 +2029,26 @@ export const pagesEn = {
       "To give people a way to record their relationship with music over time. The charts you create today become a history of everything you listened to, week by week.",
     calloutPrefix: "Have questions or want to get in touch? Visit the",
     calloutLinkText: "Contact",
+    operatorTitle: "Who runs ChartFM",
+    operatorBody:
+      "ChartFM is an independent project created and run by Bruno (@bruno on ChartFM), who is responsible for operations, editorial content and moderation. Questions, correction requests and reports can be sent to contato@chartfm.com.br or through the contact page.",
+    methodologyTitle: "Chart methodology",
+    methodologyBody1:
+      "Every collective ranking (Global 100, community charts, artist and album rankings) is calculated from the personal charts users publish. Each position is worth points according to a single table, the same one used in the calculation and documented in the How scoring works guide. Each week closes on Monday at 5:00 PM (Brasília time) and becomes a permanent snapshot that does not change afterwards.",
+    methodologyBody2:
+      "Album scores on CriticsFM are the average of community ratings. Averages based on few ratings are flagged as such and get no consensus labels, and the number of ratings is always shown next to the score.",
+    sourcesTitle: "Music data sources",
+    sourcesBody:
+      "Titles, covers, release dates, labels, release types and genres come from public sources and third-party APIs: Spotify, Last.fm, MusicBrainz, Deezer and Wikipedia (artist biographies). Billboard debut dates come from public datasets. This metadata only identifies the songs; ChartFM's own content is the rankings, histories, ratings and texts written by the community and the editorial team.",
+    curationTitle: "Curation and editorial policy",
+    curationBody:
+      "Editorials and guides are written or reviewed by the ChartFM team based on the platform's data. Home page highlights are only published when the destination page exists and has content. Catalog pages without community contributions (for example, an album with no ratings and no chart history) are kept out of search engines and show no ads until they have original content.",
+    moderationTitle: "User content moderation",
+    moderationBody:
+      "Reviews, comments, community posts and charts are the responsibility of whoever publishes them and must follow the Terms of use. Offensive content, spam, plagiarism or anything that infringes third-party rights is removed, and repeat offenders may be suspended. Users can flag incorrect data on song pages; administrators review flags and reports received by email.",
+    correctionsTitle: "Corrections",
+    correctionsBody:
+      "If you find wrong data (artist, album, date, cover) or a mistake in an editorial, write to contato@chartfm.com.br with the page link. Data corrections are applied to the entity and take effect on every page; corrections to editorial texts are made in the text itself.",
   },
   contact: {
     title: "Contact",

@@ -20,11 +20,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AboutPage() {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
 
   return (
     <InstitutionalLayout>
-      <InstitutionalTitle updatedAt="julho de 2026">{t("about.title")}</InstitutionalTitle>
+      <InstitutionalTitle updatedAt={locale === "en" ? "November 2026" : "novembro de 2026"}>{t("about.title")}</InstitutionalTitle>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
         <InstitutionalSection title={t("about.whatIsTitle")}>
@@ -48,6 +48,43 @@ export default async function AboutPage() {
 
         <InstitutionalSection title={t("about.missionTitle")}>
           <InstitutionalParagraph>{t("about.missionBody")}</InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title={t("about.operatorTitle")}>
+          <InstitutionalParagraph>{t("about.operatorBody")}</InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title={t("about.methodologyTitle")}>
+          <InstitutionalParagraph>{t("about.methodologyBody1")}</InstitutionalParagraph>
+          <InstitutionalParagraph>{t("about.methodologyBody2")}</InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title={t("about.sourcesTitle")}>
+          <InstitutionalParagraph>{t("about.sourcesBody")}</InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title={t("about.curationTitle")}>
+          <InstitutionalParagraph>{t("about.curationBody")}</InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title={t("about.moderationTitle")}>
+          <InstitutionalParagraph>{t("about.moderationBody")}</InstitutionalParagraph>
+        </InstitutionalSection>
+
+        <InstitutionalDivider />
+
+        <InstitutionalSection title={t("about.correctionsTitle")}>
+          <InstitutionalParagraph>{t("about.correctionsBody")}</InstitutionalParagraph>
         </InstitutionalSection>
 
         <InstitutionalCallout>

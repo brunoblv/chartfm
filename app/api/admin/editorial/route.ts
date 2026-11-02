@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { brokenLinksMessage, checkRelatedLinks } from "@/lib/internal-link-check";
 import { requirePrivilegedSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -44,6 +45,12 @@ export async function POST(req: NextRequest) {
 
   const validationError = validateEditorialPostInput(input);
   if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
+
+  const linkCheck = await checkRelatedLinks(input.relatedLinks ?? []);
+  if (input.published && linkCheck.broken.length > 0) {
+    return NextResponse.json({ error: brokenLinksMessage(linkCheck.broken) }, { status: 400 });
+  }
+  input.relatedLinks = linkCheck.links;
 
   const existing = await prisma.editorialPost.findUnique({ where: { slug: input.slug } });
   if (existing) return NextResponse.json({ error: "Já existe um artigo com este slug." }, { status: 409 });

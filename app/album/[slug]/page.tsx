@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { entityMetadata, getSongGlobalStats, getAlbumMaturity } from "@/lib/entity-maturity";
 import Link from "next/link";
@@ -51,16 +52,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     : null;
 
   if (!parsed) {
-    return (
-      <Shell title={t("albums.albumLabel")} subtitle={t("albums.notFoundPage")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("albums.invalidSlug")}</p>
-          <Link href="/discover" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            {t("albums.backDiscover")}
-          </Link>
-        </div>
-      </Shell>
-    );
+    notFound();
   }
 
   const firstArtistWord = parsed.type === "slug"
@@ -427,16 +419,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   }
 
   if (albumEntries.length === 0) {
-    return (
-      <Shell title={t("albums.albumLabel")} subtitle={t("albums.notFoundPage")}>
-        <div style={{ maxWidth: 560, margin: "48px auto", textAlign: "center", color: "var(--text-muted)" }}>
-          <p style={{ fontSize: 16, marginBottom: 20 }}>{t("albums.noDataFound")}</p>
-          <Link href="/discover" style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
-            {t("albums.backDiscover")}
-          </Link>
-        </div>
-      </Shell>
-    );
+    notFound();
   }
 
   const canonicalAlbum = (albumEntries[0].song.albumRef?.exhibitionName?.trim() || albumEntries[0].song.album) ?? "";
