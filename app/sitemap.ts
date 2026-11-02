@@ -1,14 +1,17 @@
 import type { MetadataRoute } from "next";
 import { getEditorialPicksSorted } from "@/lib/editorial-picks";
 import { prisma } from "@/lib/prisma";
-import { buildArtistPath, buildAlbumPath, buildSongPath } from "@/lib/music-routes";
+import {
+  listMatureAlbumPaths,
+  listMatureArtistPaths,
+  listMatureProfilePaths,
+  listMatureSongPaths,
+} from "@/lib/entity-maturity";
 
-// Limites por entidade para manter o sitemap dentro do teto de 50.000 URLs do Next
-// e evitar indexar em massa páginas sem conteúdo suficiente (thin content).
-const ARTIST_LIMIT = 5000;
-const ALBUM_LIMIT = 3000;
-const SONG_LIMIT = 5000;
 const COMMUNITY_LIMIT = 2000;
+
+// Gerado sob demanda (consulta o banco) e revalidado a cada 6h.
+export const revalidate = 21600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://chartfm.com.br";
@@ -20,40 +23,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  // Só indexável se tiver conteúdo mínimo: artista com bio (Wikipedia), álbum com
-  // avaliações da comunidade, música com aparição em alguma parada, comunidade
-  // pública com atividade real.
-  const [artists, albums, songs, communities] = await Promise.all([
-    prisma.artist.findMany({
-      where: { bio: { not: null } },
-      select: { id: true, name: true, spotifyId: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-      take: ARTIST_LIMIT,
-    }),
-    prisma.album.findMany({
-      where: { reviews: { some: {} } },
-      select: {
-        id: true,
-        title: true,
-        updatedAt: true,
-        artist: { select: { id: true, name: true } },
-      },
-      orderBy: { updatedAt: "desc" },
-      take: ALBUM_LIMIT,
-    }),
-    prisma.song.findMany({
-      where: { entries: { some: {} } },
-      select: {
-        id: true,
-        title: true,
-        artist: true,
-        spotifyId: true,
-        createdAt: true,
-        artistRef: { select: { id: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: SONG_LIMIT,
-    }),
+  // Entidades entram no sitemap pelo MESMO critério que libera index,follow na
+  // página (lib/content-quality.ts) — sitemap e robots nunca podem divergir.
+  const [artists, albums, songs, profiles, communities] = await Promise.all([
+    listMatureArtistPaths(),
+    listMatureAlbumPaths(),
+    listMatureSongPaths(),
+    listMatureProfilePaths(),
     prisma.community.findMany({
       where: { isPublic: true, posts: { gt: 0 } },
       select: { slug: true, createdAt: true },
@@ -62,35 +38,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ]);
 
-  const artistEntries = artists.map((artist) => ({
-    url: `${base}${buildArtistPath(artist.name, artist.spotifyId, artist.id)}`,
-    lastModified: artist.updatedAt,
+  const toEntry = (priority: number) => (e: { path: string; lastModified?: Date }) => ({
+    url: `${base}${e.path}`,
+    lastModified: e.lastModified,
     changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
-
-  const albumEntries = albums.map((album) => ({
-    url: `${base}${buildAlbumPath(album.title, album.artist.name, {
-      artistId: album.artist.id,
-      albumId: album.id,
-    })}`,
-    lastModified: album.updatedAt,
-    changeFrequency: "weekly" as const,
-    priority: 0.55,
-  }));
-
-  const songEntries = songs.map((song) => ({
-    url: `${base}${buildSongPath({
-      title: song.title,
-      artist: song.artist,
-      id: song.id,
-      artistId: song.artistRef?.id,
-      spotifyId: song.spotifyId,
-    })}`,
-    lastModified: song.createdAt,
-    changeFrequency: "weekly" as const,
-    priority: 0.55,
-  }));
+    priority,
+  });
+  const artistEntries = artists.map(toEntry(0.6));
+  const albumEntries = albums.map(toEntry(0.55));
+  const songEntries = songs.map(toEntry(0.55));
+  const profileEntries = profiles.map(toEntry(0.5));
 
   const communityEntries = communities.map((community) => ({
     url: `${base}/community/${community.slug}`,
@@ -134,6 +91,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...artistEntries,
     ...albumEntries,
     ...songEntries,
+    ...profileEntries,
     ...communityEntries,
   ];
 }

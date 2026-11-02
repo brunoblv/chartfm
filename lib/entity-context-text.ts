@@ -5,6 +5,7 @@
  */
 
 import type { Locale } from "@/lib/i18n/config";
+import { releaseTypeNoun } from "@/lib/release-type";
 
 function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? singular : plural;
@@ -180,10 +181,13 @@ export function buildAlbumContext(
     trackCount: number;
     rankedTrackCount: number;
     bestSong: { title: string; peak: number } | null;
+    /** Album.albumType — mesmo valor que define o rótulo da interface. */
+    releaseType?: string | null;
   },
   locale: Locale = "pt-BR",
 ): string {
   const { album, artist, releaseYear, trackCount, rankedTrackCount, bestSong } = input;
+  const noun = releaseTypeNoun(input.releaseType, locale);
   const sentences: string[] = [];
   const en = locale === "en";
 
@@ -193,14 +197,14 @@ export function buildAlbumContext(
       trackCount > 0
         ? `, with ${trackCount} ${pluralize(trackCount, "track", "tracks")} registered on ChartFM`
         : "";
-    sentences.push(`${album} is an album by ${artist}${releasePart}${trackPart}.`);
+    sentences.push(`${album} is ${noun} by ${artist}${releasePart}${trackPart}.`);
   } else {
     const releasePart = releaseYear ? `, lançado em ${releaseYear}` : "";
     const trackPart =
       trackCount > 0
         ? `, com ${trackCount} ${pluralize(trackCount, "faixa registrada", "faixas registradas")} no ChartFM`
         : "";
-    sentences.push(`${album} é um álbum de ${artist}${releasePart}${trackPart}.`);
+    sentences.push(`${album} é ${noun} de ${artist}${releasePart}${trackPart}.`);
   }
 
   if (rankedTrackCount > 0) {

@@ -42,7 +42,7 @@ export default async function EditorialPage() {
         </p>
       </div>
 
-      <Ad placement="editorial" format="rectangle" style={{ margin: "0 0 36px 0" }} />
+      <Ad placement="editorial" eligible format="rectangle" style={{ margin: "0 0 36px 0" }} />
 
       <div
         style={{

@@ -1,5 +1,6 @@
 "use client";
 
+import { releaseTypeLabel } from "@/lib/release-type";
 import { useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { Instagram, Pencil, Trash2, Heart } from "lucide-react";
@@ -631,11 +632,7 @@ function AlbumDetailsCard({ details }: { details: AlbumDetails }) {
 
   const formatType = (albumType: string | null) => {
     if (!albumType) return null;
-    if (albumType === "ALBUM") return "LP";
-    if (albumType === "EP") return "EP";
-    if (albumType === "SINGLE") return "Single";
-    if (albumType === "COMPILATION") return t("criticsfm.compilation");
-    return albumType;
+    return releaseTypeLabel(albumType, locale);
   };
 
   const rows: { value: string; key: string }[] = [];

@@ -7,6 +7,7 @@ import type { CriticsFMAlbum } from "@/lib/criticsfm-data";
 import { ScoreSquare } from "@/components/ui/ScoreSquare";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Ad } from "@/components/ui/Ad";
+import { isReviewDirectoryMature } from "@/lib/content-quality";
 import { useTranslations } from "@/hooks/useTranslations";
 
 type TFn = ReturnType<typeof useTranslations>["t"];
@@ -341,6 +342,8 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
 
   const hasMore   = showCount < filtered.length;
   const paginated = filtered.slice(0, showCount);
+  // A primeira tela visível precisa ser dominada por álbuns avaliados; listagem de fichas sem nota não monetiza.
+  const adsEligible = isReviewDirectoryMature(paginated.slice(0, 16));
 
   const topAlbums = useMemo(
     () => albums.filter((a) => a.reviewCount >= 2).sort((a, b) => b.score - a.score || b.reviewCount - a.reviewCount).slice(0, 6),
@@ -619,7 +622,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
           {isMobile && viewMode === "list" ? (
             <div>
               {paginated.slice(0, 8).map((a) => <CriticsFMListRow key={a.id} album={a} />)}
-              {paginated.length > 8 && <Ad placement="criticsFm" format="mobile-banner" style={{ margin: "10px 0" }} />}
+              {paginated.length > 8 && <Ad placement="criticsFm" eligible={adsEligible} format="mobile-banner" style={{ margin: "10px 0" }} />}
               {paginated.slice(8).map((a) => <CriticsFMListRow key={a.id} album={a} />)}
             </div>
           ) : (
@@ -634,7 +637,7 @@ export function CriticsFMClient({ albums, showBreadcrumb = false }: { albums: Cr
               {paginated.slice(0, isMobile ? 6 : 8).map((a) => <CriticsFMGridCard key={a.id} album={a} />)}
               {paginated.length > (isMobile ? 6 : 8) && (
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <Ad placement="criticsFm" format="auto" style={{ margin: "4px 0" }} />
+                  <Ad placement="criticsFm" eligible={adsEligible} format="auto" style={{ margin: "4px 0" }} />
                 </div>
               )}
               {paginated.slice(isMobile ? 6 : 8).map((a) => <CriticsFMGridCard key={a.id} album={a} />)}

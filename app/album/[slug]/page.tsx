@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { entityMetadata, getSongGlobalStats, getAlbumMaturity } from "@/lib/entity-maturity";
 import Link from "next/link";
 import { ChevronLeft, Star, MessageSquare } from "lucide-react";
 import { getServerSession } from "next-auth";
@@ -5,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import { pointsForPosition, songKey } from "@/lib/chart-page-common";
 import {
-  loadSongGlobalStatsFromSnapshots,
   songSnapshotAggKey,
 } from "@/lib/global-snapshot";
 import { albumEntityKey } from "@/lib/entity-page-snapshot/keys";
@@ -18,6 +19,7 @@ import { parseAlbumSlug, buildArtistPath, buildSongPath, slugify } from "@/lib/m
 import { authOptions } from "@/lib/auth-options";
 import { isPrivilegedRole } from "@/lib/permissions";
 import { buildAlbumContext } from "@/lib/entity-context-text";
+import { releaseTypeLabel } from "@/lib/release-type";
 import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
 import { AlbumDetailClient } from "./AlbumDetailClient";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
@@ -27,6 +29,12 @@ function albumColor(name: string): [string, string] {
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
   const idx = Math.abs(hash) % COVER_PALETTES.length;
   return COVER_PALETTES[idx];
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const { t, locale } = await getServerTranslations();
+  return entityMetadata(await getAlbumMaturity(slug, locale), t("albums.albumLabel"));
 }
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -134,6 +142,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     const artistDbId = p.artistDbId;
     const albumDbId = p.albumDbId;
     const firstEntrySpotifyId = songs[0]?.spotifyId ?? null;
+    const albumType = albumDbId
+      ? (await prisma.album.findUnique({ where: { id: albumDbId }, select: { albumType: true } }))?.albumType ?? null
+      : null;
 
     const rankedSongs = songs.filter((s) => s.peak > 0);
     const bestSong = rankedSongs.length > 0
@@ -147,6 +158,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         trackCount: songs.length,
         rankedTrackCount: rankedSongs.length,
         bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
+        releaseType: albumType,
       },
       locale,
     );
@@ -497,7 +509,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     topFans = cachedSnapshot.payload.topFans;
     stats = cachedSnapshot.payload.stats;
   } else {
-    const globalRank = await loadSongGlobalStatsFromSnapshots();
+    const globalRank = await getSongGlobalStats();
     songs = [...songsMap.values()]
       .map((s) => {
         const gs = globalRank.get(
@@ -544,6 +556,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     ? parsed.albumId
     : (albumEntries.find((e) => e.song.albumRef?.id)?.song.albumRef?.id ?? null);
 
+  const albumType = albumDbId
+    ? (await prisma.album.findUnique({ where: { id: albumDbId }, select: { albumType: true } }))?.albumType ?? null
+    : null;
   const rankedSongs = songs.filter((s) => s.peak > 0);
   const bestSong = rankedSongs.length > 0
     ? rankedSongs.reduce((best, s) => (s.peak < best.peak ? s : best))
@@ -556,6 +571,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       trackCount: songs.length,
       rankedTrackCount: rankedSongs.length,
       bestSong: bestSong ? { title: bestSong.title, peak: bestSong.peak } : null,
+      releaseType: albumType,
     },
     locale,
   );
@@ -711,7 +727,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
           <div style={{ color: "white", flex: 1, minWidth: 280 }}>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.8, marginBottom: 8 }}>
-              {t("albums.albumLabel")}
+              {releaseTypeLabel(albumType, locale)}
             </div>
             <h1 style={{ fontSize: 56, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 12 }}>
               {canonicalAlbum}

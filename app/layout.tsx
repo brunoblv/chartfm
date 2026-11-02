@@ -8,7 +8,6 @@ import { ThemeScript } from "@/components/theme-script";
 import { Providers } from "./providers";
 import { CookieConsent } from "@/components/consent/CookieConsent";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
-import { AdSenseScript } from "@/components/consent/AdSenseScript";
 import { authOptions } from "@/lib/auth-options";
 import { getServerLocale } from "@/lib/i18n/server";
 
@@ -44,11 +43,8 @@ export default async function RootLayout({
               name: "ChartFM",
               url: "https://chartfm.com.br",
               description: "Rede social de paradas musicais semanais. Publique seu ranking, acompanhe artistas e descubra fãs de música.",
-              potentialAction: {
-                "@type": "SearchAction",
-                target: "https://chartfm.com.br/communities?q={search_term_string}",
-                "query-input": "required name=search_term_string",
-              },
+              // Sem SearchAction: não existe página pública de busca (só /api/search); o
+              // alvo antigo (/communities?q=) não buscava músicas/artistas.
             }),
           }}
         />
@@ -80,7 +76,6 @@ export default async function RootLayout({
       </body>
 
       <GoogleAnalytics gaId="G-VKENNK522F" />
-      <AdSenseScript />
     </html>
   );
 }

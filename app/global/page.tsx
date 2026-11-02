@@ -223,7 +223,7 @@ export default async function GlobalHubPage() {
         </div>
       </section>
 
-      <Ad placement="globalHub" format="rectangle" style={{ margin: "0 0 28px 0" }} />
+      <Ad placement="globalHub" eligible format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
       {/* ===== COMO FUNCIONA ===== */}
       <section style={{ borderTop: "1px solid var(--divider)", paddingTop: 32 }}>

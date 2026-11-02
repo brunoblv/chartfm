@@ -304,7 +304,7 @@ export default async function Global100Page({ searchParams }: GlobalPageProps) {
               week: formatWeekLabel(locale, weekNow),
             })}
         </p>
-        <Ad placement="global100" format="rectangle" style={{ margin: "0 0 28px 0" }} />
+        <Ad placement="global100" eligible format="rectangle" style={{ margin: "0 0 28px 0" }} />
 
         <GlobalTabs
           weeklySongs={globalSongs}

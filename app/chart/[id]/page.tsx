@@ -18,6 +18,7 @@ import {
 import { Shell } from "@/components/layout/Shell";
 import { useTranslations } from "@/hooks/useTranslations";
 import { Ad } from "@/components/ui/Ad";
+import { isChartMature } from "@/lib/content-quality";
 import { Avatar } from "@/components/ui/Avatar";
 import { Cover } from "@/components/ui/Cover";
 import { VideoClipCover } from "@/components/ui/VideoClipCover";
@@ -1250,6 +1251,7 @@ export default function ChartDetailPage() {
 
         <Ad
           placement="chart"
+          eligible={isDbChart && isChartMature({ entryCount: chart?.entries.length ?? 0 })}
           format="leaderboard"
           style={{ margin: "0 0 4px 0" }}
         />

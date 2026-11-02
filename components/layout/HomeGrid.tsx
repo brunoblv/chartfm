@@ -15,7 +15,7 @@ export function HomeGrid({ feed, sidebar }: HomeGridProps) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {feed}
-        <Ad placement="homeFeed" format="mobile-banner" style={{ margin: "4px 0" }} />
+        <Ad placement="homeFeed" eligible format="mobile-banner" style={{ margin: "4px 0" }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {sidebar}
         </div>

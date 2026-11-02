@@ -1,11 +1,15 @@
 "use client";
 
 /**
- * AdSlot — slot reutilizável do Google AdSense
+ * AdSlot — slot reutilizável do Google AdSense.
  *
- * Publisher ID: ca-pub-4600084865044867 (já carregado em app/layout.tsx)
+ * O script adsbygoogle.js NÃO é carregado globalmente: só entra na página quando
+ * um slot elegível renderiza. Carregá-lo no layout disparava requisições (e Auto
+ * ads) em páginas noindex, fichas automáticas e diretórios sem contribuição —
+ * superfícies que a política do AdSense não permite monetizar.
  */
 
+import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 import { isAdSlotConfigured } from "@/lib/adsense-slots";
 import { CONSENT_STORAGE_KEY, hasAdsConsent } from "@/lib/consent";
@@ -18,11 +22,14 @@ export type AdFormat =
 
 interface AdSlotProps {
   slotId: string;
+  /** Decidido no servidor por lib/content-quality.ts. */
+  eligible: boolean;
   format?: AdFormat;
   style?: React.CSSProperties;
 }
 
 const PUB_ID = "ca-pub-4600084865044867";
+const ADSENSE_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${PUB_ID}`;
 
 const MIN_HEIGHT: Record<AdFormat, number> = {
   leaderboard: 90,
@@ -38,9 +45,9 @@ const WRAPPER_MAX_WIDTH: Record<AdFormat, number | string> = {
   auto: "100%",
 };
 
-export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
+export function AdSlot({ slotId, eligible, format = "auto", style }: AdSlotProps) {
   const pushed = useRef(false);
-  const active = isAdSlotConfigured(slotId);
+  const active = eligible && isAdSlotConfigured(slotId);
   const [adsAllowed, setAdsAllowed] = useState(false);
 
   useEffect(() => {
@@ -56,6 +63,7 @@ export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
     };
   }, []);
 
+  // A fila window.adsbygoogle é processada quando o script termina de carregar.
   useEffect(() => {
     if (!active || !adsAllowed) return;
     if (pushed.current) return;
@@ -66,7 +74,7 @@ export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
       ).push({});
       pushed.current = true;
     } catch {
-      // script ainda não carregou
+      // ignora: slot fica vazio
     }
   }, [active, adsAllowed]);
 
@@ -88,6 +96,12 @@ export function AdSlot({ slotId, format = "auto", style }: AdSlotProps) {
         ...style,
       }}
     >
+      <Script
+        id="adsbygoogle-js"
+        src={ADSENSE_SRC}
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
       <ins
         className="adsbygoogle"
         style={{ display: "block", width: "100%", minHeight: MIN_HEIGHT[format] }}

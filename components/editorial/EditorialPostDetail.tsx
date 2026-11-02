@@ -139,7 +139,7 @@ export async function EditorialPostDetail({ pick, previewImage, relatedPicks }: 
         ))}
       </div>
 
-      <Ad placement="editorial" format="rectangle" style={{ margin: "0 0 32px 0" }} />
+      <Ad placement="editorial" eligible format="rectangle" style={{ margin: "0 0 32px 0" }} />
 
       {spotifyEmbed && (
         <div style={{ maxWidth: 820, marginBottom: 32 }}>

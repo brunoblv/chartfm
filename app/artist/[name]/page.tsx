@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { entityMetadata, getSongGlobalStats, getArtistMaturity } from "@/lib/entity-maturity";
 import Link from "next/link";
 import { ChevronLeft, Play, Star } from "lucide-react";
 import type { Prisma } from "@prisma/client";
@@ -6,7 +8,6 @@ import { prisma } from "@/lib/prisma";
 import { Shell } from "@/components/layout/Shell";
 import {
   loadLatestGlobalWeeklySongPositions,
-  loadSongGlobalStatsFromSnapshots,
   resolveSongGlobal100Stats,
 } from "@/lib/global-snapshot";
 import { pointsForPosition, songKey } from "@/lib/chart-page-common";
@@ -205,6 +206,12 @@ type AlbumRow = {
   points: number;
   cover: { palette: [string, string]; seed: number; imageUrl?: string | null };
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ name: string }> }): Promise<Metadata> {
+  const { name } = await params;
+  const { locale } = await getServerTranslations();
+  return entityMetadata(await getArtistMaturity(name, locale), "ChartFM");
+}
 
 export default async function ArtistPage({
   params,
@@ -648,7 +655,7 @@ export default async function ArtistPage({
   }
 
   {
-    const globalRank = await loadSongGlobalStatsFromSnapshots();
+    const globalRank = await getSongGlobalStats();
     const latestPositions = await loadLatestGlobalWeeklySongPositions();
     songs = songs
       .map((s) => {

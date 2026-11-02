@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ChevronLeft, Flame, Trophy, BadgeCheck } from "lucide-react";
 import { Ad } from "@/components/ui/Ad";
+import { isProfileMature } from "@/lib/content-quality";
 import { Shell } from "@/components/layout/Shell";
 import { Avatar } from "@/components/ui/Avatar";
 import { ChartCard } from "@/components/chart/ChartCard";
@@ -1571,6 +1572,7 @@ export default function ProfilePage() {
 
         <Ad
           placement="profile"
+          eligible={isProfileMature({ publishedCharts: totalCharts })}
           format="rectangle"
           style={{ margin: "0 0 28px 0" }}
         />

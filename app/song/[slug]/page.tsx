@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { entityMetadata, getSongGlobalStats, getSongMaturity } from "@/lib/entity-maturity";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getServerSession } from "next-auth";
@@ -10,7 +12,8 @@ import { parseSongSlug, buildAlbumPath, buildArtistPath } from "@/lib/music-rout
 import { resolveSongIdFromParsed } from "@/lib/resolve-song-id";
 import { SongAppearancesTabs } from "@/components/song/SongAppearancesTabs";
 import { Ad } from "@/components/ui/Ad";
-import { loadSongGlobalStatsFromSnapshots, lookupSongGlobal100Stats } from "@/lib/global-snapshot";
+import { isSongMature } from "@/lib/content-quality";
+import { lookupSongGlobal100Stats } from "@/lib/global-snapshot";
 import { resolvedChartEntryPoints } from "@/lib/chart-entry-points";
 import { buildSongParadaAppearanceGroups } from "@/lib/song-parada-appearances";
 import { isPrimaryParadaChartEntry } from "@/lib/paradas";
@@ -23,6 +26,12 @@ import { SongFlagButton } from "@/components/song/SongFlagButton";
 import { SongMergeButton } from "@/components/song/SongMergeButton";
 import { EntityBackfillButtons } from "@/components/admin/EntityBackfillButtons";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const { t, locale } = await getServerTranslations();
+  return entityMetadata(await getSongMaturity(slug, locale), t("song.notFoundTitle"));
+}
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const { t, locale } = await getServerTranslations();
@@ -259,7 +268,7 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
   }
 
   {
-    const globalRank = await loadSongGlobalStatsFromSnapshots();
+    const globalRank = await getSongGlobalStats();
     const gs = lookupSongGlobal100Stats(
       { spotifyId: spotifyId ?? songRow.spotifyId, title, artist },
       globalRank,
@@ -491,7 +500,9 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           initialClips={initialClips}
         />
 
-        <Ad placement="song" format="rectangle" style={{ margin: "28px 0" }} />
+        <Ad
+          placement="song"
+          eligible={isSongMature({ uniqueUsers: globalStats?.uniqueUsers ?? 0, weeksTop100: globalStats?.weeksTop100 ?? 0 })} format="rectangle" style={{ margin: "28px 0" }} />
 
         {!hasChartPresence && (
           <div style={{ marginTop: 20, padding: 14, background: "var(--fill-inset)", borderRadius: 12, fontSize: 14, color: "var(--text-muted)" }}>

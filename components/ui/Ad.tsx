@@ -12,10 +12,12 @@ export type AdPlacement = keyof typeof ADSENSE_SLOTS;
 
 interface AdProps {
   placement: AdPlacement;
+  /** Obrigatório: a página precisa provar que tem conteúdo próprio (lib/content-quality.ts). */
+  eligible: boolean;
   format?: AdFormat;
   style?: React.CSSProperties;
 }
 
-export function Ad({ placement, format = "auto", style }: AdProps) {
-  return <AdSlot slotId={ADSENSE_SLOTS[placement]} format={format} style={style} />;
+export function Ad({ placement, eligible, format = "auto", style }: AdProps) {
+  return <AdSlot slotId={ADSENSE_SLOTS[placement]} eligible={eligible} format={format} style={style} />;
 }
