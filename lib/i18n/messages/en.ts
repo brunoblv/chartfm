@@ -53,6 +53,7 @@ export const messagesEn = {
     adminVideoparada: "Parade Videos",
     adminEditorial: "Editorial",
     adminSupport: "Support tickets",
+    adminInstagram: "Instagram",
     ctaTitle: "Create your weekly chart",
     ctaBody:
       "Log the tracks you listened to most, keep your streak, and discover your friends' taste in music.",
