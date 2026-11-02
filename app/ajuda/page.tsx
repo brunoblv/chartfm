@@ -4,6 +4,7 @@ import { LifeBuoy, Mail } from "lucide-react";
 import { InstitutionalLayout } from "@/components/institutional/InstitutionalLayout";
 import { GUIDES, FAQ_ITEMS } from "@/lib/content/helpContent";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { scoringDocParams } from "@/lib/scoring-docs";
 import { HelpSearch } from "./HelpSearch";
 import { AjudaTwoColumn } from "./AjudaTwoColumn";
 
@@ -23,7 +24,8 @@ function guideByHref(href: string) {
 }
 
 export default async function AjudaPage() {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
+  const docParams = scoringDocParams(locale);
 
   const QUICK_START = [
     {
@@ -233,7 +235,7 @@ export default async function AjudaPage() {
             {previewFaq.map((item) => (
               <div key={item.questionKey} style={{ background: "var(--surface)", padding: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>{t(item.questionKey)}</div>
-                <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>{t(item.answerKey)}</div>
+                <div style={{ fontSize: 13, color: "var(--text-subtle)", lineHeight: 1.55 }}>{t(item.answerKey, docParams)}</div>
               </div>
             ))}
             <Link

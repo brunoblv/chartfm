@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal/LegalPage";
 import { InstitutionalInlineLink } from "@/components/institutional/InstitutionalPrimitives";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { scoringDocParams } from "@/lib/scoring-docs";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -13,7 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function GuideGlobal100() {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
+  const tRaw = t;
   return (
     <LegalPage
       title={t("guides.global100Title")}
@@ -25,7 +27,7 @@ export default async function GuideGlobal100() {
         },
         {
           title: t("guides.global100Sec2Title"),
-          body: [t("guides.global100Sec2Body1"), t("guides.global100Sec2Body2"), t("guides.global100Sec2Body3")],
+          body: [tRaw("guides.global100Sec2Body1", scoringDocParams(locale)), t("guides.global100Sec2Body2"), t("guides.global100Sec2Body3")],
         },
         {
           title: t("guides.global100Sec3Title"),

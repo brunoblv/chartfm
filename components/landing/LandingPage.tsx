@@ -10,6 +10,7 @@ import { ChartFMLogo } from "@/components/ui/ChartFMLogo";
 import { SocialFooterBadges } from "@/components/ui/SocialFooterBadges";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useTranslations } from "@/hooks/useTranslations";
+import { scoringDocParams } from "@/lib/scoring-docs";
 
 function StatusBadge({ status, delta, newLabel }: { status: string; delta?: number | null; newLabel: string }) {
   if (status === "new") return (
@@ -499,7 +500,7 @@ export function LandingPage({
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 16, fontSize: 15, lineHeight: 1.8, color: "var(--text-subtle)" }}>
             <p style={{ margin: 0 }}>{t("landing.calcP1")}</p>
-            <p style={{ margin: 0 }}>{t("landing.calcP2")}</p>
+            <p style={{ margin: 0 }}>{t("landing.calcP2", scoringDocParams(locale))}</p>
             <p style={{ margin: 0 }}>{t("landing.calcP3")}</p>
             <p style={{ margin: 0 }}>{t("landing.calcP4")}</p>
           </div>

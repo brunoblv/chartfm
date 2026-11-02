@@ -2067,7 +2067,7 @@ export const pagesPtBR = {
     q3: "Preciso pagar para usar o ChartFM?",
     a3: "Não. Criar conta, publicar paradas, seguir outros usuários e participar de comunidades e da Copa não têm custo no ChartFM.",
     q4: "Como funciona a pontuação do Global 100?",
-    a4: "Cada posição da sua parada pessoal vale pontos para o Global 100, numa curva geométrica: a 1ª posição vale 1.000 pontos e cada posição seguinte vale 95% da posição anterior. Os pontos de todas as paradas publicadas na semana são somados por música para formar o ranking. A fórmula completa e a tabela de posição por pontos estão no guia Como funciona a pontuação.",
+    a4: "Cada posição da sua parada pessoal vale pontos para o Global 100: a 1ª posição vale {p1} pontos, a 2ª vale {p2} e a 3ª vale {p3}; da 4ª em diante os pontos caem numa curva decrescente até {p100} pontos na 100ª posição. Os pontos de todas as paradas publicadas na semana são somados por música para formar o ranking. A fórmula completa e a tabela de posição por pontos estão no guia Como funciona a pontuação.",
     q5: "Posso editar uma parada depois de publicada?",
     a5: "Sim. Mas a semana do Global 100 fecha toda segunda-feira às 17:00 (horário de Brasília) e o snapshot daquela semana é processado poucas horas depois. Depois que o snapshot é gerado, ele fica congelado, edições feitas após o fechamento não mudam mais o histórico da semana já fechada.",
     q6: "Minha parada pode ter qualquer gênero musical?",
@@ -2416,30 +2416,30 @@ export const pagesPtBR = {
     avaliarSec6Suffix: "do ChartFM.",
     pontuacaoMetaTitle: "Como funciona a pontuação | Guias ChartFM",
     pontuacaoMetaDescription:
-      "A fórmula geométrica por trás dos pontos de cada posição na parada: como é calculada, tabela completa de posição por pontos e exemplos.",
+      "A fórmula por trás dos pontos de cada posição na parada: como é calculada, tabela completa de posição por pontos e exemplos.",
     pontuacaoTitle: "Como funciona a pontuação",
     pontuacaoSubtitle: "A fórmula por trás dos pontos de cada posição na sua parada",
     pontuacaoSec1Title: "A fórmula",
     pontuacaoSec1Body1:
-      "Cada posição da sua parada pessoal vale uma quantidade de pontos para o Global 100. A 1ª posição sempre vale 1.000 pontos. A partir daí, cada posição seguinte vale 95% dos pontos da posição anterior, não um valor fixo a menos, mas uma porcentagem da posição de cima. Isso forma uma curva geométrica: os pontos caem rápido logo no início da parada e cada vez mais devagar conforme a posição avança.",
+      "Cada posição da sua parada pessoal vale uma quantidade de pontos para o Global 100. As três primeiras posições têm valores fixos: a 1ª vale {p1} pontos, a 2ª vale {p2} e a 3ª vale {p3}. Da 4ª posição em diante, os pontos seguem uma curva decrescente que sai de {p3} e chega a {p100} pontos na 100ª posição: a queda é mais forte no meio da parada e suaviza no final, de modo que toda posição continua valendo alguma coisa.",
     pontuacaoSec1Body2:
-      "Em fórmula: pontos da posição N = 1.000 × 0,95 elevado a (N − 1), arredondado para o inteiro mais próximo. Esse cálculo vale para as 100 posições possíveis em uma parada.",
+      "Em fórmula, para N entre 4 e 100: pontos = {p100} + ({p3} − {p100}) × ((100 − N) ÷ 97) elevado a 1,5, arredondado para cima. É exatamente a mesma função que o ChartFM usa ao publicar sua parada, e a tabela abaixo é gerada por ela.",
     pontuacaoSec2Title: "Tabela de posição por pontos",
-    pontuacaoSec2Intro: "Alguns pontos de referência da curva, da 1ª à 100ª posição:",
+    pontuacaoSec2Intro: "Pontos de cada posição, da 1ª à 100ª:",
     pontuacaoTableColPosicao: "Posição",
     pontuacaoTableColPontos: "Pontos",
     pontuacaoSec3Title: "Exemplos práticos",
     pontuacaoSec3Body1:
-      "Se uma música aparece na 1ª posição de 3 paradas diferentes na mesma semana, ela soma 3 × 1.000 = 3.000 pontos para o Global 100 daquela semana.",
+      "Se uma música aparece na 1ª posição de 3 paradas diferentes na mesma semana, ela soma 3 × {p1} = {top3x} pontos para o Global 100 daquela semana.",
     pontuacaoSec3Body2:
-      "Se uma música aparece na 1ª posição de uma parada e na 10ª posição de outra parada, na mesma semana, ela soma 1.000 + 630 = 1.630 pontos.",
+      "Se uma música aparece na 1ª posição de uma parada e na 10ª posição de outra parada, na mesma semana, ela soma {p1} + {p10} = {ex1plus10} pontos.",
     pontuacaoSec3Body3:
-      "Já uma música que aparece só na 50ª posição de uma única parada soma apenas 81 pontos com essa parada, bem menos do que uma música que aparece uma única vez na 1ª posição de qualquer parada.",
+      "Já uma música que aparece só na 50ª posição de uma única parada soma {p50} pontos com essa parada, bem menos do que uma música que aparece uma única vez na 1ª posição de qualquer parada.",
     pontuacaoSec4Title: "Por que essa curva",
     pontuacaoSec4Body1:
-      "A curva geométrica foi escolhida de propósito: ela premia conviction (estar bem colocado) mais do que volume (aparecer em muitas paradas em posições baixas). Uma música na 1ª posição de 5 paradas diferentes soma 5 × 1.000 = 5.000 pontos.",
+      "A curva foi escolhida de propósito: ela premia convicção (estar bem colocado) mais do que volume (aparecer em muitas paradas em posições baixas). Uma música na 1ª posição de {multiTop} paradas diferentes soma {multiTop} × {p1} = {multiTopTotal} pontos.",
     pontuacaoSec4Body2:
-      "Para uma música na 20ª posição (377 pontos por parada) alcançar essa mesma soma, ela precisaria aparecer em pelo menos 14 paradas diferentes (14 × 377 = 5.278). É esse desenho que faz o Global 100 valorizar mais quem coloca uma música no topo da própria parada do que quem só a menciona em posições finais, mesmo que com mais frequência.",
+      "Para uma música na {lowPos}ª posição ({lowPts} pontos por parada) alcançar essa mesma soma, ela precisaria aparecer em pelo menos {lowCharts} paradas diferentes ({lowCharts} × {lowPts} = {lowTotal}). É esse desenho que faz o Global 100 valorizar mais quem coloca uma música no topo da própria parada do que quem só a menciona em posições finais.",
     pontuacaoFooterPrefix: "Veja também:",
     pontuacaoFooterLink1: "Como funciona o Global 100",
     pontuacaoFooterLink2: "Glossário do ChartFM",
@@ -2456,7 +2456,7 @@ export const pagesPtBR = {
       "O resultado é uma parada que representa o gosto real da comunidade, não o que um algoritmo recomendou ou o que tocou mais vezes em modo aleatório, mas o que os usuários conscientemente escolheram como as músicas mais importantes de suas semanas.",
     global100Sec2Title: "Como os pontos são calculados",
     global100Sec2Body1:
-      "O sistema de pontuação do ChartFM usa uma curva geométrica: a música na 1ª posição de uma parada vale 1.000 pontos, e cada posição abaixo vale 95% da posição anterior. Assim, a 2ª posição vale 950 pontos, a 5ª vale 815, a 10ª vale 630, a 50ª vale 81, e a 100ª (última posição possível) vale 6.",
+      "No sistema de pontuação do ChartFM, a música na 1ª posição de uma parada vale {p1} pontos, a 2ª vale {p2} e a 3ª vale {p3}. Da 4ª em diante, os pontos caem numa curva decrescente: a 5ª vale {p5}, a 10ª vale {p10}, a 50ª vale {p50}, e a 100ª (última posição possível) vale {p100}.",
     global100Sec2Body2:
       "Essa curva foi escolhida de propósito: ela valoriza mais o topo das paradas pessoais do que o volume. Uma música que aparece em poucas paradas, mas sempre nas primeiras posições, pontua mais do que uma música que aparece em muitas paradas só nas posições finais.",
     global100Sec2Body3:

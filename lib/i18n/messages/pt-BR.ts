@@ -277,7 +277,7 @@ export const messagesPtBR = {
     viewFullChartCta: "Ver parada completa →",
     calcTitle: "Como o Global 100 é calculado",
     calcP1: "O Global 100 é a parada coletiva do ChartFM, formada toda semana a partir das paradas pessoais publicadas pelos usuários. Não existe algoritmo de reprodução automática aqui: cada posição no ranking coletivo vem de uma escolha deliberada de alguém, feita ao montar a própria parada.",
-    calcP2: "O cálculo usa uma curva geométrica: a música na 1ª posição de uma parada pessoal vale 1.000 pontos, e cada posição abaixo vale 95% da posição anterior - a 2ª vale 950, a 5ª vale 815, a 10ª vale 630. Esses pontos são somados entre todas as paradas publicadas na semana para formar o ranking coletivo.",
+    calcP2: "O cálculo é simples: a música na 1ª posição de uma parada pessoal vale {p1} pontos, a 2ª vale {p2}, a 3ª vale {p3}, a 10ª vale {p10} e a 100ª vale {p100}. Esses pontos são somados entre todas as paradas publicadas na semana para formar o ranking coletivo.",
     calcP3: "Essa curva foi escolhida de propósito: ela valoriza o topo das paradas pessoais mais do que o volume. Uma música que aparece em poucas paradas, sempre bem colocada, pontua mais do que uma música que aparece em muitas paradas só nas posições finais.",
     calcP4: "A semana do Global 100 fecha toda segunda-feira às 17:00 (horário de Brasília); paradas publicadas depois desse horário contam para a semana seguinte. O snapshot de cada semana é processado horas depois e vira um registro permanente - o histórico completo fica sempre disponível para consulta.",
     calcGuideLink: "Guia completo do Global 100 →",

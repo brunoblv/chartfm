@@ -10,6 +10,7 @@ import {
 } from "@/components/institutional/InstitutionalPrimitives";
 import { FAQ_ITEMS } from "@/lib/content/helpContent";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { scoringDocParams } from "@/lib/scoring-docs";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -21,7 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FaqPage() {
-  const { t } = await getServerTranslations();
+  const { t, locale } = await getServerTranslations();
+  const docParams = scoringDocParams(locale);
 
   return (
     <InstitutionalLayout>
@@ -34,7 +36,7 @@ export default async function FaqPage() {
           <div key={item.questionKey} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
             {index > 0 && <InstitutionalDivider />}
             <InstitutionalSection title={t(item.questionKey)}>
-              <InstitutionalParagraph>{t(item.answerKey)}</InstitutionalParagraph>
+              <InstitutionalParagraph>{t(item.answerKey, docParams)}</InstitutionalParagraph>
             </InstitutionalSection>
           </div>
         ))}

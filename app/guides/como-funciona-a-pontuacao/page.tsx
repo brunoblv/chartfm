@@ -8,6 +8,7 @@ import {
   InstitutionalTitle,
 } from "@/components/institutional/InstitutionalPrimitives";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
+import { scoringDocParams, scoringTable } from "@/lib/scoring-docs";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getServerTranslations();
@@ -18,17 +19,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const TOP_POINTS = 1000;
-const DECAY_RATIO = 0.95;
-
-function pointsForPosition(position: number): number {
-  return Math.round(TOP_POINTS * Math.pow(DECAY_RATIO, position - 1));
-}
-
-const TABLE_POSITIONS = [1, 2, 3, 4, 5, 10, 15, 20, 30, 50, 75, 100];
-
 export default async function GuideComoFuncionaAPontuacao() {
-  const { t, locale } = await getServerTranslations();
+  const { t: tRaw, locale } = await getServerTranslations();
+  const docParams = scoringDocParams(locale);
+  const t = (key: string) => tRaw(key, docParams);
+  const rows = scoringTable();
   return (
     <InstitutionalLayout>
       <InstitutionalTitle subtitle={t("guides.pontuacaoSubtitle")}>{t("guides.pontuacaoTitle")}</InstitutionalTitle>
@@ -81,8 +76,8 @@ export default async function GuideComoFuncionaAPontuacao() {
                   </tr>
                 </thead>
                 <tbody>
-                  {TABLE_POSITIONS.map((position) => (
-                    <tr key={position}>
+                  {rows.map(({ position, points }) => (
+                    <tr key={position} data-position={position} data-points={points}>
                       <td
                         style={{
                           padding: "10px 12px",
@@ -90,7 +85,7 @@ export default async function GuideComoFuncionaAPontuacao() {
                           color: "var(--text-subtle)",
                         }}
                       >
-                        {position}ª
+                        {locale === "en" ? `#${position}` : `${position}ª`}
                       </td>
                       <td
                         style={{
@@ -99,7 +94,7 @@ export default async function GuideComoFuncionaAPontuacao() {
                           color: "var(--text-subtle)",
                         }}
                       >
-                        {pointsForPosition(position).toLocaleString(locale)}
+                        {points.toLocaleString(locale)}
                       </td>
                     </tr>
                   ))}

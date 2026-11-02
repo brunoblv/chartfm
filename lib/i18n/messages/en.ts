@@ -277,7 +277,7 @@ export const messagesEn = {
     viewFullChartCta: "View full chart →",
     calcTitle: "How the Global 100 is calculated",
     calcP1: "The Global 100 is ChartFM's collective chart, built every week from the personal charts published by users. There's no autoplay algorithm here: every position in the collective ranking comes from someone's deliberate choice when building their own chart.",
-    calcP2: "The calculation uses a geometric curve: the song in 1st place on a personal chart is worth 1,000 points, and each position below is worth 95% of the previous one - 2nd place is worth 950, 5th is worth 815, 10th is worth 630. These points are summed across all charts published in the week to form the collective ranking.",
+    calcP2: "The calculation is simple: the song in 1st place on a personal chart is worth {p1} points, 2nd is worth {p2}, 3rd is worth {p3}, 10th is worth {p10} and 100th is worth {p100}. These points are summed across all charts published in the week to form the collective ranking.",
     calcP3: "This curve was chosen on purpose: it rewards the top of personal charts more than volume. A song that appears in few charts, always ranked highly, scores more than a song that appears in many charts only in the last positions.",
     calcP4: "The Global 100 week closes every Monday at 5:00 PM (Brasília time); charts published after that count toward the following week. Each week's snapshot is processed hours later and becomes a permanent record - the full history is always available to browse.",
     calcGuideLink: "Full Global 100 guide →",
