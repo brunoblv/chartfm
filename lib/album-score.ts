@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n/config";
+import { canShowConsensusLabel } from "@/lib/content-quality";
 import { translate } from "@/lib/i18n/translate";
 
 export type ScoreBandId = "acclaimed" | "recommended" | "mixed" | "unfavorable" | "rejected";
@@ -45,6 +46,17 @@ export function scoreBandKey(score: number): string {
 
 export function scoreLabel(score: number, locale: Locale = "pt-BR"): string {
   return translate(locale, scoreBandKey(score));
+}
+
+/**
+ * Rótulo da MÉDIA de um álbum. Com poucas avaliações não usa linguagem de
+ * consenso ("Aclamação universal" com 3 notas engana): mostra só a amostra.
+ */
+export function aggregateScoreLabel(score: number, ratingsCount: number, locale: Locale = "pt-BR"): string {
+  if (!canShowConsensusLabel(ratingsCount)) {
+    return translate(locale, "criticsfm.smallSampleLabel");
+  }
+  return scoreLabel(score, locale);
 }
 
 /** Cores mais vibrantes para badges em imagens geradas (story, gerador admin). */

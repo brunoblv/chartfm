@@ -933,6 +933,7 @@ export const pagesPtBR = {
     scoreScaleRangeHeader: "Faixa",
     scoreScaleTextHeader: "Texto",
     bandAcclaimed: "Aclamação universal",
+    smallSampleLabel: "Poucas avaliações até agora",
     bandRecommended: "Muito recomendado",
     bandMixed: "Recepção mista",
     bandUnfavorable: "Geralmente desfavorável",

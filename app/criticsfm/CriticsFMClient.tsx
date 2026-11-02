@@ -488,6 +488,9 @@ export function CriticsFMClient({
                     <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {a.artist}
                     </div>
+                    <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+                      {t("criticsfm.reviewCountPlural", { count: a.reviewCount })}
+                    </div>
                   </div>
                 </div>
               </Link>

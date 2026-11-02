@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-options";
 import { Shell } from "@/components/layout/Shell";
 import { prisma } from "@/lib/prisma";
 import { buildAlbumPath } from "@/lib/music-routes";
-import { scoreColor, scoreBg, scoreLabel } from "@/lib/album-score";
+import { scoreColor, scoreBg, aggregateScoreLabel } from "@/lib/album-score";
 import { getSpotifyAlbumDetails } from "@/lib/spotify-server";
 import { getServerTranslations } from "@/lib/i18n/server-translations";
 import { AlbumReviewsClient } from "./AlbumReviewsClient";
@@ -216,7 +216,7 @@ export default async function CriticsFMAlbumPage({
                 <div>
                   {reviewCount > 0 && (
                     <div style={{ fontSize: 15, fontWeight: 700, color: scoreColor(avgScore) }}>
-                      {scoreLabel(avgScore, locale)}
+                      {aggregateScoreLabel(avgScore, reviewCount, locale)}
                     </div>
                   )}
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>

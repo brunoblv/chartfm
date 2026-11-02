@@ -933,6 +933,7 @@ export const pagesEn = {
     scoreScaleRangeHeader: "Range",
     scoreScaleTextHeader: "Label",
     bandAcclaimed: "Universal acclaim",
+    smallSampleLabel: "Few ratings so far",
     bandRecommended: "Highly recommended",
     bandMixed: "Mixed reception",
     bandUnfavorable: "Generally unfavorable",
