@@ -53,3 +53,6 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# mídia da central de notícias (gerada em runtime)
+/public/generated/news/

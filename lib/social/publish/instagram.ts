@@ -7,7 +7,7 @@ import {
 import { timedFetch, type PublishResult } from "@/lib/social/publish/shared";
 
 // Instagram API with Instagram Login (token nativo "IGAA...", não é o token de Página do Facebook).
-const GRAPH_BASE = "https://graph.instagram.com/v21.0";
+export const GRAPH_BASE = "https://graph.instagram.com/v21.0";
 const POLL_MAX_ATTEMPTS = 8;
 const POLL_DELAY_MS = 2000;
 
@@ -15,13 +15,18 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForContainerReady(containerId: string, token: string): Promise<boolean> {
-  for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+export async function waitForContainerReady(
+  containerId: string,
+  token: string,
+  maxAttempts = POLL_MAX_ATTEMPTS,
+  delayMs = POLL_DELAY_MS,
+): Promise<boolean> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const res = await timedFetch(`${GRAPH_BASE}/${containerId}?fields=status_code&access_token=${encodeURIComponent(token)}`);
     const status = res.json?.status_code;
     if (status === "FINISHED") return true;
     if (status === "ERROR") return false;
-    await sleep(POLL_DELAY_MS);
+    await sleep(delayMs);
   }
   return false;
 }

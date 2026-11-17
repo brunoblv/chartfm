@@ -558,6 +558,10 @@ function SidebarContent({
                 <Send size={14} />
                 <span>Postagens</span>
               </Link>
+              <Link href="/admin/noticias" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/noticias")}>
+                <Send size={14} />
+                <span>{t("nav.adminNews")}</span>
+              </Link>
               <Link href="/admin/instagram" onClick={onNavClick} style={adminLinkStyle(pathname, "/admin/instagram")}>
                 <Instagram size={14} />
                 <span>{t("nav.adminInstagram")}</span>

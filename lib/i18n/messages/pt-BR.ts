@@ -54,6 +54,7 @@ export const messagesPtBR = {
     adminEditorial: "Editorial",
     adminSupport: "Tickets de suporte",
     adminInstagram: "Instagram",
+    adminNews: "Notícias (posts)",
     ctaTitle: "Crie sua parada semanal",
     ctaBody:
       "Registre as músicas que você mais ouviu, acompanhe seu streak e descubra o gosto musical dos seus amigos.",

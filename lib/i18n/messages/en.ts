@@ -54,6 +54,7 @@ export const messagesEn = {
     adminEditorial: "Editorial",
     adminSupport: "Support tickets",
     adminInstagram: "Instagram",
+    adminNews: "News (posts)",
     ctaTitle: "Create your weekly chart",
     ctaBody:
       "Log the tracks you listened to most, keep your streak, and discover your friends' taste in music.",
